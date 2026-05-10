@@ -327,7 +327,7 @@ tbody td{padding:8px 10px;vertical-align:middle}
 <div class="toast" id="toast"></div>
 
 <script>
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbw9OrAAEdBOqN9j8nmHns9c5jhLd1MtKl2EstlwY2bkDcP2ljAGnrHQgMRKnHMTsSfJog/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbziZca5tlR-2cZNAmt6fVt2aUKBXz4AJZOi9rz3AytxB9mYbp_TENA31_34M9HrmU1dWA/exec';
 const RULES = ['Zonas vigentes verificadas','Orden precolocada a tiempo','Máx 5 velas en corrida','Sin noticia roja activa','Zona marcada con consecución'];
 
 let sessions = [];
@@ -340,22 +340,32 @@ function showView(id, btn){
   btn.classList.add('active');
 }
 
-async function loadData(){
+function loadData(){
   const btn = document.querySelector('.sync-btn');
   btn.classList.add('loading');
-  try {
-    const r = await fetch(GAS_URL);
-    const data = await r.json();
-    sessions = Array.isArray(data) ? data.map(s => ({
-      ...s,
-      fecha: s.fecha ? String(s.fecha).split('T')[0] : ''
-    })) : [];
+
+  // Usamos JSONP para evitar CORS
+  const callbackName = 'cb_' + Date.now();
+  const script = document.createElement('script');
+
+  window[callbackName] = function(data){
+    delete window[callbackName];
+    document.body.removeChild(script);
+    sessions = Array.isArray(data) ? data.map(s=>({...s, fecha: s.fecha ? String(s.fecha).split('T')[0] : ''})) : [];
     renderDashboard();
     document.getElementById('lastSync').textContent = 'Sincronizado: '+new Date().toLocaleTimeString('es-CO');
-  } catch(e){
+    btn.classList.remove('loading');
+  };
+
+  script.onerror = function(){
+    delete window[callbackName];
+    document.body.removeChild(script);
     showToast('Error al conectar con Google Sheets','err');
-  }
-  btn.classList.remove('loading');
+    btn.classList.remove('loading');
+  };
+
+  script.src = `${GAS_URL}?callback=${callbackName}`;
+  document.body.appendChild(script);
 }
 
 function renderDashboard(){ renderMetrics(); renderTable(); renderErrChart(); renderDiscChart(); document.getElementById('badgeCount').textContent = sessions.length+' registros'; }
@@ -580,7 +590,7 @@ async function guardarSesion(){
   if(!params.fecha){showToast('Selecciona una fecha','err');btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Guardar en Google Sheets';return;}
   try {
     const qs=new URLSearchParams(params).toString();
-    await fetch(`${GAS_URL}?${qs}`);
+    await fetch(`${GAS_URL}?${qs}`,{method:'GET',mode:'no-cors'});
     showToast('✅ Sesión guardada en Google Sheets','ok');
     resetForm();
     setTimeout(()=>{loadData();showView('dashboard',document.querySelector('.nav-btn'));},1500);
