@@ -45,13 +45,13 @@ const Metrics = (() => {
 
   function cleanSessions(sesiones) {
     return sesiones.filter(s =>
-      s.chk_zonas && s.chk_orden && s.chk_5velas && s.chk_noticias && s.chk_consecucion
+      s.chk_zonas && s.chk_orden && s.chk_5velas && s.chk_noticias && s.chk_consecucion && s.chk_estructura
     ).length
   }
 
   function errorFrequency(sesiones) {
     const counts = {
-      'Zonas': 0, 'Orden': 0, '5 Velas': 0, 'Noticias': 0, 'Consecución': 0
+      'Zonas': 0, 'Orden': 0, '5 Velas': 0, 'Noticias': 0, 'Consecución': 0, 'Estructura': 0
     }
     sesiones.forEach(s => {
       if (!s.chk_zonas) counts['Zonas']++
@@ -59,6 +59,7 @@ const Metrics = (() => {
       if (!s.chk_5velas) counts['5 Velas']++
       if (!s.chk_noticias) counts['Noticias']++
       if (!s.chk_consecucion) counts['Consecución']++
+      if (!s.chk_estructura) counts['Estructura']++
     })
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1])
     return sorted[0][1] > 0 ? sorted[0] : null

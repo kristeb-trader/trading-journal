@@ -77,6 +77,7 @@ const Modal = {
       { key: 'chk_5velas', label: 'Máx 5 velas en corrida' },
       { key: 'chk_noticias', label: 'Sin noticia roja activa' },
       { key: 'chk_consecucion', label: 'Zona marcada con consecución' },
+      { key: 'chk_estructura', label: 'Estructura de Impulso + Retroceso + Impulso, Fluida' },
     ]
     document.getElementById('modalChecklist').innerHTML = sesion
       ? `<div class="modal-checklist">${checks.map(c => `

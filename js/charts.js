@@ -186,8 +186,8 @@ const Charts = (() => {
     const active = sesiones.filter(s => !s.no_opero).slice().reverse()
     const labels = active.map(s => s.sesion_date?.slice(5))
     const scores = active.map(s => {
-      const checks = [s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion]
-      return Math.round(checks.filter(Boolean).length / 5 * 100)
+      const checks = [s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
+      return Math.round(checks.filter(Boolean).length / 6 * 100)
     })
     instances.discipline = new Chart(document.getElementById('disciplineChart'), {
       type: 'line',
