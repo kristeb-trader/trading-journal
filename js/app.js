@@ -85,7 +85,7 @@ const Modal = {
             <i class="ti ${sesion[c.key] ? 'ti-circle-check' : 'ti-circle-x'}"></i>
             <span>${c.label}</span>
           </div>`).join('')}
-          <div class="checklist-score">Disciplina: ${checks.filter(c => sesion[c.key]).length}/5 (${(checks.filter(c => sesion[c.key]).length / 5 * 100).toFixed(0)}%)</div>
+          <div class="checklist-score">Disciplina: ${checks.filter(c => sesion[c.key]).length}/${checks.length} (${(checks.filter(c => sesion[c.key]).length / checks.length * 100).toFixed(0)}%)</div>
         </div>`
       : '<p class="text-dim">Sin datos de sesión para este día.</p>'
 
