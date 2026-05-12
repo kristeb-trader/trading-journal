@@ -5,5 +5,5 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const CLAUDE_API_KEY = '' // se lee de localStorage — ver Settings en el dashboard
 
 // Cloudinary config — set when available
-const CLOUDINARY_CLOUD_NAME = ''
-const CLOUDINARY_UPLOAD_PRESET = ''
+const CLOUDINARY_CLOUD_NAME = 'dq4n7bjta'
+const CLOUDINARY_UPLOAD_PRESET = 'trading-journal'
