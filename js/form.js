@@ -129,9 +129,10 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
           'Content-Type': 'application/json',
           'x-api-key': apiKey,
           'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-5',
           max_tokens: 300,
           messages: [{ role: 'user', content: prompt }]
         })
