@@ -114,7 +114,7 @@ const SessionForm = (() => {
         ? `${trades.filter(t => t.resultado === 'target').length} targets, ${trades.filter(t => t.resultado === 'stop').length} stops, P&L: $${pnl.toFixed(2)}`
         : 'Sin trades registrados'
 
-      const prompt = `Eres un coach de trading especializado en NQ/MNQ Futures con la metodología Chaumer en temporalidad de 1 minuto. Analiza la sesión del trader y genera un resumen conciso y constructivo en español.
+      const prompt = `Eres un coach de trading especializado en NQ/MNQ Futures en temporalidad de 1 minuto. Analiza la sesión del trader y genera un resumen conciso y constructivo en español.
 
 Fecha: ${sesionDate}
 Contexto de mercado: ${contexto || 'No indicado'}
@@ -178,6 +178,7 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
       payload.chk_5velas = document.getElementById('chk5Velas').checked
       payload.chk_noticias = document.getElementById('chkNoticias').checked
       payload.chk_consecucion = document.getElementById('chkConsecucion').checked
+      payload.chk_estructura = document.getElementById('chkEstructura').checked
     }
 
     payload.analisis_trader = document.getElementById('analisisTrader').value || null
@@ -248,6 +249,7 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
       document.getElementById('chk5Velas').checked = sesion.chk_5velas || false
       document.getElementById('chkNoticias').checked = sesion.chk_noticias || false
       document.getElementById('chkConsecucion').checked = sesion.chk_consecucion || false
+      document.getElementById('chkEstructura').checked = sesion.chk_estructura || false
 
       if (sesion.num_corrida) {
         document.getElementById('numCorrida').value = sesion.num_corrida
