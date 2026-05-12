@@ -103,8 +103,14 @@ const Modal = {
 
     // ── Imagen tab ──
     document.getElementById('modalImagen').innerHTML = sesion?.imagen_url
-      ? `<div class="modal-image-wrap"><img src="${sesion.imagen_url}" alt="Captura del día" loading="lazy"></div>`
+      ? `<div class="modal-image-wrap"><img src="${sesion.imagen_url}" alt="Captura del día" loading="lazy" style="cursor:zoom-in" title="Clic para ver en tamaño completo"></div>`
       : '<div class="modal-no-trade"><i class="ti ti-photo-off"></i><p>Sin imagen para este día</p></div>'
+
+    // Lightbox al hacer clic en la imagen
+    setTimeout(() => {
+      const img = document.querySelector('#modalImagen img')
+      if (img) img.addEventListener('click', () => Lightbox.open(img.src))
+    }, 50)
 
     // Reset to first tab
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
@@ -246,6 +252,30 @@ async function boot() {
 
   // Start on calendar
   Nav.go('calendar')
+}
+
+// ── Lightbox ──────────────────────────────────────────────────────────────
+
+const Lightbox = {
+  open(src) {
+    const lb = document.createElement('div')
+    lb.id = 'lightbox'
+    lb.innerHTML = `
+      <div class="lb-overlay">
+        <button class="lb-close" title="Cerrar (Esc)"><i class="ti ti-x"></i></button>
+        <img src="${src}" alt="Imagen completa">
+      </div>`
+    document.body.appendChild(lb)
+    document.body.classList.add('modal-open')
+    requestAnimationFrame(() => lb.querySelector('.lb-overlay').classList.add('visible'))
+    lb.addEventListener('click', e => { if (e.target === lb || e.target.closest('.lb-close')) this.close() })
+    document.addEventListener('keydown', this._esc = e => { if (e.key === 'Escape') this.close() })
+  },
+  close() {
+    document.getElementById('lightbox')?.remove()
+    document.body.classList.remove('modal-open')
+    document.removeEventListener('keydown', this._esc)
+  }
 }
 
 document.addEventListener('DOMContentLoaded', boot)
