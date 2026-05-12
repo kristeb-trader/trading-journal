@@ -213,6 +213,8 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
       await DB.upsertSesion(payload)
       Toast.show('Sesión guardada correctamente', 'success')
       clearForm()
+      document.querySelector('[data-section="calendar"]').click()
+      Calendar.load()
     } catch (err) {
       Toast.show('Error al guardar: ' + err.message, 'error')
     } finally {
