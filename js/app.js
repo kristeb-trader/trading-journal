@@ -192,6 +192,38 @@ async function boot() {
     Toast.show('Sin conexión a Supabase: ' + (err.message || err), 'error')
   }
 
+  // Settings modal
+  const openSettings = document.getElementById('openSettings')
+  const settingsModal = document.getElementById('settingsModal')
+  const closeSettings = document.getElementById('closeSettings')
+  const inputClaudeKey = document.getElementById('inputClaudeKey')
+  const toggleKeyVisibility = document.getElementById('toggleKeyVisibility')
+
+  openSettings.addEventListener('click', () => {
+    inputClaudeKey.value = localStorage.getItem('claude_api_key') || ''
+    settingsModal.classList.remove('hidden')
+  })
+  closeSettings.addEventListener('click', () => settingsModal.classList.add('hidden'))
+  settingsModal.addEventListener('click', e => { if (e.target === settingsModal) settingsModal.classList.add('hidden') })
+
+  toggleKeyVisibility.addEventListener('click', () => {
+    const isPassword = inputClaudeKey.type === 'password'
+    inputClaudeKey.type = isPassword ? 'text' : 'password'
+    toggleKeyVisibility.innerHTML = isPassword ? '<i class="ti ti-eye-off"></i>' : '<i class="ti ti-eye"></i>'
+  })
+
+  document.getElementById('saveSettings').addEventListener('click', () => {
+    const key = inputClaudeKey.value.trim()
+    if (key) {
+      localStorage.setItem('claude_api_key', key)
+      Toast.show('API Key guardada en el navegador', 'success')
+    } else {
+      localStorage.removeItem('claude_api_key')
+      Toast.show('API Key eliminada', 'info')
+    }
+    settingsModal.classList.add('hidden')
+  })
+
   // Modal events
   Modal.initTabs()
   document.getElementById('closeModal').addEventListener('click', () => Modal.close())

@@ -98,7 +98,8 @@ const SessionForm = (() => {
   async function generateAI() {
     const analysis = document.getElementById('analisisTrader').value
     if (!analysis.trim()) { Toast.show('Escribe tu análisis primero', 'warning'); return }
-    if (!CLAUDE_API_KEY) { Toast.show('API Key de Claude no configurada', 'warning'); return }
+    const apiKey = localStorage.getItem('claude_api_key') || CLAUDE_API_KEY
+    if (!apiKey) { Toast.show('Configura tu API Key de Claude en ⚙ Ajustes', 'warning'); return }
 
     const btn = document.getElementById('generateAI')
     btn.disabled = true
@@ -126,7 +127,7 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': CLAUDE_API_KEY,
+          'x-api-key': apiKey,
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({

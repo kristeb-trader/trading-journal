@@ -70,6 +70,9 @@
         <span class="status-indicator" id="connectionStatus">
           <i class="ti ti-loader-2 spin"></i> Conectando...
         </span>
+        <button class="btn-icon" id="openSettings" title="Ajustes">
+          <i class="ti ti-settings"></i>
+        </button>
       </div>
     </header>
 
@@ -400,6 +403,36 @@
       <div class="modal-footer">
         <button class="btn-secondary" id="editSessionBtn">
           <i class="ti ti-edit"></i> Editar sesión
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Ajustes ────────────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="settingsModal">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-header">
+        <h3><i class="ti ti-settings"></i> Ajustes</h3>
+        <button class="btn-icon" id="closeSettings"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-content">
+        <div class="form-group">
+          <label for="inputClaudeKey">API Key de Claude</label>
+          <div style="display:flex; gap:8px;">
+            <input type="password" id="inputClaudeKey" placeholder="sk-ant-api03-..." style="flex:1">
+            <button type="button" class="btn-secondary" id="toggleKeyVisibility" style="padding:8px 10px; flex-shrink:0;">
+              <i class="ti ti-eye"></i>
+            </button>
+          </div>
+          <small style="color:var(--text3); margin-top:4px; display:block;">
+            Se guarda solo en este navegador, nunca en GitHub.
+            Obtén la tuya en <strong>console.anthropic.com</strong>
+          </small>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end;">
+        <button class="btn-primary" id="saveSettings">
+          <i class="ti ti-device-floppy"></i> Guardar
         </button>
       </div>
     </div>
