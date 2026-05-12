@@ -22,9 +22,11 @@ const Toast = {
 
 const Modal = {
   currentSesion: null,
+  currentDate: null,
 
   openDay(dateStr, trades, sesion) {
     this.currentSesion = sesion
+    this.currentDate = dateStr
     const modal = document.getElementById('dayModal')
     const title = document.getElementById('modalDateTitle')
 
@@ -231,8 +233,10 @@ async function boot() {
     if (e.target === document.getElementById('dayModal')) Modal.close()
   })
   document.getElementById('editSessionBtn').addEventListener('click', () => {
+    const date = Modal.currentDate
+    const sesion = Modal.currentSesion
     Modal.close()
-    if (Modal.currentSesion) SessionForm.prefill(Modal.currentSesion)
+    SessionForm.prefill(sesion, date)
   })
   document.addEventListener('keydown', e => { if (e.key === 'Escape') Modal.close() })
 

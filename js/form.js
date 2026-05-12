@@ -221,8 +221,14 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
     }
   }
 
-  function prefill(sesion) {
-    if (!sesion) return
+  function prefill(sesion, date) {
+    clearForm()
+    // Si no hay sesión, solo precarga la fecha y navega al formulario
+    if (!sesion) {
+      if (date) document.getElementById('sesionDate').value = date
+      document.querySelector('[data-section="register"]').click()
+      return
+    }
     editingDate = sesion.sesion_date
     document.getElementById('sesionDate').value = sesion.sesion_date
     document.getElementById('noOpero').checked = sesion.no_opero || false
@@ -261,7 +267,6 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
       document.getElementById('uploadArea').classList.add('hidden')
     }
 
-    // Navigate to register section
     document.querySelector('[data-section="register"]').click()
   }
 
