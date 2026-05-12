@@ -137,8 +137,14 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
         })
       })
       const data = await res.json()
-      document.getElementById('resumenIA').value = data.content?.[0]?.text || ''
-      Toast.show('Resumen generado con IA', 'success')
+      console.log('Claude response:', JSON.stringify(data))
+      const texto = data?.content?.[0]?.text || data?.completion || ''
+      document.getElementById('resumenIA').value = texto
+      if (texto) {
+        Toast.show('Resumen generado con IA', 'success')
+      } else {
+        Toast.show('Respuesta vacía — revisa la consola (F12)', 'warning')
+      }
     } catch {
       Toast.show('Error al llamar a Claude API', 'error')
     } finally {
