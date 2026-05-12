@@ -282,6 +282,23 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
     document.getElementById('sessionForm').addEventListener('submit', handleSubmit)
     document.getElementById('generateAI').addEventListener('click', generateAI)
     document.getElementById('clearForm').addEventListener('click', clearForm)
+
+    // Auto-invalidar checklist de 5 velas si velas > 5
+    document.getElementById('velasCorrida').addEventListener('input', () => {
+      const velas = parseInt(document.getElementById('velasCorrida').value) || 0
+      const chk = document.getElementById('chk5Velas')
+      const item = chk.closest('.check-item')
+      if (velas > 5) {
+        chk.checked = false
+        chk.disabled = true
+        item.style.opacity = '0.5'
+        item.title = `Invalidado: ${velas} velas superan el máximo de 5`
+      } else {
+        chk.disabled = false
+        item.style.opacity = '1'
+        item.title = ''
+      }
+    })
   }
 
   return { init, prefill }
