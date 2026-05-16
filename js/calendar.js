@@ -169,26 +169,19 @@ const Calendar = (() => {
       .filter(s => s.sesion_date?.startsWith(monthPrefix) && !s.no_opero)
 
     // Disciplina mensual
-    let disciplineHtml = ''
+    let disciplineChip = ''
     if (monthSesiones.length > 0) {
       const avg = monthSesiones.reduce((sum, s) => {
         return sum + [s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
           .filter(Boolean).length / 6
       }, 0) / monthSesiones.length
       const pct = Math.round(avg * 100)
-      const iconColor = pct >= 80 ? 'icon-green' : pct >= 50 ? 'icon-warning' : 'icon-red'
-      const valColor  = pct >= 80 ? 'text-green' : pct >= 50 ? '' : 'text-red'
-      disciplineHtml = `
-        <div class="stat-card">
-          <div class="stat-card-icon ${iconColor}"><i class="ti ti-checkup-list"></i></div>
-          <div class="stat-card-val ${valColor}">${pct}%</div>
-          <div class="stat-card-label">Disciplina</div>
-          <div class="stat-card-sub">${monthSesiones.length} sesiones</div>
-        </div>`
+      const cls = pct >= 80 ? 'chip-green' : pct >= 50 ? '' : 'chip-red'
+      disciplineChip = `<span class="ms-chip ${cls}"><i class="ti ti-checkup-list"></i> ${pct}% Disciplina</span>`
     }
 
     // Error más frecuente del mes
-    let errorHtml = ''
+    let errorChip = ''
     if (monthSesiones.length > 0) {
       const keys   = ['chk_zonas','chk_orden','chk_5velas','chk_noticias','chk_consecucion','chk_estructura']
       const labels = ['Zonas','Orden','5 Velas','Noticias','Consecución','Estructura']
@@ -197,47 +190,31 @@ const Calendar = (() => {
       monthSesiones.forEach(s => keys.forEach((k, i) => { if (!s[k]) counts[labels[i]]++ }))
       const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
       if (top[1] > 0) {
-        errorHtml = `
-          <div class="stat-card">
-            <div class="stat-card-icon icon-warning"><i class="ti ti-alert-triangle"></i></div>
-            <div class="stat-card-val" style="font-size:1.1rem;color:var(--warning)">${top[0]}</div>
-            <div class="stat-card-label">Error frecuente</div>
-            <div class="stat-card-sub">${top[1]}x incumplido</div>
-          </div>`
+        errorChip = `<span class="ms-chip chip-warning"><i class="ti ti-alert-triangle"></i> ${top[0]} (${top[1]}x)</span>`
       }
     }
 
-    const monthName = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-      'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][currentMonth - 1]
-
     document.getElementById('monthlySummary').innerHTML = `
-      <div class="summary-title">
-        <i class="ti ti-chart-bar"></i> Month Summary — ${monthName} ${currentYear}
-      </div>
-
-      <div class="month-hero ${totalPnl >= 0 ? 'hero-positive' : 'hero-negative'}">
-        <i class="ti ti-currency-dollar month-hero-icon"></i>
-        <div>
-          <div class="month-hero-amount">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}</div>
-          <div class="month-hero-label">P&amp;L del mes</div>
+      <div class="ms-left">
+        <div class="ms-title"><i class="ti ti-chart-bar"></i> Month Summary</div>
+        <div class="ms-chips">
+          <span class="ms-chip ${parseFloat(winRate) >= 50 ? 'chip-green' : 'chip-red'}">
+            <i class="ti ti-target"></i> ${winRate}% Win Rate
+          </span>
+          <span class="ms-chip">
+            <i class="ti ti-list-numbers"></i> ${allTrades.length} trades · ${tradingDays} días
+          </span>
+          <span class="ms-chip">
+            <i class="ti ti-arrows-split-2"></i>
+            <span class="text-green">${targets}T</span>&nbsp;/&nbsp;<span class="text-red">${stops}S</span>
+          </span>
+          ${disciplineChip}
+          ${errorChip}
         </div>
       </div>
-
-      <div class="summary-stats-grid">
-        <div class="stat-card">
-          <div class="stat-card-icon ${parseFloat(winRate) >= 50 ? 'icon-green' : 'icon-red'}"><i class="ti ti-target"></i></div>
-          <div class="stat-card-val ${parseFloat(winRate) >= 50 ? 'text-green' : 'text-red'}">${winRate}%</div>
-          <div class="stat-card-label">Win Rate</div>
-          <div class="stat-card-sub">${targets}T / ${stops}S</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-card-icon icon-neutral"><i class="ti ti-list-numbers"></i></div>
-          <div class="stat-card-val">${allTrades.length}</div>
-          <div class="stat-card-label">Trades totales</div>
-          <div class="stat-card-sub">${tradingDays} días operados</div>
-        </div>
-        ${disciplineHtml}
-        ${errorHtml}
+      <div class="ms-right">
+        <div class="ms-label">NET P&amp;L</div>
+        <div class="ms-pnl ${totalPnl >= 0 ? 'positive' : 'negative'}">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}</div>
       </div>`
   }
 
