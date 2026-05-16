@@ -46,6 +46,11 @@ namespace NinjaTrader.NinjaScript.Indicators
         private const string SUPABASE_ENDPOINT =
             "https://jothoslozctflfrnysrx.supabase.co/rest/v1/trades";
 
+        private const string NOTIFY_ENDPOINT =
+            "https://trading-journal-bot.kristerock.workers.dev/notify";
+
+        private const string NOTIFY_SECRET = "tj-notify-2026"; // mismo valor que NOTIFY_SECRET en Cloudflare Worker #2
+
         private const string SUPABASE_KEY =
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvdGhvc2xvemN0Zmxmcm55c3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzODQ1MTMsImV4cCI6MjA5Mzk2MDUxM30.8perbSMHaE2K73aRU2NjfrUsWgbwmm2lL2dA-e2CG18";
 
@@ -53,7 +58,6 @@ namespace NinjaTrader.NinjaScript.Indicators
         private bool     inTrade;
         private double   entryPrice;
         private DateTime entryTime;
-        private string   entryName  = string.Empty;
         private int      tradeQty;
         private bool     isLong;
         private double   maeExtreme;
@@ -168,7 +172,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 double   postEntryPrice = 0, postExitPrice = 0;
                 double   postMae = 0, postMfe = 0;
                 DateTime postEntryTime = DateTime.MinValue, postExitTime = DateTime.MinValue;
-                string   postEntryName = string.Empty, postExitName = string.Empty;
+                string   postExitName = string.Empty;
                 string   postInstrument = Instrument.FullName;
                 string   postAccount    = AccountName;
                 string   postMarketPos  = string.Empty;
@@ -185,7 +189,6 @@ namespace NinjaTrader.NinjaScript.Indicators
                         isLong       = netQty > 0;
                         entryPrice   = ex.Price;
                         entryTime    = ex.Time;
-                        entryName    = ex.Name ?? ex.Order.Name ?? string.Empty;
                         tradeQty     = Math.Abs(netQty);
                         maeExtreme   = ex.Price;
                         mfeExtreme   = ex.Price;
@@ -199,7 +202,6 @@ namespace NinjaTrader.NinjaScript.Indicators
                         postExitPrice  = ex.Price;
                         postEntryTime  = entryTime;
                         postExitTime   = ex.Time;
-                        postEntryName  = entryName;
                         postExitName   = ex.Name ?? ex.Order.Name ?? string.Empty;
                         postMarketPos  = isLong ? "Long" : "Short";
                         postQty        = tradeQty;
@@ -216,6 +218,9 @@ namespace NinjaTrader.NinjaScript.Indicators
                         postMfe = isLong
                             ? Math.Max(0, mfeExtreme     - postEntryPrice)
                             : Math.Max(0, postEntryPrice - mfeExtreme);
+
+                        postMae = Math.Round(postMae * pointValue * postQty, 2);
+                        postMfe = Math.Round(postMfe * pointValue * postQty, 2);
 
                         shouldPost = true;
                     }
@@ -234,9 +239,16 @@ namespace NinjaTrader.NinjaScript.Indicators
                         postInstrument, postAccount, postMarketPos, postQty,
                         postEntryPrice, postExitPrice,
                         postEntryTime, postExitTime,
-                        postEntryName, postExitName,
+                        postExitName,
                         postProfit, postMae, postMfe,
                         bars, tradeDate, resultado
+                    ));
+
+                    Task.Run(() => SendNotificationAsync(
+                        postInstrument, postMarketPos, postQty,
+                        postEntryPrice, postExitPrice,
+                        postProfit, postMae, postMfe,
+                        resultado
                     ));
                 }
             }
@@ -247,7 +259,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             string instrument, string account, string marketPos, int qty,
             double entryPrice, double exitPrice,
             DateTime entryTime, DateTime exitTime,
-            string entryName, string exitName,
+            string exitName,
             double profit, double mae, double mfe,
             int bars, string tradeDate, string resultado)
         {
@@ -256,6 +268,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 HttpClient client = httpClient;
                 if (client == null) return;
 
+                double etd = Math.Round(mfe - profit, 2);
                 string json = string.Format(
                     System.Globalization.CultureInfo.InvariantCulture,
                     "{{" +
@@ -267,26 +280,65 @@ namespace NinjaTrader.NinjaScript.Indicators
                     "\"exit_price\":{5},"     +
                     "\"entry_time\":\"{6}\"," +
                     "\"exit_time\":\"{7}\","  +
-                    "\"entry_name\":\"{8}\"," +
-                    "\"exit_name\":\"{9}\","  +
-                    "\"profit\":{10},"        +
+                    "\"exit_name\":\"{8}\","  +
+                    "\"profit\":{9},"         +
                     "\"commission\":0,"       +
-                    "\"mae\":{11},"           +
-                    "\"mfe\":{12},"           +
+                    "\"mae\":{10},"           +
+                    "\"mfe\":{11},"           +
+                    "\"etd\":{12},"           +
                     "\"bars\":{13},"          +
                     "\"trade_date\":\"{14}\"," +
                     "\"resultado\":\"{15}\""  +
                     "}}",
                     Esc(instrument), Esc(account), marketPos, qty,
                     entryPrice, exitPrice,
-                    entryTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    exitTime.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    Esc(entryName), Esc(exitName),
-                    profit, mae, mfe, bars, tradeDate, resultado
+                    entryTime.ToString("HH:mm:ss"),
+                    exitTime.ToString("HH:mm:ss"),
+                    Esc(exitName),
+                    profit, mae, mfe,
+                    etd, bars, tradeDate, resultado
                 );
 
                 var content  = new StringContent(json, Encoding.UTF8, "application/json");
                 await client.PostAsync(SUPABASE_ENDPOINT, content);
+            }
+            catch { }
+        }
+
+        private async Task SendNotificationAsync(
+            string instrument, string marketPos, int qty,
+            double entryPrice, double exitPrice,
+            double profit, double mae, double mfe,
+            string resultado)
+        {
+            try
+            {
+                HttpClient client = httpClient;
+                if (client == null) return;
+
+                string json = string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "{{" +
+                    "\"instrument\":\"{0}\"," +
+                    "\"market_pos\":\"{1}\"," +
+                    "\"qty\":{2},"            +
+                    "\"entry_price\":{3},"    +
+                    "\"exit_price\":{4},"     +
+                    "\"profit\":{5},"         +
+                    "\"mae\":{6},"            +
+                    "\"mfe\":{7},"            +
+                    "\"resultado\":\"{8}\""   +
+                    "}}",
+                    Esc(instrument), marketPos, qty,
+                    entryPrice, exitPrice,
+                    profit, mae, mfe,
+                    resultado
+                );
+
+                var req = new HttpRequestMessage(HttpMethod.Post, NOTIFY_ENDPOINT);
+                req.Headers.Add("X-Notify-Token", NOTIFY_SECRET);
+                req.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                await client.SendAsync(req);
             }
             catch { }
         }

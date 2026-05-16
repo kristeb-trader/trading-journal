@@ -335,10 +335,42 @@ async function handleText(msg, env) {
   }
 }
 
+// ── Notificación de trade desde NinjaTrader ─────────────────────────────────
+async function handleNotify(request, env) {
+  const token = request.headers.get('X-Notify-Token');
+  if (!token || token !== env.NOTIFY_SECRET) {
+    return new Response('Unauthorized', { status: 403 });
+  }
+
+  const t = await request.json();
+  const dir   = t.market_pos === 'Long' ? '▲ Long' : '▼ Short';
+  const emoji = t.resultado === 'target' ? '✅ Target' :
+                t.resultado === 'stop'   ? '🔴 Stop'   : '⚫ Otro';
+  const sign  = t.profit >= 0 ? '+' : '';
+
+  const text =
+    `🔔 <b>Trade cerrado — ${t.instrument}</b>\n` +
+    `${dir} | ${t.qty} contrato${t.qty !== 1 ? 's' : ''}\n` +
+    `Entrada: ${parseFloat(t.entry_price).toFixed(2)} → Salida: ${parseFloat(t.exit_price).toFixed(2)}\n` +
+    `PnL: <b>${sign}$${Math.abs(parseFloat(t.profit)).toFixed(2)}</b> ${emoji}\n` +
+    `MAE: $${parseFloat(t.mae).toFixed(2)} | MFE: $${parseFloat(t.mfe).toFixed(2)}`;
+
+  await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: env.ALLOWED_CHAT_ID, text, parse_mode: 'HTML' }),
+  });
+
+  return new Response('OK');
+}
+
 // ── Entry point ─────────────────────────────────────────────────────────────
 export default {
   async fetch(request, env) {
     if (request.method !== 'POST') return new Response('OK');
+
+    const url = new URL(request.url);
+    if (url.pathname === '/notify') return handleNotify(request, env);
 
     try {
       const update = await request.json();
