@@ -190,7 +190,7 @@ const Nav = {
 async function boot() {
   // Check Supabase connectivity
   try {
-    const { error } = await supa.from('trades').select('id').limit(1)
+    const { error } = await supa.from('trades').select('trade_number').limit(1)
     if (error) throw error
     document.getElementById('connectionStatus').innerHTML = '<i class="ti ti-circle-filled"></i> Conectado'
     document.getElementById('connectionStatus').classList.add('connected')

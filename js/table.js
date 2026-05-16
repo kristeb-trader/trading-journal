@@ -16,7 +16,7 @@ const TradesTable = (() => {
 
   function fmtTime(ts) {
     if (!ts) return '—'
-    return new Date(ts).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+    return ts.slice(0, 5)
   }
 
   function resultBadge(resultado) {
@@ -38,7 +38,7 @@ const TradesTable = (() => {
     filtered = allTrades.filter(t => {
       const matchFilter = filterVal === 'all' || t.resultado === filterVal
       const matchSearch = !search || [
-        t.instrument, t.market_pos, t.entry_name, t.exit_name, t.trade_date
+        t.instrument, t.market_pos, t.exit_name, t.trade_date
       ].some(v => v?.toLowerCase().includes(search))
       return matchFilter && matchSearch
     })
@@ -56,7 +56,7 @@ const TradesTable = (() => {
     }
     tbody.innerHTML = slice.map(t => {
       const pnl = parseFloat(t.profit) || 0
-      const date = t.trade_date || fmtDate(t.entry_time)
+      const date = t.trade_date
       return `
         <tr>
           <td>${date}<br><small class="text-dim">${fmtTime(t.entry_time)}</small></td>
@@ -68,7 +68,7 @@ const TradesTable = (() => {
           <td class="${pnl >= 0 ? 'text-green' : 'text-red'} fw-bold">${pnl >= 0 ? '+' : ''}$${fmt(pnl)}</td>
           <td>${resultBadge(t.resultado)}</td>
           <td>
-            <button class="btn-row" data-action="detail" data-id="${t.id}" title="Ver detalle">
+            <button class="btn-row" data-action="detail" data-id="${t.trade_number}" title="Ver detalle">
               <i class="ti ti-eye"></i>
             </button>
           </td>
@@ -77,7 +77,7 @@ const TradesTable = (() => {
 
     tbody.querySelectorAll('[data-action="detail"]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const trade = allTrades.find(t => t.id === parseInt(btn.dataset.id))
+        const trade = allTrades.find(t => t.trade_number === parseInt(btn.dataset.id))
         if (trade) openTradeModal(trade)
       })
     })
