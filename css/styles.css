@@ -146,7 +146,7 @@ small { font-size: 0.82em; }
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr) minmax(90px, 1fr);
-  grid-auto-rows: 72px;
+  grid-auto-rows: 52px;
   gap: 5px;
   margin-bottom: 20px;
 }
@@ -658,7 +658,7 @@ body.modal-open { overflow: hidden; }
   .sidebar { width: 60px; }
   .sidebar .logo span, .sidebar .nav-item span, .sidebar .account-badge span { display: none; }
   .main-content { margin-left: 60px; }
-  .calendar-grid { gap: 3px; grid-template-columns: repeat(5, 1fr) minmax(70px, 1fr); grid-auto-rows: 58px; }
+  .calendar-grid { gap: 3px; grid-template-columns: repeat(5, 1fr) minmax(70px, 1fr); grid-auto-rows: 44px; }
   .cal-cell { padding: 4px 5px; }
   .metrics-grid { grid-template-columns: repeat(2, 1fr); }
 }
