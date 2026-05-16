@@ -10,7 +10,9 @@ const Calendar = (() => {
   const DAYS_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Semana']
 
   function dayResult(trades, sesion) {
-    if (sesion?.no_opero) return 'no-trade'
+    if (sesion?.no_opero) {
+      return sesion.motivo_no_opero === 'Sin setup' ? 'sin-setup' : 'no-trade'
+    }
     if (!trades || trades.length === 0) return 'empty'
     const targets = trades.filter(t => t.resultado === 'target').length
     const stops = trades.filter(t => t.resultado === 'stop').length
@@ -64,7 +66,9 @@ const Calendar = (() => {
     if (dow === 0) dow = 7 // Dom=7
     ptr.setDate(ptr.getDate() - (dow - 1)) // retroceder al lunes
 
+    let weekNum = 0
     while (ptr <= lastDate) {
+      weekNum++
       const weekDays = []
       let weekPnl = 0
       let weekTrades = 0
@@ -101,14 +105,24 @@ const Calendar = (() => {
           ? `<div class="cal-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(0)}</div>`
           : ''
         const tradeCount = trades.length > 0
-          ? `<div class="cal-count">${trades.length}t</div>` : ''
+          ? `<div class="cal-count">${trades.length} trade${trades.length !== 1 ? 's' : ''}</div>` : ''
         const clickable = !isFuture ? `data-date="${dateStr}" style="cursor:pointer"` : ''
+
+        let statusBadge = ''
+        if (!isFuture && sesion?.no_opero) {
+          if (sesion.motivo_no_opero === 'Sin setup') {
+            statusBadge = `<div class="cal-status-badge badge-sinsetup"><i class="ti ti-eye-off"></i> Sin setup</div>`
+          } else {
+            statusBadge = `<div class="cal-status-badge badge-noopero"><i class="ti ti-user-off"></i> No op.</div>`
+          }
+        }
 
         html += `
           <div class="${cellClass}" ${clickable}>
             <div class="cal-day-num">${parseInt(dateStr.slice(8))}</div>
             ${pnlHtml}
             ${tradeCount}
+            ${statusBadge}
           </div>`
       }
 
@@ -118,14 +132,14 @@ const Calendar = (() => {
         if (weekTrades > 0) {
           html += `
             <div class="cal-cell cal-week-summary ${weekPnl >= 0 ? 'week-positive' : 'week-negative'}">
-              <div class="week-label">Sem.</div>
+              <div class="week-label">Semana ${weekNum}</div>
               <div class="week-pnl ${weekPnl >= 0 ? 'positive' : 'negative'}">${weekPnl >= 0 ? '+' : ''}$${weekPnl.toFixed(0)}</div>
-              <div class="week-trades">${weekTrades}t</div>
+              <div class="week-trades">${weekTrades} trade${weekTrades !== 1 ? 's' : ''}</div>
             </div>`
         } else {
           html += `
             <div class="cal-cell cal-week-summary week-empty">
-              <div class="week-label">Sem.</div>
+              <div class="week-label">Semana ${weekNum}</div>
               <div class="week-pnl" style="color:var(--text3)">—</div>
             </div>`
         }
@@ -162,12 +176,14 @@ const Calendar = (() => {
           .filter(Boolean).length / 6
       }, 0) / monthSesiones.length
       const pct = Math.round(avg * 100)
-      const color = pct >= 80 ? 'text-green' : pct >= 50 ? '' : 'text-red'
+      const iconColor = pct >= 80 ? 'icon-green' : pct >= 50 ? 'icon-warning' : 'icon-red'
+      const valColor  = pct >= 80 ? 'text-green' : pct >= 50 ? '' : 'text-red'
       disciplineHtml = `
-        <div class="summary-stat">
-          <span class="stat-label">Disciplina</span>
-          <span class="stat-val ${color}">${pct}%</span>
-          <span class="stat-sub">${monthSesiones.length} sesiones</span>
+        <div class="stat-card">
+          <div class="stat-card-icon ${iconColor}"><i class="ti ti-checkup-list"></i></div>
+          <div class="stat-card-val ${valColor}">${pct}%</div>
+          <div class="stat-card-label">Disciplina</div>
+          <div class="stat-card-sub">${monthSesiones.length} sesiones</div>
         </div>`
     }
 
@@ -182,36 +198,43 @@ const Calendar = (() => {
       const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
       if (top[1] > 0) {
         errorHtml = `
-          <div class="summary-stat">
-            <span class="stat-label">Error frecuente</span>
-            <span class="stat-val stat-error">${top[0]}</span>
-            <span class="stat-sub">${top[1]}x incumplido</span>
+          <div class="stat-card">
+            <div class="stat-card-icon icon-warning"><i class="ti ti-alert-triangle"></i></div>
+            <div class="stat-card-val" style="font-size:1.1rem;color:var(--warning)">${top[0]}</div>
+            <div class="stat-card-label">Error frecuente</div>
+            <div class="stat-card-sub">${top[1]}x incumplido</div>
           </div>`
       }
     }
 
+    const monthName = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+      'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][currentMonth - 1]
+
     document.getElementById('monthlySummary').innerHTML = `
-      <div class="summary-title">Month Summary</div>
+      <div class="summary-title">
+        <i class="ti ti-chart-bar"></i> Month Summary — ${monthName} ${currentYear}
+      </div>
+
+      <div class="month-hero ${totalPnl >= 0 ? 'hero-positive' : 'hero-negative'}">
+        <i class="ti ti-currency-dollar month-hero-icon"></i>
+        <div>
+          <div class="month-hero-amount">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}</div>
+          <div class="month-hero-label">P&amp;L del mes</div>
+        </div>
+      </div>
+
       <div class="summary-stats-grid">
-        <div class="summary-stat">
-          <span class="stat-label">P&amp;L del mes</span>
-          <span class="stat-val stat-pnl ${totalPnl >= 0 ? 'text-green' : 'text-red'}">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}</span>
+        <div class="stat-card">
+          <div class="stat-card-icon ${parseFloat(winRate) >= 50 ? 'icon-green' : 'icon-red'}"><i class="ti ti-target"></i></div>
+          <div class="stat-card-val ${parseFloat(winRate) >= 50 ? 'text-green' : 'text-red'}">${winRate}%</div>
+          <div class="stat-card-label">Win Rate</div>
+          <div class="stat-card-sub">${targets}T / ${stops}S</div>
         </div>
-        <div class="summary-stat">
-          <span class="stat-label">Win Rate</span>
-          <span class="stat-val ${parseFloat(winRate) >= 50 ? 'text-green' : 'text-red'}">${winRate}%</span>
-        </div>
-        <div class="summary-stat">
-          <span class="stat-label">Trades</span>
-          <span class="stat-val">${allTrades.length}</span>
-        </div>
-        <div class="summary-stat">
-          <span class="stat-label">Días operados</span>
-          <span class="stat-val">${tradingDays}</span>
-        </div>
-        <div class="summary-stat">
-          <span class="stat-label">Targets / Stops</span>
-          <span class="stat-val"><span class="text-green">${targets}</span> / <span class="text-red">${stops}</span></span>
+        <div class="stat-card">
+          <div class="stat-card-icon icon-neutral"><i class="ti ti-list-numbers"></i></div>
+          <div class="stat-card-val">${allTrades.length}</div>
+          <div class="stat-card-label">Trades totales</div>
+          <div class="stat-card-sub">${tradingDays} días operados</div>
         </div>
         ${disciplineHtml}
         ${errorHtml}

@@ -159,10 +159,11 @@ small { font-size: 0.82em; }
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 8px;
-  min-height: 80px;
+  padding: 6px;
+  aspect-ratio: 1;
+  min-height: 0;
   display: flex; flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   transition: border-color var(--transition), transform var(--transition);
   position: relative;
 }
@@ -179,14 +180,23 @@ small { font-size: 0.82em; }
 .cal-cell.day-target { background: rgba(29,158,117,0.12); border-color: rgba(29,158,117,0.3); }
 .cal-cell.day-stop { background: rgba(226,75,74,0.12); border-color: rgba(226,75,74,0.3); }
 .cal-cell.day-mixed { background: rgba(186,117,23,0.12); border-color: rgba(186,117,23,0.3); }
-.cal-cell.day-no-trade { background: var(--bg3); opacity: 0.6; }
+.cal-cell.day-no-trade { background: var(--bg3); opacity: 0.55; }
+.cal-cell.day-sin-setup { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.3); }
 .cal-cell.day-other { background: rgba(255,255,255,0.04); }
 
-.cal-day-num { font-size: 1rem; color: var(--text2); font-weight: 500; }
-.cal-pnl { font-size: 1.1rem; font-weight: 700; }
+.cal-status-badge {
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.03em;
+  display: flex; align-items: center; gap: 3px; margin-top: auto;
+}
+.cal-status-badge i { font-size: 0.65rem; }
+.badge-noopero { color: var(--text3); }
+.badge-sinsetup { color: rgba(139,142,255,0.9); }
+
+.cal-day-num { font-size: 0.85rem; color: var(--text3); font-weight: 500; }
+.cal-pnl { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
 .cal-pnl.positive { color: var(--accent); }
 .cal-pnl.negative { color: var(--red); }
-.cal-count { font-size: 0.82rem; color: var(--text3); margin-top: auto; }
+.cal-count { font-size: 0.68rem; color: var(--text3); margin-top: auto; }
 
 /* Week summary column */
 .cal-header-week {
@@ -196,17 +206,18 @@ small { font-size: 0.82em; }
 .cal-week-summary {
   background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 8px 10px;
-  display: flex; flex-direction: column; align-items: center;
-  gap: 4px; cursor: default;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 5px; cursor: default;
+  aspect-ratio: unset; min-height: 0;
 }
-.cal-week-summary.week-positive { border-color: rgba(29,158,117,0.35); }
-.cal-week-summary.week-negative { border-color: rgba(226,75,74,0.35); }
-.cal-week-summary.week-empty { opacity: 0.5; }
-.week-label { font-size: 0.7rem; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-.week-pnl { font-size: 1rem; font-weight: 700; }
+.cal-week-summary.week-positive { background: rgba(29,158,117,0.08); border-color: rgba(29,158,117,0.35); }
+.cal-week-summary.week-negative { background: rgba(226,75,74,0.08); border-color: rgba(226,75,74,0.35); }
+.cal-week-summary.week-empty { opacity: 0.45; }
+.week-label { font-size: 0.62rem; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.week-pnl { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.03em; }
 .week-pnl.positive { color: var(--accent); }
 .week-pnl.negative { color: var(--red); }
-.week-trades { font-size: 0.75rem; color: var(--text3); }
+.week-trades { font-size: 0.68rem; color: var(--text3); }
 
 /* Month summary */
 .monthly-summary {
@@ -214,20 +225,47 @@ small { font-size: 0.82em; }
   border-radius: var(--radius); padding: 20px 24px;
 }
 .summary-title {
-  font-size: 0.82rem; font-weight: 700; color: var(--text3);
-  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.78rem; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px;
 }
+.summary-title i { font-size: 1rem; }
+
+/* Hero PNL */
+.month-hero {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 18px; border-radius: var(--radius);
+  margin-bottom: 16px; border: 1px solid transparent;
+}
+.month-hero.hero-positive { background: rgba(29,158,117,0.1); border-color: rgba(29,158,117,0.25); }
+.month-hero.hero-negative { background: rgba(226,75,74,0.1); border-color: rgba(226,75,74,0.25); }
+.month-hero-icon { font-size: 2rem; line-height: 1; }
+.hero-positive .month-hero-icon { color: var(--accent); }
+.hero-negative .month-hero-icon { color: var(--red); }
+.month-hero-amount { font-size: 2.6rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+.hero-positive .month-hero-amount { color: var(--accent); }
+.hero-negative .month-hero-amount { color: var(--red); }
+.month-hero-label { font-size: 0.78rem; color: var(--text3); margin-top: 5px; font-weight: 500; }
+
+/* Stat cards grid */
 .summary-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 16px 24px;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
 }
-.summary-stat { display: flex; flex-direction: column; gap: 3px; }
-.stat-label { font-size: 0.82rem; color: var(--text3); }
-.stat-val { font-size: 1.4rem; font-weight: 700; }
-.stat-sub { font-size: 0.72rem; color: var(--text3); }
-.stat-pnl { font-size: 1.6rem; }
-.stat-error { font-size: 1.1rem; color: var(--warning); }
+.stat-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.stat-card-icon { font-size: 1.1rem; margin-bottom: 6px; }
+.stat-card-icon.icon-green { color: var(--accent); }
+.stat-card-icon.icon-red { color: var(--red); }
+.stat-card-icon.icon-warning { color: var(--warning); }
+.stat-card-icon.icon-neutral { color: var(--text2); }
+.stat-card-val { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.stat-card-label { font-size: 0.72rem; color: var(--text3); margin-top: 3px; }
+.stat-card-sub { font-size: 0.66rem; color: var(--text3); opacity: 0.75; }
 
 /* ── Metrics ─────────────────────────────────────────────────────────── */
 .period-selector { display: flex; gap: 4px; }
@@ -622,12 +660,12 @@ body.modal-open { overflow: hidden; }
   .sidebar .logo span, .sidebar .nav-item span, .sidebar .account-badge span { display: none; }
   .main-content { margin-left: 60px; }
   .calendar-grid { gap: 4px; grid-template-columns: repeat(5, 1fr) minmax(70px, 1fr); }
-  .cal-cell { min-height: 60px; padding: 5px; }
+  .cal-cell { padding: 4px; }
   .metrics-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 600px) {
   .content-area { padding: 14px; }
   .metrics-grid { grid-template-columns: 1fr; }
   .calendar-grid { font-size: 0.75rem; }
-  .cal-cell { min-height: 50px; }
+  .cal-cell { padding: 4px; }
 }
