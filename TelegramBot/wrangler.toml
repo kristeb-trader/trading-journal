@@ -1,0 +1,7 @@
+name = "trading-journal-bot"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "3dd631773a6041c1a97a8e9a8f861067"
