@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Journal — Flujo del Usuario</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #f0f9ff; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" style="display:block">
+<defs>
+
+  <!-- Background gradient -->
+  <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%"   stop-color="#eef6ff"/>
+    <stop offset="50%"  stop-color="#f8fafc"/>
+    <stop offset="100%" stop-color="#edfdf4"/>
+  </linearGradient>
+
+  <!-- Top bar gradient -->
+  <linearGradient id="topBar" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#1d4ed8"/>
+    <stop offset="40%"  stop-color="#0284c7"/>
+    <stop offset="70%"  stop-color="#0ea5e9"/>
+    <stop offset="100%" stop-color="#059669"/>
+  </linearGradient>
+
+  <!-- Card gradients -->
+  <linearGradient id="cg1" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#ffffff"/>
+    <stop offset="100%" stop-color="#dbeafe"/>
+  </linearGradient>
+  <linearGradient id="cg2" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#ffffff"/>
+    <stop offset="100%" stop-color="#dcfce7"/>
+  </linearGradient>
+  <linearGradient id="cg3" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#ffffff"/>
+    <stop offset="100%" stop-color="#e0f2fe"/>
+  </linearGradient>
+  <linearGradient id="cg4" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#ffffff"/>
+    <stop offset="100%" stop-color="#ede9fe"/>
+  </linearGradient>
+  <linearGradient id="cg5" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#ffffff"/>
+    <stop offset="100%" stop-color="#fef3c7"/>
+  </linearGradient>
+
+  <!-- Icon circle gradients -->
+  <radialGradient id="ig1" cx="40%" cy="35%">
+    <stop offset="0%" stop-color="#93c5fd"/>
+    <stop offset="100%" stop-color="#2563eb"/>
+  </radialGradient>
+  <radialGradient id="ig2" cx="40%" cy="35%">
+    <stop offset="0%" stop-color="#86efac"/>
+    <stop offset="100%" stop-color="#16a34a"/>
+  </radialGradient>
+  <radialGradient id="ig3" cx="40%" cy="35%">
+    <stop offset="0%" stop-color="#7dd3fc"/>
+    <stop offset="100%" stop-color="#0284c7"/>
+  </radialGradient>
+  <radialGradient id="ig4" cx="40%" cy="35%">
+    <stop offset="0%" stop-color="#c4b5fd"/>
+    <stop offset="100%" stop-color="#7c3aed"/>
+  </radialGradient>
+  <radialGradient id="ig5" cx="40%" cy="35%">
+    <stop offset="0%" stop-color="#fcd34d"/>
+    <stop offset="100%" stop-color="#d97706"/>
+  </radialGradient>
+
+  <!-- Soft drop shadow for cards -->
+  <filter id="shadow" x="-8%" y="-8%" width="116%" height="130%">
+    <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#94a3b8" flood-opacity="0.18"/>
+  </filter>
+  <filter id="iconGlow" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000000" flood-opacity="0.12"/>
+  </filter>
+  <filter id="pillShadow">
+    <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#64748b" flood-opacity="0.12"/>
+  </filter>
+
+  <!-- Arrow markers -->
+  <marker id="arr1" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+    <polygon points="0 0, 9 3.5, 0 7" fill="#3b82f6"/>
+  </marker>
+  <marker id="arr2" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+    <polygon points="0 0, 9 3.5, 0 7" fill="#22c55e"/>
+  </marker>
+  <marker id="arr3" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+    <polygon points="0 0, 9 3.5, 0 7" fill="#0ea5e9"/>
+  </marker>
+  <marker id="arr4" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+    <polygon points="0 0, 9 3.5, 0 7" fill="#a78bfa"/>
+  </marker>
+</defs>
+
+<!-- ═══════════════════════════════════════════════════════ BACKGROUND -->
+<rect width="1400" height="760" fill="url(#bg)"/>
+
+<!-- Subtle dot grid -->
+<pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
+  <circle cx="14" cy="14" r="1.2" fill="#cbd5e1" opacity="0.45"/>
+</pattern>
+<rect width="1400" height="760" fill="url(#dots)"/>
+
+<!-- Top accent bar -->
+<rect x="0" y="0" width="1400" height="7" fill="url(#topBar)"/>
+
+<!-- ═══════════════════════════════════════════════════════ HEADER -->
+<text x="700" y="54" text-anchor="middle"
+  font-family="Segoe UI, system-ui, -apple-system, sans-serif"
+  font-size="26" font-weight="700" fill="#0f172a" letter-spacing="-0.3">
+  Trading Journal NQ Futures
+</text>
+<text x="700" y="82" text-anchor="middle"
+  font-family="Segoe UI, system-ui, sans-serif"
+  font-size="14.5" fill="#64748b" letter-spacing="0.1">
+  ¿Cómo funciona? — Del trade ejecutado al análisis completo, todo automático
+</text>
+
+<!-- Decorative line under header -->
+<line x1="560" y1="96" x2="840" y2="96" stroke="#e2e8f0" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="700" cy="96" r="3" fill="#cbd5e1"/>
+
+
+<!-- ═══════════════════════════════════════════════════════ STEP CARDS
+     5 cards: width=210, height=255, gap=45
+     Total: 5×210 + 4×45 = 1230   Left margin: (1400-1230)/2 = 85
+     Card X positions: 85, 340, 595, 850, 1105
+     Center Y of cards: 130 + 255/2 = 257.5
+-->
+
+<!-- ── CARD 1: NinjaTrader ─────────────────────────────────────────── -->
+<g filter="url(#shadow)">
+  <rect x="85" y="118" width="210" height="255" rx="16" fill="url(#cg1)"/>
+  <rect x="85" y="118" width="210" height="8"   rx="8"  fill="#2563eb"/>
+  <rect x="85" y="122" width="210" height="6"         fill="#2563eb"/>
+</g>
+<!-- Step badge -->
+<circle cx="275" cy="130" r="16" fill="#2563eb" filter="url(#iconGlow)"/>
+<text x="275" y="135.5" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#ffffff">1</text>
+<!-- Icon circle -->
+<circle cx="190" cy="206" r="42" fill="url(#ig1)" filter="url(#iconGlow)"/>
+<!-- Computer icon (white) -->
+<g transform="translate(190,206)">
+  <!-- Monitor body -->
+  <rect x="-17" y="-17" width="34" height="24" rx="3" fill="none" stroke="#ffffff" stroke-width="2.2"/>
+  <!-- Screen -->
+  <rect x="-12" y="-13" width="24" height="16" rx="1.5" fill="#ffffff" opacity="0.25"/>
+  <!-- Chart bars on screen -->
+  <rect x="-7"  y="-4" width="4" height="7" rx="1" fill="#ffffff" opacity="0.9"/>
+  <rect x="-1"  y="-7" width="4" height="10" rx="1" fill="#ffffff" opacity="0.9"/>
+  <rect x="5"   y="-1" width="4" height="5" rx="1" fill="#ffffff" opacity="0.9"/>
+  <!-- Stand -->
+  <rect x="-3"  y="7"  width="6"  height="5" fill="#ffffff" opacity="0.8"/>
+  <rect x="-9"  y="12" width="18" height="2.5" rx="1.2" fill="#ffffff" opacity="0.8"/>
+</g>
+<!-- Title -->
+<text x="190" y="268" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="14.5" font-weight="700" fill="#1e3a8a">
+  NinjaTrader
+</text>
+<!-- Description -->
+<text x="190" y="288" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  Operás tus futuros NQ
+</text>
+<text x="190" y="303" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  desde tu computador
+</text>
+<text x="190" y="318" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  como siempre
+</text>
+<!-- Tag pill -->
+<rect x="130" y="338" width="120" height="22" rx="11" fill="#dbeafe"/>
+<text x="190" y="353.5" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="10.5" font-weight="600" fill="#1d4ed8">
+  💻  Tu plataforma habitual
+</text>
+
+
+<!-- ── CARD 2: Auto Export ─────────────────────────────────────────── -->
+<g filter="url(#shadow)">
+  <rect x="340" y="118" width="210" height="255" rx="16" fill="url(#cg2)"/>
+  <rect x="340" y="118" width="210" height="8"   rx="8"  fill="#16a34a"/>
+  <rect x="340" y="122" width="210" height="6"         fill="#16a34a"/>
+</g>
+<!-- Step badge -->
+<circle cx="530" cy="130" r="16" fill="#16a34a" filter="url(#iconGlow)"/>
+<text x="530" y="135.5" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#ffffff">2</text>
+<!-- Icon circle -->
+<circle cx="445" cy="206" r="42" fill="url(#ig2)" filter="url(#iconGlow)"/>
+<!-- Lightning / auto-save icon (white) -->
+<g transform="translate(445,206)">
+  <!-- Cloud shape -->
+  <path d="M-14 4 C-14 -2 -10 -6 -5 -7 C-4 -14 4 -18 11 -13 C14 -13 17 -10 17 -6 C20 -6 22 -3 22 1 C22 6 18 9 14 9 L-10 9 C-12 9 -14 7 -14 4 Z"
+    fill="#ffffff" opacity="0.3"/>
+  <!-- Upload arrow -->
+  <path d="M0 6 L0 -8 M-7 -2 L0 -10 L7 -2" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="-8" y="6" width="16" height="3" rx="1.5" fill="#ffffff"/>
+</g>
+<!-- Title -->
+<text x="445" y="268" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="14.5" font-weight="700" fill="#14532d">
+  Se guarda solo
+</text>
+<!-- Description -->
+<text x="445" y="288" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  Cada trade cerrado se
+</text>
+<text x="445" y="303" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  registra automáticamente
+</text>
+<text x="445" y="318" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  en la nube. Sin hacer nada.
+</text>
+<!-- Tag pill -->
+<rect x="382" y="338" width="126" height="22" rx="11" fill="#dcfce7"/>
+<text x="445" y="353.5" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="10.5" font-weight="600" fill="#15803d">
+  ⚡  100% automático
+</text>
+
+
+<!-- ── CARD 3: Dashboard ───────────────────────────────────────────── -->
+<g filter="url(#shadow)">
+  <rect x="595" y="118" width="210" height="255" rx="16" fill="url(#cg3)"/>
+  <rect x="595" y="118" width="210" height="8"   rx="8"  fill="#0284c7"/>
+  <rect x="595" y="122" width="210" height="6"         fill="#0284c7"/>
+</g>
+<!-- Step badge -->
+<circle cx="785" cy="130" r="16" fill="#0284c7" filter="url(#iconGlow)"/>
+<text x="785" y="135.5" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#ffffff">3</text>
+<!-- Icon circle -->
+<circle cx="700" cy="206" r="42" fill="url(#ig3)" filter="url(#iconGlow)"/>
+<!-- Browser/dashboard icon (white) -->
+<g transform="translate(700,206)">
+  <!-- Browser window -->
+  <rect x="-18" y="-16" width="36" height="30" rx="4" fill="#ffffff" opacity="0.2" stroke="#ffffff" stroke-width="2"/>
+  <!-- Tab bar -->
+  <line x1="-18" y1="-8" x2="18" y2="-8" stroke="#ffffff" stroke-width="1.5" opacity="0.7"/>
+  <circle cx="-13" cy="-12" r="2"   fill="#ffffff" opacity="0.8"/>
+  <circle cx="-7"  cy="-12" r="2"   fill="#ffffff" opacity="0.8"/>
+  <!-- Chart bars -->
+  <rect x="-10" y="-2" width="5" height="9"  rx="1.5" fill="#ffffff" opacity="0.9"/>
+  <rect x="-3"  y="2"  width="5" height="5"  rx="1.5" fill="#ffffff" opacity="0.9"/>
+  <rect x="4"   y="-5" width="5" height="12" rx="1.5" fill="#ffffff" opacity="0.9"/>
+  <line x1="-12" y1="11" x2="12" y2="11" stroke="#ffffff" stroke-width="1.2" opacity="0.5"/>
+</g>
+<!-- Title -->
+<text x="700" y="268" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="14.5" font-weight="700" fill="#0c4a6e">
+  Dashboard Web
+</text>
+<!-- Description -->
+<text x="700" y="288" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  Ves estadísticas, historial
+</text>
+<text x="700" y="303" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  y gráficas desde cualquier
+</text>
+<text x="700" y="318" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  navegador o dispositivo
+</text>
+<!-- Tag pill -->
+<rect x="632" y="338" width="136" height="22" rx="11" fill="#e0f2fe"/>
+<text x="700" y="353.5" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="10.5" font-weight="600" fill="#0369a1">
+  🌐  Desde cualquier lugar
+</text>
+
+
+<!-- ── CARD 4: Telegram ────────────────────────────────────────────── -->
+<g filter="url(#shadow)">
+  <rect x="850" y="118" width="210" height="255" rx="16" fill="url(#cg4)"/>
+  <rect x="850" y="118" width="210" height="8"   rx="8"  fill="#7c3aed"/>
+  <rect x="850" y="122" width="210" height="6"         fill="#7c3aed"/>
+</g>
+<!-- Step badge -->
+<circle cx="1040" cy="130" r="16" fill="#7c3aed" filter="url(#iconGlow)"/>
+<text x="1040" y="135.5" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#ffffff">4</text>
+<!-- Icon circle -->
+<circle cx="955" cy="206" r="42" fill="url(#ig4)" filter="url(#iconGlow)"/>
+<!-- Phone + bell icon (white) -->
+<g transform="translate(955,206)">
+  <!-- Phone outline -->
+  <rect x="-11" y="-20" width="22" height="36" rx="5" fill="#ffffff" opacity="0.2" stroke="#ffffff" stroke-width="2"/>
+  <circle cx="0" cy="13" r="3" fill="#ffffff" opacity="0.8"/>
+  <rect x="-6" y="-17" width="12" height="2" rx="1" fill="#ffffff" opacity="0.6"/>
+  <!-- Bell inside phone screen -->
+  <path d="M0 -14 C-5.5 -14 -8 -10 -8 -5.5 L-8 -1.5 L-10.5 1 L10.5 1 L8 -1.5 L8 -5.5 C8 -10 5.5 -14 0 -14 Z"
+    fill="#ffffff" opacity="0.85"/>
+  <path d="M-3 1 C-3 3.5 -1.5 5 0 5 C1.5 5 3 3.5 3 1" fill="none" stroke="#ffffff" stroke-width="1.8"/>
+  <!-- Notification dot -->
+  <circle cx="8" cy="-14" r="4" fill="#fbbf24"/>
+  <text x="8" y="-11" text-anchor="middle" font-size="5" font-weight="700" fill="#7c3aed">!</text>
+</g>
+<!-- Title -->
+<text x="955" y="268" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="14.5" font-weight="700" fill="#4c1d95">
+  Bot de Telegram
+</text>
+<!-- Description -->
+<text x="955" y="288" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  Registrás la sesión del día
+</text>
+<text x="955" y="303" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  desde tu celular con
+</text>
+<text x="955" y="318" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  botones simples. 2 minutos.
+</text>
+<!-- Tag pill -->
+<rect x="886" y="338" width="138" height="22" rx="11" fill="#ede9fe"/>
+<text x="955" y="353.5" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="10.5" font-weight="600" fill="#6d28d9">
+  📱  Desde el celular
+</text>
+
+
+<!-- ── CARD 5: AI Summary ──────────────────────────────────────────── -->
+<g filter="url(#shadow)">
+  <rect x="1105" y="118" width="210" height="255" rx="16" fill="url(#cg5)"/>
+  <rect x="1105" y="118" width="210" height="8"   rx="8"  fill="#d97706"/>
+  <rect x="1105" y="122" width="210" height="6"         fill="#d97706"/>
+</g>
+<!-- Step badge -->
+<circle cx="1295" cy="130" r="16" fill="#d97706" filter="url(#iconGlow)"/>
+<text x="1295" y="135.5" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#ffffff">5</text>
+<!-- Icon circle -->
+<circle cx="1210" cy="206" r="42" fill="url(#ig5)" filter="url(#iconGlow)"/>
+<!-- Robot / AI icon (white) -->
+<g transform="translate(1210,206)">
+  <!-- Antenna -->
+  <line x1="0" y1="-22" x2="0" y2="-14" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="0" cy="-24" r="3.5" fill="#ffffff"/>
+  <!-- Head body -->
+  <rect x="-15" y="-14" width="30" height="24" rx="6" fill="#ffffff" opacity="0.2" stroke="#ffffff" stroke-width="2"/>
+  <!-- Eyes -->
+  <circle cx="-6" cy="-5" r="4.5" fill="#ffffff" opacity="0.35"/>
+  <circle cx="-6" cy="-5" r="2.5" fill="#ffffff"/>
+  <circle cx="6"  cy="-5" r="4.5" fill="#ffffff" opacity="0.35"/>
+  <circle cx="6"  cy="-5" r="2.5" fill="#ffffff"/>
+  <!-- Smile -->
+  <path d="M-6 4 Q0 8 6 4" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+  <!-- Ear bolts -->
+  <rect x="-19" y="-4" width="4" height="6" rx="2" fill="#ffffff" opacity="0.6"/>
+  <rect x="15"  y="-4" width="4" height="6" rx="2" fill="#ffffff" opacity="0.6"/>
+</g>
+<!-- Title -->
+<text x="1210" y="268" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="14.5" font-weight="700" fill="#78350f">
+  Análisis con IA
+</text>
+<!-- Description -->
+<text x="1210" y="288" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  Claude AI genera un resumen
+</text>
+<text x="1210" y="303" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  objetivo de tu sesión con
+</text>
+<text x="1210" y="318" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11.5" fill="#475569">
+  patrones y observaciones
+</text>
+<!-- Tag pill -->
+<rect x="1142" y="338" width="136" height="22" rx="11" fill="#fef3c7"/>
+<text x="1210" y="353.5" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="10.5" font-weight="600" fill="#b45309">
+  🤖  Inteligencia artificial
+</text>
+
+
+<!-- ═══════════════════════════════════════════════════════ ARROWS -->
+
+<!-- Arrow 1 → 2 (blue) -->
+<line x1="300" y1="248" x2="334" y2="248"
+  stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round"
+  marker-end="url(#arr1)"/>
+<rect x="295" y="260" width="44" height="16" rx="8" fill="#dbeafe"/>
+<text x="317" y="271.5" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="9" font-weight="600" fill="#1d4ed8">
+  trade cerrado
+</text>
+
+<!-- Arrow 2 → 3 (green) -->
+<line x1="555" y1="248" x2="589" y2="248"
+  stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"
+  marker-end="url(#arr2)"/>
+<rect x="548" y="260" width="48" height="16" rx="8" fill="#dcfce7"/>
+<text x="572" y="271.5" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="9" font-weight="600" fill="#15803d">
+  datos en nube
+</text>
+
+<!-- Arrow 3 → 4 (sky) -->
+<line x1="810" y1="248" x2="844" y2="248"
+  stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round"
+  marker-end="url(#arr3)"/>
+<rect x="803" y="260" width="47" height="16" rx="8" fill="#e0f2fe"/>
+<text x="826" y="271.5" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="9" font-weight="600" fill="#0369a1">
+  al terminar
+</text>
+
+<!-- Arrow 4 → 5 (purple) -->
+<line x1="1065" y1="248" x2="1099" y2="248"
+  stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round"
+  marker-end="url(#arr4)"/>
+<rect x="1055" y="260" width="55" height="16" rx="8" fill="#ede9fe"/>
+<text x="1082" y="271.5" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="9" font-weight="600" fill="#6d28d9">
+  al confirmar
+</text>
+
+
+<!-- ═══════════════════════════════════════════════════════ SECTION DIVIDER -->
+<line x1="80" y1="402" x2="1320" y2="402" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+
+<!-- ═══════════════════════════════════════════════════════ BENEFITS ROW -->
+<text x="700" y="432" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="12.5" font-weight="600" fill="#94a3b8" letter-spacing="1.5">
+  LO QUE OBTENÉS CON EL SISTEMA
+</text>
+
+<!-- Benefit pill 1 -->
+<g filter="url(#pillShadow)">
+  <rect x="100" y="450" width="250" height="62" rx="14" fill="#ffffff" stroke="#e0f2fe" stroke-width="1.5"/>
+</g>
+<circle cx="138" cy="481" r="20" fill="#dbeafe"/>
+<text x="138" y="487" text-anchor="middle" font-size="18">📊</text>
+<text x="225" y="473" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#0f172a">
+  Todo centralizado
+</text>
+<text x="225" y="490" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11" fill="#64748b">
+  Trades, sesiones e imágenes en un lugar
+</text>
+
+<!-- Benefit pill 2 -->
+<g filter="url(#pillShadow)">
+  <rect x="385" y="450" width="250" height="62" rx="14" fill="#ffffff" stroke="#dcfce7" stroke-width="1.5"/>
+</g>
+<circle cx="423" cy="481" r="20" fill="#dcfce7"/>
+<text x="423" y="487" text-anchor="middle" font-size="18">⚡</text>
+<text x="510" y="473" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#0f172a">
+  Sin trabajo manual
+</text>
+<text x="510" y="490" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11" fill="#64748b">
+  Los datos se guardan solos en tiempo real
+</text>
+
+<!-- Benefit pill 3 -->
+<g filter="url(#pillShadow)">
+  <rect x="670" y="450" width="250" height="62" rx="14" fill="#ffffff" stroke="#e0f2fe" stroke-width="1.5"/>
+</g>
+<circle cx="708" cy="481" r="20" fill="#e0f2fe"/>
+<text x="708" y="487" text-anchor="middle" font-size="18">📱</text>
+<text x="795" y="473" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#0f172a">
+  Siempre disponible
+</text>
+<text x="795" y="490" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11" fill="#64748b">
+  Accedés desde PC, tablet o celular
+</text>
+
+<!-- Benefit pill 4 -->
+<g filter="url(#pillShadow)">
+  <rect x="955" y="450" width="250" height="62" rx="14" fill="#ffffff" stroke="#fef3c7" stroke-width="1.5"/>
+</g>
+<circle cx="993" cy="481" r="20" fill="#fef3c7"/>
+<text x="993" y="487" text-anchor="middle" font-size="18">🧠</text>
+<text x="1080" y="473" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#0f172a">
+  Mejorá tu disciplina
+</text>
+<text x="1080" y="490" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="11" fill="#64748b">
+  El checklist y la IA identifican errores
+</text>
+
+
+<!-- ═══════════════════════════════════════════════════════ JOURNEY SUMMARY STRIP -->
+<g filter="url(#shadow)">
+  <rect x="80" y="540" width="1240" height="76" rx="16" fill="#ffffff" opacity="0.9"/>
+  <rect x="80" y="540" width="1240" height="5" rx="8" fill="url(#topBar)" opacity="0.7"/>
+</g>
+
+<text x="700" y="567" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="12" font-weight="600" fill="#64748b" letter-spacing="0.8">
+  FLUJO COMPLETO EN RESUMEN
+</text>
+
+<!-- Summary flow text -->
+<text x="700" y="597" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="13" fill="#374151">
+  <tspan font-weight="600" fill="#2563eb">Operás en NT8</tspan>
+  <tspan fill="#94a3b8">  →  </tspan>
+  <tspan font-weight="600" fill="#16a34a">Trade se guarda solo</tspan>
+  <tspan fill="#94a3b8">  →  </tspan>
+  <tspan font-weight="600" fill="#0284c7">Ves el dashboard</tspan>
+  <tspan fill="#94a3b8">  →  </tspan>
+  <tspan font-weight="600" fill="#7c3aed">Registrás la sesión por Telegram</tspan>
+  <tspan fill="#94a3b8">  →  </tspan>
+  <tspan font-weight="600" fill="#d97706">IA analiza tu día</tspan>
+</text>
+
+
+<!-- ═══════════════════════════════════════════════════════ FOOTER -->
+<text x="700" y="655" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="10.5" fill="#94a3b8">
+  Tecnologías:
+  <tspan font-weight="600" fill="#64748b"> NinjaTrader 8</tspan>
+  <tspan fill="#cbd5e1">  ·  </tspan>
+  <tspan font-weight="600" fill="#64748b">Supabase</tspan>
+  <tspan fill="#cbd5e1">  ·  </tspan>
+  <tspan font-weight="600" fill="#64748b">GitHub Pages</tspan>
+  <tspan fill="#cbd5e1">  ·  </tspan>
+  <tspan font-weight="600" fill="#64748b">Cloudflare Workers</tspan>
+  <tspan fill="#cbd5e1">  ·  </tspan>
+  <tspan font-weight="600" fill="#64748b">Telegram Bot</tspan>
+  <tspan fill="#cbd5e1">  ·  </tspan>
+  <tspan font-weight="600" fill="#64748b">Claude AI</tspan>
+  <tspan fill="#cbd5e1">  ·  </tspan>
+  <tspan font-weight="600" fill="#64748b">Cloudinary</tspan>
+</text>
+
+<text x="700" y="674" text-anchor="middle"
+  font-family="Segoe UI, sans-serif" font-size="10" fill="#cbd5e1">
+  Trading Journal NQ Futures — kristeb-trader  |  Sistema 100% serverless, costo ~$0/mes
+</text>
+
+</svg>
+</body>
+</html>
