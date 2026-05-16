@@ -61,12 +61,19 @@ const DB = {
   },
 
   async upsertSesion(payload) {
-    const { data, error } = await supa
-      .from('sesiones')
-      .upsert(payload, { onConflict: 'sesion_date' })
-      .select()
-    if (error) throw error
-    return data
+    const secret = localStorage.getItem('dashboard_secret') || ''
+    const res = await fetch('https://broad-hall-c53f.kristerock.workers.dev/api/session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Dashboard-Token': secret,
+      },
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`Error ${res.status}: ${text}`)
+    }
   },
 
   // ── Reglas ───────────────────────────────────────────────────────────────

@@ -123,12 +123,14 @@ Reflexión del trader: ${analysis}
 
 Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que puede mejorar, y un mensaje motivacional concreto.`
 
-      const res = await fetch('https://broad-hall-c53f.kristerock.workers.dev', {
+      const dashboardSecret = localStorage.getItem('dashboard_secret') || ''
+      const res = await fetch('https://broad-hall-c53f.kristerock.workers.dev/api/claude', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': apiKey,
           'anthropic-version': '2023-06-01',
+          'X-Dashboard-Token': dashboardSecret,
         },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',

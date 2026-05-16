@@ -207,9 +207,12 @@ async function boot() {
   const closeSettings = document.getElementById('closeSettings')
   const inputClaudeKey = document.getElementById('inputClaudeKey')
   const toggleKeyVisibility = document.getElementById('toggleKeyVisibility')
+  const inputDashboardSecret = document.getElementById('inputDashboardSecret')
+  const toggleSecretVisibility = document.getElementById('toggleSecretVisibility')
 
   openSettings.addEventListener('click', () => {
     inputClaudeKey.value = localStorage.getItem('claude_api_key') || ''
+    inputDashboardSecret.value = localStorage.getItem('dashboard_secret') || ''
     settingsModal.classList.remove('hidden')
   })
   closeSettings.addEventListener('click', () => settingsModal.classList.add('hidden'))
@@ -221,15 +224,28 @@ async function boot() {
     toggleKeyVisibility.innerHTML = isPassword ? '<i class="ti ti-eye-off"></i>' : '<i class="ti ti-eye"></i>'
   })
 
+  toggleSecretVisibility.addEventListener('click', () => {
+    const isPassword = inputDashboardSecret.type === 'password'
+    inputDashboardSecret.type = isPassword ? 'text' : 'password'
+    toggleSecretVisibility.innerHTML = isPassword ? '<i class="ti ti-eye-off"></i>' : '<i class="ti ti-eye"></i>'
+  })
+
   document.getElementById('saveSettings').addEventListener('click', () => {
     const key = inputClaudeKey.value.trim()
     if (key) {
       localStorage.setItem('claude_api_key', key)
-      Toast.show('API Key guardada en el navegador', 'success')
     } else {
       localStorage.removeItem('claude_api_key')
-      Toast.show('API Key eliminada', 'info')
     }
+
+    const secret = inputDashboardSecret.value.trim()
+    if (secret) {
+      localStorage.setItem('dashboard_secret', secret)
+    } else {
+      localStorage.removeItem('dashboard_secret')
+    }
+
+    Toast.show('Ajustes guardados', 'success')
     settingsModal.classList.add('hidden')
   })
 
