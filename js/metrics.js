@@ -7,7 +7,7 @@ const Metrics = (() => {
     // Group by date, determine daily result (overall win/loss)
     const byDate = {}
     trades.forEach(t => {
-      const d = t.trade_date || t.entry_time?.slice(0, 10)
+      const d = t.trade_date
       if (!d) return
       if (!byDate[d]) byDate[d] = []
       byDate[d].push(t)
@@ -33,7 +33,7 @@ const Metrics = (() => {
   function bestWorstDay(trades) {
     const byDate = {}
     trades.forEach(t => {
-      const d = t.trade_date || t.entry_time?.slice(0, 10)
+      const d = t.trade_date
       if (!d) return
       byDate[d] = (byDate[d] || 0) + (parseFloat(t.profit) || 0)
     })
@@ -94,7 +94,7 @@ const Metrics = (() => {
     const { best, worst } = bestWorstDay(trades)
     const clean = cleanSessions(sesiones)
     const topError = errorFrequency(sesiones)
-    const tradingDays = new Set(trades.map(t => t.trade_date || t.entry_time?.slice(0, 10))).size
+    const tradingDays = new Set(trades.map(t => t.trade_date)).size
     const avgPnl = tradingDays > 0 ? (netPnl / tradingDays) : 0
 
     const cards = [

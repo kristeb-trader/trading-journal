@@ -139,7 +139,6 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
         })
       })
       const rawText = await res.text()
-      console.log('Claude raw response:', rawText)
       const data = JSON.parse(rawText)
       const texto = data?.content?.[0]?.text || data?.completion || ''
       document.getElementById('resumenIA').value = texto

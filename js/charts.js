@@ -33,7 +33,7 @@ const Charts = (() => {
   function buildEquity(trades) {
     const byDate = {}
     trades.forEach(t => {
-      const d = t.trade_date || t.entry_time?.slice(0, 10)
+      const d = t.trade_date
       if (!d) return
       byDate[d] = (byDate[d] || 0) + (parseFloat(t.profit) || 0)
     })
@@ -84,7 +84,7 @@ const Charts = (() => {
     destroy('winRate')
     const weeks = {}
     trades.forEach(t => {
-      const d = t.trade_date || t.entry_time?.slice(0, 10)
+      const d = t.trade_date
       if (!d) return
       const wk = getWeekKey(d)
       if (!weeks[wk]) weeks[wk] = { win: 0, total: 0 }
@@ -114,7 +114,7 @@ const Charts = (() => {
     const DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie']
     const buckets = { 1: [], 2: [], 3: [], 4: [], 5: [] }
     trades.forEach(t => {
-      const d = t.trade_date || t.entry_time?.slice(0, 10)
+      const d = t.trade_date
       if (!d) return
       const dow = new Date(d + 'T12:00:00').getDay()
       if (dow >= 1 && dow <= 5) buckets[dow].push(parseFloat(t.profit) || 0)
@@ -155,8 +155,8 @@ const Charts = (() => {
       options: {
         ...baseOptions,
         scales: {
-          x: { ...baseOptions.scales.x, title: { display: true, text: 'MAE (pts adversos)', color: COLORS.text } },
-          y: { ...baseOptions.scales.y, title: { display: true, text: 'MFE (pts favorables)', color: COLORS.text } },
+          x: { ...baseOptions.scales.x, title: { display: true, text: 'MAE ($)', color: COLORS.text } },
+          y: { ...baseOptions.scales.y, title: { display: true, text: 'MFE ($)', color: COLORS.text } },
         },
       },
     })

@@ -6,7 +6,9 @@ const DB = {
   // ── Trades ──────────────────────────────────────────────────────────────
 
   async getTrades(filters = {}) {
-    let q = supa.from('trades').select('*').order('entry_time', { ascending: false })
+    let q = supa.from('trades').select('*')
+      .order('trade_date', { ascending: false })
+      .order('entry_time', { ascending: false })
     if (filters.resultado) q = q.eq('resultado', filters.resultado)
     if (filters.from) q = q.gte('trade_date', filters.from)
     if (filters.to) q = q.lte('trade_date', filters.to)
@@ -24,6 +26,7 @@ const DB = {
       .select('*')
       .gte('trade_date', from)
       .lte('trade_date', to)
+      .order('trade_date', { ascending: true })
       .order('entry_time', { ascending: true })
     if (error) throw error
     return data
