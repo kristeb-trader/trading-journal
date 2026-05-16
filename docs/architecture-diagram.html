@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; width: 1400px; height: 900px; overflow: hidden; }
+</style>
+</head>
+<body>
+<svg width="1400" height="900" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+<defs>
+  <!-- Arrow markers -->
+  <marker id="ac" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#00d4ff"/></marker>
+  <marker id="ag" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#3fb950"/></marker>
+  <marker id="ap" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#a371f7"/></marker>
+  <marker id="ao" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#f0883e"/></marker>
+  <marker id="ab" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#58a6ff"/></marker>
+  <!-- Glow filters -->
+  <filter id="gc" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="4" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="gg" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="4" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="gp" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="4" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <!-- Gradient backgrounds for cards -->
+  <linearGradient id="grad-blue" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#1a2a3a"/>
+    <stop offset="100%" stop-color="#0d1827"/>
+  </linearGradient>
+  <linearGradient id="grad-cyan" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#001e26"/>
+    <stop offset="100%" stop-color="#000f14"/>
+  </linearGradient>
+  <linearGradient id="grad-purple" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#1a0d2e"/>
+    <stop offset="100%" stop-color="#0f0820"/>
+  </linearGradient>
+  <linearGradient id="grad-green" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#0a1f14"/>
+    <stop offset="100%" stop-color="#050f0a"/>
+  </linearGradient>
+  <linearGradient id="grad-orange" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#1f1208"/>
+    <stop offset="100%" stop-color="#0f0804"/>
+  </linearGradient>
+</defs>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- BACKGROUND                                         -->
+<!-- ══════════════════════════════════════════════════ -->
+<rect width="1400" height="900" fill="#0d1117"/>
+<!-- subtle dot grid -->
+<pattern id="dots" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
+  <circle cx="1" cy="1" r="0.8" fill="#21262d"/>
+</pattern>
+<rect width="1400" height="900" fill="url(#dots)"/>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- LAYER BANDS                                        -->
+<!-- ══════════════════════════════════════════════════ -->
+<!-- Client -->
+<rect x="55" y="68" width="1330" height="150" rx="6" fill="#0d1117" stroke="#21262d" stroke-width="1"/>
+<!-- Proxy -->
+<rect x="55" y="238" width="1330" height="150" rx="6" fill="#0d1117" stroke="#21262d" stroke-width="1"/>
+<!-- Services -->
+<rect x="55" y="408" width="1330" height="150" rx="6" fill="#0d1117" stroke="#21262d" stroke-width="1"/>
+<!-- Data -->
+<rect x="55" y="578" width="1330" height="150" rx="6" fill="#0d1117" stroke="#21262d" stroke-width="1"/>
+
+<!-- Layer accent lines (left) -->
+<rect x="55" y="68"  width="4" height="150" rx="2" fill="#58a6ff"/>
+<rect x="55" y="238" width="4" height="150" rx="2" fill="#00d4ff"/>
+<rect x="55" y="408" width="4" height="150" rx="2" fill="#a371f7"/>
+<rect x="55" y="578" width="4" height="150" rx="2" fill="#3fb950"/>
+
+<!-- Layer labels -->
+<text x="68" y="82"  fill="#58a6ff" font-size="9" font-weight="700" letter-spacing="2.5">CLIENT LAYER</text>
+<text x="68" y="252" fill="#00d4ff" font-size="9" font-weight="700" letter-spacing="2.5">API &amp; PROXY LAYER</text>
+<text x="68" y="422" fill="#a371f7" font-size="9" font-weight="700" letter-spacing="2.5">EXTERNAL SERVICES</text>
+<text x="68" y="592" fill="#3fb950" font-size="9" font-weight="700" letter-spacing="2.5">DATA &amp; MEDIA LAYER</text>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- TITLE                                              -->
+<!-- ══════════════════════════════════════════════════ -->
+<text x="700" y="35" text-anchor="middle" fill="#e6edf3" font-size="18" font-weight="700" letter-spacing="4">TRADING JOURNAL NQ FUTURES — SYSTEM ARCHITECTURE</text>
+<text x="700" y="52" text-anchor="middle" fill="#484f58" font-size="11" letter-spacing="2">SERVERLESS · CLOUD-NATIVE · ZERO-OPS · EST. COST ~$0.00/mo</text>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- COMPONENT: NINJATRADER 8                           -->
+<!-- ══════════════════════════════════════════════════ -->
+<g filter="url(#gc)">
+<rect x="75" y="90" width="220" height="110" rx="8" fill="url(#grad-blue)" stroke="#58a6ff" stroke-width="1.5"/>
+</g>
+<rect x="75" y="90" width="220" height="5" rx="2" fill="#58a6ff"/>
+<rect x="88" y="105" width="28" height="28" rx="5" fill="#162030"/>
+<text x="102" y="124" text-anchor="middle" font-size="15">🖥️</text>
+<text x="127" y="115" fill="#e6edf3" font-size="12" font-weight="700">NinjaTrader 8</text>
+<text x="127" y="130" fill="#8b949e" font-size="10">Desktop Trading Client</text>
+<text x="127" y="144" fill="#8b949e" font-size="10">C# Custom Indicator</text>
+<rect x="88" y="155" width="50" height="15" rx="3" fill="#162030"/>
+<text x="113" y="165" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">.NET 4.8</text>
+<rect x="145" y="155" width="70" height="15" rx="3" fill="#162030"/>
+<text x="180" y="165" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">Apex PA-APEX</text>
+<rect x="222" y="155" width="60" height="15" rx="3" fill="#162030"/>
+<text x="252" y="165" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">Sim101</text>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- COMPONENT: GITHUB PAGES                            -->
+<!-- ══════════════════════════════════════════════════ -->
+<g filter="url(#gc)">
+<rect x="490" y="90" width="260" height="110" rx="8" fill="url(#grad-blue)" stroke="#58a6ff" stroke-width="1.5"/>
+</g>
+<rect x="490" y="90" width="260" height="5" rx="2" fill="#58a6ff"/>
+<rect x="503" y="105" width="28" height="28" rx="5" fill="#162030"/>
+<text x="517" y="124" text-anchor="middle" font-size="15">🌐</text>
+<text x="542" y="115" fill="#e6edf3" font-size="12" font-weight="700">GitHub Pages</text>
+<text x="542" y="130" fill="#8b949e" font-size="10">Frontend SPA — Static Hosting</text>
+<text x="542" y="144" fill="#8b949e" font-size="10">HTML · CSS · Vanilla JS · Chart.js</text>
+<rect x="503" y="155" width="75" height="15" rx="3" fill="#162030"/>
+<text x="540" y="165" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">STATIC CDN</text>
+<rect x="585" y="155" width="65" height="15" rx="3" fill="#162030"/>
+<text x="617" y="165" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">FREE TIER</text>
+<rect x="657" y="155" width="75" height="15" rx="3" fill="#162030"/>
+<text x="694" y="165" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">kristeb-trader.io</text>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- COMPONENT: TELEGRAM APP (client)                   -->
+<!-- ══════════════════════════════════════════════════ -->
+<g filter="url(#gc)">
+<rect x="1100" y="90" width="220" height="110" rx="8" fill="url(#grad-blue)" stroke="#58a6ff" stroke-width="1.5"/>
+</g>
+<rect x="1100" y="90" width="220" height="5" rx="2" fill="#58a6ff"/>
+<rect x="1113" y="105" width="28" height="28" rx="5" fill="#162030"/>
+<text x="1127" y="124" text-anchor="middle" font-size="15">📱</text>
+<text x="1152" y="115" fill="#e6edf3" font-size="12" font-weight="700">Telegram App</text>
+<text x="1152" y="130" fill="#8b949e" font-size="10">Mobile / Desktop Client</text>
+<text x="1152" y="144" fill="#8b949e" font-size="10">Trader Session Interface</text>
+<rect x="1113" y="155" width="90" height="15" rx="3" fill="#162030"/>
+<text x="1158" y="165" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">Chat ID: 372127764</text>
+<rect x="1210" y="155" width="85" height="15" rx="3" fill="#162030"/>
+<text x="1252" y="165" text-anchor="middle" fill="#58a6ff" font-size="9" font-weight="600">AUTHORIZED</text>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- COMPONENT: CLOUDFLARE WORKER #1                    -->
+<!-- ══════════════════════════════════════════════════ -->
+<g filter="url(#gc)">
+<rect x="280" y="258" width="270" height="120" rx="8" fill="url(#grad-cyan)" stroke="#00d4ff" stroke-width="1.5"/>
+</g>
+<rect x="280" y="258" width="270" height="5" rx="2" fill="#00d4ff"/>
+<rect x="293" y="274" width="28" height="28" rx="5" fill="#002030"/>
+<text x="307" y="293" text-anchor="middle" font-size="15">⚡</text>
+<text x="332" y="284" fill="#e6edf3" font-size="12" font-weight="700">Cloudflare Worker #1</text>
+<text x="332" y="299" fill="#8b949e" font-size="10">Claude API Proxy · CORS Bypass</text>
+<text x="332" y="313" fill="#8b949e" font-size="10">broad-hall-c53f.kristerock.workers.dev</text>
+<rect x="293" y="328" width="90" height="15" rx="3" fill="#002030"/>
+<text x="338" y="338" text-anchor="middle" fill="#00d4ff" font-size="9" font-weight="600">SERVERLESS</text>
+<rect x="390" y="328" width="75" height="15" rx="3" fill="#002030"/>
+<text x="427" y="338" text-anchor="middle" fill="#00d4ff" font-size="9" font-weight="600">EDGE NETWORK</text>
+<rect x="472" y="328" width="65" height="15" rx="3" fill="#002030"/>
+<text x="504" y="338" text-anchor="middle" fill="#00d4ff" font-size="9" font-weight="600">FREE TIER</text>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- COMPONENT: CLOUDFLARE WORKER #2                    -->
+<!-- ══════════════════════════════════════════════════ -->
+<g filter="url(#gc)">
+<rect x="840" y="258" width="300" height="120" rx="8" fill="url(#grad-cyan)" stroke="#00d4ff" stroke-width="1.5"/>
+</g>
+<rect x="840" y="258" width="300" height="5" rx="2" fill="#00d4ff"/>
+<rect x="853" y="274" width="28" height="28" rx="5" fill="#002030"/>
+<text x="867" y="293" text-anchor="middle" font-size="15">⚡</text>
+<text x="892" y="284" fill="#e6edf3" font-size="12" font-weight="700">Cloudflare Worker #2</text>
+<text x="892" y="299" fill="#8b949e" font-size="10">Telegram Bot · State Machine · KV Store</text>
+<text x="892" y="313" fill="#8b949e" font-size="10">trading-journal-bot.kristerock.workers.dev</text>
+<rect x="853" y="328" width="60" height="15" rx="3" fill="#002030"/>
+<text x="883" y="338" text-anchor="middle" fill="#00d4ff" font-size="9" font-weight="600">BOT LOGIC</text>
+<rect x="920" y="328" width="90" height="15" rx="3" fill="#002030"/>
+<text x="965" y="338" text-anchor="middle" fill="#00d4ff" font-size="9" font-weight="600">KV: bot-kv-3dd6</text>
+<rect x="1017" y="328" width="100" height="15" rx="3" fill="#002030"/>
+<text x="1067" y="338" text-anchor="middle" fill="#00d4ff" font-size="9" font-weight="600">TTL: 3600s</text>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- COMPONENT: CLAUDE API                              -->
+<!-- ══════════════════════════════════════════════════ -->
+<g filter="url(#gp)">
+<rect x="75" y="428" width="260" height="110" rx="8" fill="url(#grad-purple)" stroke="#a371f7" stroke-width="1.5"/>
+</g>
+<rect x="75" y="428" width="260" height="5" rx="2" fill="#a371f7"/>
+<rect x="88" y="444" width="28" height="28" rx="5" fill="#2d1050"/>
+<text x="102" y="463" text-anchor="middle" font-size="15">🤖</text>
+<text x="127" y="454" fill="#e6edf3" font-size="12" font-weight="700">Claude API</text>
+<text x="127" y="469" fill="#8b949e" font-size="10">Anthropic · AI Session Summaries</text>
+<text x="127" y="484" fill="#8b949e" font-size="10">claude-haiku-4-5-20251001</text>
+<rect x="88" y="494" width="90" height="15" rx="3" fill="#2d1050"/>
+<text x="133" y="504" text-anchor="middle" fill="#a371f7" font-size="9" font-weight="600">claude-haiku-4-5</text>
+<rect x="185" y="494" width="80" height="15" rx="3" fill="#2d1050"/>
+<text x="225" y="504" text-anchor="middle" fill="#a371f7" font-size="9" font-weight="600">~$0.004/month</text>
+<rect x="272" y="494" width="50" height="15" rx="3" fill="#2d1050"/>
+<text x="297" y="504" text-anchor="middle" fill="#a371f7" font-size="9" font-weight="600">PAID API</text>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- COMPONENT: TELEGRAM BOT API                        -->
+<!-- ══════════════════════════════════════════════════ -->
+<g filter="url(#gp)">
+<rect x="900" y="428" width="260" height="110" rx="8" fill="url(#grad-purple)" stroke="#a371f7" stroke-width="1.5"/>
+</g>
+<rect x="900" y="428" width="260" height="5" rx="2" fill="#a371f7"/>
+<rect x="913" y="444" width="28" height="28" rx="5" fill="#2d1050"/>
+<text x="927" y="463" text-anchor="middle" font-size="15">✈️</text>
+<text x="952" y="454" fill="#e6edf3" font-size="12" font-weight="700">Telegram Bot API</text>
+<text x="952" y="469" fill="#8b949e" font-size="10">Notification · Inline Keyboards</text>
+<text x="952" y="484" fill="#8b949e" font-size="10">Webhook + answerCallbackQuery</text>
+<rect x="913" y="494" width="75" height="15" rx="3" fill="#2d1050"/>
+<text x="950" y="504" text-anchor="middle" fill="#a371f7" font-size="9" font-weight="600">WEBHOOK</text>
+<rect x="995" y="494" width="75" height="15" rx="3" fill="#2d1050"/>
+<text x="1032" y="504" text-anchor="middle" fill="#a371f7" font-size="9" font-weight="600">FREE TIER</text>
+<rect x="1077" y="494" width="65" height="15" rx="3" fill="#2d1050"/>
+<text x="1109" y="504" text-anchor="middle" fill="#a371f7" font-size="9" font-weight="600">HTTPS API</text>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- COMPONENT: SUPABASE                                -->
+<!-- ══════════════════════════════════════════════════ -->
+<g filter="url(#gg)">
+<rect x="330" y="598" width="340" height="120" rx="8" fill="url(#grad-green)" stroke="#3fb950" stroke-width="1.5"/>
+</g>
+<rect x="330" y="598" width="340" height="5" rx="2" fill="#3fb950"/>
+<rect x="343" y="614" width="28" height="28" rx="5" fill="#0d2e17"/>
+<text x="357" y="633" text-anchor="middle" font-size="15">🗄️</text>
+<text x="382" y="624" fill="#e6edf3" font-size="12" font-weight="700">Supabase</text>
+<text x="382" y="639" fill="#8b949e" font-size="10">PostgreSQL 15 · PostgREST · Auth</text>
+<text x="382" y="654" fill="#8b949e" font-size="10">tables: trades · sesiones · reglas</text>
+<rect x="343" y="668" width="65" height="15" rx="3" fill="#0d2e17"/>
+<text x="375" y="678" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">PostgREST</text>
+<rect x="415" y="668" width="60" height="15" rx="3" fill="#0d2e17"/>
+<text x="445" y="678" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">RLS: OFF</text>
+<rect x="482" y="668" width="70" height="15" rx="3" fill="#0d2e17"/>
+<text x="517" y="678" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">TRIGGERS</text>
+<rect x="559" y="668" width="95" height="15" rx="3" fill="#0d2e17"/>
+<text x="606" y="678" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">jothoslo...supabase.co</text>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- COMPONENT: CLOUDINARY                              -->
+<!-- ══════════════════════════════════════════════════ -->
+<g>
+<rect x="920" y="598" width="250" height="120" rx="8" fill="url(#grad-orange)" stroke="#f0883e" stroke-width="1.5"/>
+</g>
+<rect x="920" y="598" width="250" height="5" rx="2" fill="#f0883e"/>
+<rect x="933" y="614" width="28" height="28" rx="5" fill="#3a1a00"/>
+<text x="947" y="633" text-anchor="middle" font-size="15">🖼️</text>
+<text x="972" y="624" fill="#e6edf3" font-size="12" font-weight="700">Cloudinary</text>
+<text x="972" y="639" fill="#8b949e" font-size="10">Image Storage · CDN · Optimization</text>
+<text x="972" y="654" fill="#8b949e" font-size="10">Unsigned Upload · Cloud: dq4n7bjta</text>
+<rect x="933" y="668" width="90" height="15" rx="3" fill="#3a1a00"/>
+<text x="978" y="678" text-anchor="middle" fill="#f0883e" font-size="9" font-weight="600">CDN GLOBAL</text>
+<rect x="1030" y="668" width="55" height="15" rx="3" fill="#3a1a00"/>
+<text x="1057" y="678" text-anchor="middle" fill="#f0883e" font-size="9" font-weight="600">FREE 25GB</text>
+<rect x="1092" y="668" width="60" height="15" rx="3" fill="#3a1a00"/>
+<text x="1122" y="678" text-anchor="middle" fill="#f0883e" font-size="9" font-weight="600">HTTPS URL</text>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- ARROWS                                             -->
+<!-- ══════════════════════════════════════════════════ -->
+
+<!-- 1. NinjaTrader → Supabase (direct HTTP POST) -->
+<path d="M 185 200 L 185 615 L 330 615" fill="none" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ag)" stroke-dasharray="5,3"/>
+<rect x="100" y="390" width="72" height="16" rx="3" fill="#0d1117" stroke="#3fb950" stroke-width="0.5"/>
+<text x="136" y="401" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">HTTP POST</text>
+
+<!-- 2. GitHub Pages → Worker #1 (for Claude) -->
+<path d="M 555 200 L 555 240 L 415 240 L 415 258" fill="none" stroke="#00d4ff" stroke-width="1.5" marker-end="url(#ac)"/>
+<rect x="455" y="231" width="40" height="14" rx="3" fill="#0d1117" stroke="#00d4ff" stroke-width="0.5"/>
+<text x="475" y="241" text-anchor="middle" fill="#00d4ff" font-size="9" font-weight="600">REST</text>
+
+<!-- 3. GitHub Pages → Supabase (bidirectional) -->
+<path d="M 620 200 L 620 560 L 500 560 L 500 598" fill="none" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ag)"/>
+<rect x="630" y="385" width="65" height="14" rx="3" fill="#0d1117" stroke="#3fb950" stroke-width="0.5"/>
+<text x="662" y="395" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">REST API ↕</text>
+
+<!-- 4. GitHub Pages → Cloudinary (image upload) -->
+<path d="M 750 145 L 1045 145 L 1045 598" fill="none" stroke="#f0883e" stroke-width="1.5" marker-end="url(#ao)"/>
+<rect x="862" y="136" width="60" height="14" rx="3" fill="#0d1117" stroke="#f0883e" stroke-width="0.5"/>
+<text x="892" y="146" text-anchor="middle" fill="#f0883e" font-size="9" font-weight="600">HTTPS</text>
+
+<!-- 5. Worker #1 → Claude API -->
+<path d="M 340 378 L 280 378 L 280 444 L 195 444 L 195 428" fill="none" stroke="#a371f7" stroke-width="1.5" marker-end="url(#ap)"/>
+<rect x="190" y="400" width="80" height="14" rx="3" fill="#0d1117" stroke="#a371f7" stroke-width="0.5"/>
+<text x="230" y="410" text-anchor="middle" fill="#a371f7" font-size="9" font-weight="600">HTTPS API</text>
+
+<!-- 6. Telegram App → Worker #2 (Webhook) -->
+<path d="M 1130 200 L 1130 240 L 990 240 L 990 258" fill="none" stroke="#00d4ff" stroke-width="1.5" marker-end="url(#ac)"/>
+<rect x="1027" y="231" width="60" height="14" rx="3" fill="#0d1117" stroke="#00d4ff" stroke-width="0.5"/>
+<text x="1057" y="241" text-anchor="middle" fill="#00d4ff" font-size="9" font-weight="600">WEBHOOK</text>
+
+<!-- 7. Worker #2 → Telegram Bot API -->
+<path d="M 1030 378 L 1030 420 L 1030 428" fill="none" stroke="#a371f7" stroke-width="1.5" marker-end="url(#ap)"/>
+<rect x="1038" y="397" width="60" height="14" rx="3" fill="#0d1117" stroke="#a371f7" stroke-width="0.5"/>
+<text x="1068" y="407" text-anchor="middle" fill="#a371f7" font-size="9" font-weight="600">HTTPS</text>
+
+<!-- 8. Worker #2 → Supabase (session writes) -->
+<path d="M 910 378 L 910 558 L 670 558 L 670 598" fill="none" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ag)"/>
+<rect x="760" y="447" width="65" height="14" rx="3" fill="#0d1117" stroke="#3fb950" stroke-width="0.5"/>
+<text x="792" y="457" text-anchor="middle" fill="#3fb950" font-size="9" font-weight="600">REST API</text>
+
+<!-- 9. Telegram Bot API → Telegram App (responses) -->
+<path d="M 1160 428 L 1160 340 L 1210 340 L 1210 200" fill="none" stroke="#a371f7" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#ap)"/>
+<rect x="1225" y="310" width="60" height="14" rx="3" fill="#0d1117" stroke="#a371f7" stroke-width="0.5"/>
+<text x="1255" y="320" text-anchor="middle" fill="#a371f7" font-size="9" font-weight="600">RESPONSE</text>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- LEGEND                                             -->
+<!-- ══════════════════════════════════════════════════ -->
+<rect x="55" y="748" width="880" height="132" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+<text x="75" y="768" fill="#8b949e" font-size="9" font-weight="700" letter-spacing="2.5">LEGEND — DATA FLOWS</text>
+
+<!-- Arrow types -->
+<line x1="75" y1="792" x2="115" y2="792" stroke="#3fb950" stroke-width="2"/>
+<polygon points="111,788 119,792 111,796" fill="#3fb950"/>
+<text x="125" y="796" fill="#8b949e" font-size="10">HTTP / REST (read + write)</text>
+
+<line x1="75" y1="814" x2="115" y2="814" stroke="#00d4ff" stroke-width="2"/>
+<polygon points="111,810 119,814 111,818" fill="#00d4ff"/>
+<text x="125" y="818" fill="#8b949e" font-size="10">Webhook / Proxy (serverless)</text>
+
+<line x1="75" y1="836" x2="115" y2="836" stroke="#a371f7" stroke-width="2"/>
+<polygon points="111,832 119,836 111,840" fill="#a371f7"/>
+<text x="125" y="840" fill="#8b949e" font-size="10">External HTTPS API call</text>
+
+<line x1="75" y1="858" x2="115" y2="858" stroke="#f0883e" stroke-width="2"/>
+<polygon points="111,854 119,858 111,862" fill="#f0883e"/>
+<text x="125" y="862" fill="#8b949e" font-size="10">Media upload (HTTPS)</text>
+
+<!-- Dashed = response -->
+<line x1="285" y1="792" x2="325" y2="792" stroke="#3fb950" stroke-width="2" stroke-dasharray="5,3"/>
+<polygon points="321,788 329,792 321,796" fill="#3fb950"/>
+<text x="335" y="796" fill="#8b949e" font-size="10">Response / bidirectional</text>
+
+<line x1="285" y1="814" x2="325" y2="814" stroke="#a371f7" stroke-width="2" stroke-dasharray="5,3"/>
+<polygon points="321,810 329,814 321,818" fill="#a371f7"/>
+<text x="335" y="818" fill="#8b949e" font-size="10">Notification return</text>
+
+<!-- Layer color legend -->
+<rect x="500" y="778" width="10" height="10" rx="2" fill="#58a6ff"/>
+<text x="516" y="788" fill="#8b949e" font-size="10">Client Layer</text>
+<rect x="500" y="798" width="10" height="10" rx="2" fill="#00d4ff"/>
+<text x="516" y="808" fill="#8b949e" font-size="10">API / Proxy</text>
+<rect x="500" y="818" width="10" height="10" rx="2" fill="#a371f7"/>
+<text x="516" y="828" fill="#8b949e" font-size="10">External Services</text>
+<rect x="500" y="838" width="10" height="10" rx="2" fill="#3fb950"/>
+<text x="516" y="848" fill="#8b949e" font-size="10">Data Layer</text>
+<rect x="500" y="858" width="10" height="10" rx="2" fill="#f0883e"/>
+<text x="516" y="868" fill="#8b949e" font-size="10">Media Layer</text>
+
+<!-- Technology legend -->
+<rect x="630" y="778" width="10" height="10" rx="2" fill="#21262d"/>
+<text x="645" y="788" fill="#8b949e" font-size="10">Cloudflare Workers (serverless · edge network · free 100k req/day)</text>
+<rect x="630" y="798" width="10" height="10" rx="2" fill="#21262d"/>
+<text x="645" y="808" fill="#8b949e" font-size="10">Supabase (PostgreSQL 15 · PostgREST · anon key auth · RLS disabled)</text>
+<rect x="630" y="818" width="10" height="10" rx="2" fill="#21262d"/>
+<text x="645" y="828" fill="#8b949e" font-size="10">NinjaTrader 8 indicator uses Account.ExecutionUpdate event (not OnExecutionUpdate)</text>
+<rect x="630" y="838" width="10" height="10" rx="2" fill="#21262d"/>
+<text x="645" y="848" fill="#8b949e" font-size="10">Telegram Bot state persisted in Cloudflare KV · TTL 3600s · ALLOWED_CHAT_ID guard</text>
+<rect x="630" y="858" width="10" height="10" rx="2" fill="#21262d"/>
+<text x="645" y="868" fill="#8b949e" font-size="10">Claude API key stored in localStorage (browser) · proxied via Worker #1 to bypass CORS</text>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- PROJECT BADGE (bottom right)                       -->
+<!-- ══════════════════════════════════════════════════ -->
+<rect x="955" y="748" width="430" height="132" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+<text x="975" y="768" fill="#8b949e" font-size="9" font-weight="700" letter-spacing="2.5">PROJECT METADATA</text>
+<text x="975" y="789" fill="#8b949e" font-size="10">Repo:       github.com/kristeb-trader/trading-journal</text>
+<text x="975" y="806" fill="#8b949e" font-size="10">Prod URL:   kristeb-trader.github.io/trading-journal</text>
+<text x="975" y="823" fill="#8b949e" font-size="10">DB:         jothoslozctflfrnysrx.supabase.co</text>
+<text x="975" y="840" fill="#8b949e" font-size="10">Stack:      HTML/JS · C# .NET 4.8 · PostgreSQL 15</text>
+<text x="975" y="857" fill="#8b949e" font-size="10">AI:         claude-haiku-4-5-20251001 · ~$0.0004/req</text>
+<text x="975" y="874" fill="#3fb950" font-size="10" font-weight="600">Est. Monthly Cost:  ~$0.00 (all free tiers) + &lt;$0.01 AI</text>
+
+</svg>
+</body>
+</html>
