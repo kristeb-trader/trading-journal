@@ -133,6 +133,48 @@ async function saveSession(data, env) {
   return res.ok;
 }
 
+// ── Stats desde Supabase ────────────────────────────────────────────────────
+async function fetchMonthStats(env) {
+  const now = new Date(new Date().toLocaleString('en-US', { timeZone: env.TIMEZONE || 'America/Guatemala' }))
+  const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/trades?trade_date=gte.${from}&select=trade_date,profit,resultado`,
+    { headers: { apikey: env.SUPABASE_KEY, Authorization: `Bearer ${env.SUPABASE_KEY}` } }
+  )
+  if (!res.ok) return null
+  const trades = await res.json()
+
+  const totalTrades = trades.length
+  const targets = trades.filter(t => t.resultado === 'target').length
+  const stops   = trades.filter(t => t.resultado === 'stop').length
+  const netPnl  = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
+  const winRate = totalTrades > 0 ? (targets / totalTrades * 100).toFixed(1) : 0
+
+  const grossWin  = trades.filter(t => (parseFloat(t.profit) || 0) > 0).reduce((s, t) => s + parseFloat(t.profit), 0)
+  const grossLoss = Math.abs(trades.filter(t => (parseFloat(t.profit) || 0) < 0).reduce((s, t) => s + parseFloat(t.profit), 0))
+  const pf = grossLoss > 0 ? (grossWin / grossLoss).toFixed(2) : '—'
+
+  // Racha actual por día
+  const byDate = {}
+  trades.forEach(t => {
+    if (!t.trade_date) return
+    byDate[t.trade_date] = (byDate[t.trade_date] || 0) + (parseFloat(t.profit) || 0)
+  })
+  const dates = Object.keys(byDate).sort()
+  let streak = 0, streakType = 'none'
+  if (dates.length > 0) {
+    const results = dates.map(d => byDate[d] >= 0 ? 'win' : 'loss')
+    streakType = results[results.length - 1]
+    for (let i = results.length - 1; i >= 0; i--) {
+      if (results[i] === streakType) streak++
+      else break
+    }
+  }
+
+  return { totalTrades, targets, stops, netPnl, winRate, pf, streak, streakType, from }
+}
+
 // ── Handlers principales ────────────────────────────────────────────────────
 async function handleCommand(msg, env) {
   const chatId = String(msg.chat.id);
@@ -154,6 +196,27 @@ async function handleCommand(msg, env) {
       ]] }
     );
     return;
+  }
+
+  if (msg.text === '/stats') {
+    const s = await fetchMonthStats(env)
+    if (!s) {
+      await sendMessage(token, chatId, '⚠️ Error al consultar estadísticas. Intenta de nuevo.')
+      return
+    }
+    const pnlSign  = s.netPnl >= 0 ? '+' : ''
+    const pnlEmoji = s.netPnl >= 0 ? '📈' : '📉'
+    const streakEmoji = s.streakType === 'win' ? '🟢' : s.streakType === 'loss' ? '🔴' : '—'
+    const month = new Date(s.from).toLocaleString('es', { month: 'long', timeZone: 'UTC' })
+    await sendMessage(token, chatId,
+      `📊 <b>Stats — ${month.charAt(0).toUpperCase() + month.slice(1)}</b>\n\n` +
+      `${pnlEmoji} <b>P&amp;L Neto:</b> ${pnlSign}$${s.netPnl.toFixed(2)}\n` +
+      `🎯 <b>Win Rate:</b> ${s.winRate}%\n` +
+      `📋 <b>Trades:</b> ${s.totalTrades} (${s.targets}✅ / ${s.stops}❌)\n` +
+      `⚡ <b>Profit Factor:</b> ${s.pf}\n` +
+      `🔥 <b>Racha:</b> ${s.streak > 0 ? `${s.streak} ${streakEmoji}` : '—'}`
+    )
+    return
   }
 
   if (msg.text === '/cancelar') {
