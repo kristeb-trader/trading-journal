@@ -163,6 +163,7 @@ const Nav = {
     trades: 'Trades',
     register: 'Registrar Sesión',
     analysis: 'Análisis',
+    data: 'Datos',
   },
   initialized: new Set(),
 
@@ -183,6 +184,7 @@ const Nav = {
         if (sectionId === 'trades') await TradesTable.init()
         if (sectionId === 'register') SessionForm.init()
         if (sectionId === 'analysis') await Charts.init()
+        if (sectionId === 'data') await DataManager.init()
       } catch (err) {
         Toast.show('Error cargando sección: ' + err.message, 'error')
       }

@@ -285,6 +285,14 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
   let casResultado = null
   let casPendientes = [] // { casuistica, resultado } — sin guardar aún
 
+  async function loadCasuisticasDropdown() {
+    const items = await DB.getCatalogoCasuisticas()
+    const select = document.getElementById('casCasuistica')
+    const active = items.filter(i => i.activa)
+    select.innerHTML = '<option value="">Seleccionar situación...</option>' +
+      active.map(i => `<option value="${i.nombre}">${i.nombre}</option>`).join('')
+  }
+
   function setupCasuisticas() {
     // Botones T / S
     document.querySelectorAll('#casResultadoGroup .btn-option').forEach(btn => {
@@ -355,6 +363,7 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
     setupNoOperoToggle()
     setupImageUpload()
     setupCasuisticas()
+    loadCasuisticasDropdown()
     document.getElementById('sessionForm').addEventListener('submit', handleSubmit)
     document.getElementById('generateAI').addEventListener('click', generateAI)
     document.getElementById('clearForm').addEventListener('click', clearForm)

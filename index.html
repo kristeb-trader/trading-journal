@@ -45,6 +45,10 @@
         <i class="ti ti-chart-line"></i>
         <span>Análisis</span>
       </li>
+      <li class="nav-item" data-section="data" title="Datos">
+        <i class="ti ti-database"></i>
+        <span>Datos</span>
+      </li>
     </ul>
     <div class="sidebar-footer">
       <div class="account-badge" title="Cuenta Fondeo">
@@ -365,7 +369,43 @@
         </div>
       </section>
 
-      <!-- ═══ 5. ANÁLISIS ══════════════════════════════════════════════════ -->
+      <!-- ═══ 5. DATOS ════════════════════════════════════════════════════ -->
+      <section class="section" id="section-data">
+        <div class="section-header">
+          <h2><i class="ti ti-database"></i> Gestión de Datos</h2>
+        </div>
+        <div class="data-catalogs">
+
+          <!-- Casuísticas -->
+          <div class="catalog-card">
+            <div class="catalog-header">
+              <h3><i class="ti ti-clipboard-list"></i> Casuísticas</h3>
+              <span class="catalog-sub">Situaciones a tipificar por día</span>
+            </div>
+            <div class="catalog-add">
+              <input type="text" id="newCasuistica" placeholder="Nueva casuística..." maxlength="60">
+              <button class="btn-primary" id="addCasuistica"><i class="ti ti-plus"></i> Agregar</button>
+            </div>
+            <div id="catalogoCasuisticasList" class="catalog-list"></div>
+          </div>
+
+          <!-- Reglas -->
+          <div class="catalog-card">
+            <div class="catalog-header">
+              <h3><i class="ti ti-checkup-list"></i> Reglas del Checklist</h3>
+              <span class="catalog-sub">Ítems de disciplina operativa</span>
+            </div>
+            <div class="catalog-add">
+              <input type="text" id="newRegla" placeholder="Nueva regla..." maxlength="100">
+              <button class="btn-primary" id="addRegla"><i class="ti ti-plus"></i> Agregar</button>
+            </div>
+            <div id="catalogoReglasList" class="catalog-list"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ═══ 6. ANÁLISIS ══════════════════════════════════════════════════ -->
       <section class="section" id="section-analysis">
         <div class="section-header">
           <h2>Análisis y Estadísticas</h2>
@@ -506,6 +546,7 @@
   <script src="js/table.js"></script>
   <script src="js/form.js"></script>
   <script src="js/charts.js"></script>
+  <script src="js/data.js"></script>
   <script src="js/app.js"></script>
 
 </body>

@@ -118,15 +118,61 @@ const DB = {
     return data
   },
 
-  // ── Reglas ───────────────────────────────────────────────────────────────
+  // ── Catálogo Casuísticas ─────────────────────────────────────────────────
 
-  async getRules() {
+  async getCatalogoCasuisticas() {
     const { data, error } = await supa
-      .from('reglas')
+      .from('catalogo_casuisticas')
       .select('*')
-      .eq('activa', true)
       .order('orden', { ascending: true })
     if (error) throw error
     return data
+  },
+
+  async addCatalogoCasuistica(nombre) {
+    const { data: all } = await supa.from('catalogo_casuisticas').select('orden').order('orden', { ascending: false }).limit(1)
+    const orden = (all?.[0]?.orden || 0) + 1
+    const { data, error } = await supa.from('catalogo_casuisticas').insert({ nombre, orden }).select().single()
+    if (error) throw error
+    return data
+  },
+
+  async toggleCatalogoCasuistica(id, activa) {
+    const { error } = await supa.from('catalogo_casuisticas').update({ activa }).eq('id', id)
+    if (error) throw error
+  },
+
+  async deleteCatalogoCasuistica(id) {
+    const { error } = await supa.from('catalogo_casuisticas').delete().eq('id', id)
+    if (error) throw error
+  },
+
+  // ── Catálogo Reglas ──────────────────────────────────────────────────────
+
+  async getCatalogoReglas() {
+    const { data, error } = await supa
+      .from('catalogo_reglas')
+      .select('*')
+      .order('orden', { ascending: true })
+    if (error) throw error
+    return data
+  },
+
+  async addCatalogoRegla(nombre) {
+    const { data: all } = await supa.from('catalogo_reglas').select('orden').order('orden', { ascending: false }).limit(1)
+    const orden = (all?.[0]?.orden || 0) + 1
+    const { data, error } = await supa.from('catalogo_reglas').insert({ nombre, orden }).select().single()
+    if (error) throw error
+    return data
+  },
+
+  async toggleCatalogoRegla(id, activa) {
+    const { error } = await supa.from('catalogo_reglas').update({ activa }).eq('id', id)
+    if (error) throw error
+  },
+
+  async deleteCatalogoRegla(id) {
+    const { error } = await supa.from('catalogo_reglas').delete().eq('id', id)
+    if (error) throw error
   },
 }

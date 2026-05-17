@@ -657,6 +657,59 @@ body.modal-open { overflow: hidden; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 0.8s linear infinite; display: inline-block; }
 
+/* ── Data Manager ────────────────────────────────────────────────────── */
+.data-catalogs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+.catalog-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.catalog-header { margin-bottom: 16px; }
+.catalog-header h3 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+.catalog-sub { font-size: 0.78rem; color: var(--text3); }
+.catalog-add { display: flex; gap: 8px; margin-bottom: 14px; }
+.catalog-add input { flex: 1; }
+.catalog-list { display: flex; flex-direction: column; gap: 6px; }
+.catalog-empty { font-size: 0.85rem; color: var(--text3); text-align: center; padding: 20px 0; }
+.catalog-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 8px;
+  background: var(--bg3); transition: opacity var(--transition);
+}
+.catalog-item-inactive { opacity: 0.45; }
+.catalog-nombre { flex: 1; font-size: 0.85rem; }
+.btn-del-catalog {
+  color: var(--text3); font-size: 1rem; padding: 3px 5px;
+  border-radius: 4px; transition: color var(--transition), background var(--transition);
+}
+.btn-del-catalog:hover { color: var(--red); background: var(--red-dim); }
+
+/* Toggle switch */
+.catalog-toggle { position: relative; display: inline-flex; cursor: pointer; }
+.catalog-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-track {
+  width: 32px; height: 18px; background: var(--bg);
+  border-radius: 9px; border: 1px solid var(--border);
+  transition: background var(--transition);
+  position: relative;
+}
+.toggle-track::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--text3); transition: left var(--transition), background var(--transition);
+}
+.catalog-toggle input:checked + .toggle-track { background: var(--accent-dim); border-color: var(--accent); }
+.catalog-toggle input:checked + .toggle-track::after { left: 16px; background: var(--accent); }
+
+@media (max-width: 768px) {
+  .data-catalogs { grid-template-columns: 1fr; }
+}
+
 /* ── Casuísticas ─────────────────────────────────────────────────────── */
 .cas-input-row {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
