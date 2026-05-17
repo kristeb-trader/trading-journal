@@ -144,7 +144,6 @@ const Modal = {
 const Nav = {
   sections: {
     calendar: 'Calendario',
-    metrics: 'Métricas',
     trades: 'Trades',
     register: 'Registrar Sesión',
     analysis: 'Análisis',
@@ -164,8 +163,7 @@ const Nav = {
     if (!this.initialized.has(sectionId)) {
       this.initialized.add(sectionId)
       try {
-        if (sectionId === 'calendar') await Calendar.init()
-        if (sectionId === 'metrics') await Metrics.init()
+        if (sectionId === 'calendar') { await Calendar.init(); await Metrics.init() }
         if (sectionId === 'trades') await TradesTable.init()
         if (sectionId === 'register') SessionForm.init()
         if (sectionId === 'analysis') await Charts.init()
