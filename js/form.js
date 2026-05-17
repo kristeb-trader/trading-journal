@@ -229,12 +229,15 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
 
   function prefill(sesion, date) {
     clearForm()
-    // Si no hay sesión, solo precarga la fecha y navega al formulario
+    // Navegar primero: si es la primera vez, init() llama setToday() aquí.
+    // Los valores correctos se asignan DESPUÉS para pisarlo.
+    document.querySelector('[data-section="register"]').click()
+
     if (!sesion) {
       if (date) document.getElementById('sesionDate').value = date
-      document.querySelector('[data-section="register"]').click()
       return
     }
+
     editingDate = sesion.sesion_date
     document.getElementById('sesionDate').value = sesion.sesion_date
     document.getElementById('noOpero').checked = sesion.no_opero || false
@@ -273,8 +276,6 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
       document.getElementById('imagePreview').classList.remove('hidden')
       document.getElementById('uploadArea').classList.add('hidden')
     }
-
-    document.querySelector('[data-section="register"]').click()
   }
 
   function init() {
