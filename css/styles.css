@@ -657,6 +657,37 @@ body.modal-open { overflow: hidden; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 0.8s linear infinite; display: inline-block; }
 
+/* ── Casuísticas ─────────────────────────────────────────────────────── */
+.cas-input-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.cas-input-row select { flex: 1; min-width: 160px; }
+.cas-resultado { flex-shrink: 0; }
+.cas-resultado .btn-option { padding: 6px 14px; font-weight: 700; }
+.cas-resultado .btn-option.cas-t.active { background: var(--accent-dim); color: var(--accent); }
+.cas-resultado .btn-option.cas-s.active { background: var(--red-dim); color: var(--red); }
+
+.cas-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.cas-tag {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg3); border-radius: 8px; padding: 7px 12px;
+  font-size: 0.85rem;
+}
+.cas-tag-left { display: flex; align-items: center; gap: 8px; }
+.cas-badge-t { background: var(--accent-dim); color: var(--accent); padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.78rem; }
+.cas-badge-s { background: var(--red-dim); color: var(--red); padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.78rem; }
+.cas-del { color: var(--text3); font-size: 1rem; padding: 2px 4px; border-radius: 4px; }
+.cas-del:hover { color: var(--red); background: var(--red-dim); }
+
+/* Modal errores tab */
+.modal-cas-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; border-radius: 8px; margin-bottom: 4px;
+  background: var(--bg3); font-size: 0.85rem;
+}
+.modal-cas-row .cas-badge-t,
+.modal-cas-row .cas-badge-s { font-size: 0.78rem; }
+
 /* ── Discipline Modal ────────────────────────────────────────────────── */
 .disc-section-title {
   font-size: 0.78rem; font-weight: 700; text-transform: uppercase;

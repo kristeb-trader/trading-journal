@@ -24,7 +24,7 @@ const Modal = {
   currentSesion: null,
   currentDate: null,
 
-  openDay(dateStr, trades, sesion) {
+  async openDay(dateStr, trades, sesion) {
     this.currentSesion = sesion
     this.currentDate = dateStr
     const modal = document.getElementById('dayModal')
@@ -105,6 +105,22 @@ const Modal = {
     document.getElementById('modalImagen').innerHTML = sesion?.imagen_url
       ? `<div class="modal-image-wrap"><img src="${sesion.imagen_url}" alt="Captura del día" loading="lazy" style="cursor:zoom-in" title="Clic para ver en tamaño completo"></div>`
       : '<div class="modal-no-trade"><i class="ti ti-photo-off"></i><p>Sin imagen para este día</p></div>'
+
+    // ── Errores / Casuísticas tab ──
+    const casuisticas = dateStr ? await DB.getCasuisticasByDate(dateStr) : []
+    if (casuisticas.length === 0) {
+      document.getElementById('modalErrores').innerHTML =
+        '<div class="modal-no-trade"><i class="ti ti-clipboard-check"></i><p>Sin tipificaciones para este día</p></div>'
+    } else {
+      document.getElementById('modalErrores').innerHTML = `
+        <div style="padding:4px 0">
+          ${casuisticas.map(c => `
+            <div class="modal-cas-row">
+              <span>${c.casuistica}</span>
+              <span class="${c.resultado === 'T' ? 'cas-badge-t' : 'cas-badge-s'}">${c.resultado}</span>
+            </div>`).join('')}
+        </div>`
+    }
 
     // Lightbox al hacer clic en la imagen
     setTimeout(() => {

@@ -79,6 +79,45 @@ const DB = {
     }
   },
 
+  // ── Casuísticas ──────────────────────────────────────────────────────────
+
+  async getCasuisticasByDate(date) {
+    const { data, error } = await supa
+      .from('sesion_casuisticas')
+      .select('*')
+      .eq('sesion_date', date)
+      .order('created_at', { ascending: true })
+    if (error) throw error
+    return data
+  },
+
+  async saveCasuistica(sesionDate, casuistica, resultado) {
+    const { data, error } = await supa
+      .from('sesion_casuisticas')
+      .insert({ sesion_date: sesionDate, casuistica, resultado })
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  },
+
+  async deleteCasuistica(id) {
+    const { error } = await supa
+      .from('sesion_casuisticas')
+      .delete()
+      .eq('id', id)
+    if (error) throw error
+  },
+
+  async getAllCasuisticas() {
+    const { data, error } = await supa
+      .from('sesion_casuisticas')
+      .select('*')
+      .order('sesion_date', { ascending: false })
+    if (error) throw error
+    return data
+  },
+
   // ── Reglas ───────────────────────────────────────────────────────────────
 
   async getRules() {

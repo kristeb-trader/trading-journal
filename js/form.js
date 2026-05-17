@@ -197,6 +197,8 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
     document.getElementById('imagePreview').classList.add('hidden')
     document.getElementById('uploadArea').classList.remove('hidden')
     document.getElementById('imagenUrl').value = ''
+    casPendientes = []
+    renderCasList()
     editingDate = null
     setToday()
   }
@@ -240,6 +242,7 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
 
     editingDate = sesion.sesion_date
     document.getElementById('sesionDate').value = sesion.sesion_date
+    loadCasuisticasForDate(sesion.sesion_date)
     document.getElementById('noOpero').checked = sesion.no_opero || false
     document.getElementById('noOpero').dispatchEvent(new Event('change'))
 
@@ -278,14 +281,88 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
     }
   }
 
+  // ── Casuísticas ──────────────────────────────────────────────────────────
+  let casResultado = null
+  let casPendientes = [] // { casuistica, resultado } — sin guardar aún
+
+  function setupCasuisticas() {
+    // Botones T / S
+    document.querySelectorAll('#casResultadoGroup .btn-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#casResultadoGroup .btn-option').forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+        casResultado = btn.dataset.value
+      })
+    })
+
+    document.getElementById('casAgregar').addEventListener('click', async () => {
+      const casuistica = document.getElementById('casCasuistica').value
+      if (!casuistica) { Toast.show('Selecciona una situación', 'warning'); return }
+      if (!casResultado) { Toast.show('Selecciona T o S', 'warning'); return }
+      const sesionDate = document.getElementById('sesionDate').value
+      if (!sesionDate) { Toast.show('Selecciona la fecha primero', 'warning'); return }
+
+      try {
+        const saved = await DB.saveCasuistica(sesionDate, casuistica, casResultado)
+        casPendientes.push(saved)
+        renderCasList()
+        document.getElementById('casCasuistica').value = ''
+        document.querySelectorAll('#casResultadoGroup .btn-option').forEach(b => b.classList.remove('active'))
+        casResultado = null
+      } catch (e) {
+        Toast.show('Error al guardar: ' + e.message, 'error')
+      }
+    })
+  }
+
+  function renderCasList() {
+    const list = document.getElementById('casList')
+    if (!casPendientes.length) { list.innerHTML = ''; return }
+    list.innerHTML = casPendientes.map((c, i) => `
+      <div class="cas-tag">
+        <div class="cas-tag-left">
+          <span class="${c.resultado === 'T' ? 'cas-badge-t' : 'cas-badge-s'}">${c.resultado}</span>
+          <span>${c.casuistica}</span>
+        </div>
+        <button type="button" class="cas-del" data-idx="${i}" data-id="${c.id}" title="Eliminar">
+          <i class="ti ti-x"></i>
+        </button>
+      </div>`).join('')
+
+    list.querySelectorAll('.cas-del').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = parseInt(btn.dataset.id)
+        const idx = parseInt(btn.dataset.idx)
+        try {
+          await DB.deleteCasuistica(id)
+          casPendientes.splice(idx, 1)
+          renderCasList()
+        } catch (e) {
+          Toast.show('Error al eliminar', 'error')
+        }
+      })
+    })
+  }
+
+  async function loadCasuisticasForDate(date) {
+    casPendientes = date ? await DB.getCasuisticasByDate(date) : []
+    renderCasList()
+  }
+
   function init() {
     setToday()
     setupBtnGroups()
     setupNoOperoToggle()
     setupImageUpload()
+    setupCasuisticas()
     document.getElementById('sessionForm').addEventListener('submit', handleSubmit)
     document.getElementById('generateAI').addEventListener('click', generateAI)
     document.getElementById('clearForm').addEventListener('click', clearForm)
+
+    // Cargar casuísticas al cambiar fecha
+    document.getElementById('sesionDate').addEventListener('change', () => {
+      loadCasuisticasForDate(document.getElementById('sesionDate').value)
+    })
 
     // Auto-invalidar checklist de 5 velas si velas > 5
     document.getElementById('velasCorrida').addEventListener('input', () => {
