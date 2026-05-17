@@ -134,7 +134,7 @@ const Calendar = (() => {
             <div class="cal-cell cal-week-summary ${weekPnl >= 0 ? 'week-positive' : 'week-negative'}">
               <div class="week-label">Semana ${weekNum}</div>
               <div class="week-pnl ${weekPnl >= 0 ? 'positive' : 'negative'}">${weekPnl >= 0 ? '+' : ''}$${weekPnl.toFixed(0)}</div>
-              <div class="week-trades">${weekTrades}t</div>
+              <div class="week-trades">${weekTrades} trade${weekTrades !== 1 ? 's' : ''}</div>
             </div>`
         } else {
           html += `
@@ -148,29 +148,25 @@ const Calendar = (() => {
       }
     }
 
+    // Total mensual en columna Semana (fila extra al final del grid)
+    const totalPnl = Object.values(tradesCache).flat()
+      .reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
+    const monthName = MONTHS_ES[currentMonth - 1]
+    for (let i = 0; i < 5; i++) html += `<div class="cal-cell empty-cell"></div>`
+    html += `
+      <div class="cal-cell cal-week-summary cal-month-total ${totalPnl >= 0 ? 'week-positive' : 'week-negative'}">
+        <div class="cal-totalpnl-icon ${totalPnl >= 0 ? '' : 'negative'}">
+          <i class="ti ti-currency-dollar"></i>
+        </div>
+        <div class="week-label">P&amp;L Neto</div>
+        <div class="week-pnl ${totalPnl >= 0 ? 'positive' : 'negative'} month-total-amount">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}</div>
+        <div class="week-trades">${monthName} ${currentYear}</div>
+      </div>`
+
     grid.innerHTML = html
     grid.querySelectorAll('[data-date]').forEach(cell => {
       cell.addEventListener('click', () => openDayModal(cell.dataset.date))
     })
-
-    // Tarjeta P&L mensual debajo del calendario
-    const totalPnl = Object.values(tradesCache).flat()
-      .reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
-    const monthName = MONTHS_ES[currentMonth - 1]
-    const pnlBox = document.getElementById('calMonthPnl')
-    if (pnlBox) {
-      pnlBox.innerHTML = `
-        <div class="cal-totalpnl-card">
-          <div class="cal-totalpnl-icon ${totalPnl >= 0 ? '' : 'negative'}">
-            <i class="ti ti-currency-dollar"></i>
-          </div>
-          <div class="cal-totalpnl-body">
-            <div class="cal-totalpnl-label">P&amp;L Neto — ${monthName} ${currentYear}</div>
-            <div class="cal-totalpnl-value ${totalPnl >= 0 ? 'positive' : 'negative'}">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}</div>
-            <div class="cal-totalpnl-sub">Total del mes</div>
-          </div>
-        </div>`
-    }
   }
 
   function renderMonthlySummary() {

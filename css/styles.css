@@ -248,25 +248,19 @@ small { font-size: 0.82em; }
 .ms-pnl.positive { color: var(--accent); }
 .ms-pnl.negative { color: var(--red); }
 
-/* Tarjeta P&L mensual bajo el calendario */
-#calMonthPnl { margin-top: 12px; }
-.cal-totalpnl-card {
-  display: inline-flex; align-items: center; gap: 16px;
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 14px 20px;
-}
+/* Celda total mensual en columna Semana */
+.cal-month-total { border-width: 2px !important; }
 .cal-totalpnl-icon {
-  width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
-  background: rgba(29,158,117,0.15);
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  background: rgba(29,158,117,0.18);
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.3rem; color: var(--accent);
+  font-size: 1rem; color: var(--accent);
+  margin-bottom: 2px;
 }
 .cal-totalpnl-icon.negative { background: rgba(226,75,74,0.15); color: var(--red); }
-.cal-totalpnl-label { font-size: 0.75rem; color: var(--text3); margin-bottom: 2px; }
-.cal-totalpnl-value { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
-.cal-totalpnl-value.positive { color: #138a5e; }
-.cal-totalpnl-value.negative { color: var(--red); }
-.cal-totalpnl-sub { font-size: 0.7rem; color: var(--text3); margin-top: 3px; }
+.month-total-amount { font-size: 1.1rem !important; font-weight: 800 !important; }
+.month-total-amount.positive { color: #138a5e !important; }
+.month-total-amount.negative { color: var(--red) !important; }
 
 /* ── Metrics ─────────────────────────────────────────────────────────── */
 .period-selector { display: flex; gap: 4px; }
