@@ -105,7 +105,7 @@ const Calendar = (() => {
           ? `<div class="cal-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(0)}</div>`
           : ''
         const tradeCount = trades.length > 0
-          ? `<div class="cal-count">${trades.length} trade${trades.length !== 1 ? 's' : ''}</div>` : ''
+          ? `<div class="cal-count">${trades.length}t</div>` : ''
         const clickable = !isFuture ? `data-date="${dateStr}" style="cursor:pointer"` : ''
 
         let statusBadge = ''
@@ -134,7 +134,7 @@ const Calendar = (() => {
             <div class="cal-cell cal-week-summary ${weekPnl >= 0 ? 'week-positive' : 'week-negative'}">
               <div class="week-label">Semana ${weekNum}</div>
               <div class="week-pnl ${weekPnl >= 0 ? 'positive' : 'negative'}">${weekPnl >= 0 ? '+' : ''}$${weekPnl.toFixed(0)}</div>
-              <div class="week-trades">${weekTrades} trade${weekTrades !== 1 ? 's' : ''}</div>
+              <div class="week-trades">${weekTrades}t</div>
             </div>`
         } else {
           html += `
