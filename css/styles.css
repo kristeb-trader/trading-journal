@@ -674,9 +674,120 @@ body.modal-open { overflow: hidden; }
   .cal-cell { min-height: 60px; padding: 4px 5px; }
   .metrics-grid { grid-template-columns: repeat(2, 1fr); }
 }
-@media (max-width: 600px) {
-  .content-area { padding: 14px; }
-  .metrics-grid { grid-template-columns: 1fr; }
-  .calendar-grid { font-size: 0.75rem; }
-  .cal-cell { padding: 4px; }
+
+/* ── Mobile — bottom nav bar ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Sidebar → bottom nav */
+  .sidebar {
+    width: 100% !important;
+    min-height: auto;
+    height: 60px;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    flex-direction: row;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    z-index: 200;
+  }
+  .sidebar-header,
+  .sidebar-footer { display: none; }
+
+  .nav-menu {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0;
+    width: 100%;
+  }
+  .nav-item {
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 4px;
+    margin: 0;
+    border-radius: 8px;
+    font-size: 0.6rem;
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+    min-width: 0;
+    white-space: normal;
+  }
+  .nav-item span { display: block !important; }
+  .nav-item i { font-size: 1.3rem; min-width: auto; }
+
+  /* Main content */
+  .main-content {
+    margin-left: 0 !important;
+    padding-bottom: 68px;
+  }
+  .content-area { padding: 12px; }
+
+  /* Top bar */
+  .menu-toggle { display: none; }
+
+  /* Calendar */
+  .calendar-grid {
+    gap: 2px;
+    grid-template-columns: repeat(5, 1fr) minmax(56px, 1fr);
+    font-size: 0.7rem;
+  }
+  .cal-cell { min-height: 56px; padding: 3px 4px; }
+  .cal-day-num { font-size: 0.72rem; }
+  .cal-pnl { font-size: 0.72rem; }
+  .cal-count { font-size: 0.62rem; }
+  .cal-header { font-size: 0.65rem; padding: 4px 2px; }
+  .cal-status-badge { font-size: 0.6rem; padding: 1px 3px; }
+  .cal-week-summary { padding: 6px 4px; }
+  .week-label { font-size: 0.62rem; }
+  .week-pnl { font-size: 0.95rem; }
+  .week-trades { font-size: 0.6rem; }
+
+  /* Month Summary bar */
+  .monthly-summary { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .ms-right { align-self: flex-start; }
+  .ms-pnl { font-size: 1.8rem; }
+
+  /* Metrics */
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Trades table — horizontal scroll */
+  .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .trades-table { min-width: 560px; }
+
+  /* Section headers */
+  .section-header { margin-bottom: 14px; }
+  .section-header h2 { font-size: 1rem; }
+
+  /* Modal — full screen */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal {
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 16px 16px 0 0;
+    animation: modalUp 0.25s ease;
+  }
+  @keyframes modalUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* Form */
+  .form-row { grid-template-columns: 1fr; }
+  .btn-group { flex-wrap: wrap; }
+}
+
+@media (max-width: 480px) {
+  .metrics-grid { grid-template-columns: 1fr 1fr; }
+  .calendar-grid {
+    grid-template-columns: repeat(5, 1fr) minmax(48px, 1fr);
+    font-size: 0.65rem;
+  }
+  .cal-cell { min-height: 46px; padding: 2px 3px; }
+  .cal-pnl { font-size: 0.65rem; }
+  .cal-week-summary .week-pnl { font-size: 0.85rem; }
+  .content-area { padding: 8px; }
+  .ms-chips { gap: 4px; }
+  .ms-chip { font-size: 0.72rem; padding: 3px 7px; }
 }
