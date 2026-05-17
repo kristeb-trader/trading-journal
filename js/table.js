@@ -65,11 +65,14 @@ const TradesTable = (() => {
 
     filtered = allRows.filter(row => {
       if (row.type === 'session') {
+        const isSinSetup = row.data.motivo_no_opero === 'Sin setup'
+        if (filterVal === 'sin_setup') return isSinSetup
         if (filterVal !== 'all') return false
         if (!search) return true
         return row.date.includes(search) ||
           (row.data.motivo_no_opero || '').toLowerCase().includes(search)
       }
+      if (filterVal === 'sin_setup') return false
       const t = row.data
       const matchFilter = filterVal === 'all' || t.resultado === filterVal
       const matchSearch = !search || [t.instrument, t.market_pos, t.exit_name, t.trade_date]
