@@ -135,8 +135,11 @@ async function saveSession(data, env) {
 
 // ── Stats desde Supabase ────────────────────────────────────────────────────
 async function fetchMonthStats(env) {
-  const now = new Date(new Date().toLocaleString('en-US', { timeZone: env.TIMEZONE || 'America/Guatemala' }))
-  const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: env.TIMEZONE || 'America/Guatemala',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date())
+  const from = today.slice(0, 7) + '-01'
 
   const res = await fetch(
     `${env.SUPABASE_URL}/rest/v1/trades?trade_date=gte.${from}&select=trade_date,profit,resultado`,
@@ -207,7 +210,8 @@ async function handleCommand(msg, env) {
     const pnlSign  = s.netPnl >= 0 ? '+' : ''
     const pnlEmoji = s.netPnl >= 0 ? '📈' : '📉'
     const streakEmoji = s.streakType === 'win' ? '🟢' : s.streakType === 'loss' ? '🔴' : '—'
-    const month = new Date(s.from).toLocaleString('es', { month: 'long', timeZone: 'UTC' })
+    const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    const month = MESES[parseInt(s.from.slice(5, 7)) - 1]
     await sendMessage(token, chatId,
       `📊 <b>Stats — ${month.charAt(0).toUpperCase() + month.slice(1)}</b>\n\n` +
       `${pnlEmoji} <b>P&amp;L Neto:</b> ${pnlSign}$${s.netPnl.toFixed(2)}\n` +
