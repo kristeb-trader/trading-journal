@@ -135,6 +135,7 @@ async function saveSession(data, env) {
 
 // ── Stats desde Supabase ────────────────────────────────────────────────────
 async function fetchMonthStats(env) {
+  try {
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: env.TIMEZONE || 'America/Guatemala',
     year: 'numeric', month: '2-digit', day: '2-digit',
@@ -145,7 +146,7 @@ async function fetchMonthStats(env) {
     `${env.SUPABASE_URL}/rest/v1/trades?trade_date=gte.${from}&select=trade_date,profit,resultado`,
     { headers: { apikey: env.SUPABASE_KEY, Authorization: `Bearer ${env.SUPABASE_KEY}` } }
   )
-  if (!res.ok) return null
+  if (!res.ok) return { error: `Supabase error ${res.status}` }
   const trades = await res.json()
 
   const totalTrades = trades.length
@@ -176,6 +177,9 @@ async function fetchMonthStats(env) {
   }
 
   return { totalTrades, targets, stops, netPnl, winRate, pf, streak, streakType, from }
+  } catch (e) {
+    return { error: e.message }
+  }
 }
 
 // ── Handlers principales ────────────────────────────────────────────────────
@@ -203,8 +207,8 @@ async function handleCommand(msg, env) {
 
   if (msg.text === '/stats') {
     const s = await fetchMonthStats(env)
-    if (!s) {
-      await sendMessage(token, chatId, '⚠️ Error al consultar estadísticas. Intenta de nuevo.')
+    if (!s || s.error) {
+      await sendMessage(token, chatId, `⚠️ Error al consultar estadísticas: ${s?.error || 'desconocido'}`)
       return
     }
     const pnlSign  = s.netPnl >= 0 ? '+' : ''
