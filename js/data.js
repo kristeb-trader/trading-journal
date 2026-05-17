@@ -14,6 +14,9 @@ const DataManager = (() => {
           <span class="toggle-track"></span>
         </label>
         <span class="catalog-nombre">${item.nombre}</span>
+        <button class="btn-edit-catalog" data-id="${item.id}" data-type="${type}" data-nombre="${item.nombre}" title="Editar nombre">
+          <i class="ti ti-pencil"></i>
+        </button>
         <button class="btn-del-catalog" data-id="${item.id}" data-type="${type}" title="Eliminar">
           <i class="ti ti-trash"></i>
         </button>
@@ -29,6 +32,24 @@ const DataManager = (() => {
         } catch (e) {
           Toast.show('Error al actualizar', 'error')
           chk.checked = !chk.checked
+        }
+      })
+    })
+
+    el.querySelectorAll('.btn-edit-catalog').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = parseInt(btn.dataset.id)
+        const actual = btn.dataset.nombre
+        const nuevo = prompt('Editar nombre:', actual)
+        if (!nuevo || nuevo.trim() === actual) return
+        try {
+          if (btn.dataset.type === 'cas') await DB.renameCatalogoCasuistica(id, nuevo.trim())
+          else await DB.renameCatalogoRegla(id, nuevo.trim())
+          btn.dataset.nombre = nuevo.trim()
+          btn.closest('.catalog-item').querySelector('.catalog-nombre').textContent = nuevo.trim()
+          Toast.show('Nombre actualizado', 'success')
+        } catch (e) {
+          Toast.show('Error al actualizar', 'error')
         }
       })
     })

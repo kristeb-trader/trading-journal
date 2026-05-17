@@ -683,10 +683,11 @@ body.modal-open { overflow: hidden; }
 }
 .catalog-item-inactive { opacity: 0.45; }
 .catalog-nombre { flex: 1; font-size: 0.85rem; }
-.btn-del-catalog {
+.btn-edit-catalog, .btn-del-catalog {
   color: var(--text3); font-size: 1rem; padding: 3px 5px;
   border-radius: 4px; transition: color var(--transition), background var(--transition);
 }
+.btn-edit-catalog:hover { color: var(--accent); background: var(--accent-dim); }
 .btn-del-catalog:hover { color: var(--red); background: var(--red-dim); }
 
 /* Toggle switch */

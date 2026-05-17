@@ -142,6 +142,11 @@ const DB = {
     if (error) throw error
   },
 
+  async renameCatalogoCasuistica(id, nombre) {
+    const { error } = await supa.from('catalogo_casuisticas').update({ nombre }).eq('id', id)
+    if (error) throw error
+  },
+
   async deleteCatalogoCasuistica(id) {
     const { error } = await supa.from('catalogo_casuisticas').delete().eq('id', id)
     if (error) throw error
@@ -168,6 +173,11 @@ const DB = {
 
   async toggleCatalogoRegla(id, activa) {
     const { error } = await supa.from('catalogo_reglas').update({ activa }).eq('id', id)
+    if (error) throw error
+  },
+
+  async renameCatalogoRegla(id, nombre) {
+    const { error } = await supa.from('catalogo_reglas').update({ nombre }).eq('id', id)
     if (error) throw error
   },
 
