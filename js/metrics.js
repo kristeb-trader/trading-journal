@@ -118,6 +118,85 @@ const Metrics = (() => {
     }
   }
 
+  const CHECKLIST_KEYS = [
+    { key: 'chk_zonas',       label: 'Zonas vigentes'       },
+    { key: 'chk_orden',       label: 'Orden a tiempo'       },
+    { key: 'chk_5velas',      label: 'Máx 5 velas'          },
+    { key: 'chk_noticias',    label: 'Sin noticias rojas'   },
+    { key: 'chk_consecucion', label: 'Rompimiento + Consecución' },
+    { key: 'chk_estructura',  label: 'Estructura IRI'       },
+  ]
+
+  const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
+
+  function openDisciplineModal(sesiones, trades) {
+    const active = sesiones.filter(s => !s.no_opero)
+    const total  = active.length
+
+    // Conteo de fallos por ítem
+    const counts = CHECKLIST_KEYS.map(({ key, label }) => ({
+      label,
+      key,
+      fails: active.filter(s => !s[key]).length,
+    })).sort((a, b) => b.fails - a.fails)
+
+    const maxFails = counts[0]?.fails || 1
+
+    // P&L por fecha desde trades
+    const pnlByDate = {}
+    trades.forEach(t => {
+      if (!t.trade_date) return
+      pnlByDate[t.trade_date] = (pnlByDate[t.trade_date] || 0) + (parseFloat(t.profit) || 0)
+    })
+
+    // Fechas donde falló el ítem top
+    const topKey = counts[0]?.key
+    const failDates = active
+      .filter(s => !s[topKey])
+      .map(s => s.sesion_date)
+      .sort((a, b) => b.localeCompare(a))
+
+    const barsHtml = counts.map(({ label, fails }) => {
+      const pct = total > 0 ? (fails / total * 100) : 0
+      const cls  = pct >= 60 ? 'level-high' : pct >= 30 ? 'level-mid' : 'level-low'
+      return `
+        <div class="disc-item">
+          <span class="disc-item-label">${label}</span>
+          <div class="disc-bar-wrap">
+            <div class="disc-bar-fill ${cls}" style="width:${(fails/maxFails*100).toFixed(0)}%"></div>
+          </div>
+          <span class="disc-count">${fails}</span>
+        </div>`
+    }).join('')
+
+    const datesHtml = failDates.map(date => {
+      const pnl = pnlByDate[date]
+      const dow  = DAYS[new Date(date + 'T12:00:00').getDay()]
+      const pnlHtml = pnl != null
+        ? `<span class="disc-date-pnl ${pnl >= 0 ? 'pos' : 'neg'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</span>`
+        : `<span class="disc-date-pnl neutral">Sin trades</span>`
+      return `
+        <div class="disc-date-row">
+          <span class="disc-date-dow">${dow}</span>
+          <span class="disc-date-val">${date}</span>
+          ${pnlHtml}
+        </div>`
+    }).join('')
+
+    document.getElementById('disciplineModalContent').innerHTML = `
+      <div style="padding:16px 20px 20px">
+        <p class="disc-section-title">Frecuencia de incumplimiento (${total} sesiones)</p>
+        ${barsHtml}
+        ${counts[0] ? `
+          <div class="disc-dates">
+            <p class="disc-section-title" style="margin-top:8px">Días con falla en "${counts[0].label}"</p>
+            ${datesHtml || '<p style="color:var(--text3);font-size:0.85rem">Sin fallos registrados</p>'}
+          </div>` : ''}
+      </div>`
+
+    document.getElementById('disciplineModal').classList.remove('hidden')
+  }
+
   function render(period = 'all') {
     const { trades, sesiones } = filterByPeriod(allTrades, allSesiones, period)
 
@@ -151,7 +230,7 @@ const Metrics = (() => {
       { label: 'Mejor día', value: best ? `+$${best[1].toFixed(0)}` : '—', icon: 'ti-trending-up', color: 'green', sub: best ? best[0] : '' },
       { label: 'Peor día', value: worst ? `$${worst[1].toFixed(0)}` : '—', icon: 'ti-trending-down', color: 'red', sub: worst ? worst[0] : '' },
       { label: 'Disciplina', value: `${disciplinePct}%`, icon: 'ti-checkup-list', color: disciplinePct >= 80 ? 'green' : disciplinePct >= 50 ? 'neutral' : 'red', sub: `${clean}/${activeSesiones.length} sesiones limpias` },
-      { label: 'Error más frecuente', value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]} veces incumplido` : 'Sin datos' },
+      { label: 'Error más frecuente', value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]} veces incumplido` : 'Sin datos', clickable: true },
       {
         label: 'Profit Factor',
         value: pf != null ? pf.toFixed(2) : '—',
@@ -176,16 +255,20 @@ const Metrics = (() => {
     ]
 
     document.getElementById('metricsGrid').innerHTML = cards.map(c => `
-      <div class="metric-card">
+      <div class="metric-card${c.clickable ? ' clickable' : ''}" ${c.clickable ? 'data-action="discipline"' : ''}>
         <div class="metric-icon color-${c.color}">
           <i class="ti ${c.icon}"></i>
         </div>
         <div class="metric-body">
-          <div class="metric-label">${c.label}</div>
+          <div class="metric-label">${c.label} ${c.clickable ? '<i class="ti ti-chevron-right" style="font-size:0.75rem;opacity:0.5"></i>' : ''}</div>
           <div class="metric-value color-${c.color}">${c.value}</div>
           ${c.sub ? `<div class="metric-sub">${c.sub}</div>` : ''}
         </div>
       </div>`).join('')
+
+    document.querySelector('[data-action="discipline"]')?.addEventListener('click', () => {
+      openDisciplineModal(sesiones, trades)
+    })
   }
 
   async function init() {
@@ -198,6 +281,13 @@ const Metrics = (() => {
         btn.classList.add('active')
         render(btn.dataset.period)
       })
+    })
+
+    document.getElementById('closeDisciplineModal').addEventListener('click', () => {
+      document.getElementById('disciplineModal').classList.add('hidden')
+    })
+    document.getElementById('disciplineModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden')
     })
   }
 
