@@ -65,6 +65,42 @@ const Metrics = (() => {
     return sorted[0][1] > 0 ? sorted[0] : null
   }
 
+  function calcProfitFactor(trades) {
+    const grossWin = trades.filter(t => (parseFloat(t.profit) || 0) > 0)
+      .reduce((s, t) => s + parseFloat(t.profit), 0)
+    const grossLoss = Math.abs(trades.filter(t => (parseFloat(t.profit) || 0) < 0)
+      .reduce((s, t) => s + parseFloat(t.profit), 0))
+    if (grossLoss === 0) return grossWin > 0 ? null : null
+    return grossWin / grossLoss
+  }
+
+  function calcAvgWinLoss(trades) {
+    const wins = trades.filter(t => (parseFloat(t.profit) || 0) > 0)
+    const losses = trades.filter(t => (parseFloat(t.profit) || 0) < 0)
+    const avgWin = wins.length > 0
+      ? wins.reduce((s, t) => s + parseFloat(t.profit), 0) / wins.length : null
+    const avgLoss = losses.length > 0
+      ? Math.abs(losses.reduce((s, t) => s + parseFloat(t.profit), 0) / losses.length) : null
+    return { avgWin, avgLoss }
+  }
+
+  function calcMaxDrawdown(trades) {
+    if (trades.length === 0) return 0
+    const sorted = [...trades].sort((a, b) => {
+      const ka = `${a.trade_date || ''} ${a.entry_time || ''}`
+      const kb = `${b.trade_date || ''} ${b.entry_time || ''}`
+      return ka.localeCompare(kb)
+    })
+    let peak = 0, cumPnl = 0, maxDD = 0
+    sorted.forEach(t => {
+      cumPnl += parseFloat(t.profit) || 0
+      if (cumPnl > peak) peak = cumPnl
+      const dd = peak - cumPnl
+      if (dd > maxDD) maxDD = dd
+    })
+    return maxDD
+  }
+
   function filterByPeriod(trades, sesiones, period) {
     if (period === 'all') return { trades, sesiones }
     const now = new Date()
@@ -96,6 +132,9 @@ const Metrics = (() => {
     const topError = errorFrequency(sesiones)
     const tradingDays = new Set(trades.map(t => t.trade_date)).size
     const avgPnl = tradingDays > 0 ? (netPnl / tradingDays) : 0
+    const pf = calcProfitFactor(trades)
+    const { avgWin, avgLoss } = calcAvgWinLoss(trades)
+    const maxDD = calcMaxDrawdown(trades)
     const activeSesiones = sesiones.filter(s => !s.no_opero)
     const disciplinePct = activeSesiones.length > 0
       ? Math.round(activeSesiones.reduce((sum, s) => {
@@ -113,6 +152,27 @@ const Metrics = (() => {
       { label: 'Peor día', value: worst ? `$${worst[1].toFixed(0)}` : '—', icon: 'ti-trending-down', color: 'red', sub: worst ? worst[0] : '' },
       { label: 'Disciplina', value: `${disciplinePct}%`, icon: 'ti-checkup-list', color: disciplinePct >= 80 ? 'green' : disciplinePct >= 50 ? 'neutral' : 'red', sub: `${clean}/${activeSesiones.length} sesiones limpias` },
       { label: 'Error más frecuente', value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]} veces incumplido` : 'Sin datos' },
+      {
+        label: 'Profit Factor',
+        value: pf != null ? pf.toFixed(2) : '—',
+        icon: 'ti-math-function',
+        color: pf == null ? 'neutral' : pf >= 2 ? 'green' : pf >= 1 ? 'neutral' : 'red',
+        sub: pf != null ? (pf >= 2 ? 'Sistema sólido' : pf >= 1 ? 'Sistema marginal' : 'Sistema negativo') : 'Sin pérdidas en el período',
+      },
+      {
+        label: 'Avg Win / Avg Loss',
+        value: avgWin != null && avgLoss != null ? `$${avgWin.toFixed(0)} / $${avgLoss.toFixed(0)}` : avgWin != null ? `$${avgWin.toFixed(0)} / —` : '—',
+        icon: 'ti-arrows-diff',
+        color: avgWin != null && avgLoss != null && avgWin >= avgLoss ? 'green' : 'neutral',
+        sub: avgWin != null && avgLoss != null ? `Ratio: ${(avgWin / avgLoss).toFixed(2)}x` : 'Sin datos suficientes',
+      },
+      {
+        label: 'Max Drawdown',
+        value: maxDD > 0 ? `-$${maxDD.toFixed(2)}` : '$0',
+        icon: 'ti-chart-arrows-vertical',
+        color: maxDD === 0 ? 'green' : maxDD < 200 ? 'neutral' : 'red',
+        sub: 'Máxima caída desde pico',
+      },
     ]
 
     document.getElementById('metricsGrid').innerHTML = cards.map(c => `
