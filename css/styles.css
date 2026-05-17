@@ -339,6 +339,20 @@ small { font-size: 0.82em; }
 .badge-other { background: var(--bg3); color: var(--text2); }
 .badge-long { background: rgba(29,158,117,0.1); color: var(--accent); }
 .badge-short { background: rgba(226,75,74,0.1); color: var(--red); }
+.badge-noopero { background: rgba(255,255,255,0.05); color: var(--text3); }
+.badge-sinsetup { background: rgba(99,102,241,0.12); color: rgba(139,142,255,0.9); }
+
+.month-separator td {
+  background: var(--bg3); color: var(--text2);
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.month-separator td i { margin-right: 6px; opacity: 0.7; }
+.month-separator:hover td { background: var(--bg3) !important; }
+
+.row-noopero td { opacity: 0.75; }
+.row-noopero:hover td { opacity: 1; }
 
 .btn-row {
   padding: 4px 8px; border-radius: 6px; color: var(--text2);
