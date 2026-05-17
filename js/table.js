@@ -9,6 +9,12 @@ const TradesTable = (() => {
 
   const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+  const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
+
+  function dayOfWeek(dateStr) {
+    if (!dateStr) return '—'
+    return DAYS[new Date(dateStr + 'T12:00:00').getDay()]
+  }
 
   function fmt(val, decimals = 2) {
     return val != null ? parseFloat(val).toFixed(decimals) : '—'
@@ -80,7 +86,7 @@ const TradesTable = (() => {
     const tbody = document.getElementById('tradesTableBody')
 
     if (slice.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" class="empty-row">Sin resultados</td></tr>`
+      tbody.innerHTML = `<tr><td colspan="9" class="empty-row">Sin resultados</td></tr>`
       return
     }
 
@@ -94,7 +100,7 @@ const TradesTable = (() => {
         const [year, mon] = month.split('-')
         const monthName = MONTHS[parseInt(mon) - 1]
         html += `<tr class="month-separator">
-          <td colspan="8"><i class="ti ti-calendar-month"></i> ${monthName} ${year}</td>
+          <td colspan="9"><i class="ti ti-calendar-month"></i> ${monthName} ${year}</td>
         </tr>`
       }
 
@@ -103,6 +109,7 @@ const TradesTable = (() => {
         const pnl = parseFloat(t.profit) || 0
         html += `
           <tr>
+            <td class="col-dow">${dayOfWeek(t.trade_date)}</td>
             <td>${t.trade_date || '—'}</td>
             <td>${fmtTime(t.entry_time)}</td>
             <td>${t.instrument || '—'}</td>
@@ -124,6 +131,7 @@ const TradesTable = (() => {
         const badgeCls   = isSinSetup ? 'badge-sinsetup' : 'badge-noopero'
         html += `
           <tr class="row-noopero">
+            <td class="col-dow">${dayOfWeek(s.sesion_date)}</td>
             <td>${s.sesion_date}</td>
             <td>—</td>
             <td colspan="5">
