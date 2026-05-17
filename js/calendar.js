@@ -152,6 +152,25 @@ const Calendar = (() => {
     grid.querySelectorAll('[data-date]').forEach(cell => {
       cell.addEventListener('click', () => openDayModal(cell.dataset.date))
     })
+
+    // Tarjeta P&L mensual debajo del calendario
+    const totalPnl = Object.values(tradesCache).flat()
+      .reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
+    const monthName = MONTHS_ES[currentMonth - 1]
+    const pnlBox = document.getElementById('calMonthPnl')
+    if (pnlBox) {
+      pnlBox.innerHTML = `
+        <div class="cal-totalpnl-card">
+          <div class="cal-totalpnl-icon ${totalPnl >= 0 ? '' : 'negative'}">
+            <i class="ti ti-currency-dollar"></i>
+          </div>
+          <div class="cal-totalpnl-body">
+            <div class="cal-totalpnl-label">P&amp;L Neto — ${monthName} ${currentYear}</div>
+            <div class="cal-totalpnl-value ${totalPnl >= 0 ? 'positive' : 'negative'}">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}</div>
+            <div class="cal-totalpnl-sub">Total del mes</div>
+          </div>
+        </div>`
+    }
   }
 
   function renderMonthlySummary() {

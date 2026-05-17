@@ -130,7 +130,7 @@ const Metrics = (() => {
 
   async function init() {
     [allTrades, allSesiones] = await Promise.all([DB.getTrades(), DB.getSesiones()])
-    render('all')
+    render('month')
 
     document.querySelectorAll('.period-btn').forEach(btn => {
       btn.addEventListener('click', () => {
