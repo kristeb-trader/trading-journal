@@ -141,7 +141,8 @@ small { font-size: 0.82em; }
 .dot.green { background: var(--accent); }
 .dot.red { background: var(--red); }
 .dot.mixed { background: var(--warning); }
-.dot.gray { background: var(--bg3); }
+.dot.sinsetup { background: rgba(99,102,241,0.85); }
+.dot.gray { background: var(--bg3); border: 1px solid var(--border); }
 
 .calendar-grid {
   display: grid;

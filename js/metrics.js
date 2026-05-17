@@ -96,6 +96,13 @@ const Metrics = (() => {
     const topError = errorFrequency(sesiones)
     const tradingDays = new Set(trades.map(t => t.trade_date)).size
     const avgPnl = tradingDays > 0 ? (netPnl / tradingDays) : 0
+    const activeSesiones = sesiones.filter(s => !s.no_opero)
+    const disciplinePct = activeSesiones.length > 0
+      ? Math.round(activeSesiones.reduce((sum, s) => {
+          return sum + [s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
+            .filter(Boolean).length / 6
+        }, 0) / activeSesiones.length * 100)
+      : 0
 
     const cards = [
       { label: 'P&L Neto Total', value: `${netPnl >= 0 ? '+' : ''}$${netPnl.toFixed(2)}`, icon: 'ti-currency-dollar', color: netPnl >= 0 ? 'green' : 'red', sub: `Promedio: ${avgPnl >= 0 ? '+' : ''}$${avgPnl.toFixed(0)}/día` },
@@ -104,7 +111,7 @@ const Metrics = (() => {
       { label: 'Racha actual', value: streak.count > 0 ? `${streak.count} ${streak.type === 'win' ? '🟢' : '🔴'}` : '—', icon: 'ti-flame', color: streak.type === 'win' ? 'green' : 'red', sub: streak.type === 'win' ? 'victorias seguidas' : streak.type === 'loss' ? 'pérdidas seguidas' : '' },
       { label: 'Mejor día', value: best ? `+$${best[1].toFixed(0)}` : '—', icon: 'ti-trending-up', color: 'green', sub: best ? best[0] : '' },
       { label: 'Peor día', value: worst ? `$${worst[1].toFixed(0)}` : '—', icon: 'ti-trending-down', color: 'red', sub: worst ? worst[0] : '' },
-      { label: 'Sesiones limpias', value: `${clean}/${sesiones.filter(s => !s.no_opero).length}`, icon: 'ti-checkup-list', color: 'green', sub: sesiones.length > 0 ? `${(clean / Math.max(sesiones.filter(s => !s.no_opero).length, 1) * 100).toFixed(0)}% disciplina` : '' },
+      { label: 'Disciplina', value: `${disciplinePct}%`, icon: 'ti-checkup-list', color: disciplinePct >= 80 ? 'green' : disciplinePct >= 50 ? 'neutral' : 'red', sub: `${clean}/${activeSesiones.length} sesiones limpias` },
       { label: 'Error más frecuente', value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]} veces incumplido` : 'Sin datos' },
     ]
 

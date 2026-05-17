@@ -105,15 +105,15 @@ const Calendar = (() => {
           ? `<div class="cal-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(0)}</div>`
           : ''
         const tradeCount = trades.length > 0
-          ? `<div class="cal-count">${trades.length}t</div>` : ''
+          ? `<div class="cal-count">${trades.length} trade${trades.length !== 1 ? 's' : ''}</div>` : ''
         const clickable = !isFuture ? `data-date="${dateStr}" style="cursor:pointer"` : ''
 
         let statusBadge = ''
         if (!isFuture && sesion?.no_opero) {
           if (sesion.motivo_no_opero === 'Sin setup') {
-            statusBadge = `<div class="cal-status-badge badge-sinsetup"><i class="ti ti-eye-off"></i> Sin setup</div>`
+            statusBadge = `<div class="cal-status-badge badge-sinsetup"><i class="ti ti-eye-off"></i> Sin entradas</div>`
           } else {
-            statusBadge = `<div class="cal-status-badge badge-noopero"><i class="ti ti-user-off"></i> No op.</div>`
+            statusBadge = `<div class="cal-status-badge badge-noopero"><i class="ti ti-user-off"></i> No operé</div>`
           }
         }
 
@@ -149,7 +149,6 @@ const Calendar = (() => {
     }
 
     grid.innerHTML = html
-    renderMonthlySummary()
     grid.querySelectorAll('[data-date]').forEach(cell => {
       cell.addEventListener('click', () => openDayModal(cell.dataset.date))
     })
