@@ -141,7 +141,10 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
       const rawText = await res.text()
       const data = JSON.parse(rawText)
       const texto = data?.content?.[0]?.text || data?.completion || ''
-      document.getElementById('resumenIA').value = texto
+      const ta = document.getElementById('resumenIA')
+      ta.value = texto
+      ta.style.height = 'auto'
+      ta.style.height = ta.scrollHeight + 'px'
       if (texto) {
         Toast.show('Resumen generado con IA', 'success')
       } else {
@@ -272,7 +275,10 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
     }
 
     document.getElementById('analisisTrader').value = sesion.analisis_trader || ''
-    document.getElementById('resumenIA').value = sesion.resumen_ia || ''
+    const taIA = document.getElementById('resumenIA')
+    taIA.value = sesion.resumen_ia || ''
+    taIA.style.height = 'auto'
+    taIA.style.height = taIA.scrollHeight + 'px'
     if (sesion.imagen_url) {
       document.getElementById('imagenUrl').value = sesion.imagen_url
       document.getElementById('previewImg').src = sesion.imagen_url
@@ -364,6 +370,10 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
     setupImageUpload()
     setupCasuisticas()
     loadCasuisticasDropdown()
+    document.getElementById('resumenIA').addEventListener('input', function() {
+      this.style.height = 'auto'
+      this.style.height = this.scrollHeight + 'px'
+    })
     document.getElementById('sessionForm').addEventListener('submit', handleSubmit)
     document.getElementById('generateAI').addEventListener('click', generateAI)
     document.getElementById('clearForm').addEventListener('click', clearForm)
