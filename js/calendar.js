@@ -2,9 +2,10 @@
 const Calendar = (() => {
   let currentYear = new Date().getFullYear()
   let currentMonth = new Date().getMonth() + 1 // 1-based
-  let tradesCache = {}   // date → [trades]
-  let sesionesCache = {} // date → sesion
-  let allTradesRaw = []  // sin filtrar por cuenta
+  let tradesCache = {}      // date → [trades]
+  let sesionesCache = {}    // date → sesion
+  let casuisticasCache = {} // date → true (has errors)
+  let allTradesRaw = []     // sin filtrar por cuenta
 
   function abbreviateAccount(account) {
     if (!account) return '—'
@@ -51,10 +52,14 @@ const Calendar = (() => {
   }
 
   async function load() {
-    const [trades, sesiones] = await Promise.all([
+    const [trades, sesiones, casuisticas] = await Promise.all([
       DB.getTradesByMonth(currentYear, currentMonth),
       DB.getSesiones(),
+      DB.getCasuisticasByMonth(currentYear, currentMonth),
     ])
+
+    casuisticasCache = {}
+    casuisticas.forEach(c => { casuisticasCache[c.sesion_date] = true })
 
     allTradesRaw = trades
     buildAccountFilterCalendar(trades)
@@ -148,12 +153,29 @@ const Calendar = (() => {
           }
         }
 
+        // Icono error (superior derecha)
+        const errorIcon = !isFuture && casuisticasCache[dateStr]
+          ? `<div class="cal-icon-error" title="Errores registrados"><i class="ti ti-alert-triangle"></i></div>`
+          : ''
+
+        // Icono dirección (inferior derecha)
+        let dirIcon = ''
+        if (!isFuture && trades.length > 0) {
+          const longs  = trades.filter(t => t.market_pos?.toLowerCase() === 'long').length
+          const shorts = trades.filter(t => t.market_pos?.toLowerCase() === 'short').length
+          if (longs > 0 && shorts === 0)      dirIcon = `<div class="cal-icon-dir dir-long"  title="Long"><i class="ti ti-trending-up"></i></div>`
+          else if (shorts > 0 && longs === 0) dirIcon = `<div class="cal-icon-dir dir-short" title="Short"><i class="ti ti-trending-down"></i></div>`
+          else if (longs > 0 && shorts > 0)   dirIcon = `<div class="cal-icon-dir dir-mixed" title="Long + Short"><i class="ti ti-arrows-split-2"></i></div>`
+        }
+
         html += `
           <div class="${cellClass}" ${clickable}>
             <div class="cal-day-num">${parseInt(dateStr.slice(8))}</div>
+            ${errorIcon}
             ${pnlHtml}
             ${tradeCount}
             ${statusBadge}
+            ${dirIcon}
           </div>`
       }
 
