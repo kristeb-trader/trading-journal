@@ -414,15 +414,24 @@ async function handleNotify(request, env) {
   }
 
   const t = await request.json();
-  const dir   = t.market_pos === 'Long' ? '▲ Long' : '▼ Short';
-  const emoji = t.resultado === 'target' ? '✅ Target' :
-                t.resultado === 'stop'   ? '🔴 Stop'   : '⚫ Otro';
-  const sign  = t.profit >= 0 ? '+' : '';
+
+  // Solo el nombre del instrumento sin fecha (ej. "MNQ 06-26" → "MNQ")
+  const instrument = t.instrument?.split(' ')[0] || t.instrument
+
+  // Cuenta abreviada: "PA-APEX-23411-03" → "PA-APEX", "SIM101" → "SIM101"
+  const accountParts = (t.account || '').split('-')
+  const account = accountParts.length > 2 ? accountParts.slice(0, 2).join('-') : (t.account || '')
+
+  const isLong = t.market_pos === 'Long'
+  const dir    = isLong ? '🟢 ▲ Long' : '🔴 ▼ Short'
+  const emoji  = t.resultado === 'target' ? '✅ Target' :
+                 t.resultado === 'stop'   ? '🔴 Stop'   : '⚫ Otro'
+  const sign   = t.profit >= 0 ? '+' : ''
 
   const text =
-    `🔔 <b>Trade cerrado — ${t.instrument}</b>\n` +
+    `🔔 <b>Trade cerrado — ${instrument}</b>\n` +
+    `${account ? `🏦 ${account}\n` : ''}` +
     `${dir} | ${t.qty} contrato${t.qty !== 1 ? 's' : ''}\n` +
-    `Entrada: ${parseFloat(t.entry_price).toFixed(2)} → Salida: ${parseFloat(t.exit_price).toFixed(2)}\n` +
     `PnL: <b>${sign}$${Math.abs(parseFloat(t.profit)).toFixed(2)}</b> ${emoji}\n` +
     `MAE: $${parseFloat(t.mae).toFixed(2)} | MFE: $${parseFloat(t.mfe).toFixed(2)}`;
 
