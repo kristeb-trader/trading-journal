@@ -741,6 +741,12 @@ body.modal-open { overflow: hidden; }
 }
 .modal-cas-row .cas-badge-t,
 .modal-cas-row .cas-badge-s { font-size: 0.78rem; }
+.modal-section-title {
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+  color: var(--text3); letter-spacing: 0.05em;
+  margin: 14px 0 8px; display: flex; align-items: center; gap: 5px;
+}
+.modal-empty-sub { font-size: 0.83rem; color: var(--text3); padding: 4px 0; }
 
 /* ── Discipline Modal ────────────────────────────────────────────────── */
 .disc-section-title {

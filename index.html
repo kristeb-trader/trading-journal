@@ -243,8 +243,16 @@
               </div>
 
               <div class="form-group">
-                <label for="setup">Descripción del setup</label>
-                <input type="text" id="setup" name="setup" placeholder="ej. Retroceso zona 21400 con consecución, 3ª corrida alcista">
+                <label for="setup"><i class="ti ti-chart-dots-3" style="font-size:0.9rem; margin-right:4px"></i>SetUp</label>
+                <select id="setup" name="setup">
+                  <option value="">Seleccionar setup...</option>
+                  <option>IRI Apertura Alcista</option>
+                  <option>IRI Apertura Bajista</option>
+                  <option>IRI Continuación Alcista</option>
+                  <option>IRI Continuación Bajista</option>
+                  <option>Reingreso Alcista</option>
+                  <option>Reingreso Bajista</option>
+                </select>
               </div>
 
               <!-- Checklist -->
@@ -454,7 +462,6 @@
         <button class="tab-btn active" data-tab="resumen">Resumen</button>
         <button class="tab-btn" data-tab="checklist">Checklist</button>
         <button class="tab-btn" data-tab="analisis">Análisis</button>
-        <button class="tab-btn" data-tab="errores">Errores</button>
         <button class="tab-btn" data-tab="imagen">Imagen</button>
       </div>
       <div class="modal-content">
@@ -466,9 +473,6 @@
         </div>
         <div class="tab-panel" id="tab-analisis">
           <div id="modalAnalisis"></div>
-        </div>
-        <div class="tab-panel" id="tab-errores">
-          <div id="modalErrores"></div>
         </div>
         <div class="tab-panel" id="tab-imagen">
           <div id="modalImagen"></div>

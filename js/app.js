@@ -101,26 +101,28 @@ const Modal = {
         ${sesion.resumen_ia ? `<div class="field-block ia-block"><label><i class="ti ti-sparkles"></i> Resumen IA</label><p>${sesion.resumen_ia}</p></div>` : ''}
       </div>` : '<p class="text-dim">Sin datos de análisis para este día.</p>'
 
-    // ── Imagen tab ──
-    document.getElementById('modalImagen').innerHTML = sesion?.imagen_url
+    // ── Imagen tab (imagen + tipificación + sugerencias) ──
+    const casuisticas = dateStr ? await DB.getCasuisticasByDate(dateStr) : []
+
+    const imgHtml = sesion?.imagen_url
       ? `<div class="modal-image-wrap"><img src="${sesion.imagen_url}" alt="Captura del día" loading="lazy" style="cursor:zoom-in" title="Clic para ver en tamaño completo"></div>`
       : '<div class="modal-no-trade"><i class="ti ti-photo-off"></i><p>Sin imagen para este día</p></div>'
 
-    // ── Errores / Casuísticas tab ──
-    const casuisticas = dateStr ? await DB.getCasuisticasByDate(dateStr) : []
-    if (casuisticas.length === 0) {
-      document.getElementById('modalErrores').innerHTML =
-        '<div class="modal-no-trade"><i class="ti ti-clipboard-check"></i><p>Sin tipificaciones para este día</p></div>'
-    } else {
-      document.getElementById('modalErrores').innerHTML = `
-        <div style="padding:4px 0">
-          ${casuisticas.map(c => `
+    const erroresHtml = `
+      <div class="modal-section-title"><i class="ti ti-clipboard-list"></i> Tipificación del día</div>
+      ${casuisticas.length > 0
+        ? casuisticas.map(c => `
             <div class="modal-cas-row">
               <span>${c.casuistica}</span>
               <span class="${c.resultado === 'T' ? 'cas-badge-t' : 'cas-badge-s'}">${c.resultado}</span>
-            </div>`).join('')}
-        </div>`
-    }
+            </div>`).join('')
+        : '<p class="modal-empty-sub">Sin tipificaciones registradas</p>'}`
+
+    const sugerenciasHtml = `
+      <div class="modal-section-title" style="margin-top:16px"><i class="ti ti-bulb"></i> Sugerencias</div>
+      <p class="modal-empty-sub">Próximamente...</p>`
+
+    document.getElementById('modalImagen').innerHTML = imgHtml + erroresHtml + sugerenciasHtml
 
     // Lightbox al hacer clic en la imagen
     setTimeout(() => {

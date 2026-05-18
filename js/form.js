@@ -368,9 +368,17 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
     document.getElementById('generateAI').addEventListener('click', generateAI)
     document.getElementById('clearForm').addEventListener('click', clearForm)
 
-    // Cargar casuísticas al cambiar fecha
-    document.getElementById('sesionDate').addEventListener('change', () => {
-      loadCasuisticasForDate(document.getElementById('sesionDate').value)
+    // Cargar casuísticas y auto-calcular retroceso al cambiar fecha
+    document.getElementById('sesionDate').addEventListener('change', async () => {
+      const date = document.getElementById('sesionDate').value
+      loadCasuisticasForDate(date)
+      if (date) {
+        const trades = await DB.getTradesByDate(date)
+        if (trades.length > 0) {
+          const netPnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
+          document.getElementById('puntosRetroceso').value = Math.abs(netPnl / 2).toFixed(2)
+        }
+      }
     })
 
     // Auto-invalidar checklist de 5 velas si velas > 5
