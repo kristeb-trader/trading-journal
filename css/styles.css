@@ -79,6 +79,62 @@ small { font-size: 0.82em; }
 .nav-item:hover { background: var(--bg3); color: var(--text); }
 .nav-item.active { background: var(--accent-dim); color: var(--accent); font-weight: 500; }
 
+/* ── Sidebar months ─────────────────────────────────────────────────── */
+.sidebar-months {
+  padding: 12px 8px 4px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sidebar-months-title {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+  color: var(--text3); padding: 0 8px 6px;
+}
+.months-list { list-style: none; padding: 0; margin: 0; }
+.month-nav-item {
+  padding: 6px 12px; border-radius: var(--radius);
+  font-size: 0.82rem; color: var(--text2); cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.month-nav-item:hover { background: var(--bg3); color: var(--text); }
+.month-nav-item.active { background: var(--accent-dim); color: var(--accent); font-weight: 500; }
+
+/* ── Gallery grid ───────────────────────────────────────────────────── */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  padding: 4px 0 24px;
+}
+.gallery-thumb {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+.gallery-thumb:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+}
+.gallery-thumb img {
+  width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block;
+  background: var(--bg2);
+}
+.gallery-date {
+  padding: 6px 10px;
+  font-size: 0.76rem; color: var(--text3); font-weight: 500;
+  text-align: center;
+}
+.gallery-empty {
+  grid-column: 1 / -1;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; padding: 60px 0; color: var(--text3);
+}
+.gallery-empty i { font-size: 2.5rem; }
+
 .sidebar-footer { padding: 12px 16px; border-top: 1px solid var(--border); }
 .account-badge {
   display: flex; align-items: center; gap: 8px;
@@ -842,7 +898,8 @@ body.modal-open { overflow: hidden; }
     z-index: 200;
   }
   .sidebar-header,
-  .sidebar-footer { display: none; }
+  .sidebar-footer,
+  .sidebar-months { display: none; }
 
   .nav-menu {
     flex-direction: row;

@@ -37,6 +37,10 @@
         <i class="ti ti-list-details"></i>
         <span>Trades</span>
       </li>
+      <li class="nav-item" data-section="gallery" title="Imágenes">
+        <i class="ti ti-photo"></i>
+        <span>Imágenes</span>
+      </li>
       <li class="nav-item" data-section="register" title="Registrar sesión">
         <i class="ti ti-square-rounded-plus"></i>
         <span>Registrar</span>
@@ -50,6 +54,12 @@
         <span>Datos</span>
       </li>
     </ul>
+    <!-- Meses — navegación rápida a galería por mes -->
+    <div class="sidebar-months">
+      <div class="sidebar-months-title">MESES</div>
+      <ul class="months-list" id="monthsList"></ul>
+    </div>
+
     <div class="sidebar-footer">
       <div class="account-badge" title="Cuenta Fondeo">
         <i class="ti ti-building-bank"></i>
@@ -423,6 +433,14 @@
         </div>
       </section>
 
+      <!-- ═══ 7. GALERÍA DE IMÁGENES ═══════════════════════════════════════ -->
+      <section class="section" id="section-gallery">
+        <div class="section-header">
+          <h2 id="galleryTitle">Imágenes</h2>
+        </div>
+        <div class="gallery-grid" id="galleryGrid"></div>
+      </section>
+
       <!-- ═══ 6. ANÁLISIS ══════════════════════════════════════════════════ -->
       <section class="section" id="section-analysis">
         <div class="section-header">
@@ -561,6 +579,7 @@
   <script src="js/form.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/gallery.js"></script>
   <script src="js/app.js"></script>
 
 </body>

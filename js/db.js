@@ -42,6 +42,16 @@ const DB = {
     return data
   },
 
+  async getSessionsWithImages() {
+    const { data, error } = await supa
+      .from('sesiones')
+      .select('sesion_date, imagen_url')
+      .not('imagen_url', 'is', null)
+      .order('sesion_date', { ascending: false })
+    if (error) throw error
+    return data
+  },
+
   // ── Sesiones ─────────────────────────────────────────────────────────────
 
   async getSesiones() {

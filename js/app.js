@@ -162,6 +162,7 @@ const Nav = {
   sections: {
     calendar: 'Calendario',
     trades: 'Trades',
+    gallery: 'Imágenes',
     register: 'Registrar Sesión',
     analysis: 'Análisis',
     data: 'Datos',
@@ -184,6 +185,7 @@ const Nav = {
         if (sectionId === 'calendar') { await Calendar.init(); await Metrics.init() }
         if (sectionId === 'trades') await TradesTable.init()
         if (sectionId === 'register') SessionForm.init()
+        if (sectionId === 'gallery') await Gallery.init()
         if (sectionId === 'analysis') await Charts.init()
         if (sectionId === 'data') await DataManager.init()
       } catch (err) {
