@@ -79,25 +79,20 @@ small { font-size: 0.82em; }
 .nav-item:hover { background: var(--bg3); color: var(--text); }
 .nav-item.active { background: var(--accent-dim); color: var(--accent); font-weight: 500; }
 
-/* ── Sidebar months ─────────────────────────────────────────────────── */
-.sidebar-months {
-  padding: 12px 8px 4px;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
+/* ── Gallery months bar ─────────────────────────────────────────────── */
+.gallery-months-bar {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 20px;
 }
-.sidebar-months-title {
-  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
-  color: var(--text3); padding: 0 8px 6px;
+.gallery-month-btn {
+  padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card); color: var(--text2);
+  font-size: 0.82rem; cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
 }
-.months-list { list-style: none; padding: 0; margin: 0; }
-.month-nav-item {
-  padding: 6px 12px; border-radius: var(--radius);
-  font-size: 0.82rem; color: var(--text2); cursor: pointer;
-  transition: background var(--transition), color var(--transition);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.month-nav-item:hover { background: var(--bg3); color: var(--text); }
-.month-nav-item.active { background: var(--accent-dim); color: var(--accent); font-weight: 500; }
+.gallery-month-btn:hover { background: var(--bg3); color: var(--text); border-color: var(--text3); }
+.gallery-month-btn.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); font-weight: 600; }
 
 /* ── Gallery grid ───────────────────────────────────────────────────── */
 .gallery-grid {
@@ -898,8 +893,7 @@ body.modal-open { overflow: hidden; }
     z-index: 200;
   }
   .sidebar-header,
-  .sidebar-footer,
-  .sidebar-months { display: none; }
+  .sidebar-footer { display: none; }
 
   .nav-menu {
     flex-direction: row;

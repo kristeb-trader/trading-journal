@@ -10,25 +10,26 @@ const Gallery = (() => {
     return url.replace('/upload/', '/upload/c_fill,w_280,h_180,q_auto,f_auto/')
   }
 
-  function buildMonthNav() {
-    const months = [...new Set(allImages.map(i => i.sesion_date.slice(0, 7)))]
-      .sort().reverse()
-    const list = document.getElementById('monthsList')
-    if (!list) return
+  function buildMonthsBar() {
+    const months = [...new Set(allImages.map(i => i.sesion_date.slice(0, 7)))].sort()
+    const bar = document.getElementById('galleryMonthsBar')
+    if (!bar) return
 
-    list.innerHTML = months.map(m => {
-      const [y, mo] = m.split('-')
-      const label = `${MONTHS_ES[parseInt(mo) - 1]} ${y}`
-      return `<li class="month-nav-item${m === activeMonth ? ' active' : ''}" data-month="${m}">${label}</li>`
-    }).join('')
+    bar.innerHTML = `
+      <button class="gallery-month-btn${!activeMonth ? ' active' : ''}" data-month="">
+        Todas
+      </button>` +
+      months.map(m => {
+        const [y, mo] = m.split('-')
+        const label = `${MONTHS_ES[parseInt(mo) - 1]} ${y}`
+        return `<button class="gallery-month-btn${m === activeMonth ? ' active' : ''}" data-month="${m}">${label}</button>`
+      }).join('')
 
-    list.querySelectorAll('.month-nav-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const clicked = item.dataset.month
-        activeMonth = clicked === activeMonth ? null : clicked
-        Nav.go('gallery')
+    bar.querySelectorAll('.gallery-month-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeMonth = btn.dataset.month || null
         render()
-        buildMonthNav()
+        buildMonthsBar()
       })
     })
   }
@@ -67,7 +68,7 @@ const Gallery = (() => {
 
   async function init() {
     allImages = await DB.getSessionsWithImages()
-    buildMonthNav()
+    buildMonthsBar()
     render()
   }
 

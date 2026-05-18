@@ -47,7 +47,7 @@ const DB = {
       .from('sesiones')
       .select('sesion_date, imagen_url')
       .not('imagen_url', 'is', null)
-      .order('sesion_date', { ascending: false })
+      .order('sesion_date', { ascending: true })
     if (error) throw error
     return data
   },
