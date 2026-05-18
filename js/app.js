@@ -132,8 +132,8 @@ const Modal = {
     // Reset to first tab
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'))
-    document.querySelector('.tab-btn[data-tab="resumen"]').classList.add('active')
-    document.getElementById('tab-resumen').classList.add('active')
+    document.querySelector('.tab-btn[data-tab="imagen"]').classList.add('active')
+    document.getElementById('tab-imagen').classList.add('active')
 
     modal.classList.remove('hidden')
     document.body.classList.add('modal-open')
