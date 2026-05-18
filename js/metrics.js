@@ -95,21 +95,51 @@ const Metrics = (() => {
     return maxDD
   }
 
+  function calMonth() {
+    if (typeof Calendar !== 'undefined') return Calendar.getMonth()
+    return new Date().getMonth() + 1
+  }
+  function calYear() {
+    if (typeof Calendar !== 'undefined') return Calendar.getYear()
+    return new Date().getFullYear()
+  }
+
   function filterByPeriod(trades, sesiones, period) {
     if (period === 'all') return { trades, sesiones }
-    const now = new Date()
-    let from
     if (period === 'month') {
-      from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
-    } else { // week
-      const d = new Date(now)
-      d.setDate(d.getDate() - d.getDay() + 1) // Monday
-      from = d.toISOString().slice(0, 10)
+      const y = calYear(), m = calMonth()
+      const from = `${y}-${String(m).padStart(2, '0')}-01`
+      const lastDay = new Date(y, m, 0).getDate()
+      const to = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+      return {
+        trades: trades.filter(t => (t.trade_date || '') >= from && (t.trade_date || '') <= to),
+        sesiones: sesiones.filter(s => s.sesion_date >= from && s.sesion_date <= to),
+      }
     }
+    // week
+    const d = new Date()
+    d.setDate(d.getDate() - d.getDay() + 1)
+    const from = d.toISOString().slice(0, 10)
     return {
       trades: trades.filter(t => (t.trade_date || '') >= from),
       sesiones: sesiones.filter(s => s.sesion_date >= from),
     }
+  }
+
+  function filterCasuisticasByPeriod(casuisticas, period) {
+    if (period === 'all') return casuisticas
+    if (period === 'month') {
+      const y = calYear(), m = calMonth()
+      const from = `${y}-${String(m).padStart(2, '0')}-01`
+      const lastDay = new Date(y, m, 0).getDate()
+      const to = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+      return casuisticas.filter(c => c.sesion_date >= from && c.sesion_date <= to)
+    }
+    // week
+    const d = new Date()
+    d.setDate(d.getDate() - d.getDay() + 1)
+    const from = d.toISOString().slice(0, 10)
+    return casuisticas.filter(c => c.sesion_date >= from)
   }
 
   const CHECKLIST_KEYS = [
@@ -220,13 +250,8 @@ const Metrics = (() => {
     const maxDD = calcMaxDrawdown(trades)
     const activeSesiones = sesiones.filter(s => !s.no_opero)
 
-    // Casuísticas filtradas por período
-    const periodCasuisticas = period === 'all' ? allCasuisticas : (() => {
-      const from = sesiones.length > 0
-        ? sesiones.map(s => s.sesion_date).sort()[0]
-        : ''
-      return allCasuisticas.filter(c => c.sesion_date >= from)
-    })()
+    // Casuísticas filtradas por el mismo período
+    const periodCasuisticas = filterCasuisticasByPeriod(allCasuisticas, period)
     const casByDate = {}
     periodCasuisticas.forEach(c => { casByDate[c.sesion_date] = true })
 
@@ -250,7 +275,7 @@ const Metrics = (() => {
       { label: 'Mejor día', value: best ? `+$${best[1].toFixed(0)}` : '—', icon: 'ti-trending-up', color: 'green', sub: best ? best[0] : '' },
       { label: 'Peor día', value: worst ? `$${worst[1].toFixed(0)}` : '—', icon: 'ti-trending-down', color: 'red', sub: worst ? worst[0] : '' },
       { label: 'Disciplina', value: `${disciplinePct}%`, icon: 'ti-checkup-list', color: disciplinePct >= 80 ? 'green' : disciplinePct >= 50 ? 'neutral' : 'red', sub: `${clean}/${activeSesiones.length} sesiones limpias` },
-      { label: 'Error más frecuente', value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]}x en tipificaciones` : 'Sin errores registrados', clickable: true },
+      { label: 'Error más frecuente', value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]} ${topError[1] === 1 ? 'Error' : 'Errores'}` : 'Sin errores registrados', clickable: true },
       {
         label: 'Profit Factor',
         value: pf != null ? pf.toFixed(2) : '—',

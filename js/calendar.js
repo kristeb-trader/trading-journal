@@ -298,6 +298,7 @@ const Calendar = (() => {
     if (currentMonth > 12) { currentMonth = 1; currentYear++ }
     if (currentMonth < 1) { currentMonth = 12; currentYear-- }
     load()
+    if (typeof Metrics !== 'undefined') Metrics.rerender()
   }
 
   function init() {
@@ -310,5 +311,5 @@ const Calendar = (() => {
     load()
   }
 
-  return { init, load }
+  return { init, load, getYear: () => currentYear, getMonth: () => currentMonth }
 })()
