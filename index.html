@@ -84,14 +84,19 @@
       <section class="section active" id="section-calendar">
         <div class="section-header">
           <h2>Calendario de Operativa</h2>
-          <div class="calendar-nav">
-            <button class="btn-icon" id="prevMonth" title="Mes anterior">
-              <i class="ti ti-chevron-left"></i>
-            </button>
-            <span id="calendarTitle">Cargando...</span>
-            <button class="btn-icon" id="nextMonth" title="Mes siguiente">
-              <i class="ti ti-chevron-right"></i>
-            </button>
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <div class="calendar-nav">
+              <button class="btn-icon" id="prevMonth" title="Mes anterior">
+                <i class="ti ti-chevron-left"></i>
+              </button>
+              <span id="calendarTitle">Cargando...</span>
+              <button class="btn-icon" id="nextMonth" title="Mes siguiente">
+                <i class="ti ti-chevron-right"></i>
+              </button>
+            </div>
+            <select class="filter-select" id="accountFilterCalendar">
+              <option value="all">Todas las cuentas</option>
+            </select>
           </div>
         </div>
 
@@ -126,6 +131,9 @@
           <h2>Registro de Trades</h2>
           <div class="table-controls">
             <input type="text" class="search-input" id="tradeSearch" placeholder="Buscar...">
+            <select class="filter-select" id="accountFilterTrades">
+              <option value="all">Todas las cuentas</option>
+            </select>
             <select class="filter-select" id="tradeFilter">
               <option value="all">Todos</option>
               <option value="target">Target</option>
@@ -143,6 +151,7 @@
                 <th>Fecha</th>
                 <th>Hora</th>
                 <th>Instrumento</th>
+                <th>Cuenta</th>
                 <th>Dirección</th>
                 <th>Contratos</th>
                 <th>P&amp;L</th>
@@ -151,7 +160,7 @@
               </tr>
             </thead>
             <tbody id="tradesTableBody">
-              <tr><td colspan="9" class="empty-row"><i class="ti ti-loader-2 spin"></i> Cargando...</td></tr>
+              <tr><td colspan="10" class="empty-row"><i class="ti ti-loader-2 spin"></i> Cargando...</td></tr>
             </tbody>
           </table>
         </div>

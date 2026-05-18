@@ -11,6 +11,12 @@ const TradesTable = (() => {
     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
   const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
 
+  function abbreviateAccount(account) {
+    if (!account) return '—'
+    const parts = account.split('-')
+    return parts.length > 2 ? parts.slice(0, 2).join('-') : account
+  }
+
   function dayOfWeek(dateStr) {
     if (!dateStr) return '—'
     return DAYS[new Date(dateStr + 'T12:00:00').getDay()]
@@ -59,9 +65,26 @@ const TradesTable = (() => {
     allRows.sort((a, b) => b.sortKey.localeCompare(a.sortKey))
   }
 
+  function buildAccountFilter() {
+    const accounts = {}
+    allTrades.forEach(t => {
+      if (!t.account) return
+      const abbr = abbreviateAccount(t.account)
+      accounts[abbr] = true
+    })
+    const sel = document.getElementById('accountFilterTrades')
+    const prev = sel.value
+    sel.innerHTML = '<option value="all">Todas las cuentas</option>' +
+      Object.keys(accounts).sort().map(a => `<option value="${a}">${a}</option>`).join('')
+    const paApex = Object.keys(accounts).find(a => a.startsWith('PA-APEX'))
+    if (prev && prev !== 'all') sel.value = prev
+    else if (paApex) sel.value = paApex
+  }
+
   function applyFilter() {
     const search    = document.getElementById('tradeSearch').value.toLowerCase()
     const filterVal = document.getElementById('tradeFilter').value
+    const accountVal = document.getElementById('accountFilterTrades').value
 
     filtered = allRows.filter(row => {
       if (row.type === 'session') {
@@ -74,10 +97,11 @@ const TradesTable = (() => {
       }
       if (filterVal === 'sin_setup') return false
       const t = row.data
+      const matchAccount = accountVal === 'all' || abbreviateAccount(t.account) === accountVal
       const matchFilter = filterVal === 'all' || t.resultado === filterVal
       const matchSearch = !search || [t.instrument, t.market_pos, t.exit_name, t.trade_date]
         .some(v => v?.toLowerCase().includes(search))
-      return matchFilter && matchSearch
+      return matchAccount && matchFilter && matchSearch
     })
     page = 0
     renderTable()
@@ -89,7 +113,7 @@ const TradesTable = (() => {
     const tbody = document.getElementById('tradesTableBody')
 
     if (slice.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9" class="empty-row">Sin resultados</td></tr>`
+      tbody.innerHTML = `<tr><td colspan="10" class="empty-row">Sin resultados</td></tr>`
       return
     }
 
@@ -103,7 +127,7 @@ const TradesTable = (() => {
         const [year, mon] = month.split('-')
         const monthName = MONTHS[parseInt(mon) - 1]
         html += `<tr class="month-separator">
-          <td colspan="9"><i class="ti ti-calendar-month"></i> ${monthName} ${year}</td>
+          <td colspan="10"><i class="ti ti-calendar-month"></i> ${monthName} ${year}</td>
         </tr>`
       }
 
@@ -115,7 +139,8 @@ const TradesTable = (() => {
             <td class="col-dow">${dayOfWeek(t.trade_date)}</td>
             <td>${t.trade_date || '—'}</td>
             <td>${fmtTime(t.entry_time)}</td>
-            <td>${t.instrument || '—'}</td>
+            <td>${t.instrument?.split(' ')[0] || '—'}</td>
+            <td class="col-account">${abbreviateAccount(t.account)}</td>
             <td>${dirBadge(t.market_pos)}</td>
             <td class="text-center">${t.qty ?? '—'}</td>
             <td class="${pnl >= 0 ? 'text-green' : 'text-red'} fw-bold">${pnl >= 0 ? '+' : ''}$${fmt(pnl)}</td>
@@ -137,7 +162,7 @@ const TradesTable = (() => {
             <td class="col-dow">${dayOfWeek(s.sesion_date)}</td>
             <td>${s.sesion_date}</td>
             <td>—</td>
-            <td colspan="5">
+            <td colspan="6">
               <span class="badge ${badgeCls}">
                 <i class="ti ${icon}"></i> ${label}
               </span>
@@ -190,12 +215,13 @@ const TradesTable = (() => {
   async function init() {
     ;[allTrades, allSesiones] = await Promise.all([DB.getTrades(), DB.getSesiones()])
     buildRows()
-    filtered = [...allRows]
-    renderTable()
-    renderPagination()
+    buildAccountFilter()
+    applyFilter()
 
+    buildAccountFilter()
     document.getElementById('tradeSearch').addEventListener('input', applyFilter)
     document.getElementById('tradeFilter').addEventListener('change', applyFilter)
+    document.getElementById('accountFilterTrades').addEventListener('change', applyFilter)
   }
 
   return { init, reload: init }

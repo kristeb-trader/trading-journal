@@ -4,6 +4,29 @@ const Calendar = (() => {
   let currentMonth = new Date().getMonth() + 1 // 1-based
   let tradesCache = {}   // date → [trades]
   let sesionesCache = {} // date → sesion
+  let allTradesRaw = []  // sin filtrar por cuenta
+
+  function abbreviateAccount(account) {
+    if (!account) return '—'
+    const parts = account.split('-')
+    return parts.length > 2 ? parts.slice(0, 2).join('-') : account
+  }
+
+  function buildAccountFilterCalendar(trades) {
+    const accounts = {}
+    trades.forEach(t => {
+      if (!t.account) return
+      const abbr = abbreviateAccount(t.account)
+      accounts[abbr] = true
+    })
+    const sel = document.getElementById('accountFilterCalendar')
+    const prev = sel.value
+    sel.innerHTML = '<option value="all">Todas las cuentas</option>' +
+      Object.keys(accounts).sort().map(a => `<option value="${a}">${a}</option>`).join('')
+    const paApex = Object.keys(accounts).find(a => a.startsWith('PA-APEX'))
+    if (prev && prev !== 'all') sel.value = prev
+    else if (paApex) sel.value = paApex
+  }
 
   const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
@@ -33,8 +56,16 @@ const Calendar = (() => {
       DB.getSesiones(),
     ])
 
+    allTradesRaw = trades
+    buildAccountFilterCalendar(trades)
+
+    const accountVal = document.getElementById('accountFilterCalendar').value
+    const filteredTrades = accountVal === 'all'
+      ? trades
+      : trades.filter(t => abbreviateAccount(t.account) === accountVal)
+
     tradesCache = {}
-    trades.forEach(t => {
+    filteredTrades.forEach(t => {
       const d = t.trade_date || t.entry_time?.slice(0, 10)
       if (!d) return
       if (!tradesCache[d]) tradesCache[d] = []
@@ -250,6 +281,7 @@ const Calendar = (() => {
   function init() {
     document.getElementById('prevMonth').addEventListener('click', () => navigate(-1))
     document.getElementById('nextMonth').addEventListener('click', () => navigate(1))
+    document.getElementById('accountFilterCalendar').addEventListener('change', () => load())
     load()
   }
 
