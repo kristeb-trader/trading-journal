@@ -292,24 +292,62 @@ async function boot() {
 // ── Lightbox ──────────────────────────────────────────────────────────────
 
 const Lightbox = {
-  open(src) {
+  _urls: [],
+  _idx: 0,
+  _handleKey: null,
+
+  // src: URL to open. urls: optional array for prev/next navigation. idx: current index in urls.
+  open(src, urls, idx) {
+    this._urls = (urls && urls.length > 0) ? urls : [src]
+    this._idx  = (idx != null && idx >= 0) ? idx : 0
+    this._show()
+  },
+
+  _show() {
+    document.getElementById('lightbox')?.remove()
+    document.removeEventListener('keydown', this._handleKey)
+
+    const src     = this._urls[this._idx]
+    const hasPrev = this._idx > 0
+    const hasNext = this._idx < this._urls.length - 1
+    const total   = this._urls.length
+
     const lb = document.createElement('div')
     lb.id = 'lightbox'
     lb.innerHTML = `
       <div class="lb-overlay">
         <button class="lb-close" title="Cerrar (Esc)"><i class="ti ti-x"></i></button>
+        ${hasPrev ? `<button class="lb-arrow lb-prev" title="Anterior (←)"><i class="ti ti-chevron-left"></i></button>` : ''}
         <img src="${src}" alt="Imagen completa">
+        ${hasNext ? `<button class="lb-arrow lb-next" title="Siguiente (→)"><i class="ti ti-chevron-right"></i></button>` : ''}
+        ${total > 1 ? `<div class="lb-counter">${this._idx + 1} / ${total}</div>` : ''}
       </div>`
     document.body.appendChild(lb)
     document.body.classList.add('modal-open')
     requestAnimationFrame(() => lb.querySelector('.lb-overlay').classList.add('visible'))
-    lb.addEventListener('click', e => { if (e.target === lb || e.target.closest('.lb-close')) this.close() })
-    document.addEventListener('keydown', this._esc = e => { if (e.key === 'Escape') this.close() })
+
+    lb.addEventListener('click', e => {
+      if (e.target === lb || e.target.closest('.lb-close')) this.close()
+      else if (e.target.closest('.lb-prev'))  this._prev()
+      else if (e.target.closest('.lb-next'))  this._next()
+    })
+
+    this._handleKey = e => {
+      if (e.key === 'Escape')      this.close()
+      if (e.key === 'ArrowLeft')   this._prev()
+      if (e.key === 'ArrowRight')  this._next()
+    }
+    document.addEventListener('keydown', this._handleKey)
   },
+
+  _prev() { if (this._idx > 0) { this._idx--; this._show() } },
+  _next() { if (this._idx < this._urls.length - 1) { this._idx++; this._show() } },
+
   close() {
     document.getElementById('lightbox')?.remove()
     document.body.classList.remove('modal-open')
-    document.removeEventListener('keydown', this._esc)
+    document.removeEventListener('keydown', this._handleKey)
+    this._handleKey = null
   }
 }
 

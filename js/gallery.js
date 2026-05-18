@@ -96,11 +96,42 @@ const Gallery = (() => {
       </div>`
   }
 
+  function emptyCard(dateStr) {
+    const today    = new Date().toISOString().slice(0, 10)
+    const isFuture = dateStr > today
+    const icon     = isFuture ? 'ti-clock' : 'ti-photo-off'
+    return `
+      <div class="gallery-thumb gallery-thumb-empty${isFuture ? ' gallery-thumb-future' : ''}">
+        <div class="gallery-thumb-placeholder">
+          <i class="ti ${icon}"></i>
+        </div>
+        <div class="gallery-footer">
+          <div class="gal-footer-left"></div>
+          <div class="gal-footer-date">${dateStr}</div>
+          <div class="gal-footer-right"></div>
+        </div>
+      </div>`
+  }
+
+  // Genera todos los días de lunes a viernes entre dos fechas (ISO)
+  function weekdaysBetween(startStr, endStr) {
+    const result = []
+    const cur = new Date(startStr + 'T12:00:00')
+    const end = new Date(endStr  + 'T12:00:00')
+    while (cur <= end) {
+      const dow = cur.getDay()
+      if (dow >= 1 && dow <= 5) result.push(cur.toISOString().slice(0, 10))
+      cur.setDate(cur.getDate() + 1)
+    }
+    return result
+  }
+
   function render() {
     const grid  = document.getElementById('galleryGrid')
     const title = document.getElementById('galleryTitle')
     if (!grid) return
 
+    const today    = new Date().toISOString().slice(0, 10)
     const filtered = activeMonth
       ? allImages.filter(i => i.sesion_date.startsWith(activeMonth))
       : allImages
@@ -112,30 +143,66 @@ const Gallery = (() => {
       title.textContent = 'Todas las imágenes'
     }
 
-    if (!filtered.length) {
+    // Mapa de imágenes por fecha
+    const imageByDate = {}
+    filtered.forEach(img => { imageByDate[img.sesion_date] = img })
+
+    let weekMap = {}  // monday → [dateStr, ...]
+
+    if (activeMonth) {
+      // Mes seleccionado: mostrar todos los días hábiles del mes (hasta hoy)
+      const [y, mo] = activeMonth.split('-').map(Number)
+      const monthStart = `${y}-${String(mo).padStart(2, '0')}-01`
+      const lastDay    = new Date(y, mo, 0).getDate()
+      const monthEnd   = `${y}-${String(mo).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+      const rangeEnd   = monthEnd < today ? monthEnd : today
+
+      const days = weekdaysBetween(mondayOf(monthStart), rangeEnd)
+      days.forEach(d => {
+        const mon = mondayOf(d)
+        if (!weekMap[mon]) weekMap[mon] = []
+        weekMap[mon].push(d)
+      })
+    } else {
+      // Vista "todas": solo semanas que tienen al menos una imagen;
+      // se rellenan los huecos Mon–Vie de esas semanas
+      if (!filtered.length) {
+        grid.innerHTML = `<div class="gallery-empty"><i class="ti ti-photo-off"></i><p>Sin imágenes para este período</p></div>`
+        return
+      }
+      const imageWeeks = [...new Set(filtered.map(img => mondayOf(img.sesion_date)))]
+      imageWeeks.forEach(monday => {
+        const fri = new Date(monday + 'T12:00:00')
+        fri.setDate(fri.getDate() + 4)
+        const friStr = fri.toISOString().slice(0, 10)
+        weekMap[monday] = weekdaysBetween(monday, friStr < today ? friStr : today)
+      })
+    }
+
+    const weeks = Object.keys(weekMap).sort()
+
+    if (!weeks.length) {
       grid.innerHTML = `<div class="gallery-empty"><i class="ti ti-photo-off"></i><p>Sin imágenes para este período</p></div>`
       return
     }
 
-    // Agrupar por semana (lunes)
-    const weekMap = {}
-    filtered.forEach(img => {
-      const key = mondayOf(img.sesion_date)
-      if (!weekMap[key]) weekMap[key] = []
-      weekMap[key].push(img)
-    })
+    // Lista ordenada de URLs (solo imágenes reales) para navegación en Lightbox
+    const allUrls = filtered.map(img => img.imagen_url)
 
-    const weeks = Object.keys(weekMap).sort()
     grid.innerHTML = weeks.map(monday => `
       <div class="gallery-week">
         <div class="gallery-week-header">${weekLabel(monday)}</div>
         <div class="gallery-week-row">
-          ${weekMap[monday].map(img => thumbCard(img)).join('')}
+          ${weekMap[monday].map(d => imageByDate[d] ? thumbCard(imageByDate[d]) : emptyCard(d)).join('')}
         </div>
       </div>`).join('')
 
-    grid.querySelectorAll('.gallery-thumb').forEach(thumb => {
-      thumb.addEventListener('click', () => Lightbox.open(thumb.dataset.url))
+    grid.querySelectorAll('.gallery-thumb:not(.gallery-thumb-empty)').forEach(thumb => {
+      thumb.addEventListener('click', () => {
+        const url = thumb.dataset.url
+        const idx = allUrls.indexOf(url)
+        Lightbox.open(url, allUrls, idx >= 0 ? idx : 0)
+      })
     })
   }
 

@@ -157,6 +157,24 @@ small { font-size: 0.82em; }
 }
 .gallery-empty i { font-size: 2.5rem; }
 
+/* Miniatura vacía (día sin imagen) */
+.gallery-thumb-empty {
+  cursor: default; opacity: 0.45;
+  border-style: dashed !important;
+  border-color: var(--border) !important;
+}
+.gallery-thumb-empty:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: var(--border) !important;
+}
+.gallery-thumb-future { opacity: 0.25; }
+.gallery-thumb-placeholder {
+  width: 100%; aspect-ratio: 16/10;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg2); color: var(--text3); font-size: 1.6rem;
+}
+
 .sidebar-footer { padding: 12px 16px; border-top: 1px solid var(--border); }
 .account-badge {
   display: flex; align-items: center; gap: 8px;
@@ -890,8 +908,13 @@ body.modal-open { overflow: hidden; }
 .lb-overlay { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 20px; opacity: 0; transition: opacity 0.2s ease; }
 .lb-overlay.visible { opacity: 1; }
 .lb-overlay img { max-width: 100%; max-height: 90vh; border-radius: var(--radius); box-shadow: 0 24px 80px rgba(0,0,0,0.8); cursor: zoom-out; }
-.lb-close { position: fixed; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.15); color: #fff; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: background var(--transition); }
+.lb-close { position: fixed; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.15); color: #fff; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: background var(--transition); z-index: 1; }
 .lb-close:hover { background: rgba(255,255,255,0.3); }
+.lb-arrow { position: fixed; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.12); color: #fff; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; transition: background var(--transition), opacity var(--transition); z-index: 1; }
+.lb-arrow:hover { background: rgba(255,255,255,0.28); }
+.lb-prev { left: 20px; }
+.lb-next { right: 20px; }
+.lb-counter { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.55); color: rgba(255,255,255,0.75); font-size: 0.82rem; padding: 4px 14px; border-radius: 20px; letter-spacing: 0.05em; z-index: 1; }
 
 /* ── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 900px) {

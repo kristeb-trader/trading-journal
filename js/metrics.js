@@ -251,7 +251,8 @@ const Metrics = (() => {
     const pf = calcProfitFactor(trades)
     const { avgWin, avgLoss } = calcAvgWinLoss(trades)
     const maxDD = calcMaxDrawdown(trades)
-    const activeSesiones = sesiones.filter(s => !s.no_opero)
+    // "Sin setup" days count: trader was present but no valid setup appeared
+    const activeSesiones = sesiones.filter(s => !s.no_opero || s.motivo_no_opero === 'Sin setup')
 
     // Casuísticas filtradas por el mismo período
     const periodCasuisticas = filterCasuisticasByPeriod(allCasuisticas, period)
