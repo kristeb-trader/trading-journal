@@ -243,7 +243,10 @@ const Metrics = (() => {
     const streak = calcStreak(trades)
     const { best, worst } = bestWorstDay(trades)
     const clean = cleanSessions(sesiones)
-    const tradingDays = new Set(trades.map(t => t.trade_date)).size
+    const sinSetupDates = sesiones
+      .filter(s => s.no_opero && s.motivo_no_opero === 'Sin setup')
+      .map(s => s.sesion_date)
+    const tradingDays = new Set([...trades.map(t => t.trade_date), ...sinSetupDates]).size
     const avgPnl = tradingDays > 0 ? (netPnl / tradingDays) : 0
     const pf = calcProfitFactor(trades)
     const { avgWin, avgLoss } = calcAvgWinLoss(trades)
