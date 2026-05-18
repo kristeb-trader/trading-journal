@@ -281,7 +281,10 @@ const Calendar = (() => {
   function init() {
     document.getElementById('prevMonth').addEventListener('click', () => navigate(-1))
     document.getElementById('nextMonth').addEventListener('click', () => navigate(1))
-    document.getElementById('accountFilterCalendar').addEventListener('change', () => load())
+    document.getElementById('accountFilterCalendar').addEventListener('change', () => {
+      load()
+      if (typeof Metrics !== 'undefined') Metrics.rerender()
+    })
     load()
   }
 

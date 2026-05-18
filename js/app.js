@@ -62,7 +62,6 @@ const Modal = {
               <span class="badge ${t.resultado === 'target' ? 'badge-target' : t.resultado === 'stop' ? 'badge-stop' : 'badge-other'}">${t.resultado || '—'}</span>
               <span>${t.market_pos === 'Long' ? '▲' : '▼'} ${t.market_pos}</span>
               <span>${t.qty} contratos</span>
-              <span>${parseFloat(t.entry_price).toFixed(2)} → ${parseFloat(t.exit_price).toFixed(2)}</span>
               <span class="${parseFloat(t.profit) >= 0 ? 'text-green' : 'text-red'} fw-bold">${parseFloat(t.profit) >= 0 ? '+' : ''}$${parseFloat(t.profit).toFixed(2)}</span>
               ${t.mae != null ? `<span class="text-dim">MAE: ${t.mae} | MFE: ${t.mfe}</span>` : ''}
             </div>`).join('')}

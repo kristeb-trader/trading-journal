@@ -197,8 +197,18 @@ const Metrics = (() => {
     document.getElementById('disciplineModal').classList.remove('hidden')
   }
 
+  function abbreviateAccount(account) {
+    if (!account) return '—'
+    const parts = account.split('-')
+    return parts.length > 2 ? parts.slice(0, 2).join('-') : account
+  }
+
   function render(period = 'all') {
-    const { trades, sesiones } = filterByPeriod(allTrades, allSesiones, period)
+    const accountVal = document.getElementById('accountFilterCalendar')?.value || 'all'
+    const accountFiltered = accountVal === 'all'
+      ? allTrades
+      : allTrades.filter(t => abbreviateAccount(t.account) === accountVal)
+    const { trades, sesiones } = filterByPeriod(accountFiltered, allSesiones, period)
 
     const totalTrades = trades.length
     const targets = trades.filter(t => t.resultado === 'target').length
@@ -291,5 +301,10 @@ const Metrics = (() => {
     })
   }
 
-  return { init, reload: init }
+  function rerender() {
+    const active = document.querySelector('.period-btn.active')
+    render(active?.dataset.period || 'month')
+  }
+
+  return { init, reload: init, rerender }
 })()
