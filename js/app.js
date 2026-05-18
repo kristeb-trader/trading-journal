@@ -109,14 +109,14 @@ const Modal = {
       : '<div class="modal-no-trade"><i class="ti ti-photo-off"></i><p>Sin imagen para este día</p></div>'
 
     const erroresHtml = `
-      <div class="modal-section-title"><i class="ti ti-clipboard-list"></i> Tipificación del día</div>
+      <div class="modal-section-title"><span style="font-size:0.95rem">⚠️</span> Errores</div>
       ${casuisticas.length > 0
         ? casuisticas.map(c => `
-            <div class="modal-cas-row">
+            <div class="modal-cas-row modal-cas-row-error">
               <span>${c.casuistica}</span>
               <span class="${c.resultado === 'T' ? 'cas-badge-t' : 'cas-badge-s'}">${c.resultado}</span>
             </div>`).join('')
-        : '<p class="modal-empty-sub">Sin tipificaciones registradas</p>'}`
+        : '<p class="modal-empty-sub">Sin errores registrados</p>'}`
 
     const sugerenciasHtml = `
       <div class="modal-section-title" style="margin-top:16px"><i class="ti ti-bulb"></i> Sugerencias</div>

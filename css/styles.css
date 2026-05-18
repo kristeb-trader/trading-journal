@@ -741,6 +741,11 @@ body.modal-open { overflow: hidden; }
 }
 .modal-cas-row .cas-badge-t,
 .modal-cas-row .cas-badge-s { font-size: 0.78rem; }
+.modal-cas-row-error {
+  background: var(--red-dim);
+  border: 1px solid rgba(226,75,74,0.2);
+  color: var(--text);
+}
 .modal-section-title {
   font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
   color: var(--text3); letter-spacing: 0.05em;
