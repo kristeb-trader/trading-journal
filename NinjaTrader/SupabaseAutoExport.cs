@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using NinjaTrader.Cbi;
 using NinjaTrader.NinjaScript;
@@ -19,11 +20,16 @@ using NinjaTrader.NinjaScript.Indicators;
  *   2. NinjaScript Editor → compilar (F5)
  *   3. Agregar al gráfico de NQ/MNQ
  *   4. Seleccionar la cuenta en el dropdown "Account Name"
+ *
+ * Fusión de contratos ATM:
+ *   Cuando el ATM opera 2+ contratos por separado, cada contrato genera
+ *   un ExecutionUpdate independiente. El indicador espera 3 segundos antes
+ *   de publicar, acumulando todos los cierres del mismo instrumento y
+ *   dirección en un único trade consolidado.
  */
 
 namespace NinjaTrader.NinjaScript.Indicators
 {
-    // Dropdown con las cuentas disponibles en NT8
     public class AccountNameConverter : TypeConverter
     {
         public override bool GetStandardValuesSupported(ITypeDescriptorContext context) => true;
@@ -49,11 +55,12 @@ namespace NinjaTrader.NinjaScript.Indicators
         private const string NOTIFY_ENDPOINT =
             "https://trading-journal-bot.kristerock.workers.dev/notify";
 
-        private const string NOTIFY_SECRET = "tj-notify-2026"; // mismo valor que NOTIFY_SECRET en Cloudflare Worker #2
+        private const string NOTIFY_SECRET = "tj-notify-2026";
 
         private const string SUPABASE_KEY =
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvdGhvc2xvemN0Zmxmcm55c3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzODQ1MTMsImV4cCI6MjA5Mzk2MDUxM30.8perbSMHaE2K73aRU2NjfrUsWgbwmm2lL2dA-e2CG18";
 
+        // ── Estado de posición ────────────────────────────────────────────────
         private readonly object syncLock = new object();
         private bool     inTrade;
         private double   entryPrice;
@@ -63,6 +70,27 @@ namespace NinjaTrader.NinjaScript.Indicators
         private double   maeExtreme;
         private double   mfeExtreme;
         private int      netQty;
+
+        // ── Ventana de fusión ATM (3 segundos) ───────────────────────────────
+        private readonly object mergeLock = new object();
+        private Timer    mergeTimer;
+        private bool     hasPending;
+
+        private string   pendingInstrument;
+        private string   pendingAccount;
+        private string   pendingMarketPos;
+        private int      pendingQty;
+        private double   pendingEntryPrice;   // promedio ponderado
+        private double   pendingExitPrice;    // promedio ponderado
+        private DateTime pendingEntryTime;
+        private DateTime pendingExitTime;
+        private string   pendingExitName;
+        private double   pendingProfit;       // suma
+        private double   pendingMae;          // suma
+        private double   pendingMfe;          // suma
+        private int      pendingBars;
+        private string   pendingTradeDate;
+        private string   pendingResultado;
 
         private Account    monitoredAccount;
         private HttpClient httpClient;
@@ -117,6 +145,16 @@ namespace NinjaTrader.NinjaScript.Indicators
                     monitoredAccount.ExecutionUpdate -= OnAccountExecutionUpdate;
                     monitoredAccount = null;
                 }
+
+                // Publicar cualquier trade pendiente antes de terminar
+                lock (mergeLock)
+                {
+                    mergeTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+                    mergeTimer?.Dispose();
+                    mergeTimer = null;
+                }
+                FlushPendingTrade(null);
+
                 httpClient?.Dispose();
                 httpClient = null;
             }
@@ -194,6 +232,11 @@ namespace NinjaTrader.NinjaScript.Indicators
                         mfeExtreme   = ex.Price;
                         inTrade      = true;
                     }
+                    else if (inTrade && Math.Sign(netQty) == Math.Sign(prevQty) && Math.Abs(netQty) > Math.Abs(prevQty))
+                    {
+                        // Scaling in — actualizar qty al máximo alcanzado
+                        tradeQty = Math.Abs(netQty);
+                    }
                     else if (prevQty != 0 && netQty == 0)
                     {
                         inTrade = false;
@@ -235,24 +278,104 @@ namespace NinjaTrader.NinjaScript.Indicators
                         postExitName.IndexOf("Stop",   StringComparison.OrdinalIgnoreCase) >= 0 ? "stop"   :
                         "otro";
 
-                    Task.Run(() => PostTradeAsync(
-                        postInstrument, postAccount, postMarketPos, postQty,
-                        postEntryPrice, postExitPrice,
-                        postEntryTime, postExitTime,
-                        postExitName,
-                        postProfit, postMae, postMfe,
-                        bars, tradeDate, resultado
-                    ));
+                    lock (mergeLock)
+                    {
+                        // Cancelar el timer actual mientras decidimos
+                        mergeTimer?.Change(Timeout.Infinite, Timeout.Infinite);
 
-                    Task.Run(() => SendNotificationAsync(
-                        postInstrument, postMarketPos, postQty,
-                        postEntryPrice, postExitPrice,
-                        postProfit, postMae, postMfe,
-                        resultado
-                    ));
+                        bool merged = false;
+                        if (hasPending &&
+                            pendingMarketPos   == postMarketPos   &&
+                            pendingInstrument  == postInstrument  &&
+                            pendingAccount     == postAccount     &&
+                            (postEntryTime - pendingEntryTime).TotalSeconds <= 30)
+                        {
+                            // Fusionar con el trade pendiente
+                            int totalQty = pendingQty + postQty;
+                            pendingEntryPrice = (pendingEntryPrice * pendingQty + postEntryPrice * postQty) / totalQty;
+                            pendingExitPrice  = (pendingExitPrice  * pendingQty + postExitPrice  * postQty) / totalQty;
+                            pendingQty        = totalQty;
+                            pendingProfit    += postProfit;
+                            pendingMae       += postMae;
+                            pendingMfe       += postMfe;
+                            pendingExitTime   = postExitTime > pendingExitTime ? postExitTime : pendingExitTime;
+                            pendingBars       = Math.Max(pendingBars, bars);
+                            if (pendingResultado != resultado) pendingResultado = "otro";
+                            merged = true;
+                        }
+
+                        if (!merged)
+                        {
+                            // Publicar el pendiente anterior si existe
+                            if (hasPending) FlushPendingTrade(null);
+
+                            // Guardar el nuevo trade como pendiente
+                            hasPending        = true;
+                            pendingInstrument = postInstrument;
+                            pendingAccount    = postAccount;
+                            pendingMarketPos  = postMarketPos;
+                            pendingQty        = postQty;
+                            pendingEntryPrice = postEntryPrice;
+                            pendingExitPrice  = postExitPrice;
+                            pendingEntryTime  = postEntryTime;
+                            pendingExitTime   = postExitTime;
+                            pendingExitName   = postExitName;
+                            pendingProfit     = postProfit;
+                            pendingMae        = postMae;
+                            pendingMfe        = postMfe;
+                            pendingBars       = bars;
+                            pendingTradeDate  = tradeDate;
+                            pendingResultado  = resultado;
+                        }
+
+                        // Reiniciar timer de 3 segundos
+                        if (mergeTimer == null)
+                            mergeTimer = new Timer(FlushPendingTrade, null, 3000, Timeout.Infinite);
+                        else
+                            mergeTimer.Change(3000, Timeout.Infinite);
+                    }
                 }
             }
             catch { }
+        }
+
+        private void FlushPendingTrade(object state)
+        {
+            string instrument, account, marketPos, exitName, tradeDate, resultado;
+            int qty, bars;
+            double entryPrc, exitPrc, profit, mae, mfe;
+            DateTime entryT, exitT;
+
+            lock (mergeLock)
+            {
+                if (!hasPending) return;
+
+                instrument = pendingInstrument;
+                account    = pendingAccount;
+                marketPos  = pendingMarketPos;
+                qty        = pendingQty;
+                entryPrc   = pendingEntryPrice;
+                exitPrc    = pendingExitPrice;
+                entryT     = pendingEntryTime;
+                exitT      = pendingExitTime;
+                exitName   = pendingExitName;
+                profit     = pendingProfit;
+                mae        = pendingMae;
+                mfe        = pendingMfe;
+                bars       = pendingBars;
+                tradeDate  = pendingTradeDate;
+                resultado  = pendingResultado;
+                hasPending = false;
+            }
+
+            Task.Run(() => PostTradeAsync(
+                instrument, account, marketPos, qty,
+                entryPrc, exitPrc, entryT, exitT, exitName,
+                profit, mae, mfe, bars, tradeDate, resultado));
+
+            Task.Run(() => SendNotificationAsync(
+                instrument, marketPos, qty,
+                entryPrc, exitPrc, profit, mae, mfe, resultado));
         }
 
         private async Task PostTradeAsync(
@@ -299,7 +422,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                     etd, bars, tradeDate, resultado
                 );
 
-                var content  = new StringContent(json, Encoding.UTF8, "application/json");
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
                 await client.PostAsync(SUPABASE_ENDPOINT, content);
             }
             catch { }
