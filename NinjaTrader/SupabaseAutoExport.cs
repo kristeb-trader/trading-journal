@@ -86,6 +86,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         private DateTime pendingExitTime;
         private string   pendingExitName;
         private double   pendingProfit;       // suma
+        private double   pendingCommission;   // suma
         private double   pendingMae;          // suma
         private double   pendingMfe;          // suma
         private int      pendingBars;
@@ -296,6 +297,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                             pendingExitPrice  = (pendingExitPrice  * pendingQty + postExitPrice  * postQty) / totalQty;
                             pendingQty        = totalQty;
                             pendingProfit    += postProfit;
+                            pendingCommission += 0; // NT8 no reporta comisión; sumar cuando esté disponible
                             pendingMae       += postMae;
                             pendingMfe       += postMfe;
                             pendingExitTime   = postExitTime > pendingExitTime ? postExitTime : pendingExitTime;
@@ -321,6 +323,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                             pendingExitTime   = postExitTime;
                             pendingExitName   = postExitName;
                             pendingProfit     = postProfit;
+                            pendingCommission = 0;
                             pendingMae        = postMae;
                             pendingMfe        = postMfe;
                             pendingBars       = bars;
