@@ -788,7 +788,7 @@ body.modal-open { overflow: hidden; }
 .disc-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
 .disc-bar-fill.level-high { background: var(--red); }
 .disc-bar-fill.level-mid  { background: var(--warning); }
-.disc-bar-fill.level-low  { background: var(--accent); }
+.disc-bar-fill.level-low  { background: rgba(255, 160, 80, 0.55); }
 .disc-count { font-size: 0.8rem; font-weight: 600; width: 24px; text-align: right; color: var(--text2); }
 
 .disc-dates { margin-top: 20px; }

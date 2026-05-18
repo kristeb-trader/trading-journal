@@ -2,6 +2,7 @@
 const Metrics = (() => {
   let allTrades = []
   let allSesiones = []
+  let allCasuisticas = []
 
   function calcStreak(trades) {
     // Group by date, determine daily result (overall win/loss)
@@ -49,20 +50,13 @@ const Metrics = (() => {
     ).length
   }
 
-  function errorFrequency(sesiones) {
-    const counts = {
-      'Zonas': 0, 'Orden': 0, '5 Velas': 0, 'Noticias': 0, 'Consecución': 0, 'Estructura': 0
-    }
-    sesiones.forEach(s => {
-      if (!s.chk_zonas) counts['Zonas']++
-      if (!s.chk_orden) counts['Orden']++
-      if (!s.chk_5velas) counts['5 Velas']++
-      if (!s.chk_noticias) counts['Noticias']++
-      if (!s.chk_consecucion) counts['Consecución']++
-      if (!s.chk_estructura) counts['Estructura']++
+  function casuisticaFrequency(casuisticas) {
+    const counts = {}
+    casuisticas.forEach(c => {
+      counts[c.casuistica] = (counts[c.casuistica] || 0) + 1
     })
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1])
-    return sorted[0][1] > 0 ? sorted[0] : null
+    return sorted.length > 0 && sorted[0][1] > 0 ? sorted[0] : null
   }
 
   function calcProfitFactor(trades) {
@@ -129,45 +123,46 @@ const Metrics = (() => {
 
   const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
 
-  function openDisciplineModal(sesiones, trades) {
-    const active = sesiones.filter(s => !s.no_opero)
-    const total  = active.length
+  function openDisciplineModal(casuisticas, trades) {
+    // Agrupar casuísticas por nombre y contar
+    const countMap = {}
+    casuisticas.forEach(c => {
+      countMap[c.casuistica] = (countMap[c.casuistica] || 0) + 1
+    })
+    const counts = Object.entries(countMap)
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+    const maxCount = counts[0]?.count || 1
+    const total = casuisticas.length
 
-    // Conteo de fallos por ítem
-    const counts = CHECKLIST_KEYS.map(({ key, label }) => ({
-      label,
-      key,
-      fails: active.filter(s => !s[key]).length,
-    })).sort((a, b) => b.fails - a.fails)
-
-    const maxFails = counts[0]?.fails || 1
-
-    // P&L por fecha desde trades
+    // P&L por fecha para mostrar junto a las fechas del error top
     const pnlByDate = {}
     trades.forEach(t => {
       if (!t.trade_date) return
       pnlByDate[t.trade_date] = (pnlByDate[t.trade_date] || 0) + (parseFloat(t.profit) || 0)
     })
 
-    // Fechas donde falló el ítem top
-    const topKey = counts[0]?.key
-    const failDates = active
-      .filter(s => !s[topKey])
-      .map(s => s.sesion_date)
-      .sort((a, b) => b.localeCompare(a))
+    // Fechas donde ocurrió el error más frecuente
+    const topLabel = counts[0]?.label
+    const failDates = topLabel
+      ? [...new Set(casuisticas.filter(c => c.casuistica === topLabel).map(c => c.sesion_date))]
+          .sort((a, b) => b.localeCompare(a))
+      : []
 
-    const barsHtml = counts.map(({ label, fails }) => {
-      const pct = total > 0 ? (fails / total * 100) : 0
-      const cls  = pct >= 60 ? 'level-high' : pct >= 30 ? 'level-mid' : 'level-low'
-      return `
-        <div class="disc-item">
-          <span class="disc-item-label">${label}</span>
-          <div class="disc-bar-wrap">
-            <div class="disc-bar-fill ${cls}" style="width:${(fails/maxFails*100).toFixed(0)}%"></div>
-          </div>
-          <span class="disc-count">${fails}</span>
-        </div>`
-    }).join('')
+    const barsHtml = counts.length > 0
+      ? counts.map(({ label, count }) => {
+          const pct = total > 0 ? (count / total * 100) : 0
+          const cls  = pct >= 40 ? 'level-high' : pct >= 20 ? 'level-mid' : 'level-low'
+          return `
+            <div class="disc-item">
+              <span class="disc-item-label">${label}</span>
+              <div class="disc-bar-wrap">
+                <div class="disc-bar-fill ${cls}" style="width:${(count/maxCount*100).toFixed(0)}%"></div>
+              </div>
+              <span class="disc-count">${count}</span>
+            </div>`
+        }).join('')
+      : '<p style="color:var(--text3);font-size:0.85rem">Sin errores registrados</p>'
 
     const datesHtml = failDates.map(date => {
       const pnl = pnlByDate[date]
@@ -185,12 +180,12 @@ const Metrics = (() => {
 
     document.getElementById('disciplineModalContent').innerHTML = `
       <div style="padding:16px 20px 20px">
-        <p class="disc-section-title">Frecuencia de incumplimiento (${total} sesiones)</p>
+        <p class="disc-section-title">Errores de tipificación (${total} registros)</p>
         ${barsHtml}
-        ${counts[0] ? `
+        ${topLabel && failDates.length > 0 ? `
           <div class="disc-dates">
-            <p class="disc-section-title" style="margin-top:8px">Días con falla en "${counts[0].label}"</p>
-            ${datesHtml || '<p style="color:var(--text3);font-size:0.85rem">Sin fallos registrados</p>'}
+            <p class="disc-section-title" style="margin-top:8px">Días con "${topLabel}"</p>
+            ${datesHtml}
           </div>` : ''}
       </div>`
 
@@ -218,19 +213,34 @@ const Metrics = (() => {
     const streak = calcStreak(trades)
     const { best, worst } = bestWorstDay(trades)
     const clean = cleanSessions(sesiones)
-    const topError = errorFrequency(sesiones)
     const tradingDays = new Set(trades.map(t => t.trade_date)).size
     const avgPnl = tradingDays > 0 ? (netPnl / tradingDays) : 0
     const pf = calcProfitFactor(trades)
     const { avgWin, avgLoss } = calcAvgWinLoss(trades)
     const maxDD = calcMaxDrawdown(trades)
     const activeSesiones = sesiones.filter(s => !s.no_opero)
+
+    // Casuísticas filtradas por período
+    const periodCasuisticas = period === 'all' ? allCasuisticas : (() => {
+      const from = sesiones.length > 0
+        ? sesiones.map(s => s.sesion_date).sort()[0]
+        : ''
+      return allCasuisticas.filter(c => c.sesion_date >= from)
+    })()
+    const casByDate = {}
+    periodCasuisticas.forEach(c => { casByDate[c.sesion_date] = true })
+
+    // Disciplina: 6 checklist + 1 "sin errores de tipificación" → sobre 7
     const disciplinePct = activeSesiones.length > 0
       ? Math.round(activeSesiones.reduce((sum, s) => {
-          return sum + [s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
-            .filter(Boolean).length / 6
+          const chkScore = [s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
+            .filter(Boolean).length
+          const noErrors = casByDate[s.sesion_date] ? 0 : 1
+          return sum + (chkScore + noErrors) / 7
         }, 0) / activeSesiones.length * 100)
       : 0
+
+    const topError = casuisticaFrequency(periodCasuisticas)
 
     const cards = [
       { label: 'P&L Neto Total', value: `${netPnl >= 0 ? '+' : ''}$${netPnl.toFixed(2)}`, icon: 'ti-currency-dollar', color: netPnl >= 0 ? 'green' : 'red', sub: `Promedio: ${avgPnl >= 0 ? '+' : ''}$${avgPnl.toFixed(0)}/día` },
@@ -240,7 +250,7 @@ const Metrics = (() => {
       { label: 'Mejor día', value: best ? `+$${best[1].toFixed(0)}` : '—', icon: 'ti-trending-up', color: 'green', sub: best ? best[0] : '' },
       { label: 'Peor día', value: worst ? `$${worst[1].toFixed(0)}` : '—', icon: 'ti-trending-down', color: 'red', sub: worst ? worst[0] : '' },
       { label: 'Disciplina', value: `${disciplinePct}%`, icon: 'ti-checkup-list', color: disciplinePct >= 80 ? 'green' : disciplinePct >= 50 ? 'neutral' : 'red', sub: `${clean}/${activeSesiones.length} sesiones limpias` },
-      { label: 'Error más frecuente', value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]} veces incumplido` : 'Sin datos', clickable: true },
+      { label: 'Error más frecuente', value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]}x en tipificaciones` : 'Sin errores registrados', clickable: true },
       {
         label: 'Profit Factor',
         value: pf != null ? pf.toFixed(2) : '—',
@@ -277,12 +287,12 @@ const Metrics = (() => {
       </div>`).join('')
 
     document.querySelector('[data-action="discipline"]')?.addEventListener('click', () => {
-      openDisciplineModal(sesiones, trades)
+      openDisciplineModal(periodCasuisticas, trades)
     })
   }
 
   async function init() {
-    [allTrades, allSesiones] = await Promise.all([DB.getTrades(), DB.getSesiones()])
+    ;[allTrades, allSesiones, allCasuisticas] = await Promise.all([DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas()])
     render('month')
 
     document.querySelectorAll('.period-btn').forEach(btn => {
