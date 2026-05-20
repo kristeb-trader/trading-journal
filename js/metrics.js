@@ -44,9 +44,11 @@ const Metrics = (() => {
     return { best: entries[0], worst: entries[entries.length - 1] }
   }
 
-  function cleanSessions(sesiones) {
-    return sesiones.filter(s =>
-      s.chk_zonas && s.chk_orden && s.chk_5velas && s.chk_noticias && s.chk_consecucion && s.chk_estructura
+  // Sesión limpia = los 7 factores al 100% (6 checklist + sin errores)
+  function cleanSessions(activeSesiones, casByDate) {
+    return activeSesiones.filter(s =>
+      s.chk_zonas && s.chk_orden && s.chk_5velas && s.chk_noticias &&
+      s.chk_consecucion && s.chk_estructura && !casByDate[s.sesion_date]
     ).length
   }
 
@@ -153,6 +155,93 @@ const Metrics = (() => {
 
   const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
 
+  const DISC_FACTORS = [
+    { key: 'chk_zonas',       label: 'Zonas vigentes verificadas'       },
+    { key: 'chk_orden',       label: 'Orden precolocada a tiempo'       },
+    { key: 'chk_5velas',      label: 'Máx 5 velas en corrida'           },
+    { key: 'chk_noticias',    label: 'Sin noticia roja activa'          },
+    { key: 'chk_consecucion', label: 'Zona con consecución'             },
+    { key: 'chk_estructura',  label: 'Estructura IRI fluida'            },
+    { key: '_noErrors',       label: 'Sin errores de tipificación'      },
+  ]
+
+  function openDisciplineDetailModal(activeSesiones, casByDate) {
+    const total = activeSesiones.length
+
+    if (total === 0) {
+      document.getElementById('disciplineModalContent').innerHTML =
+        '<p style="padding:20px;color:var(--text3)">Sin sesiones en el período.</p>'
+      document.getElementById('disciplineModal').classList.remove('hidden')
+      return
+    }
+
+    // Fallos por factor
+    const factorStats = DISC_FACTORS.map(f => {
+      const fails = f.key === '_noErrors'
+        ? activeSesiones.filter(s => casByDate[s.sesion_date])
+        : activeSesiones.filter(s => !s[f.key])
+      return { label: f.label, count: fails.length, pct: fails.length / total * 100 }
+    }).sort((a, b) => b.count - a.count)
+
+    const maxCount = factorStats[0]?.count || 1
+
+    const barsHtml = factorStats.map(f => {
+      const cls = f.pct >= 50 ? 'level-high' : f.pct >= 25 ? 'level-mid' : 'level-low'
+      const barW = maxCount > 0 ? (f.count / maxCount * 100).toFixed(0) : 0
+      return `
+        <div class="disc-item">
+          <span class="disc-item-label">${f.label}</span>
+          <div class="disc-bar-wrap">
+            ${f.count > 0
+              ? `<div class="disc-bar-fill ${cls}" style="width:${barW}%"></div>`
+              : `<div class="disc-bar-fill" style="width:100%;background:rgba(29,158,117,0.3)"></div>`}
+          </div>
+          <span class="disc-count" style="${f.count === 0 ? 'color:var(--accent)' : ''}">${f.count === 0 ? '✓' : f.count}</span>
+        </div>`
+    }).join('')
+
+    // Días con fallos → listar qué factores fallaron cada día
+    const failedDays = activeSesiones
+      .map(s => ({
+        date: s.sesion_date,
+        failed: DISC_FACTORS.filter(f =>
+          f.key === '_noErrors' ? casByDate[s.sesion_date] : !s[f.key]
+        ),
+      }))
+      .filter(d => d.failed.length > 0)
+      .sort((a, b) => b.date.localeCompare(a.date))
+
+    const daysHtml = failedDays.length > 0
+      ? failedDays.map(d => {
+          const dow  = DAYS[new Date(d.date + 'T12:00:00').getDay()]
+          const tags = d.failed.map(f =>
+            `<span class="disc-fail-tag">${f.label}</span>`
+          ).join('')
+          return `
+            <div class="disc-fail-day">
+              <div class="disc-fail-day-header">
+                <span class="disc-date-dow">${dow}</span>
+                <span class="disc-date-val">${d.date}</span>
+                <span class="disc-fail-count">${d.failed.length} fallo${d.failed.length !== 1 ? 's' : ''}</span>
+              </div>
+              <div class="disc-fail-tags">${tags}</div>
+            </div>`
+        }).join('')
+      : '<p style="color:var(--accent);font-size:0.85rem;padding:8px 0">¡Disciplina perfecta en el período! 🎯</p>'
+
+    document.getElementById('disciplineModalContent').innerHTML = `
+      <div style="padding:16px 20px 20px">
+        <p class="disc-section-title">Fallos por factor (${total} sesiones activas)</p>
+        ${barsHtml}
+        <div class="disc-dates" style="margin-top:12px">
+          <p class="disc-section-title">Días con fallos</p>
+          ${daysHtml}
+        </div>
+      </div>`
+
+    document.getElementById('disciplineModal').classList.remove('hidden')
+  }
+
   function openDisciplineModal(casuisticas, trades) {
     // Agrupar casuísticas por nombre y contar
     const countMap = {}
@@ -242,7 +331,6 @@ const Metrics = (() => {
     const netPnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
     const streak = calcStreak(trades)
     const { best, worst } = bestWorstDay(trades)
-    const clean = cleanSessions(sesiones)
     const sinSetupDates = sesiones
       .filter(s => s.no_opero && s.motivo_no_opero === 'Sin setup')
       .map(s => s.sesion_date)
@@ -251,13 +339,17 @@ const Metrics = (() => {
     const pf = calcProfitFactor(trades)
     const { avgWin, avgLoss } = calcAvgWinLoss(trades)
     const maxDD = calcMaxDrawdown(trades)
-    // "Sin setup" days count: trader was present but no valid setup appeared
+    // "Sin setup" days count: trader was present pero no hubo setup válido
     const activeSesiones = sesiones.filter(s => !s.no_opero || s.motivo_no_opero === 'Sin setup')
 
     // Casuísticas filtradas por el mismo período
     const periodCasuisticas = filterCasuisticasByPeriod(allCasuisticas, period)
     const casByDate = {}
     periodCasuisticas.forEach(c => { casByDate[c.sesion_date] = true })
+
+    // clean usa los 7 factores (checklist + sin errores) sobre activeSesiones
+    const clean = cleanSessions(activeSesiones, casByDate)
+    const failedCount = activeSesiones.length - clean
 
     // Disciplina: 6 checklist + 1 "sin errores de tipificación" → sobre 7
     const disciplinePct = activeSesiones.length > 0
@@ -278,8 +370,8 @@ const Metrics = (() => {
       { label: 'Racha actual', value: streak.count > 0 ? `${streak.count} ${streak.type === 'win' ? '🟢' : '🔴'}` : '—', icon: 'ti-flame', color: streak.type === 'win' ? 'green' : 'red', sub: streak.type === 'win' ? 'victorias seguidas' : streak.type === 'loss' ? 'pérdidas seguidas' : '' },
       { label: 'Mejor día', value: best ? `+$${best[1].toFixed(0)}` : '—', icon: 'ti-trending-up', color: 'green', sub: best ? best[0] : '' },
       { label: 'Peor día', value: worst ? `$${worst[1].toFixed(0)}` : '—', icon: 'ti-trending-down', color: 'red', sub: worst ? worst[0] : '' },
-      { label: 'Disciplina', value: `${disciplinePct}%`, icon: 'ti-checkup-list', color: disciplinePct >= 80 ? 'green' : disciplinePct >= 50 ? 'neutral' : 'red', sub: `${clean}/${activeSesiones.length} sesiones limpias` },
-      { label: 'Error más frecuente', value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]} ${topError[1] === 1 ? 'Error' : 'Errores'}` : 'Sin errores registrados', clickable: true },
+      { label: 'Disciplina', value: `${disciplinePct}%`, icon: 'ti-checkup-list', color: disciplinePct >= 80 ? 'green' : disciplinePct >= 50 ? 'neutral' : 'red', sub: activeSesiones.length > 0 ? `${failedCount}/${activeSesiones.length} sesiones con fallos` : 'Sin sesiones', clickable: true, action: 'disc-detail' },
+      { label: 'Error más frecuente', value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]} ${topError[1] === 1 ? 'Error' : 'Errores'}` : 'Sin errores registrados', clickable: true, action: 'disc-errors' },
       {
         label: 'Profit Factor',
         value: pf != null ? pf.toFixed(2) : '—',
@@ -304,7 +396,7 @@ const Metrics = (() => {
     ]
 
     document.getElementById('metricsGrid').innerHTML = cards.map(c => `
-      <div class="metric-card${c.clickable ? ' clickable' : ''}" ${c.clickable ? 'data-action="discipline"' : ''}>
+      <div class="metric-card${c.clickable ? ' clickable' : ''}" ${c.action ? `data-action="${c.action}"` : ''}>
         <div class="metric-icon color-${c.color}">
           <i class="ti ${c.icon}"></i>
         </div>
@@ -315,7 +407,10 @@ const Metrics = (() => {
         </div>
       </div>`).join('')
 
-    document.querySelector('[data-action="discipline"]')?.addEventListener('click', () => {
+    document.querySelector('[data-action="disc-detail"]')?.addEventListener('click', () => {
+      openDisciplineDetailModal(activeSesiones, casByDate)
+    })
+    document.querySelector('[data-action="disc-errors"]')?.addEventListener('click', () => {
       openDisciplineModal(periodCasuisticas, trades)
     })
   }
