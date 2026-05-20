@@ -2,7 +2,7 @@
 
 > **Este documento es editable — actualizalo ante cualquier cambio en el sistema.**
 
-**Versión:** 1.0 | **Fecha:** 2026-05-15 | **Audiencia:** Desarrollador / DevOps
+**Versión:** 2.1 | **Fecha:** 2026-05-20 | **Audiencia:** Desarrollador / DevOps
 
 ---
 
@@ -38,7 +38,7 @@
 |---|---|
 | **Cero infraestructura propia** | No hay servidores, contenedores ni VMs. Todo corre en plataformas PaaS/FaaS. |
 | **3 canales de entrada de datos** | NinjaTrader 8 (automático), Dashboard web (manual), Telegram Bot (móvil). |
-| **Single user** | Sin autenticación multi-usuario. RLS deshabilitado. `ALLOWED_CHAT_ID` en el bot. |
+| **Single user** | Sin autenticación multi-usuario. RLS deshabilitado en trades/sesiones. `ALLOWED_CHAT_ID` en el bot. |
 | **Separación de secretos** | `config.js` no versionado públicamente. API keys en variables de entorno de CF Workers. |
 | **Costo ~$0/mes** | Supabase Free, GitHub Pages gratis, Cloudflare Workers free tier, Cloudinary free tier. |
 
@@ -54,7 +54,7 @@
 │  SupabaseAutoExport   index.html + JS Vanilla    Mobile/Desktop │
 └──────────┬───────────────────┬──────────────────────┬──────────┘
            │ HTTP POST          │ REST API             │ HTTPS
-           │ (direct)          │                      │
+           │ (fusión ATM 3s)   │                      │
            ▼                   ▼                      ▼
 ┌──────────────────┐  ┌───────────────────┐  ┌──────────────────────┐
 │  Supabase        │  │ CF Worker #1      │  │ CF Worker #2         │
@@ -64,11 +64,13 @@
 │                  │  └────────┬──────────┘  └──────────┬───────────┘
 │  Table: trades   │           │                        │
 │  Table: sesiones │  ┌────────▼──────────┐            │
-│                  │◄─│  Anthropic API    │   ┌────────▼──────────┐
-│  Trigger:        │  │  claude-haiku-4-5 │   │ Cloudflare KV     │
-│  cum_net_profit  │  └───────────────────┘   │ Session state     │
-└──────────────────┘                          │ TTL: 3600s        │
-         ▲                                    └───────────────────┘
+│  Table: fomc_    │  │  Anthropic API    │   ┌────────▼──────────┐
+│        dates     │◄─│  claude-haiku-4-5 │   │ Cloudflare KV     │
+│                  │  └───────────────────┘   │ Session state     │
+│  Trigger:        │                          │ TTL: 3600s        │
+│  cum_net_profit  │                          └───────────────────┘
+└──────────────────┘
+         ▲
          │ Upload URL
 ┌────────┴───────────┐
 │  Cloudinary        │
@@ -85,9 +87,10 @@
 
 **Flujo de datos — trade automático (NT8):**
 1. NT8 detecta cierre de posición via `Account.ExecutionUpdate`
-2. C# calcula profit, MAE, MFE, bars
-3. HTTP POST directo a `https://jothoslozctflfrnysrx.supabase.co/rest/v1/trades`
-4. Trigger PostgreSQL calcula `cum_net_profit` antes del INSERT
+2. C# acumula durante 3 segundos (ventana de fusión ATM) si hay múltiples contratos
+3. C# calcula profit, MAE, MFE, bars, commission (leída de `ex.Commission`)
+4. HTTP POST directo a `https://jothoslozctflfrnysrx.supabase.co/rest/v1/trades`
+5. Trigger PostgreSQL calcula `cum_net_profit` antes del INSERT
 
 **Flujo de datos — sesión diaria (Telegram):**
 1. Usuario envía `/start` o `/sesion` al bot
@@ -100,7 +103,7 @@
 
 | Componente | Tecnología | Versión / Plan | Rol |
 |---|---|---|---|
-| Base de datos | Supabase (PostgreSQL) | PostgreSQL 15, Free tier | Almacenamiento persistente de trades y sesiones |
+| Base de datos | Supabase (PostgreSQL) | PostgreSQL 15, Free tier | Almacenamiento persistente de trades, sesiones y fechas FOMC |
 | Frontend | HTML + JS Vanilla | ES2022, sin bundler | Dashboard web de análisis y visualización |
 | Hosting web | GitHub Pages | Gratis (repo privado con Pages) | Sirve el frontend estático |
 | Proxy IA | Cloudflare Worker #1 | Workers Free (100k req/día) | Bypass CORS para llamadas a Anthropic desde browser |
@@ -108,7 +111,7 @@
 | KV Sessions | Cloudflare KV | Free (100k reads/día) | Estado de sesión del bot (TTL 3600s) |
 | IA / Resúmenes | Anthropic Claude | claude-haiku-4-5 | Genera resúmenes de sesiones (~$0.0004 c/u) |
 | Imágenes | Cloudinary | Free tier | Upload + CDN de capturas de pantalla |
-| Indicador | C# .NET 4.8 | NinjaTrader 8 | Exportación automática de trades a Supabase |
+| Indicador | C# .NET 4.8 | NinjaTrader 8 (8.1.7.0) | Exportación automática de trades a Supabase (con fusión ATM) |
 
 ---
 
@@ -123,20 +126,23 @@ trading-journal/
 ├── js/
 │   ├── config.js               ← SECRETOS (no versionado públicamente)
 │   ├── db.js                   ← Capa de datos: queries a Supabase REST
-│   ├── calendar.js             ← Vista de calendario mensual
-│   ├── metrics.js              ← Cálculo de métricas y KPIs
+│   ├── calendar.js             ← Vista de calendario mensual (festivos CME, FOMC, iconos)
+│   ├── metrics.js              ← Cálculo de métricas y KPIs (disciplina 7 factores)
 │   ├── table.js                ← Tabla de trades con filtros
 │   ├── form.js                 ← Formulario de sesión diaria
 │   ├── charts.js               ← Gráficas (equity curve, distribuciones)
+│   ├── gallery.js              ← NUEVO: galería de imágenes por semana con lightbox
 │   └── app.js                  ← Orquestador principal, router
 ├── NinjaTrader/
-│   └── SupabaseAutoExport.cs   ← Indicador C# para NT8
+│   └── SupabaseAutoExport.cs   ← Indicador C# para NT8 (fusión ATM, comisión real)
 ├── TelegramBot/
 │   ├── worker.js               ← Código del CF Worker #2
 │   └── wrangler.toml           ← Config Wrangler (KV binding, name)
 └── docs/
     ├── manual-tecnico.md       ← Este archivo
-    └── [otros archivos de docs]
+    ├── manual-usuario.md
+    ├── arquitectura-tecnica.md
+    └── arquitectura-funcional.md
 ```
 
 > `config.js` debe estar en `.gitignore`. Contiene credenciales de Supabase y Cloudinary.
@@ -169,7 +175,7 @@ CREATE TABLE trades (
   entry_name      text,
   exit_name       text,
   profit          numeric,
-  commission      numeric DEFAULT 0,
+  commission      numeric DEFAULT 0,  -- Leída de ex.Commission en NT8 (v2.1+)
   mae             numeric,         -- Maximum Adverse Excursion
   mfe             numeric,         -- Maximum Favorable Excursion
   bars            integer,         -- Duración en minutos (delta entry→exit)
@@ -202,6 +208,12 @@ CREATE TABLE sesiones (
   created_at          timestamptz DEFAULT now(),
   updated_at          timestamptz DEFAULT now()
 );
+
+-- Tabla de fechas FOMC (NUEVA en v2.1)
+CREATE TABLE fomc_dates (
+  date        DATE PRIMARY KEY,
+  description TEXT DEFAULT 'FOMC Meeting'
+);
 ```
 
 **Trigger cum_net_profit:**
@@ -224,16 +236,44 @@ BEFORE INSERT ON trades
 FOR EACH ROW EXECUTE FUNCTION calc_cum_net_profit();
 ```
 
-**Permisos (RLS deshabilitado — proyecto personal):**
+**Permisos:**
 
 ```sql
--- Deshabilitar RLS
+-- Deshabilitar RLS en trades y sesiones (proyecto personal)
 ALTER TABLE trades DISABLE ROW LEVEL SECURITY;
 ALTER TABLE sesiones DISABLE ROW LEVEL SECURITY;
 
--- Dar permisos al rol anon (usado por el anon key)
+-- Habilitar RLS en fomc_dates (read-only público)
+ALTER TABLE fomc_dates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "fomc_dates_read_public" ON fomc_dates
+  FOR SELECT TO anon USING (true);
+
+-- Permisos para el rol anon
 GRANT INSERT, SELECT, UPDATE ON trades, sesiones TO anon;
 GRANT USAGE, SELECT ON SEQUENCE trades_id_seq, sesiones_id_seq TO anon;
+GRANT SELECT ON fomc_dates TO anon;
+```
+
+**Pre-poblar fomc_dates (2025-2026):**
+
+```sql
+INSERT INTO fomc_dates (date, description) VALUES
+  ('2025-01-29', 'FOMC Meeting'),
+  ('2025-03-19', 'FOMC Meeting'),
+  ('2025-05-07', 'FOMC Meeting'),
+  ('2025-06-18', 'FOMC Meeting'),
+  ('2025-07-30', 'FOMC Meeting'),
+  ('2025-09-17', 'FOMC Meeting'),
+  ('2025-10-29', 'FOMC Meeting'),
+  ('2025-12-10', 'FOMC Meeting'),
+  ('2026-01-28', 'FOMC Meeting'),
+  ('2026-03-18', 'FOMC Meeting'),
+  ('2026-04-29', 'FOMC Meeting'),
+  ('2026-06-17', 'FOMC Meeting'),
+  ('2026-07-29', 'FOMC Meeting'),
+  ('2026-09-16', 'FOMC Meeting'),
+  ('2026-10-28', 'FOMC Meeting'),
+  ('2026-12-09', 'FOMC Meeting');
 ```
 
 **Recargar schema PostgREST tras cambios DDL:**
@@ -521,10 +561,9 @@ private const string SUPABASE_KEY =
 
 > Para cambiar credenciales, editar las constantes y recompilar en NT8.
 
-**Lógica de captura de trades:**
+**Lógica de captura de trades — suscripción al evento:**
 
 ```csharp
-// Suscripción al evento
 protected override void OnStateChange() {
     if (State == State.DataLoaded) {
         Account.ExecutionUpdate += OnExecutionUpdate;
@@ -533,30 +572,66 @@ protected override void OnStateChange() {
         Account.ExecutionUpdate -= OnExecutionUpdate;
     }
 }
+```
 
-// Tracking de posición neta
+**Ventana de fusión ATM (3 segundos) — lógica central:**
+
+```csharp
+// Campos de fusión
+private bool hasPending = false;
+private object mergeLock = new object();
+private System.Threading.Timer mergeTimer;
+private double pendingCommission = 0;
+private List<TradeData> pendingTrades = new List<TradeData>();
+
 private void OnExecutionUpdate(object sender, ExecutionEventArgs e) {
-    lock (syncLock) {
-        int prevQty = netQty;
-        if (e.Execution.MarketPosition == MarketPosition.Long)
-            netQty += e.Execution.Quantity;
-        else if (e.Execution.MarketPosition == MarketPosition.Short)
-            netQty -= e.Execution.Quantity;
+    lock (mergeLock) {
+        double commission = e.Execution.Commission; // ← Leída de NT8
 
-        // Apertura de posición
-        if (prevQty == 0 && netQty != 0) {
-            entryPrice = e.Execution.Price;
-            entryTime  = e.Execution.Time;
-            entryName  = e.Execution.Name;
-            inTrade    = true;
-        }
-        // Cierre de posición
-        if (prevQty != 0 && netQty == 0) {
-            inTrade = false;
-            double profit = CalculateProfit(/* ... */);
-            Task.Run(() => PostTradeToSupabase(/* ... */));
+        if (!hasPending) {
+            // Primer cierre: iniciar ventana de fusión
+            hasPending = true;
+            pendingTrades.Add(BuildTradeData(e, commission));
+            pendingCommission = commission;
+
+            // Timer de 3 segundos
+            mergeTimer = new System.Threading.Timer(_ => {
+                lock (mergeLock) {
+                    PublishMergedTrade(pendingTrades);
+                    hasPending = false;
+                    pendingTrades.Clear();
+                    pendingCommission = 0;
+                }
+            }, null, 3000, System.Threading.Timeout.Infinite);
+        } else {
+            // Cierre adicional dentro de la ventana: acumular
+            pendingTrades.Add(BuildTradeData(e, commission));
+            pendingCommission += commission;
         }
     }
+}
+
+private void PublishMergedTrade(List<TradeData> trades) {
+    // Calcular promedios ponderados y sumas
+    double totalQty    = trades.Sum(t => t.qty);
+    double entryPrice  = trades.Sum(t => t.entry_price * t.qty) / totalQty;
+    double exitPrice   = trades.Sum(t => t.exit_price  * t.qty) / totalQty;
+    double profit      = trades.Sum(t => t.profit);
+    double commission  = trades.Sum(t => t.commission);
+    double mae         = trades.Sum(t => t.mae);
+    double mfe         = trades.Sum(t => t.mfe);
+
+    // POST único a Supabase
+    Task.Run(() => PostTradeToSupabase(new TradeData {
+        entry_price = entryPrice,
+        exit_price  = exitPrice,
+        profit      = profit,
+        commission  = commission,
+        mae         = mae,
+        mfe         = mfe,
+        qty         = (int)totalQty,
+        // ... resto de campos del primer trade
+    }));
 }
 ```
 
@@ -646,16 +721,16 @@ async function uploadImage(file) {
 | `account` | text | | Nombre de la cuenta en NT8 |
 | `market_pos` | text | | `Long` o `Short` |
 | `qty` | integer | | Contratos operados |
-| `entry_price` | numeric | | Precio de entrada |
-| `exit_price` | numeric | | Precio de salida |
+| `entry_price` | numeric | | Precio de entrada (promedio ponderado en fusiones ATM) |
+| `exit_price` | numeric | | Precio de salida (promedio ponderado en fusiones ATM) |
 | `entry_time` | timestamptz | | Timestamp de entrada (con timezone) |
 | `exit_time` | timestamptz | | Timestamp de salida |
 | `entry_name` | text | | Nombre de la orden de entrada (NT8) |
 | `exit_name` | text | | Nombre de la orden de salida (NT8) |
-| `profit` | numeric | | P&L del trade en USD (calculado en C#) |
-| `commission` | numeric | DEFAULT 0 | Comisiones (no disponible en indicador NT8) |
-| `mae` | numeric | | Max Adverse Excursion en puntos |
-| `mfe` | numeric | | Max Favorable Excursion en puntos |
+| `profit` | numeric | | P&L del trade en USD (suma en fusiones ATM) |
+| `commission` | numeric | DEFAULT 0 | Comisión real leída de `ex.Commission` en NT8 (suma en fusiones ATM) |
+| `mae` | numeric | | Max Adverse Excursion en puntos (suma en fusiones ATM) |
+| `mfe` | numeric | | Max Favorable Excursion en puntos (suma en fusiones ATM) |
 | `bars` | integer | | Duración del trade en minutos (delta entry→exit) |
 | `trade_date` | date | | Fecha del trade (para joins con sesiones) |
 | `resultado` | text | | `target`, `stop`, o `otro` (basado en `exit_name`) |
@@ -694,6 +769,15 @@ otro caso                   → resultado = 'otro'
 | `created_at` | timestamptz | DEFAULT now() | |
 | `updated_at` | timestamptz | DEFAULT now() | |
 
+### Tabla `fomc_dates` (nueva en v2.1)
+
+| Columna | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `date` | date | PRIMARY KEY | Fecha de la reunión FOMC |
+| `description` | text | DEFAULT 'FOMC Meeting' | Descripción del evento |
+
+RLS habilitado — solo lectura pública para rol `anon`.
+
 ### Trigger
 
 ```sql
@@ -705,6 +789,15 @@ FOR EACH ROW EXECUTE FUNCTION calc_cum_net_profit();
 ```
 
 > Si se necesita recalcular `cum_net_profit` para todos los registros existentes (ej: tras editar un profit manualmente), hay que re-insertar o ejecutar un UPDATE masivo con función window `SUM() OVER (ORDER BY entry_time)`.
+
+### Nuevas funciones en `db.js` (v2.1)
+
+| Función | Descripción |
+|---|---|
+| `getFomcDates(year, month)` | Fechas FOMC del mes/año especificado |
+| `getSessionsWithImages()` | Sesiones con `imagen_url` no null (para galería) |
+| `getCasuisticasByMonth(year, month)` | Casuísticas del mes (solo `sesion_date`) |
+| `getAllCasuisticas()` | Todas las casuísticas con `casuistica` y `sesion_date` |
 
 ---
 
@@ -800,6 +893,16 @@ En `TelegramBot/worker.js`:
 wrangler deploy  # redesplegar
 ```
 
+### Agregar fechas FOMC a la tabla
+
+```sql
+INSERT INTO fomc_dates (date, description) VALUES
+  ('2027-01-27', 'FOMC Meeting'),
+  ('2027-03-17', 'FOMC Meeting');
+-- Recargar schema si es necesario
+NOTIFY pgrst, 'reload schema';
+```
+
 ### Rotar la clave de Supabase (anon key)
 
 1. Supabase Dashboard → Settings → API → Rotate keys
@@ -850,6 +953,8 @@ git push origin main
 | Error 404 | `SUPABASE_ENDPOINT` mal escrito | Verificar URL del endpoint |
 | Los datos llegan pero `cum_net_profit` es NULL | Trigger no creado | Ejecutar el SQL del trigger en Supabase |
 | El trade se registra pero MAE/MFE = 0 | `OnBarUpdate` no está corriendo (timeframe incorrecto) | Verificar que el chart sea de 1 minuto y `BarsInProgress == 0` |
+| Trades duplicados con ATM | Ventana de fusión no activa | Verificar que el indicador sea v2.1+ con los campos `hasPending`/`mergeTimer` |
+| `commission` siempre es 0 | Indicador pre-v2.1 | Actualizar a v2.1 que lee `ex.Commission` de NT8 |
 
 ### El bot de Telegram no responde
 
@@ -869,6 +974,9 @@ git push origin main
 | Error 401 desde Supabase | `SUPABASE_ANON_KEY` incorrecto en `config.js` | Copiar la key correcta desde Supabase Dashboard |
 | Datos vacíos (0 trades) | RLS habilitado por accidente | `ALTER TABLE trades DISABLE ROW LEVEL SECURITY;` |
 | Upload de imagen falla | Upload preset no es "unsigned" | Cloudinary Dashboard → Edit preset → Signing mode: Unsigned |
+| Galería no muestra imágenes | `getSessionsWithImages()` falla | Verificar permisos de SELECT en sesiones |
+| Festivos no aparecen | Bug en cálculo de fecha en JS | Revisar `calendar.js` función de festivos para el año actual |
+| Días FOMC no aparecen | Tabla `fomc_dates` vacía o sin permisos | Verificar datos en tabla y `GRANT SELECT ON fomc_dates TO anon` |
 
 ### Claude proxy no funciona
 
@@ -911,9 +1019,8 @@ NOTIFY pgrst, 'reload schema';
 | Versión | Fecha | Autor | Descripción |
 |---|---|---|---|
 | 1.0 | 2026-05-15 | kristeb-trader | Versión inicial del manual técnico |
-| | | | |
-| | | | |
+| 2.1 | 2026-05-20 | kristeb-trader | Galería de imágenes (`gallery.js`); tabla `fomc_dates`; festivos CME automáticos en calendario; disciplina 7 factores clickable; error frecuente desde casuísticas; pestaña Imagen primera en modal; motivo "Festivo" en formulario; fusión ATM 3s en indicador C#; comisión real desde `ex.Commission`; nuevas funciones en `db.js` |
 
 ---
 
-*Manual generado el 2026-05-15. Actualizar esta tabla con cada cambio significativo en el sistema.*
+*Manual generado el 2026-05-20. Actualizar esta tabla con cada cambio significativo en el sistema.*

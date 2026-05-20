@@ -1,7 +1,7 @@
 # Trading Journal NQ Futures
 ## Arquitectura Técnica del Sistema
 
-**Versión:** 2.0 | **Fecha:** Mayo 2026 | **Autor:** kristeb-trader
+**Versión:** 2.1 | **Fecha:** Mayo 2026 | **Autor:** kristeb-trader
 
 ---
 
@@ -48,7 +48,7 @@ Sistema distribuido de registro, análisis y visualización de operativa en futu
 ╚══════╤═══════╩═══════════╤═══════════╩═══════════════╤═══════════════╝
        │                   │                           │
        │ POST /trades      │ fetch() REST              │ Webhook POST
-       │                   │                           │
+       │ (fusión ATM 3s)   │                           │
        ▼                   │                           ▼
 ╔══════════════╗           │           ╔═══════════════════════════════╗
 ║              ║           │           ║  Cloudflare Worker #2         ║
@@ -61,12 +61,13 @@ Sistema distribuido de registro, análisis y visualización de operativa en futu
 ║              ║                       ║  TTL: 3600s                   ║
 ║  trades      ║                       ╚═══════════════════════════════╝
 ║  sesiones    ║
-║  reglas      ║           ╔═══════════════════════════════════════════╗
+║  fomc_dates  ║           ╔═══════════════════════════════════════════╗
 ║              ║           ║  Dashboard Web — GitHub Pages             ║
 ║  Trigger:    ║           ║                                           ║
 ║  cum_net     ║           ║  calendar.js  │ metrics.js  │ charts.js   ║
 ║  _profit     ║           ║  table.js     │ form.js     │ app.js      ║
-╚══════════════╝           ║                                           ║
+╚══════════════╝           ║  gallery.js                               ║
+                           ║                                           ║
                            ║  "Generar resumen" →                      ║
                            ╚══════════════╤════════════════════════════╝
                                           │
@@ -94,6 +95,7 @@ Sistema distribuido de registro, análisis y visualización de operativa en futu
 **Archivo:** `NinjaTrader/SupabaseAutoExport.cs`
 **Patrón:** Event-driven | Account.ExecutionUpdate
 
+**Flujo sin fusión (1 contrato):**
 ```
 [Trade cierra en NT8]
         │
@@ -108,18 +110,44 @@ Account.ExecutionUpdate
         └─ netQty N → 0 : calcular y publicar
                │
                ├─ profit = Δprecio × PointValue × qty
+               ├─ commission = ex.Commission (leída de NT8)
                ├─ MAE    = máx excursión adversa (de OnBarUpdate)
                ├─ MFE    = máx excursión favorable (de OnBarUpdate)
                ├─ bars   = Δminutos entry→exit
                └─ Task.Run → POST JSON → Supabase /trades
+```
 
+**Ventana de fusión ATM (3 segundos):**
+Cuando se operan 2+ contratos con ATM, cada contrato genera un `ExecutionUpdate` separado. El indicador acumula los cierres del mismo instrumento/dirección/cuenta durante 3 segundos y publica un único trade consolidado con precios promedio ponderados y profit/MAE/MFE/comisión sumados.
+
+```
+[Cierre contrato 1] → hasPending = true → mergeTimer = 3s
+[Cierre contrato 2] → se acumula en pendingData durante los 3s
+        │
+        └─ Timer vence → publicar trade consolidado
+               ├─ entry_price = promedio ponderado por qty
+               ├─ exit_price  = promedio ponderado por qty
+               ├─ profit      = suma de profits individuales
+               ├─ commission  = suma de comisiones individuales
+               ├─ MAE/MFE     = suma de excursiones
+               └─ POST único → Supabase /trades
+```
+
+**Campos internos de fusión:** `pendingCommission`, `mergeTimer`, `mergeLock`, `hasPending`.
+
+**Comisión real:** Lee `ex.Commission` de NT8 (antes era siempre 0 hardcodeado). Se acumula correctamente en fusiones. Se envía a Supabase en el campo `commission` y aparece en la notificación push.
+
+**Compatible con:** NT8 8.1.7.0 (APIs usadas son estables).
+
+**TypeConverter personalizado (`AccountNameConverter`):**
+Lee `Account.All` en tiempo de ejecución y genera un dropdown en la UI de NinjaTrader para seleccionar la cuenta a monitorear.
+
+**Tracking MAE/MFE en `OnBarUpdate`:**
+```
 OnBarUpdate (OnBarClose)
         │
         └─ Si inTrade: maeExtreme / mfeExtreme con High[0] / Low[0]
 ```
-
-**TypeConverter personalizado (`AccountNameConverter`):**
-Lee `Account.All` en tiempo de ejecución y genera un dropdown en la UI de NinjaTrader para seleccionar la cuenta a monitorear.
 
 ---
 
@@ -129,11 +157,12 @@ Lee `Account.All` en tiempo de ejecución y genera un dropdown en la UI de Ninja
 |---|---|
 | `config.js` | Credenciales Supabase + Cloudinary |
 | `db.js` | Capa de datos — todas las queries REST |
-| `calendar.js` | Vista mensual, agrupación P&L por día, color por resultado |
-| `metrics.js` | KPIs: win rate, equity, racha, error frecuente |
+| `calendar.js` | Vista mensual, agrupación P&L, festivos CME, días FOMC, iconos por celda, filtro de cuenta |
+| `metrics.js` | KPIs: win rate, equity, racha, disciplina (7 factores, clickable), error frecuente (casuísticas) |
 | `charts.js` | 6 gráficas Chart.js: equity curve, scatter MAE/MFE, donut, etc. |
 | `table.js` | Tabla paginada de trades con filtros y búsqueda |
 | `form.js` | Formulario de sesión + integración Claude via Worker |
+| `gallery.js` | Galería de imágenes agrupadas por semana, lightbox con teclado |
 | `app.js` | Bootstrap, modales, toasts, lightbox, navegación |
 
 **Flujo de resumen IA:**
@@ -141,6 +170,11 @@ Lee `Account.All` en tiempo de ejecución y genera un dropdown en la UI de Ninja
 form.js → fetch(Worker #1) → Anthropic API → resumen_ia → Supabase sesiones
 ```
 **API key Claude:** guardada en `localStorage`. El usuario la ingresa una vez en ⚙ Ajustes.
+
+**Sincronización calendario ↔ métricas:**
+- Las métricas siguen el mes y la cuenta del calendario.
+- La navegación de mes llama `Metrics.rerender()` automáticamente.
+- El filtro de cuenta persiste en `localStorage`.
 
 ---
 
@@ -192,7 +226,7 @@ Prefer: resolution=merge-duplicates   ← idempotente por UNIQUE(sesion_date)
 | `entry_time` / `exit_time` | timestamptz | NT8 |
 | `entry_name` / `exit_name` | text | NT8 |
 | `profit` | numeric | C# calculado |
-| `commission` | numeric | 0 (no disponible en Indicator) |
+| `commission` | numeric | `ex.Commission` leído de NT8 (acumulado en fusiones ATM) |
 | `mae` / `mfe` | numeric | C# via High/Low barras |
 | `bars` | integer | C# Δminutos |
 | `trade_date` | date | C# |
@@ -210,11 +244,24 @@ Campos clave: `sesion_date UNIQUE`, `contexto`, `num_corrida`, `velas_corrida`,
 `puntos_retroceso`, `zonas_contra`, `setup`, `chk_zonas/orden/5velas/noticias/consecucion/estructura`,
 `analisis_trader`, `resumen_ia`, `imagen_url`, `no_opero`, `motivo_no_opero`
 
+### Tabla `fomc_dates` — Fechas de reuniones FOMC ← NUEVA
+
+```sql
+CREATE TABLE fomc_dates (
+  date        DATE PRIMARY KEY,
+  description TEXT DEFAULT 'FOMC Meeting'
+);
+```
+
+Con RLS habilitado (read-only público). Pre-poblada con fechas 2025 y 2026.
+
 ### Permisos
 ```sql
-RLS:   DISABLED  (proyecto personal, un solo usuario)
+RLS:   DISABLED en trades y sesiones (proyecto personal, un solo usuario)
+RLS:   ENABLED en fomc_dates (read-only público)
 GRANT: INSERT / SELECT / UPDATE ON trades, sesiones TO anon
 GRANT: USAGE, SELECT ON SEQUENCE trades_id_seq, sesiones_id_seq TO anon
+GRANT: SELECT ON fomc_dates TO anon
 ```
 
 ---
@@ -228,7 +275,8 @@ GRANT: USAGE, SELECT ON SEQUENCE trades_id_seq, sesiones_id_seq TO anon
 | Anon key en C# binary | Compilado localmente, no en repo público |
 | Telegram bot | `ALLOWED_CHAT_ID` hardcodeado — bot ignora cualquier otro chat |
 | Cloudflare Workers | HTTPS forzado, variables como secrets cifrados |
-| RLS deshabilitado | Aceptable — proyecto personal, sin múltiples usuarios |
+| RLS deshabilitado en trades/sesiones | Aceptable — proyecto personal, sin múltiples usuarios |
+| fomc_dates | RLS habilitado — solo lectura pública, sin posibilidad de escritura no autorizada |
 
 ---
 
@@ -260,6 +308,7 @@ trading-journal/
 │   ├── table.js
 │   ├── form.js
 │   ├── charts.js
+│   ├── gallery.js              ← NUEVO: galería de imágenes
 │   └── app.js
 ├── NinjaTrader/
 │   └── SupabaseAutoExport.cs   ← Indicador C#
@@ -268,7 +317,9 @@ trading-journal/
 │   └── wrangler.toml           ← Config KV binding
 ├── docs/
 │   ├── arquitectura-tecnica.md
-│   └── arquitectura-funcional.md
+│   ├── arquitectura-funcional.md
+│   ├── manual-tecnico.md
+│   └── manual-usuario.md
 ├── PROGRESS.md                 ← Estado del proyecto
 └── TRADING_JOURNAL_PROJECT.md  ← Especificación original
 ```
