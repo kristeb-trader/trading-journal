@@ -6,6 +6,9 @@ const Calendar = (() => {
   let sesionesCache = {}    // date → sesion
   let casuisticasCache = {} // date → true (has errors)
   let allTradesRaw = []     // sin filtrar por cuenta
+  let allAccountsList = []  // lista completa de cuentas (cargada una sola vez)
+
+  const ACCOUNT_STORAGE_KEY = 'calendarAccount'
 
   function abbreviateAccount(account) {
     if (!account) return '—'
@@ -13,20 +16,21 @@ const Calendar = (() => {
     return parts.length > 2 ? parts.slice(0, 2).join('-') : account
   }
 
-  function buildAccountFilterCalendar(trades) {
-    const accounts = {}
-    trades.forEach(t => {
-      if (!t.account) return
-      const abbr = abbreviateAccount(t.account)
-      accounts[abbr] = true
-    })
+  // Reconstruye el dropdown conservando la selección actual (o restaurando desde localStorage)
+  function buildAccountFilterCalendar() {
     const sel = document.getElementById('accountFilterCalendar')
     const prev = sel.value
+
     sel.innerHTML = '<option value="all">Todas las cuentas</option>' +
-      Object.keys(accounts).sort().map(a => `<option value="${a}">${a}</option>`).join('')
-    const paApex = Object.keys(accounts).find(a => a.startsWith('PA-APEX'))
-    if (prev && prev !== 'all') sel.value = prev
-    else if (paApex) sel.value = paApex
+      allAccountsList.map(a => `<option value="${a}">${a}</option>`).join('')
+
+    // Prioridad: 1) preferencia guardada  2) selección anterior  3) PA-APEX  4) 'all'
+    const saved  = localStorage.getItem(ACCOUNT_STORAGE_KEY)
+    const paApex = allAccountsList.find(a => a.startsWith('PA-APEX'))
+
+    if (saved && allAccountsList.includes(saved))           sel.value = saved
+    else if (prev && prev !== 'all' && allAccountsList.includes(prev)) sel.value = prev
+    else if (paApex)                                        sel.value = paApex
   }
 
   const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
@@ -62,7 +66,7 @@ const Calendar = (() => {
     casuisticas.forEach(c => { casuisticasCache[c.sesion_date] = true })
 
     allTradesRaw = trades
-    buildAccountFilterCalendar(trades)
+    buildAccountFilterCalendar()
 
     const accountVal = document.getElementById('accountFilterCalendar').value
     const filteredTrades = accountVal === 'all'
@@ -301,14 +305,28 @@ const Calendar = (() => {
     if (typeof Metrics !== 'undefined') Metrics.rerender()
   }
 
-  function init() {
+  async function init() {
     document.getElementById('prevMonth').addEventListener('click', () => navigate(-1))
     document.getElementById('nextMonth').addEventListener('click', () => navigate(1))
     document.getElementById('accountFilterCalendar').addEventListener('change', () => {
+      // Persistir la selección para que sobreviva navegación y recargas
+      const val = document.getElementById('accountFilterCalendar').value
+      localStorage.setItem(ACCOUNT_STORAGE_KEY, val)
       load()
       if (typeof Metrics !== 'undefined') Metrics.rerender()
     })
-    load()
+
+    // Cargar la lista completa de cuentas una sola vez (independiente del mes)
+    const allTrades = await DB.getTrades()
+    const accountsMap = {}
+    allTrades.forEach(t => {
+      if (!t.account) return
+      const abbr = abbreviateAccount(t.account)
+      accountsMap[abbr] = true
+    })
+    allAccountsList = Object.keys(accountsMap).sort()
+
+    await load()
   }
 
   return { init, load, getYear: () => currentYear, getMonth: () => currentMonth }
