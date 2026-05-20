@@ -273,20 +273,32 @@ small { font-size: 0.82em; }
 .cal-cell.future { opacity: 0.4; }
 .cal-cell.today { border-color: var(--accent) !important; box-shadow: 0 0 0 1px var(--accent); }
 
-.cal-cell.day-target { background: rgba(29,158,117,0.12); border-color: rgba(29,158,117,0.3); }
-.cal-cell.day-stop { background: rgba(226,75,74,0.12); border-color: rgba(226,75,74,0.3); }
-.cal-cell.day-mixed { background: rgba(186,117,23,0.12); border-color: rgba(186,117,23,0.3); }
+.cal-cell.day-target   { background: rgba(29,158,117,0.12);  border-color: rgba(29,158,117,0.3); }
+.cal-cell.day-stop     { background: rgba(226,75,74,0.12);   border-color: rgba(226,75,74,0.3); }
+.cal-cell.day-mixed    { background: rgba(186,117,23,0.12);  border-color: rgba(186,117,23,0.3); }
 .cal-cell.day-no-trade { background: var(--bg3); opacity: 0.55; }
-.cal-cell.day-sin-setup { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.3); }
-.cal-cell.day-other { background: rgba(255,255,255,0.04); }
+.cal-cell.day-sin-setup{ background: rgba(99,102,241,0.08);  border-color: rgba(99,102,241,0.3); }
+.cal-cell.day-other    { background: rgba(255,255,255,0.04); }
+.cal-cell.day-festivo  { background: rgba(56,131,246,0.09);  border-color: rgba(56,131,246,0.28); }
+.cal-cell.day-fomc     { background: rgba(194,137,72,0.12);  border-color: rgba(194,137,72,0.35); }
 
 .cal-status-badge {
   font-size: 0.6rem; font-weight: 700; letter-spacing: 0.03em;
   display: flex; align-items: center; gap: 3px; margin-top: auto;
 }
 .cal-status-badge i { font-size: 0.65rem; }
-.badge-noopero { color: var(--text3); }
+.badge-noopero  { color: var(--text3); }
 .badge-sinsetup { color: rgba(139,142,255,0.9); }
+.badge-festivo  { color: rgba(96,165,250,0.9); }
+.badge-fomc     { color: rgba(214,157,92,0.95); }
+
+/* Icono FOMC — superior izquierda */
+.cal-icon-fomc {
+  position: absolute; top: 5px; left: 6px;
+  font-size: 0.68rem; line-height: 1;
+  color: rgba(214,157,92,0.85);
+}
+.cal-icon-fomc i { font-size: 0.68rem; }
 
 /* Icono error — superior derecha */
 .cal-icon-error {
@@ -455,8 +467,10 @@ small { font-size: 0.82em; }
 .badge-other { background: var(--bg3); color: var(--text2); }
 .badge-long { background: rgba(29,158,117,0.1); color: var(--accent); }
 .badge-short { background: rgba(226,75,74,0.1); color: var(--red); }
-.badge-noopero { background: rgba(255,255,255,0.05); color: var(--text3); }
-.badge-sinsetup { background: rgba(99,102,241,0.12); color: rgba(139,142,255,0.9); }
+.badge-noopero  { background: rgba(255,255,255,0.05);  color: var(--text3); }
+.badge-sinsetup { background: rgba(99,102,241,0.12);   color: rgba(139,142,255,0.9); }
+.badge-festivo  { background: rgba(56,131,246,0.1);    color: rgba(96,165,250,0.9); }
+.badge-fomc     { background: rgba(194,137,72,0.12);   color: rgba(214,157,92,0.95); }
 
 .col-dow { color: var(--text3); font-size: 0.78rem; font-weight: 600; width: 38px; }
 .col-account { color: var(--text3); font-size: 0.78rem; }

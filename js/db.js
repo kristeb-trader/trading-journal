@@ -141,6 +141,21 @@ const DB = {
     return data
   },
 
+  // ── FOMC Dates ───────────────────────────────────────────────────────────
+
+  async getFomcDates(year, month) {
+    const from = `${year}-${String(month).padStart(2, '0')}-01`
+    const lastDay = new Date(year, month, 0).getDate()
+    const to = `${year}-${String(month).padStart(2, '0')}-${lastDay}`
+    const { data, error } = await supa
+      .from('fomc_dates')
+      .select('date')
+      .gte('date', from)
+      .lte('date', to)
+    if (error) throw error
+    return data.map(r => r.date)
+  },
+
   // ── Catálogo Casuísticas ─────────────────────────────────────────────────
 
   async getCatalogoCasuisticas() {

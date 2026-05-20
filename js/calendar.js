@@ -7,6 +7,8 @@ const Calendar = (() => {
   let casuisticasCache = {} // date → true (has errors)
   let allTradesRaw = []     // sin filtrar por cuenta
   let allAccountsList = []  // lista completa de cuentas (cargada una sola vez)
+  let cmeHolidays   = new Set() // fechas ISO de festivos CME del mes actual
+  let fomcDates     = new Set() // fechas ISO de reuniones FOMC del mes actual
 
   const ACCOUNT_STORAGE_KEY = 'calendarAccount'
 
@@ -33,20 +35,73 @@ const Calendar = (() => {
     else if (paApex)                                        sel.value = paApex
   }
 
+  // ── Festivos CME (calculados algorítmicamente) ────────────────────────────
+  function calcCMEHolidays(year) {
+    const result = new Set()
+    const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+
+    // Ajuste weekend → día hábil observado (Sáb→Vie, Dom→Lun)
+    const observed = d => {
+      const r = new Date(d)
+      if (r.getDay() === 6) r.setDate(r.getDate() - 1)
+      if (r.getDay() === 0) r.setDate(r.getDate() + 1)
+      return r
+    }
+    // N-ésimo weekday del mes (weekday: 0=Dom,1=Lun,...,6=Sáb)
+    const nth = (yr, mo, weekday, n) => {
+      const d = new Date(yr, mo - 1, 1); let count = 0
+      while (true) { if (d.getDay() === weekday && ++count === n) return new Date(d); d.setDate(d.getDate() + 1) }
+    }
+    // Último weekday del mes
+    const last = (yr, mo, weekday) => {
+      const d = new Date(yr, mo, 0)
+      while (d.getDay() !== weekday) d.setDate(d.getDate() - 1)
+      return new Date(d)
+    }
+    // Pascua (algoritmo de Computus)
+    const easter = yr => {
+      const a=yr%19, b=Math.floor(yr/100), c=yr%100, d=Math.floor(b/4), e=b%4
+      const f=Math.floor((b+8)/25), g=Math.floor((b-f+1)/3)
+      const h=(19*a+b-d-g+15)%30, i=Math.floor(c/4), k=c%4
+      const l=(32+2*e+2*i-h-k)%7, m=Math.floor((a+11*h+22*l)/451)
+      const mo=Math.floor((h+l-7*m+114)/31), dy=((h+l-7*m+114)%31)+1
+      return new Date(yr, mo-1, dy)
+    }
+
+    result.add(iso(observed(new Date(year, 0, 1))))   // New Year's Day
+    result.add(iso(nth(year, 1, 1, 3)))               // MLK Day (3er Lunes Ene)
+    result.add(iso(nth(year, 2, 1, 3)))               // Presidents' Day (3er Lunes Feb)
+    const gf = new Date(easter(year)); gf.setDate(gf.getDate() - 2)
+    result.add(iso(gf))                               // Good Friday
+    result.add(iso(last(year, 5, 1)))                 // Memorial Day (último Lunes May)
+    result.add(iso(observed(new Date(year, 5, 19))))  // Juneteenth
+    result.add(iso(observed(new Date(year, 6, 4))))   // Independence Day
+    result.add(iso(nth(year, 9, 1, 1)))               // Labor Day (1er Lunes Sep)
+    result.add(iso(nth(year, 11, 4, 4)))              // Thanksgiving (4to Jueves Nov)
+    result.add(iso(observed(new Date(year, 11, 25)))) // Christmas
+    return result
+  }
+
   const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
   const DAYS_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Semana']
 
-  function dayResult(trades, sesion) {
+  function dayResult(trades, sesion, dateStr) {
     if (sesion?.no_opero) {
-      return sesion.motivo_no_opero === 'Sin setup' ? 'sin-setup' : 'no-trade'
+      if (sesion.motivo_no_opero === 'FOMC')    return 'fomc'
+      if (sesion.motivo_no_opero === 'Festivo') return 'festivo'
+      if (sesion.motivo_no_opero === 'Sin setup') return 'sin-setup'
+      return 'no-trade'
     }
-    if (!trades || trades.length === 0) return 'empty'
+    if (!trades || trades.length === 0) {
+      if (cmeHolidays.has(dateStr)) return 'festivo'  // festivo automático
+      return 'empty'
+    }
     const targets = trades.filter(t => t.resultado === 'target').length
-    const stops = trades.filter(t => t.resultado === 'stop').length
+    const stops   = trades.filter(t => t.resultado === 'stop').length
     if (targets > 0 && stops === 0) return 'target'
     if (stops > 0 && targets === 0) return 'stop'
-    if (targets > 0 && stops > 0) return 'mixed'
+    if (targets > 0 && stops > 0)   return 'mixed'
     return 'other'
   }
 
@@ -56,11 +111,18 @@ const Calendar = (() => {
   }
 
   async function load() {
-    const [trades, sesiones, casuisticas] = await Promise.all([
+    const [trades, sesiones, casuisticas, fomcList] = await Promise.all([
       DB.getTradesByMonth(currentYear, currentMonth),
       DB.getSesiones(),
       DB.getCasuisticasByMonth(currentYear, currentMonth),
+      DB.getFomcDates(currentYear, currentMonth).catch(() => []),
     ])
+
+    // Festivos CME calculados para el año actual
+    cmeHolidays = calcCMEHolidays(currentYear)
+
+    // FOMC del mes actual
+    fomcDates = new Set(fomcList)
 
     casuisticasCache = {}
     casuisticas.forEach(c => { casuisticasCache[c.sesion_date] = true })
@@ -132,12 +194,14 @@ const Calendar = (() => {
 
         const trades = tradesCache[dateStr] || []
         const sesion = sesionesCache[dateStr]
-        const isFuture = dateStr > today
-        const isToday = dateStr === today
+        const isFuture  = dateStr > today
+        const isToday   = dateStr === today
+        const isHoliday = !isFuture && cmeHolidays.has(dateStr)
+        const isFomc    = !isFuture && fomcDates.has(dateStr)
 
         let cellClass = 'cal-cell'
         if (isFuture) cellClass += ' future'
-        else cellClass += ` day-${dayResult(trades, sesion)}`
+        else cellClass += ` day-${dayResult(trades, sesion, dateStr)}`
         if (isToday) cellClass += ' today'
 
         const pnl = dayPnl(trades)
@@ -149,13 +213,27 @@ const Calendar = (() => {
         const clickable = !isFuture ? `data-date="${dateStr}" style="cursor:pointer"` : ''
 
         let statusBadge = ''
-        if (!isFuture && sesion?.no_opero) {
-          if (sesion.motivo_no_opero === 'Sin setup') {
-            statusBadge = `<div class="cal-status-badge badge-sinsetup"><i class="ti ti-eye-off"></i> Sin entradas</div>`
-          } else {
-            statusBadge = `<div class="cal-status-badge badge-noopero"><i class="ti ti-user-off"></i> No operé</div>`
+        if (!isFuture) {
+          if (sesion?.no_opero) {
+            if (sesion.motivo_no_opero === 'Sin setup') {
+              statusBadge = `<div class="cal-status-badge badge-sinsetup"><i class="ti ti-eye-off"></i> Sin entradas</div>`
+            } else if (sesion.motivo_no_opero === 'FOMC') {
+              statusBadge = `<div class="cal-status-badge badge-fomc"><i class="ti ti-chart-candle"></i> FOMC</div>`
+            } else if (sesion.motivo_no_opero === 'Festivo') {
+              statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> Festivo</div>`
+            } else {
+              statusBadge = `<div class="cal-status-badge badge-noopero"><i class="ti ti-user-off"></i> No operé</div>`
+            }
+          } else if (isHoliday && !trades.length) {
+            // Festivo automático (sin sesión registrada)
+            statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> Festivo</div>`
           }
         }
+
+        // Indicador FOMC superior izquierda (visible aunque haya operado)
+        const fomcIcon = isFomc
+          ? `<div class="cal-icon-fomc" title="Día de reunión FOMC"><i class="ti ti-podium"></i></div>`
+          : ''
 
         // Icono error (superior derecha)
         const errorIcon = !isFuture && casuisticasCache[dateStr]
@@ -175,6 +253,7 @@ const Calendar = (() => {
         html += `
           <div class="${cellClass}" ${clickable}>
             <div class="cal-day-num">${parseInt(dateStr.slice(8))}</div>
+            ${fomcIcon}
             ${errorIcon}
             ${pnlHtml}
             ${tradeCount}
