@@ -217,6 +217,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 string   postMarketPos  = string.Empty;
                 int      postQty = 0;
                 double   postProfit = 0;
+                double   postCommission = 0;
 
                 lock (syncLock)
                 {
@@ -266,6 +267,9 @@ namespace NinjaTrader.NinjaScript.Indicators
                         postMae = Math.Round(postMae * pointValue * postQty, 2);
                         postMfe = Math.Round(postMfe * pointValue * postQty, 2);
 
+                        // Capturar comisión reportada por NT8 (puede ser 0 en versiones antiguas)
+                        postCommission = Math.Round(ex.Commission, 2);
+
                         shouldPost = true;
                     }
                 }
@@ -297,7 +301,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                             pendingExitPrice  = (pendingExitPrice  * pendingQty + postExitPrice  * postQty) / totalQty;
                             pendingQty        = totalQty;
                             pendingProfit    += postProfit;
-                            pendingCommission += 0; // NT8 no reporta comisión; sumar cuando esté disponible
+                            pendingCommission += postCommission;
                             pendingMae       += postMae;
                             pendingMfe       += postMfe;
                             pendingExitTime   = postExitTime > pendingExitTime ? postExitTime : pendingExitTime;
@@ -323,7 +327,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                             pendingExitTime   = postExitTime;
                             pendingExitName   = postExitName;
                             pendingProfit     = postProfit;
-                            pendingCommission = 0;
+                            pendingCommission = postCommission;
                             pendingMae        = postMae;
                             pendingMfe        = postMfe;
                             pendingBars       = bars;
@@ -346,7 +350,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         {
             string instrument, account, marketPos, exitName, tradeDate, resultado;
             int qty, bars;
-            double entryPrc, exitPrc, profit, mae, mfe;
+            double entryPrc, exitPrc, profit, commission, mae, mfe;
             DateTime entryT, exitT;
 
             lock (mergeLock)
@@ -363,6 +367,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 exitT      = pendingExitTime;
                 exitName   = pendingExitName;
                 profit     = pendingProfit;
+                commission = pendingCommission;
                 mae        = pendingMae;
                 mfe        = pendingMfe;
                 bars       = pendingBars;
@@ -374,11 +379,11 @@ namespace NinjaTrader.NinjaScript.Indicators
             Task.Run(() => PostTradeAsync(
                 instrument, account, marketPos, qty,
                 entryPrc, exitPrc, entryT, exitT, exitName,
-                profit, mae, mfe, bars, tradeDate, resultado));
+                profit, commission, mae, mfe, bars, tradeDate, resultado));
 
             Task.Run(() => SendNotificationAsync(
                 instrument, marketPos, qty,
-                entryPrc, exitPrc, profit, mae, mfe, resultado));
+                entryPrc, exitPrc, profit, commission, mae, mfe, resultado));
         }
 
         private async Task PostTradeAsync(
@@ -386,7 +391,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             double entryPrice, double exitPrice,
             DateTime entryTime, DateTime exitTime,
             string exitName,
-            double profit, double mae, double mfe,
+            double profit, double commission, double mae, double mfe,
             int bars, string tradeDate, string resultado)
         {
             try
@@ -408,7 +413,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                     "\"exit_time\":\"{7}\","  +
                     "\"exit_name\":\"{8}\","  +
                     "\"profit\":{9},"         +
-                    "\"commission\":0,"       +
+                    "\"commission\":{16},"    +
                     "\"mae\":{10},"           +
                     "\"mfe\":{11},"           +
                     "\"etd\":{12},"           +
@@ -422,7 +427,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                     exitTime.ToString("HH:mm:ss"),
                     Esc(exitName),
                     profit, mae, mfe,
-                    etd, bars, tradeDate, resultado
+                    etd, bars, tradeDate, resultado, commission
                 );
 
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -434,7 +439,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         private async Task SendNotificationAsync(
             string instrument, string marketPos, int qty,
             double entryPrice, double exitPrice,
-            double profit, double mae, double mfe,
+            double profit, double commission, double mae, double mfe,
             string resultado)
         {
             try
@@ -451,13 +456,14 @@ namespace NinjaTrader.NinjaScript.Indicators
                     "\"entry_price\":{3},"    +
                     "\"exit_price\":{4},"     +
                     "\"profit\":{5},"         +
-                    "\"mae\":{6},"            +
-                    "\"mfe\":{7},"            +
-                    "\"resultado\":\"{8}\""   +
+                    "\"commission\":{6},"     +
+                    "\"mae\":{7},"            +
+                    "\"mfe\":{8},"            +
+                    "\"resultado\":\"{9}\""   +
                     "}}",
                     Esc(instrument), marketPos, qty,
                     entryPrice, exitPrice,
-                    profit, mae, mfe,
+                    profit, commission, mae, mfe,
                     resultado
                 );
 
