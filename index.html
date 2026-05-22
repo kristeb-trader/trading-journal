@@ -244,8 +244,9 @@
                   <input type="number" id="velasCorrida" name="velas_corrida" min="1" max="20" placeholder="1 – 20">
                 </div>
                 <div class="form-group">
-                  <label for="puntosRetroceso">Puntos de retroceso</label>
-                  <input type="number" id="puntosRetroceso" name="puntos_retroceso" step="0.25" min="0" placeholder="ej. 12.50">
+                  <label>Puntos de retroceso <small style="color:var(--text3)">(calculado automáticamente)</small></label>
+                  <div id="puntosRetrocesoDisplay" style="padding:8px 12px;background:var(--card2);border-radius:6px;color:var(--text2);font-size:0.9rem;min-height:36px;display:flex;align-items:center">— pts</div>
+                  <input type="hidden" id="puntosRetroceso">
                 </div>
               </div>
 

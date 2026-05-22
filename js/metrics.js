@@ -44,12 +44,13 @@ const Metrics = (() => {
     return { best: entries[0], worst: entries[entries.length - 1] }
   }
 
-  // Sesión limpia = los 7 factores al 100% (6 checklist + sin errores)
+  // Sesión limpia: días operados → 7 factores al 100%; días no_opero → sin casuísticas
   function cleanSessions(activeSesiones, casByDate) {
-    return activeSesiones.filter(s =>
-      s.chk_zonas && s.chk_orden && s.chk_5velas && s.chk_noticias &&
-      s.chk_consecucion && s.chk_estructura && !casByDate[s.sesion_date]
-    ).length
+    return activeSesiones.filter(s => {
+      if (s.no_opero) return !casByDate[s.sesion_date]
+      return s.chk_zonas && s.chk_orden && s.chk_5velas && s.chk_noticias &&
+        s.chk_consecucion && s.chk_estructura && !casByDate[s.sesion_date]
+    }).length
   }
 
   function casuisticaFrequency(casuisticas) {
@@ -175,12 +176,18 @@ const Metrics = (() => {
       return
     }
 
-    // Fallos por factor
+    // Fallos por factor: checklist solo días operados; casuística todos
+    const operatedSesiones = activeSesiones.filter(s => !s.no_opero)
     const factorStats = DISC_FACTORS.map(f => {
-      const fails = f.key === '_noErrors'
-        ? activeSesiones.filter(s => casByDate[s.sesion_date])
-        : activeSesiones.filter(s => !s[f.key])
-      return { label: f.label, count: fails.length, pct: fails.length / total * 100 }
+      let fails, denominator
+      if (f.key === '_noErrors') {
+        fails = activeSesiones.filter(s => casByDate[s.sesion_date])
+        denominator = total
+      } else {
+        fails = operatedSesiones.filter(s => !s[f.key])
+        denominator = operatedSesiones.length || 1
+      }
+      return { label: f.label, count: fails.length, pct: fails.length / denominator * 100 }
     }).sort((a, b) => b.count - a.count)
 
     const maxCount = factorStats[0]?.count || 1
@@ -200,14 +207,14 @@ const Metrics = (() => {
         </div>`
     }).join('')
 
-    // Días con fallos → listar qué factores fallaron cada día
+    // Días con fallos: no_opero → solo casuística; operados → todos los factores
     const failedDays = activeSesiones
-      .map(s => ({
-        date: s.sesion_date,
-        failed: DISC_FACTORS.filter(f =>
-          f.key === '_noErrors' ? casByDate[s.sesion_date] : !s[f.key]
-        ),
-      }))
+      .map(s => {
+        const failed = s.no_opero
+          ? (casByDate[s.sesion_date] ? [DISC_FACTORS.find(f => f.key === '_noErrors')] : [])
+          : DISC_FACTORS.filter(f => f.key === '_noErrors' ? casByDate[s.sesion_date] : !s[f.key])
+        return { date: s.sesion_date, noOpero: s.no_opero, failed }
+      })
       .filter(d => d.failed.length > 0)
       .sort((a, b) => b.date.localeCompare(a.date))
 
@@ -217,11 +224,14 @@ const Metrics = (() => {
           const tags = d.failed.map(f =>
             `<span class="disc-fail-tag">${f.label}</span>`
           ).join('')
+          const noOpBadge = d.noOpero
+            ? '<span style="font-size:0.7rem;color:var(--text3);background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:3px;margin-left:6px">sin operar</span>'
+            : ''
           return `
             <div class="disc-fail-day">
               <div class="disc-fail-day-header">
                 <span class="disc-date-dow">${dow}</span>
-                <span class="disc-date-val">${d.date}</span>
+                <span class="disc-date-val">${d.date}${noOpBadge}</span>
                 <span class="disc-fail-count">${d.failed.length} fallo${d.failed.length !== 1 ? 's' : ''}</span>
               </div>
               <div class="disc-fail-tags">${tags}</div>
@@ -231,7 +241,7 @@ const Metrics = (() => {
 
     document.getElementById('disciplineModalContent').innerHTML = `
       <div style="padding:16px 20px 20px">
-        <p class="disc-section-title">Fallos por factor (${total} sesiones activas)</p>
+        <p class="disc-section-title">Fallos por factor (${operatedSesiones.length} días operados · ${total - operatedSesiones.length} sin operar)</p>
         ${barsHtml}
         <div class="disc-dates" style="margin-top:12px">
           <p class="disc-section-title">Días con fallos</p>
@@ -340,7 +350,7 @@ const Metrics = (() => {
     const { avgWin, avgLoss } = calcAvgWinLoss(trades)
     const maxDD = calcMaxDrawdown(trades)
     // "Sin setup" days count: trader was present pero no hubo setup válido
-    const activeSesiones = sesiones.filter(s => !s.no_opero || s.motivo_no_opero === 'Sin setup')
+    const activeSesiones = sesiones
 
     // Casuísticas filtradas por el mismo período
     const periodCasuisticas = filterCasuisticasByPeriod(allCasuisticas, period)
@@ -351,9 +361,10 @@ const Metrics = (() => {
     const clean = cleanSessions(activeSesiones, casByDate)
     const failedCount = activeSesiones.length - clean
 
-    // Disciplina: 6 checklist + 1 "sin errores de tipificación" → sobre 7
+    // Disciplina: días operados → 7 factores; días no_opero → solo casuística (1 factor)
     const disciplinePct = activeSesiones.length > 0
       ? Math.round(activeSesiones.reduce((sum, s) => {
+          if (s.no_opero) return sum + (casByDate[s.sesion_date] ? 0 : 1)
           const chkScore = [s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
             .filter(Boolean).length
           const noErrors = casByDate[s.sesion_date] ? 0 : 1

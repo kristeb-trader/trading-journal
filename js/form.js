@@ -1,6 +1,7 @@
 // Session registration form
 const SessionForm = (() => {
   let editingDate = null // set when editing an existing session
+  let retrocesoCancelId = 0
 
   function setToday() {
     const today = new Date().toISOString().slice(0, 10)
@@ -92,6 +93,23 @@ const SessionForm = (() => {
       Toast.show('Imagen subida correctamente', 'success')
     } catch {
       Toast.show('Error al subir imagen a Cloudinary', 'error')
+    }
+  }
+
+  async function updateRetroceso(date) {
+    const myId = ++retrocesoCancelId
+    const display = document.getElementById('puntosRetrocesoDisplay')
+    const hidden = document.getElementById('puntosRetroceso')
+    display.textContent = '— pts'
+    hidden.value = ''
+    if (!date) return
+    const trades = await DB.getTradesByDate(date)
+    if (myId !== retrocesoCancelId) return
+    if (trades.length > 0) {
+      const netPnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
+      const pts = Math.abs(netPnl / 2).toFixed(2)
+      display.textContent = `${pts} pts`
+      hidden.value = pts
     }
   }
 
@@ -200,6 +218,7 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
     document.getElementById('imagePreview').classList.add('hidden')
     document.getElementById('uploadArea').classList.remove('hidden')
     document.getElementById('imagenUrl').value = ''
+    updateRetroceso(document.getElementById('sesionDate').value)
     casPendientes = []
     renderCasList()
     editingDate = null
@@ -239,20 +258,23 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
     document.querySelector('[data-section="register"]').click()
 
     if (!sesion) {
-      if (date) document.getElementById('sesionDate').value = date
+      if (date) {
+        document.getElementById('sesionDate').value = date
+        updateRetroceso(date)
+      }
       return
     }
 
     editingDate = sesion.sesion_date
     document.getElementById('sesionDate').value = sesion.sesion_date
     loadCasuisticasForDate(sesion.sesion_date)
+    updateRetroceso(sesion.sesion_date)
     document.getElementById('noOpero').checked = sesion.no_opero || false
     document.getElementById('noOpero').dispatchEvent(new Event('change'))
 
     if (!sesion.no_opero) {
       document.getElementById('contexto').value = sesion.contexto || ''
       document.getElementById('velasCorrida').value = sesion.velas_corrida || ''
-      document.getElementById('puntosRetroceso').value = sesion.puntos_retroceso || ''
       document.getElementById('setup').value = sesion.setup || ''
       document.getElementById('chkZonas').checked = sesion.chk_zonas || false
       document.getElementById('chkOrden').checked = sesion.chk_orden || false
@@ -365,6 +387,7 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
 
   function init() {
     setToday()
+    updateRetroceso(document.getElementById('sesionDate').value)
     setupBtnGroups()
     setupNoOperoToggle()
     setupImageUpload()
@@ -379,16 +402,10 @@ Genera un resumen de máximo 150 palabras que destaque: lo que hizo bien, lo que
     document.getElementById('clearForm').addEventListener('click', clearForm)
 
     // Cargar casuísticas y auto-calcular retroceso al cambiar fecha
-    document.getElementById('sesionDate').addEventListener('change', async () => {
+    document.getElementById('sesionDate').addEventListener('change', () => {
       const date = document.getElementById('sesionDate').value
       loadCasuisticasForDate(date)
-      if (date) {
-        const trades = await DB.getTradesByDate(date)
-        if (trades.length > 0) {
-          const netPnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
-          document.getElementById('puntosRetroceso').value = Math.abs(netPnl / 2).toFixed(2)
-        }
-      }
+      updateRetroceso(date)
     })
 
     // Auto-invalidar checklist de 5 velas si velas > 5
