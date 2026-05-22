@@ -166,7 +166,7 @@ const Metrics = (() => {
     { key: '_noErrors',       label: 'Sin errores de tipificación'      },
   ]
 
-  function openDisciplineDetailModal(activeSesiones, casByDate) {
+  function openDisciplineDetailModal(activeSesiones, casByDate, periodCasuisticas) {
     const total = activeSesiones.length
 
     if (total === 0) {
@@ -176,25 +176,28 @@ const Metrics = (() => {
       return
     }
 
-    // Fallos por factor: checklist solo días operados; casuística todos
+    // Checklist: 6 factores sobre días operados
     const operatedSesiones = activeSesiones.filter(s => !s.no_opero)
-    const factorStats = DISC_FACTORS.map(f => {
-      let fails, denominator
-      if (f.key === '_noErrors') {
-        fails = activeSesiones.filter(s => casByDate[s.sesion_date])
-        denominator = total
-      } else {
-        fails = operatedSesiones.filter(s => !s[f.key])
-        denominator = operatedSesiones.length || 1
-      }
+    const CHECKLIST_FACTORS = DISC_FACTORS.filter(f => f.key !== '_noErrors')
+    const checklistStats = CHECKLIST_FACTORS.map(f => {
+      const fails = operatedSesiones.filter(s => !s[f.key])
+      const denominator = operatedSesiones.length || 1
       return { label: f.label, count: fails.length, pct: fails.length / denominator * 100 }
     }).sort((a, b) => b.count - a.count)
 
-    const maxCount = factorStats[0]?.count || 1
+    // Casuísticas: contar por tipo exacto
+    const casCountMap = {}
+    periodCasuisticas.forEach(c => { casCountMap[c.casuistica] = (casCountMap[c.casuistica] || 0) + 1 })
+    const casStats = Object.entries(casCountMap)
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
 
-    const barsHtml = factorStats.map(f => {
+    const maxChk = checklistStats[0]?.count || 1
+    const maxCas = casStats[0]?.count || 1
+
+    const chkBarsHtml = checklistStats.map(f => {
       const cls = f.pct >= 50 ? 'level-high' : f.pct >= 25 ? 'level-mid' : 'level-low'
-      const barW = maxCount > 0 ? (f.count / maxCount * 100).toFixed(0) : 0
+      const barW = (f.count / maxChk * 100).toFixed(0)
       return `
         <div class="disc-item">
           <span class="disc-item-label">${f.label}</span>
@@ -207,42 +210,69 @@ const Metrics = (() => {
         </div>`
     }).join('')
 
-    // Días con fallos: no_opero → solo casuística; operados → todos los factores
+    const casBarsHtml = casStats.length > 0
+      ? casStats.map(f => {
+          const barW = (f.count / maxCas * 100).toFixed(0)
+          return `
+            <div class="disc-item">
+              <span class="disc-item-label">${f.label}</span>
+              <div class="disc-bar-wrap">
+                <div class="disc-bar-fill level-high" style="width:${barW}%;background:var(--warning)"></div>
+              </div>
+              <span class="disc-count">${f.count}</span>
+            </div>`
+        }).join('')
+      : '<p style="color:var(--accent);font-size:0.85rem;padding:4px 0">✓ Sin errores de ejecución</p>'
+
+    // Agrupar casuísticas por fecha (sin duplicar tipo en el mismo día)
+    const casByDateDetail = {}
+    periodCasuisticas.forEach(c => {
+      if (!casByDateDetail[c.sesion_date]) casByDateDetail[c.sesion_date] = []
+      if (!casByDateDetail[c.sesion_date].includes(c.casuistica))
+        casByDateDetail[c.sesion_date].push(c.casuistica)
+    })
+
+    // Días con fallos: no_opero → solo casuísticas; operados → checklist + casuísticas
     const failedDays = activeSesiones
       .map(s => {
-        const failed = s.no_opero
-          ? (casByDate[s.sesion_date] ? [DISC_FACTORS.find(f => f.key === '_noErrors')] : [])
-          : DISC_FACTORS.filter(f => f.key === '_noErrors' ? casByDate[s.sesion_date] : !s[f.key])
-        return { date: s.sesion_date, noOpero: s.no_opero, failed }
+        const chkFails = s.no_opero ? [] : CHECKLIST_FACTORS.filter(f => !s[f.key])
+        const casFails = casByDateDetail[s.sesion_date] || []
+        return { date: s.sesion_date, noOpero: s.no_opero, chkFails, casFails }
       })
-      .filter(d => d.failed.length > 0)
+      .filter(d => d.chkFails.length > 0 || d.casFails.length > 0)
       .sort((a, b) => b.date.localeCompare(a.date))
 
     const daysHtml = failedDays.length > 0
       ? failedDays.map(d => {
-          const dow  = DAYS[new Date(d.date + 'T12:00:00').getDay()]
-          const tags = d.failed.map(f =>
-            `<span class="disc-fail-tag">${f.label}</span>`
-          ).join('')
+          const dow = DAYS[new Date(d.date + 'T12:00:00').getDay()]
+          const totalFails = d.chkFails.length + d.casFails.length
           const noOpBadge = d.noOpero
             ? '<span style="font-size:0.7rem;color:var(--text3);background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:3px;margin-left:6px">sin operar</span>'
             : ''
+          const chkTags = d.chkFails.map(f =>
+            `<span class="disc-fail-tag">${f.label}</span>`
+          ).join('')
+          const casTags = d.casFails.map(c =>
+            `<span class="disc-fail-tag" style="background:rgba(186,117,23,0.18);color:var(--warning);border-color:rgba(186,117,23,0.3)">${c}</span>`
+          ).join('')
           return `
             <div class="disc-fail-day">
               <div class="disc-fail-day-header">
                 <span class="disc-date-dow">${dow}</span>
                 <span class="disc-date-val">${d.date}${noOpBadge}</span>
-                <span class="disc-fail-count">${d.failed.length} fallo${d.failed.length !== 1 ? 's' : ''}</span>
+                <span class="disc-fail-count">${totalFails} fallo${totalFails !== 1 ? 's' : ''}</span>
               </div>
-              <div class="disc-fail-tags">${tags}</div>
+              <div class="disc-fail-tags">${chkTags}${casTags}</div>
             </div>`
         }).join('')
       : '<p style="color:var(--accent);font-size:0.85rem;padding:8px 0">¡Disciplina perfecta en el período! 🎯</p>'
 
     document.getElementById('disciplineModalContent').innerHTML = `
       <div style="padding:16px 20px 20px">
-        <p class="disc-section-title">Fallos por factor (${operatedSesiones.length} días operados · ${total - operatedSesiones.length} sin operar)</p>
-        ${barsHtml}
+        <p class="disc-section-title">Reglas del checklist (${operatedSesiones.length} días operados · ${total - operatedSesiones.length} sin operar)</p>
+        ${chkBarsHtml}
+        <p class="disc-section-title" style="margin-top:16px">Errores de ejecución</p>
+        ${casBarsHtml}
         <div class="disc-dates" style="margin-top:12px">
           <p class="disc-section-title">Días con fallos</p>
           ${daysHtml}
@@ -419,7 +449,7 @@ const Metrics = (() => {
       </div>`).join('')
 
     document.querySelector('[data-action="disc-detail"]')?.addEventListener('click', () => {
-      openDisciplineDetailModal(activeSesiones, casByDate)
+      openDisciplineDetailModal(activeSesiones, casByDate, periodCasuisticas)
     })
     document.querySelector('[data-action="disc-errors"]')?.addEventListener('click', () => {
       openDisciplineModal(periodCasuisticas, trades)
