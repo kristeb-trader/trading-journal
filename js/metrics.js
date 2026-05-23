@@ -210,15 +210,18 @@ const Metrics = (() => {
         </div>`
     }).join('')
 
+    const topErrorLabel = casStats[0]?.label || null
     const casBarsHtml = casStats.length > 0
       ? casStats.map((f, i) => {
           const barW = (f.count / maxCas * 100).toFixed(0)
-          const color = i === 0 ? 'var(--red)' : 'var(--warning)'
+          const isTop = i === 0
+          const barColor = isTop ? 'rgba(226,75,74,0.45)' : 'var(--warning)'
+          const labelStyle = isTop ? 'style="color:rgba(226,75,74,0.85)"' : ''
           return `
             <div class="disc-item">
-              <span class="disc-item-label">${f.label}</span>
+              <span class="disc-item-label" ${labelStyle}>${f.label}</span>
               <div class="disc-bar-wrap">
-                <div class="disc-bar-fill" style="width:${barW}%;background:${color}"></div>
+                <div class="disc-bar-fill" style="width:${barW}%;background:${barColor}"></div>
               </div>
               <span class="disc-count">${f.count}</span>
             </div>`
@@ -250,11 +253,12 @@ const Metrics = (() => {
           const noOpBadge = d.noOpero
             ? '<span style="font-size:0.7rem;color:var(--text3);background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:3px;margin-left:6px">sin operar</span>'
             : ''
-          const chkTags = d.chkFails.map(f =>
-            `<span class="disc-fail-tag">${f.label}</span>`
-          ).join('')
+          const amberTag = t => `<span class="disc-fail-tag" style="background:rgba(186,117,23,0.18);color:var(--warning);border-color:rgba(186,117,23,0.3)">${t}</span>`
+          const chkTags = d.chkFails.map(f => amberTag(f.label)).join('')
           const casTags = d.casFails.map(c =>
-            `<span class="disc-fail-tag">${c}</span>`
+            c === topErrorLabel
+              ? `<span class="disc-fail-tag">${c}</span>`
+              : amberTag(c)
           ).join('')
           return `
             <div class="disc-fail-day">
