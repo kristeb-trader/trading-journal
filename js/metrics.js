@@ -414,7 +414,7 @@ const Metrics = (() => {
       { label: 'Total Trades', value: totalTrades, icon: 'ti-list-numbers', color: 'neutral', sub: `${tradingDays} días operados` },
       {
         label: 'Targets · Stops · Sin entrada',
-        value: `<span class="color-green">${targets}</span> · <span class="color-red">${stops}</span> · ${noOperoCount}`,
+        value: `<span style="color:var(--accent)">${targets}</span> · <span style="color:var(--red)">${stops}</span> · ${noOperoCount}`,
         icon: 'ti-chart-bar',
         color: 'neutral',
         sub: `Ratio T/S: ${stops > 0 ? (targets / stops).toFixed(2) : targets > 0 ? '∞' : '—'}`,
