@@ -211,13 +211,14 @@ const Metrics = (() => {
     }).join('')
 
     const casBarsHtml = casStats.length > 0
-      ? casStats.map(f => {
+      ? casStats.map((f, i) => {
           const barW = (f.count / maxCas * 100).toFixed(0)
+          const color = i === 0 ? 'var(--red)' : 'var(--warning)'
           return `
             <div class="disc-item">
               <span class="disc-item-label">${f.label}</span>
               <div class="disc-bar-wrap">
-                <div class="disc-bar-fill level-high" style="width:${barW}%;background:var(--warning)"></div>
+                <div class="disc-bar-fill" style="width:${barW}%;background:${color}"></div>
               </div>
               <span class="disc-count">${f.count}</span>
             </div>`
@@ -253,7 +254,7 @@ const Metrics = (() => {
             `<span class="disc-fail-tag">${f.label}</span>`
           ).join('')
           const casTags = d.casFails.map(c =>
-            `<span class="disc-fail-tag" style="background:rgba(186,117,23,0.18);color:var(--warning);border-color:rgba(186,117,23,0.3)">${c}</span>`
+            `<span class="disc-fail-tag">${c}</span>`
           ).join('')
           return `
             <div class="disc-fail-day">
