@@ -477,6 +477,11 @@ const Metrics = (() => {
     document.getElementById('disciplineModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden')
     })
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return
+      const dm = document.getElementById('disciplineModal')
+      if (!dm.classList.contains('hidden')) dm.classList.add('hidden')
+    })
 
     // Días con fallos → abrir modal de detalle del día
     document.getElementById('disciplineModalContent').addEventListener('click', async e => {
