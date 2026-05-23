@@ -261,7 +261,7 @@ const Metrics = (() => {
               : amberTag(c)
           ).join('')
           return `
-            <div class="disc-fail-day">
+            <div class="disc-fail-day" data-date="${d.date}">
               <div class="disc-fail-day-header">
                 <span class="disc-date-dow">${dow}</span>
                 <span class="disc-date-val">${d.date}${noOpBadge}</span>
@@ -476,6 +476,19 @@ const Metrics = (() => {
     })
     document.getElementById('disciplineModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden')
+    })
+
+    // Días con fallos → abrir modal de detalle del día
+    document.getElementById('disciplineModalContent').addEventListener('click', async e => {
+      const dayEl = e.target.closest('.disc-fail-day[data-date]')
+      if (!dayEl) return
+      const date = dayEl.dataset.date
+      document.getElementById('disciplineModal').classList.add('hidden')
+      const [trades, sesion] = await Promise.all([
+        DB.getTradesByDate(date),
+        DB.getSesionByDate(date),
+      ])
+      await Modal.openDay(date, trades, sesion)
     })
   }
 

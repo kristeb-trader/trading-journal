@@ -921,6 +921,8 @@ body.modal-open { overflow: hidden; }
   background: var(--bg3); border-radius: 8px;
   padding: 8px 10px; margin-bottom: 6px;
 }
+.disc-fail-day[data-date] { cursor: pointer; transition: background 0.15s; }
+.disc-fail-day[data-date]:hover { background: rgba(255,255,255,0.07); }
 .disc-fail-day-header {
   display: flex; align-items: center; gap: 8px;
   margin-bottom: 6px;
