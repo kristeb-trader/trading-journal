@@ -411,7 +411,8 @@ const Metrics = (() => {
     const cards = [
       { label: 'P&L Neto Total', value: `${netPnl >= 0 ? '+' : ''}$${netPnl.toFixed(2)}`, icon: 'ti-currency-dollar', color: netPnl >= 0 ? 'green' : 'red', sub: `Promedio: ${avgPnl >= 0 ? '+' : ''}$${avgPnl.toFixed(0)}/día` },
       { label: 'Tasa de Acierto', value: `${winRate}%`, icon: 'ti-target', color: parseFloat(winRate) >= 50 ? 'green' : 'red', sub: `${targets} targets / ${stops} stops` },
-      { label: 'Total Trades', value: totalTrades, icon: 'ti-list-numbers', color: 'neutral', sub: `${tradingDays} días operados` },
+      { label: 'Disciplina', value: `${disciplinePct}%`, icon: 'ti-checkup-list', color: disciplinePct >= 80 ? 'green' : disciplinePct >= 50 ? 'warning' : 'red', sub: activeSesiones.length > 0 ? `${failedCount}/${activeSesiones.length} sesiones con fallos` : 'Sin sesiones', clickable: true, action: 'disc-detail' },
+      { label: 'Error más frecuente', value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]} ${topError[1] === 1 ? 'Error' : 'Errores'}` : 'Sin errores registrados', clickable: true, action: 'disc-errors' },
       {
         label: 'Targets · Stops · Sin entrada',
         value: `<span style="color:var(--accent)">${targets}</span> · <span style="color:var(--red)">${stops}</span> · ${noOperoCount}`,
@@ -422,8 +423,13 @@ const Metrics = (() => {
       { label: 'Racha actual', value: streak.count > 0 ? `${streak.count} ${streak.type === 'win' ? '🟢' : '🔴'}` : '—', icon: 'ti-flame', color: streak.type === 'win' ? 'green' : 'red', sub: streak.type === 'win' ? 'victorias seguidas' : streak.type === 'loss' ? 'pérdidas seguidas' : '' },
       { label: 'Mejor día', value: best ? `+$${best[1].toFixed(0)}` : '—', icon: 'ti-trending-up', color: 'green', sub: best ? best[0] : '' },
       { label: 'Peor día', value: worst ? `$${worst[1].toFixed(0)}` : '—', icon: 'ti-trending-down', color: 'red', sub: worst ? worst[0] : '' },
-      { label: 'Disciplina', value: `${disciplinePct}%`, icon: 'ti-checkup-list', color: disciplinePct >= 80 ? 'green' : disciplinePct >= 50 ? 'warning' : 'red', sub: activeSesiones.length > 0 ? `${failedCount}/${activeSesiones.length} sesiones con fallos` : 'Sin sesiones', clickable: true, action: 'disc-detail' },
-      { label: 'Error más frecuente', value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]} ${topError[1] === 1 ? 'Error' : 'Errores'}` : 'Sin errores registrados', clickable: true, action: 'disc-errors' },
+      {
+        label: 'Max Drawdown',
+        value: maxDD > 0 ? `-$${maxDD.toFixed(2)}` : '$0',
+        icon: 'ti-chart-arrows-vertical',
+        color: maxDD === 0 ? 'green' : maxDD < 200 ? 'neutral' : 'red',
+        sub: 'Máxima caída desde pico',
+      },
       {
         label: 'Profit Factor',
         value: pf != null ? pf.toFixed(2) : '—',
@@ -438,13 +444,7 @@ const Metrics = (() => {
         color: avgWin != null && avgLoss != null && avgWin >= avgLoss ? 'green' : 'neutral',
         sub: avgWin != null && avgLoss != null ? `Ratio: ${(avgWin / avgLoss).toFixed(2)}x` : 'Sin datos suficientes',
       },
-      {
-        label: 'Max Drawdown',
-        value: maxDD > 0 ? `-$${maxDD.toFixed(2)}` : '$0',
-        icon: 'ti-chart-arrows-vertical',
-        color: maxDD === 0 ? 'green' : maxDD < 200 ? 'neutral' : 'red',
-        sub: 'Máxima caída desde pico',
-      },
+      { label: 'Total Trades', value: totalTrades, icon: 'ti-list-numbers', color: 'neutral', sub: `${tradingDays} días operados` },
     ]
 
     document.getElementById('metricsGrid').innerHTML = cards.map(c => `
