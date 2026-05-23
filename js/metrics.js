@@ -382,6 +382,7 @@ const Metrics = (() => {
     const pf = calcProfitFactor(trades)
     const { avgWin, avgLoss } = calcAvgWinLoss(trades)
     const maxDD = calcMaxDrawdown(trades)
+    const noOperoCount = sesiones.filter(s => s.no_opero).length
     // "Sin setup" days count: trader was present pero no hubo setup válido
     const activeSesiones = sesiones
 
@@ -411,6 +412,13 @@ const Metrics = (() => {
       { label: 'P&L Neto Total', value: `${netPnl >= 0 ? '+' : ''}$${netPnl.toFixed(2)}`, icon: 'ti-currency-dollar', color: netPnl >= 0 ? 'green' : 'red', sub: `Promedio: ${avgPnl >= 0 ? '+' : ''}$${avgPnl.toFixed(0)}/día` },
       { label: 'Tasa de Acierto', value: `${winRate}%`, icon: 'ti-target', color: parseFloat(winRate) >= 50 ? 'green' : 'red', sub: `${targets} targets / ${stops} stops` },
       { label: 'Total Trades', value: totalTrades, icon: 'ti-list-numbers', color: 'neutral', sub: `${tradingDays} días operados` },
+      {
+        label: 'Targets · Stops · Sin entrada',
+        value: `<span class="color-green">${targets}</span> · <span class="color-red">${stops}</span> · ${noOperoCount}`,
+        icon: 'ti-chart-bar',
+        color: 'neutral',
+        sub: `Ratio T/S: ${stops > 0 ? (targets / stops).toFixed(2) : targets > 0 ? '∞' : '—'}`,
+      },
       { label: 'Racha actual', value: streak.count > 0 ? `${streak.count} ${streak.type === 'win' ? '🟢' : '🔴'}` : '—', icon: 'ti-flame', color: streak.type === 'win' ? 'green' : 'red', sub: streak.type === 'win' ? 'victorias seguidas' : streak.type === 'loss' ? 'pérdidas seguidas' : '' },
       { label: 'Mejor día', value: best ? `+$${best[1].toFixed(0)}` : '—', icon: 'ti-trending-up', color: 'green', sub: best ? best[0] : '' },
       { label: 'Peor día', value: worst ? `$${worst[1].toFixed(0)}` : '—', icon: 'ti-trending-down', color: 'red', sub: worst ? worst[0] : '' },
