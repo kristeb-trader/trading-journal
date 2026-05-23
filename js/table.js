@@ -1,8 +1,10 @@
 // Trades table with pagination, search, filter
 const TradesTable = (() => {
-  let allTrades   = []
-  let allSesiones = []
-  let allRows     = []  // unified: trades + no-opero sessions
+  let allTrades      = []
+  let allSesiones    = []
+  let allCasuisticas = []
+  let allRows        = []  // unified: trades + no-opero sessions
+  let casByDate      = {}  // { 'YYYY-MM-DD': ['Error A', 'Error B'] }
   let filtered    = []
   let page = 0
   const PAGE_SIZE = 20
@@ -42,6 +44,22 @@ const TradesTable = (() => {
     return pos.toLowerCase() === 'long'
       ? '<span class="badge badge-long">▲ Long</span>'
       : '<span class="badge badge-short">▼ Short</span>'
+  }
+
+  function buildCasByDate() {
+    casByDate = {}
+    allCasuisticas.forEach(c => {
+      if (!casByDate[c.sesion_date]) casByDate[c.sesion_date] = []
+      if (!casByDate[c.sesion_date].includes(c.casuistica))
+        casByDate[c.sesion_date].push(c.casuistica)
+    })
+  }
+
+  function errorCell(date) {
+    const errors = casByDate[date] || []
+    if (errors.length === 0)
+      return '<span style="color:var(--accent);font-size:0.78rem">Sin Errores</span>'
+    return `<span style="color:rgba(226,75,74,0.85);font-size:0.78rem">${errors.join(' · ')}</span>`
   }
 
   function buildRows() {
@@ -140,11 +158,11 @@ const TradesTable = (() => {
             <td>${t.trade_date || '—'}</td>
             <td>${fmtTime(t.entry_time)}</td>
             <td>${t.instrument?.split(' ')[0] || '—'}</td>
-            <td class="col-account">${abbreviateAccount(t.account)}</td>
             <td>${dirBadge(t.market_pos)}</td>
             <td class="text-center">${t.qty ?? '—'}</td>
-            <td class="${pnl >= 0 ? 'text-green' : 'text-red'} fw-bold">${pnl >= 0 ? '+' : ''}$${fmt(pnl)}</td>
             <td>${resultBadge(t.resultado)}</td>
+            <td class="${pnl >= 0 ? 'text-green' : 'text-red'} fw-bold">${pnl >= 0 ? '+' : ''}$${fmt(pnl)}</td>
+            <td>${errorCell(t.trade_date)}</td>
             <td>
               <button class="btn-row" data-action="detail" data-id="${t.trade_number}" title="Ver detalle">
                 <i class="ti ti-eye"></i>
@@ -162,11 +180,12 @@ const TradesTable = (() => {
             <td class="col-dow">${dayOfWeek(s.sesion_date)}</td>
             <td>${s.sesion_date}</td>
             <td>—</td>
-            <td colspan="6">
-              <span class="badge ${badgeCls}">
-                <i class="ti ${icon}"></i> ${label}
-              </span>
-            </td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td><span class="badge ${badgeCls}"><i class="ti ${icon}"></i> ${label}</span></td>
+            <td>—</td>
+            <td>${errorCell(s.sesion_date)}</td>
             <td>
               <button class="btn-row" data-action="edit-session" data-date="${s.sesion_date}" title="Editar sesión">
                 <i class="ti ti-pencil"></i>
@@ -213,8 +232,9 @@ const TradesTable = (() => {
   }
 
   async function init() {
-    ;[allTrades, allSesiones] = await Promise.all([DB.getTrades(), DB.getSesiones()])
+    ;[allTrades, allSesiones, allCasuisticas] = await Promise.all([DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas()])
     buildRows()
+    buildCasByDate()
     buildAccountFilter()
     applyFilter()
 
