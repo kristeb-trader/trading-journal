@@ -269,9 +269,7 @@ const Metrics = (() => {
 
     document.getElementById('disciplineModalContent').innerHTML = `
       <div style="padding:16px 20px 20px">
-        <p class="disc-section-title">Reglas del checklist (${operatedSesiones.length} días operados · ${total - operatedSesiones.length} sin operar)</p>
-        ${chkBarsHtml}
-        <p class="disc-section-title" style="margin-top:16px">Errores de ejecución</p>
+        <p class="disc-section-title">Errores de ejecución</p>
         ${casBarsHtml}
         <div class="disc-dates" style="margin-top:12px">
           <p class="disc-section-title">Días con fallos</p>
