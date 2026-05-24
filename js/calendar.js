@@ -87,7 +87,7 @@ const Calendar = (() => {
   const DAYS_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Semana']
 
   function isBreakEven(profit) {
-    return Math.abs(parseFloat(profit) || 0) <= 5
+    return Math.abs(parseFloat(profit) || 0) <= 6
   }
 
   function dayResult(trades, sesion, dateStr) {

@@ -368,7 +368,7 @@ const Metrics = (() => {
     const { trades, sesiones } = filterByPeriod(accountFiltered, allSesiones, period)
 
     const totalTrades = trades.length
-    const isBreakEven = t => Math.abs(parseFloat(t.profit) || 0) <= 5
+    const isBreakEven = t => Math.abs(parseFloat(t.profit) || 0) <= 6
     const nonBETrades = trades.filter(t => !isBreakEven(t))
     const targets = nonBETrades.filter(t => t.resultado === 'target').length
     const stops   = nonBETrades.filter(t => t.resultado === 'stop').length
