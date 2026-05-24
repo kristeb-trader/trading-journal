@@ -299,9 +299,6 @@ const Calendar = (() => {
     for (let i = 0; i < 4; i++) html += `<div class="cal-cell empty-cell"></div>`
     html += `
       <div class="cal-cell cal-week-summary ${totalPnl >= 0 ? 'week-positive' : 'week-negative'}">
-        <div class="cal-totalpnl-icon ${totalPnl >= 0 ? '' : 'negative'}">
-          <i class="ti ti-currency-dollar"></i>
-        </div>
         <div class="week-label">P&amp;L Neto</div>
         <div class="week-trades">${monthName} ${currentYear}</div>
       </div>
