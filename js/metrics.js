@@ -384,7 +384,16 @@ const Metrics = (() => {
     const pf = calcProfitFactor(trades)
     const { avgWin, avgLoss } = calcAvgWinLoss(trades)
     const maxDD = calcMaxDrawdown(trades)
-    const noOperoCount = sesiones.filter(s => s.no_opero).length
+    // Días B.E.: todos los trades del día tienen |profit| <= 6
+    const tradesByDate = {}
+    trades.forEach(t => {
+      if (!t.trade_date) return
+      if (!tradesByDate[t.trade_date]) tradesByDate[t.trade_date] = []
+      tradesByDate[t.trade_date].push(t)
+    })
+    const beDaysCount = Object.values(tradesByDate)
+      .filter(dayTrades => dayTrades.every(t => isBreakEven(t))).length
+    const noOperoCount = sesiones.filter(s => s.no_opero).length + beDaysCount
     // "Sin setup" days count: trader was present pero no hubo setup válido
     const activeSesiones = sesiones
 
