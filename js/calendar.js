@@ -292,19 +292,21 @@ const Calendar = (() => {
       }
     }
 
-    // Total mensual en columna Semana (fila extra al final del grid)
+    // Total mensual — fila extra al final del grid (4 vacías + descriptiva + número)
     const totalPnl = Object.values(tradesCache).flat()
       .reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
     const monthName = MONTHS_ES[currentMonth - 1]
-    for (let i = 0; i < 5; i++) html += `<div class="cal-cell empty-cell"></div>`
+    for (let i = 0; i < 4; i++) html += `<div class="cal-cell empty-cell"></div>`
     html += `
-      <div class="cal-cell cal-week-summary cal-month-total ${totalPnl >= 0 ? 'week-positive' : 'week-negative'}">
+      <div class="cal-cell cal-week-summary ${totalPnl >= 0 ? 'week-positive' : 'week-negative'}">
         <div class="cal-totalpnl-icon ${totalPnl >= 0 ? '' : 'negative'}">
           <i class="ti ti-currency-dollar"></i>
         </div>
         <div class="week-label">P&amp;L Neto</div>
-        <div class="week-pnl ${totalPnl >= 0 ? 'positive' : 'negative'} month-total-amount">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}</div>
         <div class="week-trades">${monthName} ${currentYear}</div>
+      </div>
+      <div class="cal-cell cal-week-summary cal-month-total ${totalPnl >= 0 ? 'week-positive' : 'week-negative'}">
+        <div class="week-pnl ${totalPnl >= 0 ? 'positive' : 'negative'} month-total-amount">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}</div>
       </div>`
 
     grid.innerHTML = html
