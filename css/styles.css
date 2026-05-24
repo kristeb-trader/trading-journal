@@ -124,12 +124,13 @@ small { font-size: 0.82em; }
 .gallery-thumb.result-mixed  { border-color: rgba(234,179,8,0.55);  }
 .gallery-thumb.result-empty,
 .gallery-thumb.result-other  { border-color: var(--border); }
-/* Hover — azul brillante independiente del resultado */
-.gallery-thumb:hover {
-  border-color: #60a5fa;
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(96,165,250,0.25);
-}
+/* Hover — color según resultado */
+.gallery-thumb:hover                  { transform: translateY(-3px); }
+.gallery-thumb.result-target:hover   { border-color: rgba(52,211,153,0.85);  box-shadow: 0 8px 24px rgba(29,158,117,0.3); }
+.gallery-thumb.result-stop:hover     { border-color: rgba(226,75,74,0.85);   box-shadow: 0 8px 24px rgba(226,75,74,0.3); }
+.gallery-thumb.result-mixed:hover    { border-color: rgba(234,179,8,0.85);   box-shadow: 0 8px 24px rgba(234,179,8,0.25); }
+.gallery-thumb.result-empty:hover,
+.gallery-thumb.result-other:hover    { border-color: rgba(255,255,255,0.2);  box-shadow: 0 8px 24px rgba(255,255,255,0.07); }
 .gallery-thumb img {
   width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block;
   background: var(--bg2);
