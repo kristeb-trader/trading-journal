@@ -59,7 +59,7 @@ const Modal = {
         <div class="modal-trades-list">
           ${trades.map(t => `
             <div class="modal-trade-row">
-              <span class="badge ${t.resultado === 'target' ? 'badge-target' : t.resultado === 'stop' ? 'badge-stop' : 'badge-other'}">${t.resultado || '—'}</span>
+              <span class="badge ${Math.abs(parseFloat(t.profit)||0) <= 5 ? 'badge-be' : t.resultado === 'target' ? 'badge-target' : t.resultado === 'stop' ? 'badge-stop' : 'badge-other'}">${Math.abs(parseFloat(t.profit)||0) <= 5 ? 'B.E.' : (t.resultado || '—')}</span>
               <span>${t.market_pos === 'Long' ? '▲' : '▼'} ${t.market_pos}</span>
               <span>${t.qty} contratos</span>
               <span class="${parseFloat(t.profit) >= 0 ? 'text-green' : 'text-red'} fw-bold">${parseFloat(t.profit) >= 0 ? '+' : ''}$${parseFloat(t.profit).toFixed(2)}</span>

@@ -86,19 +86,25 @@ const Calendar = (() => {
     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
   const DAYS_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Semana']
 
+  function isBreakEven(profit) {
+    return Math.abs(parseFloat(profit) || 0) <= 5
+  }
+
   function dayResult(trades, sesion, dateStr) {
     if (sesion?.no_opero) {
-      if (sesion.motivo_no_opero === 'FOMC')    return 'fomc'
-      if (sesion.motivo_no_opero === 'Festivo') return 'festivo'
-      if (sesion.motivo_no_opero === 'Sin setup') return 'sin-setup'
+      if (sesion.motivo_no_opero === 'FOMC')      return 'fomc'
+      if (sesion.motivo_no_opero === 'Festivo')   return 'festivo'
+      if (sesion.motivo_no_opero === 'Sin setup')  return 'sin-setup'
       return 'no-trade'
     }
     if (!trades || trades.length === 0) {
-      if (cmeHolidays.has(dateStr)) return 'festivo'  // festivo automático
+      if (cmeHolidays.has(dateStr)) return 'festivo'
       return 'empty'
     }
-    const targets = trades.filter(t => t.resultado === 'target').length
-    const stops   = trades.filter(t => t.resultado === 'stop').length
+    const nonBE = trades.filter(t => !isBreakEven(t.profit))
+    if (nonBE.length === 0) return 'be'  // todos los trades del día son B.E.
+    const targets = nonBE.filter(t => t.resultado === 'target').length
+    const stops   = nonBE.filter(t => t.resultado === 'stop').length
     if (targets > 0 && stops === 0) return 'target'
     if (stops > 0 && targets === 0) return 'stop'
     if (targets > 0 && stops > 0)   return 'mixed'
@@ -224,6 +230,8 @@ const Calendar = (() => {
             } else {
               statusBadge = `<div class="cal-status-badge badge-noopero"><i class="ti ti-user-off"></i> No operé</div>`
             }
+          } else if (trades.length > 0 && trades.every(t => isBreakEven(t.profit))) {
+            statusBadge = `<div class="cal-status-badge badge-be"><i class="ti ti-scale"></i> B.E.</div>`
           } else if (isHoliday && !trades.length) {
             // Festivo automático (sin sesión registrada)
             statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> Festivo</div>`
@@ -309,9 +317,10 @@ const Calendar = (() => {
     const allTrades = Object.values(tradesCache).flat()
     const tradingDays = Object.keys(tradesCache).length
     const totalPnl = allTrades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
-    const targets = allTrades.filter(t => t.resultado === 'target').length
-    const stops = allTrades.filter(t => t.resultado === 'stop').length
-    const winRate = allTrades.length > 0 ? (targets / allTrades.length * 100).toFixed(0) : 0
+    const nonBETrades = allTrades.filter(t => !isBreakEven(t.profit))
+    const targets = nonBETrades.filter(t => t.resultado === 'target').length
+    const stops   = nonBETrades.filter(t => t.resultado === 'stop').length
+    const winRate = nonBETrades.length > 0 ? (targets / nonBETrades.length * 100).toFixed(0) : 0
 
     // Sesiones del mes actual (solo días operados)
     const monthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`

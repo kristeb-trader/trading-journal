@@ -33,7 +33,12 @@ const TradesTable = (() => {
     return ts.slice(0, 5)
   }
 
-  function resultBadge(resultado) {
+  function isBreakEven(profit) {
+    return Math.abs(parseFloat(profit) || 0) <= 5
+  }
+
+  function resultBadge(resultado, profit) {
+    if (isBreakEven(profit)) return '<span class="badge badge-be">B.E.</span>'
     if (!resultado) return '<span class="badge badge-other">—</span>'
     const map = { target: 'badge-target', stop: 'badge-stop' }
     return `<span class="badge ${map[resultado] || 'badge-other'}">${resultado}</span>`
@@ -160,7 +165,7 @@ const TradesTable = (() => {
             <td>${t.instrument?.split(' ')[0] || '—'}</td>
             <td>${dirBadge(t.market_pos)}</td>
             <td class="text-center">${t.qty ?? '—'}</td>
-            <td>${resultBadge(t.resultado)}</td>
+            <td>${resultBadge(t.resultado, t.profit)}</td>
             <td class="${pnl >= 0 ? 'text-green' : 'text-red'} fw-bold">${pnl >= 0 ? '+' : ''}$${fmt(pnl)}</td>
             <td>${errorCell(t.trade_date)}</td>
             <td>
