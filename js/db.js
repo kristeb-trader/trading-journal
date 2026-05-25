@@ -190,4 +190,9 @@ const DB = {
     if (error) throw error
   },
 
+  async updateCasuisticaOrden(id, orden) {
+    const { error } = await supa.from('catalogo_casuisticas').update({ orden }).eq('id', id)
+    if (error) throw error
+  },
+
 }

@@ -8,7 +8,8 @@ const DataManager = (() => {
       return
     }
     el.innerHTML = items.map(item => `
-      <div class="catalog-item ${!item.activa ? 'catalog-item-inactive' : ''}" data-id="${item.id}">
+      <div class="catalog-item ${!item.activa ? 'catalog-item-inactive' : ''}" data-id="${item.id}" draggable="true">
+        <span class="drag-handle" title="Arrastra para reordenar"><i class="ti ti-grip-vertical"></i></span>
         <label class="catalog-toggle" title="${item.activa ? 'Activa' : 'Inactiva'}">
           <input type="checkbox" class="tog-activa" data-id="${item.id}" ${item.activa ? 'checked' : ''}>
           <span class="toggle-track"></span>
@@ -22,6 +23,7 @@ const DataManager = (() => {
         </button>
       </div>`).join('')
 
+    // ── Toggles ────────────────────────────────────────────────────────────
     el.querySelectorAll('.tog-activa').forEach(chk => {
       chk.addEventListener('change', async () => {
         const id = parseInt(chk.dataset.id)
@@ -35,6 +37,7 @@ const DataManager = (() => {
       })
     })
 
+    // ── Editar nombre ──────────────────────────────────────────────────────
     el.querySelectorAll('.btn-edit-catalog').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = parseInt(btn.dataset.id)
@@ -52,6 +55,7 @@ const DataManager = (() => {
       })
     })
 
+    // ── Eliminar ───────────────────────────────────────────────────────────
     el.querySelectorAll('.btn-del-catalog').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!confirm('¿Eliminar esta casuística? Los registros históricos conservarán el nombre anterior.')) return
@@ -64,6 +68,70 @@ const DataManager = (() => {
         }
       })
     })
+
+    // ── Drag & Drop para reordenar ────────────────────────────────────────
+    setupDragDrop(el)
+  }
+
+  function setupDragDrop(container) {
+    let dragged = null
+
+    container.addEventListener('dragstart', e => {
+      dragged = e.target.closest('[draggable]')
+      if (!dragged) return
+      // Pequeño delay para que se vea el elemento original al empezar el drag
+      setTimeout(() => dragged.classList.add('dragging'), 0)
+      e.dataTransfer.effectAllowed = 'move'
+    })
+
+    container.addEventListener('dragend', () => {
+      if (dragged) dragged.classList.remove('dragging')
+      clearDropIndicators(container)
+      dragged = null
+    })
+
+    container.addEventListener('dragover', e => {
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'move'
+      const target = e.target.closest('[draggable]')
+      clearDropIndicators(container)
+      if (!target || target === dragged) return
+      const { top, height } = target.getBoundingClientRect()
+      target.classList.add(e.clientY < top + height / 2 ? 'drag-over-top' : 'drag-over-bot')
+    })
+
+    container.addEventListener('dragleave', e => {
+      if (!container.contains(e.relatedTarget)) clearDropIndicators(container)
+    })
+
+    container.addEventListener('drop', async e => {
+      e.preventDefault()
+      const target = e.target.closest('[draggable]')
+      clearDropIndicators(container)
+      if (!target || !dragged || target === dragged) return
+
+      // Insertar antes o después según posición del cursor
+      const { top, height } = target.getBoundingClientRect()
+      if (e.clientY < top + height / 2) {
+        container.insertBefore(dragged, target)
+      } else {
+        target.after(dragged)
+      }
+
+      // Guardar nuevo orden en Supabase
+      const ids = [...container.querySelectorAll('[data-id]')].map(el => parseInt(el.dataset.id))
+      try {
+        await Promise.all(ids.map((id, i) => DB.updateCasuisticaOrden(id, i + 1)))
+        Toast.show('Orden guardado', 'success')
+      } catch {
+        Toast.show('Error al guardar el orden', 'error')
+      }
+    })
+  }
+
+  function clearDropIndicators(container) {
+    container.querySelectorAll('.drag-over-top, .drag-over-bot')
+      .forEach(el => el.classList.remove('drag-over-top', 'drag-over-bot'))
   }
 
   async function loadCasuisticas() {

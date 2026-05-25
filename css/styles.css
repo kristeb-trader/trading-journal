@@ -885,6 +885,24 @@ body.modal-open { overflow: hidden; }
   background: var(--bg3); transition: opacity var(--transition);
 }
 .catalog-item-inactive { opacity: 0.45; }
+
+/* Drag & Drop reorder */
+.drag-handle {
+  cursor: grab; color: var(--text3); padding: 0 4px;
+  display: flex; align-items: center; font-size: 1.05rem;
+  flex-shrink: 0; transition: color var(--transition);
+}
+.drag-handle:hover { color: var(--text2); }
+.drag-handle:active { cursor: grabbing; }
+.catalog-item.dragging { opacity: 0.3; }
+.catalog-item.drag-over-top {
+  box-shadow: 0 -2px 0 var(--accent);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.catalog-item.drag-over-bot {
+  box-shadow: 0 2px 0 var(--accent);
+  border-radius: 0 0 var(--radius) var(--radius);
+}
 .catalog-nombre { flex: 1; font-size: 0.85rem; }
 .btn-edit-catalog, .btn-del-catalog {
   color: var(--text3); font-size: 1rem; padding: 3px 5px;
