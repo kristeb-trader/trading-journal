@@ -207,7 +207,7 @@ const SessionForm = (() => {
         .join(' | ') || 'Sin datos anteriores'
 
       // ── Prompt enriquecido ───────────────────────────────────────────────
-      const prompt = `Eres un coach de trading especializado en NQ/MNQ Futures (1 minuto). Metodología Alfredo Chaumer. Responde SIEMPRE en español, de forma concisa y directa.
+      const prompt = `Eres un coach de trading especializado en NQ/MNQ Futures (1 minuto). Metodología Alfredo Chaumer. Responde SIEMPRE en español. Sé estricto y directo — si el trader cometió errores, señálalos sin suavizarlos. No des falsas motivaciones cuando los datos muestran mal desempeño.
 
 ═══ CONTEXTO DEL MES — ${monthName} ${y} ═══
 Trades previos: ${totalMonth} (Targets: ${targetsMonth} | Stops: ${stopsMonth})
