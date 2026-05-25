@@ -1,8 +1,9 @@
 // Chart.js visualizations — con filtros, KPI strip y soporte B.E.
 const Charts = (() => {
-  let allTrades   = []
-  let allSesiones = []
-  const instances = {}
+  let allTrades      = []
+  let allSesiones    = []
+  let allCasuisticas = []
+  const instances    = {}
 
   const COLORS = {
     accent:  '#1D9E75',
@@ -337,6 +338,120 @@ const Charts = (() => {
     })
   }
 
+  // ── Disciplina vs P&L (scatter) ──────────────────────────────────────────
+
+  function renderDisciplinePnl(trades, sesiones) {
+    destroy('disciplinePnl')
+    const pnlByDate = {}
+    trades.forEach(t => {
+      if (!t.trade_date) return
+      pnlByDate[t.trade_date] = (pnlByDate[t.trade_date]||0) + (parseFloat(t.profit)||0)
+    })
+    const points = sesiones
+      .filter(s => !s.no_opero && pnlByDate[s.sesion_date] !== undefined)
+      .map(s => {
+        const checks = [s.chk_zonas,s.chk_orden,s.chk_5velas,s.chk_noticias,s.chk_consecucion,s.chk_estructura]
+        return {
+          x: Math.round(checks.filter(Boolean).length / 6 * 100),
+          y: parseFloat(pnlByDate[s.sesion_date].toFixed(2)),
+          date: s.sesion_date,
+        }
+      })
+    if (points.length === 0) {
+      destroy('disciplinePnl')
+      return
+    }
+    const pos = points.filter(p => p.y >= 0)
+    const neg = points.filter(p => p.y  < 0)
+    instances.disciplinePnl = new Chart(document.getElementById('disciplinePnlChart'), {
+      type: 'scatter',
+      data: { datasets: [
+        { label:'Día ganador',  data:pos, backgroundColor:'rgba(29,158,117,0.65)', pointRadius:6 },
+        { label:'Día perdedor', data:neg, backgroundColor:'rgba(226,75,74,0.65)',  pointRadius:6 },
+      ]},
+      options: { ...baseOptions,
+        plugins: { ...baseOptions.plugins,
+          tooltip: { ...baseOptions.plugins.tooltip, callbacks: {
+            label: ctx => `${ctx.raw.date} — disc: ${ctx.raw.x}%  P&L: ${ctx.raw.y>=0?'+':''}$${ctx.raw.y}`
+          }}},
+        scales: {
+          x: { ...baseOptions.scales.x, min:0, max:100,
+            title:{ display:true, text:'Disciplina (%)', color:COLORS.text },
+            ticks:{ color:COLORS.text, callback:v=>v+'%' } },
+          y: { ...baseOptions.scales.y,
+            title:{ display:true, text:'P&L del día ($)', color:COLORS.text },
+            ticks:{ color:COLORS.text, callback:v=>`$${v}` } },
+        }},
+    })
+  }
+
+  // ── Errores en el tiempo (barras apiladas por semana) ─────────────────────
+
+  function filterCasuisticasByPeriod(casuisticas, period) {
+    if (period === 'all') return casuisticas
+    const y = typeof Calendar !== 'undefined' ? Calendar.getYear() : new Date().getFullYear()
+    const m = typeof Calendar !== 'undefined' ? Calendar.getMonth() : new Date().getMonth() + 1
+    if (period === 'month') {
+      const from = `${y}-${String(m).padStart(2,'0')}-01`
+      const to   = `${y}-${String(m).padStart(2,'0')}-${String(new Date(y,m,0).getDate()).padStart(2,'0')}`
+      return casuisticas.filter(c => c.sesion_date >= from && c.sesion_date <= to)
+    }
+    const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1)
+    return casuisticas.filter(c => c.sesion_date >= d.toISOString().slice(0,10))
+  }
+
+  function renderErrorsOverTime(casuisticas) {
+    destroy('errorsTime')
+    if (casuisticas.length === 0) return
+
+    // Tipos únicos de error ordenados por frecuencia total
+    const typeCount = {}
+    casuisticas.forEach(c => { typeCount[c.casuistica] = (typeCount[c.casuistica]||0) + 1 })
+    const errorTypes = Object.keys(typeCount).sort((a,b) => typeCount[b] - typeCount[a])
+
+    // Agrupar por semana
+    const weekMap = {}
+    casuisticas.forEach(c => {
+      const wk = getWeekKey(c.sesion_date)
+      if (!weekMap[wk]) weekMap[wk] = {}
+      weekMap[wk][c.casuistica] = (weekMap[wk][c.casuistica]||0) + 1
+    })
+    const weeks = Object.keys(weekMap).sort()
+
+    const palette = [
+      'rgba(226,75,74,0.8)',   // rojo
+      'rgba(186,117,23,0.8)',  // ámbar
+      'rgba(99,102,241,0.8)',  // índigo
+      'rgba(20,184,166,0.8)',  // teal
+      'rgba(249,115,22,0.8)', // naranja
+      'rgba(168,85,247,0.8)', // púrpura
+      'rgba(59,130,246,0.8)', // azul
+      'rgba(236,72,153,0.8)', // rosa
+    ]
+
+    instances.errorsTime = new Chart(document.getElementById('errorsTimeChart'), {
+      type: 'bar',
+      data: {
+        labels: weeks.map(w => w.slice(5)),
+        datasets: errorTypes.map((type, i) => ({
+          label: type,
+          data: weeks.map(wk => weekMap[wk][type] || 0),
+          backgroundColor: palette[i % palette.length],
+          borderRadius: 3,
+          stack: 'errors',
+        })),
+      },
+      options: { ...baseOptions,
+        plugins: { ...baseOptions.plugins,
+          legend: { labels: { color:COLORS.text, font:{ size:10 }, boxWidth:12, padding:8 } },
+          tooltip: { ...baseOptions.plugins.tooltip, mode:'index', intersect:false } },
+        scales: {
+          x: { ...baseOptions.scales.x, stacked:true },
+          y: { ...baseOptions.scales.y, stacked:true, ticks:{ color:COLORS.text, stepSize:1 } },
+        }},
+    })
+  }
+
   // ── Render principal ──────────────────────────────────────────────────────
 
   function render(period = 'month') {
@@ -345,6 +460,7 @@ const Charts = (() => {
       ? allTrades
       : allTrades.filter(t => abbreviateAccount(t.account)===accountVal)
     const { trades, sesiones } = filterByPeriod(accountFiltered, allSesiones, period)
+    const casuisticas = filterCasuisticasByPeriod(allCasuisticas, period)
 
     renderKpiStrip(trades)
     renderEquity(trades)
@@ -354,10 +470,14 @@ const Charts = (() => {
     renderMaeMfe(trades)
     renderResults(trades)
     renderDiscipline(sesiones)
+    renderDisciplinePnl(trades, sesiones)
+    renderErrorsOverTime(casuisticas)
   }
 
   async function init() {
-    ;[allTrades, allSesiones] = await Promise.all([DB.getTrades(), DB.getSesiones()])
+    ;[allTrades, allSesiones, allCasuisticas] = await Promise.all([
+      DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas()
+    ])
     buildAccountFilter()
     render('month')
 
