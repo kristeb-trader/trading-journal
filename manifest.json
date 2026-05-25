@@ -1,0 +1,33 @@
+{
+  "name": "NQ Journal — Trading Diario",
+  "short_name": "NQ Journal",
+  "description": "Journal de operativa NQ/MNQ Futures — Metodología Chaumer",
+  "start_url": ".",
+  "scope": "/trading-journal/",
+  "display": "standalone",
+  "background_color": "#1a1a18",
+  "theme_color": "#1D9E75",
+  "lang": "es",
+  "orientation": "any",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
