@@ -453,6 +453,16 @@
             <button class="period-btn active" data-period="month">Mes</button>
             <button class="period-btn" data-period="all">Todo</button>
           </div>
+          <!-- Navegador de mes (visible solo en período "Mes") -->
+          <div class="analysis-month-nav" id="analysisMonthNav">
+            <button class="btn-icon" id="analysisPrevMonth" title="Mes anterior">
+              <i class="ti ti-chevron-left"></i>
+            </button>
+            <span id="analysisMonthLabel">Mayo 2026</span>
+            <button class="btn-icon" id="analysisNextMonth" title="Mes siguiente">
+              <i class="ti ti-chevron-right"></i>
+            </button>
+          </div>
           <select id="accountFilterAnalysis" class="filter-select">
             <option value="all">Todas las cuentas</option>
           </select>
@@ -463,43 +473,73 @@
 
         <div class="charts-grid">
           <div class="chart-card wide">
-            <h3><i class="ti ti-trending-up"></i> Curva de Equity — P&amp;L Acumulado</h3>
+            <div class="chart-header">
+              <h3><i class="ti ti-trending-up"></i> Curva de Equity — P&amp;L Acumulado</h3>
+              <button class="help-btn" data-help="equity" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
             <canvas id="equityChart"></canvas>
           </div>
           <div class="chart-card">
-            <h3><i class="ti ti-target"></i> Win Rate semanal</h3>
+            <div class="chart-header">
+              <h3><i class="ti ti-target"></i> Win Rate semanal</h3>
+              <button class="help-btn" data-help="winRate" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
             <canvas id="winRateChart"></canvas>
           </div>
           <div class="chart-card">
-            <h3><i class="ti ti-calendar-week"></i> P&amp;L promedio por día de semana</h3>
+            <div class="chart-header">
+              <h3><i class="ti ti-calendar-week"></i> P&amp;L promedio por día de semana</h3>
+              <button class="help-btn" data-help="pnlByDay" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
             <canvas id="pnlByDayChart"></canvas>
           </div>
           <div class="chart-card">
-            <h3><i class="ti ti-clock"></i> P&amp;L promedio por hora (ET)</h3>
+            <div class="chart-header">
+              <h3><i class="ti ti-clock"></i> P&amp;L promedio por hora (ET)</h3>
+              <button class="help-btn" data-help="pnlByHour" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
             <canvas id="pnlByHourChart"></canvas>
           </div>
           <div class="chart-card wide">
-            <h3><i class="ti ti-arrows-maximize"></i> MAE vs MFE — Gestión de excursiones</h3>
+            <div class="chart-header">
+              <h3><i class="ti ti-arrows-maximize"></i> MAE vs MFE — Gestión de excursiones</h3>
+              <button class="help-btn" data-help="maeMfe" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
             <canvas id="maeMfeChart"></canvas>
           </div>
           <div class="chart-card wide">
-            <h3><i class="ti ti-chart-histogram"></i> Distribución de P&amp;L — Frecuencia por rango</h3>
+            <div class="chart-header">
+              <h3><i class="ti ti-chart-histogram"></i> Distribución de P&amp;L — Frecuencia por rango</h3>
+              <button class="help-btn" data-help="pnlHist" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
             <canvas id="pnlHistChart"></canvas>
           </div>
           <div class="chart-card">
-            <h3><i class="ti ti-chart-donut"></i> Distribución de resultados</h3>
+            <div class="chart-header">
+              <h3><i class="ti ti-chart-donut"></i> Distribución de resultados</h3>
+              <button class="help-btn" data-help="results" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
             <canvas id="resultsChart"></canvas>
           </div>
           <div class="chart-card">
-            <h3><i class="ti ti-checkup-list"></i> Disciplina por sesión</h3>
+            <div class="chart-header">
+              <h3><i class="ti ti-checkup-list"></i> Disciplina por sesión</h3>
+              <button class="help-btn" data-help="discipline" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
             <canvas id="disciplineChart"></canvas>
           </div>
           <div class="chart-card">
-            <h3><i class="ti ti-chart-dots"></i> Disciplina vs P&amp;L — ¿Las reglas generan dinero?</h3>
+            <div class="chart-header">
+              <h3><i class="ti ti-chart-dots"></i> Disciplina vs P&amp;L — ¿Las reglas generan dinero?</h3>
+              <button class="help-btn" data-help="discPnl" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
             <canvas id="disciplinePnlChart"></canvas>
           </div>
           <div class="chart-card wide">
-            <h3><i class="ti ti-timeline"></i> Errores en el tiempo — Evolución semanal</h3>
+            <div class="chart-header">
+              <h3><i class="ti ti-timeline"></i> Errores en el tiempo — Evolución semanal</h3>
+              <button class="help-btn" data-help="errorsTime" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
             <canvas id="errorsTimeChart"></canvas>
           </div>
         </div>
@@ -594,6 +634,19 @@
         <button class="btn-primary" id="saveSettings">
           <i class="ti ti-device-floppy"></i> Guardar
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Ayuda de Análisis ─────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="analysisHelpModal">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h3 id="analysisHelpTitle"><i class="ti ti-help-circle"></i> Ayuda</h3>
+        <button class="btn-icon" id="closeAnalysisHelp"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-content">
+        <p id="analysisHelpText" style="line-height:1.75; color:var(--text2); font-size:0.92rem;"></p>
       </div>
     </div>
   </div>

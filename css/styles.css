@@ -679,6 +679,41 @@ textarea { resize: vertical; min-height: 80px; }
   .chart-card.wide { grid-column: span 1; }
 }
 
+/* ── Chart header (title + help button) ─────────────────────────────── */
+.chart-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 8px; margin-bottom: 14px;
+}
+.chart-header h3 { margin: 0; font-size: 0.9rem; color: var(--text2); font-weight: 500; flex: 1; }
+.chart-card h3 { margin-bottom: 14px; } /* fallback si no usa .chart-header */
+
+/* ── Help buttons ────────────────────────────────────────────────────── */
+.help-btn {
+  flex-shrink: 0; background: none; border: none;
+  color: var(--text3); cursor: pointer;
+  padding: 2px 4px; border-radius: 50%; line-height: 1;
+  font-size: 1rem; transition: color 0.2s;
+  display: flex; align-items: center;
+}
+.help-btn:hover { color: var(--accent); }
+.help-btn-sm {
+  background: none; border: none; color: var(--text3); cursor: pointer;
+  padding: 0 1px; line-height: 1; font-size: 0.72rem;
+  transition: color 0.2s; vertical-align: middle; margin-left: 3px;
+}
+.help-btn-sm:hover { color: var(--accent); }
+
+/* ── Analysis month navigator ────────────────────────────────────────── */
+.analysis-month-nav {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 3px 8px;
+}
+#analysisMonthLabel {
+  font-size: 0.88rem; font-weight: 600; color: var(--text);
+  min-width: 110px; text-align: center; white-space: nowrap;
+}
+
 /* ── Modal ───────────────────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed; inset: 0;

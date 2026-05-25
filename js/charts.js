@@ -5,6 +5,52 @@ const Charts = (() => {
   let allCasuisticas = []
   const instances    = {}
 
+  // ── Estado del filtro de mes (independiente del Calendario) ──────────────
+  let analysisYear  = new Date().getFullYear()
+  let analysisMonth = new Date().getMonth() + 1
+  let activePeriod  = 'month'
+
+  const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                       'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+
+  // ── Textos de ayuda ───────────────────────────────────────────────────────
+  const HELP_TEXTS = {
+    kpiPnl:     { title: 'P&L Neto',
+      text: 'Suma total de ganancias y pérdidas en el período seleccionado, incluyendo las operaciones Break Even (±$6).' },
+    kpiTrades:  { title: 'Trades',
+      text: 'Total de operaciones ejecutadas. Los B.E. (Break Even, ±$6) se muestran aparte porque no cuentan para el Win Rate ni el Profit Factor.' },
+    kpiWinRate: { title: 'Win Rate',
+      text: 'Porcentaje de trades con resultado Target sobre el total de trades (excluyendo B.E.). Un 50% o más es el objetivo mínimo de consistencia.' },
+    kpiPf:      { title: 'Profit Factor',
+      text: 'Relación entre la suma de ganancias brutas y la suma de pérdidas brutas. Mayor de 1.5 es excelente, mayor de 1.0 es rentable, menor de 1.0 significa pérdida neta.' },
+    kpiAvgWin:  { title: 'Avg Win',
+      text: 'Ganancia promedio de los trades ganadores. Compárala con Avg Loss para verificar que el ratio riesgo/recompensa es favorable.' },
+    kpiAvgLoss: { title: 'Avg Loss',
+      text: 'Pérdida promedio de los trades perdedores en valor absoluto. Idealmente debe ser menor que Avg Win para mantener una ventaja estadística.' },
+    kpiEtd:     { title: 'ETD Medio',
+      text: 'Efficiency To Destination: cuánto dinero dejaste sobre la mesa en promedio (MFE − Profit). Un ETD alto indica que saliste demasiado pronto de los trades ganadores.' },
+    equity:     { title: 'Curva de Equity',
+      text: 'Evolución del P&L acumulado día a día. La banda roja inferior muestra el drawdown: cuánto estás por debajo del pico histórico. Una curva ascendente y constante indica consistencia. Pasa el mouse por los puntos para ver el valor exacto.' },
+    winRate:    { title: 'Win Rate Semanal',
+      text: 'Porcentaje de trades ganadores (Target) por semana calendario, excluyendo las operaciones Break Even. Las barras verdes indican semanas con 50% o más de acierto; las rojas, semanas por debajo. El número dentro de cada barra muestra el porcentaje exacto.' },
+    pnlByDay:   { title: 'P&L por Día de Semana',
+      text: 'P&L promedio de todos los trades agrupados por día de la semana (Lun–Vie). Identifica en qué días eres más rentable y en cuáles deberías ser más conservador o reducir el tamaño de posición.' },
+    pnlByHour:  { title: 'P&L por Hora (ET)',
+      text: 'P&L promedio de los trades agrupados en franjas de 30 minutos, desde las 9:30 hasta las 15:00 hora ET (RTH del NQ). Los slots con mejor rendimiento son los horarios óptimos para operar.' },
+    maeMfe:     { title: 'MAE vs MFE',
+      text: 'MAE (Maximum Adverse Excursion): cuánto fue el trade en tu contra antes de cerrar. MFE (Maximum Favorable Excursion): cuánto llegó a ir a tu favor. Cada punto es un trade. Ayuda a calibrar entradas, gestión de stops y tamaño de objetivo.' },
+    pnlHist:    { title: 'Distribución de P&L',
+      text: 'Histograma que muestra cuántos trades cayeron en cada rango de $15. Un sesgo positivo (barras verdes más altas y más hacia la derecha) indica una estrategia con ventaja estadística.' },
+    results:    { title: 'Distribución de Resultados',
+      text: 'Proporción de Targets, Stops, Break Even y Otros sobre el total de trades en el período. Muestra de forma visual el balance de resultados.' },
+    discipline: { title: 'Disciplina por Sesión',
+      text: 'Puntuación de disciplina (0–100%) calculada con el modelo de 7 factores: 6 ítems del checklist operativo + ausencia de casuísticas/errores. Una sesión con todo el checklist cumplido y sin errores = 100%.' },
+    discPnl:    { title: 'Disciplina vs P&L',
+      text: 'Scatter plot donde cada punto es una sesión. El eje X muestra la disciplina (%) y el eje Y el P&L del día. Un patrón positivo (puntos verdes arriba a la derecha) confirma que seguir las reglas genera rentabilidad.' },
+    errorsTime: { title: 'Errores en el Tiempo',
+      text: 'Frecuencia de cada tipo de casuística/error agrupada por semana. Las barras apiladas muestran qué errores se repiten más y si están aumentando o disminuyendo con el tiempo.' },
+  }
+
   const COLORS = {
     accent:  '#1D9E75',
     red:     '#E24B4A',
@@ -41,11 +87,12 @@ const Charts = (() => {
     return Math.abs(parseFloat(t.profit) || 0) <= 6
   }
 
+  // ── Filtrado por período (usa mes propio del módulo cuando period='month') ─
+
   function filterByPeriod(trades, sesiones, period) {
     if (period === 'all') return { trades, sesiones }
-    const y = typeof Calendar !== 'undefined' ? Calendar.getYear() : new Date().getFullYear()
-    const m = typeof Calendar !== 'undefined' ? Calendar.getMonth() : new Date().getMonth() + 1
     if (period === 'month') {
+      const y = analysisYear, m = analysisMonth
       const from = `${y}-${String(m).padStart(2,'0')}-01`
       const to   = `${y}-${String(m).padStart(2,'0')}-${String(new Date(y,m,0).getDate()).padStart(2,'0')}`
       return {
@@ -62,6 +109,18 @@ const Charts = (() => {
     }
   }
 
+  function filterCasuisticasByPeriod(casuisticas, period) {
+    if (period === 'all') return casuisticas
+    if (period === 'month') {
+      const y = analysisYear, m = analysisMonth
+      const from = `${y}-${String(m).padStart(2,'0')}-01`
+      const to   = `${y}-${String(m).padStart(2,'0')}-${String(new Date(y,m,0).getDate()).padStart(2,'0')}`
+      return casuisticas.filter(c => c.sesion_date >= from && c.sesion_date <= to)
+    }
+    const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1)
+    return casuisticas.filter(c => c.sesion_date >= d.toISOString().slice(0,10))
+  }
+
   function buildAccountFilter() {
     const accounts = {}
     allTrades.forEach(t => { if (t.account) accounts[abbreviateAccount(t.account)] = true })
@@ -74,15 +133,27 @@ const Charts = (() => {
     else if (paApex) sel.value = paApex
   }
 
+  // ── Navegador de mes ──────────────────────────────────────────────────────
+
+  function updateMonthLabel() {
+    const el = document.getElementById('analysisMonthLabel')
+    if (el) el.textContent = `${MONTH_NAMES[analysisMonth - 1]} ${analysisYear}`
+  }
+
+  function showHideMonthNav(period) {
+    const nav = document.getElementById('analysisMonthNav')
+    if (!nav) return
+    nav.style.display = period === 'month' ? 'flex' : 'none'
+  }
+
   // ── KPI Strip ─────────────────────────────────────────────────────────────
 
   function renderKpiStrip(trades) {
     const nonBE  = trades.filter(t => !isBreakEven(t))
     const beCount = trades.filter(t => isBreakEven(t)).length
     const targets = nonBE.filter(t => t.resultado === 'target').length
-    const stops   = nonBE.filter(t => t.resultado === 'stop').length
-    const winRate = nonBE.length > 0 ? (targets / nonBE.length * 100).toFixed(1) : '0.0'
     const netPnl  = trades.reduce((s,t) => s + (parseFloat(t.profit)||0), 0)
+    const winRate = nonBE.length > 0 ? (targets / nonBE.length * 100).toFixed(1) : '0.0'
 
     const grossWin  = nonBE.filter(t => (parseFloat(t.profit)||0) > 0)
       .reduce((s,t) => s + parseFloat(t.profit), 0)
@@ -102,21 +173,24 @@ const Charts = (() => {
       ? (etdTrades.reduce((s,t) => s + (parseFloat(t.mfe) - parseFloat(t.profit)), 0) / etdTrades.length).toFixed(0)
       : null
 
-    const chip = (label, val, cls='kpi-neutral') => `
+    const chip = (label, val, cls='kpi-neutral', helpKey='') => `
       <div class="analysis-kpi">
-        <span class="analysis-kpi-label">${label}</span>
+        <span class="analysis-kpi-label">
+          ${label}
+          ${helpKey ? `<button class="help-btn-sm" data-help="${helpKey}" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>` : ''}
+        </span>
         <span class="analysis-kpi-value ${cls}">${val}</span>
       </div>`
 
     document.getElementById('analysisKpiStrip').innerHTML = `
       <div class="analysis-kpi-row">
-        ${chip('P&L Neto', `${netPnl>=0?'+':''}$${netPnl.toFixed(0)}`, netPnl>=0?'kpi-green':'kpi-red')}
-        ${chip('Trades', `${nonBE.length}${beCount>0?` <small style="color:var(--text3);font-weight:400">+${beCount} B.E.</small>`:''}`, 'kpi-neutral')}
-        ${chip('Win Rate', `${winRate}%`, parseFloat(winRate)>=50?'kpi-green':'kpi-red')}
-        ${chip('Profit Factor', pf, pfColor)}
-        ${chip('Avg Win', `$${avgWin}`, 'kpi-green')}
-        ${chip('Avg Loss', `$${avgLoss}`, 'kpi-red')}
-        ${avgEtd !== null ? chip('ETD medio', `$${avgEtd}`, parseFloat(avgEtd)<=15?'kpi-neutral':'kpi-red') : ''}
+        ${chip('P&L Neto', `${netPnl>=0?'+':''}$${netPnl.toFixed(0)}`, netPnl>=0?'kpi-green':'kpi-red', 'kpiPnl')}
+        ${chip('Trades', `${nonBE.length}${beCount>0?` <small style="color:var(--text3);font-weight:400">+${beCount} B.E.</small>`:''}`, 'kpi-neutral', 'kpiTrades')}
+        ${chip('Win Rate', `${winRate}%`, parseFloat(winRate)>=50?'kpi-green':'kpi-red', 'kpiWinRate')}
+        ${chip('Profit Factor', pf, pfColor, 'kpiPf')}
+        ${chip('Avg Win', `$${avgWin}`, 'kpi-green', 'kpiAvgWin')}
+        ${chip('Avg Loss', `$${avgLoss}`, 'kpi-red', 'kpiAvgLoss')}
+        ${avgEtd !== null ? chip('ETD medio', `$${avgEtd}`, parseFloat(avgEtd)<=15?'kpi-neutral':'kpi-red', 'kpiEtd') : ''}
       </div>`
   }
 
@@ -134,11 +208,11 @@ const Charts = (() => {
     const equityData = dates.map(d => { cum += byDate[d]; return parseFloat(cum.toFixed(2)) })
     const lastVal = equityData[equityData.length-1] || 0
 
-    // Banda de drawdown: cuánto estamos por debajo del pico histórico
+    // Banda de drawdown
     let peak = -Infinity
     const drawdownData = equityData.map(v => {
       if (v > peak) peak = v
-      return parseFloat((v - peak).toFixed(2))  // siempre <= 0
+      return parseFloat((v - peak).toFixed(2))
     })
 
     const ctx  = document.getElementById('equityChart').getContext('2d')
@@ -156,7 +230,8 @@ const Charts = (() => {
             borderColor: lastVal>=0 ? COLORS.accent : COLORS.red,
             backgroundColor: lastVal>=0 ? grad : 'rgba(226,75,74,0.1)',
             borderWidth: 2,
-            pointRadius: dates.length > 30 ? 0 : 3,
+            pointRadius: dates.length > 30 ? 2 : 4,
+            pointHoverRadius: 7,
             tension: 0.3,
             fill: true,
             order: 1,
@@ -168,6 +243,7 @@ const Charts = (() => {
             backgroundColor: 'rgba(226,75,74,0.15)',
             borderWidth: 1,
             pointRadius: 0,
+            pointHoverRadius: 0,
             tension: 0.3,
             fill: 'origin',
             order: 2,
@@ -176,8 +252,23 @@ const Charts = (() => {
       },
       options: {
         ...baseOptions,
-        plugins: { ...baseOptions.plugins,
-          legend: { display: true, labels: { color:COLORS.text, font:{ size:11 }, boxWidth:14 } } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          ...baseOptions.plugins,
+          legend: { display: true, labels: { color:COLORS.text, font:{ size:11 }, boxWidth:14 } },
+          tooltip: {
+            ...baseOptions.plugins.tooltip,
+            callbacks: {
+              label: ctx => {
+                if (ctx.datasetIndex === 0)
+                  return ` P&L acumulado: ${ctx.raw >= 0 ? '+' : ''}$${ctx.raw}`
+                if (ctx.datasetIndex === 1 && ctx.raw < 0)
+                  return ` Drawdown: $${ctx.raw}`
+                return null
+              }
+            }
+          }
+        },
       },
     })
   }
@@ -189,6 +280,28 @@ const Charts = (() => {
     const day = d.getDay() || 7
     d.setDate(d.getDate() - day + 1)
     return d.toISOString().slice(0,10)
+  }
+
+  // Plugin inline: muestra el % dentro de cada barra
+  const winRateLabelPlugin = {
+    id: 'winRateLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx, data } = chart
+      const meta = chart.getDatasetMeta(0)
+      meta.data.forEach((bar, i) => {
+        const value = data.datasets[0].data[i]
+        if (value === null || value === undefined) return
+        const barHeight = Math.abs(bar.base - bar.y)
+        if (barHeight < 16) return  // barra demasiado corta
+        ctx.save()
+        ctx.fillStyle = 'rgba(255,255,255,0.88)'
+        ctx.font = 'bold 11px system-ui, sans-serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(`${value}%`, bar.x, bar.y + barHeight / 2)
+        ctx.restore()
+      })
+    }
   }
 
   function renderWinRate(trades) {
@@ -208,7 +321,7 @@ const Charts = (() => {
       data: {
         labels: sorted.map(w => w.slice(5)),
         datasets: [{
-          label: 'Win Rate % (ex-B.E.)',
+          label: 'Win Rate %',
           data: sorted.map(w => parseFloat((weeks[w].win/weeks[w].total*100).toFixed(1))),
           backgroundColor: sorted.map(w => weeks[w].win/weeks[w].total>=0.5
             ? 'rgba(29,158,117,0.7)' : 'rgba(226,75,74,0.7)'),
@@ -217,6 +330,7 @@ const Charts = (() => {
       },
       options: { ...baseOptions, scales: { ...baseOptions.scales,
         y: { ...baseOptions.scales.y, max:100, ticks:{ color:COLORS.text, callback:v=>v+'%' } } } },
+      plugins: [winRateLabelPlugin],
     })
   }
 
@@ -247,15 +361,14 @@ const Charts = (() => {
     })
   }
 
-  // ── P&L promedio por hora del día (nuevo) ─────────────────────────────────
+  // ── P&L promedio por hora del día ─────────────────────────────────────────
 
   function renderPnlByHour(trades) {
     destroy('pnlByHour')
-    // Slots de 30 min desde 09:30 hasta 15:00 hora ET (UTC-5 en Colombia = mismo offset RTH)
     const slots = {}
     for (let h=9; h<=14; h++) {
       for (let min=0; min<60; min+=30) {
-        if (h===9 && min<30) continue  // RTH abre 9:30
+        if (h===9 && min<30) continue
         const key = `${String(h).padStart(2,'0')}:${min===0?'00':'30'}`
         slots[key] = []
       }
@@ -266,9 +379,8 @@ const Charts = (() => {
       if (!t.entry_time) return
       const [h,m] = t.entry_time.split(':').map(Number)
       if (h<9 || h>15) return
-      // Redondear al slot de 30 min más cercano hacia abajo
-      const slotMin  = m < 30 ? 0 : 30
-      const slotH    = h
+      const slotMin = m < 30 ? 0 : 30
+      const slotH   = h
       if (slotH===9 && slotMin<30) return
       if (slotH>15 || (slotH===15 && slotMin>0)) return
       const key = `${String(slotH).padStart(2,'0')}:${slotMin===0?'00':'30'}`
@@ -342,15 +454,13 @@ const Charts = (() => {
     })
   }
 
-  // ── Disciplina por sesión ─────────────────────────────────────────────────
-
   // ── Histograma de distribución de P&L ────────────────────────────────────
 
   function renderPnlHistogram(trades) {
     destroy('pnlHist')
     if (trades.length === 0) return
     const profits = trades.map(t => parseFloat(t.profit) || 0)
-    const BUCKET  = 15  // $15 por bucket
+    const BUCKET  = 15
     const minB = Math.floor(Math.min(...profits) / BUCKET) * BUCKET
     const maxB = Math.ceil( Math.max(...profits) / BUCKET) * BUCKET
     const buckets = {}
@@ -431,10 +541,7 @@ const Charts = (() => {
           date: s.sesion_date,
         }
       })
-    if (points.length === 0) {
-      destroy('disciplinePnl')
-      return
-    }
+    if (points.length === 0) { destroy('disciplinePnl'); return }
     const pos = points.filter(p => p.y >= 0)
     const neg = points.filter(p => p.y  < 0)
     instances.disciplinePnl = new Chart(document.getElementById('disciplinePnlChart'), {
@@ -461,29 +568,14 @@ const Charts = (() => {
 
   // ── Errores en el tiempo (barras apiladas por semana) ─────────────────────
 
-  function filterCasuisticasByPeriod(casuisticas, period) {
-    if (period === 'all') return casuisticas
-    const y = typeof Calendar !== 'undefined' ? Calendar.getYear() : new Date().getFullYear()
-    const m = typeof Calendar !== 'undefined' ? Calendar.getMonth() : new Date().getMonth() + 1
-    if (period === 'month') {
-      const from = `${y}-${String(m).padStart(2,'0')}-01`
-      const to   = `${y}-${String(m).padStart(2,'0')}-${String(new Date(y,m,0).getDate()).padStart(2,'0')}`
-      return casuisticas.filter(c => c.sesion_date >= from && c.sesion_date <= to)
-    }
-    const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1)
-    return casuisticas.filter(c => c.sesion_date >= d.toISOString().slice(0,10))
-  }
-
   function renderErrorsOverTime(casuisticas) {
     destroy('errorsTime')
     if (casuisticas.length === 0) return
 
-    // Tipos únicos de error ordenados por frecuencia total
     const typeCount = {}
     casuisticas.forEach(c => { typeCount[c.casuistica] = (typeCount[c.casuistica]||0) + 1 })
     const errorTypes = Object.keys(typeCount).sort((a,b) => typeCount[b] - typeCount[a])
 
-    // Agrupar por semana
     const weekMap = {}
     casuisticas.forEach(c => {
       const wk = getWeekKey(c.sesion_date)
@@ -493,14 +585,14 @@ const Charts = (() => {
     const weeks = Object.keys(weekMap).sort()
 
     const palette = [
-      'rgba(226,75,74,0.8)',   // rojo
-      'rgba(186,117,23,0.8)',  // ámbar
-      'rgba(99,102,241,0.8)',  // índigo
-      'rgba(20,184,166,0.8)',  // teal
-      'rgba(249,115,22,0.8)', // naranja
-      'rgba(168,85,247,0.8)', // púrpura
-      'rgba(59,130,246,0.8)', // azul
-      'rgba(236,72,153,0.8)', // rosa
+      'rgba(226,75,74,0.8)',
+      'rgba(186,117,23,0.8)',
+      'rgba(99,102,241,0.8)',
+      'rgba(20,184,166,0.8)',
+      'rgba(249,115,22,0.8)',
+      'rgba(168,85,247,0.8)',
+      'rgba(59,130,246,0.8)',
+      'rgba(236,72,153,0.8)',
     ]
 
     instances.errorsTime = new Chart(document.getElementById('errorsTimeChart'), {
@@ -529,6 +621,9 @@ const Charts = (() => {
   // ── Render principal ──────────────────────────────────────────────────────
 
   function render(period = 'month') {
+    activePeriod = period
+    showHideMonthNav(period)
+
     const accountVal = document.getElementById('accountFilterAnalysis')?.value || 'all'
     const accountFiltered = accountVal==='all'
       ? allTrades
@@ -554,8 +649,15 @@ const Charts = (() => {
       DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas()
     ])
     buildAccountFilter()
+
+    // Inicializar mes al mes actual
+    analysisYear  = new Date().getFullYear()
+    analysisMonth = new Date().getMonth() + 1
+    updateMonthLabel()
+
     render('month')
 
+    // ── Período ──────────────────────────────────────────────────────────
     document.querySelectorAll('#section-analysis .period-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#section-analysis .period-btn').forEach(b => b.classList.remove('active'))
@@ -563,9 +665,48 @@ const Charts = (() => {
         render(btn.dataset.period)
       })
     })
+
+    // ── Navegador de mes ─────────────────────────────────────────────────
+    document.getElementById('analysisPrevMonth').addEventListener('click', () => {
+      analysisMonth--
+      if (analysisMonth < 1) { analysisMonth = 12; analysisYear-- }
+      updateMonthLabel()
+      render(activePeriod)
+    })
+    document.getElementById('analysisNextMonth').addEventListener('click', () => {
+      analysisMonth++
+      if (analysisMonth > 12) { analysisMonth = 1; analysisYear++ }
+      updateMonthLabel()
+      render(activePeriod)
+    })
+
+    // ── Cuenta ───────────────────────────────────────────────────────────
     document.getElementById('accountFilterAnalysis').addEventListener('change', () => {
-      const active = document.querySelector('#section-analysis .period-btn.active')
-      render(active?.dataset.period || 'month')
+      render(activePeriod)
+    })
+
+    // ── Modal de ayuda ───────────────────────────────────────────────────
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('[data-help]')
+      if (!btn) return
+      const key  = btn.dataset.help
+      const info = HELP_TEXTS[key]
+      if (!info) return
+      document.getElementById('analysisHelpTitle').innerHTML =
+        `<i class="ti ti-help-circle" style="color:var(--accent)"></i> ${info.title}`
+      document.getElementById('analysisHelpText').textContent = info.text
+      document.getElementById('analysisHelpModal').classList.remove('hidden')
+    })
+    document.getElementById('closeAnalysisHelp').addEventListener('click', () => {
+      document.getElementById('analysisHelpModal').classList.add('hidden')
+    })
+    document.getElementById('analysisHelpModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('analysisHelpModal'))
+        document.getElementById('analysisHelpModal').classList.add('hidden')
+    })
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape')
+        document.getElementById('analysisHelpModal')?.classList.add('hidden')
     })
   }
 
