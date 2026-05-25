@@ -634,6 +634,32 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .btn-secondary:hover { background: var(--bg2); color: var(--text); }
 
+/* ── Analysis controls & KPI strip ──────────────────────────────────── */
+.analysis-controls {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 16px; flex-wrap: wrap;
+}
+#analysisKpiStrip { margin-bottom: 20px; }
+.analysis-kpi-row {
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+.analysis-kpi {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 16px;
+  display: flex; flex-direction: column; gap: 3px;
+  flex: 1; min-width: 90px;
+}
+.analysis-kpi-label {
+  font-size: 0.68rem; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600;
+}
+.analysis-kpi-value {
+  font-size: 1.1rem; font-weight: 700; color: var(--text2); line-height: 1;
+}
+.analysis-kpi-value.kpi-green  { color: var(--accent); }
+.analysis-kpi-value.kpi-red    { color: var(--red); }
+.analysis-kpi-value.kpi-neutral { color: var(--text2); }
+
 /* ── Charts ──────────────────────────────────────────────────────────── */
 .charts-grid {
   display: grid;

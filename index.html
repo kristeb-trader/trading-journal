@@ -445,6 +445,22 @@
         <div class="section-header">
           <h2>Análisis y Estadísticas</h2>
         </div>
+
+        <!-- Filtros -->
+        <div class="analysis-controls">
+          <div class="period-selector">
+            <button class="period-btn" data-period="week">Semana</button>
+            <button class="period-btn active" data-period="month">Mes</button>
+            <button class="period-btn" data-period="all">Todo</button>
+          </div>
+          <select id="accountFilterAnalysis" class="filter-select">
+            <option value="all">Todas las cuentas</option>
+          </select>
+        </div>
+
+        <!-- KPI Strip -->
+        <div id="analysisKpiStrip"></div>
+
         <div class="charts-grid">
           <div class="chart-card wide">
             <h3><i class="ti ti-trending-up"></i> Curva de Equity — P&amp;L Acumulado</h3>
@@ -457,6 +473,10 @@
           <div class="chart-card">
             <h3><i class="ti ti-calendar-week"></i> P&amp;L promedio por día de semana</h3>
             <canvas id="pnlByDayChart"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3><i class="ti ti-clock"></i> P&amp;L promedio por hora (ET)</h3>
+            <canvas id="pnlByHourChart"></canvas>
           </div>
           <div class="chart-card wide">
             <h3><i class="ti ti-arrows-maximize"></i> MAE vs MFE — Gestión de excursiones</h3>
