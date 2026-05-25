@@ -131,8 +131,16 @@ const Charts = (() => {
     })
     const dates = Object.keys(byDate).sort()
     let cum = 0
-    const data = dates.map(d => { cum += byDate[d]; return parseFloat(cum.toFixed(2)) })
-    const lastVal = data[data.length-1] || 0
+    const equityData = dates.map(d => { cum += byDate[d]; return parseFloat(cum.toFixed(2)) })
+    const lastVal = equityData[equityData.length-1] || 0
+
+    // Banda de drawdown: cuánto estamos por debajo del pico histórico
+    let peak = -Infinity
+    const drawdownData = equityData.map(v => {
+      if (v > peak) peak = v
+      return parseFloat((v - peak).toFixed(2))  // siempre <= 0
+    })
+
     const ctx  = document.getElementById('equityChart').getContext('2d')
     const grad = ctx.createLinearGradient(0,0,0,300)
     grad.addColorStop(0, 'rgba(29,158,117,0.3)')
@@ -141,18 +149,36 @@ const Charts = (() => {
       type: 'line',
       data: {
         labels: dates,
-        datasets: [{
-          label: 'P&L Acumulado',
-          data,
-          borderColor: lastVal>=0 ? COLORS.accent : COLORS.red,
-          backgroundColor: lastVal>=0 ? grad : 'rgba(226,75,74,0.1)',
-          borderWidth: 2,
-          pointRadius: dates.length > 30 ? 0 : 3,
-          tension: 0.3,
-          fill: true,
-        }]
+        datasets: [
+          {
+            label: 'P&L Acumulado',
+            data: equityData,
+            borderColor: lastVal>=0 ? COLORS.accent : COLORS.red,
+            backgroundColor: lastVal>=0 ? grad : 'rgba(226,75,74,0.1)',
+            borderWidth: 2,
+            pointRadius: dates.length > 30 ? 0 : 3,
+            tension: 0.3,
+            fill: true,
+            order: 1,
+          },
+          {
+            label: 'Drawdown',
+            data: drawdownData,
+            borderColor: 'rgba(226,75,74,0.5)',
+            backgroundColor: 'rgba(226,75,74,0.15)',
+            borderWidth: 1,
+            pointRadius: 0,
+            tension: 0.3,
+            fill: 'origin',
+            order: 2,
+          },
+        ]
       },
-      options: { ...baseOptions, plugins: { ...baseOptions.plugins, legend: { display: false } } },
+      options: {
+        ...baseOptions,
+        plugins: { ...baseOptions.plugins,
+          legend: { display: true, labels: { color:COLORS.text, font:{ size:11 }, boxWidth:14 } } },
+      },
     })
   }
 
@@ -318,18 +344,66 @@ const Charts = (() => {
 
   // ── Disciplina por sesión ─────────────────────────────────────────────────
 
-  function renderDiscipline(sesiones) {
+  // ── Histograma de distribución de P&L ────────────────────────────────────
+
+  function renderPnlHistogram(trades) {
+    destroy('pnlHist')
+    if (trades.length === 0) return
+    const profits = trades.map(t => parseFloat(t.profit) || 0)
+    const BUCKET  = 15  // $15 por bucket
+    const minB = Math.floor(Math.min(...profits) / BUCKET) * BUCKET
+    const maxB = Math.ceil( Math.max(...profits) / BUCKET) * BUCKET
+    const buckets = {}
+    for (let v = minB; v <= maxB; v += BUCKET) buckets[v] = 0
+    profits.forEach(p => {
+      const b = Math.floor(p / BUCKET) * BUCKET
+      buckets[b] = (buckets[b] || 0) + 1
+    })
+    const labels = Object.keys(buckets).map(Number).sort((a,b) => a-b)
+    const data   = labels.map(k => buckets[k])
+    instances.pnlHist = new Chart(document.getElementById('pnlHistChart'), {
+      type: 'bar',
+      data: {
+        labels: labels.map(v => `$${v}`),
+        datasets: [{
+          label: 'Trades',
+          data,
+          backgroundColor: labels.map(v => v >= 0 ? 'rgba(29,158,117,0.7)' : 'rgba(226,75,74,0.7)'),
+          borderRadius: 3,
+          barPercentage: 0.95,
+          categoryPercentage: 1.0,
+        }]
+      },
+      options: { ...baseOptions,
+        plugins: { ...baseOptions.plugins, legend:{ display:false } },
+        scales: {
+          x: { ...baseOptions.scales.x,
+            title:{ display:true, text:'P&L por trade ($)', color:COLORS.text } },
+          y: { ...baseOptions.scales.y,
+            title:{ display:true, text:'Frecuencia', color:COLORS.text },
+            ticks:{ color:COLORS.text, stepSize:1 } },
+        }},
+    })
+  }
+
+  // ── Disciplina por sesión — modelo 7 factores ─────────────────────────────
+
+  function renderDiscipline(sesiones, casuisticas) {
     destroy('discipline')
+    const casByDate = {}
+    casuisticas.forEach(c => { casByDate[c.sesion_date] = true })
     const active = sesiones.filter(s => !s.no_opero).slice().reverse()
     const labels = active.map(s => s.sesion_date?.slice(5))
     const scores = active.map(s => {
-      const checks = [s.chk_zonas,s.chk_orden,s.chk_5velas,s.chk_noticias,s.chk_consecucion,s.chk_estructura]
-      return Math.round(checks.filter(Boolean).length/6*100)
+      const checks  = [s.chk_zonas,s.chk_orden,s.chk_5velas,s.chk_noticias,s.chk_consecucion,s.chk_estructura]
+      const chkScore = checks.filter(Boolean).length
+      const noErrors = casByDate[s.sesion_date] ? 0 : 1
+      return Math.round((chkScore + noErrors) / 7 * 100)
     })
     instances.discipline = new Chart(document.getElementById('disciplineChart'), {
       type: 'line',
       data: { labels, datasets: [{
-        label:'Disciplina %', data:scores,
+        label:'Disciplina % (7 factores)', data:scores,
         borderColor:COLORS.accent, backgroundColor:'rgba(29,158,117,0.1)',
         borderWidth:2, pointRadius:3, tension:0.2, fill:true,
       }]},
@@ -468,8 +542,9 @@ const Charts = (() => {
     renderPnlByDay(trades)
     renderPnlByHour(trades)
     renderMaeMfe(trades)
+    renderPnlHistogram(trades)
     renderResults(trades)
-    renderDiscipline(sesiones)
+    renderDiscipline(sesiones, casuisticas)
     renderDisciplinePnl(trades, sesiones)
     renderErrorsOverTime(casuisticas)
   }
