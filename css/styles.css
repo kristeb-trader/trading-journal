@@ -679,6 +679,12 @@ textarea { resize: vertical; min-height: 80px; }
   .chart-card.wide { grid-column: span 1; }
 }
 
+/* ── Modal festivo ───────────────────────────────────────────────────── */
+.holiday-modal {
+  max-width: 360px;
+  border-top: 3px solid var(--warning);
+}
+
 /* ── Chart header (title + help button) ─────────────────────────────── */
 .chart-header {
   display: flex; align-items: flex-start; justify-content: space-between;

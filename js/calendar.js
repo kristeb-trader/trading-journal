@@ -7,7 +7,7 @@ const Calendar = (() => {
   let casuisticasCache = {} // date → true (has errors)
   let allTradesRaw = []     // sin filtrar por cuenta
   let allAccountsList = []  // lista completa de cuentas (cargada una sola vez)
-  let cmeHolidays   = new Set() // fechas ISO de festivos CME del mes actual
+  let cmeHolidays   = {}        // date → { name, emoji } para festivos CME
   let fomcDates     = new Set() // fechas ISO de reuniones FOMC del mes actual
 
   const ACCOUNT_STORAGE_KEY = 'calendarAccount'
@@ -37,7 +37,7 @@ const Calendar = (() => {
 
   // ── Festivos CME (calculados algorítmicamente) ────────────────────────────
   function calcCMEHolidays(year) {
-    const result = new Set()
+    const result = {}  // date → { name, emoji }
     const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 
     // Ajuste weekend → día hábil observado (Sáb→Vie, Dom→Lun)
@@ -68,17 +68,19 @@ const Calendar = (() => {
       return new Date(yr, mo-1, dy)
     }
 
-    result.add(iso(observed(new Date(year, 0, 1))))   // New Year's Day
-    result.add(iso(nth(year, 1, 1, 3)))               // MLK Day (3er Lunes Ene)
-    result.add(iso(nth(year, 2, 1, 3)))               // Presidents' Day (3er Lunes Feb)
+    const add = (d, name, emoji) => { result[iso(d)] = { name, emoji } }
+
+    add(observed(new Date(year, 0, 1)),  'Año Nuevo',                    '🎊')
+    add(nth(year, 1, 1, 3),              'Día de Martin Luther King Jr.', '✊')
+    add(nth(year, 2, 1, 3),              'Día de los Presidentes',        '🦅')
     const gf = new Date(easter(year)); gf.setDate(gf.getDate() - 2)
-    result.add(iso(gf))                               // Good Friday
-    result.add(iso(last(year, 5, 1)))                 // Memorial Day (último Lunes May)
-    result.add(iso(observed(new Date(year, 5, 19))))  // Juneteenth
-    result.add(iso(observed(new Date(year, 6, 4))))   // Independence Day
-    result.add(iso(nth(year, 9, 1, 1)))               // Labor Day (1er Lunes Sep)
-    result.add(iso(nth(year, 11, 4, 4)))              // Thanksgiving (4to Jueves Nov)
-    result.add(iso(observed(new Date(year, 11, 25)))) // Christmas
+    add(gf,                              'Viernes Santo',                 '✝️')
+    add(last(year, 5, 1),               'Día de los Caídos',             '🪖')
+    add(observed(new Date(year, 5, 19)), 'Juneteenth',                    '🎉')
+    add(observed(new Date(year, 6, 4)),  'Día de la Independencia',       '🎆')
+    add(nth(year, 9, 1, 1),             'Día del Trabajo',               '👷')
+    add(nth(year, 11, 4, 4),            'Día de Acción de Gracias',      '🦃')
+    add(observed(new Date(year, 11, 25)),'Navidad',                       '🎄')
     return result
   }
 
@@ -98,7 +100,7 @@ const Calendar = (() => {
       return 'no-trade'
     }
     if (!trades || trades.length === 0) {
-      if (cmeHolidays.has(dateStr)) return 'festivo'
+      if (dateStr in cmeHolidays) return 'festivo'
       return 'empty'
     }
     const nonBE = trades.filter(t => !isBreakEven(t.profit))
@@ -202,7 +204,7 @@ const Calendar = (() => {
         const sesion = sesionesCache[dateStr]
         const isFuture  = dateStr > today
         const isToday   = dateStr === today
-        const isHoliday = !isFuture && cmeHolidays.has(dateStr)
+        const isHoliday = !isFuture && (dateStr in cmeHolidays)
         const isFomc    = !isFuture && fomcDates.has(dateStr)
 
         let cellClass = 'cal-cell'
@@ -376,11 +378,41 @@ const Calendar = (() => {
       </div>`
   }
 
+  function fmtDateEs(d) {
+    if (!d) return '—'
+    const [y, m, day] = d.split('-')
+    const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    return `${parseInt(day)} de ${months[parseInt(m)-1]} de ${y}`
+  }
+
+  function openHolidayModal(dateStr, name, emoji) {
+    document.getElementById('holidayEmoji').textContent = emoji
+    document.getElementById('holidayName').textContent  = name
+    document.getElementById('holidayDate').textContent  = fmtDateEs(dateStr)
+    document.getElementById('holidayModal').classList.remove('hidden')
+    document.body.classList.add('modal-open')
+  }
+
   async function openDayModal(dateStr) {
+    // Festivo CME → modal especial con nombre y emoji del feriado
+    const holiday = cmeHolidays[dateStr]
+    if (holiday) {
+      openHolidayModal(dateStr, holiday.name, holiday.emoji)
+      return
+    }
+
     const [trades, sesion] = await Promise.all([
       DB.getTradesByDate(dateStr),
       DB.getSesionByDate(dateStr),
     ])
+
+    // Festivo registrado manualmente → también modal especial
+    if (sesion?.no_opero && sesion?.motivo_no_opero === 'Festivo') {
+      openHolidayModal(dateStr, 'Día Festivo', '🏛')
+      return
+    }
+
     Modal.openDay(dateStr, trades, sesion)
   }
 
@@ -393,6 +425,19 @@ const Calendar = (() => {
   }
 
   async function init() {
+    // Cerrar modal festivo
+    const closeHoliday = () => {
+      document.getElementById('holidayModal').classList.add('hidden')
+      document.body.classList.remove('modal-open')
+    }
+    document.getElementById('closeHolidayModal').addEventListener('click', closeHoliday)
+    document.getElementById('holidayModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('holidayModal')) closeHoliday()
+    })
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeHoliday()
+    })
+
     document.getElementById('prevMonth').addEventListener('click', () => navigate(-1))
     document.getElementById('nextMonth').addEventListener('click', () => navigate(1))
     document.getElementById('accountFilterCalendar').addEventListener('change', () => {
