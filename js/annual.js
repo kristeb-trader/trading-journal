@@ -282,6 +282,7 @@ const Annual = (() => {
       const cSign = m.cumPnl >= 0 ? '+' : ''
       const rentab  = cap > 0 ? `${(m.pnl / cap * 100).toFixed(2)}%` : '—'
       const winStr  = m.winRate != null ? `${m.winRate.toFixed(1)}%` : '—'
+      const winCls  = m.winRate == null ? '' : m.winRate >= 50 ? 'annual-pos' : m.winRate >= 40 ? 'annual-warn' : 'annual-neg'
       const discStr = m.discipline != null ? `${m.discipline}%` : '—'
       const discCls = m.discipline == null ? '' :
                       m.discipline >= 80 ? 'annual-pos' :
@@ -300,7 +301,7 @@ const Annual = (() => {
           <td class="${m.cumPnl >= 0 ? 'annual-pos' : 'annual-neg'}">
             ${cSign}$${m.cumPnl.toFixed(2)}</td>
           <td>${rentab}</td>
-          <td>${winStr}</td>
+          <td class="${winCls}">${winStr}</td>
           <td class="${discCls}">${discStr}</td>
           <td>${m.trades || '—'}</td>
           <td>${estado}</td>
@@ -318,7 +319,7 @@ const Annual = (() => {
           ${tSign}$${s.totalPnl.toFixed(2)}</td>
         <td>—</td>
         <td>${tRentab}</td>
-        <td>${s.winRate.toFixed(1)}%</td>
+        <td class="${s.winRate >= 50 ? 'annual-pos' : s.winRate >= 40 ? 'annual-warn' : 'annual-neg'}">${s.winRate.toFixed(1)}%</td>
         <td>${s.avgDisc != null ? s.avgDisc + '%' : '—'}</td>
         <td>${s.totalTrades}</td>
         <td></td>
