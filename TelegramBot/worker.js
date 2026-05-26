@@ -14,24 +14,32 @@
 
 // ── Constantes del flujo ────────────────────────────────────────────────────
 const STEPS = {
-  OPERO:          'opero',
-  MOTIVO:         'motivo',
-  CONTEXTO:       'contexto',
-  CORRIDA:        'corrida',
-  VELAS:          'velas',
-  RETROCESO:      'retroceso',
-  ZONAS_CONTRA:   'zonas_contra',
-  SETUP:          'setup',
-  CHECKLIST:      'checklist',
-  REFLEXION:      'reflexion',
+  OPERO:        'opero',
+  MOTIVO:       'motivo',
+  CONTEXTO:     'contexto',
+  CORRIDA:      'corrida',
+  VELAS:        'velas',
+  ZONAS_CONTRA: 'zonas_contra',
+  SETUP:        'setup',
+  CHECKLIST:    'checklist',
+  REFLEXION:    'reflexion',
 };
 
 const CONTEXTOS = [
-  'Tendencia alcista',
-  'Tendencia bajista',
-  'Lateral',
-  'Volátil',
-  'Sin contexto claro',
+  { label: '📈 Alcista fuerte', value: 'Alcista fuerte' },
+  { label: '↗ Alcista',         value: 'Alcista'        },
+  { label: '↔ Mixto',           value: 'Mixto'          },
+  { label: '↘ Bajista',         value: 'Bajista'        },
+  { label: '📉 Bajista fuerte', value: 'Bajista fuerte' },
+];
+
+const SETUPS = [
+  'IRI Apertura Alcista',
+  'IRI Apertura Bajista',
+  'IRI Continuación Alcista',
+  'IRI Continuación Bajista',
+  'Reingreso Alcista',
+  'Reingreso Bajista',
 ];
 
 const CHECKLIST_ITEMS = [
@@ -98,6 +106,37 @@ function scoreChecklist(data) {
   return CHECKLIST_ITEMS.filter(({ key }) => data[key]).length;
 }
 
+// ── Setup keyboard ──────────────────────────────────────────────────────────
+function setupKeyboard() {
+  const rows = [];
+  for (let i = 0; i < SETUPS.length; i += 2) {
+    const row = [{ text: SETUPS[i], callback_data: `setup_${i}` }];
+    if (SETUPS[i + 1]) row.push({ text: SETUPS[i + 1], callback_data: `setup_${i + 1}` });
+    rows.push(row);
+  }
+  return { inline_keyboard: rows };
+}
+
+// ── Resumen completo de la sesión ───────────────────────────────────────────
+function buildResumen(data) {
+  const score = scoreChecklist(data);
+  const chkLines = CHECKLIST_ITEMS
+    .map(({ key, label }) => `  ${data[key] ? '✅' : '❌'} ${label}`)
+    .join('\n');
+
+  return (
+    `✅ <b>Sesión guardada</b>\n\n` +
+    `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
+    `📊 <b>Contexto:</b> ${data.contexto}\n` +
+    `🔢 <b>Corrida:</b> ${data.num_corrida}ª\n` +
+    `🕯️ <b>Velas:</b> ${data.velas_corrida}\n` +
+    `⚠️ <b>Zonas en contra:</b> ${data.zonas_contra ? 'Sí' : 'No'}\n` +
+    `📐 <b>Setup:</b> ${data.setup}\n\n` +
+    `📋 <b>Checklist (${score}/6):</b>\n${chkLines}\n\n` +
+    `✍️ <b>Análisis del día:</b>\n${data.analisis_trader || '—'}`
+  );
+}
+
 // ── Supabase upsert de sesión ────────────────────────────────────────────────
 async function saveSession(data, env) {
   const payload = {
@@ -136,50 +175,67 @@ async function saveSession(data, env) {
 // ── Stats desde Supabase ────────────────────────────────────────────────────
 async function fetchMonthStats(env) {
   try {
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: env.TIMEZONE || 'America/Guatemala',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date())
-  const from = today.slice(0, 7) + '-01'
+    const today = new Intl.DateTimeFormat('en-CA', {
+      timeZone: env.TIMEZONE || 'America/Bogota',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date());
+    const from = today.slice(0, 7) + '-01';
 
-  const res = await fetch(
-    `${env.SUPABASE_URL}/rest/v1/trades?trade_date=gte.${from}&select=trade_date,profit,resultado`,
-    { headers: { apikey: env.SUPABASE_KEY, Authorization: `Bearer ${env.SUPABASE_KEY}` } }
-  )
-  if (!res.ok) return { error: `Supabase error ${res.status}` }
-  const trades = await res.json()
+    const res = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/trades?trade_date=gte.${from}&select=trade_date,profit,resultado`,
+      { headers: { apikey: env.SUPABASE_KEY, Authorization: `Bearer ${env.SUPABASE_KEY}` } }
+    );
+    if (!res.ok) return { error: `Supabase error ${res.status}` };
+    const trades = await res.json();
 
-  const totalTrades = trades.length
-  const targets = trades.filter(t => t.resultado === 'target').length
-  const stops   = trades.filter(t => t.resultado === 'stop').length
-  const netPnl  = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
-  const winRate = totalTrades > 0 ? (targets / totalTrades * 100).toFixed(1) : 0
+    const totalTrades = trades.length;
+    const targets = trades.filter(t => t.resultado === 'target').length;
+    const stops   = trades.filter(t => t.resultado === 'stop').length;
+    const netPnl  = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0);
+    const winRate = totalTrades > 0 ? (targets / totalTrades * 100).toFixed(1) : 0;
 
-  const grossWin  = trades.filter(t => (parseFloat(t.profit) || 0) > 0).reduce((s, t) => s + parseFloat(t.profit), 0)
-  const grossLoss = Math.abs(trades.filter(t => (parseFloat(t.profit) || 0) < 0).reduce((s, t) => s + parseFloat(t.profit), 0))
-  const pf = grossLoss > 0 ? (grossWin / grossLoss).toFixed(2) : '—'
+    const grossWin  = trades.filter(t => (parseFloat(t.profit) || 0) > 0).reduce((s, t) => s + parseFloat(t.profit), 0);
+    const grossLoss = Math.abs(trades.filter(t => (parseFloat(t.profit) || 0) < 0).reduce((s, t) => s + parseFloat(t.profit), 0));
+    const pf = grossLoss > 0 ? (grossWin / grossLoss).toFixed(2) : '—';
 
-  // Racha actual por día
-  const byDate = {}
-  trades.forEach(t => {
-    if (!t.trade_date) return
-    byDate[t.trade_date] = (byDate[t.trade_date] || 0) + (parseFloat(t.profit) || 0)
-  })
-  const dates = Object.keys(byDate).sort()
-  let streak = 0, streakType = 'none'
-  if (dates.length > 0) {
-    const results = dates.map(d => byDate[d] >= 0 ? 'win' : 'loss')
-    streakType = results[results.length - 1]
-    for (let i = results.length - 1; i >= 0; i--) {
-      if (results[i] === streakType) streak++
-      else break
+    const byDate = {};
+    trades.forEach(t => {
+      if (!t.trade_date) return;
+      byDate[t.trade_date] = (byDate[t.trade_date] || 0) + (parseFloat(t.profit) || 0);
+    });
+    const dates = Object.keys(byDate).sort();
+    let streak = 0, streakType = 'none';
+    if (dates.length > 0) {
+      const results = dates.map(d => byDate[d] >= 0 ? 'win' : 'loss');
+      streakType = results[results.length - 1];
+      for (let i = results.length - 1; i >= 0; i--) {
+        if (results[i] === streakType) streak++;
+        else break;
+      }
     }
-  }
 
-  return { totalTrades, targets, stops, netPnl, winRate, pf, streak, streakType, from }
+    return { totalTrades, targets, stops, netPnl, winRate, pf, streak, streakType, from };
   } catch (e) {
-    return { error: e.message }
+    return { error: e.message };
   }
+}
+
+// ── Iniciar flujo de sesión ─────────────────────────────────────────────────
+async function startSesionFlow(chatId, token, kv, env) {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: env.TIMEZONE || 'America/Bogota',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
+  const state = { step: STEPS.OPERO, data: { sesion_date: today } };
+  await saveState(kv, chatId, state);
+
+  await sendMessage(token, chatId,
+    `📅 <b>Registro de sesión — ${today}</b>\n\n¿Operaste hoy?`,
+    { inline_keyboard: [[
+      { text: '✅ Sí, operé',  callback_data: 'opero_si' },
+      { text: '❌ No operé',   callback_data: 'opero_no' },
+    ]] }
+  );
 }
 
 // ── Handlers principales ────────────────────────────────────────────────────
@@ -188,43 +244,30 @@ async function handleCommand(msg, env) {
   const token  = env.BOT_TOKEN;
 
   if (msg.text === '/sesion') {
-    const today = new Intl.DateTimeFormat('en-CA', {
-      timeZone: env.TIMEZONE || 'America/Guatemala',
-      year: 'numeric', month: '2-digit', day: '2-digit',
-    }).format(new Date());
-    const state = { step: STEPS.OPERO, data: { sesion_date: today } };
-    await saveState(env.KV, chatId, state);
-
-    await sendMessage(token, chatId,
-      `📅 <b>Registro de sesión — ${today}</b>\n\n¿Operaste hoy?`,
-      { inline_keyboard: [[
-        { text: '✅ Sí, operé',  callback_data: 'opero_si' },
-        { text: '❌ No operé',   callback_data: 'opero_no' },
-      ]] }
-    );
+    await startSesionFlow(chatId, token, env.KV, env);
     return;
   }
 
   if (msg.text === '/stats') {
-    const s = await fetchMonthStats(env)
+    const s = await fetchMonthStats(env);
     if (!s || s.error) {
-      await sendMessage(token, chatId, `⚠️ Error al consultar estadísticas: ${s?.error || 'desconocido'}`)
-      return
+      await sendMessage(token, chatId, `⚠️ Error al consultar estadísticas: ${s?.error || 'desconocido'}`);
+      return;
     }
-    const pnlSign  = s.netPnl >= 0 ? '+' : ''
-    const pnlEmoji = s.netPnl >= 0 ? '📈' : '📉'
-    const streakEmoji = s.streakType === 'win' ? '🟢' : s.streakType === 'loss' ? '🔴' : '—'
-    const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-    const month = MESES[parseInt(s.from.slice(5, 7)) - 1]
+    const pnlSign  = s.netPnl >= 0 ? '+' : '';
+    const pnlEmoji = s.netPnl >= 0 ? '📈' : '📉';
+    const streakEmoji = s.streakType === 'win' ? '🟢' : s.streakType === 'loss' ? '🔴' : '—';
+    const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const month = MESES[parseInt(s.from.slice(5, 7)) - 1];
     await sendMessage(token, chatId,
-      `📊 <b>Stats — ${month.charAt(0).toUpperCase() + month.slice(1)}</b>\n\n` +
+      `📊 <b>Stats — ${month}</b>\n\n` +
       `${pnlEmoji} <b>P&amp;L Neto:</b> ${pnlSign}$${s.netPnl.toFixed(2)}\n` +
       `🎯 <b>Win Rate:</b> ${s.winRate}%\n` +
       `📋 <b>Trades:</b> ${s.totalTrades} (${s.targets}✅ / ${s.stops}❌)\n` +
       `⚡ <b>Profit Factor:</b> ${s.pf}\n` +
       `🔥 <b>Racha:</b> ${s.streak > 0 ? `${s.streak} ${streakEmoji}` : '—'}`
-    )
-    return
+    );
+    return;
   }
 
   if (msg.text === '/cancelar') {
@@ -235,12 +278,18 @@ async function handleCommand(msg, env) {
 }
 
 async function handleCallback(cbq, env) {
-  const chatId  = String(cbq.message.chat.id);
-  const msgId   = cbq.message.message_id;
-  const action  = cbq.data;
-  const token   = env.BOT_TOKEN;
+  const chatId = String(cbq.message.chat.id);
+  const msgId  = cbq.message.message_id;
+  const action = cbq.data;
+  const token  = env.BOT_TOKEN;
 
   await answerCbq(token, cbq.id);
+
+  // ── Arrancar sesión desde botón en notificación de trade ──────────────────
+  if (action === 'iniciar_sesion') {
+    await startSesionFlow(chatId, token, env.KV, env);
+    return;
+  }
 
   const state = await getState(env.KV, chatId);
   if (!state) {
@@ -264,8 +313,21 @@ async function handleCallback(cbq, env) {
     const score = scoreChecklist(state.data);
     await sendMessage(token, chatId,
       `✅ Checklist guardado — Score: <b>${score}/6</b>\n\n` +
-      `✍️ <b>Reflexión del día</b>\n\nEscribe tu análisis y reflexión de la sesión:`
+      `✍️ <b>Análisis del día</b>\n\nEscribe tu análisis y reflexión de la sesión:`
     );
+    return;
+  }
+
+  // ── Setup seleccionado ────────────────────────────────────────────────────
+  if (action.startsWith('setup_')) {
+    const idx = parseInt(action.slice(6));
+    state.data.setup = SETUPS[idx];
+    state.step = STEPS.CHECKLIST;
+    CHECKLIST_ITEMS.forEach(({ key }) => {
+      if (state.data[key] === undefined) state.data[key] = false;
+    });
+    await saveState(env.KV, chatId, state);
+    await editMessage(token, chatId, msgId, checklistText(state.data), checklistKeyboard(state.data));
     return;
   }
 
@@ -277,7 +339,7 @@ async function handleCallback(cbq, env) {
       await saveState(env.KV, chatId, state);
       await editMessage(token, chatId, msgId,
         '📊 <b>Contexto de mercado</b>\n\n¿Cómo estaba el mercado hoy?',
-        { inline_keyboard: CONTEXTOS.map((c, i) => [{ text: c, callback_data: `ctx_${i}` }]) }
+        { inline_keyboard: CONTEXTOS.map(c => [{ text: c.label, callback_data: `ctx_${c.value}` }]) }
       );
       break;
 
@@ -290,7 +352,7 @@ async function handleCallback(cbq, env) {
 
     default:
       if (action.startsWith('ctx_')) {
-        state.data.contexto = CONTEXTOS[parseInt(action.slice(4))];
+        state.data.contexto = action.slice(4);
         state.step = STEPS.CORRIDA;
         await saveState(env.KV, chatId, state);
         await editMessage(token, chatId, msgId,
@@ -306,14 +368,15 @@ async function handleCallback(cbq, env) {
         state.step = STEPS.VELAS;
         await saveState(env.KV, chatId, state);
         await sendMessage(token, chatId,
-          '🕯️ <b>Velas en corrida</b>\n\n¿Cuántas velas tuvo la corrida? (escribe un número del 1 al 20)'
+          '🕯️ <b>Velas en corrida</b>\n\n¿Cuántas velas tuvo la corrida? (número del 1 al 20)'
         );
       } else if (action === 'zonas_si' || action === 'zonas_no') {
         state.data.zonas_contra = action === 'zonas_si';
         state.step = STEPS.SETUP;
         await saveState(env.KV, chatId, state);
         await editMessage(token, chatId, msgId,
-          '📐 <b>Setup</b>\n\nDescribe brevemente el setup que operaste:'
+          '📐 <b>Setup</b>\n\n¿Qué setup operaste?',
+          setupKeyboard()
         );
       }
   }
@@ -347,22 +410,7 @@ async function handleText(msg, env) {
         return;
       }
       state.data.velas_corrida = n;
-      if (n > 5) state.data.chk_5velas = false; // auto-invalidar
-      state.step = STEPS.RETROCESO;
-      await saveState(env.KV, chatId, state);
-      await sendMessage(token, chatId,
-        '📏 <b>Puntos de retroceso</b>\n\n¿Cuántos puntos retrocedió antes del entry? (ej: 8.5)'
-      );
-      break;
-    }
-
-    case STEPS.RETROCESO: {
-      const p = parseFloat(text.replace(',', '.'));
-      if (isNaN(p) || p < 0) {
-        await sendMessage(token, chatId, '⚠️ Ingresa un número válido (ej: 8.5)');
-        return;
-      }
-      state.data.puntos_retroceso = p;
+      if (n > 5) state.data.chk_5velas = false;
       state.step = STEPS.ZONAS_CONTRA;
       await saveState(env.KV, chatId, state);
       await sendMessage(token, chatId,
@@ -375,34 +423,15 @@ async function handleText(msg, env) {
       break;
     }
 
-    case STEPS.SETUP:
-      state.data.setup = text;
-      state.step = STEPS.CHECKLIST;
-      // Inicializar checklist en false (respetar chk_5velas si ya fue auto-invalidado)
-      CHECKLIST_ITEMS.forEach(({ key }) => {
-        if (state.data[key] === undefined) state.data[key] = false;
-      });
-      await saveState(env.KV, chatId, state);
-      await sendMessage(token, chatId, checklistText(state.data), checklistKeyboard(state.data));
-      break;
-
-    case STEPS.REFLEXION:
+    case STEPS.REFLEXION: {
       state.data.analisis_trader = text;
       const ok = await saveSession(state.data, env);
       await delState(env.KV, chatId);
-      const score = scoreChecklist(state.data);
       await sendMessage(token, chatId,
-        ok
-          ? `✅ <b>Sesión guardada correctamente</b>\n\n` +
-            `📅 Fecha: ${state.data.sesion_date}\n` +
-            `📊 Contexto: ${state.data.contexto}\n` +
-            `🔢 Corrida: ${state.data.num_corrida}ª\n` +
-            `🕯️ Velas: ${state.data.velas_corrida}\n` +
-            `📏 Retroceso: ${state.data.puntos_retroceso} pts\n` +
-            `📋 Disciplina: <b>${score}/6</b>`
-          : '⚠️ Error al guardar en Supabase. Intenta de nuevo con /sesion.'
+        ok ? buildResumen(state.data) : '⚠️ Error al guardar en Supabase. Intenta de nuevo con /sesion.'
       );
       break;
+    }
   }
 }
 
@@ -415,18 +444,15 @@ async function handleNotify(request, env) {
 
   const t = await request.json();
 
-  // Solo el nombre del instrumento sin fecha (ej. "MNQ 06-26" → "MNQ")
-  const instrument = t.instrument?.split(' ')[0] || t.instrument
+  const instrument  = t.instrument?.split(' ')[0] || t.instrument;
+  const accountParts = (t.account || '').split('-');
+  const account = accountParts.length > 2 ? accountParts.slice(0, 2).join('-') : (t.account || '');
 
-  // Cuenta abreviada: "PA-APEX-23411-03" → "PA-APEX", "SIM101" → "SIM101"
-  const accountParts = (t.account || '').split('-')
-  const account = accountParts.length > 2 ? accountParts.slice(0, 2).join('-') : (t.account || '')
-
-  const isLong = t.market_pos === 'Long'
-  const dir    = isLong ? '🟢 ▲ Long' : '🔴 ▼ Short'
+  const isLong = t.market_pos === 'Long';
+  const dir    = isLong ? '🟢 ▲ Long' : '🔴 ▼ Short';
   const emoji  = t.resultado === 'target' ? '✅ Target' :
-                 t.resultado === 'stop'   ? '🔴 Stop'   : '⚫ Otro'
-  const sign   = t.profit >= 0 ? '+' : ''
+                 t.resultado === 'stop'   ? '🔴 Stop'   : '⚫ Otro';
+  const sign   = t.profit >= 0 ? '+' : '';
 
   const text =
     `🔔 <b>Trade cerrado — ${instrument}</b>\n` +
@@ -438,7 +464,16 @@ async function handleNotify(request, env) {
   await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: env.ALLOWED_CHAT_ID, text, parse_mode: 'HTML' }),
+    body: JSON.stringify({
+      chat_id: env.ALLOWED_CHAT_ID,
+      text,
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '📝 Registrar sesión del día', callback_data: 'iniciar_sesion' },
+        ]],
+      },
+    }),
   });
 
   return new Response('OK');
@@ -458,7 +493,6 @@ export default {
         update.message?.chat.id ?? update.callback_query?.message.chat.id ?? ''
       );
 
-      // Verificar autorización
       if (env.ALLOWED_CHAT_ID && chatId !== env.ALLOWED_CHAT_ID) {
         return new Response('OK');
       }
