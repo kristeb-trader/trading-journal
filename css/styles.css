@@ -1306,3 +1306,29 @@ body.modal-open { overflow: hidden; }
   .annual-kpi-strip { grid-template-columns: 1fr 1fr; gap: 8px; }
   .annual-kpi-value { font-size: 0.95rem; }
 }
+
+/* Annual totals row — celdas con cuadros y color */
+.annual-totals-row td {
+  padding: 11px 10px !important;
+  border-top: 2px solid var(--border) !important;
+  border-bottom: none !important;
+  font-size: 0.9rem;
+}
+.annual-totals-label {
+  color: var(--text) !important;
+  font-weight: 700 !important;
+  font-size: 0.88rem !important;
+}
+.annual-totals-pos,
+.annual-totals-neg,
+.annual-totals-warn,
+.annual-totals-neutral {
+  font-weight: 700 !important;
+  border-radius: 6px;
+  padding: 6px 10px !important;
+  text-align: center;
+}
+.annual-totals-pos     { background: rgba(29,158,117,0.15);  color: var(--accent)  !important; }
+.annual-totals-neg     { background: rgba(226,75,74,0.15);   color: var(--red)     !important; }
+.annual-totals-warn    { background: rgba(186,117,23,0.15);  color: var(--warning) !important; }
+.annual-totals-neutral { background: rgba(255,255,255,0.05); color: var(--text2)   !important; }

@@ -311,17 +311,21 @@ const Annual = (() => {
     const tSign   = s.totalPnl >= 0 ? '+' : ''
     const tRentab = cap > 0 ? `${(s.totalPnl / cap * 100).toFixed(2)}%` : '—'
 
+    const discColor = s.avgDisc == null ? '' : s.avgDisc >= 80 ? 'annual-pos' : s.avgDisc >= 55 ? 'annual-warn' : 'annual-neg'
+
     document.getElementById('annualMonthTableBody').innerHTML = rows
     document.getElementById('annualMonthTableFoot').innerHTML = `
       <tr class="annual-totals-row">
-        <td>Total</td>
-        <td class="${s.totalPnl >= 0 ? 'annual-pos' : 'annual-neg'} fw-600">
+        <td class="annual-totals-label">Resumen Anual</td>
+        <td class="${s.totalPnl >= 0 ? 'annual-totals-pos' : 'annual-totals-neg'}">
           ${tSign}$${s.totalPnl.toFixed(2)}</td>
-        <td>—</td>
-        <td>${tRentab}</td>
-        <td class="${s.winRate >= 50 ? 'annual-pos' : s.winRate >= 40 ? 'annual-warn' : 'annual-neg'}">${s.winRate.toFixed(1)}%</td>
-        <td>${s.avgDisc != null ? s.avgDisc + '%' : '—'}</td>
-        <td>${s.totalTrades}</td>
+        <td class="annual-totals-neutral">—</td>
+        <td class="annual-totals-neutral">${tRentab}</td>
+        <td class="${s.winRate >= 50 ? 'annual-totals-pos' : s.winRate >= 40 ? 'annual-totals-warn' : 'annual-totals-neg'}">
+          ${s.winRate.toFixed(1)}%</td>
+        <td class="${s.avgDisc == null ? 'annual-totals-neutral' : s.avgDisc >= 80 ? 'annual-totals-pos' : s.avgDisc >= 55 ? 'annual-totals-warn' : 'annual-totals-neg'}">
+          ${s.avgDisc != null ? s.avgDisc + '%' : '—'}</td>
+        <td class="annual-totals-neutral">${s.totalTrades}</td>
         <td></td>
       </tr>`
   }
