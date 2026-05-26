@@ -1,9 +1,20 @@
 // Service Worker — NQ Journal PWA
-// Estrategia: cache-first para app shell, network-only para APIs externas
+// Estrategia:
+//   - app shell (JS/CSS/HTML propios): network-first → siempre frescos, caché de respaldo offline
+//   - CDN (tabler, supabase, chart.js): cache-first → no cambian, carga instantánea
+//   - APIs externas (supabase, cloudinary, workers.dev...): network-only
 
-const CACHE = 'nqjournal-v1'
+const CACHE = 'nqjournal-v3'
 
-const SHELL = [
+// Recursos CDN que no cambian → cache-first
+const CDN_SHELL = [
+  'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css',
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js',
+  'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
+]
+
+// Archivos propios del journal → network-first
+const APP_SHELL = [
   './',
   './index.html',
   './css/styles.css',
@@ -16,66 +27,77 @@ const SHELL = [
   './js/charts.js',
   './js/data.js',
   './js/gallery.js',
+  './js/annual.js',
   './js/app.js',
   './favicon.svg',
   './manifest.json',
-  // CDN — se cachean para funcionamiento offline
-  'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js',
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
 ]
 
-// ── Instalación: cachear el app shell ─────────────────────────────────────
+// APIs externas → nunca cachear
+const NETWORK_ONLY_HOSTS = [
+  'supabase.co',
+  'cloudinary.com',
+  'workers.dev',
+  'anthropic.com',
+  'telegram.org',
+  'api.telegram.org',
+]
+
+// ── Instalación: pre-cachear CDN ──────────────────────────────────────────
 self.addEventListener('install', e => {
   self.skipWaiting()
   e.waitUntil(
-    caches.open(CACHE).then(cache => {
-      // Cachear todo el shell; si algo falla, continuar igualmente
-      return Promise.allSettled(SHELL.map(url => cache.add(url).catch(() => null)))
-    })
+    caches.open(CACHE).then(cache =>
+      Promise.allSettled(CDN_SHELL.map(url => cache.add(url).catch(() => null)))
+    )
   )
 })
 
-// ── Activación: limpiar caches viejos ─────────────────────────────────────
+// ── Activación: eliminar cachés viejos y tomar control inmediato ──────────
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   )
 })
 
-// ── Fetch: network-only para APIs, cache-first para app shell ─────────────
+// ── Fetch ─────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url)
 
-  // Siempre ir a la red para llamadas externas (datos en tiempo real)
-  const isExternal =
-    url.hostname.includes('supabase.co') ||
-    url.hostname.includes('cloudinary.com') ||
-    url.hostname.includes('workers.dev') ||
-    url.hostname.includes('anthropic.com') ||
-    url.hostname.includes('telegram.org')
+  // 1. APIs externas → siempre red, sin intervención
+  if (NETWORK_ONLY_HOSTS.some(h => url.hostname.includes(h))) return
 
-  if (isExternal) return  // deja que el navegador maneje normalmente
-
-  // POST/PUT/DELETE → siempre red
+  // 2. Solo interceptar GET
   if (e.request.method !== 'GET') return
 
-  // App shell y CDN: cache-first, actualizar en background
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      const networkFetch = fetch(e.request)
-        .then(response => {
-          if (response && response.ok) {
-            const clone = response.clone()
-            caches.open(CACHE).then(cache => cache.put(e.request, clone))
-          }
-          return response
-        })
-        .catch(() => null)
+  const isCDN = CDN_SHELL.some(u => e.request.url.startsWith(u))
 
-      return cached || networkFetch
-    })
-  )
+  if (isCDN) {
+    // Cache-first para CDN: respuesta instantánea, actualiza en background
+    e.respondWith(
+      caches.match(e.request).then(cached => {
+        const networkFetch = fetch(e.request).then(res => {
+          if (res && res.ok) {
+            caches.open(CACHE).then(c => c.put(e.request, res.clone()))
+          }
+          return res
+        }).catch(() => null)
+        return cached || networkFetch
+      })
+    )
+  } else {
+    // Network-first para app shell: siempre intenta red → guarda en caché → fallback a caché si offline
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          if (res && res.ok) {
+            caches.open(CACHE).then(c => c.put(e.request, res.clone()))
+          }
+          return res
+        })
+        .catch(() => caches.match(e.request))
+    )
+  }
 })
