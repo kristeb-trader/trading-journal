@@ -165,6 +165,7 @@ const Nav = {
     gallery: 'Imágenes',
     register: 'Registrar Sesión',
     analysis: 'Análisis',
+    annual: 'Resumen Anual',
     data: 'Datos',
   },
   initialized: new Set(),
@@ -187,6 +188,7 @@ const Nav = {
         if (sectionId === 'register') SessionForm.init()
         if (sectionId === 'gallery') await Gallery.init()
         if (sectionId === 'analysis') await Charts.init()
+        if (sectionId === 'annual') await Annual.init()
         if (sectionId === 'data') await DataManager.init()
       } catch (err) {
         Toast.show('Error cargando sección: ' + err.message, 'error')

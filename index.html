@@ -54,6 +54,10 @@
         <i class="ti ti-chart-line"></i>
         <span>Análisis</span>
       </li>
+      <li class="nav-item" data-section="annual" title="Resumen Anual">
+        <i class="ti ti-calendar-stats"></i>
+        <span>Anual</span>
+      </li>
       <li class="nav-item" data-section="register" title="Registrar sesión">
         <i class="ti ti-square-rounded-plus"></i>
         <span>Registrar</span>
@@ -541,6 +545,85 @@
         </div>
       </section>
 
+      <!-- ── Section: Anual ──────────────────────────────────────────────── -->
+      <section class="section" id="section-annual">
+
+        <!-- Header: año + capital inicial -->
+        <div class="annual-header">
+          <div class="annual-year-nav">
+            <button class="btn-icon" id="annualPrevYear" title="Año anterior">
+              <i class="ti ti-chevron-left"></i>
+            </button>
+            <span id="annualYearLabel" class="annual-year-label">2026</span>
+            <button class="btn-icon" id="annualNextYear" title="Año siguiente">
+              <i class="ti ti-chevron-right"></i>
+            </button>
+          </div>
+          <div class="annual-capital-wrap">
+            <label for="annualCapitalInicial">Capital inicial <span style="color:var(--text3)">(para rentabilidad %)</span></label>
+            <div class="annual-capital-input">
+              <span>$</span>
+              <input type="number" id="annualCapitalInicial" placeholder="5000" min="0" step="100">
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading state -->
+        <div id="annualLoadingState" style="text-align:center;padding:60px 0;color:var(--text3)">
+          <i class="ti ti-loader-2 spin" style="font-size:2rem"></i>
+          <p style="margin-top:12px">Cargando datos anuales...</p>
+        </div>
+
+        <!-- Main content -->
+        <div id="annualContent" class="hidden">
+
+          <!-- KPI strip -->
+          <div class="annual-kpi-strip" id="annualKpiStrip"></div>
+
+          <!-- Charts row -->
+          <div class="annual-charts-row">
+            <div class="card">
+              <div class="chart-header">
+                <h3><i class="ti ti-trending-up"></i> Equity Curve Anual</h3>
+              </div>
+              <canvas id="annualEquityChart" height="110"></canvas>
+            </div>
+            <div class="card">
+              <div class="chart-header">
+                <h3><i class="ti ti-chart-bar"></i> P&amp;L por Mes</h3>
+              </div>
+              <canvas id="annualPnlBarChart" height="110"></canvas>
+            </div>
+          </div>
+
+          <!-- Monthly table -->
+          <div class="card annual-table-card">
+            <div class="chart-header">
+              <h3><i class="ti ti-table"></i> Resumen por Mes</h3>
+            </div>
+            <div class="annual-table-wrap">
+              <table class="annual-table">
+                <thead>
+                  <tr>
+                    <th>Mes</th>
+                    <th>P&amp;L Neto</th>
+                    <th>Acumulado</th>
+                    <th>Rentabilidad</th>
+                    <th>Efectividad</th>
+                    <th>Disciplina</th>
+                    <th>Trades</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="annualMonthTableBody"></tbody>
+                <tfoot id="annualMonthTableFoot"></tfoot>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
     </div>
   </main>
 
@@ -679,6 +762,7 @@
   <script src="js/charts.js"></script>
   <script src="js/data.js"></script>
   <script src="js/gallery.js"></script>
+  <script src="js/annual.js"></script>
   <script src="js/app.js"></script>
 
   <!-- Registro del Service Worker (PWA) -->
