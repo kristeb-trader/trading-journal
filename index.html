@@ -559,11 +559,16 @@
               <i class="ti ti-chevron-right"></i>
             </button>
           </div>
-          <div class="annual-capital-wrap">
-            <label for="annualCapitalInicial">Capital inicial <span style="color:var(--text3)">(para rentabilidad %)</span></label>
-            <div class="annual-capital-input">
-              <span>$</span>
-              <input type="number" id="annualCapitalInicial" placeholder="5000" min="0" step="100">
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <select id="accountFilterAnnual" class="filter-select">
+              <option value="all">Todas las cuentas</option>
+            </select>
+            <div class="annual-capital-wrap">
+              <label for="annualCapitalInicial">Capital inicial <span style="color:var(--text3)">(para rentabilidad %)</span></label>
+              <div class="annual-capital-input">
+                <span>$</span>
+                <input type="number" id="annualCapitalInicial" placeholder="5000" min="0" step="100">
+              </div>
             </div>
           </div>
         </div>

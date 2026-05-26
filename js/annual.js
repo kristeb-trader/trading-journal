@@ -4,6 +4,35 @@ const Annual = (() => {
   let capitalInicial = 0
   let equityChartInst  = null
   let pnlBarChartInst  = null
+  let allAccountsList  = []
+
+  const ACCOUNT_KEY = 'annualAccount'
+
+  function abbreviateAccount(account) {
+    if (!account) return '—'
+    const parts = account.split('-')
+    return parts.length > 2 ? parts.slice(0, 2).join('-') : account
+  }
+
+  function buildAccountFilter(allTrades) {
+    const map = {}
+    allTrades.forEach(t => {
+      if (!t.account) return
+      const abbr = abbreviateAccount(t.account)
+      map[abbr] = true
+    })
+    allAccountsList = Object.keys(map).sort()
+
+    const sel = document.getElementById('accountFilterAnnual')
+    sel.innerHTML = '<option value="all">Todas las cuentas</option>' +
+      allAccountsList.map(a => `<option value="${a}">${a}</option>`).join('')
+
+    // Prioridad: 1) guardado en localStorage  2) PA-APEX  3) 'all'
+    const saved  = localStorage.getItem(ACCOUNT_KEY)
+    const paApex = allAccountsList.find(a => a.startsWith('PA-APEX'))
+    if (saved && allAccountsList.includes(saved)) sel.value = saved
+    else if (paApex)                               sel.value = paApex
+  }
 
   const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                        'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
@@ -66,10 +95,18 @@ const Annual = (() => {
         DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas()
       ])
 
+      // Poblar dropdown de cuentas (solo la primera vez que carga datos reales)
+      buildAccountFilter(allTrades)
+
+      const accountVal = document.getElementById('accountFilterAnnual').value
+      const tradesFiltered = accountVal === 'all'
+        ? allTrades
+        : allTrades.filter(t => abbreviateAccount(t.account) === accountVal)
+
       const from = `${annualYear}-01-01`
       const to   = `${annualYear}-12-31`
 
-      const trades      = allTrades.filter(t => t.trade_date   >= from && t.trade_date   <= to)
+      const trades      = tradesFiltered.filter(t => t.trade_date >= from && t.trade_date <= to)
       const sesiones    = allSes.filter(s   => s.sesion_date   >= from && s.sesion_date   <= to)
       const casuisticas = allCas.filter(c   => c.sesion_date   >= from && c.sesion_date   <= to)
 
@@ -382,6 +419,11 @@ const Annual = (() => {
     input.addEventListener('change', () => {
       capitalInicial = parseFloat(input.value) || 0
       localStorage.setItem('annual_capital_inicial', String(capitalInicial))
+      loadAndRender()
+    })
+
+    document.getElementById('accountFilterAnnual').addEventListener('change', () => {
+      localStorage.setItem(ACCOUNT_KEY, document.getElementById('accountFilterAnnual').value)
       loadAndRender()
     })
 
