@@ -753,13 +753,78 @@ Tras el análisis inicial, responde preguntas de seguimiento del trader con el m
     })
   }
 
+  // ── Cambio de fecha ───────────────────────────────────────────────────
+
+  function resetPanel() {
+    chatHistory        = []
+    diagnosticoActual  = {}
+    diagnosticoGuardado = false
+    systemPromptCache  = null
+    imagenBase64       = null
+
+    const chatEl = document.getElementById('coachChatMessages')
+    if (chatEl) chatEl.innerHTML = ''
+
+    const analisisEl = document.getElementById('coachAnalisisContent')
+    if (analisisEl) analisisEl.innerHTML = `
+      <div class="coach-placeholder">
+        <i class="ti ti-robot"></i>
+        <p>Haz clic en <strong>Analizar sesión</strong> para que el Coach evalúe esta sesión.</p>
+        <p class="coach-placeholder-hint">Sube la gráfica del día para un análisis más preciso.</p>
+      </div>`
+
+    ocultarGuardar()
+
+    // Reset imagen
+    imagenBase64 = null
+    const preview = document.getElementById('coachImagePreview')
+    const area    = document.getElementById('coachUploadArea')
+    const img     = document.getElementById('coachPreviewImg')
+    if (preview) preview.classList.add('hidden')
+    if (area)    area.classList.remove('hidden')
+    if (img)     img.src = ''
+  }
+
+  async function cargarFecha(date) {
+    coachDate = date
+
+    // Hint: hoy / ayer / hace N días
+    const hintEl = document.getElementById('coachDateHint')
+    if (hintEl) {
+      const hoy    = today()
+      const diffMs = new Date(hoy) - new Date(date)
+      const dias   = Math.round(diffMs / 86400000)
+      hintEl.textContent = dias === 0 ? '— hoy' : dias === 1 ? '— ayer' : dias > 1 ? `— hace ${dias} días` : ''
+      hintEl.className   = `coach-date-hint ${dias === 0 ? 'hint-today' : dias <= 5 ? 'hint-recent' : 'hint-old'}`
+    }
+
+    resetPanel()
+    await setupEmocionConfianza(date)
+
+    // Si ya existe diagnóstico para esa fecha, mostrarlo directamente
+    const diag = await DB.getDiagnosticoByDate(date)
+    if (diag?.sec_contexto) {
+      renderAnalisis({
+        contexto:    diag.sec_contexto,
+        desarrollo:  diag.sec_desarrollo,
+        validacion:  diag.sec_validacion,
+        errores:     diag.sec_errores,
+        aprendizaje: diag.sec_aprendizaje,
+        resumen:     diag.sec_resumen_compacto,
+      })
+      diagnosticoGuardado = true
+      const saveBtn = document.getElementById('coachSaveBtn')
+      if (saveBtn) {
+        saveBtn.innerHTML = '<i class="ti ti-circle-check"></i> Ya guardado'
+        saveBtn.classList.remove('hidden')
+      }
+      Toast.show(`Diagnóstico del ${fmtDate(date)} cargado`, 'info')
+    }
+  }
+
   // ── init ──────────────────────────────────────────────────────────────
 
   async function init() {
-    coachDate = today()
-    imagenBase64 = null
-    diagnosticoGuardado = false
-
     // Tabs
     document.querySelectorAll('.coach-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => switchTab(btn.dataset.tab))
@@ -780,25 +845,17 @@ Tras el análisis inicial, responde preguntas de seguimiento del trader con el m
     // Imagen
     setupImagenCoach()
 
-    // Emoción y confianza
-    await setupEmocionConfianza(coachDate)
-
-    // Si ya hay diagnóstico del día, mostrarlo
-    const diagExistente = await DB.getDiagnosticoByDate(coachDate)
-    if (diagExistente?.sec_contexto) {
-      renderAnalisis({
-        contexto:    diagExistente.sec_contexto,
-        desarrollo:  diagExistente.sec_desarrollo,
-        validacion:  diagExistente.sec_validacion,
-        errores:     diagExistente.sec_errores,
-        aprendizaje: diagExistente.sec_aprendizaje,
-        resumen:     diagExistente.sec_resumen_compacto,
+    // Selector de fecha
+    const datePicker = document.getElementById('coachDatePicker')
+    if (datePicker) {
+      datePicker.value = today()
+      datePicker.addEventListener('change', () => {
+        if (datePicker.value) cargarFecha(datePicker.value)
       })
-      diagnosticoGuardado = true
-      const saveBtn = document.getElementById('coachSaveBtn')
-      if (saveBtn) { saveBtn.innerHTML = '<i class="ti ti-circle-check"></i> Guardado'; saveBtn.classList.remove('hidden') }
-      Toast.show('Diagnóstico del día ya guardado — puedes seguir chateando', 'info')
     }
+
+    // Cargar con la fecha de hoy
+    await cargarFecha(today())
   }
 
   return { init }

@@ -1367,6 +1367,41 @@ body.modal-open { overflow: hidden; }
 .coach-tab-panel { display: none; }
 .coach-tab-panel.active { display: block; }
 
+/* ── Date picker row ─────────────────────────────────────────────────────── */
+.coach-date-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.coach-date-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.coach-date-input {
+  padding: 8px 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color var(--transition);
+}
+.coach-date-input:focus { outline: none; border-color: var(--accent); }
+.coach-date-hint {
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+.hint-today  { color: var(--accent);  background: var(--accent-dim); }
+.hint-recent { color: var(--warning); background: var(--warning-dim); }
+.hint-old    { color: var(--text3);   background: var(--bg3); }
+
 /* ── Controls row: emoción + confianza + imagen ──────────────────────────── */
 .coach-controls-row {
   display: flex;
