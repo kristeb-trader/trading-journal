@@ -472,21 +472,19 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
   // ── Guardar diagnóstico ───────────────────────────────────────────────
 
   function mostrarGuardar() {
-    const btn = document.getElementById('coachSaveBtn')
-    if (btn) btn.classList.remove('hidden')
+    document.querySelectorAll('.coach-save-btn').forEach(btn => btn.classList.remove('hidden'))
   }
 
   function ocultarGuardar() {
-    const btn = document.getElementById('coachSaveBtn')
-    if (btn) btn.classList.add('hidden')
+    document.querySelectorAll('.coach-save-btn').forEach(btn => btn.classList.add('hidden'))
   }
 
   async function guardarDiagnostico() {
     if (diagnosticoGuardado) { Toast.show('Ya guardado', 'info'); return }
     if (!diagnosticoActual.resumen && !diagnosticoActual.contexto) { Toast.show('Primero genera el análisis', 'warning'); return }
 
-    const btn = document.getElementById('coachSaveBtn')
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Guardando...' }
+    const btns = document.querySelectorAll('.coach-save-btn')
+    btns.forEach(btn => { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Guardando...' })
 
     try {
       const emocionId = document.getElementById('coachEmocionSelect')?.value
@@ -533,14 +531,14 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
 
       diagnosticoGuardado = true
       Toast.show('Diagnóstico guardado correctamente', 'success')
-      if (btn) { btn.innerHTML = '<i class="ti ti-circle-check"></i> Guardado' }
+      btns.forEach(btn => { btn.innerHTML = '<i class="ti ti-circle-check"></i> Guardado' })
 
       // Refrescar historial
       await renderHistorial()
 
     } catch (err) {
       Toast.show('Error al guardar: ' + err.message, 'error')
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-device-floppy"></i> Guardar diagnóstico' }
+      btns.forEach(btn => { btn.disabled = false; btn.innerHTML = '<i class="ti ti-device-floppy"></i> Guardar diagnóstico' })
     }
   }
 
@@ -831,11 +829,10 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
         resumen:     diag.sec_resumen_compacto,
       })
       diagnosticoGuardado = true
-      const saveBtn = document.getElementById('coachSaveBtn')
-      if (saveBtn) {
-        saveBtn.innerHTML = '<i class="ti ti-circle-check"></i> Ya guardado'
-        saveBtn.classList.remove('hidden')
-      }
+      document.querySelectorAll('.coach-save-btn').forEach(btn => {
+        btn.innerHTML = '<i class="ti ti-circle-check"></i> Ya guardado'
+        btn.classList.remove('hidden')
+      })
       Toast.show(`Diagnóstico del ${fmtDate(date)} cargado`, 'info')
     }
   }
@@ -857,8 +854,8 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensaje() }
     })
 
-    // Guardar
-    document.getElementById('coachSaveBtn')?.addEventListener('click', guardarDiagnostico)
+    // Guardar (ambos botones: arriba y abajo del chat)
+    document.querySelectorAll('.coach-save-btn').forEach(btn => btn.addEventListener('click', guardarDiagnostico))
 
     // Imagen
     setupImagenCoach()
