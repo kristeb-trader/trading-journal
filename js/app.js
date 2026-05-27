@@ -195,6 +195,8 @@ const Nav = {
       } catch (err) {
         Toast.show('Error cargando sección: ' + err.message, 'error')
       }
+    } else if (sectionId === 'coach') {
+      Coach.refresh()
     }
   },
 

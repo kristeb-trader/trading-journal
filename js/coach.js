@@ -876,5 +876,9 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
     await cargarFecha(today())
   }
 
-  return { init }
+  function refresh() {
+    cargarFecha(coachDate || today())
+  }
+
+  return { init, refresh }
 })()
