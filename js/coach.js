@@ -728,6 +728,25 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
     reader.readAsDataURL(file)
   }
 
+  async function autoCargarImagen(url) {
+    try {
+      const res = await fetch(url)
+      if (!res.ok) return
+      const blob = await res.blob()
+      const reader = new FileReader()
+      reader.onload = e => {
+        const dataUrl = e.target.result
+        imagenBase64 = { data: dataUrl.split(',')[1], mediaType: blob.type || 'image/jpeg' }
+        document.getElementById('coachPreviewImg').src = dataUrl
+        document.getElementById('coachUploadArea').classList.add('hidden')
+        document.getElementById('coachImagePreview').classList.remove('hidden')
+      }
+      reader.readAsDataURL(blob)
+    } catch (_) {
+      // URL inaccesible o CORS — deja el área de upload manual visible
+    }
+  }
+
   // ── Selector de emoción y confianza ──────────────────────────────────
 
   async function setupEmocionConfianza(date) {
@@ -751,6 +770,9 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
     const confianzaGuardada = diagExistente?.nivel_confianza || sesion?.nivel_confianza
     if (emocionGuardada) select.value = emocionGuardada
     if (confianzaGuardada && confianza) confianza.value = confianzaGuardada
+
+    // Auto-cargar imagen del día desde la sesión si existe
+    if (sesion?.imagen_url) autoCargarImagen(sesion.imagen_url)
 
     // Estrellas de confianza
     renderStars(confianzaGuardada || 0)
