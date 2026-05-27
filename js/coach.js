@@ -397,18 +397,36 @@ Tras el análisis inicial, responde preguntas de seguimiento del trader con el m
 
     try {
       // Construir el contenido del usuario (texto + imagen si existe)
+      const instruccionFormato = `Realiza el análisis completo en exactamente 6 secciones. USA OBLIGATORIAMENTE estos encabezados con este formato exacto (negrita + número + emoji):
+
+**1. 🌍 CONTEXTO**
+**2. 📈 DESARROLLO DE SESIÓN**
+**3. ✅ VALIDACIÓN DE SETUPS**
+**4. ⚠️ ERRORES DETECTADOS**
+**5. 🎓 APRENDIZAJE DEL DÍA**
+**6. 📋 RESUMEN PARA DIARIO**
+
+Si no hay datos de sesión registrados, igual completa las 6 secciones basándote en lo disponible e indicando la falta de información donde corresponda.`
+
       let userContent
       if (imagenBase64) {
         userContent = [
           { type: 'image', source: { type: 'base64', media_type: imagenBase64.mediaType, data: imagenBase64.data } },
-          { type: 'text', text: 'Analiza esta gráfica de la sesión de hoy y realiza el análisis completo en las 6 secciones establecidas.' }
+          { type: 'text', text: `Analiza esta gráfica de la sesión. ${instruccionFormato}` }
         ]
       } else {
-        userContent = 'Realiza el análisis completo de la sesión de hoy en las 6 secciones establecidas. No tengo imagen disponible, usa los datos numéricos de contexto.'
+        userContent = `No tengo imagen disponible, usa los datos numéricos del sistema de contexto. ${instruccionFormato}`
       }
 
       const respuesta = await llamarClaude(userContent, true)
       diagnosticoActual = parsearSecciones(respuesta)
+
+      // Fallback: si el parseo no capturó ninguna sección, mostrar respuesta completa en "contexto"
+      const hayContenido = Object.values(diagnosticoActual).some(v => v && v.trim().length > 20)
+      if (!hayContenido) {
+        diagnosticoActual.contexto = respuesta
+      }
+
       renderAnalisis(diagnosticoActual)
 
       // Mostrar mensaje inicial en el chat
@@ -465,7 +483,7 @@ Tras el análisis inicial, responde preguntas de seguimiento del trader con el m
 
   async function guardarDiagnostico() {
     if (diagnosticoGuardado) { Toast.show('Ya guardado', 'info'); return }
-    if (!diagnosticoActual.resumen) { Toast.show('Primero genera el análisis', 'warning'); return }
+    if (!diagnosticoActual.resumen && !diagnosticoActual.contexto) { Toast.show('Primero genera el análisis', 'warning'); return }
 
     const btn = document.getElementById('coachSaveBtn')
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Guardando...' }
