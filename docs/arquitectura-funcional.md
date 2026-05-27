@@ -1,13 +1,13 @@
 # Trading Journal NQ Futures
 ## Guía Funcional del Sistema
 
-**Versión:** 2.1 | **Fecha:** Mayo 2026
+**Versión:** 3.0 | **Fecha:** Mayo 2026
 
 ---
 
 ## ¿Qué es el Trading Journal?
 
-Es un sistema personal diseñado para registrar, revisar y mejorar tu operativa diaria en futuros NQ/MNQ. Centraliza toda la información de tus sesiones de trading en un solo lugar: los trades que ejecutas, cómo te comportaste con tus reglas, tus reflexiones del día, y estadísticas que te ayudan a identificar patrones en tu operativa.
+Es un sistema personal diseñado para registrar, revisar y mejorar tu operativa diaria en futuros NQ/MNQ. Centraliza toda la información de tus sesiones de trading en un solo lugar: los trades que ejecutas, cómo te comportaste con tus reglas, tus reflexiones del día, y estadísticas que te ayudan a identificar patrones en tu operativa — tanto diarios como anuales.
 
 ---
 
@@ -32,13 +32,13 @@ El sistema tiene **tres formas de recibir información**, y las tres trabajan ju
 │  • Precio entry │   • Contexto mercado  │   • Contexto mercado      │
 │  • Precio exit  │   • Nº de corrida     │   • Nº de corrida         │
 │  • Hora exacta  │   • Velas en corrida  │   • Velas en corrida      │
-│  • Ganancia/    │   • Puntos retroceso  │   • Puntos retroceso      │
-│    pérdida      │   • Zonas en contra   │   • Zonas en contra       │
-│  • Tipo de      │   • Setup del día     │   • Setup del día         │
-│    resultado    │   • Checklist 6 reglas│   • Checklist 6 reglas    │
-│    (target/stop)│   • Reflexión del día │   • Reflexión del día     │
-│  • MAE y MFE    │   • Imagen del día    │                           │
-│  • Comisión     │   • Resumen con IA    │                           │
+│  • Ganancia/    │   • Zonas en contra   │   • Zonas en contra       │
+│    pérdida      │   • Setup del día     │   • Setup del día         │
+│  • Tipo de      │   • Checklist 6 reglas│   • Checklist 6 reglas    │
+│    resultado    │   • Análisis del día  │   • Análisis del día      │
+│    (target/stop)│   • Imagen del día    │                           │
+│  • MAE y MFE    │   • Resumen con IA    │                           │
+│  • Comisión     │                       │                           │
 └─────────────────┴───────────────────────┴───────────────────────────┘
 ```
 
@@ -46,32 +46,32 @@ El sistema tiene **tres formas de recibir información**, y las tres trabajan ju
 
 ## ¿Dónde se guarda todo?
 
-Toda la información va a una base de datos en la nube. No está en tu computador — está en internet, accesible desde cualquier dispositivo. Se organiza en tres grandes grupos:
+Toda la información va a una base de datos en la nube. No está en tu computador — está en internet, accesible desde cualquier dispositivo. Se organiza en cuatro grupos:
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│                         BASE DE DATOS                                │
-├─────────────────────────┬────────────────────┬───────────────────────┤
-│                         │                    │                       │
-│  TABLA DE TRADES        │  TABLA DE SESIONES │  TABLA FOMC_DATES     │
-│  (lo automático)        │  (lo manual)       │  (referencia)         │
-│                         │                    │                       │
-│  Un registro por cada   │  Un registro por   │  Fechas de reuniones  │
-│  trade ejecutado        │  día operado       │  FOMC 2025-2026       │
-│                         │                    │                       │
-│  60 trades históricos   │  Contexto, corrida │  Solo lectura,        │
-│  cargados + nuevos      │  setup, checklist  │  pre-poblada          │
-│  automáticos desde NT8  │  reflexión, imagen │                       │
-│                         │  resumen IA        │                       │
-│                         │                    │                       │
-└─────────────────────────┴────────────────────┴───────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│                             BASE DE DATOS                                │
+├──────────────────┬────────────────────┬───────────────┬──────────────────┤
+│                  │                    │               │                  │
+│  TABLA TRADES    │  TABLA SESIONES    │  FOMC_DATES   │  CATALOGO_       │
+│  (automático)    │  (manual)          │  (referencia) │  CASUISTICAS     │
+│                  │                    │               │                  │
+│  Un registro por │  Un registro por   │  Fechas FOMC  │  Catálogo de     │
+│  cada trade      │  día operado       │  2025-2026    │  errores         │
+│                  │                    │               │  tipificables    │
+│  Trade entry/    │  Contexto, corrida │  Solo lectura │  con orden para  │
+│  exit, profit,   │  setup, checklist  │  pre-poblada  │  drag-and-drop   │
+│  commission,     │  análisis, imagen  │               │                  │
+│  resultado       │  resumen IA        │               │                  │
+│                  │                    │               │                  │
+└──────────────────┴────────────────────┴───────────────┴──────────────────┘
 ```
 
 ---
 
 ## ¿Qué puedes ver en el Dashboard?
 
-El dashboard es una página web accesible desde cualquier navegador. Tiene 6 secciones:
+El dashboard es una página web accesible desde cualquier navegador — y también instalable como PWA en iPhone/Android. Tiene **7 secciones**:
 
 ### 📅 Sección 1 — Calendario
 
@@ -114,25 +114,24 @@ Iconos en celda:
 **Filtro de cuenta:**
 - Por defecto selecciona **PA-APEX** al cargar el calendario.
 - La selección persiste en `localStorage` al navegar entre secciones y recargar.
-- La lista de cuentas se carga de **todos los trades** (no solo el mes actual).
 
 **Festivos CME automáticos:**
-Los 10 festivos anuales del mercado CME se calculan algorítmicamente en JavaScript para cualquier año (New Year, MLK Day, Presidents' Day, Good Friday, Memorial Day, Juneteenth, Independence Day, Labor Day, Thanksgiving, Christmas). No requieren registro de sesión.
+Los 10 festivos anuales del mercado CME se calculan algorítmicamente en JavaScript para cualquier año. No requieren registro de sesión.
 
 **Días FOMC:**
-Las fechas FOMC se cargan desde la tabla `fomc_dates` de Supabase. Si no operaste ese día → fondo ámbar con badge "📊 FOMC". Si operaste en día FOMC → solo aparece un pequeño icono ámbar en la esquina superior izquierda de la celda.
+Las fechas FOMC se cargan desde la tabla `fomc_dates` de Supabase.
 
-Al hacer clic en cualquier día aparece un panel con 4 pestañas (en este orden):
+Al hacer clic en cualquier día aparece un panel con 4 pestañas:
 - **Imagen:** captura del gráfico del día (primera pestaña)
-- **Análisis:** contexto, setup, reflexión tuya + resumen de la IA
-- **Checklist:** las 6 reglas con ✅/❌ y tu score del día
-- **Resumen:** lista de trades del día con ganancia/pérdida
+- **Análisis:** contexto, setup, reflexión + resumen de la IA
+- **Checklist:** las 6 reglas con ✅/❌ y score del día
+- **Resumen:** lista de trades del día
 
 ---
 
 ### 📊 Sección 2 — Métricas
 
-Estadísticas de tu operativa. Siguen el **mes del calendario** y el **filtro de cuenta** del calendario (no el mes del sistema).
+Estadísticas de tu operativa. Siguen el **mes del calendario** y el **filtro de cuenta**.
 
 ```
 ┌──────────┬──────────┬──────────┬──────────┐
@@ -148,72 +147,40 @@ Estadísticas de tu operativa. Siguen el **mes del calendario** y el **filtro de
 ```
 
 **Disciplina (7 factores):**
-Evalúa 6 ítems del checklist + 1 factor "sin errores de tipificación". Incluye días "Sin setup" en el cálculo. Sub-texto muestra "N/total sesiones con fallos". Colores: ≥80% verde, 50-79% amarillo, <50% rojo. **Es clickable** → abre modal con desglose por factor (barras ordenadas de más a menos fallos + lista de días con fallos y qué factores fallaron).
+Evalúa 6 ítems del checklist + 1 factor "sin errores de tipificación". Colores: ≥80% verde, 50-79% amarillo, <50% rojo. **Es clickable** → modal con desglose por factor.
 
 **Error más frecuente:**
-Muestra el error más frecuente de las **casuísticas** (tipificaciones de errores), no del checklist. Clickable → modal con frecuencia de cada casuística.
-
-**Días operados:** incluye días "Sin setup" en el conteo.
-
-Los filtros "semana" y "mes" sincronizan con el calendario.
+Muestra la casuística más frecuente. Clickable → modal con frecuencia de cada casuística.
 
 ---
 
 ### 🖼️ Sección 3 — Galería de Imágenes
 
-Vista de miniaturas de las capturas de pantalla de tus sesiones.
-
-```
-┌──────────────────────────────────────────────────────────┐
-│  GALERÍA DE IMÁGENES          [Mayo ▼] [Jun ▼]           │
-├──────────────────────────────────────────────────────────┤
-│  Semana 19 — 5 al 9 de mayo                             │
-│  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐         │
-│  │ Lun 5  │  │ Mar 6  │  │ Mié 7  │  │ Jue 8  │         │
-│  │ [img]  │  │ [img]  │  │ · · ·  │  │ [img]  │         │
-│  │ borde🟢│  │ borde🔴│  │ vacío  │  │ borde🟡│         │
-│  │ 🔺 ⚠️  │  │  🔻    │  │  🕐    │  │  🔺    │         │
-│  └────────┘  └────────┘  └────────┘  └────────┘         │
-│                                                          │
-│  Semana 20 — 12 al 16 de mayo                           │
-│  ...                                                     │
-└──────────────────────────────────────────────────────────┘
-```
-
-**Características:**
-- Barra de filtro por mes en la parte superior.
-- Miniaturas agrupadas por semana.
-- Borde de color por resultado: verde=target, rojo=stop, amarillo=mixto.
-- Iconos: dirección del trade (largo/corto) e icono de error si hubo casuísticas.
-- Días sin imagen → recuadro vacío punteado (con icono 🕐 si es fecha futura).
-- **Lightbox:** al hacer clic en una miniatura se abre la imagen a pantalla completa con:
-  - Flechas prev/next para navegar.
-  - Teclado: ← → para navegar, Esc para cerrar.
-  - Contador "3 / 12" en la esquina.
+Vista de miniaturas de las capturas de pantalla de tus sesiones, agrupadas por semana. Borde de color por resultado. **Lightbox** con navegación y atajos de teclado.
 
 ---
 
 ### 📋 Sección 4 — Tabla de Trades
 
-Todos tus trades en una tabla filtrable y buscable. Puedes filtrar por resultado (target/stop), buscar por fecha o instrumento, y hacer clic en cualquier fila para ver el detalle completo del día.
+Todos tus trades en una tabla filtrable y buscable.
 
 ---
 
 ### ✍️ Sección 5 — Registrar Sesión
 
-Formulario para documentar tu sesión del día. Si ya existe un registro para hoy, lo edita en lugar de crear uno nuevo. Al terminar de llenar el formulario puedes:
-- Pulsar **"Generar resumen"** para que la IA (Claude) redacte un análisis de tu sesión.
+Formulario para documentar tu sesión del día. Si ya existe un registro para hoy, lo edita en lugar de crear uno nuevo. Al terminar puedes:
+- Pulsar **"Generar resumen"** para que el coach IA (Claude) redacte un análisis estructurado de tu sesión con contexto del mes completo.
 - Subir la imagen del gráfico del día.
 
 **Motivos de no operación disponibles:**
 - FOMC / Fed
-- Festivo (mercado cerrado) ← nuevo
+- Festivo (mercado cerrado)
 - Sin entradas válidas
 - Noticia roja activa
 - Motivo personal
 - Otro
 
-**Casuísticas:** Los errores de tipificación permanecen visibles en el formulario aunque se marque "No operé hoy".
+**Casuísticas:** Los errores de tipificación permanecen visibles aunque se marque "No operé hoy".
 
 ---
 
@@ -229,6 +196,61 @@ Seis gráficas para identificar patrones en tu operativa:
 | MAE vs MFE | Relación entre cuánto pierde y cuánto gana cada trade |
 | Distribución de resultados | Proporción targets vs stops |
 | Disciplina por sesión | Tu score de checklist a lo largo del tiempo |
+
+---
+
+### 📆 Sección 7 — Resumen Anual (NUEVO v3.0)
+
+Vista consolidada de todo un año de trading. Permite comparar meses, detectar estacionalidad y evaluar el desempeño global.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  RESUMEN ANUAL              ◀  2026  ▶    [Cuenta: PA-APEX ▼]   │
+│  Capital inicial: $__________                                    │
+├──────────────────────────────────────────────────────────────────┤
+│  P&L TOTAL  │ TRADES │ WIN RATE │ PROFIT F. │ MAX DD  │ DISCIP. │
+│  +$2,340    │  248   │  61%     │  2.3x     │ -$450   │  78%    │
+│                                                                  │
+│  MEJOR MES: Marzo +$620  │  PEOR MES: Enero -$180               │
+├──────────────────────────────────────────────────────────────────┤
+│  [Equity Curve anual — línea acumulada]                          │
+│  [P&L por mes — barras verdes/rojas]                             │
+├──────────────────────────────────────────────────────────────────┤
+│  Mes      │ P&L     │ Acumulado│ Rentab. │ Efectiv.│ Disc. │ #  │
+│  Enero    │ -$180   │  -$180   │  -1.8%  │  45% 🟡 │  72%  │ 20 │
+│  Febrero  │ +$340   │  +$160   │  +3.4%  │  63% 🟢 │  85%  │ 18 │
+│  Marzo    │ +$620   │  +$780   │  +6.2%  │  68% 🟢 │  91%  │ 24 │
+│  ...                                                             │
+├──────────────────────────────────────────────────────────────────┤
+│  Resumen  │ +$2,340 │    —     │ +23.4%  │  61% 🟢 │  78%  │248 │  ← celdas coloreadas
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**Columnas de la tabla mensual:**
+
+| Columna | Descripción |
+|---|---|
+| Mes | Nombre del mes (Jan → Dic) |
+| P&L Neto | Ganancia/pérdida neta del mes (verde/rojo) |
+| Acumulado | P&L acumulado hasta ese mes |
+| Rentabilidad | P&L / capital inicial × 100 (requiere configurar capital) |
+| Efectividad | Win rate del mes (color: ≥50% verde, ≥40% amarillo, <40% rojo) |
+| Disciplina | Score promedio de checklist del mes |
+| # Trades | Total de operaciones del mes |
+| Estado | Badge visual de resultado del mes |
+
+**Totals row coloreados:**
+La fila de totales al final de la tabla usa fondos de color según el valor:
+- Fondo verde con texto en negrita → resultado positivo
+- Fondo rojo con texto en negrita → resultado negativo
+- Fondo amarillo con texto en negrita → rango de advertencia
+- Fondo neutro → campos sin semántica de color
+
+**Capital inicial:**
+Se configura una sola vez en el campo de la cabecera. Se guarda en `localStorage`. Permite calcular la rentabilidad porcentual del año.
+
+**Filtro de cuenta:**
+Mismo principio que en el calendario — por defecto PA-APEX, persistido en `localStorage`.
 
 ---
 
@@ -249,13 +271,21 @@ El sistema calcula automáticamente tu **score de disciplina** por sesión, eval
 
 ---
 
-## El Bot de Telegram
+## El Bot de Telegram (v3.0)
 
-En lugar de abrir el dashboard web, puedes registrar tu sesión diaria directamente desde Telegram en tu celular. El bot te hace preguntas una por una con botones para responder:
+En lugar de abrir el dashboard web, puedes registrar tu sesión diaria directamente desde Telegram. El bot te hace preguntas una por una con botones para responder.
+
+**Novedad v3.0: activación automática desde notificación de trade.**
+Cuando NT8 registra un trade, recibes la notificación con un botón "📝 Registrar sesión del día". Al presionarlo, el bot inicia el flujo directamente — ya no necesitas escribir `/sesion`.
 
 ```
-Tú:   /sesion
+[Notificación de trade en Telegram]
+📊 NQ — Long | Target +$237.50
+🕐 09:31:42 | 1 contrato | 3 barras
 
+[ 📝 Registrar sesión del día ]   ← botón inline
+                │
+                ▼
 Bot:  📅 Registro de sesión — 2026-05-15
       ¿Operaste hoy?
       [ ✅ Sí, operé ]  [ ❌ No operé ]
@@ -263,43 +293,97 @@ Bot:  📅 Registro de sesión — 2026-05-15
 Tú:   ✅ Sí, operé
 
 Bot:  📊 Contexto de mercado
-      ¿Cómo estaba el mercado hoy?
-      [ Tendencia alcista ]
-      [ Tendencia bajista ]
-      [ Lateral           ]
-      [ Volátil           ]
-      [ Sin contexto      ]
+      [ 📈 Alcista fuerte ]  [ ↗ Alcista ]
+      [ ↔ Mixto ]
+      [ ↘ Bajista ]  [ 📉 Bajista fuerte ]
 
-Tú:   Lateral
+Tú:   ↗ Alcista
 
 Bot:  🔢 ¿Qué corrida operaste?
       [ 1ª corrida ]  [ 2ª corrida ]  [ 3ª corrida ]
 
-      ... (continúa con velas, retroceso, zonas, setup)
+Tú:   2ª corrida
+
+Bot:  🕯 ¿Cuántas velas tuvo la corrida?
+      (escribe el número)
+
+Tú:   4
+
+Bot:  🏔 ¿Había zonas en contra?
+      [ ✅ Sí ]  [ ❌ No ]
+
+Tú:   No
+
+Bot:  📐 Setup del día
+      [ IRI Apertura Alcista   ]  [ IRI Apertura Bajista   ]
+      [ IRI Continuación Alc. ]  [ IRI Continuación Baj. ]
+      [ Reingreso Alcista      ]  [ Reingreso Bajista      ]
+
+Tú:   IRI Continuación Alcista
 
 Bot:  📋 Checklist de disciplina
-      ❌ Zonas vigentes verificadas
-      ❌ Orden precolocada a tiempo
-      ✅ Máx 5 velas en corrida
-      ❌ Sin noticia roja activa
-      ❌ Zona con rompimiento + consecución
-      ❌ Estructura IRI fluida
-      [ Toggle cada regla y confirmar ]
+      (toggle cada regla)
 
-Bot:  ✅ Sesión guardada correctamente
-      📅 2026-05-15
-      📊 Lateral | 3ª corrida | 4 velas
-      📏 Retroceso: 50.25 pts
-      📋 Disciplina: 6/6
+Bot:  ✍️ Análisis del día
+      Escribe tu análisis...
+
+Bot:  ✅ Sesión guardada — 2026-05-15
+      📊 Contexto: Alcista
+      🔢 2ª corrida | 🕯 4 velas
+      🏔 Sin zonas en contra
+      📐 IRI Continuación Alcista
+      📋 Checklist:
+        ✅ Zonas vigentes verificadas
+        ✅ Orden precolocada a tiempo
+        ✅ Máx 5 velas en corrida
+        ✅ Sin noticia roja activa
+        ❌ Zona con rompimiento + consecución
+        ✅ Estructura IRI fluida
+      💬 Análisis: "Buena ejecución, pero la zona no tenía consecución."
 ```
+
+**Cambios respecto a v2.1:**
+
+| Aspecto | v2.1 | v3.0 |
+|---|---|---|
+| Inicio del flujo | Solo con `/sesion` | Con `/sesion` O con el botón de la notificación |
+| Contexto de mercado | Texto libre | Lista de 5 opciones con botones |
+| Puntos de retroceso | Paso manual | **Eliminado** (se calcula automáticamente) |
+| Setup | Texto libre | Lista de 6 setups con botones (2 por fila) |
+| Resumen tras guardar | Solo confirmación básica | **Resumen completo** con todos los campos y checklist ítem por ítem |
+| Nombre del último paso | "Reflexión del día" | **"Análisis del día"** |
+
+---
+
+## El Coach IA — Resumen Inteligente de Sesión (v3.0)
+
+Al hacer clic en **"Generar resumen"** en el formulario web, el sistema analiza tu sesión con un **coach estricto** que no suaviza los errores.
+
+**¿Qué datos usa el coach?**
+
+| Fuente | Datos |
+|---|---|
+| Sesión de hoy | Trades, checklist, casuísticas, análisis del trader, contexto |
+| Mes en curso | Trades totales, win rate mensual, P&L acumulado, evolución semanal |
+| Historial de errores | Top casuísticas recurrentes en stops del mes |
+| Disciplina promedio | Score de checklist de todas las sesiones del mes |
+
+**Estructura del análisis generado (4 secciones fijas, máx. 120 palabras):**
+
+1. **Evaluación** — Lo más relevante de hoy comparado con el patrón del mes.
+2. **Patrón detectado** — Fortaleza o debilidad que se repite en el mes.
+3. **Acción concreta** — Una sola acción específica y medible para mañana.
+4. **Cierre motivacional** — 1 frase corta de aliento basada en los datos.
+
+**Tono:** directo y estricto. Si el trader cometió errores, el coach los señala sin suavizarlos. No genera falsas motivaciones cuando los datos muestran mal desempeño.
 
 ---
 
 ## Resumen Visual del Sistema Completo
 
 ```
-                    TRADING JOURNAL NQ FUTURES
-                    ═══════════════════════════
+                    TRADING JOURNAL NQ FUTURES v3.0
+                    ════════════════════════════════
 
   ┌─────────────────────────────────────────────────────────────┐
   │                    TÚ — EL TRADER                           │
@@ -308,13 +392,14 @@ Bot:  ✅ Sesión guardada correctamente
          En NT8  │         En el PC  │         En el     │
          operas  │         completas │         celular   │
                  │         el form   │         /sesion   │
-                 ▼                   ▼                   ▼
+                 ▼                   ▼         o botón ↑ │
   ┌──────────────────┐  ┌────────────────────┐  ┌────────────────┐
   │  NinjaTrader 8   │  │  Dashboard Web     │  │  Bot Telegram  │
   │                  │  │  github.io/...     │  │                │
   │  Trades se       │  │  Formulario        │  │  Preguntas     │
   │  guardan solos   │  │  de sesión         │  │  con botones   │
-  │  (fusión ATM)    │  │                    │  │                │
+  │  (fusión ATM)    │  │  + Coach IA        │  │  + auto-botón  │
+  │  + notif. bot    │  │  + Anual           │  │  en notif.     │
   └────────┬─────────┘  └────────┬───────────┘  └───────┬────────┘
            │                     │                       │
            └─────────────────────┼───────────────────────┘
@@ -326,11 +411,12 @@ Bot:  ✅ Sesión guardada correctamente
                     │                        │
                     │  trades   │  sesiones  │
                     │  fomc_dates            │
+                    │  catalogo_casuisticas  │
                     └─────────────┬──────────┘
                                   │
                                   ▼
                     ┌────────────────────────┐
-                    │   DASHBOARD WEB        │
+                    │   DASHBOARD WEB (PWA)  │
                     │                        │
                     │  📅 Calendario         │
                     │  📊 Métricas           │
@@ -338,6 +424,7 @@ Bot:  ✅ Sesión guardada correctamente
                     │  📋 Tabla de trades    │
                     │  ✍️  Registrar sesión  │
                     │  📈 Gráficas           │
+                    │  📆 Anual ← NUEVO      │
                     └────────────────────────┘
 ```
 
@@ -350,10 +437,12 @@ Bot:  ✅ Sesión guardada correctamente
 | Los trades quedaban solo en NT8 | Todos los datos centralizados y accesibles |
 | No había registro del contexto del día | Cada sesión documentada con setup y reflexión |
 | Difícil identificar patrones de error | El checklist y las casuísticas muestran tu error más frecuente |
-| Sin métricas de disciplina | Score de disciplina (7 factores) por sesión y en el tiempo, con desglose clickable |
-| Registrar la sesión tomaba mucho tiempo | El bot de Telegram la registra en 2 minutos |
+| Sin métricas de disciplina | Score de disciplina (7 factores) por sesión, con desglose clickable |
+| Registrar la sesión tomaba mucho tiempo | El bot la registra en 2 minutos, con botón directo desde notificación |
 | Las imágenes del día se perdían | Galería de imágenes con lightbox, agrupadas por semana |
-| Sin análisis externo de la sesión | La IA genera un resumen objetivo de cada día |
-| No había visibilidad de festivos CME | Festivos calculados automáticamente, visibles en el calendario |
-| Sin referencia de días FOMC | Días FOMC marcados desde la base de datos, con indicador visual |
-| Trades con múltiples contratos ATM registrados por separado | Fusión automática de 3 seg consolida contratos en un solo trade |
+| Sin análisis externo de la sesión | Coach IA estricto con contexto mensual completo, 4 secciones estructuradas |
+| No había visibilidad de festivos CME | Festivos calculados automáticamente |
+| Sin referencia de días FOMC | Días FOMC marcados desde la base de datos |
+| Trades con múltiples contratos ATM registrados por separado | Fusión automática de 3s consolida contratos |
+| Sin visión anual del desempeño | Dashboard anual con KPIs, equity curve, tabla mensual y account filter |
+| La PWA no se actualizaba en el iPhone | Estrategia network-first: updates automáticos al recargar con conexión |

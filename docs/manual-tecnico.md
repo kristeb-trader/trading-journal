@@ -2,7 +2,7 @@
 
 > **Este documento es editable — actualizalo ante cualquier cambio en el sistema.**
 
-**Versión:** 2.1 | **Fecha:** 2026-05-20 | **Audiencia:** Desarrollador / DevOps
+**Versión:** 3.0 | **Fecha:** 2026-05-26 | **Audiencia:** Desarrollador / DevOps
 
 ---
 
@@ -30,7 +30,7 @@
 
 ## 1. Descripción y Principios de Diseño
 
-**Trading Journal NQ Futures** es un diario de trading personal para futuros NQ/MNQ (timeframe 1 minuto), 100% serverless y cloud-native con costo operativo aproximado de $0/mes dentro de los límites de los planes gratuitos.
+**Trading Journal NQ Futures** es un diario de trading personal para futuros NQ/MNQ (timeframe 1 minuto), 100% serverless y cloud-native con costo operativo aproximado de $0/mes dentro de los límites de los planes gratuitos. Incluye PWA instalable en dispositivos móviles con actualizaciones automáticas vía estrategia network-first.
 
 ### Principios fundamentales
 
@@ -50,7 +50,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                         CLIENTES                                │
 │                                                                 │
-│  NinjaTrader 8 (C#)   Dashboard Web (Browser)   Telegram App   │
+│  NinjaTrader 8 (C#)   Dashboard Web (Browser/PWA)  Telegram App │
 │  SupabaseAutoExport   index.html + JS Vanilla    Mobile/Desktop │
 └──────────┬───────────────────┬──────────────────────┬──────────┘
            │ HTTP POST          │ REST API             │ HTTPS
@@ -66,9 +66,11 @@
 │  Table: sesiones │  ┌────────▼──────────┐            │
 │  Table: fomc_    │  │  Anthropic API    │   ┌────────▼──────────┐
 │        dates     │◄─│  claude-haiku-4-5 │   │ Cloudflare KV     │
-│                  │  └───────────────────┘   │ Session state     │
-│  Trigger:        │                          │ TTL: 3600s        │
-│  cum_net_profit  │                          └───────────────────┘
+│  Table: catalogo │  │  -20251001        │   │ Session state     │
+│  _casuisticas    │  └───────────────────┘   │ TTL: 3600s        │
+│                  │                          └───────────────────┘
+│  Trigger:        │
+│  cum_net_profit  │
 └──────────────────┘
          ▲
          │ Upload URL
@@ -77,11 +79,13 @@
 │  Image Upload+CDN  │
 └────────────────────┘
          ▲
-         │ Upload from browser
+         │ Upload from browser + SW v3 (network-first)
 ┌────────┴───────────┐
 │  GitHub Pages      │
 │  (Static hosting)  │
 │  index.html + JS   │
+│  + manifest.json   │
+│  + sw.js (PWA)     │
 └────────────────────┘
 ```
 
@@ -91,11 +95,20 @@
 3. C# calcula profit, MAE, MFE, bars, commission (leída de `ex.Commission`)
 4. HTTP POST directo a `https://jothoslozctflfrnysrx.supabase.co/rest/v1/trades`
 5. Trigger PostgreSQL calcula `cum_net_profit` antes del INSERT
+6. El Worker #2 (bot) envía notificación Telegram con botón inline "📝 Registrar sesión del día"
 
-**Flujo de datos — sesión diaria (Telegram):**
-1. Usuario envía `/start` o `/sesion` al bot
+**Flujo de datos — sesión diaria (Telegram v3.0):**
+1. Usuario presiona botón inline desde notificación de trade (o escribe `/sesion`)
 2. CF Worker #2 gestiona state machine en KV (`s:{chatId}`)
-3. Al completar el flujo, upsert en `sesiones` vía Supabase REST API
+3. Flujo: OPERO → CONTEXTO (lista) → CORRIDA → VELAS → ZONAS_CONTRA → SETUP (lista) → CHECKLIST → REFLEXION
+4. Al completar, upsert en `sesiones` vía Supabase REST API + resumen completo al usuario
+
+**Flujo de datos — resumen IA (v3.0 enriquecido):**
+1. `form.js` ejecuta 5 fetches en paralelo (trades hoy, casuísticas hoy, trades del mes, todas las sesiones, todas las casuísticas)
+2. Construye prompt con contexto mensual completo + sesión de hoy
+3. POST al CF Worker #1 con `model: 'claude-haiku-4-5-20251001'` y `max_tokens: 400`
+4. Recibe análisis en 4 secciones estructuradas
+5. Guarda `resumen_ia` en la sesión de Supabase
 
 ---
 
@@ -103,15 +116,16 @@
 
 | Componente | Tecnología | Versión / Plan | Rol |
 |---|---|---|---|
-| Base de datos | Supabase (PostgreSQL) | PostgreSQL 15, Free tier | Almacenamiento persistente de trades, sesiones y fechas FOMC |
-| Frontend | HTML + JS Vanilla | ES2022, sin bundler | Dashboard web de análisis y visualización |
+| Base de datos | Supabase (PostgreSQL) | PostgreSQL 15, Free tier | Almacenamiento persistente |
+| Frontend | HTML + JS Vanilla | ES2022, sin bundler | Dashboard web SPA + PWA |
+| PWA | `sw.js` (nqjournal-v3) | Service Worker API | Network-first para app shell, cache-first para CDN |
 | Hosting web | GitHub Pages | Gratis (repo privado con Pages) | Sirve el frontend estático |
-| Proxy IA | Cloudflare Worker #1 | Workers Free (100k req/día) | Bypass CORS para llamadas a Anthropic desde browser |
-| Bot Telegram | Cloudflare Worker #2 | Workers Free | Webhook Telegram + state machine para registro móvil |
+| Proxy IA | Cloudflare Worker #1 | Workers Free (100k req/día) | Bypass CORS para llamadas a Anthropic |
+| Bot Telegram | Cloudflare Worker #2 | Workers Free | Webhook Telegram + state machine |
 | KV Sessions | Cloudflare KV | Free (100k reads/día) | Estado de sesión del bot (TTL 3600s) |
-| IA / Resúmenes | Anthropic Claude | claude-haiku-4-5 | Genera resúmenes de sesiones (~$0.0004 c/u) |
+| IA / Resúmenes | Anthropic Claude | claude-haiku-4-5-20251001 | Coach estricto con contexto mensual completo |
 | Imágenes | Cloudinary | Free tier | Upload + CDN de capturas de pantalla |
-| Indicador | C# .NET 4.8 | NinjaTrader 8 (8.1.7.0) | Exportación automática de trades a Supabase (con fusión ATM) |
+| Indicador | C# .NET 4.8 | NinjaTrader 8 (8.1.7.0) | Exportación automática de trades a Supabase |
 
 ---
 
@@ -119,25 +133,36 @@
 
 ```
 trading-journal/
-├── index.html                  ← Punto de entrada, SPA single-page
+├── index.html                  ← Punto de entrada SPA + sección-annual
 ├── favicon.svg
+├── manifest.json               ← PWA manifest (nombre, iconos, theme color)
+├── sw.js                       ← Service Worker v3 (nqjournal-v3)
+│                                  network-first: app shell
+│                                  cache-first: CDN (Tabler, Supabase JS, Chart.js)
+│                                  network-only: supabase.co, cloudinary.com, workers.dev
+├── icons/                      ← Iconos PWA
+│   ├── icon-192.png
+│   └── icon-512.png
 ├── css/
-│   └── styles.css              ← Estilos globales
+│   └── styles.css              ← Estilos globales + annual dashboard
 ├── js/
 │   ├── config.js               ← SECRETOS (no versionado públicamente)
 │   ├── db.js                   ← Capa de datos: queries a Supabase REST
-│   ├── calendar.js             ← Vista de calendario mensual (festivos CME, FOMC, iconos)
-│   ├── metrics.js              ← Cálculo de métricas y KPIs (disciplina 7 factores)
+│   │                              Incluye: getCatalogoCasuisticas(), updateCasuisticaOrden()
+│   ├── calendar.js             ← Vista de calendario mensual
+│   ├── metrics.js              ← Cálculo de métricas y KPIs
 │   ├── table.js                ← Tabla de trades con filtros
-│   ├── form.js                 ← Formulario de sesión diaria
-│   ├── charts.js               ← Gráficas (equity curve, distribuciones)
-│   ├── gallery.js              ← NUEVO: galería de imágenes por semana con lightbox
-│   └── app.js                  ← Orquestador principal, router
+│   ├── form.js                 ← Formulario + coach IA (contexto mensual, 4 secciones)
+│   ├── charts.js               ← 6 gráficas Chart.js
+│   ├── gallery.js              ← Galería de imágenes por semana con lightbox
+│   ├── data.js                 ← Casuísticas: catálogo con drag-and-drop para reordenar
+│   ├── annual.js               ← NUEVO: Dashboard anual (KPI strip, charts, tabla mensual)
+│   └── app.js                  ← Orquestador principal, router (7 secciones)
 ├── NinjaTrader/
-│   └── SupabaseAutoExport.cs   ← Indicador C# para NT8 (fusión ATM, comisión real)
+│   └── SupabaseAutoExport.cs   ← Indicador C# para NT8
 ├── TelegramBot/
-│   ├── worker.js               ← Código del CF Worker #2
-│   └── wrangler.toml           ← Config Wrangler (KV binding, name)
+│   ├── worker.js               ← CF Worker #2 (bot Telegram sin RETROCESO)
+│   └── wrangler.toml           ← Config Wrangler (KV binding, name, TIMEZONE)
 └── docs/
     ├── manual-tecnico.md       ← Este archivo
     ├── manual-usuario.md
@@ -175,13 +200,13 @@ CREATE TABLE trades (
   entry_name      text,
   exit_name       text,
   profit          numeric,
-  commission      numeric DEFAULT 0,  -- Leída de ex.Commission en NT8 (v2.1+)
-  mae             numeric,         -- Maximum Adverse Excursion
-  mfe             numeric,         -- Maximum Favorable Excursion
-  bars            integer,         -- Duración en minutos (delta entry→exit)
+  commission      numeric DEFAULT 0,
+  mae             numeric,
+  mfe             numeric,
+  bars            integer,
   trade_date      date,
-  resultado       text,            -- 'target' | 'stop' | 'otro'
-  cum_net_profit  numeric          -- Calculado por trigger
+  resultado       text,            -- 'target' | 'stop' | 'be' | 'otro'
+  cum_net_profit  numeric
 );
 
 -- Tabla de sesiones diarias
@@ -190,10 +215,10 @@ CREATE TABLE sesiones (
   sesion_date         date UNIQUE,
   no_opero            boolean DEFAULT false,
   motivo_no_opero     text,
-  contexto            text,        -- Tendencia alcista/bajista/Lateral/Volátil/Sin contexto claro
-  num_corrida         integer,     -- 1 | 2 | 3
+  contexto            text,
+  num_corrida         integer,
   velas_corrida       integer,
-  puntos_retroceso    numeric,
+  puntos_retroceso    numeric,     -- Mantenido por compatibilidad; ya no lo solicita el bot
   zonas_contra        boolean,
   setup               text,
   chk_zonas           boolean DEFAULT false,
@@ -203,16 +228,23 @@ CREATE TABLE sesiones (
   chk_consecucion     boolean DEFAULT false,
   chk_estructura      boolean DEFAULT false,
   analisis_trader     text,
-  resumen_ia          text,        -- Generado por Claude Haiku
-  imagen_url          text,        -- URL de Cloudinary
+  resumen_ia          text,
+  imagen_url          text,
   created_at          timestamptz DEFAULT now(),
   updated_at          timestamptz DEFAULT now()
 );
 
--- Tabla de fechas FOMC (NUEVA en v2.1)
+-- Tabla de fechas FOMC
 CREATE TABLE fomc_dates (
   date        DATE PRIMARY KEY,
   description TEXT DEFAULT 'FOMC Meeting'
+);
+
+-- Catálogo de casuísticas con orden para drag-and-drop (NUEVO v3.0)
+CREATE TABLE catalogo_casuisticas (
+  id     bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nombre text NOT NULL,
+  orden  integer DEFAULT 0
 );
 ```
 
@@ -248,10 +280,18 @@ ALTER TABLE fomc_dates ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "fomc_dates_read_public" ON fomc_dates
   FOR SELECT TO anon USING (true);
 
+-- Habilitar RLS en catalogo_casuisticas (read + update orden)
+ALTER TABLE catalogo_casuisticas ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "casuisticas_read" ON catalogo_casuisticas
+  FOR SELECT TO anon USING (true);
+CREATE POLICY "casuisticas_update" ON catalogo_casuisticas
+  FOR UPDATE TO anon USING (true);
+
 -- Permisos para el rol anon
 GRANT INSERT, SELECT, UPDATE ON trades, sesiones TO anon;
 GRANT USAGE, SELECT ON SEQUENCE trades_id_seq, sesiones_id_seq TO anon;
 GRANT SELECT ON fomc_dates TO anon;
+GRANT SELECT, UPDATE ON catalogo_casuisticas TO anon;
 ```
 
 **Pre-poblar fomc_dates (2025-2026):**
@@ -282,11 +322,6 @@ INSERT INTO fomc_dates (date, description) VALUES
 NOTIFY pgrst, 'reload schema';
 ```
 
-**Obtener credenciales:**
-- Dashboard → Settings → API
-  - `Project URL`: `https://jothoslozctflfrnysrx.supabase.co`
-  - `anon/public key`: clave para el frontend y el bot
-
 ---
 
 ### 5b. GitHub Pages
@@ -296,7 +331,6 @@ NOTIFY pgrst, 'reload schema';
 ```bash
 git init trading-journal
 cd trading-journal
-# ... agregar archivos ...
 git remote add origin https://github.com/<user>/trading-journal.git
 git push -u origin main
 ```
@@ -330,8 +364,14 @@ js/config.js
 git add .
 git commit -m "feat: descripcion del cambio"
 git push origin main
-# GitHub Actions / Pages auto-despliega en ~1 minuto
+# GitHub Pages auto-despliega en ~1 minuto
+# PWA se actualiza automáticamente en el próximo acceso (network-first SW)
 ```
+
+**Forzar actualización de PWA en iPhone (solo cuando el SW cambia):**
+1. Abrir Safari → navegar a la URL
+2. Forzar reload (mantener el botón de reload)
+3. Volver al ícono en pantalla de inicio
 
 ---
 
@@ -346,7 +386,6 @@ git push origin main
 ```javascript
 export default {
   async fetch(request, env) {
-    // CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
         headers: {
@@ -387,34 +426,20 @@ export default {
 |---|---|
 | `ANTHROPIC_API_KEY` | `sk-ant-...` (secret) |
 
-**Despliegue:**
-
-```bash
-# Desde el directorio del worker
-wrangler deploy
-# o directamente desde Cloudflare Dashboard → Quick Edit
-```
-
 **URL del Worker:** `https://broad-hall-c53f.<account>.workers.dev`
 
-**Uso desde el frontend (`db.js` o similar):**
+**Uso desde `form.js` (v3.0):**
 
 ```javascript
-const CLAUDE_PROXY_URL = 'https://broad-hall-c53f.<account>.workers.dev';
-
-async function generarResumenIA(textoSesion) {
-  const res = await fetch(CLAUDE_PROXY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5',
-      max_tokens: 512,
-      messages: [{ role: 'user', content: textoSesion }]
-    })
-  });
-  const data = await res.json();
-  return data.content[0].text;
-}
+const res = await fetch(CLAUDE_PROXY_URL, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 400,
+    messages: [{ role: 'user', content: promptConContextoMensual }]
+  })
+});
 ```
 
 ---
@@ -438,14 +463,7 @@ id = "3dd631773a6041c1a97a8e9a8f861067"
 TIMEZONE = "America/Bogota"
 ```
 
-**Secrets (añadir con Wrangler o Dashboard):**
-
-```bash
-wrangler secret put BOT_TOKEN
-wrangler secret put SUPABASE_URL
-wrangler secret put SUPABASE_KEY
-wrangler secret put ALLOWED_CHAT_ID
-```
+**Secrets:**
 
 | Secret | Valor |
 |---|---|
@@ -453,39 +471,58 @@ wrangler secret put ALLOWED_CHAT_ID
 | `SUPABASE_URL` | `https://jothoslozctflfrnysrx.supabase.co` |
 | `SUPABASE_KEY` | Anon key de Supabase |
 | `ALLOWED_CHAT_ID` | `372127764` |
-| `TIMEZONE` | `America/Bogota` (variable, no secret) |
 
-**State Machine — pasos del flujo:**
+**State Machine v3.0 (sin paso RETROCESO):**
 
 ```
-/start o /sesion
+Botón inline de notificación (callback 'iniciar_sesion')
+  OR  /sesion  OR  /start
     │
     ▼
 OPERO (¿Operaste hoy? Sí/No)
     ├─ No → MOTIVO → [upsert sesión con no_opero=true] → FIN
     └─ Sí →
-         CONTEXTO (Tendencia alcista/bajista/Lateral/Volátil/Sin contexto claro)
-             → CORRIDA (¿Cuántas corridas? 1/2/3)
-             → VELAS (¿Cuántas velas tuvo la corrida?)
-             → RETROCESO (¿Puntos de retroceso?)
-             → ZONAS_CONTRA (¿Había zonas en contra? Sí/No)
-             → SETUP (Descripción del setup)
-             → CHECKLIST (6 checkboxes: zonas/orden/5velas/noticias/consecucion/estructura)
-             → REFLEXION (Análisis libre del trader)
-             → [upsert sesión completa] → FIN
+         CONTEXTO (lista botones: Alcista fuerte | Alcista | Mixto | Bajista | Bajista fuerte)
+             → CORRIDA (1ª / 2ª / 3ª corrida)
+             → VELAS (número — texto libre)
+             → ZONAS_CONTRA (Sí / No)
+             → SETUP (lista botones 6 setups, 2 por fila)
+             → CHECKLIST (6 checkboxes)
+             → REFLEXION ("Análisis del día" — texto libre)
+             → [upsert sesión completa] → resumen completo → FIN
 ```
+
+**Pasos eliminados vs v2.1:** `RETROCESO` (puntos de retroceso).
+
+**Función `startSesionFlow(chatId, token, kv, env)`:**
+Función reutilizable que inicia el flujo tanto para `/sesion` como para el callback de la notificación. Garantiza que funciona incluso sin estado KV previo.
+
+**Setups disponibles:**
+```javascript
+const SETUPS = [
+  'IRI Apertura Alcista', 'IRI Apertura Bajista',
+  'IRI Continuación Alcista', 'IRI Continuación Bajista',
+  'Reingreso Alcista', 'Reingreso Bajista'
+]
+```
+
+**Botón inline en notificación de trade (handleNotify):**
+```javascript
+reply_markup: {
+  inline_keyboard: [[
+    { text: '📝 Registrar sesión del día', callback_data: 'iniciar_sesion' }
+  ]]
+}
+```
+
+**handleCallback:** procesa `'iniciar_sesion'` antes de cualquier verificación de estado KV, para que funcione sin sesión previa.
 
 **Patrón KV para estado de sesión:**
 
 ```javascript
-// Guardar estado
 await env.KV.put(`s:${chatId}`, JSON.stringify({ step, data }), { expirationTtl: 3600 });
-
-// Leer estado
 const raw = await env.KV.get(`s:${chatId}`);
 const session = raw ? JSON.parse(raw) : { step: 'OPERO', data: {} };
-
-// Borrar al finalizar
 await env.KV.delete(`s:${chatId}`);
 ```
 
@@ -500,42 +537,20 @@ const res = await fetch(`${env.SUPABASE_URL}/rest/v1/sesiones`, {
     'Authorization': `Bearer ${env.SUPABASE_KEY}`,
     'Prefer': 'resolution=merge-duplicates'
   },
-  body: JSON.stringify({
-    sesion_date: today,   // formato 'YYYY-MM-DD'
-    ...sessionData
-  })
+  body: JSON.stringify({ sesion_date: today, ...sessionData })
 });
-```
-
-**Obtener fecha en zona horaria correcta:**
-
-```javascript
-function getTodayBogota(timezone) {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
-    year: 'numeric', month: '2-digit', day: '2-digit'
-  }).format(new Date()); // Retorna 'YYYY-MM-DD'
-}
 ```
 
 **Registrar webhook de Telegram:**
 
 ```bash
-# Reemplazar TOKEN y URL del worker
 curl -X POST "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \
   -H "Content-Type: application/json" \
   -d '{"url": "https://trading-journal-bot.<account>.workers.dev"}'
-
-# Verificar webhook
-curl "https://api.telegram.org/bot<BOT_TOKEN>/getWebhookInfo"
 ```
 
-**Despliegue:**
-
-```bash
-cd TelegramBot/
-wrangler deploy
-```
+**Despliegue:** Desde Cloudflare Dashboard → Worker → Quick Edit (pegar código) → Save & Deploy.
+> Si Wrangler no está disponible localmente, usar siempre Cloudflare Dashboard.
 
 ---
 
@@ -550,34 +565,17 @@ wrangler deploy
 2. En NT8: Tools → Edit NinjaScript → Compile (o F5 en el editor)
 3. Agregar al chart: Indicators → `SupabaseAutoExport`
 
-**Credenciales hardcodeadas en el indicador (`SupabaseAutoExport.cs`):**
+**Credenciales hardcodeadas en el indicador:**
 
 ```csharp
 private const string SUPABASE_ENDPOINT =
     "https://jothoslozctflfrnysrx.supabase.co/rest/v1/trades";
-private const string SUPABASE_KEY =
-    "<anon-key-de-supabase>";
-```
-
-> Para cambiar credenciales, editar las constantes y recompilar en NT8.
-
-**Lógica de captura de trades — suscripción al evento:**
-
-```csharp
-protected override void OnStateChange() {
-    if (State == State.DataLoaded) {
-        Account.ExecutionUpdate += OnExecutionUpdate;
-    }
-    if (State == State.Terminated) {
-        Account.ExecutionUpdate -= OnExecutionUpdate;
-    }
-}
+private const string SUPABASE_KEY = "<anon-key-de-supabase>";
 ```
 
 **Ventana de fusión ATM (3 segundos) — lógica central:**
 
 ```csharp
-// Campos de fusión
 private bool hasPending = false;
 private object mergeLock = new object();
 private System.Threading.Timer mergeTimer;
@@ -586,127 +584,32 @@ private List<TradeData> pendingTrades = new List<TradeData>();
 
 private void OnExecutionUpdate(object sender, ExecutionEventArgs e) {
     lock (mergeLock) {
-        double commission = e.Execution.Commission; // ← Leída de NT8
-
+        double commission = e.Execution.Commission;
         if (!hasPending) {
-            // Primer cierre: iniciar ventana de fusión
             hasPending = true;
             pendingTrades.Add(BuildTradeData(e, commission));
-            pendingCommission = commission;
-
-            // Timer de 3 segundos
             mergeTimer = new System.Threading.Timer(_ => {
                 lock (mergeLock) {
                     PublishMergedTrade(pendingTrades);
                     hasPending = false;
                     pendingTrades.Clear();
-                    pendingCommission = 0;
                 }
             }, null, 3000, System.Threading.Timeout.Infinite);
         } else {
-            // Cierre adicional dentro de la ventana: acumular
             pendingTrades.Add(BuildTradeData(e, commission));
-            pendingCommission += commission;
-        }
-    }
-}
-
-private void PublishMergedTrade(List<TradeData> trades) {
-    // Calcular promedios ponderados y sumas
-    double totalQty    = trades.Sum(t => t.qty);
-    double entryPrice  = trades.Sum(t => t.entry_price * t.qty) / totalQty;
-    double exitPrice   = trades.Sum(t => t.exit_price  * t.qty) / totalQty;
-    double profit      = trades.Sum(t => t.profit);
-    double commission  = trades.Sum(t => t.commission);
-    double mae         = trades.Sum(t => t.mae);
-    double mfe         = trades.Sum(t => t.mfe);
-
-    // POST único a Supabase
-    Task.Run(() => PostTradeToSupabase(new TradeData {
-        entry_price = entryPrice,
-        exit_price  = exitPrice,
-        profit      = profit,
-        commission  = commission,
-        mae         = mae,
-        mfe         = mfe,
-        qty         = (int)totalQty,
-        // ... resto de campos del primer trade
-    }));
-}
-```
-
-**Tracking MAE/MFE en `OnBarUpdate`:**
-
-```csharp
-protected override void OnBarUpdate() {
-    if (BarsInProgress != 0 || CurrentBar < 1) return;
-    if (!inTrade) return;
-
-    lock (syncLock) {
-        if (currentMarketPos == MarketPosition.Long) {
-            mfe = Math.Max(mfe, High[0] - entryPrice);
-            mae = Math.Min(mae, Low[0]  - entryPrice);
-        } else {
-            mfe = Math.Max(mfe, entryPrice - Low[0]);
-            mae = Math.Min(mae, entryPrice - High[0]);
         }
     }
 }
 ```
-
-**POST a Supabase desde C#:**
-
-```csharp
-private async Task PostTradeToSupabase(TradeData trade) {
-    using var client = new HttpClient();
-    client.DefaultRequestHeaders.Add("apikey", SUPABASE_KEY);
-    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {SUPABASE_KEY}");
-    client.DefaultRequestHeaders.Add("Prefer", "return=minimal");
-
-    var json = JsonConvert.SerializeObject(trade);
-    var content = new StringContent(json, Encoding.UTF8, "application/json");
-    var response = await client.PostAsync(SUPABASE_ENDPOINT, content);
-    // Log response.StatusCode en Output window de NT8
-}
-```
-
-**Verificar en NT8:** Tools → Output Window → buscar logs del indicador.
 
 ---
 
 ### 5f. Cloudinary
 
-**Crear cuenta y configurar:**
-
-1. Registro en [cloudinary.com](https://cloudinary.com) (Free tier: 25 GB storage, 25 GB bandwidth/mes)
+1. Registro en [cloudinary.com](https://cloudinary.com) (Free tier)
 2. Dashboard → Settings → Upload → Add upload preset
-   - Preset name: `trading_journal` (o el que se use en config.js)
-   - Signing mode: **Unsigned** (para upload directo desde browser sin backend)
-   - Folder: `trading-journal/` (opcional)
-
-**Credenciales necesarias:**
-
-| Credencial | Dónde encontrarla | Dónde se usa |
-|---|---|---|
-| `Cloud name` | Dashboard → Settings → Account | `config.js` → `CLOUDINARY_CLOUD_NAME` |
-| `Upload preset` | Dashboard → Settings → Upload | `config.js` → `CLOUDINARY_UPLOAD_PRESET` |
-
-**Upload desde el frontend:**
-
-```javascript
-async function uploadImage(file) {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', CONFIG.CLOUDINARY_UPLOAD_PRESET);
-
-  const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${CONFIG.CLOUDINARY_CLOUD_NAME}/image/upload`,
-    { method: 'POST', body: formData }
-  );
-  const data = await res.json();
-  return data.secure_url; // URL HTTPS del CDN
-}
-```
+   - Signing mode: **Unsigned**
+   - Folder: `trading-journal/`
 
 ---
 
@@ -714,103 +617,82 @@ async function uploadImage(file) {
 
 ### Tabla `trades`
 
-| Columna | Tipo | Restricciones | Descripción |
-|---|---|---|---|
-| `id` | bigint | PK, auto | ID generado automáticamente |
-| `instrument` | text | | Ej: `NQ 03-25`, `MNQ 03-25` |
-| `account` | text | | Nombre de la cuenta en NT8 |
-| `market_pos` | text | | `Long` o `Short` |
-| `qty` | integer | | Contratos operados |
-| `entry_price` | numeric | | Precio de entrada (promedio ponderado en fusiones ATM) |
-| `exit_price` | numeric | | Precio de salida (promedio ponderado en fusiones ATM) |
-| `entry_time` | timestamptz | | Timestamp de entrada (con timezone) |
-| `exit_time` | timestamptz | | Timestamp de salida |
-| `entry_name` | text | | Nombre de la orden de entrada (NT8) |
-| `exit_name` | text | | Nombre de la orden de salida (NT8) |
-| `profit` | numeric | | P&L del trade en USD (suma en fusiones ATM) |
-| `commission` | numeric | DEFAULT 0 | Comisión real leída de `ex.Commission` en NT8 (suma en fusiones ATM) |
-| `mae` | numeric | | Max Adverse Excursion en puntos (suma en fusiones ATM) |
-| `mfe` | numeric | | Max Favorable Excursion en puntos (suma en fusiones ATM) |
-| `bars` | integer | | Duración del trade en minutos (delta entry→exit) |
-| `trade_date` | date | | Fecha del trade (para joins con sesiones) |
-| `resultado` | text | | `target`, `stop`, o `otro` (basado en `exit_name`) |
-| `cum_net_profit` | numeric | Calculado por trigger | P&L acumulado hasta este trade |
-
-**Derivación de `resultado`:**
-```
-exit_name contiene "Target" → resultado = 'target'
-exit_name contiene "Stop"   → resultado = 'stop'
-otro caso                   → resultado = 'otro'
-```
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `id` | bigint PK | Auto generado |
+| `instrument` | text | Ej: `NQ 03-25`, `MNQ 03-25` |
+| `account` | text | Nombre de cuenta en NT8 |
+| `market_pos` | text | `Long` o `Short` |
+| `qty` | integer | Contratos operados |
+| `entry_price` / `exit_price` | numeric | Precios (promedio ponderado en ATM) |
+| `entry_time` / `exit_time` | timestamptz | Timestamps con timezone |
+| `entry_name` / `exit_name` | text | Nombres de órdenes NT8 |
+| `profit` | numeric | P&L en USD (suma en ATM) |
+| `commission` | numeric | Comisión real de NT8 `ex.Commission` |
+| `mae` / `mfe` | numeric | Max Adverse/Favorable Excursion |
+| `bars` | integer | Duración en minutos |
+| `trade_date` | date | Para joins con sesiones |
+| `resultado` | text | `target`, `stop`, `be` (±$6), `otro` |
+| `cum_net_profit` | numeric | Calculado por trigger BEFORE INSERT |
 
 ### Tabla `sesiones`
 
-| Columna | Tipo | Restricciones | Descripción |
-|---|---|---|---|
-| `id` | bigint | PK, auto | |
-| `sesion_date` | date | UNIQUE | Clave natural (una sesión por día) |
-| `no_opero` | boolean | DEFAULT false | Marcador de día sin operaciones |
-| `motivo_no_opero` | text | | Solo si `no_opero = true` |
-| `contexto` | text | | Contexto de mercado del día |
-| `num_corrida` | integer | | 1, 2 o 3 corridas identificadas |
-| `velas_corrida` | integer | | Velas de la corrida principal |
-| `puntos_retroceso` | numeric | | Puntos de retroceso de la corrida |
-| `zonas_contra` | boolean | | ¿Había zonas de oferta/demanda en contra? |
-| `setup` | text | | Descripción del setup operado |
-| `chk_zonas` | boolean | DEFAULT false | Checklist: zonas identificadas |
-| `chk_orden` | boolean | DEFAULT false | Checklist: orden del mercado |
-| `chk_5velas` | boolean | DEFAULT false | Checklist: patrón de 5 velas |
-| `chk_noticias` | boolean | DEFAULT false | Checklist: noticias revisadas |
-| `chk_consecucion` | boolean | DEFAULT false | Checklist: consecución del plan |
-| `chk_estructura` | boolean | DEFAULT false | Checklist: estructura del mercado |
-| `analisis_trader` | text | | Reflexión libre del trader |
-| `resumen_ia` | text | | Resumen generado por Claude Haiku |
-| `imagen_url` | text | | URL HTTPS de Cloudinary |
-| `created_at` | timestamptz | DEFAULT now() | |
-| `updated_at` | timestamptz | DEFAULT now() | |
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `sesion_date` | date UNIQUE | Clave natural (una sesión por día) |
+| `no_opero` | boolean | Marcador de día sin operaciones |
+| `motivo_no_opero` | text | Motivo si `no_opero = true` |
+| `contexto` | text | Contexto de mercado del día |
+| `num_corrida` | integer | 1, 2 o 3 |
+| `velas_corrida` | integer | Velas de la corrida principal |
+| `puntos_retroceso` | numeric | Mantenido por compatibilidad histórica |
+| `zonas_contra` | boolean | ¿Había zonas en contra? |
+| `setup` | text | Setup del día (ej: "IRI Apertura Alcista") |
+| `chk_zonas` … `chk_estructura` | boolean | 6 ítems del checklist |
+| `analisis_trader` | text | Análisis libre del trader |
+| `resumen_ia` | text | Resumen generado por Claude (4 secciones) |
+| `imagen_url` | text | URL HTTPS de Cloudinary |
 
-### Tabla `fomc_dates` (nueva en v2.1)
+### Tabla `fomc_dates`
 
-| Columna | Tipo | Restricciones | Descripción |
-|---|---|---|---|
-| `date` | date | PRIMARY KEY | Fecha de la reunión FOMC |
-| `description` | text | DEFAULT 'FOMC Meeting' | Descripción del evento |
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `date` | date PK | Fecha de la reunión FOMC |
+| `description` | text | `'FOMC Meeting'` |
 
-RLS habilitado — solo lectura pública para rol `anon`.
+RLS habilitado — solo lectura pública.
 
-### Trigger
+### Tabla `catalogo_casuisticas` (NUEVA v3.0)
 
-```sql
--- Se ejecuta BEFORE INSERT en trades
--- Suma todos los profits anteriores (entry_time < NEW.entry_time) + profit del nuevo trade
-CREATE TRIGGER trg_cum_net_profit
-BEFORE INSERT ON trades
-FOR EACH ROW EXECUTE FUNCTION calc_cum_net_profit();
-```
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `id` | bigint PK | Auto generado |
+| `nombre` | text | Nombre del error tipificable |
+| `orden` | integer | Posición en el listado (drag-and-drop) |
 
-> Si se necesita recalcular `cum_net_profit` para todos los registros existentes (ej: tras editar un profit manualmente), hay que re-insertar o ejecutar un UPDATE masivo con función window `SUM() OVER (ORDER BY entry_time)`.
+RLS habilitado — lectura y actualización de `orden` vía anon.
 
-### Nuevas funciones en `db.js` (v2.1)
+### Funciones en `db.js`
 
 | Función | Descripción |
 |---|---|
-| `getFomcDates(year, month)` | Fechas FOMC del mes/año especificado |
-| `getSessionsWithImages()` | Sesiones con `imagen_url` no null (para galería) |
-| `getCasuisticasByMonth(year, month)` | Casuísticas del mes (solo `sesion_date`) |
+| `getFomcDates(year, month)` | Fechas FOMC del mes/año |
+| `getSessionsWithImages()` | Sesiones con `imagen_url` no null (galería) |
+| `getCasuisticasByMonth(year, month)` | Casuísticas del mes |
 | `getAllCasuisticas()` | Todas las casuísticas con `casuistica` y `sesion_date` |
+| `getCatalogoCasuisticas()` | Catálogo ordenado por `orden ASC` |
+| `updateCasuisticaOrden(id, orden)` | Actualiza el orden de una casuística (drag-and-drop) |
 
 ---
 
 ## 7. Variables de Entorno y Credenciales
 
-### Resumen completo
-
 | Variable | Componente | Tipo | Valor / Ubicación |
 |---|---|---|---|
 | `SUPABASE_URL` | Frontend, Bot, C# | URL | `https://jothoslozctflfrnysrx.supabase.co` |
 | `SUPABASE_ANON_KEY` | Frontend (`config.js`) | Secret | Supabase Dashboard → Settings → API |
-| `SUPABASE_KEY` (= anon key) | Bot (CF Worker #2 secret) | Secret | Mismo valor que anon key |
-| `SUPABASE_KEY` | C# indicador (hardcoded const) | Secret | Mismo valor que anon key |
+| `SUPABASE_KEY` | Bot (CF Worker #2 secret) | Secret | Mismo valor que anon key |
+| `SUPABASE_KEY` | C# indicador (hardcoded) | Secret | Mismo valor que anon key |
 | `ANTHROPIC_API_KEY` | CF Worker #1 (secret) | Secret | console.anthropic.com |
 | `CLOUDINARY_CLOUD_NAME` | Frontend (`config.js`) | Config | Cloudinary Dashboard |
 | `CLOUDINARY_UPLOAD_PRESET` | Frontend (`config.js`) | Config | Cloudinary Dashboard → Upload presets |
@@ -819,41 +701,6 @@ FOR EACH ROW EXECUTE FUNCTION calc_cum_net_profit();
 | `TIMEZONE` | CF Worker #2 (`wrangler.toml` var) | Config | `America/Bogota` |
 | KV Namespace ID | CF Worker #2 (`wrangler.toml`) | Config | `3dd631773a6041c1a97a8e9a8f861067` |
 
-### Dónde se configura cada una
-
-**`js/config.js` (frontend — no versionado):**
-```javascript
-const CONFIG = {
-  SUPABASE_URL: '...',
-  SUPABASE_ANON_KEY: '...',
-  CLOUDINARY_CLOUD_NAME: '...',
-  CLOUDINARY_UPLOAD_PRESET: '...'
-};
-```
-
-**CF Worker #1 — Cloudflare Dashboard → Worker → Settings → Variables:**
-```
-ANTHROPIC_API_KEY = sk-ant-... (encrypt)
-```
-
-**CF Worker #2 — `wrangler.toml` + secrets:**
-```toml
-[vars]
-TIMEZONE = "America/Bogota"
-```
-```bash
-wrangler secret put BOT_TOKEN       # Token de Telegram
-wrangler secret put SUPABASE_URL
-wrangler secret put SUPABASE_KEY
-wrangler secret put ALLOWED_CHAT_ID # 372127764
-```
-
-**C# Indicador — constantes en código fuente:**
-```csharp
-private const string SUPABASE_ENDPOINT = "https://jothoslozctflfrnysrx.supabase.co/rest/v1/trades";
-private const string SUPABASE_KEY = "<anon-key>";
-```
-
 ---
 
 ## 8. Guía de Cambios Comunes
@@ -861,84 +708,75 @@ private const string SUPABASE_KEY = "<anon-key>";
 ### Añadir una nueva columna a `trades` o `sesiones`
 
 ```sql
--- 1. Agregar columna en Supabase SQL Editor
 ALTER TABLE trades ADD COLUMN nueva_columna text;
-
--- 2. Recargar schema de PostgREST
 NOTIFY pgrst, 'reload schema';
 ```
 
-Luego actualizar:
-- `js/db.js`: añadir campo en queries/inserts
-- `NinjaTrader/SupabaseAutoExport.cs`: añadir campo en el JSON de POST (recompilar)
-- `TelegramBot/worker.js`: añadir paso en state machine si es un campo de sesión
+Luego actualizar: `db.js`, `SupabaseAutoExport.cs` (recompilar), `TelegramBot/worker.js`.
 
 ### Cambiar el modelo de IA
 
-En el frontend (`db.js` o donde se construya el request al proxy):
+En `form.js`, buscar y modificar:
 ```javascript
-model: 'claude-haiku-4-5'  // cambiar aquí
+model: 'claude-haiku-4-5-20251001'
 ```
-No hay cambios necesarios en CF Worker #1 (es un proxy genérico).
+No hay cambios en CF Worker #1 (es proxy genérico).
+
+### Modificar el prompt del coach IA
+
+En `form.js`, función `generateAI()`. El prompt incluye:
+- Instrucción inicial (coach estricto)
+- Bloque `═══ CONTEXTO DEL MES ═══`
+- Bloque `═══ SESIÓN DE HOY ═══`
+- Bloque `═══ INSTRUCCIONES ═══` (4 secciones fijas, máx 120 palabras)
+
+### Agregar un setup al bot Telegram
+
+En `TelegramBot/worker.js`, modificar el array `SETUPS`:
+```javascript
+const SETUPS = [
+  'IRI Apertura Alcista', 'IRI Apertura Bajista',
+  // ... agregar aquí ...
+]
+```
+Redesplegar desde Cloudflare Dashboard.
 
 ### Agregar un paso al flujo del bot Telegram
 
 En `TelegramBot/worker.js`:
-1. Agregar el nuevo `step` al enum/constante de pasos
-2. Añadir el `case` correspondiente en el switch del handler
-3. Actualizar la transición del paso anterior para apuntar al nuevo paso
-4. Incluir el dato en el objeto final antes del upsert
+1. Agregar el nuevo `step` al objeto `STEPS`
+2. Añadir el `case` correspondiente en el handler
+3. Actualizar la transición del paso anterior
+4. Redesplegar desde Cloudflare Dashboard
 
-```bash
-wrangler deploy  # redesplegar
-```
+### Actualizar la estrategia del Service Worker
 
-### Agregar fechas FOMC a la tabla
+En `sw.js`:
+1. Incrementar la versión de caché: `const CACHE = 'nqjournal-v4'`
+2. Agregar/quitar URLs en `APP_SHELL` o `CDN_SHELL` según corresponda
+3. Los hosts en `NETWORK_ONLY_HOSTS` nunca se interceptan
+
+> Al cambiar la versión, el `activate` elimina automáticamente cachés anteriores.
+
+### Agregar fechas FOMC
 
 ```sql
 INSERT INTO fomc_dates (date, description) VALUES
-  ('2027-01-27', 'FOMC Meeting'),
-  ('2027-03-17', 'FOMC Meeting');
--- Recargar schema si es necesario
+  ('2027-01-27', 'FOMC Meeting');
 NOTIFY pgrst, 'reload schema';
 ```
 
-### Rotar la clave de Supabase (anon key)
+### Rotar la clave de Supabase
 
 1. Supabase Dashboard → Settings → API → Rotate keys
-2. Actualizar en todos los sitios:
-   - `js/config.js` (frontend)
-   - CF Worker #2: `wrangler secret put SUPABASE_KEY`
-   - `NinjaTrader/SupabaseAutoExport.cs` (constante + recompilar)
-
-### Cambiar la zona horaria del bot
-
-```toml
-# wrangler.toml
-[vars]
-TIMEZONE = "America/New_York"  # cambiar aquí
-```
-```bash
-wrangler deploy
-```
+2. Actualizar en: `js/config.js`, CF Worker #2 secret, `SupabaseAutoExport.cs` (recompilar)
 
 ### Resetear el estado de una sesión de bot atascada
 
-Si el bot queda en un paso intermedio sin responder:
 ```bash
-# Usando Wrangler CLI
 wrangler kv:key delete --namespace-id 3dd631773a6041c1a97a8e9a8f861067 "s:372127764"
 ```
-O directamente desde Cloudflare Dashboard → KV → buscar key `s:372127764` → Delete.
-
-### Actualizar GitHub Pages
-
-```bash
-git add <archivos modificados>
-git commit -m "descripcion del cambio"
-git push origin main
-# Auto-despliega en ~60 segundos
-```
+O desde Cloudflare Dashboard → KV → buscar key `s:372127764` → Delete.
 
 ---
 
@@ -948,50 +786,44 @@ git push origin main
 
 | Síntoma | Causa probable | Solución |
 |---|---|---|
-| No aparece nada en Output Window | El indicador no está agregado al chart correcto | Verificar que esté en el chart del instrumento activo |
-| Error 401 en Output Window | `SUPABASE_KEY` incorrecto | Verificar la constante en el .cs y recompilar |
-| Error 404 | `SUPABASE_ENDPOINT` mal escrito | Verificar URL del endpoint |
-| Los datos llegan pero `cum_net_profit` es NULL | Trigger no creado | Ejecutar el SQL del trigger en Supabase |
-| El trade se registra pero MAE/MFE = 0 | `OnBarUpdate` no está corriendo (timeframe incorrecto) | Verificar que el chart sea de 1 minuto y `BarsInProgress == 0` |
-| Trades duplicados con ATM | Ventana de fusión no activa | Verificar que el indicador sea v2.1+ con los campos `hasPending`/`mergeTimer` |
-| `commission` siempre es 0 | Indicador pre-v2.1 | Actualizar a v2.1 que lee `ex.Commission` de NT8 |
+| No aparece nada en Output Window | Indicador no está en el chart correcto | Verificar que esté en el chart del instrumento activo |
+| Error 401 en Output Window | `SUPABASE_KEY` incorrecto | Verificar constante en .cs y recompilar |
+| Trades duplicados con ATM | Indicador pre-v2.1 | Actualizar al indicador v2.1+ con fusión de 3s |
+| `commission` siempre es 0 | Indicador pre-v2.1 | Actualizar a v2.1 que lee `ex.Commission` |
 
 ### El bot de Telegram no responde
 
 | Síntoma | Causa probable | Solución |
 |---|---|---|
 | Bot no responde a ningún mensaje | Webhook no registrado o URL incorrecta | Re-ejecutar `setWebhook` con la URL correcta del Worker |
-| Responde "Unauthorized" | `ALLOWED_CHAT_ID` no coincide con tu chat ID | Verificar tu chat ID con @userinfobot en Telegram |
-| Error al guardar sesión | `SUPABASE_KEY` o `SUPABASE_URL` incorrectos | `wrangler secret list` y verificar valores |
-| Bot queda sin responder tras un crash | Estado KV corrupto | Borrar la key `s:{chatId}` en KV (ver sección anterior) |
+| Responde "Unauthorized" | `ALLOWED_CHAT_ID` no coincide | Verificar chat ID con @userinfobot |
+| Botón de notificación no aparece | Worker no desplegado con el nuevo código | Redesplegar desde Cloudflare Dashboard |
+| Bot queda sin responder tras un crash | Estado KV corrupto | Borrar key `s:{chatId}` en KV |
 | Fecha incorrecta en sesiones | Timezone mal configurado | Verificar `TIMEZONE=America/Bogota` en wrangler.toml |
 
 ### El frontend no carga datos
 
 | Síntoma | Causa probable | Solución |
 |---|---|---|
-| Error CORS en consola del browser | `config.js` cargado antes del DOM o variables undefined | Verificar orden de scripts en `index.html` |
-| Error 401 desde Supabase | `SUPABASE_ANON_KEY` incorrecto en `config.js` | Copiar la key correcta desde Supabase Dashboard |
+| Error 401 desde Supabase | `SUPABASE_ANON_KEY` incorrecto | Copiar key correcta desde Supabase Dashboard |
 | Datos vacíos (0 trades) | RLS habilitado por accidente | `ALTER TABLE trades DISABLE ROW LEVEL SECURITY;` |
-| Upload de imagen falla | Upload preset no es "unsigned" | Cloudinary Dashboard → Edit preset → Signing mode: Unsigned |
-| Galería no muestra imágenes | `getSessionsWithImages()` falla | Verificar permisos de SELECT en sesiones |
-| Festivos no aparecen | Bug en cálculo de fecha en JS | Revisar `calendar.js` función de festivos para el año actual |
-| Días FOMC no aparecen | Tabla `fomc_dates` vacía o sin permisos | Verificar datos en tabla y `GRANT SELECT ON fomc_dates TO anon` |
+| Sección Anual no aparece | `annual.js` no cargado | Verificar `<script src="js/annual.js">` antes de `app.js` en index.html |
+| Sección Anual no muestra datos | Cuenta no coincide | Verificar que la cuenta en el filtro coincida con trades registrados |
+| Rentabilidad muestra "—" | Capital inicial no configurado | Ingresar valor en el campo capital del header del dashboard anual |
 
 ### Claude proxy no funciona
 
 | Síntoma | Causa probable | Solución |
 |---|---|---|
-| Error 403 desde el Worker | `ANTHROPIC_API_KEY` inválida o expirada | Rotar en console.anthropic.com y actualizar en CF Worker #1 |
-| CORS error al llamar al proxy | Worker no retorna headers CORS | Verificar que el Worker incluye `Access-Control-Allow-Origin: *` |
-| Timeout | Claude tardando > 30s (límite de Workers Free) | Reducir `max_tokens` o usar plan pago |
+| Error 403 desde el Worker | `ANTHROPIC_API_KEY` inválida | Rotar en console.anthropic.com y actualizar en CF Worker #1 |
+| Timeout | Prompt muy extenso o modelo saturado | El prompt de v3.0 es más largo (contexto mensual); verificar max_tokens=400 |
 
-### Supabase — PostgREST no refleja cambios DDL
+### PWA no se actualiza en iPhone
 
-```sql
--- Ejecutar siempre después de ALTER TABLE, CREATE TABLE, etc.
-NOTIFY pgrst, 'reload schema';
-```
+| Síntoma | Causa probable | Solución |
+|---|---|---|
+| App muestra versión vieja | Service Worker cacheó la app anterior | Abrir Safari → navegar a la URL → forzar reload → volver al ícono |
+| Nunca recibe actualizaciones | Estrategia cache-first (versión antigua) | Verificar que `sw.js` use network-first para APP_SHELL y la versión sea `nqjournal-v3` |
 
 ---
 
@@ -1003,14 +835,16 @@ NOTIFY pgrst, 'reload schema';
 | GitHub Pages | Free | 1 GB repo, 100 GB transfer | Negligible | $0 |
 | Cloudflare Workers | Free | 100,000 req/día | ~300 req/día | $0 |
 | Cloudflare KV | Free | 100,000 reads/día | ~100 reads/día | $0 |
-| Anthropic API | Pay-per-use | — | ~60 sesiones × $0.0004 | ~$0.024 |
+| Anthropic API | Pay-per-use | — | ~20 sesiones × $0.0008 | ~$0.016 |
 | Cloudinary | Free | 25 GB storage, 25 GB BW | <100 MB | $0 |
-| **TOTAL** | | | | **~$0.03/mes** |
+| **TOTAL** | | | | **~$0.02/mes** |
 
-**Modelo de IA utilizado:** `claude-haiku-4-5`
+**Modelo de IA:** `claude-haiku-4-5-20251001`
 - Input: $0.80 / MTok
 - Output: $4.00 / MTok
-- Costo por resumen (~500 tokens): ~$0.0004
+- Costo por resumen v3.0 (~2000 tokens in + ~400 tokens out): ~$0.0008
+
+> El costo por resumen duplicó respecto a v2.1 porque el prompt v3.0 incluye contexto mensual completo. Sigue siendo despreciable (~$0.02/mes con 20 sesiones).
 
 ---
 
@@ -1019,8 +853,9 @@ NOTIFY pgrst, 'reload schema';
 | Versión | Fecha | Autor | Descripción |
 |---|---|---|---|
 | 1.0 | 2026-05-15 | kristeb-trader | Versión inicial del manual técnico |
-| 2.1 | 2026-05-20 | kristeb-trader | Galería de imágenes (`gallery.js`); tabla `fomc_dates`; festivos CME automáticos en calendario; disciplina 7 factores clickable; error frecuente desde casuísticas; pestaña Imagen primera en modal; motivo "Festivo" en formulario; fusión ATM 3s en indicador C#; comisión real desde `ex.Commission`; nuevas funciones en `db.js` |
+| 2.1 | 2026-05-20 | kristeb-trader | Galería de imágenes (`gallery.js`); tabla `fomc_dates`; festivos CME automáticos; disciplina 7 factores clickable; error frecuente desde casuísticas; pestaña Imagen primera en modal; motivo "Festivo" en formulario; fusión ATM 3s; comisión real `ex.Commission`; nuevas funciones `db.js` |
+| 3.0 | 2026-05-26 | kristeb-trader | **Dashboard Anual** (`annual.js`): KPI strip 8 métricas, equity curve, barras P&L mensual, tabla mensual con account filter (PA-APEX default), capital inicial en localStorage, totals row coloreados. **Bot Telegram**: botón automático desde notificación de trade, contexto como lista de 5 opciones, paso RETROCESO eliminado, setup como lista de 6 opciones (2 por fila), resumen completo tras guardar, "Análisis del día" (renombrado de "Reflexión"). **Coach IA**: prompt enriquecido con contexto mensual (5 fetches paralelos), coach estricto y directo, salida estructurada 4 secciones fijas (máx 120 palabras), max_tokens=400, modelo `claude-haiku-4-5-20251001`. **PWA**: `sw.js` v3 (nqjournal-v3) con network-first para app shell — updates automáticos en iPhone. **Casuísticas**: tabla `catalogo_casuisticas` con columna `orden` para drag-and-drop; `data.js` simplificado; `db.js` con `updateCasuisticaOrden()`. **Break Even**: clasificación ±$6 como `resultado = 'be'`. |
 
 ---
 
-*Manual generado el 2026-05-20. Actualizar esta tabla con cada cambio significativo en el sistema.*
+*Manual Técnico — Trading Journal NQ Futures | Versión 3.0 | 2026-05-26*

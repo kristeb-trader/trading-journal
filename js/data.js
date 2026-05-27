@@ -70,16 +70,16 @@ const DataManager = (() => {
     })
 
     // ── Drag & Drop para reordenar ────────────────────────────────────────
-    setupDragDrop(el)
+    setupDragDrop(el, ids => Promise.all(ids.map((id, i) => DB.updateCasuisticaOrden(id, i + 1))))
   }
 
-  function setupDragDrop(container) {
+  // saveFn(ids) receives the ordered array of IDs after a drag-drop reorder
+  function setupDragDrop(container, saveFn) {
     let dragged = null
 
     container.addEventListener('dragstart', e => {
       dragged = e.target.closest('[draggable]')
       if (!dragged) return
-      // Pequeño delay para que se vea el elemento original al empezar el drag
       setTimeout(() => dragged.classList.add('dragging'), 0)
       e.dataTransfer.effectAllowed = 'move'
     })
@@ -110,7 +110,6 @@ const DataManager = (() => {
       clearDropIndicators(container)
       if (!target || !dragged || target === dragged) return
 
-      // Insertar antes o después según posición del cursor
       const { top, height } = target.getBoundingClientRect()
       if (e.clientY < top + height / 2) {
         container.insertBefore(dragged, target)
@@ -118,10 +117,9 @@ const DataManager = (() => {
         target.after(dragged)
       }
 
-      // Guardar nuevo orden en Supabase
       const ids = [...container.querySelectorAll('[data-id]')].map(el => parseInt(el.dataset.id))
       try {
-        await Promise.all(ids.map((id, i) => DB.updateCasuisticaOrden(id, i + 1)))
+        await saveFn(ids)
         Toast.show('Orden guardado', 'success')
       } catch {
         Toast.show('Error al guardar el orden', 'error')
@@ -139,9 +137,100 @@ const DataManager = (() => {
     renderList(items, 'catalogoCasuisticasList')
   }
 
-  async function init() {
-    await loadCasuisticas()
+  // ── Emociones ─────────────────────────────────────────────────────────────
 
+  function renderEmocionesList(items) {
+    const el = document.getElementById('catalogoEmocionesList')
+    if (!el) return
+    if (!items.length) {
+      el.innerHTML = '<p class="catalog-empty">Sin emociones registradas</p>'
+      return
+    }
+    el.innerHTML = items.map(item => `
+      <div class="catalog-item ${!item.activa ? 'catalog-item-inactive' : ''}" data-id="${item.id}" draggable="true">
+        <span class="drag-handle" title="Arrastra para reordenar"><i class="ti ti-grip-vertical"></i></span>
+        <label class="catalog-toggle" title="${item.activa ? 'Activa' : 'Inactiva'}">
+          <input type="checkbox" class="tog-emocion" data-id="${item.id}" ${item.activa ? 'checked' : ''}>
+          <span class="toggle-track"></span>
+        </label>
+        <span class="catalog-emoji">${item.emoji || '😐'}</span>
+        <span class="catalog-nombre">${item.nombre}</span>
+        <button class="btn-edit-catalog" data-id="${item.id}" data-nombre="${item.nombre}" data-emoji="${item.emoji || '😐'}" title="Editar">
+          <i class="ti ti-pencil"></i>
+        </button>
+        <button class="btn-del-catalog" data-id="${item.id}" title="Eliminar">
+          <i class="ti ti-trash"></i>
+        </button>
+      </div>`).join('')
+
+    // Toggles
+    el.querySelectorAll('.tog-emocion').forEach(chk => {
+      chk.addEventListener('change', async () => {
+        const id = parseInt(chk.dataset.id)
+        try {
+          await DB.toggleCatalogoEmocion(id, chk.checked)
+          chk.closest('.catalog-item').classList.toggle('catalog-item-inactive', !chk.checked)
+        } catch (e) {
+          Toast.show('Error al actualizar', 'error')
+          chk.checked = !chk.checked
+        }
+      })
+    })
+
+    // Editar nombre + emoji
+    el.querySelectorAll('.btn-edit-catalog').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id      = parseInt(btn.dataset.id)
+        const nombre  = prompt('Nombre de la emoción:', btn.dataset.nombre)
+        if (nombre === null) return
+        const emoji   = prompt('Emoji:', btn.dataset.emoji)
+        if (emoji === null) return
+        try {
+          await DB.renameCatalogoEmocion(id, nombre.trim(), emoji.trim() || '😐')
+          btn.dataset.nombre = nombre.trim()
+          btn.dataset.emoji  = emoji.trim() || '😐'
+          const item = btn.closest('.catalog-item')
+          item.querySelector('.catalog-nombre').textContent = nombre.trim()
+          item.querySelector('.catalog-emoji').textContent  = emoji.trim() || '😐'
+          Toast.show('Emoción actualizada', 'success')
+        } catch (e) {
+          Toast.show('Error al actualizar', 'error')
+        }
+      })
+    })
+
+    // Eliminar
+    el.querySelectorAll('.btn-del-catalog').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('¿Eliminar esta emoción?')) return
+        const id = parseInt(btn.dataset.id)
+        try {
+          await DB.deleteCatalogoEmocion(id)
+          btn.closest('.catalog-item').remove()
+        } catch (e) {
+          Toast.show('Error al eliminar', 'error')
+        }
+      })
+    })
+
+    // Drag & Drop (save using emociones-specific order function)
+    setupDragDrop(el, ids => Promise.all(ids.map((id, i) => DB.updateEmocionOrden(id, i + 1))))
+  }
+
+  async function loadEmociones() {
+    // getCatalogoEmociones solo devuelve activas; necesitamos todas para el manager
+    const { data, error } = await supa
+      .from('catalogo_emociones')
+      .select('*')
+      .order('orden', { ascending: true })
+    if (error) throw error
+    renderEmocionesList(data)
+  }
+
+  async function init() {
+    await Promise.all([loadCasuisticas(), loadEmociones()])
+
+    // ── Casuísticas ──
     document.getElementById('addCasuistica').addEventListener('click', async () => {
       const input = document.getElementById('newCasuistica')
       const nombre = input.value.trim()
@@ -158,6 +247,26 @@ const DataManager = (() => {
 
     document.getElementById('newCasuistica').addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); document.getElementById('addCasuistica').click() }
+    })
+
+    // ── Emociones ──
+    document.getElementById('addEmocion')?.addEventListener('click', async () => {
+      const emoji  = document.getElementById('newEmocionEmoji').value.trim() || '😐'
+      const nombre = document.getElementById('newEmocionNombre').value.trim()
+      if (!nombre) { Toast.show('Escribe el nombre de la emoción', 'warning'); return }
+      try {
+        await DB.addCatalogoEmocion(nombre, emoji)
+        document.getElementById('newEmocionNombre').value = ''
+        document.getElementById('newEmocionEmoji').value  = ''
+        await loadEmociones()
+        Toast.show('Emoción agregada', 'success')
+      } catch (e) {
+        Toast.show('Error al agregar: ' + e.message, 'error')
+      }
+    })
+
+    document.getElementById('newEmocionNombre')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); document.getElementById('addEmocion').click() }
     })
   }
 

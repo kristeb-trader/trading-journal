@@ -16,6 +16,8 @@
 const STEPS = {
   OPERO:        'opero',
   MOTIVO:       'motivo',
+  EMOCION:      'emocion',
+  CONFIANZA:    'confianza',
   CONTEXTO:     'contexto',
   CORRIDA:      'corrida',
   VELAS:        'velas',
@@ -106,6 +108,40 @@ function scoreChecklist(data) {
   return CHECKLIST_ITEMS.filter(({ key }) => data[key]).length;
 }
 
+// ── Emociones desde Supabase ────────────────────────────────────────────────
+async function fetchEmociones(env) {
+  try {
+    const res = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/catalogo_emociones?activa=eq.true&order=orden.asc&select=id,nombre,emoji`,
+      { headers: { apikey: env.SUPABASE_KEY, Authorization: `Bearer ${env.SUPABASE_KEY}` } }
+    );
+    if (!res.ok) return [];
+    return await res.json();
+  } catch { return []; }
+}
+
+function emocionKeyboard(emociones) {
+  const rows = [];
+  for (let i = 0; i < emociones.length; i += 2) {
+    const row = [{ text: `${emociones[i].emoji} ${emociones[i].nombre}`, callback_data: `emoc_${emociones[i].id}` }];
+    if (emociones[i + 1]) row.push({ text: `${emociones[i + 1].emoji} ${emociones[i + 1].nombre}`, callback_data: `emoc_${emociones[i + 1].id}` });
+    rows.push(row);
+  }
+  rows.push([{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]);
+  return { inline_keyboard: rows };
+}
+
+const CONFIANZA_KEYBOARD = { inline_keyboard: [[
+  { text: '★☆☆☆☆ Muy baja', callback_data: 'conf_1' },
+  { text: '★★☆☆☆ Baja',     callback_data: 'conf_2' },
+],[
+  { text: '★★★☆☆ Normal',   callback_data: 'conf_3' },
+  { text: '★★★★☆ Alta',     callback_data: 'conf_4' },
+],[
+  { text: '★★★★★ Máxima',   callback_data: 'conf_5' },
+  { text: '⏭ Omitir',        callback_data: 'conf_skip' },
+]]};
+
 // ── Setup keyboard ──────────────────────────────────────────────────────────
 function setupKeyboard() {
   const rows = [];
@@ -124,9 +160,12 @@ function buildResumen(data) {
     .map(({ key, label }) => `  ${data[key] ? '✅' : '❌'} ${label}`)
     .join('\n');
 
+  const stars = data.nivel_confianza ? '★'.repeat(data.nivel_confianza) + '☆'.repeat(5 - data.nivel_confianza) : null;
+
   return (
     `✅ <b>Sesión guardada</b>\n\n` +
     `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
+    (stars ? `⭐ <b>Confianza:</b> ${stars}\n` : '') +
     `📊 <b>Contexto:</b> ${data.contexto}\n` +
     `🔢 <b>Corrida:</b> ${data.num_corrida}ª\n` +
     `🕯️ <b>Velas:</b> ${data.velas_corrida}\n` +
@@ -154,8 +193,10 @@ async function saveSession(data, env) {
     chk_5velas:        data.chk_5velas        ?? false,
     chk_noticias:      data.chk_noticias      ?? false,
     chk_consecucion:   data.chk_consecucion   ?? false,
-    chk_estructura:    data.chk_estructura    ?? false,
-    analisis_trader:   data.analisis_trader   ?? null,
+    chk_estructura:        data.chk_estructura        ?? false,
+    analisis_trader:       data.analisis_trader       ?? null,
+    estado_emocional_id:   data.estado_emocional_id   ?? null,
+    nivel_confianza:       data.nivel_confianza        ?? null,
   };
 
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/sesiones`, {
@@ -333,15 +374,17 @@ async function handleCallback(cbq, env) {
 
   // ── Flujo principal ───────────────────────────────────────────────────────
   switch (action) {
-    case 'opero_si':
+    case 'opero_si': {
       state.data.no_opero = false;
-      state.step = STEPS.CONTEXTO;
+      state.step = STEPS.EMOCION;
       await saveState(env.KV, chatId, state);
+      const emociones = await fetchEmociones(env);
       await editMessage(token, chatId, msgId,
-        '📊 <b>Contexto de mercado</b>\n\n¿Cómo estaba el mercado hoy?',
-        { inline_keyboard: CONTEXTOS.map(c => [{ text: c.label, callback_data: `ctx_${c.value}` }]) }
+        '😊 <b>Estado emocional</b>\n\n¿Cómo llegas a la sesión de hoy?',
+        emociones.length ? emocionKeyboard(emociones) : { inline_keyboard: [[{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]] }
       );
       break;
+    }
 
     case 'opero_no':
       state.data.no_opero = true;
@@ -351,7 +394,25 @@ async function handleCallback(cbq, env) {
       break;
 
     default:
-      if (action.startsWith('ctx_')) {
+      if (action.startsWith('emoc_')) {
+        const val = action.slice(5);
+        state.data.estado_emocional_id = val === 'skip' ? null : parseInt(val);
+        state.step = STEPS.CONFIANZA;
+        await saveState(env.KV, chatId, state);
+        await editMessage(token, chatId, msgId,
+          '⭐ <b>Nivel de confianza</b>\n\n¿Cuánta confianza tienes en tu operativa hoy?',
+          CONFIANZA_KEYBOARD
+        );
+      } else if (action.startsWith('conf_')) {
+        const val = action.slice(5);
+        state.data.nivel_confianza = val === 'skip' ? null : parseInt(val);
+        state.step = STEPS.CONTEXTO;
+        await saveState(env.KV, chatId, state);
+        await editMessage(token, chatId, msgId,
+          '📊 <b>Contexto de mercado</b>\n\n¿Cómo estaba el mercado hoy?',
+          { inline_keyboard: CONTEXTOS.map(c => [{ text: c.label, callback_data: `ctx_${c.value}` }]) }
+        );
+      } else if (action.startsWith('ctx_')) {
         state.data.contexto = action.slice(4);
         state.step = STEPS.CORRIDA;
         await saveState(env.KV, chatId, state);

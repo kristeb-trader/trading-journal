@@ -163,6 +163,7 @@ const Nav = {
     calendar: 'Calendario',
     trades: 'Trades',
     gallery: 'Imágenes',
+    coach: 'Coach IA',
     register: 'Registrar Sesión',
     analysis: 'Análisis',
     annual: 'Resumen Anual',
@@ -189,6 +190,7 @@ const Nav = {
         if (sectionId === 'gallery') await Gallery.init()
         if (sectionId === 'analysis') await Charts.init()
         if (sectionId === 'annual') await Annual.init()
+        if (sectionId === 'coach') await Coach.init()
         if (sectionId === 'data') await DataManager.init()
       } catch (err) {
         Toast.show('Error cargando sección: ' + err.message, 'error')

@@ -195,4 +195,105 @@ const DB = {
     if (error) throw error
   },
 
+  // ── Catálogo Emociones ───────────────────────────────────────────────────
+
+  async getCatalogoEmociones() {
+    const { data, error } = await supa
+      .from('catalogo_emociones')
+      .select('*')
+      .eq('activa', true)
+      .order('orden', { ascending: true })
+    if (error) throw error
+    return data
+  },
+
+  async addCatalogoEmocion(nombre, emoji) {
+    const { data: all } = await supa.from('catalogo_emociones').select('orden').order('orden', { ascending: false }).limit(1)
+    const orden = (all?.[0]?.orden || 0) + 1
+    const { data, error } = await supa.from('catalogo_emociones').insert({ nombre, emoji: emoji || '😐', orden }).select().single()
+    if (error) throw error
+    return data
+  },
+
+  async toggleCatalogoEmocion(id, activa) {
+    const { error } = await supa.from('catalogo_emociones').update({ activa }).eq('id', id)
+    if (error) throw error
+  },
+
+  async renameCatalogoEmocion(id, nombre, emoji) {
+    const { error } = await supa.from('catalogo_emociones').update({ nombre, emoji }).eq('id', id)
+    if (error) throw error
+  },
+
+  async deleteCatalogoEmocion(id) {
+    const { error } = await supa.from('catalogo_emociones').delete().eq('id', id)
+    if (error) throw error
+  },
+
+  async updateEmocionOrden(id, orden) {
+    const { error } = await supa.from('catalogo_emociones').update({ orden }).eq('id', id)
+    if (error) throw error
+  },
+
+  // ── Estrategia Chaumer ───────────────────────────────────────────────────
+
+  async getEstrategiaSecciones() {
+    const { data, error } = await supa
+      .from('estrategia_chaumer')
+      .select('*')
+      .eq('activa', true)
+      .order('orden', { ascending: true })
+    if (error) throw error
+    return data
+  },
+
+  async updateEstrategiaSeccion(id, contenido) {
+    const { error } = await supa
+      .from('estrategia_chaumer')
+      .update({ contenido, updated_at: new Date().toISOString() })
+      .eq('id', id)
+    if (error) throw error
+  },
+
+  // ── Diagnósticos Diarios ─────────────────────────────────────────────────
+
+  async getDiagnosticoByDate(date) {
+    const { data, error } = await supa
+      .from('diagnosticos_diarios')
+      .select('*')
+      .eq('sesion_date', date)
+      .maybeSingle()
+    if (error) throw error
+    return data
+  },
+
+  async saveDiagnostico(payload) {
+    const { error } = await supa
+      .from('diagnosticos_diarios')
+      .upsert(payload, { onConflict: 'sesion_date' })
+    if (error) throw error
+  },
+
+  async getHistorialCompacto(limit = 60) {
+    const { data, error } = await supa
+      .from('diagnosticos_diarios')
+      .select('sesion_date, sec_resumen_compacto, errores_json, setups_json, estado_emocional_id, nivel_confianza, patron_detectado, patron_descripcion')
+      .not('sec_resumen_compacto', 'is', null)
+      .order('sesion_date', { ascending: false })
+      .limit(limit)
+    if (error) throw error
+    return data
+  },
+
+  async getErroresHistoricos() {
+    const { data, error } = await supa
+      .from('diagnosticos_diarios')
+      .select('sesion_date, errores_json')
+      .not('errores_json', 'eq', '[]')
+      .order('sesion_date', { ascending: false })
+      .limit(90)
+    if (error) throw error
+    return data
+  },
+
 }

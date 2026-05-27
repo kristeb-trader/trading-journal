@@ -1,13 +1,13 @@
 # Trading Journal NQ Futures
 ## Arquitectura Técnica del Sistema
 
-**Versión:** 2.1 | **Fecha:** Mayo 2026 | **Autor:** kristeb-trader
+**Versión:** 3.0 | **Fecha:** Mayo 2026 | **Autor:** kristeb-trader
 
 ---
 
 ## 1. Visión General
 
-Sistema distribuido de registro, análisis y visualización de operativa en futuros NQ/MNQ (temporalidad 1 minuto). Arquitectura 100% serverless y cloud-native, con tres canales de entrada de datos y un dashboard web como capa de presentación unificada.
+Sistema distribuido de registro, análisis y visualización de operativa en futuros NQ/MNQ (temporalidad 1 minuto). Arquitectura 100% serverless y cloud-native, con tres canales de entrada de datos y un dashboard web como capa de presentación unificada. Incluye PWA (Progressive Web App) instalable en iPhone y Android con estrategia de caché network-first para actualizaciones automáticas.
 
 **Principios de diseño:**
 - Zero-ops: sin servidores propios que mantener
@@ -22,12 +22,13 @@ Sistema distribuido de registro, análisis y visualización de operativa en futu
 | Capa | Tecnología | Rol en el sistema |
 |---|---|---|
 | Base de datos | Supabase (PostgreSQL 15) | Persistencia, API REST, triggers |
-| Frontend | HTML + JS Vanilla (ES2022) | Dashboard web SPA |
+| Frontend | HTML + JS Vanilla (ES2022) | Dashboard web SPA + PWA instalable |
 | Hosting web | GitHub Pages | CDN estático global |
+| Service Worker | `sw.js` (nqjournal-v3) | PWA: network-first app shell, cache-first CDN |
 | Proxy IA | Cloudflare Worker #1 | Bypass CORS → Anthropic API |
 | Bot Telegram | Cloudflare Worker #2 | Flujo conversacional de sesiones |
 | Estado conversación | Cloudflare KV | Sesiones temporales del bot (TTL 1h) |
-| Análisis IA | Anthropic Claude API (`claude-haiku-4-5`) | Resúmenes automáticos de sesión |
+| Análisis IA | Anthropic Claude API (`claude-haiku-4-5-20251001`) | Coach estricto con contexto mensual completo |
 | Imágenes | Cloudinary | Upload, almacenamiento y CDN |
 | Captura automática | C# Indicator (.NET 4.8 / NinjaTrader 8) | Exportación de trades en tiempo real |
 
@@ -41,10 +42,10 @@ Sistema distribuido de registro, análisis y visualización de operativa en futu
 ╠══════════════╦═══════════════════════╦═══════════════════════════════╣
 ║              ║                       ║                               ║
 ║  NinjaTrader ║   Dashboard Web       ║   Telegram App               ║
-║  (PC trader) ║   (Browser)           ║   (Móvil)                    ║
+║  (PC trader) ║   (Browser / PWA)     ║   (Móvil)                    ║
 ║              ║                       ║                               ║
 ║  C# Indicator║   GitHub Pages SPA    ║   Bot: @trading_journal_bot  ║
-║  .NET 4.8    ║   JS Vanilla          ║                               ║
+║  .NET 4.8    ║   JS Vanilla + SW v3  ║                               ║
 ╚══════╤═══════╩═══════════╤═══════════╩═══════════════╤═══════════════╝
        │                   │                           │
        │ POST /trades      │ fetch() REST              │ Webhook POST
@@ -62,13 +63,13 @@ Sistema distribuido de registro, análisis y visualización de operativa en futu
 ║  trades      ║                       ╚═══════════════════════════════╝
 ║  sesiones    ║
 ║  fomc_dates  ║           ╔═══════════════════════════════════════════╗
-║              ║           ║  Dashboard Web — GitHub Pages             ║
-║  Trigger:    ║           ║                                           ║
-║  cum_net     ║           ║  calendar.js  │ metrics.js  │ charts.js   ║
-║  _profit     ║           ║  table.js     │ form.js     │ app.js      ║
-╚══════════════╝           ║  gallery.js                               ║
-                           ║                                           ║
-                           ║  "Generar resumen" →                      ║
+║  catalogo_   ║           ║  Dashboard Web — GitHub Pages             ║
+║  casuisticas ║           ║                                           ║
+║              ║           ║  calendar.js  │ metrics.js  │ charts.js   ║
+║  Trigger:    ║           ║  table.js     │ form.js     │ app.js      ║
+║  cum_net     ║           ║  gallery.js   │ data.js     │ annual.js   ║
+║  _profit     ║           ║                                           ║
+╚══════════════╝           ║  "Generar resumen" →                      ║
                            ╚══════════════╤════════════════════════════╝
                                           │
                                           │ fetch()
@@ -83,7 +84,8 @@ Sistema distribuido de registro, análisis y visualización de operativa en futu
                            ╔══════════════════════════╗
                            ║  Anthropic Claude API    ║
                            ║  claude-haiku-4-5        ║
-                           ║  ~$0.0004 / resumen      ║
+                           ║  -20251001               ║
+                           ║  ~$0.0008 / resumen      ║
                            ╚══════════════════════════╝
 ```
 
@@ -135,7 +137,7 @@ Cuando se operan 2+ contratos con ATM, cada contrato genera un `ExecutionUpdate`
 
 **Campos internos de fusión:** `pendingCommission`, `mergeTimer`, `mergeLock`, `hasPending`.
 
-**Comisión real:** Lee `ex.Commission` de NT8 (antes era siempre 0 hardcodeado). Se acumula correctamente en fusiones. Se envía a Supabase en el campo `commission` y aparece en la notificación push.
+**Comisión real:** Lee `ex.Commission` de NT8. Se acumula correctamente en fusiones. Se envía a Supabase en el campo `commission`.
 
 **Compatible con:** NT8 8.1.7.0 (APIs usadas son estables).
 
@@ -161,14 +163,72 @@ OnBarUpdate (OnBarClose)
 | `metrics.js` | KPIs: win rate, equity, racha, disciplina (7 factores, clickable), error frecuente (casuísticas) |
 | `charts.js` | 6 gráficas Chart.js: equity curve, scatter MAE/MFE, donut, etc. |
 | `table.js` | Tabla paginada de trades con filtros y búsqueda |
-| `form.js` | Formulario de sesión + integración Claude via Worker |
+| `form.js` | Formulario de sesión + integración Claude (coach estricto, contexto mensual) |
 | `gallery.js` | Galería de imágenes agrupadas por semana, lightbox con teclado |
-| `app.js` | Bootstrap, modales, toasts, lightbox, navegación |
+| `data.js` | Gestión de casuísticas (catálogo con drag-and-drop para reordenar) |
+| `annual.js` | **NUEVO** Dashboard anual: KPI strip, equity curve, barras P&L mensual, tabla mensual |
+| `app.js` | Bootstrap, modales, toasts, lightbox, navegación (7 secciones) |
 
-**Flujo de resumen IA:**
+**Secciones de navegación:**
+1. `calendar` — Calendario mensual
+2. `metrics` — Métricas
+3. `gallery` — Galería de imágenes
+4. `table` — Tabla de trades
+5. `form` — Registrar sesión
+6. `charts` — Análisis / Gráficas
+7. `annual` — **NUEVO** Resumen Anual
+
+**Flujo de resumen IA (enriquecido):**
 ```
-form.js → fetch(Worker #1) → Anthropic API → resumen_ia → Supabase sesiones
+form.js
+  → 5 fetch() en paralelo (trades hoy, casuísticas hoy, trades del mes,
+    todas las sesiones, todas las casuísticas)
+  → construye prompt con contexto mensual completo
+  → fetch(Worker #1)
+  → Anthropic API (claude-haiku-4-5-20251001, max_tokens=400)
+  → resumen_ia (4 secciones estructuradas)
+  → Supabase sesiones
 ```
+
+**Prompt del coach IA — estructura (v3.0):**
+```
+Eres un coach de trading especializado en NQ/MNQ Futures (1 minuto).
+Metodología Alfredo Chaumer. Responde SIEMPRE en español.
+Sé estricto y directo — si el trader cometió errores, señálalos sin
+suavizarlos. No des falsas motivaciones cuando los datos muestran mal
+desempeño.
+
+═══ CONTEXTO DEL MES — {mes} {año} ═══
+Trades previos: N (Targets: X | Stops: Y)
+Win Rate mensual: N%
+P&L acumulado (sin hoy): $X
+Evolución semanal: [semana 1: +$X | semana 2: -$Y | ...]
+Disciplina promedio (checklist): N%
+Top errores recurrentes (casuísticas Stop): [lista]
+
+═══ SESIÓN DE HOY — {fecha} ═══
+Contexto de mercado: ...
+Trades: N (Targets: X | Stops: Y | BEs: Z) — P&L: $N
+Checklist: [detalle de 6 ítems]
+Disciplina de hoy: N%
+Casuísticas: [lista]
+Reflexión del trader: ...
+
+═══ INSTRUCCIONES ═══
+Genera un análisis estructurado en exactamente 4 secciones
+(máx. 120 palabras en total):
+1. **Evaluación**: Lo más relevante de hoy comparado con el patrón del mes.
+2. **Patrón detectado**: Fortaleza o debilidad que se repite en el mes.
+3. **Acción concreta**: Una sola acción específica y medible para mañana.
+4. **Cierre motivacional**: 1 frase corta de aliento basada en los datos.
+```
+
+**Break Even:** `Math.abs(profit) <= 6` → resultado `'be'` (±$6).
+
+**Disciplina (7 factores):** `(chk_zonas + chk_orden + chk_5velas + chk_noticias + chk_consecucion + chk_estructura + sinCasuisticas) / 7 × 100`
+
+**Abreviación de cuenta:** `PA-APEX-23411-03` → `PA-APEX` (primeras 2 partes separadas por `-`).
+
 **API key Claude:** guardada en `localStorage`. El usuario la ingresa una vez en ⚙ Ajustes.
 
 **Sincronización calendario ↔ métricas:**
@@ -178,26 +238,102 @@ form.js → fetch(Worker #1) → Anthropic API → resumen_ia → Supabase sesio
 
 ---
 
-### 4.3 Telegram Bot — Cloudflare Worker #2
+### 4.3 Dashboard Anual — `annual.js` (NUEVO v3.0)
+
+**Módulo IIFE:** `Annual = (() => { ... })()`
+
+**Flujo de datos:**
+```
+Annual.init()
+  → loadAndRender()
+  → fetch trades (cuenta filtrada, año seleccionado)
+  → fetch sesiones (año seleccionado)
+  → agrupar por mes
+  → calcular métricas por mes (P&L, win rate, disciplina, max drawdown, profit factor)
+  → renderKpis()   — 8 chips: P&L, Trades, Win Rate, Profit Factor,
+                              Max Drawdown, Disciplina, Mejor Mes, Peor Mes
+  → renderCharts() — Chart.js: equity curve (line) + P&L barras (bar)
+  → renderMonthTable() — tabla mensual con totales coloreados
+```
+
+**Filtro de cuenta:**
+- Dropdown precargado con cuentas únicas desde todos los trades
+- Default: primera cuenta que contenga `PA-APEX`, o la guardada en `localStorage('annualAccount')`
+- Al cambiar cuenta → `loadAndRender()` se re-ejecuta
+
+**Capital inicial:**
+- Input persistido en `localStorage('annual_capital_inicial')`
+- El usuario lo configura una vez. Cuando no está definido, la columna Rentabilidad muestra `—`.
+- Rentabilidad mensual = `(P&L_mes / capital_inicial) × 100`
+
+**Navegación de año:**
+- Botones `◀ ▶` para cambiar `annualYear`
+- Por defecto: año actual
+
+**Colores en totals row:**
+- `.annual-totals-pos` — verde (P&L ≥0, efectividad ≥50%, disciplina ≥80%)
+- `.annual-totals-neg` — rojo (P&L <0, efectividad <40%)
+- `.annual-totals-warn` — amarillo (efectividad 40-49%, disciplina 55-79%)
+- `.annual-totals-neutral` — neutro (campos sin color semántico)
+
+**Color de efectividad por fila:**
+- `.annual-pos` (verde): ≥50%
+- `.annual-warn` (amarillo): ≥40%
+- `.annual-neg` (rojo): <40%
+
+---
+
+### 4.4 Telegram Bot — Cloudflare Worker #2
 
 **Archivo:** `TelegramBot/worker.js`
 **Patrón:** Webhook + State Machine
 
-**Máquina de estados:**
+**Máquina de estados (v3.0 — sin RETROCESO):**
 ```
-/sesion
+Notificación de trade → botón inline "📝 Registrar sesión del día"
+                                    ↓
+/sesion  o  callback 'iniciar_sesion'
    │
    ├─ [No operé] → MOTIVO → saveSession() → FIN
    │
-   └─ [Sí operé] → CONTEXTO → CORRIDA → VELAS → RETROCESO
-                                                      │
-                              FIN ← REFLEXION ← CHECKLIST ← SETUP ← ZONAS_CONTRA
+   └─ [Sí operé] → CONTEXTO (lista 5 opciones)
+                       → CORRIDA (1/2/3ª corrida)
+                       → VELAS (número de velas)
+                       → ZONAS_CONTRA (Sí/No)
+                       → SETUP (lista 6 setups, 2 por fila)
+                       → CHECKLIST (6 checkboxes)
+                       → REFLEXION ("Análisis del día")
+                       → saveSession() → resumen completo → FIN
 ```
+
+**Pasos eliminados vs v2.1:** `RETROCESO` (puntos de retroceso — se calcula automáticamente).
+
+**Opciones de contexto (lista con botones):**
+```
+📈 Alcista fuerte | ↗ Alcista | ↔ Mixto | ↘ Bajista | 📉 Bajista fuerte
+```
+
+**Setups disponibles (lista con botones, 2 por fila):**
+```
+IRI Apertura Alcista      | IRI Apertura Bajista
+IRI Continuación Alcista  | IRI Continuación Bajista
+Reingreso Alcista         | Reingreso Bajista
+```
+
+**Notificación automática de trade:**
+Cuando NT8 registra un trade, el bot envía la notificación con un botón inline:
+```
+[ 📝 Registrar sesión del día ]
+```
+Al presionarlo, inicia el flujo `startSesionFlow()` directamente sin necesidad de `/sesion`.
+
+**Resumen completo tras guardar:**
+El bot muestra todos los campos registrados incluyendo el checklist ítem por ítem y las casuísticas si las hay.
 
 **Estado en KV:**
 ```json
 Key:   "s:{chatId}"
-Value: { "step": "VELAS", "data": { "sesion_date": "2026-05-15", "contexto": "Lateral", ... } }
+Value: { "step": "VELAS", "data": { "sesion_date": "2026-05-15", "contexto": "Alcista fuerte", ... } }
 TTL:   3600s
 ```
 
@@ -207,7 +343,35 @@ POST /rest/v1/sesiones
 Prefer: resolution=merge-duplicates   ← idempotente por UNIQUE(sesion_date)
 ```
 
-**Zona horaria:** `env.TIMEZONE` → `Intl.DateTimeFormat` → fecha local correcta.
+**Zona horaria:** `TIMEZONE=America/Bogota` → `Intl.DateTimeFormat` → fecha local correcta.
+
+---
+
+### 4.5 Service Worker — `sw.js` (v3.0)
+
+**Versión de caché:** `nqjournal-v3`
+
+**Estrategia por tipo de recurso:**
+
+| Tipo | Estrategia | Recursos |
+|---|---|---|
+| App shell (JS/CSS/HTML propios) | **Network-first** | `index.html`, `css/styles.css`, todos los `js/*.js`, `favicon.svg`, `manifest.json` |
+| CDN (librerías externas) | **Cache-first** + background update | Tabler Icons, Supabase JS, Chart.js |
+| APIs externas | **Network-only** (sin intercepción) | `supabase.co`, `cloudinary.com`, `anthropic.com`, `telegram.org`, `workers.dev` |
+
+**Network-first para app shell:**
+```
+fetch(request)
+  → si ok: guardar en caché + retornar respuesta
+  → si offline: retornar desde caché
+```
+Garantiza que los usuarios siempre reciben la versión más reciente al cargar con conexión. Fallback a caché solo cuando no hay red (modo offline).
+
+**Instalación:** pre-cachea los recursos CDN.
+**Activación:** elimina cachés viejos (≠ `nqjournal-v3`) + `clients.claim()` inmediato.
+
+**Actualización en iPhone PWA:**
+Al hacer `git push` el cambio se sirve automáticamente en el próximo acceso con conexión (estrategia network-first). No requiere reinstalar la PWA.
 
 ---
 
@@ -226,12 +390,14 @@ Prefer: resolution=merge-duplicates   ← idempotente por UNIQUE(sesion_date)
 | `entry_time` / `exit_time` | timestamptz | NT8 |
 | `entry_name` / `exit_name` | text | NT8 |
 | `profit` | numeric | C# calculado |
-| `commission` | numeric | `ex.Commission` leído de NT8 (acumulado en fusiones ATM) |
+| `commission` | numeric | `ex.Commission` leído de NT8 |
 | `mae` / `mfe` | numeric | C# via High/Low barras |
 | `bars` | integer | C# Δminutos |
 | `trade_date` | date | C# |
-| `resultado` | text | `target` / `stop` / `otro` |
+| `resultado` | text | `target` / `stop` / `be` / `otro` |
 | `cum_net_profit` | numeric | **Trigger PostgreSQL** |
+
+**Break Even:** `resultado = 'be'` cuando `abs(profit) <= 6`.
 
 **Trigger `trg_cum_net_profit`:**
 ```sql
@@ -241,10 +407,12 @@ BEFORE INSERT → NEW.cum_net_profit = SUM(profit WHERE entry_time < NEW.entry_t
 ### Tabla `sesiones` — Datos manuales del trader
 
 Campos clave: `sesion_date UNIQUE`, `contexto`, `num_corrida`, `velas_corrida`,
-`puntos_retroceso`, `zonas_contra`, `setup`, `chk_zonas/orden/5velas/noticias/consecucion/estructura`,
+`zonas_contra`, `setup`, `chk_zonas/orden/5velas/noticias/consecucion/estructura`,
 `analisis_trader`, `resumen_ia`, `imagen_url`, `no_opero`, `motivo_no_opero`
 
-### Tabla `fomc_dates` — Fechas de reuniones FOMC ← NUEVA
+> **Nota v3.0:** `puntos_retroceso` sigue en la tabla por compatibilidad histórica, pero el bot ya no lo solicita (se calcula automáticamente).
+
+### Tabla `fomc_dates` — Fechas de reuniones FOMC
 
 ```sql
 CREATE TABLE fomc_dates (
@@ -255,14 +423,40 @@ CREATE TABLE fomc_dates (
 
 Con RLS habilitado (read-only público). Pre-poblada con fechas 2025 y 2026.
 
+### Tabla `catalogo_casuisticas` — Catálogo de errores tipificados (NUEVO v3.0)
+
+```sql
+CREATE TABLE catalogo_casuisticas (
+  id       bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nombre   text NOT NULL,
+  orden    integer DEFAULT 0
+);
+```
+
+Con RLS habilitado (SELECT público). Orden persistido para drag-and-drop desde `data.js`.
+La columna `orden` se actualiza vía `PATCH` al reordenar en el dashboard.
+
 ### Permisos
 ```sql
 RLS:   DISABLED en trades y sesiones (proyecto personal, un solo usuario)
 RLS:   ENABLED en fomc_dates (read-only público)
+RLS:   ENABLED en catalogo_casuisticas (read-only público; UPDATE vía anon para reordenar)
 GRANT: INSERT / SELECT / UPDATE ON trades, sesiones TO anon
-GRANT: USAGE, SELECT ON SEQUENCE trades_id_seq, sesiones_id_seq TO anon
 GRANT: SELECT ON fomc_dates TO anon
+GRANT: SELECT, UPDATE ON catalogo_casuisticas TO anon
+GRANT: USAGE, SELECT ON SEQUENCE trades_id_seq, sesiones_id_seq TO anon
 ```
+
+### Funciones `db.js` (acumulado)
+
+| Función | Descripción |
+|---|---|
+| `getFomcDates(year, month)` | Fechas FOMC del mes/año |
+| `getSessionsWithImages()` | Sesiones con `imagen_url` no null (galería) |
+| `getCasuisticasByMonth(year, month)` | Casuísticas del mes |
+| `getAllCasuisticas()` | Todas las casuísticas con `casuistica` y `sesion_date` |
+| `getCatalogoCasuisticas()` | Catálogo ordenado por `orden ASC` |
+| `updateCasuisticaOrden(id, orden)` | Actualiza el orden de una casuística (drag-and-drop) |
 
 ---
 
@@ -276,7 +470,8 @@ GRANT: SELECT ON fomc_dates TO anon
 | Telegram bot | `ALLOWED_CHAT_ID` hardcodeado — bot ignora cualquier otro chat |
 | Cloudflare Workers | HTTPS forzado, variables como secrets cifrados |
 | RLS deshabilitado en trades/sesiones | Aceptable — proyecto personal, sin múltiples usuarios |
-| fomc_dates | RLS habilitado — solo lectura pública, sin posibilidad de escritura no autorizada |
+| fomc_dates | RLS habilitado — solo lectura pública |
+| catalogo_casuisticas | RLS habilitado — lectura y actualización de orden vía anon |
 
 ---
 
@@ -285,6 +480,7 @@ GRANT: SELECT ON fomc_dates TO anon
 | Componente | Mecanismo | Trigger |
 |---|---|---|
 | Dashboard web | `git push → main` | GitHub Pages auto-deploy |
+| PWA en iPhone | network-first SW | Automático al recargar con conexión |
 | Cloudflare Worker #1 (proxy) | Cloudflare Dashboard / Wrangler | Manual |
 | Cloudflare Worker #2 (bot) | Cloudflare Dashboard / Wrangler | Manual |
 | Indicador NT8 | Copiar `.cs` → compilar en NinjaScript Editor | Manual |
@@ -296,32 +492,37 @@ GRANT: SELECT ON fomc_dates TO anon
 
 ```
 trading-journal/
-├── index.html                  ← Shell SPA
+├── index.html                  ← Shell SPA + sección-annual
 ├── favicon.svg
+├── manifest.json               ← PWA manifest
+├── sw.js                       ← Service Worker v3 (network-first)
+├── icons/                      ← Iconos PWA (192x192, 512x512)
 ├── css/
-│   └── styles.css              ← Dark mode completo
+│   └── styles.css              ← Dark mode completo + estilos annual
 ├── js/
 │   ├── config.js               ← Credenciales (no público)
-│   ├── db.js                   ← Capa de datos
+│   ├── db.js                   ← Capa de datos (incluye catalogo_casuisticas)
 │   ├── calendar.js
 │   ├── metrics.js
 │   ├── table.js
-│   ├── form.js
+│   ├── form.js                 ← Coach IA estricto con contexto mensual
 │   ├── charts.js
-│   ├── gallery.js              ← NUEVO: galería de imágenes
-│   └── app.js
+│   ├── data.js                 ← Casuísticas con drag-and-drop
+│   ├── gallery.js              ← Galería de imágenes con lightbox
+│   ├── annual.js               ← NUEVO: Dashboard anual
+│   └── app.js                  ← 7 secciones de navegación
 ├── NinjaTrader/
 │   └── SupabaseAutoExport.cs   ← Indicador C#
 ├── TelegramBot/
-│   ├── worker.js               ← Cloudflare Worker bot
+│   ├── worker.js               ← Cloudflare Worker bot (sin RETROCESO)
 │   └── wrangler.toml           ← Config KV binding
 ├── docs/
 │   ├── arquitectura-tecnica.md
 │   ├── arquitectura-funcional.md
 │   ├── manual-tecnico.md
 │   └── manual-usuario.md
-├── PROGRESS.md                 ← Estado del proyecto
-└── TRADING_JOURNAL_PROJECT.md  ← Especificación original
+├── PROGRESS.md
+└── TRADING_JOURNAL_PROJECT.md
 ```
 
 ---
@@ -335,5 +536,7 @@ trading-journal/
 | Cloudflare Workers | Free | 100k req/día | < 100 req/día | $0 |
 | Cloudflare KV | Free | 100k reads/día | < 50 reads/día | $0 |
 | Cloudinary | Free | 25GB | < 1GB/año | $0 |
-| Anthropic Claude | Pay-per-use | — | ~10 resúmenes/mes | ~$0.004 |
-| **Total mensual** | | | | **< $0.01** |
+| Anthropic Claude | Pay-per-use | — | ~20 resúmenes/mes | ~$0.016 |
+| **Total mensual** | | | | **< $0.02** |
+
+> El costo por resumen aumentó respecto a v2.1 porque el prompt ahora incluye contexto mensual completo (~2000 tokens de entrada vs ~500 anteriormente) y max_tokens=400 para la respuesta estructurada de 4 secciones.

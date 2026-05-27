@@ -58,6 +58,10 @@
         <i class="ti ti-calendar-stats"></i>
         <span>Anual</span>
       </li>
+      <li class="nav-item" data-section="coach" title="Coach IA">
+        <i class="ti ti-robot"></i>
+        <span>Coach IA</span>
+      </li>
       <li class="nav-item" data-section="register" title="Registrar sesión">
         <i class="ti ti-square-rounded-plus"></i>
         <span>Registrar</span>
@@ -364,16 +368,11 @@
                 placeholder="¿Cómo fue la sesión? ¿Qué salió bien? ¿Qué mejorar? ¿Seguiste las reglas?"></textarea>
             </div>
 
-            <!-- IA Summary -->
+            <!-- Notas adicionales -->
             <div class="form-group">
-              <div class="ai-header">
-                <label>Resumen con IA (Claude)</label>
-                <button type="button" class="btn-ai" id="generateAI">
-                  <i class="ti ti-sparkles"></i> Generar resumen
-                </button>
-              </div>
-              <textarea id="resumenIA" name="resumen_ia" rows="4"
-                placeholder="El resumen generado por Claude aparecerá aquí. Puedes editarlo antes de guardar."></textarea>
+              <label for="resumenIA">Notas adicionales</label>
+              <textarea id="resumenIA" name="resumen_ia" rows="3"
+                placeholder="Apuntes extra, ideas para mañana, contexto adicional..."></textarea>
             </div>
 
             <!-- Imagen -->
@@ -428,8 +427,145 @@
             <div id="catalogoCasuisticasList" class="catalog-list"></div>
           </div>
 
+          <!-- Emociones -->
+          <div class="catalog-card">
+            <div class="catalog-header">
+              <h3><i class="ti ti-mood-smile"></i> Emociones</h3>
+              <span class="catalog-sub">Estados emocionales del Coach IA</span>
+            </div>
+            <div class="catalog-add">
+              <input type="text" id="newEmocionEmoji" placeholder="😐" maxlength="4" class="catalog-emoji-input">
+              <input type="text" id="newEmocionNombre" placeholder="Nueva emoción..." maxlength="40">
+              <button class="btn-primary" id="addEmocion"><i class="ti ti-plus"></i> Agregar</button>
+            </div>
+            <div id="catalogoEmocionesList" class="catalog-list"></div>
+          </div>
+
         </div>
       </section>
+
+      <!-- ═══ COACH IA ════════════════════════════════════════════════════════ -->
+      <section class="section" id="section-coach">
+        <div class="section-header">
+          <h2><i class="ti ti-robot"></i> Coach IA — Estrategia Chaumer</h2>
+        </div>
+
+        <!-- Tabs -->
+        <div class="coach-tabs">
+          <button class="coach-tab-btn active" data-tab="analisis">
+            <i class="ti ti-chart-dots-3"></i> Análisis de Hoy
+          </button>
+          <button class="coach-tab-btn" data-tab="historial">
+            <i class="ti ti-history"></i> Historial
+          </button>
+          <button class="coach-tab-btn" data-tab="estrategia">
+            <i class="ti ti-book-2"></i> Estrategia
+          </button>
+        </div>
+
+        <!-- ── Panel: Análisis de Hoy ─────────────────────────────────────── -->
+        <div class="coach-tab-panel active" id="coach-panel-analisis">
+
+          <!-- Fila de controles: emoción + confianza + imagen -->
+          <div class="coach-controls-row">
+
+            <div class="coach-control-group">
+              <label class="coach-label">Estado emocional</label>
+              <select id="coachEmocionSelect" class="coach-select">
+                <option value="">¿Cómo llegas hoy?</option>
+              </select>
+            </div>
+
+            <div class="coach-control-group">
+              <label class="coach-label">Confianza</label>
+              <div class="coach-stars" id="coachConfianzaStars">
+                <button type="button" class="coach-star" data-val="1" title="Muy baja">★</button>
+                <button type="button" class="coach-star" data-val="2" title="Baja">★</button>
+                <button type="button" class="coach-star" data-val="3" title="Normal">★</button>
+                <button type="button" class="coach-star" data-val="4" title="Alta">★</button>
+                <button type="button" class="coach-star" data-val="5" title="Máxima">★</button>
+              </div>
+              <input type="hidden" id="coachConfianzaVal">
+            </div>
+
+            <div class="coach-control-group coach-img-group">
+              <label class="coach-label">Gráfica del día</label>
+              <div class="coach-upload-area" id="coachUploadArea">
+                <i class="ti ti-photo-up"></i>
+                <span>Arrastra o haz clic para subir</span>
+                <input type="file" id="coachImageInput" accept="image/*" hidden>
+              </div>
+              <div class="coach-img-preview hidden" id="coachImagePreview">
+                <img id="coachPreviewImg" src="" alt="Gráfica">
+                <button type="button" class="coach-remove-img" id="coachRemoveImg" title="Quitar imagen">
+                  <i class="ti ti-x"></i>
+                </button>
+              </div>
+            </div>
+
+          </div><!-- /.coach-controls-row -->
+
+          <!-- Botones de acción -->
+          <div class="coach-action-row">
+            <button class="btn-primary" id="coachAnalyzeBtn">
+              <i class="ti ti-robot"></i> Analizar sesión
+            </button>
+            <button class="btn-primary coach-save-btn hidden" id="coachSaveBtn">
+              <i class="ti ti-device-floppy"></i> Guardar diagnóstico
+            </button>
+          </div>
+
+          <!-- Análisis estructurado (6 secciones) -->
+          <div id="coachAnalisisContent" class="coach-analisis-content">
+            <div class="coach-placeholder">
+              <i class="ti ti-robot"></i>
+              <p>Haz clic en <strong>Analizar sesión</strong> para que el Coach evalúe tu operativa de hoy.</p>
+              <p class="coach-placeholder-hint">Sube la gráfica del día para un análisis más preciso. Sin imagen, usará los datos del diario.</p>
+            </div>
+          </div>
+
+          <!-- Chat de seguimiento -->
+          <div class="coach-chat-wrap">
+            <div class="coach-chat-header">
+              <i class="ti ti-messages"></i> Chat de seguimiento
+            </div>
+            <div class="coach-chat-messages" id="coachChatMessages"></div>
+            <div class="coach-chat-input-row">
+              <textarea
+                id="coachChatInput"
+                class="coach-chat-input"
+                rows="2"
+                placeholder="Pregunta sobre un setup, un error, la estrategia... (Enter para enviar, Shift+Enter para nueva línea)"></textarea>
+              <button class="btn-primary coach-send-btn" id="coachSendBtn" title="Enviar">
+                <i class="ti ti-send"></i>
+              </button>
+            </div>
+          </div>
+
+        </div><!-- /#coach-panel-analisis -->
+
+        <!-- ── Panel: Historial ────────────────────────────────────────────── -->
+        <div class="coach-tab-panel" id="coach-panel-historial">
+          <div id="coachHistorialList" class="coach-historial-list">
+            <div class="coach-placeholder">
+              <i class="ti ti-history"></i>
+              <p>Los diagnósticos guardados aparecerán aquí.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Panel: Estrategia ──────────────────────────────────────────── -->
+        <div class="coach-tab-panel" id="coach-panel-estrategia">
+          <p class="coach-estrat-desc">
+            <i class="ti ti-info-circle"></i>
+            Edita las secciones de tu estrategia Chaumer. Los cambios se guardan en la base de datos y el Coach los usará automáticamente en el próximo análisis.
+          </p>
+          <div id="coachEstrategiaList" class="coach-estrategia-list">
+            <div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Cargando...</div>
+          </div>
+        </div>
+
+      </section><!-- /#section-coach -->
 
       <!-- ═══ 7. GALERÍA DE IMÁGENES ═══════════════════════════════════════ -->
       <section class="section" id="section-gallery">
@@ -768,6 +904,7 @@
   <script src="js/data.js"></script>
   <script src="js/gallery.js"></script>
   <script src="js/annual.js"></script>
+  <script src="js/coach.js"></script>
   <script src="js/app.js"></script>
 
   <!-- Registro del Service Worker (PWA) -->
