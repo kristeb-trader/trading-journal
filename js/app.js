@@ -74,7 +74,7 @@ const Modal = {
       { key: 'chk_zonas', label: 'Zonas vigentes verificadas' },
       { key: 'chk_orden', label: 'Orden precolocada a tiempo' },
       { key: 'chk_5velas', label: 'Máx 5 velas en corrida' },
-      { key: 'chk_noticias', label: 'Sin noticia roja activa' },
+      { key: 'chk_noticias', label: 'Calendario económico verificado' },
       { key: 'chk_consecucion', label: 'Zona marcada con consecución' },
       { key: 'chk_estructura', label: 'Estructura de Impulso + Retroceso + Impulso, Fluida' },
     ]

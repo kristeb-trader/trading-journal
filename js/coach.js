@@ -76,7 +76,7 @@ const Coach = (() => {
       ['chk_zonas',      'Zonas vigentes verificadas'],
       ['chk_orden',      'Orden precolocada a tiempo'],
       ['chk_5velas',     'Máx 5 velas en corrida'],
-      ['chk_noticias',   'Sin noticia roja activa'],
+      ['chk_noticias',   'Calendario económico verificado (sin noticia roja)'],
       ['chk_consecucion','Zona con rompimiento + consecución'],
       ['chk_estructura', 'Estructura IRI fluida'],
     ]

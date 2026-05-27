@@ -230,6 +230,23 @@
               </select>
             </div>
 
+            <!-- Checklist Pre-Sesión (siempre visible) -->
+            <div class="form-group">
+              <label>Checklist Pre-Sesión</label>
+              <div class="checklist" id="checklistPreSesion">
+                <label class="check-item">
+                  <input type="checkbox" id="chkNoticias" name="chk_noticias">
+                  <span class="check-box"></span>
+                  <span>Calendario económico verificado (sin noticia roja)</span>
+                </label>
+                <label class="check-item">
+                  <input type="checkbox" id="chkZonas" name="chk_zonas">
+                  <span class="check-box"></span>
+                  <span>Zonas vigentes verificadas</span>
+                </label>
+              </div>
+            </div>
+
             <!-- Campos de trading (visibles cuando sí operó) -->
             <div id="tradingFields">
               <div class="form-row">
@@ -294,11 +311,6 @@
                 <label>Checklist Operativa</label>
                 <div class="checklist" id="checklistRules">
                   <label class="check-item">
-                    <input type="checkbox" id="chkZonas" name="chk_zonas">
-                    <span class="check-box"></span>
-                    <span>Zonas vigentes verificadas</span>
-                  </label>
-                  <label class="check-item">
                     <input type="checkbox" id="chkOrden" name="chk_orden">
                     <span class="check-box"></span>
                     <span>Orden precolocada a tiempo</span>
@@ -307,11 +319,6 @@
                     <input type="checkbox" id="chk5Velas" name="chk_5velas">
                     <span class="check-box"></span>
                     <span>Máx 5 velas en el impulso de la corrida</span>
-                  </label>
-                  <label class="check-item">
-                    <input type="checkbox" id="chkNoticias" name="chk_noticias">
-                    <span class="check-box"></span>
-                    <span>Sin noticia roja activa en el momento de entrada</span>
                   </label>
                   <label class="check-item">
                     <input type="checkbox" id="chkConsecucion" name="chk_consecucion">

@@ -149,7 +149,7 @@ const Metrics = (() => {
     { key: 'chk_zonas',       label: 'Zonas vigentes'       },
     { key: 'chk_orden',       label: 'Orden a tiempo'       },
     { key: 'chk_5velas',      label: 'Máx 5 velas'          },
-    { key: 'chk_noticias',    label: 'Sin noticias rojas'   },
+    { key: 'chk_noticias',    label: 'Calendario verificado' },
     { key: 'chk_consecucion', label: 'Rompimiento + Consecución' },
     { key: 'chk_estructura',  label: 'Estructura IRI'       },
   ]
@@ -160,7 +160,7 @@ const Metrics = (() => {
     { key: 'chk_zonas',       label: 'Zonas vigentes verificadas'       },
     { key: 'chk_orden',       label: 'Orden precolocada a tiempo'       },
     { key: 'chk_5velas',      label: 'Máx 5 velas en corrida'           },
-    { key: 'chk_noticias',    label: 'Sin noticia roja activa'          },
+    { key: 'chk_noticias',    label: 'Calendario económico verificado'  },
     { key: 'chk_consecucion', label: 'Zona con consecución'             },
     { key: 'chk_estructura',  label: 'Estructura IRI fluida'            },
     { key: '_noErrors',       label: 'Sin errores de tipificación'      },
