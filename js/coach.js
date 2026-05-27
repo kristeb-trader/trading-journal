@@ -46,11 +46,18 @@ const Coach = (() => {
       DB.getCatalogoEmociones()
     ])
 
-    // Emoción del día
-    const emocionId = sesion?.estado_emocional_id
-    const emocionNombre = emocionId
-      ? (emociones.find(e => e.id === emocionId)?.nombre || 'No indicado')
+    // Emoción inicio (UI tiene precedencia para capturar lo recién seleccionado)
+    const emocionInicioId = parseInt(document.getElementById('coachEmocionSelect')?.value) || sesion?.estado_emocional_id
+    const emocionInicio = emocionInicioId
+      ? (emociones.find(e => e.id === emocionInicioId)?.nombre || 'No indicado')
       : 'No indicado'
+
+    // Emoción cierre
+    const emocionFinId = parseInt(document.getElementById('coachEmocionFinSelect')?.value) || null
+    const emocionFin = emocionFinId
+      ? (emociones.find(e => e.id === emocionFinId)?.nombre || 'No indicado')
+      : 'No indicado'
+
     const confianza = sesion?.nivel_confianza
       ? `${sesion.nivel_confianza}/5`
       : 'No indicado'
@@ -111,8 +118,9 @@ ${historial}
 
 ## SESIÓN DE HOY — ${date}
 
-Estado emocional: ${emocionNombre}
-Nivel de confianza: ${confianza}
+Estado emocional al inicio: ${emocionInicio}
+Estado emocional al cierre: ${emocionFin}
+Confianza pre-sesión: ${confianza}
 Contexto de mercado: ${sesion?.contexto || 'No indicado'}
 Setup del día: ${sesion?.setup || 'No indicado'}
 
@@ -487,9 +495,11 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
     btns.forEach(btn => { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Guardando...' })
 
     try {
-      const emocionId = document.getElementById('coachEmocionSelect')?.value
+      const emocionId    = document.getElementById('coachEmocionSelect')?.value
         ? parseInt(document.getElementById('coachEmocionSelect').value) : null
-      const confianza = document.getElementById('coachConfianzaVal')?.value
+      const emocionFinId = document.getElementById('coachEmocionFinSelect')?.value
+        ? parseInt(document.getElementById('coachEmocionFinSelect').value) : null
+      const confianza    = document.getElementById('coachConfianzaVal')?.value
         ? parseInt(document.getElementById('coachConfianzaVal').value) : null
 
       const erroresJson  = parsearErroresJson(diagnosticoActual.errores)
@@ -506,8 +516,9 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
         sec_resumen_compacto: diagnosticoActual.resumen,
         errores_json:         erroresJson,
         setups_json:          setuosJson,
-        estado_emocional_id:  emocionId,
-        nivel_confianza:      confianza,
+        estado_emocional_id:     emocionId,
+        estado_emocional_fin_id: emocionFinId,
+        nivel_confianza:         confianza,
         patron_detectado:     patronesDetectados.length > 0,
         patron_descripcion:   patronesDetectados.map(e => e.descripcion).join('; ') || null,
         chat_messages:        chatHistory,
@@ -561,7 +572,8 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
       }
 
       container.innerHTML = historial.map(d => {
-        const emocion  = emociones.find(e => e.id === d.estado_emocional_id)
+        const emocion    = emociones.find(e => e.id === d.estado_emocional_id)
+        const emocionFin = emociones.find(e => e.id === d.estado_emocional_fin_id)
         const errores  = d.errores_json || []
         const tieneAlerta = d.patron_detectado || errores.some(e => e.repetido)
         const resultado = d.sec_resumen_compacto?.includes('TARGET ✅') ? 'target'
@@ -571,7 +583,7 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
           <div class="hist-item hist-item-${resultado}" data-date="${d.sesion_date}">
             <div class="hist-header">
               <span class="hist-date">${fmtDate(d.sesion_date)}</span>
-              ${emocion ? `<span class="hist-emocion">${emocion.emoji} ${emocion.nombre}</span>` : ''}
+              ${emocion ? `<span class="hist-emocion">${emocion.emoji} ${emocion.nombre}${emocionFin ? ` → ${emocionFin.emoji} ${emocionFin.nombre}` : ''}</span>` : ''}
               ${tieneAlerta ? '<span class="hist-alert">⚠️</span>' : ''}
             </div>
             <div class="hist-resumen">${d.sec_resumen_compacto || '—'}</div>
@@ -758,18 +770,24 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
     // Cargar emociones
     const emociones = await DB.getCatalogoEmociones()
     emocionesCache = emociones
-    select.innerHTML = '<option value="">¿Cómo llegas hoy?</option>' +
-      emociones.map(e => `<option value="${e.id}">${e.emoji} ${e.nombre}</option>`).join('')
+    const optionsHtml = emociones.map(e => `<option value="${e.id}">${e.emoji} ${e.nombre}</option>`).join('')
+    select.innerHTML = '<option value="">Estado al inicio</option>' + optionsHtml
+
+    // También poblar el select de emoción al cierre
+    const selectFin = document.getElementById('coachEmocionFinSelect')
+    if (selectFin) selectFin.innerHTML = '<option value="">Estado al cierre</option>' + optionsHtml
 
     // Pre-llenar si ya hay diagnóstico o sesión guardada
     const [sesion, diagExistente] = await Promise.all([
       DB.getSesionByDate(date),
       DB.getDiagnosticoByDate(date)
     ])
-    const emocionGuardada = diagExistente?.estado_emocional_id || sesion?.estado_emocional_id
-    const confianzaGuardada = diagExistente?.nivel_confianza || sesion?.nivel_confianza
-    if (emocionGuardada) select.value = emocionGuardada
-    if (confianzaGuardada && confianza) confianza.value = confianzaGuardada
+    const emocionGuardada    = diagExistente?.estado_emocional_id    || sesion?.estado_emocional_id
+    const emocionFinGuardada = diagExistente?.estado_emocional_fin_id
+    const confianzaGuardada  = diagExistente?.nivel_confianza        || sesion?.nivel_confianza
+    if (emocionGuardada)              select.value    = emocionGuardada
+    if (emocionFinGuardada && selectFin) selectFin.value = emocionFinGuardada
+    if (confianzaGuardada && confianza)  confianza.value = confianzaGuardada
 
     // Auto-cargar imagen del día desde la sesión si existe
     if (sesion?.imagen_url) autoCargarImagen(sesion.imagen_url)

@@ -277,7 +277,7 @@ const DB = {
   async getHistorialCompacto(limit = 60) {
     const { data, error } = await supa
       .from('diagnosticos_diarios')
-      .select('sesion_date, sec_resumen_compacto, errores_json, setups_json, estado_emocional_id, nivel_confianza, patron_detectado, patron_descripcion')
+      .select('sesion_date, sec_resumen_compacto, errores_json, setups_json, estado_emocional_id, estado_emocional_fin_id, nivel_confianza, patron_detectado, patron_descripcion')
       .not('sec_resumen_compacto', 'is', null)
       .order('sesion_date', { ascending: false })
       .limit(limit)
