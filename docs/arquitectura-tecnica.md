@@ -1,7 +1,7 @@
 # Trading Journal NQ Futures
 ## Arquitectura Técnica del Sistema
 
-**Versión:** 3.0 | **Fecha:** Mayo 2026 | **Autor:** kristeb-trader
+**Versión:** 4.0 | **Fecha:** Mayo 2026 | **Autor:** kristeb-trader
 
 ---
 
@@ -24,11 +24,11 @@ Sistema distribuido de registro, análisis y visualización de operativa en futu
 | Base de datos | Supabase (PostgreSQL 15) | Persistencia, API REST, triggers |
 | Frontend | HTML + JS Vanilla (ES2022) | Dashboard web SPA + PWA instalable |
 | Hosting web | GitHub Pages | CDN estático global |
-| Service Worker | `sw.js` (nqjournal-v3) | PWA: network-first app shell, cache-first CDN |
+| Service Worker | `sw.js` (nqjournal-v4) | PWA: network-first app shell, cache-first CDN |
 | Proxy IA | Cloudflare Worker #1 | Bypass CORS → Anthropic API |
 | Bot Telegram | Cloudflare Worker #2 | Flujo conversacional de sesiones |
 | Estado conversación | Cloudflare KV | Sesiones temporales del bot (TTL 1h) |
-| Análisis IA | Anthropic Claude API (`claude-haiku-4-5-20251001`) | Coach estricto con contexto mensual completo |
+| Análisis IA | Anthropic Claude API (`claude-sonnet-4-5-20251001`) | Coach IA · análisis Chaumer · multi-turn · visión de imagen |
 | Imágenes | Cloudinary | Upload, almacenamiento y CDN |
 | Captura automática | C# Indicator (.NET 4.8 / NinjaTrader 8) | Exportación de trades en tiempo real |
 
@@ -65,12 +65,17 @@ Sistema distribuido de registro, análisis y visualización de operativa en futu
 ║  fomc_dates  ║           ╔═══════════════════════════════════════════╗
 ║  catalogo_   ║           ║  Dashboard Web — GitHub Pages             ║
 ║  casuisticas ║           ║                                           ║
-║              ║           ║  calendar.js  │ metrics.js  │ charts.js   ║
-║  Trigger:    ║           ║  table.js     │ form.js     │ app.js      ║
-║  cum_net     ║           ║  gallery.js   │ data.js     │ annual.js   ║
-║  _profit     ║           ║                                           ║
-╚══════════════╝           ║  "Generar resumen" →                      ║
-                           ╚══════════════╤════════════════════════════╝
+║  catalogo_   ║           ║  calendar.js  │ metrics.js  │ charts.js   ║
+║  emociones   ║           ║  table.js     │ form.js     │ app.js      ║
+║  estrategia_ ║           ║  gallery.js   │ data.js     │ annual.js   ║
+║  chaumer     ║           ║  coach.js ← NUEVO                         ║
+║  diagnosticos║           ║                                           ║
+║  _diarios    ║           ║  "Coach IA" →                             ║
+║              ║           ╚══════════════╤════════════════════════════╝
+║  Trigger:    ║
+║  cum_net     ║
+║  _profit     ║
+╚══════════════╝
                                           │
                                           │ fetch()
                                           ▼
@@ -83,9 +88,9 @@ Sistema distribuido de registro, análisis y visualización de operativa en futu
                                           ▼
                            ╔══════════════════════════╗
                            ║  Anthropic Claude API    ║
-                           ║  claude-haiku-4-5        ║
+                           ║  claude-sonnet-4-5       ║
                            ║  -20251001               ║
-                           ║  ~$0.0008 / resumen      ║
+                           ║  ~$0.02 / diagnóstico    ║
                            ╚══════════════════════════╝
 ```
 
@@ -163,11 +168,12 @@ OnBarUpdate (OnBarClose)
 | `metrics.js` | KPIs: win rate, equity, racha, disciplina (7 factores, clickable), error frecuente (casuísticas) |
 | `charts.js` | 6 gráficas Chart.js: equity curve, scatter MAE/MFE, donut, etc. |
 | `table.js` | Tabla paginada de trades con filtros y búsqueda |
-| `form.js` | Formulario de sesión + integración Claude (coach estricto, contexto mensual) |
+| `form.js` | Formulario de sesión (sin IA — solo notas adicionales) |
 | `gallery.js` | Galería de imágenes agrupadas por semana, lightbox con teclado |
-| `data.js` | Gestión de casuísticas (catálogo con drag-and-drop para reordenar) |
-| `annual.js` | **NUEVO** Dashboard anual: KPI strip, equity curve, barras P&L mensual, tabla mensual |
-| `app.js` | Bootstrap, modales, toasts, lightbox, navegación (7 secciones) |
+| `data.js` | Gestión de casuísticas y emociones (catálogos con drag-and-drop, toggle activa) |
+| `annual.js` | Dashboard anual: KPI strip, equity curve, barras P&L mensual, tabla mensual |
+| `coach.js` | **NUEVO** Coach IA: diagnóstico multi-sección, chat multi-turn, historial, estrategia editable |
+| `app.js` | Bootstrap, modales, toasts, lightbox, navegación (8 secciones) |
 
 **Secciones de navegación:**
 1. `calendar` — Calendario mensual
@@ -176,51 +182,60 @@ OnBarUpdate (OnBarClose)
 4. `table` — Tabla de trades
 5. `form` — Registrar sesión
 6. `charts` — Análisis / Gráficas
-7. `annual` — **NUEVO** Resumen Anual
+7. `annual` — Resumen Anual
+8. `coach` — **NUEVO** Coach IA
 
-**Flujo de resumen IA (enriquecido):**
+**Flujo Coach IA (v4.0 — módulo dedicado):**
 ```
-form.js
-  → 5 fetch() en paralelo (trades hoy, casuísticas hoy, trades del mes,
-    todas las sesiones, todas las casuísticas)
-  → construye prompt con contexto mensual completo
-  → fetch(Worker #1)
-  → Anthropic API (claude-haiku-4-5-20251001, max_tokens=400)
-  → resumen_ia (4 secciones estructuradas)
-  → Supabase sesiones
+coach.js (sección-coach)
+  → cargarFecha(date)
+      ├─ setupEmocionConfianza(date)  ← carga emoción/confianza del día
+      └─ DB.getDiagnosticoByDate(date) ← muestra diagnóstico existente si lo hay
+
+  → [Btn "Analizar sesión"]
+      → buildSystemPrompt()
+           ├─ DB.getEstrategiaSection()        ← 6 secciones de estrategia Chaumer
+           ├─ DB.getSesionesForContext(60 días) ← historial + patrones
+           └─ DB.getSessionForCoach(date)      ← sesión del día (trades, checklist, etc.)
+      → fetch(Worker #1) con claude-sonnet-4-5-20251001, max_tokens=3000
+      → renderAnalisis() — 6 tarjetas: Contexto│Desarrollo│Validación│Errores│Aprendizaje│Resumen
+      → [Btn "Guardar"] → DB.saveDiagnostico() → diagnosticos_diarios
+
+  → Chat multi-turn
+      → chatHistory[] + systemPromptCache
+      → imagen opcional (base64, Claude Vision)
+      → fetch(Worker #1) → respuesta en burbuja
+
+  → Historial → DB.getHistorialDiagnosticos() → lista por fecha
+  → Estrategia → DB.upsertEstrategiaSection() → edición in-place
 ```
 
-**Prompt del coach IA — estructura (v3.0):**
+**Prompt del Coach IA — estructura (v4.0 — 6 secciones):**
 ```
-Eres un coach de trading especializado en NQ/MNQ Futures (1 minuto).
-Metodología Alfredo Chaumer. Responde SIEMPRE en español.
-Sé estricto y directo — si el trader cometió errores, señálalos sin
-suavizarlos. No des falsas motivaciones cuando los datos muestran mal
-desempeño.
+Eres un Coach IA de trading especializado en NQ/MNQ Futures (1 min).
+Metodología Alfredo Chaumer. Idioma: español. Tono: estricto y directo.
 
-═══ CONTEXTO DEL MES — {mes} {año} ═══
-Trades previos: N (Targets: X | Stops: Y)
-Win Rate mensual: N%
-P&L acumulado (sin hoy): $X
-Evolución semanal: [semana 1: +$X | semana 2: -$Y | ...]
-Disciplina promedio (checklist): N%
-Top errores recurrentes (casuísticas Stop): [lista]
+═══ ESTRATEGIA CHAUMER (del trader) ═══
+[6 secciones editables: Fundamentos, Setups, Gestión, Psicología, Checklist, Reglas]
 
-═══ SESIÓN DE HOY — {fecha} ═══
-Contexto de mercado: ...
-Trades: N (Targets: X | Stops: Y | BEs: Z) — P&L: $N
-Checklist: [detalle de 6 ítems]
-Disciplina de hoy: N%
-Casuísticas: [lista]
-Reflexión del trader: ...
+═══ HISTORIAL 60 DÍAS ═══
+Rendimiento: Win Rate, P&L, Disciplina promedio
+Patrones detectados: errores recurrentes, días con mejor/peor desempeño
+
+═══ SESIÓN DEL DÍA — {fecha} ═══
+Emoción: {emoji nombre} | Confianza: ★★★☆☆
+Trades: N (T: X | S: Y | BE: Z) — P&L: $N
+Checklist: [6 ítems ✅/❌] | Disciplina: N%
+Casuísticas: [lista] | Notas: ...
 
 ═══ INSTRUCCIONES ═══
-Genera un análisis estructurado en exactamente 4 secciones
-(máx. 120 palabras en total):
-1. **Evaluación**: Lo más relevante de hoy comparado con el patrón del mes.
-2. **Patrón detectado**: Fortaleza o debilidad que se repite en el mes.
-3. **Acción concreta**: Una sola acción específica y medible para mañana.
-4. **Cierre motivacional**: 1 frase corta de aliento basada en los datos.
+Genera exactamente 6 secciones:
+1. **Contexto** — Situación del día en el histórico.
+2. **Desarrollo** — Cómo evolucionó la sesión.
+3. **Validación** — Qué salió bien y por qué.
+4. **Errores** — Qué falló con referencias a la estrategia.
+5. **Aprendizaje** — Lección concreta y acción para mañana.
+6. **Resumen** — Síntesis de 2-3 frases.
 ```
 
 **Break Even:** `Math.abs(profit) <= 6` → resultado `'be'` (±$6).
@@ -288,7 +303,7 @@ Annual.init()
 **Archivo:** `TelegramBot/worker.js`
 **Patrón:** Webhook + State Machine
 
-**Máquina de estados (v3.0 — sin RETROCESO):**
+**Máquina de estados (v4.0 — con EMOCION y CONFIANZA):**
 ```
 Notificación de trade → botón inline "📝 Registrar sesión del día"
                                     ↓
@@ -296,7 +311,9 @@ Notificación de trade → botón inline "📝 Registrar sesión del día"
    │
    ├─ [No operé] → MOTIVO → saveSession() → FIN
    │
-   └─ [Sí operé] → CONTEXTO (lista 5 opciones)
+   └─ [Sí operé] → EMOCION (catálogo dinámico desde catalogo_emociones, 2 por fila + ⏭ Omitir)
+                       → CONFIANZA (★☆☆☆☆ … ★★★★★ + ⏭ Omitir)
+                       → CONTEXTO (lista 5 opciones)
                        → CORRIDA (1/2/3ª corrida)
                        → VELAS (número de velas)
                        → ZONAS_CONTRA (Sí/No)
@@ -306,7 +323,13 @@ Notificación de trade → botón inline "📝 Registrar sesión del día"
                        → saveSession() → resumen completo → FIN
 ```
 
-**Pasos eliminados vs v2.1:** `RETROCESO` (puntos de retroceso — se calcula automáticamente).
+**Nuevos pasos vs v3.0:** `EMOCION` (estado_emocional_id desde catálogo dinámico) y `CONFIANZA` (nivel 1-5 o skip).
+
+**Payload de sesión ahora incluye:**
+```javascript
+estado_emocional_id: data.estado_emocional_id ?? null,
+nivel_confianza:     data.nivel_confianza ?? null,
+```
 
 **Opciones de contexto (lista con botones):**
 ```
@@ -347,15 +370,15 @@ Prefer: resolution=merge-duplicates   ← idempotente por UNIQUE(sesion_date)
 
 ---
 
-### 4.5 Service Worker — `sw.js` (v3.0)
+### 4.5 Service Worker — `sw.js` (v4.0)
 
-**Versión de caché:** `nqjournal-v3`
+**Versión de caché:** `nqjournal-v4`
 
 **Estrategia por tipo de recurso:**
 
 | Tipo | Estrategia | Recursos |
 |---|---|---|
-| App shell (JS/CSS/HTML propios) | **Network-first** | `index.html`, `css/styles.css`, todos los `js/*.js`, `favicon.svg`, `manifest.json` |
+| App shell (JS/CSS/HTML propios) | **Network-first** | `index.html`, `css/styles.css`, todos los `js/*.js` (incl. `coach.js`), `favicon.svg`, `manifest.json` |
 | CDN (librerías externas) | **Cache-first** + background update | Tabler Icons, Supabase JS, Chart.js |
 | APIs externas | **Network-only** (sin intercepción) | `supabase.co`, `cloudinary.com`, `anthropic.com`, `telegram.org`, `workers.dev` |
 
@@ -368,7 +391,7 @@ fetch(request)
 Garantiza que los usuarios siempre reciben la versión más reciente al cargar con conexión. Fallback a caché solo cuando no hay red (modo offline).
 
 **Instalación:** pre-cachea los recursos CDN.
-**Activación:** elimina cachés viejos (≠ `nqjournal-v3`) + `clients.claim()` inmediato.
+**Activación:** elimina cachés viejos (≠ `nqjournal-v4`) + `clients.claim()` inmediato.
 
 **Actualización en iPhone PWA:**
 Al hacer `git push` el cambio se sirve automáticamente en el próximo acceso con conexión (estrategia network-first). No requiere reinstalar la PWA.
@@ -408,9 +431,10 @@ BEFORE INSERT → NEW.cum_net_profit = SUM(profit WHERE entry_time < NEW.entry_t
 
 Campos clave: `sesion_date UNIQUE`, `contexto`, `num_corrida`, `velas_corrida`,
 `zonas_contra`, `setup`, `chk_zonas/orden/5velas/noticias/consecucion/estructura`,
-`analisis_trader`, `resumen_ia`, `imagen_url`, `no_opero`, `motivo_no_opero`
+`analisis_trader`, `resumen_ia`, `imagen_url`, `no_opero`, `motivo_no_opero`,
+`estado_emocional_id` (FK → catalogo_emociones), `nivel_confianza` (int 1-5)
 
-> **Nota v3.0:** `puntos_retroceso` sigue en la tabla por compatibilidad histórica, pero el bot ya no lo solicita (se calcula automáticamente).
+> **Nota v3.0:** `puntos_retroceso` sigue en la tabla por compatibilidad histórica, pero el bot ya no lo solicita.
 
 ### Tabla `fomc_dates` — Fechas de reuniones FOMC
 
@@ -423,27 +447,73 @@ CREATE TABLE fomc_dates (
 
 Con RLS habilitado (read-only público). Pre-poblada con fechas 2025 y 2026.
 
-### Tabla `catalogo_casuisticas` — Catálogo de errores tipificados (NUEVO v3.0)
+### Tabla `catalogo_casuisticas` — Catálogo de errores tipificados (v3.0)
 
 ```sql
 CREATE TABLE catalogo_casuisticas (
   id       bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   nombre   text NOT NULL,
+  activa   boolean DEFAULT true,
   orden    integer DEFAULT 0
 );
 ```
 
-Con RLS habilitado (SELECT público). Orden persistido para drag-and-drop desde `data.js`.
-La columna `orden` se actualiza vía `PATCH` al reordenar en el dashboard.
+### Tabla `catalogo_emociones` — Catálogo de estados emocionales (NUEVO v4.0)
+
+```sql
+CREATE TABLE catalogo_emociones (
+  id     bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nombre text NOT NULL,
+  emoji  text DEFAULT '😐',
+  activa boolean DEFAULT true,
+  orden  integer DEFAULT 0
+);
+```
+
+Poblada con emociones pre-definidas. Orden y toggle manejados desde `data.js`.
+El bot la consulta dinámicamente al paso EMOCION para construir el teclado inline.
+
+### Tabla `estrategia_chaumer` — Secciones de la estrategia editable (NUEVO v4.0)
+
+```sql
+CREATE TABLE estrategia_chaumer (
+  id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  seccion    text UNIQUE NOT NULL,  -- 'fundamentos', 'setups', 'gestion', etc.
+  contenido  text DEFAULT ''
+);
+```
+
+Usada por `coach.js` para construir el system prompt. El trader edita el contenido directamente desde la pestaña "Estrategia" del Coach IA.
+
+### Tabla `diagnosticos_diarios` — Diagnósticos persistidos del Coach IA (NUEVO v4.0)
+
+```sql
+CREATE TABLE diagnosticos_diarios (
+  id             bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  diagnostico_date date UNIQUE NOT NULL,
+  sec_contexto   text,
+  sec_desarrollo text,
+  sec_validacion text,
+  sec_errores    text,
+  sec_aprendizaje text,
+  sec_resumen    text,
+  sesion_data    jsonb,  -- snapshot de la sesión analizada
+  created_at     timestamptz DEFAULT now()
+);
+```
 
 ### Permisos
 ```sql
 RLS:   DISABLED en trades y sesiones (proyecto personal, un solo usuario)
 RLS:   ENABLED en fomc_dates (read-only público)
-RLS:   ENABLED en catalogo_casuisticas (read-only público; UPDATE vía anon para reordenar)
-GRANT: INSERT / SELECT / UPDATE ON trades, sesiones TO anon
+RLS:   ENABLED en catalogo_casuisticas (read + update)
+RLS:   ENABLED en catalogo_emociones (read + update)
+RLS:   ENABLED en estrategia_chaumer (read + upsert)
+RLS:   ENABLED en diagnosticos_diarios (read + insert/update)
+GRANT: INSERT, SELECT, UPDATE ON trades, sesiones TO anon
 GRANT: SELECT ON fomc_dates TO anon
-GRANT: SELECT, UPDATE ON catalogo_casuisticas TO anon
+GRANT: SELECT, UPDATE ON catalogo_casuisticas, catalogo_emociones TO anon
+GRANT: SELECT, INSERT, UPDATE ON estrategia_chaumer, diagnosticos_diarios TO anon
 GRANT: USAGE, SELECT ON SEQUENCE trades_id_seq, sesiones_id_seq TO anon
 ```
 
@@ -456,7 +526,25 @@ GRANT: USAGE, SELECT ON SEQUENCE trades_id_seq, sesiones_id_seq TO anon
 | `getCasuisticasByMonth(year, month)` | Casuísticas del mes |
 | `getAllCasuisticas()` | Todas las casuísticas con `casuistica` y `sesion_date` |
 | `getCatalogoCasuisticas()` | Catálogo ordenado por `orden ASC` |
-| `updateCasuisticaOrden(id, orden)` | Actualiza el orden de una casuística (drag-and-drop) |
+| `addCatalogoCasuistica(nombre)` | Agrega casuística al catálogo |
+| `toggleCatalogoCasuistica(id, activa)` | Activa/desactiva casuística |
+| `renameCatalogoCasuistica(id, nombre)` | Renombra casuística |
+| `deleteCatalogoCasuistica(id)` | Elimina casuística |
+| `updateCasuisticaOrden(id, orden)` | Actualiza orden (drag-and-drop) |
+| `getCatalogoEmociones()` | Emociones activas ordenadas |
+| `addCatalogoEmocion(nombre, emoji)` | Agrega emoción al catálogo |
+| `toggleCatalogoEmocion(id, activa)` | Activa/desactiva emoción |
+| `renameCatalogoEmocion(id, nombre, emoji)` | Edita nombre y emoji |
+| `deleteCatalogoEmocion(id)` | Elimina emoción |
+| `updateEmocionOrden(id, orden)` | Actualiza orden (drag-and-drop) |
+| `getEstrategiaSection(seccion)` | Obtiene sección de estrategia Chaumer |
+| `upsertEstrategiaSection(seccion, contenido)` | Guarda sección de estrategia |
+| `getDiagnosticoByDate(date)` | Diagnóstico guardado de una fecha |
+| `saveDiagnostico(date, secciones, sesionData)` | Persiste diagnóstico en `diagnosticos_diarios` |
+| `getHistorialDiagnosticos(limit)` | Últimos N diagnósticos para el historial |
+| `getSessionForCoach(date)` | Datos de sesión + trades para el análisis |
+| `getSesionesForContext(days)` | Historial de sesiones para el system prompt |
+| `upsertEmocionConfianza(date, emocionId, confianza)` | Guarda emoción y confianza del día |
 
 ---
 
@@ -495,7 +583,7 @@ trading-journal/
 ├── index.html                  ← Shell SPA + sección-annual
 ├── favicon.svg
 ├── manifest.json               ← PWA manifest
-├── sw.js                       ← Service Worker v3 (network-first)
+├── sw.js                       ← Service Worker v4 (nqjournal-v4, network-first)
 ├── icons/                      ← Iconos PWA (192x192, 512x512)
 ├── css/
 │   └── styles.css              ← Dark mode completo + estilos annual
@@ -505,12 +593,13 @@ trading-journal/
 │   ├── calendar.js
 │   ├── metrics.js
 │   ├── table.js
-│   ├── form.js                 ← Coach IA estricto con contexto mensual
+│   ├── form.js                 ← Formulario de sesión (sin IA)
 │   ├── charts.js
-│   ├── data.js                 ← Casuísticas con drag-and-drop
+│   ├── data.js                 ← Casuísticas + Emociones con drag-and-drop
 │   ├── gallery.js              ← Galería de imágenes con lightbox
-│   ├── annual.js               ← NUEVO: Dashboard anual
-│   └── app.js                  ← 7 secciones de navegación
+│   ├── annual.js               ← Dashboard anual
+│   ├── coach.js                ← NUEVO: Coach IA (diagnóstico, chat, historial, estrategia)
+│   └── app.js                  ← 8 secciones de navegación
 ├── NinjaTrader/
 │   └── SupabaseAutoExport.cs   ← Indicador C#
 ├── TelegramBot/
@@ -536,7 +625,7 @@ trading-journal/
 | Cloudflare Workers | Free | 100k req/día | < 100 req/día | $0 |
 | Cloudflare KV | Free | 100k reads/día | < 50 reads/día | $0 |
 | Cloudinary | Free | 25GB | < 1GB/año | $0 |
-| Anthropic Claude | Pay-per-use | — | ~20 resúmenes/mes | ~$0.016 |
-| **Total mensual** | | | | **< $0.02** |
+| Anthropic Claude | Pay-per-use | — | ~20 diagnósticos/mes | ~$0.40 |
+| **Total mensual** | | | | **< $0.50** |
 
-> El costo por resumen aumentó respecto a v2.1 porque el prompt ahora incluye contexto mensual completo (~2000 tokens de entrada vs ~500 anteriormente) y max_tokens=400 para la respuesta estructurada de 4 secciones.
+> El costo aumentó con v4.0 porque se usa `claude-sonnet-4-5-20251001` (más potente que haiku) con max_tokens=3000 y un system prompt rico (~4000 tokens). Costo estimado por diagnóstico: ~$0.02. Para 20 sesiones/mes el costo total es ~$0.40/mes — sigue siendo despreciable.

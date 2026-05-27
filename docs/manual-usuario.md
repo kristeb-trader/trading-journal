@@ -1,6 +1,6 @@
 # Manual de Usuario — Trading Journal NQ Futures
 
-**Versión:** 3.0  
+**Versión:** 4.0  
 **Fecha:** Mayo 2026  
 **Autor:** Equipo Trading Journal
 
@@ -17,7 +17,7 @@
 3. [Módulo 1: Indicador NinjaTrader 8](#módulo-1-indicador-ninjatrader-8)
 4. [Módulo 2: Dashboard Web](#módulo-2-dashboard-web)
 5. [Módulo 3: Bot de Telegram](#módulo-3-bot-de-telegram)
-6. [Módulo 4: Resumen con IA (Claude)](#módulo-4-resumen-con-ia-claude)
+6. [Módulo 4: Coach IA](#módulo-4-coach-ia)
 7. [Rutina Diaria Recomendada](#rutina-diaria-recomendada)
 8. [Preguntas Frecuentes (FAQ)](#preguntas-frecuentes-faq)
 9. [Tarjeta de Referencia Rápida](#tarjeta-de-referencia-rápida)
@@ -56,7 +56,7 @@ El sistema tiene 7 piezas que trabajan juntas:
 | **Indicador NT8** | Exporta trades automáticamente a la nube | Se configura una vez, trabaja solo |
 | **Dashboard Web** | Ver métricas, calendario, galería, análisis, registrar sesión, ver resumen anual | Al final del día o cuando quieras revisar |
 | **Bot de Telegram** | Registrar la sesión del día por chat | Al terminar de operar (desde notificación o con /sesion) |
-| **Claude AI** | Generar análisis estricto con contexto del mes completo | Al registrar sesión en el dashboard |
+| **Coach IA** | Diagnóstico inteligente 6 secciones, chat multi-turn, historial | Desde la sección Coach IA (cualquier fecha) |
 | **Cloudinary** | Guardar imágenes de tus charts | Al subir capturas en el formulario |
 | **Galería de Imágenes** | Ver miniaturas de tus capturas organizadas por semana | Al revisar tu historial visual |
 | **Resumen Anual** | Ver KPIs, equity curve y tabla del año completo por cuenta | Al revisar tu desempeño global |
@@ -99,6 +99,8 @@ El indicador corre en segundo plano dentro de NinjaTrader 8. Cada vez que cierra
 **https://kristeb-trader.github.io/trading-journal/**
 
 Funciona en cualquier navegador moderno. También puedes instalarlo como **app en tu iPhone o Android** (en Safari: botón compartir → "Agregar al inicio"). La app en el teléfono se actualiza automáticamente cuando hay nuevas versiones.
+
+Tiene **8 secciones** en la barra de navegación.
 
 ---
 
@@ -204,12 +206,10 @@ Esta es la sección más importante del uso diario.
 | Motivo personal | Razón personal |
 | Otro | Cualquier otra razón |
 
-**Cómo generar el análisis IA:**
-1. Completa todos los campos del formulario.
-2. Escribe tu análisis en el campo "Análisis del día".
-3. Haz clic en **"Generar resumen"**.
-4. Espera unos segundos — la IA analiza hoy en el contexto de todo el mes.
-5. El análisis aparecerá listo para guardarse junto con la sesión.
+**Notas adicionales:**
+Campo de texto libre para apuntes extra, ideas para mañana, contexto adicional.
+
+> Para el análisis detallado con IA, usá la sección **Coach IA** (ícono 🤖).
 
 ---
 
@@ -228,7 +228,7 @@ Seis gráficos que te dan una visión profunda de tu desempeño:
 
 ---
 
-### Sección 7: Resumen Anual (NUEVO)
+### Sección 7: Resumen Anual
 
 Vista consolidada de todo un año de trading. Perfecta para la revisión mensual y el cierre de año.
 
@@ -291,11 +291,52 @@ Usa los botones ◀ y ▶ junto al año para cambiar al año anterior o siguient
 
 ---
 
+---
+
+### Sección 8: Coach IA (NUEVO v4.0)
+
+El módulo de análisis inteligente. A diferencia de las demás secciones, **podés analizar cualquier fecha** — no solo la de hoy.
+
+**Cómo usarlo:**
+
+1. Seleccioná la fecha que querés analizar (por defecto: hoy).
+2. Registrá tu emoción del día y nivel de confianza.
+3. Opcionalmente, subí una imagen del chart.
+4. Hacé clic en **"Analizar sesión"**.
+5. El Coach genera 6 tarjetas de análisis.
+6. Hacé clic en **"Guardar diagnóstico"** para persistirlo.
+
+**Las 4 pestañas del Coach IA:**
+
+| Pestaña | Qué hace |
+|---|---|
+| **Análisis** | Genera y muestra el diagnóstico de 6 secciones |
+| **Chat** | Conversación libre con el Coach sobre la sesión |
+| **Historial** | Lista de diagnósticos guardados — clic para recargar |
+| **Estrategia** | Editá las secciones de tu estrategia Chaumer |
+
+**Las 6 secciones del diagnóstico:**
+
+| Sección | Contenido |
+|---|---|
+| 📋 Contexto | Tu situación del día en el contexto histórico |
+| 📈 Desarrollo | Cómo evolucionó la sesión |
+| ✅ Validación | Qué salió bien y por qué |
+| ⚠️ Errores | Qué falló, con referencia a tu estrategia |
+| 📚 Aprendizaje | Lección concreta y acción para mañana |
+| 📝 Resumen | Síntesis de 2-3 frases |
+
+> 💡 **Tip:** Usá el Coach IA también para fechas anteriores — podés ir analizando la semana el fin de semana, o completar días que no registraste en el momento.
+
+> ⚙️ La API Key de Claude se configura en el ícono ⚙️ del dashboard — se guarda en tu navegador.
+
+---
+
 ### Configuración (icono ⚙️)
 
-Aquí solo hay un ajuste importante: tu **API Key de Claude** para los resúmenes con IA.
+Aquí solo hay un ajuste importante: tu **API Key de Claude** para el Coach IA.
 
-Ver instrucciones completas en el [Módulo 4: Resumen con IA](#módulo-4-resumen-con-ia-claude).
+Ver instrucciones completas en el [Módulo 4: Coach IA](#módulo-4-coach-ia).
 
 ---
 
@@ -322,13 +363,30 @@ Al presionarlo, el bot inicia el flujo de registro directamente. **Ya no necesit
 | `/sesion` | Inicia el registro de la sesión del día |
 | `/cancelar` | Cancela el registro en cualquier momento |
 
-### Flujo completo del registro (v3.0)
+### Flujo completo del registro (v4.0)
 
 **Paso 1: ¿Operaste hoy?**
 El bot pregunta con botones. Si dices **No**, te pide el motivo y cierra el registro.
 
-**Paso 2: Contexto de mercado**
-Ahora el bot muestra **5 opciones con botones** — igual que el formulario web:
+**Paso 2: Estado emocional (NUEVO v4.0)**
+El bot muestra las emociones disponibles en tu catálogo con botones:
+
+```
+[ 😤 Frustrado ]  [ 😰 Ansioso ]
+[ 😌 Tranquilo ]  [ 💪 Confiado ]
+...                [ ⏭ Omitir ]
+```
+
+**Paso 3: Nivel de confianza (NUEVO v4.0)**
+```
+[ ★☆☆☆☆ Muy baja ]  [ ★★☆☆☆ Baja ]
+[ ★★★☆☆ Media ]
+[ ★★★★☆ Alta ]  [ ★★★★★ Muy alta ]
+[ ⏭ Omitir ]
+```
+
+**Paso 4: Contexto de mercado**
+El bot muestra **5 opciones con botones**:
 
 ```
 [ 📈 Alcista fuerte ]  [ ↗ Alcista ]
@@ -336,16 +394,16 @@ Ahora el bot muestra **5 opciones con botones** — igual que el formulario web:
 [ ↘ Bajista ]  [ 📉 Bajista fuerte ]
 ```
 
-**Paso 3: Corrida**
+**Paso 5: Corrida**
 El bot pregunta cuántas corridas operaste con botones: `[ 1ª corrida ] [ 2ª corrida ] [ 3ª corrida ]`
 
-**Paso 4: Velas**
+**Paso 6: Velas**
 Escribe el número de velas que tuvo la corrida.
 
-**Paso 5: ¿Había zonas en contra?**
+**Paso 7: ¿Había zonas en contra?**
 Botones: `[ ✅ Sí ] [ ❌ No ]`
 
-**Paso 6: Setup del día**
+**Paso 8: Setup del día**
 El bot muestra la lista de setups con botones — igual que el formulario web:
 
 ```
@@ -354,10 +412,10 @@ El bot muestra la lista de setups con botones — igual que el formulario web:
 [ Reingreso Alcista      ]  [ Reingreso Bajista       ]
 ```
 
-**Paso 7: Checklist de reglas**
+**Paso 9: Checklist de reglas**
 El bot te permite marcar/desmarcar cada una de las 6 reglas con botones y confirmar.
 
-**Paso 8: Análisis del día**
+**Paso 10: Análisis del día**
 Escribe tu análisis del día libremente.
 
 **Guardado y resumen:**
@@ -379,16 +437,16 @@ El bot confirma que la sesión fue guardada y te muestra **un resumen completo**
 💬 Análisis del día: "..."
 ```
 
-**Cambios respecto a la versión anterior:**
+**Cambios respecto a versiones anteriores:**
 
-| Aspecto | Antes | Ahora |
-|---|---|---|
-| Inicio del flujo | Solo con `/sesion` | Con `/sesion` o con botón en la notificación del trade |
-| Contexto de mercado | Escribir texto libre | Lista de 5 opciones con botones |
-| Puntos de retroceso | Se pedía un número | **Eliminado** — el sistema no lo requiere manualmente |
-| Setup | Escribir texto libre | Lista de 6 setups con botones (2 por fila) |
-| Confirmación al guardar | Solo mensaje básico | Resumen completo con todos los campos y checklist |
-| Nombre del último paso | "Reflexión del día" | **"Análisis del día"** |
+| Aspecto | v2.1 | v3.0 | v4.0 |
+|---|---|---|---|
+| Emoción y Confianza | No existía | No existía | **NUEVO** — pasos 2 y 3 |
+| Inicio del flujo | Solo `/sesion` | `/sesion` o botón notificación | Igual |
+| Contexto de mercado | Texto libre | Lista 5 opciones | Igual |
+| Puntos de retroceso | Paso manual | **Eliminado** | Eliminado |
+| Setup | Texto libre | Lista 6 setups | Igual |
+| Confirmación al guardar | Solo básico | Resumen completo | Incluye emoción/confianza |
 
 > ⚠️ **Nota:** El bot no permite subir imágenes. Para adjuntar una captura de chart, hazlo desde el formulario del dashboard web.
 
@@ -396,59 +454,70 @@ El bot confirma que la sesión fue guardada y te muestra **un resumen completo**
 
 ---
 
-## Módulo 4: Resumen con IA (Claude)
+## Módulo 4: Coach IA
 
-### ¿Qué hace el resumen con IA?
+### ¿Qué es el Coach IA?
 
-Al hacer clic en **"Generar resumen"** dentro del formulario de sesión, el sistema envía información de tu sesión **más el contexto de todo el mes** a Claude (la IA de Anthropic) y recibe un análisis estructurado del día.
+Es un módulo dedicado de análisis inteligente, accesible desde el ícono 🤖 del dashboard. Usa Claude Sonnet (Anthropic) para generar un diagnóstico profundo de tu sesión basado en la metodología Alfredo Chaumer.
 
-### Tono del coach: estricto y directo
+A diferencia del análisis simple de versiones anteriores, el Coach IA:
+- Tiene su propia sección en el dashboard
+- Analiza **cualquier fecha** — no solo la de hoy
+- Genera **6 secciones detalladas** (no 4 breves)
+- Permite **chat libre** para profundizar en cualquier tema
+- Guarda el diagnóstico para consultarlo después
+- Usa tu **estrategia personalizada** como referencia
 
-El coach IA está configurado para ser **estricto y directo**. Si cometiste errores, los señala sin suavizarlos. No genera falsas motivaciones cuando los datos muestran mal desempeño. El objetivo es que el análisis sea útil para mejorar, no para sentirte bien.
+### Tono: estricto y directo
 
-### ¿Qué datos usa el análisis?
+El coach está configurado para señalar errores sin suavizarlos. Si tu sesión fue mala, el análisis lo refleja. El objetivo es que el feedback sea útil para mejorar, no para sentirte bien.
 
-El coach no solo ve la sesión de hoy — ve el mes completo:
+### ¿Qué datos usa?
 
-| Datos del mes | Datos de hoy |
+| Fuente de datos | Qué aporta |
 |---|---|
-| Trades totales del mes (targets/stops) | Trades de hoy |
-| Win rate mensual acumulado | Checklist del día |
-| P&L acumulado del mes (sin hoy) | Casuísticas del día |
-| Evolución semanal (semana 1, 2, 3...) | Análisis que escribiste |
-| Disciplina promedio del mes | Contexto de mercado |
-| Top errores recurrentes en stops | |
+| Sesión del día analizado | Trades, checklist, emoción, confianza, notas |
+| Historial 60 días | Patrones, errores recurrentes, tendencias |
+| Tu estrategia Chaumer | Marco de referencia para evaluar decisiones |
+| Imagen del chart (opcional) | El coach la ve y la incluye en el análisis |
 
-### Estructura del análisis (4 secciones fijas)
+### Cómo usarlo paso a paso
 
-El análisis siempre tiene exactamente 4 secciones (máx. 120 palabras en total):
+1. Hacé clic en el ícono 🤖 en la barra de navegación.
+2. Seleccioná la fecha a analizar (por defecto: hoy).
+3. Registrá tu emoción del día y nivel de confianza.
+4. Opcionalmente, arrastrá o seleccioná una imagen del chart.
+5. Hacé clic en **"Analizar sesión"**.
+6. Esperá unos segundos — aparecen las 6 tarjetas de análisis.
+7. Si querés profundizar en algo, usá el **chat** (pestaña Chat).
+8. Hacé clic en **"Guardar diagnóstico"** para persistirlo.
 
-1. **Evaluación** — Lo más relevante de hoy comparado con el patrón del mes.
-2. **Patrón detectado** — Una fortaleza o debilidad que se repite en el mes.
-3. **Acción concreta** — Una sola acción específica y medible para mañana.
-4. **Cierre motivacional** — 1 frase corta de aliento basada en los datos reales.
+### Las 6 secciones del diagnóstico
 
-> 💡 **Ejemplo de uso:** Si tu win rate mensual es 45% pero hoy fue 60%, el coach puede señalar que las sesiones mejoran cuando el contexto es claro, y sugerirte operar solo cuando el contexto esté bien definido.
+| Sección | Descripción |
+|---|---|
+| 📋 **Contexto** | Tu situación del día comparada con el historial |
+| 📈 **Desarrollo** | Cómo evolucionó la sesión |
+| ✅ **Validación** | Qué salió bien y por qué |
+| ⚠️ **Errores** | Qué falló, con referencia a tu estrategia |
+| 📚 **Aprendizaje** | Lección concreta + acción para mañana |
+| 📝 **Resumen** | Síntesis de 2-3 frases del día |
+
+### Estrategia Chaumer editable
+
+La pestaña **Estrategia** te permite editar las secciones de tu estrategia. Cuanto más completa esté, más preciso será el análisis.
 
 ### Cómo configurar la API Key de Claude (se hace una sola vez)
 
 1. Ve a [https://console.anthropic.com](https://console.anthropic.com).
 2. Crea una cuenta o inicia sesión.
-3. Ve a **API Keys** → **Create Key** → ponle un nombre y copia la clave.
+3. Ve a **API Keys** → **Create Key** → copia la clave.
 4. Abre el dashboard web y haz clic en el ícono ⚙️.
 5. Pega tu API Key y haz clic en **Guardar**.
 
 La key queda guardada en tu navegador. No se sube a ningún servidor.
 
-### Cómo generar un resumen
-
-1. Ve a la sección **Registrar Sesión**.
-2. Completa todos los campos del formulario.
-3. Escribe tu análisis del día.
-4. Haz clic en **"Generar resumen"**.
-5. Espera unos segundos — el análisis aparecerá listo para guardarse.
-
-> 💡 **Tip:** Genera el resumen **antes** de guardar la sesión, no después. El resumen se guarda como parte del registro del día.
+> 💡 **Tip:** El Coach IA funciona mejor cuando la sesión del día está completa en el formulario. Registrá primero la sesión, luego abrí el Coach IA para analizarla.
 
 ---
 
@@ -474,8 +543,8 @@ La key queda guardada en tu navegador. No se sube a ningún servidor.
   - Registra las casuísticas si cometiste errores tipificables.
   - Escribe tu análisis del día.
   - Sube la captura de pantalla.
-  - Haz clic en "Generar resumen" para el análisis de IA.
   - Guarda la sesión.
+- Abrí el **Coach IA** (ícono 🤖), seleccioná la fecha de hoy y hacé clic en **"Analizar sesión"**.
 
 ### Revisión semanal (viernes o fin de semana)
 
@@ -508,7 +577,7 @@ Sí, ambos canales llegan a la misma base de datos. Sin embargo, si ya registras
 
 **3. ¿La API Key de Claude tiene algún costo?**
 
-Sí, Anthropic cobra por uso. Para el uso de este sistema (un análisis diario), el costo es muy bajo — aproximadamente $0.0008 por análisis. Puedes ver el costo estimado en [https://www.anthropic.com/pricing](https://www.anthropic.com/pricing).
+Sí, Anthropic cobra por uso. Con el Coach IA v4.0 (Sonnet), el costo por diagnóstico es aproximadamente $0.02. Con 20 sesiones al mes, son ~$0.40/mes — prácticamente despreciable. Puedes ver el costo en [https://www.anthropic.com/pricing](https://www.anthropic.com/pricing).
 
 ---
 
@@ -524,7 +593,7 @@ Es el saldo de tu cuenta al inicio del año. Se usa para calcular la columna "Re
 
 ---
 
-**6. ¿Por qué el coach IA a veces parece duro en su análisis?**
+**6. ¿Por qué el Coach IA a veces parece duro en su análisis?**
 
 El coach está configurado para ser estricto y directo. Si cometiste errores o tu desempeño fue malo, el análisis lo señala sin suavizarlo. El objetivo es que el feedback sea útil para mejorar, no para sentirte bien. Si los datos muestran buen desempeño, el análisis lo reconoce.
 
@@ -552,7 +621,7 @@ Correcto. Desde v3.0, el paso de "puntos de retroceso" fue eliminado del bot por
 ## Tarjeta de Referencia Rápida
 
 ```
-TRADING JOURNAL NQ FUTURES — REFERENCIA RÁPIDA v3.0
+TRADING JOURNAL NQ FUTURES — REFERENCIA RÁPIDA v4.0
 ====================================================
 
 ACCESO
@@ -572,10 +641,10 @@ CHECKLIST AL TERMINAR
 □ Completar: contexto, corrida, velas, zonas, setup
 □ Marcar las 6 reglas del checklist
 □ Registrar casuísticas si aplica
-□ Escribir análisis del día
+□ Escribir notas adicionales
 □ Subir imagen del chart
-□ Clic en "Generar resumen" (opcional pero recomendado)
 □ Guardar sesión
+□ Abrir Coach IA → seleccionar fecha → Analizar sesión → Guardar diagnóstico
 
 LAS 6 REGLAS DEL CHECKLIST
 1. Zonas vigentes verificadas
@@ -621,10 +690,11 @@ COMANDOS TELEGRAM
 /cancelar → Cancelar el registro en curso
 [Botón en notificación] → Iniciar registro directamente
 
-SECCIONES DEL DASHBOARD (7)
+SECCIONES DEL DASHBOARD (8)
 1. Calendario  2. Métricas  3. Galería
 4. Tabla       5. Registrar Sesión
-6. Análisis    7. Anual (NUEVO)
+6. Análisis    7. Anual
+8. Coach IA (NUEVO)
 
 ACTUALIZAR PWA EN IPHONE
 Abrir Safari → ir a la URL → recargar → volver al ícono
@@ -666,7 +736,8 @@ Abrir Safari → ir a la URL → recargar → volver al ícono
 |---|---|---|
 | 1.0 | Mayo 2026 | Versión inicial del manual |
 | 2.1 | Mayo 2026 | Galería de imágenes con lightbox; festivos CME automáticos y días FOMC en el calendario (6 colores); iconos por celda (error/dirección/FOMC operado); filtro de cuenta PA-APEX por defecto con persistencia; disciplina 7 factores clickable con desglose; error frecuente desde casuísticas; pestaña Imagen primera en modal de día; motivo "Festivo" en formulario; casuísticas visibles en no-operación; fusión ATM 3s en NT8; tarjeta de referencia rápida |
-| 3.0 | Mayo 2026 | **Sección Anual**: KPI strip (8 métricas), equity curve, barras P&L mensual, tabla por mes (P&L, Acumulado, Rentabilidad, Efectividad, Disciplina, # Trades), account filter PA-APEX, capital inicial en localStorage, totals row con celdas coloreadas, color de efectividad por fila. **Bot Telegram v3**: botón automático "📝 Registrar sesión del día" en notificación de trade; contexto como lista de 5 opciones; paso de puntos de retroceso eliminado; setup como lista de 6 opciones (2 por fila); resumen completo con checklist ítem por ítem tras guardar; renombrado "Reflexión" → "Análisis del día". **Coach IA**: análisis con contexto mensual completo (5 fuentes de datos), coach estricto y directo, 4 secciones estructuradas fijas (máx 120 palabras). **PWA**: actualización automática en iPhone con estrategia network-first. **Casuísticas**: catálogo con drag-and-drop para reordenar. |
+| 3.0 | Mayo 2026 | **Sección Anual**: KPI strip (8 métricas), equity curve, barras P&L mensual, tabla por mes, account filter PA-APEX, capital inicial en localStorage, totals row coloreados. **Bot Telegram v3**: botón automático desde notificación de trade; contexto como lista; setup como lista (2/fila); resumen completo con checklist. **Coach IA v2**: análisis 4 secciones desde formulario, max_tokens=400, claude-haiku. **PWA**: network-first, updates automáticos en iPhone. **Casuísticas**: catálogo con drag-and-drop. |
+| 4.0 | Mayo 2026 | **Coach IA v3 — módulo dedicado**: sección propia 🤖, diagnóstico 6 secciones (Contexto, Desarrollo, Validación, Errores, Aprendizaje, Resumen), chat multi-turn, historial de diagnósticos persistido, subida de imagen (Claude Vision), selector de fecha para días pasados, estrategia Chaumer editable por sección. Modelo: claude-sonnet-4-5, max_tokens=3000. **Emociones**: catálogo de emociones, estado emocional y confianza en sesiones. **Bot Telegram v4**: pasos EMOCION y CONFIANZA nuevos. **form.js**: eliminado "Generar resumen", reemplazado por "Notas adicionales". **PWA**: sw v4 (nqjournal-v4). |
 
 ---
 
@@ -690,4 +761,4 @@ Describe:
 
 ---
 
-*Manual de Usuario — Trading Journal NQ Futures | Versión 3.0 | Mayo 2026*
+*Manual de Usuario — Trading Journal NQ Futures | Versión 4.0 | Mayo 2026*

@@ -2,7 +2,7 @@
 
 > **Este documento es editable — actualizalo ante cualquier cambio en el sistema.**
 
-**Versión:** 3.0 | **Fecha:** 2026-05-26 | **Audiencia:** Desarrollador / DevOps
+**Versión:** 4.0 | **Fecha:** 2026-05-27 | **Audiencia:** Desarrollador / DevOps
 
 ---
 
@@ -118,12 +118,12 @@
 |---|---|---|---|
 | Base de datos | Supabase (PostgreSQL) | PostgreSQL 15, Free tier | Almacenamiento persistente |
 | Frontend | HTML + JS Vanilla | ES2022, sin bundler | Dashboard web SPA + PWA |
-| PWA | `sw.js` (nqjournal-v3) | Service Worker API | Network-first para app shell, cache-first para CDN |
+| PWA | `sw.js` (nqjournal-v4) | Service Worker API | Network-first para app shell, cache-first para CDN |
 | Hosting web | GitHub Pages | Gratis (repo privado con Pages) | Sirve el frontend estático |
 | Proxy IA | Cloudflare Worker #1 | Workers Free (100k req/día) | Bypass CORS para llamadas a Anthropic |
 | Bot Telegram | Cloudflare Worker #2 | Workers Free | Webhook Telegram + state machine |
 | KV Sessions | Cloudflare KV | Free (100k reads/día) | Estado de sesión del bot (TTL 3600s) |
-| IA / Resúmenes | Anthropic Claude | claude-haiku-4-5-20251001 | Coach estricto con contexto mensual completo |
+| IA / Coach | Anthropic Claude | claude-sonnet-4-5-20251001 | Coach IA · diagnóstico 6 secciones · chat · Vision |
 | Imágenes | Cloudinary | Free tier | Upload + CDN de capturas de pantalla |
 | Indicador | C# .NET 4.8 | NinjaTrader 8 (8.1.7.0) | Exportación automática de trades a Supabase |
 
@@ -136,7 +136,7 @@ trading-journal/
 ├── index.html                  ← Punto de entrada SPA + sección-annual
 ├── favicon.svg
 ├── manifest.json               ← PWA manifest (nombre, iconos, theme color)
-├── sw.js                       ← Service Worker v3 (nqjournal-v3)
+├── sw.js                       ← Service Worker v4 (nqjournal-v4)
 │                                  network-first: app shell
 │                                  cache-first: CDN (Tabler, Supabase JS, Chart.js)
 │                                  network-only: supabase.co, cloudinary.com, workers.dev
@@ -152,12 +152,13 @@ trading-journal/
 │   ├── calendar.js             ← Vista de calendario mensual
 │   ├── metrics.js              ← Cálculo de métricas y KPIs
 │   ├── table.js                ← Tabla de trades con filtros
-│   ├── form.js                 ← Formulario + coach IA (contexto mensual, 4 secciones)
+│   ├── form.js                 ← Formulario de sesión (sin IA — notas adicionales)
 │   ├── charts.js               ← 6 gráficas Chart.js
 │   ├── gallery.js              ← Galería de imágenes por semana con lightbox
-│   ├── data.js                 ← Casuísticas: catálogo con drag-and-drop para reordenar
-│   ├── annual.js               ← NUEVO: Dashboard anual (KPI strip, charts, tabla mensual)
-│   └── app.js                  ← Orquestador principal, router (7 secciones)
+│   ├── data.js                 ← Casuísticas + Emociones: catálogos con drag-and-drop
+│   ├── annual.js               ← Dashboard anual (KPI strip, charts, tabla mensual)
+│   ├── coach.js                ← NUEVO: Coach IA (diagnóstico, chat, historial, estrategia)
+│   └── app.js                  ← Orquestador principal, router (8 secciones)
 ├── NinjaTrader/
 │   └── SupabaseAutoExport.cs   ← Indicador C# para NT8
 ├── TelegramBot/
@@ -240,11 +241,42 @@ CREATE TABLE fomc_dates (
   description TEXT DEFAULT 'FOMC Meeting'
 );
 
--- Catálogo de casuísticas con orden para drag-and-drop (NUEVO v3.0)
+-- Catálogo de casuísticas con orden para drag-and-drop (v3.0)
 CREATE TABLE catalogo_casuisticas (
   id     bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   nombre text NOT NULL,
+  activa boolean DEFAULT true,
   orden  integer DEFAULT 0
+);
+
+-- Catálogo de emociones (NUEVO v4.0)
+CREATE TABLE catalogo_emociones (
+  id     bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nombre text NOT NULL,
+  emoji  text DEFAULT '😐',
+  activa boolean DEFAULT true,
+  orden  integer DEFAULT 0
+);
+
+-- Estrategia Chaumer editable por sección (NUEVO v4.0)
+CREATE TABLE estrategia_chaumer (
+  id        bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  seccion   text UNIQUE NOT NULL,
+  contenido text DEFAULT ''
+);
+
+-- Diagnósticos persistidos del Coach IA (NUEVO v4.0)
+CREATE TABLE diagnosticos_diarios (
+  id               bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  diagnostico_date date UNIQUE NOT NULL,
+  sec_contexto     text,
+  sec_desarrollo   text,
+  sec_validacion   text,
+  sec_errores      text,
+  sec_aprendizaje  text,
+  sec_resumen      text,
+  sesion_data      jsonb,
+  created_at       timestamptz DEFAULT now()
 );
 ```
 
@@ -280,18 +312,32 @@ ALTER TABLE fomc_dates ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "fomc_dates_read_public" ON fomc_dates
   FOR SELECT TO anon USING (true);
 
--- Habilitar RLS en catalogo_casuisticas (read + update orden)
+-- Habilitar RLS en catalogo_casuisticas + emociones
 ALTER TABLE catalogo_casuisticas ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "casuisticas_read" ON catalogo_casuisticas
-  FOR SELECT TO anon USING (true);
-CREATE POLICY "casuisticas_update" ON catalogo_casuisticas
-  FOR UPDATE TO anon USING (true);
+CREATE POLICY "casuisticas_read" ON catalogo_casuisticas FOR SELECT TO anon USING (true);
+CREATE POLICY "casuisticas_update" ON catalogo_casuisticas FOR UPDATE TO anon USING (true);
+CREATE POLICY "casuisticas_insert" ON catalogo_casuisticas FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "casuisticas_delete" ON catalogo_casuisticas FOR DELETE TO anon USING (true);
+
+ALTER TABLE catalogo_emociones ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "emociones_read" ON catalogo_emociones FOR SELECT TO anon USING (true);
+CREATE POLICY "emociones_update" ON catalogo_emociones FOR UPDATE TO anon USING (true);
+CREATE POLICY "emociones_insert" ON catalogo_emociones FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "emociones_delete" ON catalogo_emociones FOR DELETE TO anon USING (true);
+
+ALTER TABLE estrategia_chaumer ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "estrategia_all" ON estrategia_chaumer FOR ALL TO anon USING (true) WITH CHECK (true);
+
+ALTER TABLE diagnosticos_diarios ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "diagnosticos_all" ON diagnosticos_diarios FOR ALL TO anon USING (true) WITH CHECK (true);
 
 -- Permisos para el rol anon
 GRANT INSERT, SELECT, UPDATE ON trades, sesiones TO anon;
 GRANT USAGE, SELECT ON SEQUENCE trades_id_seq, sesiones_id_seq TO anon;
 GRANT SELECT ON fomc_dates TO anon;
-GRANT SELECT, UPDATE ON catalogo_casuisticas TO anon;
+GRANT SELECT, UPDATE, INSERT, DELETE ON catalogo_casuisticas, catalogo_emociones TO anon;
+GRANT SELECT, INSERT, UPDATE ON estrategia_chaumer, diagnosticos_diarios TO anon;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon;
 ```
 
 **Pre-poblar fomc_dates (2025-2026):**
@@ -428,16 +474,17 @@ export default {
 
 **URL del Worker:** `https://broad-hall-c53f.<account>.workers.dev`
 
-**Uso desde `form.js` (v3.0):**
+**Uso desde `coach.js` (v4.0):**
 
 ```javascript
 const res = await fetch(CLAUDE_PROXY_URL, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 400,
-    messages: [{ role: 'user', content: promptConContextoMensual }]
+    model: 'claude-sonnet-4-5-20251001',
+    max_tokens: 3000,
+    system: systemPromptCache,   // estrategia + historial 60 días
+    messages: chatHistory        // multi-turn; puede incluir imágenes base64
   })
 });
 ```
@@ -472,7 +519,7 @@ TIMEZONE = "America/Bogota"
 | `SUPABASE_KEY` | Anon key de Supabase |
 | `ALLOWED_CHAT_ID` | `372127764` |
 
-**State Machine v3.0 (sin paso RETROCESO):**
+**State Machine v4.0 (con EMOCION y CONFIANZA):**
 
 ```
 Botón inline de notificación (callback 'iniciar_sesion')
@@ -482,7 +529,9 @@ Botón inline de notificación (callback 'iniciar_sesion')
 OPERO (¿Operaste hoy? Sí/No)
     ├─ No → MOTIVO → [upsert sesión con no_opero=true] → FIN
     └─ Sí →
-         CONTEXTO (lista botones: Alcista fuerte | Alcista | Mixto | Bajista | Bajista fuerte)
+         EMOCION (teclado dinámico de catalogo_emociones, 2/fila + ⏭ Omitir)
+             → CONFIANZA (★☆☆☆☆ / ★★ / ★★★ / ★★★★ / ★★★★★ + ⏭ Omitir)
+             → CONTEXTO (lista botones: Alcista fuerte | Alcista | Mixto | Bajista | Bajista fuerte)
              → CORRIDA (1ª / 2ª / 3ª corrida)
              → VELAS (número — texto libre)
              → ZONAS_CONTRA (Sí / No)
@@ -492,7 +541,7 @@ OPERO (¿Operaste hoy? Sí/No)
              → [upsert sesión completa] → resumen completo → FIN
 ```
 
-**Pasos eliminados vs v2.1:** `RETROCESO` (puntos de retroceso).
+**Nuevos pasos vs v3.0:** `EMOCION` (estado_emocional_id dinámico) y `CONFIANZA` (nivel 1-5).
 
 **Función `startSesionFlow(chatId, token, kv, env)`:**
 Función reutilizable que inicia el flujo tanto para `/sesion` como para el callback de la notificación. Garantiza que funciona incluso sin estado KV previo.
@@ -650,8 +699,10 @@ private void OnExecutionUpdate(object sender, ExecutionEventArgs e) {
 | `setup` | text | Setup del día (ej: "IRI Apertura Alcista") |
 | `chk_zonas` … `chk_estructura` | boolean | 6 ítems del checklist |
 | `analisis_trader` | text | Análisis libre del trader |
-| `resumen_ia` | text | Resumen generado por Claude (4 secciones) |
+| `resumen_ia` | text | Campo legacy (ya no se usa activamente) |
 | `imagen_url` | text | URL HTTPS de Cloudinary |
+| `estado_emocional_id` | bigint FK | FK → `catalogo_emociones.id` (capturado por bot v4.0) |
+| `nivel_confianza` | integer | 1-5 (capturado por bot v4.0) |
 
 ### Tabla `fomc_dates`
 
@@ -662,15 +713,39 @@ private void OnExecutionUpdate(object sender, ExecutionEventArgs e) {
 
 RLS habilitado — solo lectura pública.
 
-### Tabla `catalogo_casuisticas` (NUEVA v3.0)
+### Tabla `catalogo_casuisticas` (v3.0)
 
 | Columna | Tipo | Descripción |
 |---|---|---|
 | `id` | bigint PK | Auto generado |
 | `nombre` | text | Nombre del error tipificable |
+| `activa` | boolean | Visible o archivada |
 | `orden` | integer | Posición en el listado (drag-and-drop) |
 
-RLS habilitado — lectura y actualización de `orden` vía anon.
+### Tabla `catalogo_emociones` (NUEVA v4.0)
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `id` | bigint PK | Auto generado |
+| `nombre` | text | Nombre de la emoción |
+| `emoji` | text | Emoji representativo (ej: 😤) |
+| `activa` | boolean | Visible o archivada |
+| `orden` | integer | Posición en el listado |
+
+### Tabla `estrategia_chaumer` (NUEVA v4.0)
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `seccion` | text UNIQUE | Identificador de sección (ej: `fundamentos`) |
+| `contenido` | text | Texto editable de la sección |
+
+### Tabla `diagnosticos_diarios` (NUEVA v4.0)
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `diagnostico_date` | date UNIQUE | Una fila por día |
+| `sec_*` | text | 6 columnas: contexto, desarrollo, validacion, errores, aprendizaje, resumen |
+| `sesion_data` | jsonb | Snapshot de la sesión en el momento del análisis |
 
 ### Funciones en `db.js`
 
@@ -681,7 +756,25 @@ RLS habilitado — lectura y actualización de `orden` vía anon.
 | `getCasuisticasByMonth(year, month)` | Casuísticas del mes |
 | `getAllCasuisticas()` | Todas las casuísticas con `casuistica` y `sesion_date` |
 | `getCatalogoCasuisticas()` | Catálogo ordenado por `orden ASC` |
-| `updateCasuisticaOrden(id, orden)` | Actualiza el orden de una casuística (drag-and-drop) |
+| `addCatalogoCasuistica(nombre)` | Agrega casuística |
+| `toggleCatalogoCasuistica(id, activa)` | Activa/desactiva |
+| `renameCatalogoCasuistica(id, nombre)` | Renombra |
+| `deleteCatalogoCasuistica(id)` | Elimina |
+| `updateCasuisticaOrden(id, orden)` | Actualiza orden (drag-and-drop) |
+| `getCatalogoEmociones()` | Emociones activas ordenadas |
+| `addCatalogoEmocion(nombre, emoji)` | Agrega emoción |
+| `toggleCatalogoEmocion(id, activa)` | Activa/desactiva emoción |
+| `renameCatalogoEmocion(id, nombre, emoji)` | Edita nombre y emoji |
+| `deleteCatalogoEmocion(id)` | Elimina emoción |
+| `updateEmocionOrden(id, orden)` | Actualiza orden |
+| `getEstrategiaSection(seccion)` | Lee sección de estrategia |
+| `upsertEstrategiaSection(seccion, contenido)` | Guarda sección |
+| `getDiagnosticoByDate(date)` | Diagnóstico guardado de una fecha |
+| `saveDiagnostico(date, secciones, sesionData)` | Persiste diagnóstico |
+| `getHistorialDiagnosticos(limit)` | Últimos N diagnósticos |
+| `getSessionForCoach(date)` | Datos de sesión + trades para análisis |
+| `getSesionesForContext(days)` | Historial de sesiones (system prompt) |
+| `upsertEmocionConfianza(date, emocionId, confianza)` | Guarda emoción y confianza del día |
 
 ---
 
@@ -716,19 +809,20 @@ Luego actualizar: `db.js`, `SupabaseAutoExport.cs` (recompilar), `TelegramBot/wo
 
 ### Cambiar el modelo de IA
 
-En `form.js`, buscar y modificar:
+En `coach.js`, función `callClaude()`, buscar y modificar:
 ```javascript
-model: 'claude-haiku-4-5-20251001'
+model: 'claude-sonnet-4-5-20251001'
 ```
 No hay cambios en CF Worker #1 (es proxy genérico).
 
-### Modificar el prompt del coach IA
+### Modificar el prompt del Coach IA
 
-En `form.js`, función `generateAI()`. El prompt incluye:
-- Instrucción inicial (coach estricto)
-- Bloque `═══ CONTEXTO DEL MES ═══`
-- Bloque `═══ SESIÓN DE HOY ═══`
-- Bloque `═══ INSTRUCCIONES ═══` (4 secciones fijas, máx 120 palabras)
+En `coach.js`, función `buildSystemPrompt()`. El system prompt incluye:
+- Instrucción inicial (coach estricto, metodología Chaumer)
+- Secciones de estrategia Chaumer desde `estrategia_chaumer`
+- Historial 60 días desde `getSesionesForContext(60)`
+- Patrones detectados (errores recurrentes, días mejor/peor)
+- Sesión del día (trades, checklist, emoción, confianza, notas)
 
 ### Agregar un setup al bot Telegram
 
@@ -823,7 +917,7 @@ O desde Cloudflare Dashboard → KV → buscar key `s:372127764` → Delete.
 | Síntoma | Causa probable | Solución |
 |---|---|---|
 | App muestra versión vieja | Service Worker cacheó la app anterior | Abrir Safari → navegar a la URL → forzar reload → volver al ícono |
-| Nunca recibe actualizaciones | Estrategia cache-first (versión antigua) | Verificar que `sw.js` use network-first para APP_SHELL y la versión sea `nqjournal-v3` |
+| Nunca recibe actualizaciones | Estrategia cache-first (versión antigua) | Verificar que `sw.js` use network-first para APP_SHELL y la versión sea `nqjournal-v4` |
 
 ---
 
@@ -835,16 +929,16 @@ O desde Cloudflare Dashboard → KV → buscar key `s:372127764` → Delete.
 | GitHub Pages | Free | 1 GB repo, 100 GB transfer | Negligible | $0 |
 | Cloudflare Workers | Free | 100,000 req/día | ~300 req/día | $0 |
 | Cloudflare KV | Free | 100,000 reads/día | ~100 reads/día | $0 |
-| Anthropic API | Pay-per-use | — | ~20 sesiones × $0.0008 | ~$0.016 |
+| Anthropic Claude | Pay-per-use | — | ~20 diagnósticos × $0.02 | ~$0.40 |
 | Cloudinary | Free | 25 GB storage, 25 GB BW | <100 MB | $0 |
-| **TOTAL** | | | | **~$0.02/mes** |
+| **TOTAL** | | | | **~$0.40/mes** |
 
-**Modelo de IA:** `claude-haiku-4-5-20251001`
-- Input: $0.80 / MTok
-- Output: $4.00 / MTok
-- Costo por resumen v3.0 (~2000 tokens in + ~400 tokens out): ~$0.0008
+**Modelo de IA:** `claude-sonnet-4-5-20251001`
+- Input: $3.00 / MTok
+- Output: $15.00 / MTok
+- Costo por diagnóstico v4.0 (~4000 tokens in + ~1500 tokens out): ~$0.02
 
-> El costo por resumen duplicó respecto a v2.1 porque el prompt v3.0 incluye contexto mensual completo. Sigue siendo despreciable (~$0.02/mes con 20 sesiones).
+> Aumentó respecto a v3.0 porque usamos Sonnet (vs. Haiku) con max_tokens=3000 y un system prompt rico con estrategia + historial 60 días. Sigue siendo despreciable para el uso personal (~$0.40/mes con 20 sesiones diarias).
 
 ---
 
@@ -854,8 +948,9 @@ O desde Cloudflare Dashboard → KV → buscar key `s:372127764` → Delete.
 |---|---|---|---|
 | 1.0 | 2026-05-15 | kristeb-trader | Versión inicial del manual técnico |
 | 2.1 | 2026-05-20 | kristeb-trader | Galería de imágenes (`gallery.js`); tabla `fomc_dates`; festivos CME automáticos; disciplina 7 factores clickable; error frecuente desde casuísticas; pestaña Imagen primera en modal; motivo "Festivo" en formulario; fusión ATM 3s; comisión real `ex.Commission`; nuevas funciones `db.js` |
-| 3.0 | 2026-05-26 | kristeb-trader | **Dashboard Anual** (`annual.js`): KPI strip 8 métricas, equity curve, barras P&L mensual, tabla mensual con account filter (PA-APEX default), capital inicial en localStorage, totals row coloreados. **Bot Telegram**: botón automático desde notificación de trade, contexto como lista de 5 opciones, paso RETROCESO eliminado, setup como lista de 6 opciones (2 por fila), resumen completo tras guardar, "Análisis del día" (renombrado de "Reflexión"). **Coach IA**: prompt enriquecido con contexto mensual (5 fetches paralelos), coach estricto y directo, salida estructurada 4 secciones fijas (máx 120 palabras), max_tokens=400, modelo `claude-haiku-4-5-20251001`. **PWA**: `sw.js` v3 (nqjournal-v3) con network-first para app shell — updates automáticos en iPhone. **Casuísticas**: tabla `catalogo_casuisticas` con columna `orden` para drag-and-drop; `data.js` simplificado; `db.js` con `updateCasuisticaOrden()`. **Break Even**: clasificación ±$6 como `resultado = 'be'`. |
+| 3.0 | 2026-05-26 | kristeb-trader | **Dashboard Anual** (`annual.js`): KPI strip 8 métricas, equity curve, barras P&L mensual, tabla mensual con account filter (PA-APEX default), capital inicial en localStorage, totals row coloreados. **Bot Telegram**: botón automático desde notificación de trade, contexto como lista de 5 opciones, paso RETROCESO eliminado, setup como lista de 6 opciones (2 por fila), resumen completo tras guardar, "Análisis del día". **Coach IA v2**: prompt enriquecido con contexto mensual, coach estricto, 4 secciones, max_tokens=400, `claude-haiku-4-5-20251001`. **PWA**: `sw.js` v3 (nqjournal-v3). **Casuísticas**: tabla `catalogo_casuisticas` con `orden` para drag-and-drop. **Break Even** ±$6. |
+| 4.0 | 2026-05-27 | kristeb-trader | **Coach IA v3 — módulo dedicado** (`coach.js`, `section-coach`): diagnóstico 6 secciones (Contexto, Desarrollo, Validación, Errores, Aprendizaje, Resumen), chat multi-turn con historial, subida de imagen (Claude Vision), selector de fecha para analizar días pasados, diagnóstico persistido en `diagnosticos_diarios`, estrategia Chaumer editable por sección en `estrategia_chaumer`. Modelo actualizado a `claude-sonnet-4-5-20251001`, max_tokens=3000. **Emociones**: tabla `catalogo_emociones` + gestión en `data.js` + campos `estado_emocional_id`/`nivel_confianza` en `sesiones`. **Bot Telegram v4**: pasos EMOCION y CONFIANZA añadidos al flujo. **PWA**: `sw.js` v4 (nqjournal-v4) — agrega `coach.js` al app shell. **form.js**: eliminado `generateAI()`, reemplazado por textarea "Notas adicionales". |
 
 ---
 
-*Manual Técnico — Trading Journal NQ Futures | Versión 3.0 | 2026-05-26*
+*Manual Técnico — Trading Journal NQ Futures | Versión 4.0 | 2026-05-27*

@@ -1,7 +1,7 @@
 # Trading Journal NQ Futures
 ## Guía Funcional del Sistema
 
-**Versión:** 3.0 | **Fecha:** Mayo 2026
+**Versión:** 4.0 | **Fecha:** Mayo 2026
 
 ---
 
@@ -53,17 +53,20 @@ Toda la información va a una base de datos en la nube. No está en tu computado
 │                             BASE DE DATOS                                │
 ├──────────────────┬────────────────────┬───────────────┬──────────────────┤
 │                  │                    │               │                  │
-│  TABLA TRADES    │  TABLA SESIONES    │  FOMC_DATES   │  CATALOGO_       │
-│  (automático)    │  (manual)          │  (referencia) │  CASUISTICAS     │
+│  TABLA TRADES    │  TABLA SESIONES    │  FOMC_DATES   │  CATALOGOS       │
+│  (automático)    │  (manual)          │  (referencia) │  (catálogos)     │
 │                  │                    │               │                  │
-│  Un registro por │  Un registro por   │  Fechas FOMC  │  Catálogo de     │
-│  cada trade      │  día operado       │  2025-2026    │  errores         │
-│                  │                    │               │  tipificables    │
-│  Trade entry/    │  Contexto, corrida │  Solo lectura │  con orden para  │
-│  exit, profit,   │  setup, checklist  │  pre-poblada  │  drag-and-drop   │
-│  commission,     │  análisis, imagen  │               │                  │
-│  resultado       │  resumen IA        │               │                  │
+│  Un registro por │  Un registro por   │  Fechas FOMC  │  casuisticas     │
+│  cada trade      │  día operado       │  2025-2026    │  emociones       │
 │                  │                    │               │                  │
+│  Trade entry/    │  Contexto, corrida │  Solo lectura │  ESTRATEGIA_     │
+│  exit, profit,   │  setup, checklist  │  pre-poblada  │  CHAUMER         │
+│  commission,     │  emoción, conf.    │               │  (6 secciones    │
+│  resultado       │  notas adicionales │               │   editables)     │
+│                  │                    │               │                  │
+│                  │                    │               │  DIAGNOSTICOS_   │
+│                  │                    │               │  DIARIOS         │
+│                  │                    │               │  (Coach IA)      │
 └──────────────────┴────────────────────┴───────────────┴──────────────────┘
 ```
 
@@ -71,7 +74,7 @@ Toda la información va a una base de datos en la nube. No está en tu computado
 
 ## ¿Qué puedes ver en el Dashboard?
 
-El dashboard es una página web accesible desde cualquier navegador — y también instalable como PWA en iPhone/Android. Tiene **7 secciones**:
+El dashboard es una página web accesible desde cualquier navegador — y también instalable como PWA en iPhone/Android. Tiene **8 secciones**:
 
 ### 📅 Sección 1 — Calendario
 
@@ -169,8 +172,10 @@ Todos tus trades en una tabla filtrable y buscable.
 ### ✍️ Sección 5 — Registrar Sesión
 
 Formulario para documentar tu sesión del día. Si ya existe un registro para hoy, lo edita en lugar de crear uno nuevo. Al terminar puedes:
-- Pulsar **"Generar resumen"** para que el coach IA (Claude) redacte un análisis estructurado de tu sesión con contexto del mes completo.
+- Escribir notas adicionales en el campo "Notas adicionales" (libre).
 - Subir la imagen del gráfico del día.
+
+> El análisis IA ya no se genera desde aquí — ver **Sección 8: Coach IA**.
 
 **Motivos de no operación disponibles:**
 - FOMC / Fed
@@ -199,7 +204,7 @@ Seis gráficas para identificar patrones en tu operativa:
 
 ---
 
-### 📆 Sección 7 — Resumen Anual (NUEVO v3.0)
+### 📆 Sección 7 — Resumen Anual
 
 Vista consolidada de todo un año de trading. Permite comparar meses, detectar estacionalidad y evaluar el desempeño global.
 
@@ -254,6 +259,55 @@ Mismo principio que en el calendario — por defecto PA-APEX, persistido en `loc
 
 ---
 
+### 🤖 Sección 8 — Coach IA (NUEVO v4.0)
+
+Módulo dedicado de análisis inteligente con Claude Sonnet. Puede analizar **cualquier fecha** — no solo hoy.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  COACH IA                               Fecha: [2026-05-27 ▼] — hoy │
+│                                                                      │
+│  Estado emocional: [😤 Frustrado ▼]  Confianza: ★★★☆☆               │
+│                                                                      │
+│  [ Análisis ]  [ Chat ]  [ Historial ]  [ Estrategia ]              │
+├─────────────────────────────────────────────────────────────────────┤
+│  [Analizar sesión]  [🖼 Subir imagen]                                │
+├─────────────────────────────────────────────────────────────────────┤
+│  📋 CONTEXTO      │  📈 DESARROLLO    │  ✅ VALIDACIÓN              │
+│  Situación del   │  Evolución de    │  Qué salió bien             │
+│  día en contexto │  la sesión       │  y por qué                  │
+│  histórico       │                  │                              │
+├──────────────────┼──────────────────┼─────────────────────────────┤
+│  ⚠️ ERRORES       │  📚 APRENDIZAJE   │  📝 RESUMEN                 │
+│  Qué falló con  │  Lección concreta│  Síntesis de                │
+│  ref. a la      │  + acción para   │  2-3 frases                 │
+│  estrategia     │  mañana          │                              │
+├─────────────────────────────────────────────────────────────────────┤
+│  [Guardar diagnóstico]                                               │
+├─────────────────────────────────────────────────────────────────────┤
+│  Chat:                                                               │
+│  Coach: ¿Qué quieres profundizar?                                   │
+│  [Escribe tu pregunta...]                         [Enviar]          │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Pestañas del Coach IA:**
+
+| Pestaña | Función |
+|---|---|
+| Análisis | Genera el diagnóstico de 6 secciones con Sonnet · guarda en `diagnosticos_diarios` |
+| Chat | Conversación multi-turn · mantiene historial de mensajes · acepta imágenes |
+| Historial | Lista de diagnósticos guardados · clic para recargar cualquier fecha |
+| Estrategia | Edición de las 6 secciones de la estrategia Chaumer · se guardan en `estrategia_chaumer` |
+
+**Características clave:**
+- **Selector de fecha**: analizás cualquier día pasado para llenar la base de datos histórica.
+- **Imagen**: se puede adjuntar una captura del chart — Claude la analiza con Vision API.
+- **Diagnóstico persistido**: el análisis se guarda y se puede recuperar desde Historial.
+- **System prompt dinámico**: incluye la estrategia Chaumer actual + 60 días de historial + patrones detectados.
+
+---
+
 ## Las 6 Reglas del Checklist
 
 Cada vez que registras una sesión — desde el web o el bot — evalúas si cumpliste estas 6 reglas:
@@ -275,8 +329,8 @@ El sistema calcula automáticamente tu **score de disciplina** por sesión, eval
 
 En lugar de abrir el dashboard web, puedes registrar tu sesión diaria directamente desde Telegram. El bot te hace preguntas una por una con botones para responder.
 
-**Novedad v3.0: activación automática desde notificación de trade.**
-Cuando NT8 registra un trade, recibes la notificación con un botón "📝 Registrar sesión del día". Al presionarlo, el bot inicia el flujo directamente — ya no necesitas escribir `/sesion`.
+**Novedades v4.0: pasos EMOCION y CONFIANZA añadidos al flujo.**
+Ahora el bot pregunta emoción (del catálogo dinámico) y nivel de confianza antes de continuar con el contexto.
 
 ```
 [Notificación de trade en Telegram]
@@ -291,6 +345,21 @@ Bot:  📅 Registro de sesión — 2026-05-15
       [ ✅ Sí, operé ]  [ ❌ No operé ]
 
 Tú:   ✅ Sí, operé
+
+Bot:  😊 ¿Cómo llegás emocionalmente hoy?
+      [ 😤 Frustrado ]  [ 😰 Ansioso ]
+      [ 😌 Tranquilo ]  [ 💪 Confiado ]
+      ...                [ ⏭ Omitir ]
+
+Tú:   😌 Tranquilo
+
+Bot:  ⭐ Nivel de confianza
+      [ ★☆☆☆☆ Muy baja ]  [ ★★☆☆☆ Baja ]
+      [ ★★★☆☆ Media ]
+      [ ★★★★☆ Alta ]  [ ★★★★★ Muy alta ]
+      [ ⏭ Omitir ]
+
+Tú:   ★★★☆☆ Media
 
 Bot:  📊 Contexto de mercado
       [ 📈 Alcista fuerte ]  [ ↗ Alcista ]
@@ -342,47 +411,51 @@ Bot:  ✅ Sesión guardada — 2026-05-15
       💬 Análisis: "Buena ejecución, pero la zona no tenía consecución."
 ```
 
-**Cambios respecto a v2.1:**
+**Cambios respecto a versiones anteriores:**
 
-| Aspecto | v2.1 | v3.0 |
-|---|---|---|
-| Inicio del flujo | Solo con `/sesion` | Con `/sesion` O con el botón de la notificación |
-| Contexto de mercado | Texto libre | Lista de 5 opciones con botones |
-| Puntos de retroceso | Paso manual | **Eliminado** (se calcula automáticamente) |
-| Setup | Texto libre | Lista de 6 setups con botones (2 por fila) |
-| Resumen tras guardar | Solo confirmación básica | **Resumen completo** con todos los campos y checklist ítem por ítem |
-| Nombre del último paso | "Reflexión del día" | **"Análisis del día"** |
+| Aspecto | v2.1 | v3.0 | v4.0 |
+|---|---|---|---|
+| Inicio del flujo | Solo con `/sesion` | Con `/sesion` O botón notificación | Igual |
+| Emoción y Confianza | No existía | No existía | **NUEVO** — pasos EMOCION + CONFIANZA |
+| Contexto de mercado | Texto libre | Lista de 5 opciones | Igual |
+| Puntos de retroceso | Paso manual | **Eliminado** | Eliminado |
+| Setup | Texto libre | Lista de 6 setups (2/fila) | Igual |
+| Resumen tras guardar | Solo confirmación | Resumen completo | Igual + muestra emoción/confianza |
 
 ---
 
-## El Coach IA — Resumen Inteligente de Sesión (v3.0)
+## El Coach IA — Análisis Inteligente de Sesión (v4.0)
 
-Al hacer clic en **"Generar resumen"** en el formulario web, el sistema analiza tu sesión con un **coach estricto** que no suaviza los errores.
+Módulo dedicado accesible desde la sección **Coach IA** del dashboard. Analiza cualquier día — pasado o presente — con un diagnóstico de 6 secciones basado en la metodología Alfredo Chaumer.
 
 **¿Qué datos usa el coach?**
 
 | Fuente | Datos |
 |---|---|
-| Sesión de hoy | Trades, checklist, casuísticas, análisis del trader, contexto |
-| Mes en curso | Trades totales, win rate mensual, P&L acumulado, evolución semanal |
-| Historial de errores | Top casuísticas recurrentes en stops del mes |
-| Disciplina promedio | Score de checklist de todas las sesiones del mes |
+| Sesión del día analizado | Trades, checklist, casuísticas, emoción, confianza, notas del trader |
+| Historial 60 días | Win rate, P&L, disciplina, patrones, errores recurrentes |
+| Estrategia Chaumer | 6 secciones editables por el trader (fundamentos, setups, gestión, psicología…) |
+| Imagen (opcional) | Captura del chart analizada con Claude Vision |
 
-**Estructura del análisis generado (4 secciones fijas, máx. 120 palabras):**
+**Estructura del análisis (6 secciones, ~3000 tokens de salida):**
 
-1. **Evaluación** — Lo más relevante de hoy comparado con el patrón del mes.
-2. **Patrón detectado** — Fortaleza o debilidad que se repite en el mes.
-3. **Acción concreta** — Una sola acción específica y medible para mañana.
-4. **Cierre motivacional** — 1 frase corta de aliento basada en los datos.
+1. **Contexto** — Situación del día en el contexto histórico.
+2. **Desarrollo** — Cómo evolucionó la sesión.
+3. **Validación** — Qué salió bien y por qué.
+4. **Errores** — Qué falló con referencias a la estrategia.
+5. **Aprendizaje** — Lección concreta y acción para mañana.
+6. **Resumen** — Síntesis de 2-3 frases.
 
-**Tono:** directo y estricto. Si el trader cometió errores, el coach los señala sin suavizarlos. No genera falsas motivaciones cuando los datos muestran mal desempeño.
+**Tono:** directo y estricto. Señala errores sin suavizarlos. Fundamenta cada observación en la estrategia Chaumer del trader.
+
+**Diagnóstico persistido:** se guarda en `diagnosticos_diarios`. Recuperable desde la pestaña Historial.
 
 ---
 
 ## Resumen Visual del Sistema Completo
 
 ```
-                    TRADING JOURNAL NQ FUTURES v3.0
+                    TRADING JOURNAL NQ FUTURES v4.0
                     ════════════════════════════════
 
   ┌─────────────────────────────────────────────────────────────┐
@@ -424,7 +497,8 @@ Al hacer clic en **"Generar resumen"** en el formulario web, el sistema analiza 
                     │  📋 Tabla de trades    │
                     │  ✍️  Registrar sesión  │
                     │  📈 Gráficas           │
-                    │  📆 Anual ← NUEVO      │
+                    │  📆 Anual              │
+                    │  🤖 Coach IA ← NUEVO   │
                     └────────────────────────┘
 ```
 
@@ -440,7 +514,7 @@ Al hacer clic en **"Generar resumen"** en el formulario web, el sistema analiza 
 | Sin métricas de disciplina | Score de disciplina (7 factores) por sesión, con desglose clickable |
 | Registrar la sesión tomaba mucho tiempo | El bot la registra en 2 minutos, con botón directo desde notificación |
 | Las imágenes del día se perdían | Galería de imágenes con lightbox, agrupadas por semana |
-| Sin análisis externo de la sesión | Coach IA estricto con contexto mensual completo, 4 secciones estructuradas |
+| Sin análisis externo de la sesión | Coach IA con Sonnet — diagnóstico 6 secciones, chat multi-turn, historial persistido, análisis de imagen |
 | No había visibilidad de festivos CME | Festivos calculados automáticamente |
 | Sin referencia de días FOMC | Días FOMC marcados desde la base de datos |
 | Trades con múltiples contratos ATM registrados por separado | Fusión automática de 3s consolida contratos |
