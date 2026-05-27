@@ -2,7 +2,7 @@
 const Coach = (() => {
 
   const CLAUDE_URL = 'https://broad-hall-c53f.kristerock.workers.dev/api/claude'
-  const MODEL      = 'claude-3-5-sonnet-20241022'
+  const MODEL      = 'claude-sonnet-4-6'
   const MAX_TOKENS = 3000
 
   // ── Estado interno ─────────────────────────────────────────────────────
