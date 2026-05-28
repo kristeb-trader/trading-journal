@@ -1651,6 +1651,23 @@ body.modal-open { overflow: hidden; }
   color: var(--text);
   border-bottom-left-radius: 4px;
 }
+/* Separador de conversación guardada */
+.chat-separator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  color: var(--text3);
+  font-size: 0.75rem;
+}
+.chat-separator::before,
+.chat-separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
 /* Typing dots */
 .chat-typing-dots {
   display: flex;

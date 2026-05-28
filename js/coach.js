@@ -887,6 +887,26 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
         aprendizaje: diag.sec_aprendizaje,
         resumen:     diag.sec_resumen_compacto,
       })
+
+      // Restaurar conversación guardada en el chat
+      if (diag.chat_messages?.length) {
+        chatHistory = diag.chat_messages
+        const chatEl = document.getElementById('coachChatMessages')
+        if (chatEl) {
+          const sep = document.createElement('div')
+          sep.className = 'chat-separator'
+          sep.innerHTML = `<span>── Conversación del ${fmtDate(date)} ──</span>`
+          chatEl.appendChild(sep)
+          diag.chat_messages.forEach(msg => {
+            // content puede ser string (texto) o array (imagen + texto)
+            const texto = Array.isArray(msg.content)
+              ? (msg.content.find(c => c.type === 'text')?.text || '')
+              : (msg.content || '')
+            if (texto.trim()) renderMensaje(msg.role, texto)
+          })
+        }
+      }
+
       diagnosticoGuardado = true
       document.querySelectorAll('.coach-save-btn').forEach(btn => {
         btn.innerHTML = '<i class="ti ti-circle-check"></i> Ya guardado'
