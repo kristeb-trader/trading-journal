@@ -36,6 +36,48 @@ const SessionForm = (() => {
         tradingFields.classList.remove('hidden')
       }
     })
+
+    // Mostrar campos extra cuando el motivo es "Setup válido no tomado"
+    document.getElementById('motivoNoOpero').addEventListener('change', function() {
+      const isSetupNoTomado = this.value === 'Setup válido no tomado'
+      document.getElementById('setupNoTomadoGroup').classList.toggle('hidden', !isSetupNoTomado)
+    })
+
+    // Btn-group: motivo no entrada
+    setupBtnGroupHidden('motivoNoEntradaGroup', 'motivoNoEntradaVal')
+
+    // Btn-group: zona naranja en setup no tomado
+    document.getElementById('zonaNaranjaHabiaSNTGroup')?.querySelectorAll('.btn-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('zonaNaranjaHabiaSNTGroup').querySelectorAll('.btn-option').forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+        document.getElementById('zonaNaranjaHabiaVal').value = btn.dataset.value
+        document.getElementById('zonaNaranjaReaccionSNT').classList.toggle('hidden', btn.dataset.value !== 'true')
+      })
+    })
+    setupBtnGroupHidden('zonaNaranjaReaccionSNTGroup', 'zonaNaranjaReaccionVal')
+
+    // Btn-group: zona naranja en trade normal
+    document.getElementById('zonaNaranjaHabiaGroup')?.querySelectorAll('.btn-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('zonaNaranjaHabiaGroup').querySelectorAll('.btn-option').forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+        document.getElementById('zonaNaranjaHabiaTradeVal').value = btn.dataset.value
+        document.getElementById('zonaNaranjaReaccionGroup').classList.toggle('hidden', btn.dataset.value !== 'true')
+      })
+    })
+    setupBtnGroupHidden('zonaNaranjaReaccionTradeGroup', 'zonaNaranjaReaccionTradeVal')
+  }
+
+  // Helper: btn-group que escribe en un hidden input
+  function setupBtnGroupHidden(groupId, hiddenId) {
+    document.getElementById(groupId)?.querySelectorAll('.btn-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById(groupId).querySelectorAll('.btn-option').forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+        document.getElementById(hiddenId).value = btn.dataset.value
+      })
+    })
   }
 
   function setupImageUpload() {
@@ -144,6 +186,27 @@ const SessionForm = (() => {
     payload.resumen_ia = document.getElementById('resumenIA').value || null
     payload.imagen_url = document.getElementById('imagenUrl').value || null
 
+    // Setup válido no tomado (aplica cuando no_opero = true)
+    if (noOpero) {
+      const svnt = document.getElementById('motivoNoOpero').value === 'Setup válido no tomado'
+      payload.setup_valido_no_tomado = svnt
+      if (svnt) {
+        payload.setup_observado   = document.getElementById('setupObservado').value || null
+        payload.motivo_no_entrada = document.getElementById('motivoNoEntradaVal').value || null
+        // Zona naranja desde el bloque "setup no tomado"
+        const znHabia = document.getElementById('zonaNaranjaHabiaVal').value
+        payload.zona_naranja_habia    = znHabia === 'true' ? true : znHabia === 'false' ? false : null
+        payload.zona_naranja_reaccion = document.getElementById('zonaNaranjaReaccionVal').value || null
+        payload.zona_naranja_nota     = document.getElementById('zonaNaranjaNotaVal').value || null
+      }
+    } else {
+      // Zona naranja desde el bloque de trading normal
+      const znHabia = document.getElementById('zonaNaranjaHabiaTradeVal').value
+      payload.zona_naranja_habia    = znHabia === 'true' ? true : znHabia === 'false' ? false : null
+      payload.zona_naranja_reaccion = document.getElementById('zonaNaranjaReaccionTradeVal').value || null
+      payload.zona_naranja_nota     = document.getElementById('zonaNaranjaNotaTradeVal').value || null
+    }
+
     return payload
   }
 
@@ -231,6 +294,44 @@ const SessionForm = (() => {
       }
     } else {
       document.getElementById('motivoNoOpero').value = sesion.motivo_no_opero || ''
+    }
+
+    // Setup válido no tomado
+    if (sesion.setup_valido_no_tomado) {
+      document.getElementById('motivoNoOpero').value = 'Setup válido no tomado'
+      document.getElementById('motivoNoOpero').dispatchEvent(new Event('change'))
+      if (sesion.setup_observado)   document.getElementById('setupObservado').value = sesion.setup_observado
+      if (sesion.motivo_no_entrada) {
+        document.getElementById('motivoNoEntradaVal').value = sesion.motivo_no_entrada
+        document.querySelector(`#motivoNoEntradaGroup [data-value="${sesion.motivo_no_entrada}"]`)?.classList.add('active')
+      }
+      if (sesion.zona_naranja_habia != null) {
+        const v = String(sesion.zona_naranja_habia)
+        document.getElementById('zonaNaranjaHabiaVal').value = v
+        document.querySelector(`#zonaNaranjaHabiaSNTGroup [data-value="${v}"]`)?.classList.add('active')
+        if (sesion.zona_naranja_habia) {
+          document.getElementById('zonaNaranjaReaccionSNT').classList.remove('hidden')
+          if (sesion.zona_naranja_reaccion) {
+            document.getElementById('zonaNaranjaReaccionVal').value = sesion.zona_naranja_reaccion
+            document.querySelector(`#zonaNaranjaReaccionSNTGroup [data-value="${sesion.zona_naranja_reaccion}"]`)?.classList.add('active')
+          }
+          document.getElementById('zonaNaranjaNotaVal').value = sesion.zona_naranja_nota || ''
+        }
+      }
+    }
+    // Zona naranja en sesión con trade
+    if (!sesion.no_opero && sesion.zona_naranja_habia != null) {
+      const v = String(sesion.zona_naranja_habia)
+      document.getElementById('zonaNaranjaHabiaTradeVal').value = v
+      document.querySelector(`#zonaNaranjaHabiaGroup [data-value="${v}"]`)?.classList.add('active')
+      if (sesion.zona_naranja_habia) {
+        document.getElementById('zonaNaranjaReaccionGroup').classList.remove('hidden')
+        if (sesion.zona_naranja_reaccion) {
+          document.getElementById('zonaNaranjaReaccionTradeVal').value = sesion.zona_naranja_reaccion
+          document.querySelector(`#zonaNaranjaReaccionTradeGroup [data-value="${sesion.zona_naranja_reaccion}"]`)?.classList.add('active')
+        }
+        document.getElementById('zonaNaranjaNotaTradeVal').value = sesion.zona_naranja_nota || ''
+      }
     }
 
     document.getElementById('analisisTrader').value = sesion.analisis_trader || ''

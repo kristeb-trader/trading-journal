@@ -89,6 +89,22 @@ const Coach = (() => {
       ? casuisticas.map(c => `  - ${c.resultado === 'T' ? 'Target' : 'Stop'}: ${c.casuistica}`).join('\n')
       : '  Ninguna'
 
+    // Setup válido no tomado
+    let setupNoTomadoStr = ''
+    if (sesion?.setup_valido_no_tomado) {
+      setupNoTomadoStr = `\nSETUP VÁLIDO NO TOMADO: ${sesion.setup_observado || 'No especificado'}
+Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
+    }
+
+    // Zona naranja testeo
+    let zonaNaranjaStr = 'No registrado'
+    if (sesion?.zona_naranja_habia === true) {
+      zonaNaranjaStr = `SÍ había zona naranja en el camino al target
+  Reacción del precio: ${sesion.zona_naranja_reaccion || 'No registrado'}${sesion.zona_naranja_nota ? `\n  Nota: ${sesion.zona_naranja_nota}` : ''}`
+    } else if (sesion?.zona_naranja_habia === false) {
+      zonaNaranjaStr = 'NO había zona naranja'
+    }
+
     // Análisis del trader
     const analisisTrader = sesion?.analisis_trader || 'No registrado'
 
@@ -135,6 +151,9 @@ ${casStr}
 
 Análisis del trader:
   "${analisisTrader}"
+${setupNoTomadoStr}
+Zonas naranjas (testeo experimental):
+  ${zonaNaranjaStr}
 
 ---
 

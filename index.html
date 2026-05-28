@@ -221,13 +221,58 @@
               <label for="motivoNoOpero">Motivo de no operación</label>
               <select id="motivoNoOpero" name="motivo_no_opero">
                 <option value="">Seleccionar...</option>
-                <option value="FOMC">FOMC / Fed</option>
-                <option value="Festivo">Festivo (mercado cerrado)</option>
+                <option value="Setup válido no tomado">⚠️ Setup válido — no entré (duda/miedo)</option>
                 <option value="Sin setup">Sin entradas válidas</option>
                 <option value="Noticia roja">Noticia roja activa</option>
+                <option value="FOMC">FOMC / Fed</option>
+                <option value="Festivo">Festivo (mercado cerrado)</option>
                 <option value="Personal">Motivo personal</option>
                 <option value="Otro">Otro</option>
               </select>
+
+              <!-- Campos extra cuando hay setup válido no tomado -->
+              <div id="setupNoTomadoGroup" class="hidden" style="margin-top:12px">
+                <label style="margin-bottom:6px;display:block">Setup que identificaste</label>
+                <select id="setupObservado" name="setup_observado">
+                  <option value="">Seleccionar setup...</option>
+                  <option>IRI Apertura Alcista</option>
+                  <option>IRI Apertura Bajista</option>
+                  <option>IRI Continuación Alcista</option>
+                  <option>IRI Continuación Bajista</option>
+                  <option>Reingreso Alcista</option>
+                  <option>Reingreso Bajista</option>
+                </select>
+                <label style="margin-top:10px;margin-bottom:6px;display:block">Motivo por el que no entraste</label>
+                <div class="btn-group" id="motivoNoEntradaGroup">
+                  <button type="button" class="btn-option" data-value="Duda">Duda</button>
+                  <button type="button" class="btn-option" data-value="Miedo">Miedo</button>
+                  <button type="button" class="btn-option" data-value="Zona naranja">Zona naranja</button>
+                  <button type="button" class="btn-option" data-value="Desconfianza">Desconfianza</button>
+                  <button type="button" class="btn-option" data-value="Otro">Otro</button>
+                </div>
+                <input type="hidden" id="motivoNoEntradaVal" name="motivo_no_entrada">
+
+                <!-- Zona naranja testeo (setup no tomado) -->
+                <div id="zonaNaranjaSNT" style="margin-top:12px">
+                  <label style="margin-bottom:6px;display:block">🟠 ¿Había zona naranja en el camino al target?</label>
+                  <div class="btn-group" id="zonaNaranjaHabiaSNTGroup">
+                    <button type="button" class="btn-option" data-value="true">Sí</button>
+                    <button type="button" class="btn-option" data-value="false">No</button>
+                  </div>
+                  <input type="hidden" id="zonaNaranjaHabiaVal" name="zona_naranja_habia">
+                  <div id="zonaNaranjaReaccionSNT" class="hidden" style="margin-top:10px">
+                    <label style="margin-bottom:6px;display:block">¿Qué hizo el precio con la zona naranja?</label>
+                    <div class="btn-group" id="zonaNaranjaReaccionSNTGroup">
+                      <button type="button" class="btn-option" data-value="RESPETO">Respetó (rebotó)</button>
+                      <button type="button" class="btn-option" data-value="IGNORO">Ignoró (pasó de largo)</button>
+                      <button type="button" class="btn-option" data-value="PARCIAL">Parcial</button>
+                    </div>
+                    <input type="hidden" id="zonaNaranjaReaccionVal" name="zona_naranja_reaccion">
+                    <input type="text" id="zonaNaranjaNotaVal" name="zona_naranja_nota"
+                      placeholder="Contexto adicional (opcional)" style="margin-top:8px">
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Checklist Pre-Sesión (siempre visible) -->
@@ -330,6 +375,27 @@
                     <span class="check-box"></span>
                     <span>Estructura de Impulso + Retroceso + Impulso, Fluida</span>
                   </label>
+                </div>
+              </div>
+
+              <!-- Zona Naranja — testeo experimental (sesión con trade) -->
+              <div class="form-group">
+                <label>🟠 Zonas Naranjas — Testeo Experimental</label>
+                <div class="btn-group" id="zonaNaranjaHabiaGroup">
+                  <button type="button" class="btn-option" data-value="true">Sí había en el camino</button>
+                  <button type="button" class="btn-option" data-value="false">No había</button>
+                </div>
+                <input type="hidden" id="zonaNaranjaHabiaTradeVal" name="zona_naranja_habia">
+                <div id="zonaNaranjaReaccionGroup" class="hidden" style="margin-top:10px">
+                  <label style="margin-bottom:6px;display:block">¿Qué hizo el precio?</label>
+                  <div class="btn-group" id="zonaNaranjaReaccionTradeGroup">
+                    <button type="button" class="btn-option" data-value="RESPETO">Respetó (rebotó)</button>
+                    <button type="button" class="btn-option" data-value="IGNORO">Ignoró (pasó de largo)</button>
+                    <button type="button" class="btn-option" data-value="PARCIAL">Parcial</button>
+                  </div>
+                  <input type="hidden" id="zonaNaranjaReaccionTradeVal" name="zona_naranja_reaccion">
+                  <input type="text" id="zonaNaranjaNotaTradeVal" name="zona_naranja_nota"
+                    placeholder="Contexto adicional (opcional)" style="margin-top:8px">
                 </div>
               </div>
 
