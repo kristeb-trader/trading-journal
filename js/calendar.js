@@ -96,7 +96,8 @@ const Calendar = (() => {
     if (sesion?.no_opero) {
       if (sesion.motivo_no_opero === 'FOMC')      return 'fomc'
       if (sesion.motivo_no_opero === 'Festivo')   return 'festivo'
-      if (sesion.motivo_no_opero === 'Sin setup')  return 'sin-setup'
+      if (sesion.motivo_no_opero === 'Sin setup')             return 'sin-setup'
+      if (sesion.motivo_no_opero === 'Setup válido no tomado') return 'sin-setup'
       return 'no-trade'
     }
     if (!trades || trades.length === 0) {
@@ -223,7 +224,9 @@ const Calendar = (() => {
         let statusBadge = ''
         if (!isFuture) {
           if (sesion?.no_opero) {
-            if (sesion.motivo_no_opero === 'Sin setup') {
+            if (sesion.motivo_no_opero === 'Setup válido no tomado') {
+              statusBadge = `<div class="cal-status-badge badge-sinsetup">⚠️ Setup válido — no entré</div>`
+            } else if (sesion.motivo_no_opero === 'Sin setup') {
               statusBadge = `<div class="cal-status-badge badge-sinsetup"><i class="ti ti-eye-off"></i> Sin entradas</div>`
             } else if (sesion.motivo_no_opero === 'FOMC') {
               statusBadge = `<div class="cal-status-badge badge-fomc"><i class="ti ti-chart-candle"></i> FOMC</div>`
