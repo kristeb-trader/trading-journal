@@ -856,6 +856,14 @@ body.modal-open { overflow: hidden; }
   transition: background var(--transition), color var(--transition);
 }
 .btn-icon:hover { background: var(--bg3); color: var(--text); }
+.btn-lang {
+  height: 28px; padding: 0 10px; border-radius: 6px;
+  font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em;
+  color: var(--text2); background: var(--bg3);
+  border: 1px solid var(--border);
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.btn-lang:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 0.8s linear infinite; display: inline-block; }

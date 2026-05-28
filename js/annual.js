@@ -5,6 +5,8 @@ const Annual = (() => {
   let equityChartInst  = null
   let pnlBarChartInst  = null
   let allAccountsList  = []
+  let cachedMonthData  = null
+  let cachedAnnualStats = null
 
   const ACCOUNT_KEY = 'annualAccount'
 
@@ -33,11 +35,6 @@ const Annual = (() => {
     if (saved && allAccountsList.includes(saved)) sel.value = saved
     else if (paApex)                               sel.value = paApex
   }
-
-  const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                       'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-  const MONTH_SHORT = ['Ene','Feb','Mar','Abr','May','Jun',
-                       'Jul','Ago','Sep','Oct','Nov','Dic']
 
   const BE = t => Math.abs(parseFloat(t.profit) || 0) <= 6
 
@@ -115,7 +112,9 @@ const Annual = (() => {
 
       // ── Per-month stats ─────────────────────────────────────────────────
       let cumPnl = 0
-      const monthData = MONTH_NAMES.map((name, i) => {
+      const MONTHS     = I18n.months()
+      const MONTHS_SHT = I18n.monthsShort()
+      const monthData = MONTHS.map((name, i) => {
         const m = i + 1
         const { from: mFrom, to: mTo } = monthRange(annualYear, m)
 
@@ -133,7 +132,7 @@ const Annual = (() => {
         cumPnl += pnl
 
         return {
-          idx: i, name, short: MONTH_SHORT[i],
+          idx: i, name, short: MONTHS_SHT[i],
           trades: mTrades.length, targets, stops, pnl,
           cumPnl: parseFloat(cumPnl.toFixed(2)),
           winRate:    nonBE.length > 0 ? targets / nonBE.length * 100 : null,
@@ -172,6 +171,8 @@ const Annual = (() => {
         bestMonth, worstMonth,
       }
 
+      cachedMonthData   = monthData
+      cachedAnnualStats = annualStats
       renderKpis(annualStats)
       renderMonthTable(monthData, annualStats)
       renderCharts(monthData)
@@ -190,65 +191,65 @@ const Annual = (() => {
     const rentab  = capitalInicial > 0
       ? `${(s.totalPnl / capitalInicial * 100).toFixed(2)}%`
       : '—'
-    const pfLabel = s.pf == null ? 'Sin pérdidas' :
-                    s.pf >= 1.5  ? 'Sistema sólido' :
-                    s.pf >= 1.0  ? 'Sistema marginal' : 'Sistema negativo'
+    const pfLabel = s.pf == null ? I18n.t('annual.kpi.pf_no_losses') :
+                    s.pf >= 1.5  ? I18n.t('annual.kpi.pf_solid') :
+                    s.pf >= 1.0  ? I18n.t('annual.kpi.pf_marginal') : I18n.t('annual.kpi.pf_negative')
     const pfColor = s.pf == null ? 'neutral' : s.pf >= 1.5 ? 'green' : s.pf >= 1.0 ? 'warning' : 'red'
 
     const chips = [
       {
-        label: 'P&L Anual',
+        label: I18n.t('annual.kpi.pnl'),
         value: `${s.totalPnl >= 0 ? '+' : ''}$${s.totalPnl.toFixed(2)}`,
-        sub:   `Rentabilidad: ${rentab}`,
+        sub:   `${I18n.t('annual.kpi.return')}: ${rentab}`,
         color: s.totalPnl >= 0 ? 'green' : 'red',
         icon:  'ti-currency-dollar',
       },
       {
-        label: 'Win Rate',
+        label: I18n.t('kpi.win_rate'),
         value: `${s.winRate.toFixed(1)}%`,
         sub:   `${s.targets}T · ${s.stops}S · ${s.totalTrades} trades`,
         color: s.winRate >= 50 ? 'green' : s.winRate >= 40 ? 'warning' : 'red',
         icon:  'ti-target',
       },
       {
-        label: 'Profit Factor',
+        label: I18n.t('annual.kpi.pf'),
         value: s.pf != null ? s.pf.toFixed(2) : '—',
         sub:   pfLabel,
         color: pfColor,
         icon:  'ti-math-function',
       },
       {
-        label: 'Max Drawdown',
+        label: I18n.t('annual.kpi.max_dd'),
         value: s.maxDD > 0 ? `-$${s.maxDD.toFixed(2)}` : '$0',
-        sub:   'Máxima caída desde pico',
+        sub:   I18n.t('annual.kpi.max_dd_sub'),
         color: s.maxDD === 0 ? 'green' : s.maxDD < 300 ? 'warning' : 'red',
         icon:  'ti-chart-arrows-vertical',
       },
       {
-        label: 'Disciplina Prom.',
+        label: I18n.t('annual.kpi.avg_disc'),
         value: s.avgDisc != null ? `${s.avgDisc}%` : '—',
-        sub:   'Checklist + sin errores',
+        sub:   I18n.t('annual.kpi.avg_disc_sub'),
         color: s.avgDisc == null ? 'neutral' : s.avgDisc >= 80 ? 'green' : s.avgDisc >= 55 ? 'warning' : 'red',
         icon:  'ti-checkup-list',
       },
       {
-        label: 'Consistencia',
+        label: I18n.t('annual.kpi.consistency'),
         value: `${s.profitMonths}/${s.profitMonths + s.lossMonths}`,
-        sub:   `${s.consistency}% meses positivos`,
+        sub:   `${s.consistency}% ${I18n.t('annual.kpi.consistency_sub')}`,
         color: s.consistency >= 60 ? 'green' : s.consistency >= 40 ? 'warning' : 'red',
         icon:  'ti-calendar-check',
       },
       {
-        label: 'Mejor mes',
+        label: I18n.t('annual.kpi.best_month'),
         value: s.bestMonth ? `${s.bestMonth.pnl >= 0 ? '+' : ''}$${s.bestMonth.pnl.toFixed(0)}` : '—',
-        sub:   s.bestMonth?.name || 'Sin datos',
+        sub:   s.bestMonth?.name || I18n.t('annual.kpi.no_data'),
         color: 'green',
         icon:  'ti-trending-up',
       },
       {
-        label: 'Peor mes',
+        label: I18n.t('annual.kpi.worst_month'),
         value: s.worstMonth ? `${s.worstMonth.pnl >= 0 ? '+' : ''}$${s.worstMonth.pnl.toFixed(0)}` : '—',
-        sub:   s.worstMonth?.name || 'Sin datos',
+        sub:   s.worstMonth?.name || I18n.t('annual.kpi.no_data'),
         color: 'red',
         icon:  'ti-trending-down',
       },
@@ -274,7 +275,7 @@ const Annual = (() => {
         return `
           <tr class="annual-row-empty">
             <td class="annual-month-name">${m.name}</td>
-            <td colspan="7" class="annual-empty-cell">— sin actividad —</td>
+            <td colspan="7" class="annual-empty-cell">${I18n.t('annual.no_activity')}</td>
           </tr>`
       }
 
@@ -288,10 +289,10 @@ const Annual = (() => {
                       m.discipline >= 80 ? 'annual-pos' :
                       m.discipline >= 55 ? 'annual-warn' : 'annual-neg'
       const estado  = m.pnl > 0
-        ? '<span class="annual-badge annual-badge-pos">▲ Positivo</span>'
+        ? `<span class="annual-badge annual-badge-pos">${I18n.t('annual.status.positive')}</span>`
         : m.pnl < 0
-        ? '<span class="annual-badge annual-badge-neg">▼ Negativo</span>'
-        : '<span class="annual-badge annual-badge-be">— Neutro</span>'
+        ? `<span class="annual-badge annual-badge-neg">${I18n.t('annual.status.negative')}</span>`
+        : `<span class="annual-badge annual-badge-be">${I18n.t('annual.status.neutral')}</span>`
 
       return `
         <tr class="annual-row${m.pnl > 0 ? ' annual-row-pos' : m.pnl < 0 ? ' annual-row-neg' : ''}">
@@ -316,7 +317,7 @@ const Annual = (() => {
     document.getElementById('annualMonthTableBody').innerHTML = rows
     document.getElementById('annualMonthTableFoot').innerHTML = `
       <tr class="annual-totals-row">
-        <td class="annual-totals-label">Resumen Anual</td>
+        <td class="annual-totals-label">${I18n.t('annual.summary')}</td>
         <td class="${s.totalPnl >= 0 ? 'annual-totals-pos' : 'annual-totals-neg'}">
           ${tSign}$${s.totalPnl.toFixed(2)}</td>
         <td class="annual-totals-neutral">—</td>
@@ -332,7 +333,8 @@ const Annual = (() => {
 
   // ── Charts ──────────────────────────────────────────────────────────────
   function renderCharts(monthData) {
-    const labels = monthData.map(m => m.short)
+    const MONTHS_SHT = I18n.monthsShort()
+    const labels = monthData.map(m => MONTHS_SHT[m.idx])
     const equity = monthData.map(m => m.cumPnl)
     const bars   = monthData.map(m => m.pnl)
     const lastVal = equity[equity.length - 1] || 0
@@ -356,7 +358,7 @@ const Annual = (() => {
       data: {
         labels,
         datasets: [{
-          label: 'P&L Acumulado',
+          label: I18n.t('annual.chart.cumulative'),
           data: equity,
           borderColor: eColor,
           backgroundColor: eFill,
@@ -374,7 +376,7 @@ const Annual = (() => {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              label: ctx => ` Acumulado: ${ctx.parsed.y >= 0 ? '+' : ''}$${ctx.parsed.y.toFixed(2)}`
+              label: ctx => ` ${I18n.t('annual.chart.cumulative')}: ${ctx.parsed.y >= 0 ? '+' : ''}$${ctx.parsed.y.toFixed(2)}`
             }
           },
         },
@@ -390,7 +392,7 @@ const Annual = (() => {
       data: {
         labels,
         datasets: [{
-          label: 'P&L Mensual',
+          label: I18n.t('annual.chart.monthly'),
           data: bars,
           backgroundColor: bars.map(v => v >= 0 ? 'rgba(29,158,117,0.65)' : 'rgba(226,75,74,0.65)'),
           borderColor:     bars.map(v => v >= 0 ? 'rgba(29,158,117,1)'    : 'rgba(226,75,74,1)'),
@@ -444,5 +446,12 @@ const Annual = (() => {
     await loadAndRender()
   }
 
-  return { init }
+  function rerender() {
+    if (!cachedMonthData || !cachedAnnualStats) return
+    renderKpis(cachedAnnualStats)
+    renderMonthTable(cachedMonthData, cachedAnnualStats)
+    renderCharts(cachedMonthData)
+  }
+
+  return { init, rerender }
 })()

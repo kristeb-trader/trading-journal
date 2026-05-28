@@ -30,13 +30,7 @@ const Modal = {
     const modal = document.getElementById('dayModal')
     const title = document.getElementById('modalDateTitle')
 
-    const fmtDate = d => {
-      if (!d) return '—'
-      const [y, m, day] = d.split('-')
-      const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
-      return `${parseInt(day)} ${months[parseInt(m)-1]} ${y}`
-    }
-    title.textContent = dateStr ? fmtDate(dateStr) : 'Detalle'
+    title.textContent = dateStr ? I18n.formatDateShort(dateStr) : I18n.t('modal.day_detail')
 
     // ── Resumen tab ──
     const pnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
@@ -45,9 +39,9 @@ const Modal = {
 
     let resumenHtml = ''
     if (sesion?.no_opero) {
-      resumenHtml = `<div class="modal-no-trade"><i class="ti ti-coffee"></i><p>Sin operación este día</p><p class="text-dim">${sesion.motivo_no_opero || ''}</p></div>`
+      resumenHtml = `<div class="modal-no-trade"><i class="ti ti-coffee"></i><p>${I18n.t('modal.no_trade')}</p><p class="text-dim">${sesion.motivo_no_opero || ''}</p></div>`
     } else if (trades.length === 0) {
-      resumenHtml = `<div class="modal-no-trade"><i class="ti ti-chart-off"></i><p>Sin trades registrados</p></div>`
+      resumenHtml = `<div class="modal-no-trade"><i class="ti ti-chart-off"></i><p>${I18n.t('modal.no_trades')}</p></div>`
     } else {
       resumenHtml = `
         <div class="modal-summary-bar">
@@ -61,7 +55,7 @@ const Modal = {
             <div class="modal-trade-row">
               <span class="badge ${Math.abs(parseFloat(t.profit)||0) <= 6 ? 'badge-be' : t.resultado === 'target' ? 'badge-target' : t.resultado === 'stop' ? 'badge-stop' : 'badge-other'}">${Math.abs(parseFloat(t.profit)||0) <= 6 ? 'B.E.' : (t.resultado || '—')}</span>
               <span>${t.market_pos === 'Long' ? '▲' : '▼'} ${t.market_pos}</span>
-              <span>${t.qty} contratos</span>
+              <span>${t.qty} ${I18n.t('modal.contracts')}</span>
               <span class="${parseFloat(t.profit) >= 0 ? 'text-green' : 'text-red'} fw-bold">${parseFloat(t.profit) >= 0 ? '+' : ''}$${parseFloat(t.profit).toFixed(2)}</span>
               ${t.mae != null ? `<span class="text-dim">MAE: ${t.mae} | MFE: ${t.mfe}</span>` : ''}
             </div>`).join('')}
@@ -71,12 +65,12 @@ const Modal = {
 
     // ── Checklist tab ──
     const checks = [
-      { key: 'chk_zonas', label: 'Zonas vigentes verificadas' },
-      { key: 'chk_orden', label: 'Orden precolocada a tiempo' },
-      { key: 'chk_5velas', label: 'Máx 5 velas en corrida' },
-      { key: 'chk_noticias', label: 'Sin noticia roja activa' },
-      { key: 'chk_consecucion', label: 'Zona marcada con consecución' },
-      { key: 'chk_estructura', label: 'Estructura de Impulso + Retroceso + Impulso, Fluida' },
+      { key: 'chk_zonas',       label: I18n.t('chk.zonas') },
+      { key: 'chk_orden',       label: I18n.t('chk.orden') },
+      { key: 'chk_5velas',      label: I18n.t('chk.5velas') },
+      { key: 'chk_noticias',    label: I18n.t('chk.noticias') },
+      { key: 'chk_consecucion', label: I18n.t('chk.consecucion') },
+      { key: 'chk_estructura',  label: I18n.t('chk.estructura') },
     ]
     document.getElementById('modalChecklist').innerHTML = sesion
       ? `<div class="modal-checklist">${checks.map(c => `
@@ -84,42 +78,42 @@ const Modal = {
             <i class="ti ${sesion[c.key] ? 'ti-circle-check' : 'ti-circle-x'}"></i>
             <span>${c.label}</span>
           </div>`).join('')}
-          <div class="checklist-score">Disciplina: ${checks.filter(c => sesion[c.key]).length}/${checks.length} (${(checks.filter(c => sesion[c.key]).length / checks.length * 100).toFixed(0)}%)</div>
+          <div class="checklist-score">${I18n.t('discipline.checklist_score')}: ${checks.filter(c => sesion[c.key]).length}/${checks.length} (${(checks.filter(c => sesion[c.key]).length / checks.length * 100).toFixed(0)}%)</div>
         </div>`
-      : '<p class="text-dim">Sin datos de sesión para este día.</p>'
+      : `<p class="text-dim">${I18n.t('modal.no_session_data')}</p>`
 
     // ── Análisis tab ──
     document.getElementById('modalAnalisis').innerHTML = sesion ? `
       <div class="modal-analisis">
-        ${sesion.contexto ? `<div class="field-row"><label>Contexto</label><span>${sesion.contexto}</span></div>` : ''}
-        ${sesion.num_corrida ? `<div class="field-row"><label>Corrida</label><span>${sesion.num_corrida}ª</span></div>` : ''}
-        ${sesion.velas_corrida ? `<div class="field-row"><label>Velas en corrida</label><span>${sesion.velas_corrida}</span></div>` : ''}
-        ${sesion.puntos_retroceso ? `<div class="field-row"><label>Puntos retroceso</label><span>${sesion.puntos_retroceso}</span></div>` : ''}
-        ${sesion.setup ? `<div class="field-row"><label>Setup</label><span>${sesion.setup}</span></div>` : ''}
-        ${sesion.analisis_trader ? `<div class="field-block"><label>Reflexión</label><p>${sesion.analisis_trader}</p></div>` : ''}
-        ${sesion.resumen_ia ? `<div class="field-block ia-block"><label><i class="ti ti-sparkles"></i> Resumen IA</label><p>${sesion.resumen_ia}</p></div>` : ''}
-      </div>` : '<p class="text-dim">Sin datos de análisis para este día.</p>'
+        ${sesion.contexto ? `<div class="field-row"><label>${I18n.t('modal.context')}</label><span>${sesion.contexto}</span></div>` : ''}
+        ${sesion.num_corrida ? `<div class="field-row"><label>${I18n.t('modal.run')}</label><span>${sesion.num_corrida}ª</span></div>` : ''}
+        ${sesion.velas_corrida ? `<div class="field-row"><label>${I18n.t('modal.candles_run')}</label><span>${sesion.velas_corrida}</span></div>` : ''}
+        ${sesion.puntos_retroceso ? `<div class="field-row"><label>${I18n.t('modal.retrace_pts')}</label><span>${sesion.puntos_retroceso}</span></div>` : ''}
+        ${sesion.setup ? `<div class="field-row"><label>${I18n.t('modal.setup')}</label><span>${sesion.setup}</span></div>` : ''}
+        ${sesion.analisis_trader ? `<div class="field-block"><label>${I18n.t('modal.reflection')}</label><p>${sesion.analisis_trader}</p></div>` : ''}
+        ${sesion.resumen_ia ? `<div class="field-block ia-block"><label><i class="ti ti-sparkles"></i> ${I18n.t('modal.ai_summary')}</label><p>${sesion.resumen_ia}</p></div>` : ''}
+      </div>` : `<p class="text-dim">${I18n.t('modal.no_analysis_data')}</p>`
 
     // ── Imagen tab (imagen + tipificación + sugerencias) ──
     const casuisticas = dateStr ? await DB.getCasuisticasByDate(dateStr) : []
 
     const imgHtml = sesion?.imagen_url
       ? `<div class="modal-image-wrap"><img src="${sesion.imagen_url}" alt="Captura del día" loading="lazy" style="cursor:zoom-in" title="Clic para ver en tamaño completo"></div>`
-      : '<div class="modal-no-trade"><i class="ti ti-photo-off"></i><p>Sin imagen para este día</p></div>'
+      : `<div class="modal-no-trade"><i class="ti ti-photo-off"></i><p>${I18n.t('modal.no_image')}</p></div>`
 
     const erroresHtml = `
-      <div class="modal-section-title"><span style="font-size:0.95rem">⚠️</span> Errores</div>
+      <div class="modal-section-title"><span style="font-size:0.95rem">⚠️</span> ${I18n.t('modal.errors_title')}</div>
       ${casuisticas.length > 0
         ? casuisticas.map(c => `
             <div class="modal-cas-row modal-cas-row-error">
               <span>${c.casuistica}</span>
               <span class="${c.resultado === 'T' ? 'cas-badge-t' : 'cas-badge-s'}">${c.resultado}</span>
             </div>`).join('')
-        : '<p class="modal-empty-sub">Sin errores registrados</p>'}`
+        : `<p class="modal-empty-sub">${I18n.t('modal.no_errors')}</p>`}`
 
     const sugerenciasHtml = `
-      <div class="modal-section-title" style="margin-top:16px"><i class="ti ti-bulb"></i> Sugerencias</div>
-      <p class="modal-empty-sub">Próximamente...</p>`
+      <div class="modal-section-title" style="margin-top:16px"><i class="ti ti-bulb"></i> ${I18n.t('modal.suggestions')}</div>
+      <p class="modal-empty-sub">${I18n.t('modal.coming_soon')}</p>`
 
     document.getElementById('modalImagen').innerHTML = imgHtml + erroresHtml + sugerenciasHtml
 
@@ -159,15 +153,17 @@ const Modal = {
 // ── Navigation ────────────────────────────────────────────────────────────
 
 const Nav = {
-  sections: {
-    calendar: 'Calendario',
-    trades: 'Trades',
-    gallery: 'Imágenes',
-    coach: 'Coach IA',
-    register: 'Registrar Sesión',
-    analysis: 'Análisis',
-    annual: 'Resumen Anual',
-    data: 'Datos',
+  get sections() {
+    return {
+      calendar: I18n.t('nav.calendar'),
+      trades:   I18n.t('trades.title'),
+      gallery:  I18n.t('gallery.title'),
+      coach:    I18n.t('coach.title'),
+      register: I18n.t('register.title'),
+      analysis: I18n.t('analysis.title'),
+      annual:   I18n.t('annual.summary'),
+      data:     I18n.t('data.title'),
+    }
   },
   initialized: new Set(),
 
@@ -193,7 +189,7 @@ const Nav = {
         if (sectionId === 'coach') await Coach.init()
         if (sectionId === 'data') await DataManager.init()
       } catch (err) {
-        Toast.show('Error cargando sección: ' + err.message, 'error')
+        Toast.show(I18n.t('toast.error_section') + ': ' + err.message, 'error')
       }
     }
   },
@@ -215,13 +211,13 @@ async function boot() {
   try {
     const { error } = await supa.from('trades').select('trade_number').limit(1)
     if (error) throw error
-    document.getElementById('connectionStatus').innerHTML = '<i class="ti ti-circle-filled"></i> Conectado'
+    document.getElementById('connectionStatus').innerHTML = `<i class="ti ti-circle-filled"></i> ${I18n.t('header.connected')}`
     document.getElementById('connectionStatus').classList.add('connected')
   } catch (err) {
-    document.getElementById('connectionStatus').innerHTML = '<i class="ti ti-circle-filled"></i> Sin conexión'
+    document.getElementById('connectionStatus').innerHTML = `<i class="ti ti-circle-filled"></i> ${I18n.t('header.disconnected')}`
     document.getElementById('connectionStatus').classList.add('disconnected')
     console.error('Supabase error:', err)
-    Toast.show('Sin conexión a Supabase: ' + (err.message || err), 'error')
+    Toast.show(I18n.t('toast.connection_error') + ': ' + (err.message || err), 'error')
   }
 
   // Settings modal
@@ -268,7 +264,7 @@ async function boot() {
       localStorage.removeItem('dashboard_secret')
     }
 
-    Toast.show('Ajustes guardados', 'success')
+    Toast.show(I18n.t('toast.settings_saved'), 'success')
     settingsModal.classList.add('hidden')
   })
 
@@ -286,11 +282,25 @@ async function boot() {
   })
   document.addEventListener('keydown', e => { if (e.key === 'Escape') Modal.close() })
 
+  // Language toggle
+  I18n.initToggle()
+
   // Navigation
   Nav.init()
 
   // Start on calendar
   Nav.go('calendar')
+
+  // Re-render initialized sections on language change
+  document.addEventListener('langchange', () => {
+    const active = document.querySelector('.nav-item.active')?.dataset.section
+    if (active) document.getElementById('currentSectionTitle').textContent = Nav.sections[active] || ''
+    if (Nav.initialized.has('calendar')) { Calendar.render(); Metrics.rerender() }
+    if (Nav.initialized.has('trades'))   TradesTable.rerender()
+    if (Nav.initialized.has('gallery'))  Gallery.rerender()
+    if (Nav.initialized.has('analysis')) Charts.rerender()
+    if (Nav.initialized.has('annual'))   Annual.rerender()
+  })
 }
 
 // ── Lightbox ──────────────────────────────────────────────────────────────

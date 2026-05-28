@@ -9,9 +9,6 @@ const TradesTable = (() => {
   let page = 0
   const PAGE_SIZE = 20
 
-  const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-  const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
 
   function abbreviateAccount(account) {
     if (!account) return '—'
@@ -21,7 +18,7 @@ const TradesTable = (() => {
 
   function dayOfWeek(dateStr) {
     if (!dateStr) return '—'
-    return DAYS[new Date(dateStr + 'T12:00:00').getDay()]
+    return I18n.daysAll()[new Date(dateStr + 'T12:00:00').getDay()]
   }
 
   function fmt(val, decimals = 2) {
@@ -63,7 +60,7 @@ const TradesTable = (() => {
   function errorCell(date) {
     const errors = casByDate[date] || []
     if (errors.length === 0)
-      return '<span style="color:var(--accent);font-size:0.78rem">Sin Errores</span>'
+      return `<span style="color:var(--accent);font-size:0.78rem">${I18n.t('trades.no_errors')}</span>`
     return `<span style="color:rgba(226,75,74,0.85);font-size:0.78rem">${errors.join(' · ')}</span>`
   }
 
@@ -136,12 +133,13 @@ const TradesTable = (() => {
     const tbody = document.getElementById('tradesTableBody')
 
     if (slice.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="10" class="empty-row">Sin resultados</td></tr>`
+      tbody.innerHTML = `<tr><td colspan="10" class="empty-row">${I18n.t('trades.no_results')}</td></tr>`
       return
     }
 
     let currentMonth = null
     let html = ''
+    const MONTHS = I18n.months()
 
     slice.forEach(row => {
       const month = row.date?.slice(0, 7)
@@ -177,7 +175,7 @@ const TradesTable = (() => {
       } else {
         const s          = row.data
         const isSinSetup = s.motivo_no_opero === 'Sin setup'
-        const label      = isSinSetup ? 'Sin entradas válidas' : (s.motivo_no_opero || 'No operé')
+        const label      = isSinSetup ? I18n.t('trades.sin_entradas') : (s.motivo_no_opero || I18n.t('trades.no_opero'))
         const icon       = isSinSetup ? 'ti-eye-off' : 'ti-user-off'
         const badgeCls   = isSinSetup ? 'badge-sinsetup' : 'badge-noopero'
         html += `
@@ -221,10 +219,10 @@ const TradesTable = (() => {
     const total = Math.ceil(filtered.length / PAGE_SIZE)
     const pg    = document.getElementById('tradesPagination')
     if (total <= 1) { pg.innerHTML = ''; return }
-    let html = `<span class="page-info">${filtered.length} registros</span>`
-    html += `<button class="btn-page" ${page === 0 ? 'disabled' : ''} id="pgPrev">‹ Anterior</button>`
-    html += `<span class="page-num">Página ${page + 1} / ${total}</span>`
-    html += `<button class="btn-page" ${page >= total - 1 ? 'disabled' : ''} id="pgNext">Siguiente ›</button>`
+    let html = `<span class="page-info">${filtered.length} ${I18n.t('pagination.records')}</span>`
+    html += `<button class="btn-page" ${page === 0 ? 'disabled' : ''} id="pgPrev">${I18n.t('pagination.prev')}</button>`
+    html += `<span class="page-num">${I18n.t('pagination.page')} ${page + 1} ${I18n.t('pagination.of')} ${total}</span>`
+    html += `<button class="btn-page" ${page >= total - 1 ? 'disabled' : ''} id="pgNext">${I18n.t('pagination.next')}</button>`
     pg.innerHTML = html
     pg.querySelector('#pgPrev')?.addEventListener('click', () => { page--; renderTable(); renderPagination() })
     pg.querySelector('#pgNext')?.addEventListener('click', () => { page++; renderTable(); renderPagination() })
@@ -249,5 +247,10 @@ const TradesTable = (() => {
     document.getElementById('accountFilterTrades').addEventListener('change', applyFilter)
   }
 
-  return { init, reload: init }
+  function rerender() {
+    renderTable()
+    renderPagination()
+  }
+
+  return { init, reload: init, rerender }
 })()

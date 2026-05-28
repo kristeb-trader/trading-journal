@@ -145,40 +145,42 @@ const Metrics = (() => {
     return casuisticas.filter(c => c.sesion_date >= from)
   }
 
-  const CHECKLIST_KEYS = [
-    { key: 'chk_zonas',       label: 'Zonas vigentes'       },
-    { key: 'chk_orden',       label: 'Orden a tiempo'       },
-    { key: 'chk_5velas',      label: 'Máx 5 velas'          },
-    { key: 'chk_noticias',    label: 'Sin noticias rojas'   },
-    { key: 'chk_consecucion', label: 'Rompimiento + Consecución' },
-    { key: 'chk_estructura',  label: 'Estructura IRI'       },
-  ]
+  function checklistKeys() {
+    return [
+      { key: 'chk_zonas',       label: I18n.t('chk_short.zonas') },
+      { key: 'chk_orden',       label: I18n.t('chk_short.orden') },
+      { key: 'chk_5velas',      label: I18n.t('chk_short.5velas') },
+      { key: 'chk_noticias',    label: I18n.t('chk_short.noticias') },
+      { key: 'chk_consecucion', label: I18n.t('chk_short.consecucion') },
+      { key: 'chk_estructura',  label: I18n.t('chk_short.estructura') },
+    ]
+  }
 
-  const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
-
-  const DISC_FACTORS = [
-    { key: 'chk_zonas',       label: 'Zonas vigentes verificadas'       },
-    { key: 'chk_orden',       label: 'Orden precolocada a tiempo'       },
-    { key: 'chk_5velas',      label: 'Máx 5 velas en corrida'           },
-    { key: 'chk_noticias',    label: 'Sin noticia roja activa'          },
-    { key: 'chk_consecucion', label: 'Zona con consecución'             },
-    { key: 'chk_estructura',  label: 'Estructura IRI fluida'            },
-    { key: '_noErrors',       label: 'Sin errores de tipificación'      },
-  ]
+  function discFactors() {
+    return [
+      { key: 'chk_zonas',       label: I18n.t('chk.zonas') },
+      { key: 'chk_orden',       label: I18n.t('chk.orden') },
+      { key: 'chk_5velas',      label: I18n.t('chk.5velas') },
+      { key: 'chk_noticias',    label: I18n.t('chk.noticias') },
+      { key: 'chk_consecucion', label: I18n.t('chk.consecucion') },
+      { key: 'chk_estructura',  label: I18n.t('chk.estructura') },
+      { key: '_noErrors',       label: I18n.t('chk_short.no_errors') },
+    ]
+  }
 
   function openDisciplineDetailModal(activeSesiones, casByDate, periodCasuisticas) {
     const total = activeSesiones.length
 
     if (total === 0) {
       document.getElementById('disciplineModalContent').innerHTML =
-        '<p style="padding:20px;color:var(--text3)">Sin sesiones en el período.</p>'
+        `<p style="padding:20px;color:var(--text3)">${I18n.t('discipline.no_sessions')}</p>`
       document.getElementById('disciplineModal').classList.remove('hidden')
       return
     }
 
     // Checklist: 6 factores sobre días operados
     const operatedSesiones = activeSesiones.filter(s => !s.no_opero)
-    const CHECKLIST_FACTORS = DISC_FACTORS.filter(f => f.key !== '_noErrors')
+    const CHECKLIST_FACTORS = discFactors().filter(f => f.key !== '_noErrors')
     const checklistStats = CHECKLIST_FACTORS.map(f => {
       const fails = operatedSesiones.filter(s => !s[f.key])
       const denominator = operatedSesiones.length || 1
@@ -226,7 +228,7 @@ const Metrics = (() => {
               <span class="disc-count">${f.count}</span>
             </div>`
         }).join('')
-      : '<p style="color:var(--accent);font-size:0.85rem;padding:4px 0">✓ Sin errores de ejecución</p>'
+      : `<p style="color:var(--accent);font-size:0.85rem;padding:4px 0">${I18n.t('discipline.no_exec_errors')}</p>`
 
     // Agrupar casuísticas por fecha (sin duplicar tipo en el mismo día)
     const casByDateDetail = {}
@@ -248,10 +250,10 @@ const Metrics = (() => {
 
     const daysHtml = failedDays.length > 0
       ? failedDays.map(d => {
-          const dow = DAYS[new Date(d.date + 'T12:00:00').getDay()]
+          const dow = I18n.daysAll()[new Date(d.date + 'T12:00:00').getDay()]
           const totalFails = d.chkFails.length + d.casFails.length
           const noOpBadge = d.noOpero
-            ? '<span style="font-size:0.7rem;color:var(--text3);background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:3px;margin-left:6px">sin operar</span>'
+            ? `<span style="font-size:0.7rem;color:var(--text3);background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:3px;margin-left:6px">${I18n.t('discipline.no_opero_badge')}</span>`
             : ''
           const amberTag = t => `<span class="disc-fail-tag" style="background:rgba(186,117,23,0.18);color:var(--warning);border-color:rgba(186,117,23,0.3)">${t}</span>`
           const chkTags = d.chkFails.map(f => amberTag(f.label)).join('')
@@ -265,19 +267,19 @@ const Metrics = (() => {
               <div class="disc-fail-day-header">
                 <span class="disc-date-dow">${dow}</span>
                 <span class="disc-date-val">${d.date}${noOpBadge}</span>
-                <span class="disc-fail-count">${totalFails} fallo${totalFails !== 1 ? 's' : ''}</span>
+                <span class="disc-fail-count">${totalFails} ${totalFails !== 1 ? I18n.t('discipline.fallos') : I18n.t('discipline.fallo')}</span>
               </div>
               <div class="disc-fail-tags">${chkTags}${casTags}</div>
             </div>`
         }).join('')
-      : '<p style="color:var(--accent);font-size:0.85rem;padding:8px 0">¡Disciplina perfecta en el período! 🎯</p>'
+      : `<p style="color:var(--accent);font-size:0.85rem;padding:8px 0">${I18n.t('discipline.perfect')}</p>`
 
     document.getElementById('disciplineModalContent').innerHTML = `
       <div style="padding:16px 20px 20px">
-        <p class="disc-section-title">Errores de ejecución</p>
+        <p class="disc-section-title">${I18n.t('discipline.exec_errors')}</p>
         ${casBarsHtml}
         <div class="disc-dates" style="margin-top:12px">
-          <p class="disc-section-title">Días con fallos</p>
+          <p class="disc-section-title">${I18n.t('discipline.failed_days')}</p>
           ${daysHtml}
         </div>
       </div>`
@@ -324,14 +326,14 @@ const Metrics = (() => {
               <span class="disc-count">${count}</span>
             </div>`
         }).join('')
-      : '<p style="color:var(--text3);font-size:0.85rem">Sin errores registrados</p>'
+      : `<p style="color:var(--text3);font-size:0.85rem">${I18n.t('discipline.no_errors')}</p>`
 
     const datesHtml = failDates.map(date => {
       const pnl = pnlByDate[date]
-      const dow  = DAYS[new Date(date + 'T12:00:00').getDay()]
+      const dow  = I18n.daysAll()[new Date(date + 'T12:00:00').getDay()]
       const pnlHtml = pnl != null
         ? `<span class="disc-date-pnl ${pnl >= 0 ? 'pos' : 'neg'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</span>`
-        : `<span class="disc-date-pnl neutral">Sin trades</span>`
+        : `<span class="disc-date-pnl neutral">${I18n.t('chart.no_trades')}</span>`
       return `
         <div class="disc-date-row">
           <span class="disc-date-dow">${dow}</span>
@@ -342,11 +344,11 @@ const Metrics = (() => {
 
     document.getElementById('disciplineModalContent').innerHTML = `
       <div style="padding:16px 20px 20px">
-        <p class="disc-section-title">Errores de tipificación (${total} registros)</p>
+        <p class="disc-section-title">${I18n.t('discipline.typification_errors', { count: total })}</p>
         ${barsHtml}
         ${topLabel && failDates.length > 0 ? `
           <div class="disc-dates">
-            <p class="disc-section-title" style="margin-top:8px">Días con "${topLabel}"</p>
+            <p class="disc-section-title" style="margin-top:8px">${I18n.t('discipline.days_with', { name: topLabel })}</p>
             ${datesHtml}
           </div>` : ''}
       </div>`
@@ -420,42 +422,42 @@ const Metrics = (() => {
     const topError = casuisticaFrequency(periodCasuisticas)
 
     const cards = [
-      { label: 'P&L Neto Total', value: `${netPnl >= 0 ? '+' : ''}$${netPnl.toFixed(2)}`, icon: 'ti-currency-dollar', color: netPnl >= 0 ? 'green' : 'red', sub: `Promedio: ${avgPnl >= 0 ? '+' : ''}$${avgPnl.toFixed(0)}/día` },
-      { label: 'Tasa de Acierto', value: `${winRate}%`, icon: 'ti-target', color: parseFloat(winRate) >= 50 ? 'green' : 'red', sub: `${targets} targets / ${stops} stops` },
-      { label: 'Disciplina', value: `${disciplinePct}%`, icon: 'ti-checkup-list', color: disciplinePct >= 80 ? 'green' : disciplinePct >= 50 ? 'warning' : 'red', sub: activeSesiones.length > 0 ? `${failedCount}/${activeSesiones.length} sesiones con fallos` : 'Sin sesiones', clickable: true, action: 'disc-detail' },
-      { label: 'Error más frecuente', value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]} ${topError[1] === 1 ? 'Error' : 'Errores'}` : 'Sin errores registrados', clickable: true, action: 'disc-errors' },
+      { label: I18n.t('metric.net_pnl'), value: `${netPnl >= 0 ? '+' : ''}$${netPnl.toFixed(2)}`, icon: 'ti-currency-dollar', color: netPnl >= 0 ? 'green' : 'red', sub: `${I18n.t('metric.net_pnl_avg')}: ${avgPnl >= 0 ? '+' : ''}$${avgPnl.toFixed(0)}/día` },
+      { label: I18n.t('metric.win_rate'), value: `${winRate}%`, icon: 'ti-target', color: parseFloat(winRate) >= 50 ? 'green' : 'red', sub: `${targets} targets / ${stops} stops` },
+      { label: I18n.t('metric.discipline'), value: `${disciplinePct}%`, icon: 'ti-checkup-list', color: disciplinePct >= 80 ? 'green' : disciplinePct >= 50 ? 'warning' : 'red', sub: activeSesiones.length > 0 ? `${failedCount}/${activeSesiones.length} ${I18n.t('metric.discipline_failed')}` : I18n.t('discipline.no_sessions'), clickable: true, action: 'disc-detail' },
+      { label: I18n.t('metric.top_error'), value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]} ${topError[1] === 1 ? 'Error' : 'Errors'}` : I18n.t('metric.top_error_none'), clickable: true, action: 'disc-errors' },
       {
-        label: 'Targets · Stops · Sin entrada',
+        label: I18n.t('metric.targets_stops'),
         value: `<span style="color:var(--accent)">${targets}</span> · <span style="color:var(--red)">${stops}</span> · ${noOperoCount}`,
         icon: 'ti-chart-bar',
         color: 'neutral',
         sub: `Ratio T/S: ${stops > 0 ? (targets / stops).toFixed(2) : targets > 0 ? '∞' : '—'}`,
       },
-      { label: 'Racha actual', value: streak.count > 0 ? `${streak.count} ${streak.type === 'win' ? '🟢' : '🔴'}` : '—', icon: 'ti-flame', color: streak.type === 'win' ? 'green' : 'red', sub: streak.type === 'win' ? 'victorias seguidas' : streak.type === 'loss' ? 'pérdidas seguidas' : '' },
-      { label: 'Mejor día', value: best ? `+$${best[1].toFixed(0)}` : '—', icon: 'ti-trending-up', color: 'green', sub: best ? best[0] : '' },
-      { label: 'Peor día', value: worst ? `$${worst[1].toFixed(0)}` : '—', icon: 'ti-trending-down', color: 'red', sub: worst ? worst[0] : '' },
+      { label: I18n.t('metric.streak'), value: streak.count > 0 ? `${streak.count} ${streak.type === 'win' ? '🟢' : '🔴'}` : '—', icon: 'ti-flame', color: streak.type === 'win' ? 'green' : 'red', sub: streak.type === 'win' ? I18n.t('metric.streak_wins') : streak.type === 'loss' ? I18n.t('metric.streak_losses') : '' },
+      { label: I18n.t('metric.best_day'), value: best ? `+$${best[1].toFixed(0)}` : '—', icon: 'ti-trending-up', color: 'green', sub: best ? best[0] : '' },
+      { label: I18n.t('metric.worst_day'), value: worst ? `$${worst[1].toFixed(0)}` : '—', icon: 'ti-trending-down', color: 'red', sub: worst ? worst[0] : '' },
       {
-        label: 'Max Drawdown',
+        label: I18n.t('metric.max_drawdown'),
         value: maxDD > 0 ? `-$${maxDD.toFixed(2)}` : '$0',
         icon: 'ti-chart-arrows-vertical',
         color: maxDD === 0 ? 'green' : maxDD < 200 ? 'neutral' : 'red',
-        sub: 'Máxima caída desde pico',
+        sub: I18n.t('metric.max_drawdown_sub'),
       },
       {
-        label: 'Profit Factor',
+        label: I18n.t('metric.profit_factor'),
         value: pf != null ? pf.toFixed(2) : '—',
         icon: 'ti-math-function',
         color: pf == null ? 'neutral' : pf >= 2 ? 'green' : pf >= 1 ? 'neutral' : 'red',
-        sub: pf != null ? (pf >= 2 ? 'Sistema sólido' : pf >= 1 ? 'Sistema marginal' : 'Sistema negativo') : 'Sin pérdidas en el período',
+        sub: pf != null ? (pf >= 2 ? I18n.t('metric.pf_solid') : pf >= 1 ? I18n.t('metric.pf_marginal') : I18n.t('metric.pf_negative')) : I18n.t('metric.pf_no_losses'),
       },
       {
-        label: 'Avg Win / Avg Loss',
+        label: I18n.t('metric.avg_win_loss'),
         value: avgWin != null && avgLoss != null ? `$${avgWin.toFixed(0)} / $${avgLoss.toFixed(0)}` : avgWin != null ? `$${avgWin.toFixed(0)} / —` : '—',
         icon: 'ti-arrows-diff',
         color: avgWin != null && avgLoss != null && avgWin >= avgLoss ? 'green' : 'neutral',
-        sub: avgWin != null && avgLoss != null ? `Ratio: ${(avgWin / avgLoss).toFixed(2)}x` : 'Sin datos suficientes',
+        sub: avgWin != null && avgLoss != null ? `${I18n.t('metric.avg_ratio')}: ${(avgWin / avgLoss).toFixed(2)}x` : I18n.t('metric.avg_no_data'),
       },
-      { label: 'Total Trades', value: totalTrades, icon: 'ti-list-numbers', color: 'neutral', sub: `${tradingDays} días operados` },
+      { label: I18n.t('metric.total_trades'), value: totalTrades, icon: 'ti-list-numbers', color: 'neutral', sub: `${tradingDays} ${I18n.t('metric.trading_days')}` },
     ]
 
     document.getElementById('metricsGrid').innerHTML = cards.map(c => `

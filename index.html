@@ -38,43 +38,43 @@
       </div>
     </div>
     <ul class="nav-menu">
-      <li class="nav-item active" data-section="calendar" title="Calendario">
+      <li class="nav-item active" data-section="calendar" data-i18n-title="nav.calendar">
         <i class="ti ti-calendar-month"></i>
-        <span>Calendario</span>
+        <span data-i18n="nav.calendar">Calendario</span>
       </li>
-      <li class="nav-item" data-section="gallery" title="Imágenes">
+      <li class="nav-item" data-section="gallery" data-i18n-title="nav.images">
         <i class="ti ti-photo"></i>
-        <span>Imágenes</span>
+        <span data-i18n="nav.images">Imágenes</span>
       </li>
-      <li class="nav-item" data-section="trades" title="Trades">
+      <li class="nav-item" data-section="trades" data-i18n-title="nav.trades">
         <i class="ti ti-list-details"></i>
-        <span>Trades</span>
+        <span data-i18n="nav.trades">Trades</span>
       </li>
-      <li class="nav-item" data-section="analysis" title="Análisis">
+      <li class="nav-item" data-section="analysis" data-i18n-title="nav.analysis">
         <i class="ti ti-chart-line"></i>
-        <span>Análisis</span>
+        <span data-i18n="nav.analysis">Análisis</span>
       </li>
-      <li class="nav-item" data-section="annual" title="Resumen Anual">
+      <li class="nav-item" data-section="annual" data-i18n-title="nav.annual">
         <i class="ti ti-calendar-stats"></i>
-        <span>Anual</span>
+        <span data-i18n="nav.annual">Anual</span>
       </li>
-      <li class="nav-item" data-section="coach" title="Coach IA">
+      <li class="nav-item" data-section="coach" data-i18n-title="nav.coach">
         <i class="ti ti-robot"></i>
-        <span>Coach IA</span>
+        <span data-i18n="nav.coach">Coach IA</span>
       </li>
-      <li class="nav-item" data-section="register" title="Registrar sesión">
+      <li class="nav-item" data-section="register" data-i18n-title="nav.register">
         <i class="ti ti-square-rounded-plus"></i>
-        <span>Registrar</span>
+        <span data-i18n="nav.register">Registrar</span>
       </li>
-      <li class="nav-item" data-section="data" title="Datos">
+      <li class="nav-item" data-section="data" data-i18n-title="nav.data">
         <i class="ti ti-database"></i>
-        <span>Datos</span>
+        <span data-i18n="nav.data">Datos</span>
       </li>
     </ul>
     <div class="sidebar-footer">
-      <div class="account-badge" title="Cuenta Fondeo">
+      <div class="account-badge" data-i18n-title="nav.account">
         <i class="ti ti-building-bank"></i>
-        <span>Cuenta Fondeo</span>
+        <span data-i18n="nav.account">Cuenta Fondeo</span>
       </div>
     </div>
   </nav>
@@ -84,15 +84,16 @@
 
     <!-- Top Bar -->
     <header class="top-bar">
-      <button class="btn-icon menu-toggle" id="menuToggle" title="Menú">
+      <button class="btn-icon menu-toggle" id="menuToggle" data-i18n-title="header.menu">
         <i class="ti ti-menu-2"></i>
       </button>
-      <div class="header-info" id="currentSectionTitle">Calendario</div>
+      <div class="header-info" id="currentSectionTitle" data-i18n="nav.calendar">Calendario</div>
       <div class="header-actions">
         <span class="status-indicator" id="connectionStatus">
-          <i class="ti ti-loader-2 spin"></i> Conectando...
+          <i class="ti ti-loader-2 spin"></i> <span data-i18n="header.connecting">Conectando...</span>
         </span>
-        <button class="btn-icon" id="openSettings" title="Ajustes">
+        <button class="btn-lang" id="langToggle" title="Switch language">EN</button>
+        <button class="btn-icon" id="openSettings" data-i18n-title="header.settings">
           <i class="ti ti-settings"></i>
         </button>
       </div>
@@ -104,29 +105,29 @@
       <!-- ═══ 1. CALENDARIO ═══════════════════════════════════════════════ -->
       <section class="section active" id="section-calendar">
         <div class="section-header">
-          <h2>Calendario de Operativa</h2>
+          <h2 data-i18n="calendar.section_title">Calendario de Operativa</h2>
           <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
             <div class="calendar-nav">
-              <button class="btn-icon" id="prevMonth" title="Mes anterior">
+              <button class="btn-icon" id="prevMonth" data-i18n-title="calendar.prev_month">
                 <i class="ti ti-chevron-left"></i>
               </button>
               <span id="calendarTitle">Cargando...</span>
-              <button class="btn-icon" id="nextMonth" title="Mes siguiente">
+              <button class="btn-icon" id="nextMonth" data-i18n-title="calendar.next_month">
                 <i class="ti ti-chevron-right"></i>
               </button>
             </div>
             <select class="filter-select" id="accountFilterCalendar">
-              <option value="all">Todas las cuentas</option>
+              <option value="all" data-i18n="calendar.all_accounts">Todas las cuentas</option>
             </select>
           </div>
         </div>
 
         <div class="calendar-legend">
-          <span class="legend-item"><span class="dot green"></span> Target</span>
-          <span class="legend-item"><span class="dot red"></span> Stop</span>
-          <span class="legend-item"><span class="dot sinsetup"></span> Sin entradas válidas</span>
-          <span class="legend-item"><span class="dot gray"></span> No operé</span>
-          <span class="legend-item"><span class="dot festivo"></span> Festivo</span>
+          <span class="legend-item"><span class="dot green"></span> <span data-i18n="calendar.legend.target">Target</span></span>
+          <span class="legend-item"><span class="dot red"></span> <span data-i18n="calendar.legend.stop">Stop</span></span>
+          <span class="legend-item"><span class="dot sinsetup"></span> <span data-i18n="calendar.legend.no_entries">Sin entradas válidas</span></span>
+          <span class="legend-item"><span class="dot gray"></span> <span data-i18n="calendar.legend.no_trade">No operé</span></span>
+          <span class="legend-item"><span class="dot festivo"></span> <span data-i18n="calendar.legend.holiday">Festivo</span></span>
           <span class="legend-item"><span class="dot fomc"></span> FOMC</span>
         </div>
 
@@ -136,11 +137,11 @@
 
         <!-- ── Métricas Generales ─────────────────────────────────────── -->
         <div class="section-header" style="margin-top:56px">
-          <h2>Métricas Generales</h2>
+          <h2 data-i18n="metrics.title">Métricas Generales</h2>
           <div class="period-selector">
-            <button class="period-btn" data-period="all">Todo</button>
-            <button class="period-btn active" data-period="month">Este mes</button>
-            <button class="period-btn" data-period="week">Esta semana</button>
+            <button class="period-btn" data-period="all" data-i18n="metrics.period.all">Todo</button>
+            <button class="period-btn active" data-period="month" data-i18n="metrics.period.month">Este mes</button>
+            <button class="period-btn" data-period="week" data-i18n="metrics.period.week">Esta semana</button>
           </div>
         </div>
         <div class="metrics-grid" id="metricsGrid">
@@ -151,17 +152,17 @@
       <!-- ═══ 3. TRADES ════════════════════════════════════════════════════ -->
       <section class="section" id="section-trades">
         <div class="section-header">
-          <h2>Registro de Trades</h2>
+          <h2 data-i18n="trades.title">Registro de Trades</h2>
           <div class="table-controls">
-            <input type="text" class="search-input" id="tradeSearch" placeholder="Buscar...">
+            <input type="text" class="search-input" id="tradeSearch" data-i18n-ph="trades.search_ph" placeholder="Buscar...">
             <select class="filter-select" id="accountFilterTrades">
-              <option value="all">Todas las cuentas</option>
+              <option value="all" data-i18n="trades.all_accounts">Todas las cuentas</option>
             </select>
             <select class="filter-select" id="tradeFilter">
-              <option value="all">Todos</option>
-              <option value="target">Target</option>
-              <option value="stop">Stop</option>
-              <option value="sin_setup">Sin entradas válidas</option>
+              <option value="all" data-i18n="trades.filter.all">Todos</option>
+              <option value="target" data-i18n="trades.filter.target">Target</option>
+              <option value="stop" data-i18n="trades.filter.stop">Stop</option>
+              <option value="sin_setup" data-i18n="trades.filter.no_entries">Sin entradas válidas</option>
             </select>
           </div>
         </div>
@@ -170,15 +171,15 @@
           <table class="trades-table" id="tradesTable">
             <thead>
               <tr>
-                <th>Día</th>
-                <th>Fecha</th>
-                <th>Hora</th>
-                <th>Instrumento</th>
-                <th>Dirección</th>
-                <th>Contratos</th>
-                <th>Resultado</th>
+                <th data-i18n="trades.headers.day">Día</th>
+                <th data-i18n="trades.headers.date">Fecha</th>
+                <th data-i18n="trades.headers.time">Hora</th>
+                <th data-i18n="trades.headers.instrument">Instrumento</th>
+                <th data-i18n="trades.headers.direction">Dirección</th>
+                <th data-i18n="trades.headers.contracts">Contratos</th>
+                <th data-i18n="trades.headers.result">Resultado</th>
                 <th>P&amp;L</th>
-                <th>Error</th>
+                <th data-i18n="trades.headers.error">Error</th>
                 <th></th>
               </tr>
             </thead>
@@ -193,7 +194,7 @@
       <!-- ═══ 4. REGISTRAR SESIÓN ══════════════════════════════════════════ -->
       <section class="section" id="section-register">
         <div class="section-header">
-          <h2>Registrar Sesión</h2>
+          <h2 data-i18n="register.title">Registrar Sesión</h2>
         </div>
 
         <div class="form-container">
@@ -202,7 +203,7 @@
             <!-- Fecha + No operé -->
             <div class="form-row">
               <div class="form-group">
-                <label for="sesionDate">Fecha de la sesión</label>
+                <label for="sesionDate" data-i18n="register.date">Fecha de la sesión</label>
                 <input type="date" id="sesionDate" name="sesion_date" required>
               </div>
               <div class="form-group" style="justify-content: flex-end; padding-top: 22px;">
@@ -211,14 +212,14 @@
                     <input type="checkbox" id="noOpero" name="no_opero">
                     <span class="toggle-slider"></span>
                   </label>
-                  <span style="font-size:0.88rem; color:var(--text2);">No operé hoy</span>
+                  <span style="font-size:0.88rem; color:var(--text2);" data-i18n="register.no_opero">No operé hoy</span>
                 </label>
               </div>
             </div>
 
             <!-- Motivo no operé (oculto por defecto) -->
             <div class="form-group hidden" id="motivoGroup">
-              <label for="motivoNoOpero">Motivo de no operación</label>
+              <label for="motivoNoOpero" data-i18n="register.motivo">Motivo de no operación</label>
               <select id="motivoNoOpero" name="motivo_no_opero">
                 <option value="">Seleccionar...</option>
                 <option value="FOMC">FOMC / Fed</option>
@@ -234,7 +235,7 @@
             <div id="tradingFields">
               <div class="form-row">
                 <div class="form-group">
-                  <label for="contexto">Contexto de mercado</label>
+                  <label for="contexto" data-i18n="register.context">Contexto de mercado</label>
                   <select id="contexto" name="contexto">
                     <option value="">Seleccionar...</option>
                     <option value="Alcista fuerte">📈 Alcista fuerte</option>
@@ -245,7 +246,7 @@
                   </select>
                 </div>
                 <div class="form-group">
-                  <label>Número de corrida</label>
+                  <label data-i18n="register.run_number">Número de corrida</label>
                   <div class="btn-group" id="corrida">
                     <button type="button" class="btn-option" data-value="1">1ª corrida</button>
                     <button type="button" class="btn-option" data-value="2">2ª corrida</button>
@@ -257,21 +258,21 @@
 
               <div class="form-row">
                 <div class="form-group">
-                  <label for="velasCorrida">Velas en la corrida (máx. 5)</label>
+                  <label for="velasCorrida" data-i18n="register.candles">Velas en la corrida (máx. 5)</label>
                   <input type="number" id="velasCorrida" name="velas_corrida" min="1" max="20" placeholder="1 – 20">
                 </div>
                 <div class="form-group">
-                  <label>Puntos de retroceso</label>
+                  <label data-i18n="register.retrace">Puntos de retroceso</label>
                   <div id="puntosRetrocesoDisplay" style="padding:8px 12px;background:var(--card2);border-radius:6px;color:var(--text2);font-size:0.9rem;min-height:36px;display:flex;align-items:center">— pts</div>
                   <input type="hidden" id="puntosRetroceso">
                 </div>
               </div>
 
               <div class="form-group">
-                <label>¿Había zonas vigentes en contra?</label>
+                <label data-i18n="register.zones">¿Había zonas vigentes en contra?</label>
                 <div class="btn-group" id="zonasContra">
-                  <button type="button" class="btn-option" data-value="true">Sí había zonas</button>
-                  <button type="button" class="btn-option" data-value="false">No había zonas</button>
+                  <button type="button" class="btn-option" data-value="true" data-i18n="register.zones_yes">Sí había zonas</button>
+                  <button type="button" class="btn-option" data-value="false" data-i18n="register.zones_no">No había zonas</button>
                 </div>
                 <input type="hidden" id="zonasContraVal" name="zonas_contra">
               </div>
@@ -291,37 +292,37 @@
 
               <!-- Checklist -->
               <div class="form-group">
-                <label>Checklist Operativa</label>
+                <label data-i18n="register.checklist">Checklist Operativa</label>
                 <div class="checklist" id="checklistRules">
                   <label class="check-item">
                     <input type="checkbox" id="chkZonas" name="chk_zonas">
                     <span class="check-box"></span>
-                    <span>Zonas vigentes verificadas</span>
+                    <span data-i18n="chk.zonas">Zonas vigentes verificadas</span>
                   </label>
                   <label class="check-item">
                     <input type="checkbox" id="chkOrden" name="chk_orden">
                     <span class="check-box"></span>
-                    <span>Orden precolocada a tiempo</span>
+                    <span data-i18n="chk.orden">Orden precolocada a tiempo</span>
                   </label>
                   <label class="check-item">
                     <input type="checkbox" id="chk5Velas" name="chk_5velas">
                     <span class="check-box"></span>
-                    <span>Máx 5 velas en el impulso de la corrida</span>
+                    <span data-i18n="chk.5velas">Máx 5 velas en el impulso de la corrida</span>
                   </label>
                   <label class="check-item">
                     <input type="checkbox" id="chkNoticias" name="chk_noticias">
                     <span class="check-box"></span>
-                    <span>Sin noticia roja activa en el momento de entrada</span>
+                    <span data-i18n="chk.noticias">Sin noticia roja activa en el momento de entrada</span>
                   </label>
                   <label class="check-item">
                     <input type="checkbox" id="chkConsecucion" name="chk_consecucion">
                     <span class="check-box"></span>
-                    <span>Zona marcada con rompimiento + consecución + retroceso confirmado</span>
+                    <span data-i18n="chk.consecucion">Zona marcada con rompimiento + consecución + retroceso confirmado</span>
                   </label>
                   <label class="check-item">
                     <input type="checkbox" id="chkEstructura" name="chk_estructura">
                     <span class="check-box"></span>
-                    <span>Estructura de Impulso + Retroceso + Impulso, Fluida</span>
+                    <span data-i18n="chk.estructura">Estructura de Impulso + Retroceso + Impulso, Fluida</span>
                   </label>
                 </div>
               </div>
@@ -330,32 +331,17 @@
 
             <!-- Casuísticas / Tipificación de errores -->
             <div class="form-group" id="casuisticasGroup">
-              <label>Tipificación del día</label>
+              <label data-i18n="register.typification">Tipificación del día</label>
               <div class="cas-input-row">
                 <select id="casCasuistica">
                   <option value="">Seleccionar situación...</option>
-                  <option>Reingresos</option>
-                  <option>Contra Resistencia</option>
-                  <option>Contra Soporte</option>
-                  <option>Contra Mínimo</option>
-                  <option>Contra Máximo</option>
-                  <option>Volumen Mayor</option>
-                  <option>Target Largo</option>
-                  <option>Rompimiento Extendido</option>
-                  <option>IRIs Poco Claros</option>
-                  <option>3ª Corrida</option>
-                  <option>FOMC</option>
-                  <option>Máximo de la Apertura</option>
-                  <option>Mínimo de la Apertura</option>
-                  <option>Error de Marcación</option>
-                  <option>Duda</option>
                 </select>
                 <div class="btn-group cas-resultado" id="casResultadoGroup">
                   <button type="button" class="btn-option cas-t" data-value="T">T</button>
                   <button type="button" class="btn-option cas-s" data-value="S">S</button>
                 </div>
                 <button type="button" class="btn-secondary" id="casAgregar">
-                  <i class="ti ti-plus"></i> Agregar
+                  <i class="ti ti-plus"></i> <span data-i18n="register.add">Agregar</span>
                 </button>
               </div>
               <div id="casList" class="cas-list"></div>
@@ -363,30 +349,32 @@
 
             <!-- Reflexión -->
             <div class="form-group">
-              <label for="analisisTrader">Reflexión / Análisis del día</label>
+              <label for="analisisTrader" data-i18n="register.reflection">Reflexión / Análisis del día</label>
               <textarea id="analisisTrader" name="analisis_trader" rows="5"
+                data-i18n-ph="register.reflection_ph"
                 placeholder="¿Cómo fue la sesión? ¿Qué salió bien? ¿Qué mejorar? ¿Seguiste las reglas?"></textarea>
             </div>
 
             <!-- Notas adicionales -->
             <div class="form-group">
-              <label for="resumenIA">Notas adicionales</label>
+              <label for="resumenIA" data-i18n="register.notes">Notas adicionales</label>
               <textarea id="resumenIA" name="resumen_ia" rows="3"
+                data-i18n-ph="register.notes_ph"
                 placeholder="Apuntes extra, ideas para mañana, contexto adicional..."></textarea>
             </div>
 
             <!-- Imagen -->
             <div class="form-group">
-              <label>Imagen / captura del día</label>
+              <label data-i18n="register.image">Imagen / captura del día</label>
               <div class="upload-area" id="uploadArea">
                 <i class="ti ti-photo-up"></i>
-                <p>Arrastra una imagen o haz clic para seleccionar</p>
-                <p style="font-size:0.75rem; margin-top:4px; color:var(--text3);">PNG, JPG — máx. 10 MB</p>
+                <p data-i18n="register.image_drag">Arrastra una imagen o haz clic para seleccionar</p>
+                <p style="font-size:0.75rem; margin-top:4px; color:var(--text3);" data-i18n="register.image_size">PNG, JPG — máx. 10 MB</p>
                 <input type="file" id="imageUpload" accept="image/*" hidden>
               </div>
               <div class="image-preview hidden" id="imagePreview">
                 <img id="previewImg" src="" alt="Vista previa">
-                <button type="button" class="btn-remove-img" id="removeImage" title="Quitar imagen">
+                <button type="button" class="btn-remove-img" id="removeImage" data-i18n-title="register.remove_image">
                   <i class="ti ti-x"></i>
                 </button>
               </div>
@@ -396,10 +384,10 @@
             <!-- Actions -->
             <div class="form-actions">
               <button type="submit" class="btn-primary" id="saveSession">
-                <i class="ti ti-device-floppy"></i> Guardar sesión
+                <i class="ti ti-device-floppy"></i> <span data-i18n="register.save">Guardar sesión</span>
               </button>
               <button type="button" class="btn-secondary" id="clearForm">
-                <i class="ti ti-refresh"></i> Limpiar formulario
+                <i class="ti ti-refresh"></i> <span data-i18n="register.clear">Limpiar formulario</span>
               </button>
             </div>
 
@@ -410,19 +398,19 @@
       <!-- ═══ 5. DATOS ════════════════════════════════════════════════════ -->
       <section class="section" id="section-data">
         <div class="section-header">
-          <h2><i class="ti ti-database"></i> Gestión de Datos</h2>
+          <h2><i class="ti ti-database"></i> <span data-i18n="data.title">Gestión de Datos</span></h2>
         </div>
         <div class="data-catalogs">
 
           <!-- Casuísticas -->
           <div class="catalog-card">
             <div class="catalog-header">
-              <h3><i class="ti ti-clipboard-list"></i> Casuísticas</h3>
-              <span class="catalog-sub">Situaciones a tipificar por día</span>
+              <h3><i class="ti ti-clipboard-list"></i> <span data-i18n="data.casuisticas">Casuísticas</span></h3>
+              <span class="catalog-sub" data-i18n="data.casuisticas_sub">Situaciones a tipificar por día</span>
             </div>
             <div class="catalog-add">
-              <input type="text" id="newCasuistica" placeholder="Nueva casuística..." maxlength="60">
-              <button class="btn-primary" id="addCasuistica"><i class="ti ti-plus"></i> Agregar</button>
+              <input type="text" id="newCasuistica" data-i18n-ph="data.new_cas_ph" placeholder="Nueva casuística..." maxlength="60">
+              <button class="btn-primary" id="addCasuistica"><i class="ti ti-plus"></i> <span data-i18n="register.add">Agregar</span></button>
             </div>
             <div id="catalogoCasuisticasList" class="catalog-list"></div>
           </div>
@@ -430,13 +418,13 @@
           <!-- Emociones -->
           <div class="catalog-card">
             <div class="catalog-header">
-              <h3><i class="ti ti-mood-smile"></i> Emociones</h3>
-              <span class="catalog-sub">Estados emocionales del Coach IA</span>
+              <h3><i class="ti ti-mood-smile"></i> <span data-i18n="data.emociones">Emociones</span></h3>
+              <span class="catalog-sub" data-i18n="data.emociones_sub">Estados emocionales del Coach IA</span>
             </div>
             <div class="catalog-add">
               <input type="text" id="newEmocionEmoji" placeholder="😐" maxlength="4" class="catalog-emoji-input">
-              <input type="text" id="newEmocionNombre" placeholder="Nueva emoción..." maxlength="40">
-              <button class="btn-primary" id="addEmocion"><i class="ti ti-plus"></i> Agregar</button>
+              <input type="text" id="newEmocionNombre" data-i18n-ph="data.new_emocion_ph" placeholder="Nueva emoción..." maxlength="40">
+              <button class="btn-primary" id="addEmocion"><i class="ti ti-plus"></i> <span data-i18n="register.add">Agregar</span></button>
             </div>
             <div id="catalogoEmocionesList" class="catalog-list"></div>
           </div>
@@ -447,19 +435,19 @@
       <!-- ═══ COACH IA ════════════════════════════════════════════════════════ -->
       <section class="section" id="section-coach">
         <div class="section-header">
-          <h2><i class="ti ti-robot"></i> Coach IA — Estrategia Chaumer</h2>
+          <h2><i class="ti ti-robot"></i> <span data-i18n="coach.title">Coach IA — Estrategia Chaumer</span></h2>
         </div>
 
         <!-- Tabs -->
         <div class="coach-tabs">
           <button class="coach-tab-btn active" data-tab="analisis">
-            <i class="ti ti-chart-dots-3"></i> Análisis de Hoy
+            <i class="ti ti-chart-dots-3"></i> <span data-i18n="coach.tab_analysis">Análisis de Hoy</span>
           </button>
           <button class="coach-tab-btn" data-tab="historial">
-            <i class="ti ti-history"></i> Historial
+            <i class="ti ti-history"></i> <span data-i18n="coach.tab_history">Historial</span>
           </button>
           <button class="coach-tab-btn" data-tab="estrategia">
-            <i class="ti ti-book-2"></i> Estrategia
+            <i class="ti ti-book-2"></i> <span data-i18n="coach.tab_strategy">Estrategia</span>
           </button>
         </div>
 
@@ -470,14 +458,14 @@
           <div class="coach-controls-row">
 
             <div class="coach-control-group">
-              <label class="coach-label">Estado emocional</label>
+              <label class="coach-label" data-i18n="coach.emotion">Estado emocional</label>
               <select id="coachEmocionSelect" class="coach-select">
                 <option value="">¿Cómo llegas hoy?</option>
               </select>
             </div>
 
             <div class="coach-control-group">
-              <label class="coach-label">Confianza</label>
+              <label class="coach-label" data-i18n="coach.confidence">Confianza</label>
               <div class="coach-stars" id="coachConfianzaStars">
                 <button type="button" class="coach-star" data-val="1" title="Muy baja">★</button>
                 <button type="button" class="coach-star" data-val="2" title="Baja">★</button>
@@ -489,15 +477,15 @@
             </div>
 
             <div class="coach-control-group coach-img-group">
-              <label class="coach-label">Gráfica del día</label>
+              <label class="coach-label" data-i18n="coach.chart">Gráfica del día</label>
               <div class="coach-upload-area" id="coachUploadArea">
                 <i class="ti ti-photo-up"></i>
-                <span>Arrastra o haz clic para subir</span>
+                <span data-i18n="coach.chart_upload">Arrastra o haz clic para subir</span>
                 <input type="file" id="coachImageInput" accept="image/*" hidden>
               </div>
               <div class="coach-img-preview hidden" id="coachImagePreview">
                 <img id="coachPreviewImg" src="" alt="Gráfica">
-                <button type="button" class="coach-remove-img" id="coachRemoveImg" title="Quitar imagen">
+                <button type="button" class="coach-remove-img" id="coachRemoveImg">
                   <i class="ti ti-x"></i>
                 </button>
               </div>
@@ -508,10 +496,10 @@
           <!-- Botones de acción -->
           <div class="coach-action-row">
             <button class="btn-primary" id="coachAnalyzeBtn">
-              <i class="ti ti-robot"></i> Analizar sesión
+              <i class="ti ti-robot"></i> <span data-i18n="coach.analyze">Analizar sesión</span>
             </button>
             <button class="btn-primary coach-save-btn hidden" id="coachSaveBtn">
-              <i class="ti ti-device-floppy"></i> Guardar diagnóstico
+              <i class="ti ti-device-floppy"></i> <span data-i18n="coach.save">Guardar diagnóstico</span>
             </button>
           </div>
 
@@ -519,15 +507,15 @@
           <div id="coachAnalisisContent" class="coach-analisis-content">
             <div class="coach-placeholder">
               <i class="ti ti-robot"></i>
-              <p>Haz clic en <strong>Analizar sesión</strong> para que el Coach evalúe tu operativa de hoy.</p>
-              <p class="coach-placeholder-hint">Sube la gráfica del día para un análisis más preciso. Sin imagen, usará los datos del diario.</p>
+              <p data-i18n-html="coach.placeholder">Haz clic en <strong>Analizar sesión</strong> para que el Coach evalúe tu operativa de hoy.</p>
+              <p class="coach-placeholder-hint" data-i18n="coach.placeholder_hint">Sube la gráfica del día para un análisis más preciso. Sin imagen, usará los datos del diario.</p>
             </div>
           </div>
 
           <!-- Chat de seguimiento -->
           <div class="coach-chat-wrap">
             <div class="coach-chat-header">
-              <i class="ti ti-messages"></i> Chat de seguimiento
+              <i class="ti ti-messages"></i> <span data-i18n="coach.chat_header">Chat de seguimiento</span>
             </div>
             <div class="coach-chat-messages" id="coachChatMessages"></div>
             <div class="coach-chat-input-row">
@@ -535,8 +523,9 @@
                 id="coachChatInput"
                 class="coach-chat-input"
                 rows="2"
+                data-i18n-ph="coach.chat_ph"
                 placeholder="Pregunta sobre un setup, un error, la estrategia... (Enter para enviar, Shift+Enter para nueva línea)"></textarea>
-              <button class="btn-primary coach-send-btn" id="coachSendBtn" title="Enviar">
+              <button class="btn-primary coach-send-btn" id="coachSendBtn">
                 <i class="ti ti-send"></i>
               </button>
             </div>
@@ -549,7 +538,7 @@
           <div id="coachHistorialList" class="coach-historial-list">
             <div class="coach-placeholder">
               <i class="ti ti-history"></i>
-              <p>Los diagnósticos guardados aparecerán aquí.</p>
+              <p data-i18n="coach.history_empty">Los diagnósticos guardados aparecerán aquí.</p>
             </div>
           </div>
         </div>
@@ -558,10 +547,10 @@
         <div class="coach-tab-panel" id="coach-panel-estrategia">
           <p class="coach-estrat-desc">
             <i class="ti ti-info-circle"></i>
-            Edita las secciones de tu estrategia Chaumer. Los cambios se guardan en la base de datos y el Coach los usará automáticamente en el próximo análisis.
+            <span data-i18n="coach.strategy_desc">Edita las secciones de tu estrategia Chaumer. Los cambios se guardan en la base de datos y el Coach los usará automáticamente en el próximo análisis.</span>
           </p>
           <div id="coachEstrategiaList" class="coach-estrategia-list">
-            <div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Cargando...</div>
+            <div class="coach-loading"><i class="ti ti-loader-2 spin"></i> <span data-i18n="coach.loading">Cargando...</span></div>
           </div>
         </div>
 
@@ -570,7 +559,7 @@
       <!-- ═══ 7. GALERÍA DE IMÁGENES ═══════════════════════════════════════ -->
       <section class="section" id="section-gallery">
         <div class="section-header">
-          <h2 id="galleryTitle">Imágenes</h2>
+          <h2 id="galleryTitle" data-i18n="gallery.title">Imágenes</h2>
         </div>
         <div class="gallery-months-bar" id="galleryMonthsBar"></div>
         <div class="gallery-grid" id="galleryGrid"></div>
@@ -579,28 +568,28 @@
       <!-- ═══ 6. ANÁLISIS ══════════════════════════════════════════════════ -->
       <section class="section" id="section-analysis">
         <div class="section-header">
-          <h2>Análisis y Estadísticas</h2>
+          <h2 data-i18n="analysis.title">Análisis y Estadísticas</h2>
         </div>
 
         <!-- Filtros -->
         <div class="analysis-controls">
           <div class="period-selector">
-            <button class="period-btn" data-period="week">Semana</button>
-            <button class="period-btn active" data-period="month">Mes</button>
-            <button class="period-btn" data-period="all">Todo</button>
+            <button class="period-btn" data-period="week" data-i18n="analysis.period.week">Semana</button>
+            <button class="period-btn active" data-period="month" data-i18n="analysis.period.month">Mes</button>
+            <button class="period-btn" data-period="all" data-i18n="analysis.period.all">Todo</button>
           </div>
           <!-- Navegador de mes (visible solo en período "Mes") -->
           <div class="analysis-month-nav" id="analysisMonthNav">
-            <button class="btn-icon" id="analysisPrevMonth" title="Mes anterior">
+            <button class="btn-icon" id="analysisPrevMonth" data-i18n-title="analysis.prev_month">
               <i class="ti ti-chevron-left"></i>
             </button>
             <span id="analysisMonthLabel">Mayo 2026</span>
-            <button class="btn-icon" id="analysisNextMonth" title="Mes siguiente">
+            <button class="btn-icon" id="analysisNextMonth" data-i18n-title="analysis.next_month">
               <i class="ti ti-chevron-right"></i>
             </button>
           </div>
           <select id="accountFilterAnalysis" class="filter-select">
-            <option value="all">Todas las cuentas</option>
+            <option value="all" data-i18n="analysis.all_accounts">Todas las cuentas</option>
           </select>
         </div>
 
@@ -610,71 +599,71 @@
         <div class="charts-grid">
           <div class="chart-card wide">
             <div class="chart-header">
-              <h3><i class="ti ti-trending-up"></i> Curva de Equity — P&amp;L Acumulado</h3>
-              <button class="help-btn" data-help="equity" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+              <h3><i class="ti ti-trending-up"></i> <span data-i18n="chart.equity_title">Curva de Equity — P&amp;L Acumulado</span></h3>
+              <button class="help-btn" data-help="equity" data-i18n-title="analysis.help"><i class="ti ti-help-circle"></i></button>
             </div>
             <canvas id="equityChart"></canvas>
           </div>
           <div class="chart-card">
             <div class="chart-header">
-              <h3><i class="ti ti-target"></i> Win Rate semanal</h3>
-              <button class="help-btn" data-help="winRate" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+              <h3><i class="ti ti-target"></i> <span data-i18n="chart.winrate_title">Win Rate semanal</span></h3>
+              <button class="help-btn" data-help="winRate" data-i18n-title="analysis.help"><i class="ti ti-help-circle"></i></button>
             </div>
             <canvas id="winRateChart"></canvas>
           </div>
           <div class="chart-card">
             <div class="chart-header">
-              <h3><i class="ti ti-calendar-week"></i> P&amp;L promedio por día de semana</h3>
-              <button class="help-btn" data-help="pnlByDay" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+              <h3><i class="ti ti-calendar-week"></i> <span data-i18n="chart.pnl_day_title">P&amp;L promedio por día de semana</span></h3>
+              <button class="help-btn" data-help="pnlByDay" data-i18n-title="analysis.help"><i class="ti ti-help-circle"></i></button>
             </div>
             <canvas id="pnlByDayChart"></canvas>
           </div>
           <div class="chart-card">
             <div class="chart-header">
-              <h3><i class="ti ti-clock"></i> P&amp;L promedio por hora (ET)</h3>
-              <button class="help-btn" data-help="pnlByHour" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+              <h3><i class="ti ti-clock"></i> <span data-i18n="chart.pnl_hour_title">P&amp;L promedio por hora (ET)</span></h3>
+              <button class="help-btn" data-help="pnlByHour" data-i18n-title="analysis.help"><i class="ti ti-help-circle"></i></button>
             </div>
             <canvas id="pnlByHourChart"></canvas>
           </div>
           <div class="chart-card wide">
             <div class="chart-header">
-              <h3><i class="ti ti-arrows-maximize"></i> MAE vs MFE — Gestión de excursiones</h3>
-              <button class="help-btn" data-help="maeMfe" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+              <h3><i class="ti ti-arrows-maximize"></i> <span data-i18n="chart.mae_mfe_title">MAE vs MFE — Gestión de excursiones</span></h3>
+              <button class="help-btn" data-help="maeMfe" data-i18n-title="analysis.help"><i class="ti ti-help-circle"></i></button>
             </div>
             <canvas id="maeMfeChart"></canvas>
           </div>
           <div class="chart-card wide">
             <div class="chart-header">
-              <h3><i class="ti ti-chart-histogram"></i> Distribución de P&amp;L — Frecuencia por rango</h3>
-              <button class="help-btn" data-help="pnlHist" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+              <h3><i class="ti ti-chart-histogram"></i> <span data-i18n="chart.pnl_hist_title">Distribución de P&amp;L — Frecuencia por rango</span></h3>
+              <button class="help-btn" data-help="pnlHist" data-i18n-title="analysis.help"><i class="ti ti-help-circle"></i></button>
             </div>
             <canvas id="pnlHistChart"></canvas>
           </div>
           <div class="chart-card">
             <div class="chart-header">
-              <h3><i class="ti ti-chart-donut"></i> Distribución de resultados</h3>
-              <button class="help-btn" data-help="results" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+              <h3><i class="ti ti-chart-donut"></i> <span data-i18n="chart.results_title">Distribución de resultados</span></h3>
+              <button class="help-btn" data-help="results" data-i18n-title="analysis.help"><i class="ti ti-help-circle"></i></button>
             </div>
             <canvas id="resultsChart"></canvas>
           </div>
           <div class="chart-card">
             <div class="chart-header">
-              <h3><i class="ti ti-checkup-list"></i> Disciplina por sesión</h3>
-              <button class="help-btn" data-help="discipline" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+              <h3><i class="ti ti-checkup-list"></i> <span data-i18n="chart.discipline_title">Disciplina por sesión</span></h3>
+              <button class="help-btn" data-help="discipline" data-i18n-title="analysis.help"><i class="ti ti-help-circle"></i></button>
             </div>
             <canvas id="disciplineChart"></canvas>
           </div>
           <div class="chart-card">
             <div class="chart-header">
-              <h3><i class="ti ti-chart-dots"></i> Disciplina vs P&amp;L — ¿Las reglas generan dinero?</h3>
-              <button class="help-btn" data-help="discPnl" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+              <h3><i class="ti ti-chart-dots"></i> <span data-i18n="chart.disc_pnl_title">Disciplina vs P&amp;L — ¿Las reglas generan dinero?</span></h3>
+              <button class="help-btn" data-help="discPnl" data-i18n-title="analysis.help"><i class="ti ti-help-circle"></i></button>
             </div>
             <canvas id="disciplinePnlChart"></canvas>
           </div>
           <div class="chart-card wide">
             <div class="chart-header">
-              <h3><i class="ti ti-timeline"></i> Errores en el tiempo — Evolución semanal</h3>
-              <button class="help-btn" data-help="errorsTime" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+              <h3><i class="ti ti-timeline"></i> <span data-i18n="chart.errors_title">Errores en el tiempo — Evolución semanal</span></h3>
+              <button class="help-btn" data-help="errorsTime" data-i18n-title="analysis.help"><i class="ti ti-help-circle"></i></button>
             </div>
             <canvas id="errorsTimeChart"></canvas>
           </div>
@@ -687,20 +676,23 @@
         <!-- Header: año + capital inicial -->
         <div class="annual-header">
           <div class="annual-year-nav">
-            <button class="btn-icon" id="annualPrevYear" title="Año anterior">
+            <button class="btn-icon" id="annualPrevYear" data-i18n-title="annual.prev_year">
               <i class="ti ti-chevron-left"></i>
             </button>
             <span id="annualYearLabel" class="annual-year-label">2026</span>
-            <button class="btn-icon" id="annualNextYear" title="Año siguiente">
+            <button class="btn-icon" id="annualNextYear" data-i18n-title="annual.next_year">
               <i class="ti ti-chevron-right"></i>
             </button>
           </div>
           <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
             <select id="accountFilterAnnual" class="filter-select">
-              <option value="all">Todas las cuentas</option>
+              <option value="all" data-i18n="annual.all_accounts">Todas las cuentas</option>
             </select>
             <div class="annual-capital-wrap">
-              <label for="annualCapitalInicial">Capital inicial <span style="color:var(--text3)">(para rentabilidad %)</span></label>
+              <label for="annualCapitalInicial">
+                <span data-i18n="annual.capital">Capital inicial</span>
+                <span style="color:var(--text3)"> <span data-i18n="annual.capital_hint">(para rentabilidad %)</span></span>
+              </label>
               <div class="annual-capital-input">
                 <span>$</span>
                 <input type="number" id="annualCapitalInicial" placeholder="5000" min="0" step="100">
@@ -712,7 +704,7 @@
         <!-- Loading state -->
         <div id="annualLoadingState" style="text-align:center;padding:60px 0;color:var(--text3)">
           <i class="ti ti-loader-2 spin" style="font-size:2rem"></i>
-          <p style="margin-top:12px">Cargando datos anuales...</p>
+          <p style="margin-top:12px" data-i18n="annual.loading">Cargando datos anuales...</p>
         </div>
 
         <!-- Main content -->
@@ -725,13 +717,13 @@
           <div class="annual-charts-row">
             <div class="card">
               <div class="chart-header">
-                <h3><i class="ti ti-trending-up"></i> Equity Curve Anual</h3>
+                <h3><i class="ti ti-trending-up"></i> <span data-i18n="annual.equity_title">Equity Curve Anual</span></h3>
               </div>
               <canvas id="annualEquityChart" height="110"></canvas>
             </div>
             <div class="card">
               <div class="chart-header">
-                <h3><i class="ti ti-chart-bar"></i> P&amp;L por Mes</h3>
+                <h3><i class="ti ti-chart-bar"></i> <span data-i18n="annual.pnl_bar_title">P&amp;L por Mes</span></h3>
               </div>
               <canvas id="annualPnlBarChart" height="110"></canvas>
             </div>
@@ -740,20 +732,20 @@
           <!-- Monthly table -->
           <div class="card annual-table-card">
             <div class="chart-header">
-              <h3><i class="ti ti-table"></i> Resumen por Mes</h3>
+              <h3><i class="ti ti-table"></i> <span data-i18n="annual.table_title">Resumen por Mes</span></h3>
             </div>
             <div class="annual-table-wrap">
               <table class="annual-table">
                 <thead>
                   <tr>
-                    <th>Mes</th>
-                    <th>P&amp;L Neto</th>
-                    <th>Acumulado</th>
-                    <th>Rentabilidad</th>
-                    <th>Efectividad</th>
-                    <th>Disciplina</th>
-                    <th>Trades</th>
-                    <th>Estado</th>
+                    <th data-i18n="annual.table.month">Mes</th>
+                    <th data-i18n="annual.table.net_pnl">P&amp;L Neto</th>
+                    <th data-i18n="annual.table.cumulative">Acumulado</th>
+                    <th data-i18n="annual.table.return">Rentabilidad</th>
+                    <th data-i18n="annual.table.win_rate">Efectividad</th>
+                    <th data-i18n="annual.table.discipline">Disciplina</th>
+                    <th data-i18n="annual.table.trades">Trades</th>
+                    <th data-i18n="annual.table.status">Estado</th>
                   </tr>
                 </thead>
                 <tbody id="annualMonthTableBody"></tbody>
@@ -772,16 +764,16 @@
   <div class="modal-overlay hidden" id="dayModal">
     <div class="modal">
       <div class="modal-header">
-        <h3 id="modalDateTitle">Detalle del día</h3>
-        <button class="btn-icon" id="closeModal" title="Cerrar">
+        <h3 id="modalDateTitle" data-i18n="modal.day_detail">Detalle del día</h3>
+        <button class="btn-icon" id="closeModal" data-i18n-title="modal.close">
           <i class="ti ti-x"></i>
         </button>
       </div>
       <div class="modal-tabs">
-        <button class="tab-btn active" data-tab="imagen">Imagen</button>
-        <button class="tab-btn" data-tab="analisis">Análisis</button>
-        <button class="tab-btn" data-tab="checklist">Checklist</button>
-        <button class="tab-btn" data-tab="resumen">Resumen</button>
+        <button class="tab-btn active" data-tab="imagen" data-i18n="modal.tab_image">Imagen</button>
+        <button class="tab-btn" data-tab="analisis" data-i18n="modal.tab_analysis">Análisis</button>
+        <button class="tab-btn" data-tab="checklist" data-i18n="modal.tab_checklist">Checklist</button>
+        <button class="tab-btn" data-tab="resumen" data-i18n="modal.tab_summary">Resumen</button>
       </div>
       <div class="modal-content">
         <div class="tab-panel active" id="tab-resumen">
@@ -799,7 +791,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" id="editSessionBtn">
-          <i class="ti ti-edit"></i> Editar sesión
+          <i class="ti ti-edit"></i> <span data-i18n="modal.edit_session">Editar sesión</span>
         </button>
       </div>
     </div>
@@ -815,7 +807,7 @@
         <div id="holidayEmoji" style="font-size:4.5rem; line-height:1; margin-bottom:16px">🏛</div>
         <div style="margin-bottom:20px">
           <span class="badge badge-festivo" style="font-size:0.8rem; padding:5px 14px">
-            <i class="ti ti-building-bank"></i> Mercado Cerrado — CME
+            <i class="ti ti-building-bank"></i> <span data-i18n="holiday.closed">Mercado Cerrado — CME</span>
           </span>
         </div>
         <div id="holidayName" style="font-size:1.4rem; font-weight:700; color:var(--text); margin-bottom:8px">Festivo</div>
@@ -828,7 +820,7 @@
   <div class="modal-overlay hidden" id="disciplineModal">
     <div class="modal" style="max-width:500px">
       <div class="modal-header">
-        <h3><i class="ti ti-checkup-list"></i> Análisis de Disciplina</h3>
+        <h3><i class="ti ti-checkup-list"></i> <span data-i18n="discipline.modal_title">Análisis de Disciplina</span></h3>
         <button class="btn-icon" id="closeDisciplineModal"><i class="ti ti-x"></i></button>
       </div>
       <div class="modal-content" id="disciplineModalContent"></div>
@@ -839,39 +831,38 @@
   <div class="modal-overlay hidden" id="settingsModal">
     <div class="modal" style="max-width:480px">
       <div class="modal-header">
-        <h3><i class="ti ti-settings"></i> Ajustes</h3>
+        <h3><i class="ti ti-settings"></i> <span data-i18n="settings.title">Ajustes</span></h3>
         <button class="btn-icon" id="closeSettings"><i class="ti ti-x"></i></button>
       </div>
       <div class="modal-content">
         <div class="form-group">
-          <label for="inputClaudeKey">API Key de Claude</label>
+          <label for="inputClaudeKey" data-i18n="settings.claude_key">API Key de Claude</label>
           <div style="display:flex; gap:8px;">
-            <input type="password" id="inputClaudeKey" placeholder="sk-ant-api03-..." style="flex:1">
+            <input type="password" id="inputClaudeKey" data-i18n-ph="settings.claude_key_ph" placeholder="sk-ant-api03-..." style="flex:1">
             <button type="button" class="btn-secondary" id="toggleKeyVisibility" style="padding:8px 10px; flex-shrink:0;">
               <i class="ti ti-eye"></i>
             </button>
           </div>
-          <small style="color:var(--text3); margin-top:4px; display:block;">
+          <small style="color:var(--text3); margin-top:4px; display:block;" data-i18n="settings.claude_key_hint">
             Se guarda solo en este navegador, nunca en GitHub.
-            Obtén la tuya en <strong>console.anthropic.com</strong>
           </small>
         </div>
         <div class="form-group" style="margin-top:16px;">
-          <label for="inputDashboardSecret">Dashboard Secret</label>
+          <label for="inputDashboardSecret" data-i18n="settings.dashboard_secret">Dashboard Secret</label>
           <div style="display:flex; gap:8px;">
-            <input type="password" id="inputDashboardSecret" placeholder="Clave configurada en Cloudflare Worker" style="flex:1">
+            <input type="password" id="inputDashboardSecret" data-i18n-ph="settings.dashboard_secret_ph" placeholder="Clave configurada en Cloudflare Worker" style="flex:1">
             <button type="button" class="btn-secondary" id="toggleSecretVisibility" style="padding:8px 10px; flex-shrink:0;">
               <i class="ti ti-eye"></i>
             </button>
           </div>
-          <small style="color:var(--text3); margin-top:4px; display:block;">
+          <small style="color:var(--text3); margin-top:4px; display:block;" data-i18n="settings.dashboard_secret_hint">
             Requerido para guardar sesiones y generar resúmenes con IA.
           </small>
         </div>
       </div>
       <div class="modal-footer" style="justify-content:flex-end;">
         <button class="btn-primary" id="saveSettings">
-          <i class="ti ti-device-floppy"></i> Guardar
+          <i class="ti ti-device-floppy"></i> <span data-i18n="settings.save">Guardar</span>
         </button>
       </div>
     </div>
@@ -881,7 +872,7 @@
   <div class="modal-overlay hidden" id="analysisHelpModal">
     <div class="modal" style="max-width:420px">
       <div class="modal-header">
-        <h3 id="analysisHelpTitle"><i class="ti ti-help-circle"></i> Ayuda</h3>
+        <h3 id="analysisHelpTitle"><i class="ti ti-help-circle"></i> <span data-i18n="help.title">Ayuda</span></h3>
         <button class="btn-icon" id="closeAnalysisHelp"><i class="ti ti-x"></i></button>
       </div>
       <div class="modal-content">
@@ -894,6 +885,7 @@
   <div id="toastContainer"></div>
 
   <!-- ── Scripts (orden importante) ────────────────────────────────── -->
+  <script src="js/i18n.js"></script>
   <script src="js/config.js"></script>
   <script src="js/db.js"></script>
   <script src="js/calendar.js"></script>

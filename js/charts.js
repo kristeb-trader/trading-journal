@@ -10,9 +10,6 @@ const Charts = (() => {
   let analysisMonth = new Date().getMonth() + 1
   let activePeriod  = 'month'
 
-  const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                       'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-
   // ── Textos de ayuda ───────────────────────────────────────────────────────
   const HELP_TEXTS = {
     kpiPnl:     { title: 'P&L Neto',
@@ -137,7 +134,7 @@ const Charts = (() => {
 
   function updateMonthLabel() {
     const el = document.getElementById('analysisMonthLabel')
-    if (el) el.textContent = `${MONTH_NAMES[analysisMonth - 1]} ${analysisYear}`
+    if (el) el.textContent = `${I18n.months()[analysisMonth - 1]} ${analysisYear}`
   }
 
   function showHideMonthNav(period) {
@@ -184,13 +181,13 @@ const Charts = (() => {
 
     document.getElementById('analysisKpiStrip').innerHTML = `
       <div class="analysis-kpi-row">
-        ${chip('P&L Neto', `${netPnl>=0?'+':''}$${netPnl.toFixed(0)}`, netPnl>=0?'kpi-green':'kpi-red', 'kpiPnl')}
-        ${chip('Trades', `${nonBE.length}${beCount>0?` <small style="color:var(--text3);font-weight:400">+${beCount} B.E.</small>`:''}`, 'kpi-neutral', 'kpiTrades')}
-        ${chip('Win Rate', `${winRate}%`, parseFloat(winRate)>=50?'kpi-green':'kpi-red', 'kpiWinRate')}
-        ${chip('Profit Factor', pf, pfColor, 'kpiPf')}
-        ${chip('Avg Win', `$${avgWin}`, 'kpi-green', 'kpiAvgWin')}
-        ${chip('Avg Loss', `$${avgLoss}`, 'kpi-red', 'kpiAvgLoss')}
-        ${avgEtd !== null ? chip('ETD medio', `$${avgEtd}`, parseFloat(avgEtd)<=15?'kpi-neutral':'kpi-red', 'kpiEtd') : ''}
+        ${chip(I18n.t('kpi.net_pnl'), `${netPnl>=0?'+':''}$${netPnl.toFixed(0)}`, netPnl>=0?'kpi-green':'kpi-red', 'kpiPnl')}
+        ${chip(I18n.t('kpi.trades'), `${nonBE.length}${beCount>0?` <small style="color:var(--text3);font-weight:400">+${beCount} B.E.</small>`:''}`, 'kpi-neutral', 'kpiTrades')}
+        ${chip(I18n.t('kpi.win_rate'), `${winRate}%`, parseFloat(winRate)>=50?'kpi-green':'kpi-red', 'kpiWinRate')}
+        ${chip(I18n.t('kpi.profit_factor'), pf, pfColor, 'kpiPf')}
+        ${chip(I18n.t('kpi.avg_win'), `$${avgWin}`, 'kpi-green', 'kpiAvgWin')}
+        ${chip(I18n.t('kpi.avg_loss'), `$${avgLoss}`, 'kpi-red', 'kpiAvgLoss')}
+        ${avgEtd !== null ? chip(I18n.t('kpi.etd'), `$${avgEtd}`, parseFloat(avgEtd)<=15?'kpi-neutral':'kpi-red', 'kpiEtd') : ''}
       </div>`
   }
 
@@ -225,7 +222,7 @@ const Charts = (() => {
         labels: dates,
         datasets: [
           {
-            label: 'P&L Acumulado',
+            label: I18n.t('chart.equity_label'),
             data: equityData,
             borderColor: lastVal>=0 ? COLORS.accent : COLORS.red,
             backgroundColor: lastVal>=0 ? grad : 'rgba(226,75,74,0.1)',
@@ -237,7 +234,7 @@ const Charts = (() => {
             order: 1,
           },
           {
-            label: 'Drawdown',
+            label: I18n.t('chart.drawdown_label'),
             data: drawdownData,
             borderColor: 'rgba(226,75,74,0.5)',
             backgroundColor: 'rgba(226,75,74,0.15)',
@@ -338,7 +335,8 @@ const Charts = (() => {
 
   function renderPnlByDay(trades) {
     destroy('pnlByDay')
-    const DAYS = ['Lun','Mar','Mié','Jue','Vie']
+    const calDays = I18n.calendarDays()
+    const DAYS = calDays.slice(0, 5)
     const buckets = {1:[],2:[],3:[],4:[],5:[]}
     trades.forEach(t => {
       if (!t.trade_date) return
@@ -353,7 +351,7 @@ const Charts = (() => {
       type: 'bar',
       data: {
         labels: DAYS,
-        datasets: [{ label:'P&L promedio', data:avgs,
+        datasets: [{ label: I18n.t('chart.pnl_avg_label'), data:avgs,
           backgroundColor: avgs.map(v=>v>=0?'rgba(29,158,117,0.7)':'rgba(226,75,74,0.7)'),
           borderRadius:4 }]
       },
@@ -397,7 +395,7 @@ const Charts = (() => {
       type: 'bar',
       data: {
         labels,
-        datasets: [{ label:'P&L promedio/trade', data:avgs,
+        datasets: [{ label: I18n.t('chart.pnl_avg_trade_label'), data:avgs,
           backgroundColor: avgs.map(v=>v===null?'rgba(255,255,255,0.05)':v>=0?'rgba(29,158,117,0.7)':'rgba(226,75,74,0.7)'),
           borderRadius: 4 }]
       },
@@ -488,9 +486,9 @@ const Charts = (() => {
         plugins: { ...baseOptions.plugins, legend:{ display:false } },
         scales: {
           x: { ...baseOptions.scales.x,
-            title:{ display:true, text:'P&L por trade ($)', color:COLORS.text } },
+            title:{ display:true, text: I18n.t('chart.pnl_x_label'), color:COLORS.text } },
           y: { ...baseOptions.scales.y,
-            title:{ display:true, text:'Frecuencia', color:COLORS.text },
+            title:{ display:true, text: I18n.t('chart.frequency_label'), color:COLORS.text },
             ticks:{ color:COLORS.text, stepSize:1 } },
         }},
     })
@@ -513,7 +511,7 @@ const Charts = (() => {
     instances.discipline = new Chart(document.getElementById('disciplineChart'), {
       type: 'line',
       data: { labels, datasets: [{
-        label:'Disciplina % (7 factores)', data:scores,
+        label: I18n.t('chart.discipline_label'), data:scores,
         borderColor:COLORS.accent, backgroundColor:'rgba(29,158,117,0.1)',
         borderWidth:2, pointRadius:3, tension:0.2, fill:true,
       }]},
@@ -547,8 +545,8 @@ const Charts = (() => {
     instances.disciplinePnl = new Chart(document.getElementById('disciplinePnlChart'), {
       type: 'scatter',
       data: { datasets: [
-        { label:'Día ganador',  data:pos, backgroundColor:'rgba(29,158,117,0.65)', pointRadius:6 },
-        { label:'Día perdedor', data:neg, backgroundColor:'rgba(226,75,74,0.65)',  pointRadius:6 },
+        { label: I18n.t('chart.winning_day'), data:pos, backgroundColor:'rgba(29,158,117,0.65)', pointRadius:6 },
+        { label: I18n.t('chart.losing_day'),  data:neg, backgroundColor:'rgba(226,75,74,0.65)',  pointRadius:6 },
       ]},
       options: { ...baseOptions,
         plugins: { ...baseOptions.plugins,
@@ -557,10 +555,10 @@ const Charts = (() => {
           }}},
         scales: {
           x: { ...baseOptions.scales.x, min:0, max:100,
-            title:{ display:true, text:'Disciplina (%)', color:COLORS.text },
+            title:{ display:true, text: I18n.t('chart.discipline_x'), color:COLORS.text },
             ticks:{ color:COLORS.text, callback:v=>v+'%' } },
           y: { ...baseOptions.scales.y,
-            title:{ display:true, text:'P&L del día ($)', color:COLORS.text },
+            title:{ display:true, text: I18n.t('chart.pnl_y'), color:COLORS.text },
             ticks:{ color:COLORS.text, callback:v=>`$${v}` } },
         }},
     })
@@ -710,5 +708,10 @@ const Charts = (() => {
     })
   }
 
-  return { init }
+  function rerender() {
+    updateMonthLabel()
+    render(activePeriod)
+  }
+
+  return { init, rerender }
 })()

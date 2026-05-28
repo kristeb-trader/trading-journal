@@ -5,10 +5,6 @@ const Gallery = (() => {
   let errorDates    = {}  // date → true
   let activeMonth   = null
 
-  const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-  const DAYS_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
-
   function thumbUrl(url) {
     return url.replace('/upload/', '/upload/c_fill,w_280,h_180,q_auto,f_auto/')
   }
@@ -24,8 +20,10 @@ const Gallery = (() => {
   function weekLabel(mondayStr) {
     const mon = new Date(mondayStr + 'T12:00:00')
     const fri = new Date(mon); fri.setDate(mon.getDate() + 4)
-    const fmtDay = d => `${d.getDate()} ${MONTHS_ES[d.getMonth()]}`
-    return `${DAYS_ES[mon.getDay()]} ${fmtDay(mon)} — ${DAYS_ES[fri.getDay()]} ${fmtDay(fri)} ${fri.getFullYear()}`
+    const MONTHS = I18n.months()
+    const DAYS   = I18n.daysAll()
+    const fmtDay = d => `${d.getDate()} ${MONTHS[d.getMonth()]}`
+    return `${DAYS[mon.getDay()]} ${fmtDay(mon)} — ${DAYS[fri.getDay()]} ${fmtDay(fri)} ${fri.getFullYear()}`
   }
 
   function dayResult(date) {
@@ -58,7 +56,7 @@ const Gallery = (() => {
       `<button class="gallery-month-btn${!activeMonth ? ' active' : ''}" data-month="">Todas</button>` +
       months.map(m => {
         const [y, mo] = m.split('-')
-        return `<button class="gallery-month-btn${m === activeMonth ? ' active' : ''}" data-month="${m}">${MONTHS_ES[parseInt(mo)-1]} ${y}</button>`
+        return `<button class="gallery-month-btn${m === activeMonth ? ' active' : ''}" data-month="${m}">${I18n.months()[parseInt(mo)-1]} ${y}</button>`
       }).join('')
     bar.querySelectorAll('.gallery-month-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -138,9 +136,9 @@ const Gallery = (() => {
 
     if (activeMonth) {
       const [y, mo] = activeMonth.split('-')
-      title.textContent = `${MONTHS_ES[parseInt(mo)-1]} ${y}`
+      title.textContent = `${I18n.months()[parseInt(mo)-1]} ${y}`
     } else {
-      title.textContent = 'Todas las imágenes'
+      title.textContent = I18n.t('gallery.title')
     }
 
     // Mapa de imágenes por fecha
@@ -230,5 +228,10 @@ const Gallery = (() => {
     render()
   }
 
-  return { init }
+  function rerender() {
+    buildMonthsBar()
+    render()
+  }
+
+  return { init, rerender }
 })()

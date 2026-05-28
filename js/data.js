@@ -4,13 +4,13 @@ const DataManager = (() => {
   function renderList(items, containerId) {
     const el = document.getElementById(containerId)
     if (!items.length) {
-      el.innerHTML = '<p class="catalog-empty">Sin ítems registrados</p>'
+      el.innerHTML = `<p class="catalog-empty">${I18n.t('data.empty')}</p>`
       return
     }
     el.innerHTML = items.map(item => `
       <div class="catalog-item ${!item.activa ? 'catalog-item-inactive' : ''}" data-id="${item.id}" draggable="true">
-        <span class="drag-handle" title="Arrastra para reordenar"><i class="ti ti-grip-vertical"></i></span>
-        <label class="catalog-toggle" title="${item.activa ? 'Activa' : 'Inactiva'}">
+        <span class="drag-handle" title="${I18n.t('data.drag_hint')}"><i class="ti ti-grip-vertical"></i></span>
+        <label class="catalog-toggle" title="${item.activa ? I18n.t('data.active') : I18n.t('data.inactive')}">
           <input type="checkbox" class="tog-activa" data-id="${item.id}" ${item.activa ? 'checked' : ''}>
           <span class="toggle-track"></span>
         </label>
@@ -31,7 +31,7 @@ const DataManager = (() => {
           await DB.toggleCatalogoCasuistica(id, chk.checked)
           chk.closest('.catalog-item').classList.toggle('catalog-item-inactive', !chk.checked)
         } catch (e) {
-          Toast.show('Error al actualizar', 'error')
+          Toast.show(I18n.t('toast.update_error'), 'error')
           chk.checked = !chk.checked
         }
       })
@@ -42,15 +42,15 @@ const DataManager = (() => {
       btn.addEventListener('click', async () => {
         const id = parseInt(btn.dataset.id)
         const actual = btn.dataset.nombre
-        const nuevo = prompt('Editar nombre:', actual)
+        const nuevo = prompt(I18n.t('data.edit_name_prompt'), actual)
         if (!nuevo || nuevo.trim() === actual) return
         try {
           await DB.renameCatalogoCasuistica(id, nuevo.trim())
           btn.dataset.nombre = nuevo.trim()
           btn.closest('.catalog-item').querySelector('.catalog-nombre').textContent = nuevo.trim()
-          Toast.show('Nombre actualizado', 'success')
+          Toast.show(I18n.t('toast.name_updated'), 'success')
         } catch (e) {
-          Toast.show('Error al actualizar', 'error')
+          Toast.show(I18n.t('toast.update_error'), 'error')
         }
       })
     })
@@ -58,13 +58,13 @@ const DataManager = (() => {
     // ── Eliminar ───────────────────────────────────────────────────────────
     el.querySelectorAll('.btn-del-catalog').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('¿Eliminar esta casuística? Los registros históricos conservarán el nombre anterior.')) return
+        if (!confirm(I18n.t('data.confirm_delete'))) return
         const id = parseInt(btn.dataset.id)
         try {
           await DB.deleteCatalogoCasuistica(id)
           btn.closest('.catalog-item').remove()
         } catch (e) {
-          Toast.show('Error al eliminar', 'error')
+          Toast.show(I18n.t('toast.delete_error'), 'error')
         }
       })
     })
@@ -120,9 +120,9 @@ const DataManager = (() => {
       const ids = [...container.querySelectorAll('[data-id]')].map(el => parseInt(el.dataset.id))
       try {
         await saveFn(ids)
-        Toast.show('Orden guardado', 'success')
+        Toast.show(I18n.t('toast.order_saved'), 'success')
       } catch {
-        Toast.show('Error al guardar el orden', 'error')
+        Toast.show(I18n.t('toast.order_error'), 'error')
       }
     })
   }
@@ -143,13 +143,13 @@ const DataManager = (() => {
     const el = document.getElementById('catalogoEmocionesList')
     if (!el) return
     if (!items.length) {
-      el.innerHTML = '<p class="catalog-empty">Sin emociones registradas</p>'
+      el.innerHTML = `<p class="catalog-empty">${I18n.t('data.emociones_empty')}</p>`
       return
     }
     el.innerHTML = items.map(item => `
       <div class="catalog-item ${!item.activa ? 'catalog-item-inactive' : ''}" data-id="${item.id}" draggable="true">
-        <span class="drag-handle" title="Arrastra para reordenar"><i class="ti ti-grip-vertical"></i></span>
-        <label class="catalog-toggle" title="${item.activa ? 'Activa' : 'Inactiva'}">
+        <span class="drag-handle" title="${I18n.t('data.drag_hint')}"><i class="ti ti-grip-vertical"></i></span>
+        <label class="catalog-toggle" title="${item.activa ? I18n.t('data.active') : I18n.t('data.inactive')}">
           <input type="checkbox" class="tog-emocion" data-id="${item.id}" ${item.activa ? 'checked' : ''}>
           <span class="toggle-track"></span>
         </label>
@@ -171,7 +171,7 @@ const DataManager = (() => {
           await DB.toggleCatalogoEmocion(id, chk.checked)
           chk.closest('.catalog-item').classList.toggle('catalog-item-inactive', !chk.checked)
         } catch (e) {
-          Toast.show('Error al actualizar', 'error')
+          Toast.show(I18n.t('toast.update_error'), 'error')
           chk.checked = !chk.checked
         }
       })
@@ -181,9 +181,9 @@ const DataManager = (() => {
     el.querySelectorAll('.btn-edit-catalog').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id      = parseInt(btn.dataset.id)
-        const nombre  = prompt('Nombre de la emoción:', btn.dataset.nombre)
+        const nombre  = prompt(I18n.t('data.emocion_name_prompt'), btn.dataset.nombre)
         if (nombre === null) return
-        const emoji   = prompt('Emoji:', btn.dataset.emoji)
+        const emoji   = prompt(I18n.t('data.emocion_emoji_prompt'), btn.dataset.emoji)
         if (emoji === null) return
         try {
           await DB.renameCatalogoEmocion(id, nombre.trim(), emoji.trim() || '😐')
@@ -192,9 +192,9 @@ const DataManager = (() => {
           const item = btn.closest('.catalog-item')
           item.querySelector('.catalog-nombre').textContent = nombre.trim()
           item.querySelector('.catalog-emoji').textContent  = emoji.trim() || '😐'
-          Toast.show('Emoción actualizada', 'success')
+          Toast.show(I18n.t('toast.emocion_updated'), 'success')
         } catch (e) {
-          Toast.show('Error al actualizar', 'error')
+          Toast.show(I18n.t('toast.update_error'), 'error')
         }
       })
     })
@@ -202,13 +202,13 @@ const DataManager = (() => {
     // Eliminar
     el.querySelectorAll('.btn-del-catalog').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('¿Eliminar esta emoción?')) return
+        if (!confirm(I18n.t('data.confirm_delete_emocion'))) return
         const id = parseInt(btn.dataset.id)
         try {
           await DB.deleteCatalogoEmocion(id)
           btn.closest('.catalog-item').remove()
         } catch (e) {
-          Toast.show('Error al eliminar', 'error')
+          Toast.show(I18n.t('toast.delete_error'), 'error')
         }
       })
     })
@@ -234,14 +234,14 @@ const DataManager = (() => {
     document.getElementById('addCasuistica').addEventListener('click', async () => {
       const input = document.getElementById('newCasuistica')
       const nombre = input.value.trim()
-      if (!nombre) { Toast.show('Escribe el nombre de la casuística', 'warning'); return }
+      if (!nombre) { Toast.show(I18n.t('data.enter_cas'), 'warning'); return }
       try {
         await DB.addCatalogoCasuistica(nombre)
         input.value = ''
         await loadCasuisticas()
-        Toast.show('Casuística agregada', 'success')
+        Toast.show(I18n.t('toast.cas_added'), 'success')
       } catch (e) {
-        Toast.show('Error al agregar: ' + e.message, 'error')
+        Toast.show(I18n.t('toast.update_error') + ': ' + e.message, 'error')
       }
     })
 
@@ -253,15 +253,15 @@ const DataManager = (() => {
     document.getElementById('addEmocion')?.addEventListener('click', async () => {
       const emoji  = document.getElementById('newEmocionEmoji').value.trim() || '😐'
       const nombre = document.getElementById('newEmocionNombre').value.trim()
-      if (!nombre) { Toast.show('Escribe el nombre de la emoción', 'warning'); return }
+      if (!nombre) { Toast.show(I18n.t('data.enter_emocion'), 'warning'); return }
       try {
         await DB.addCatalogoEmocion(nombre, emoji)
         document.getElementById('newEmocionNombre').value = ''
         document.getElementById('newEmocionEmoji').value  = ''
         await loadEmociones()
-        Toast.show('Emoción agregada', 'success')
+        Toast.show(I18n.t('toast.emocion_added'), 'success')
       } catch (e) {
-        Toast.show('Error al agregar: ' + e.message, 'error')
+        Toast.show(I18n.t('toast.update_error') + ': ' + e.message, 'error')
       }
     })
 

@@ -76,7 +76,7 @@ const SessionForm = (() => {
     if (CLOUDINARY_CLOUD_NAME && CLOUDINARY_UPLOAD_PRESET) {
       uploadToCloudinary(file)
     } else {
-      Toast.show('Cloudinary no configurado — imagen solo visible localmente', 'warning')
+      Toast.show(I18n.t('toast.cloudinary_nc'), 'warning')
     }
   }
 
@@ -90,9 +90,9 @@ const SessionForm = (() => {
       })
       const json = await res.json()
       document.getElementById('imagenUrl').value = json.secure_url
-      Toast.show('Imagen subida correctamente', 'success')
+      Toast.show(I18n.t('toast.image_uploaded'), 'success')
     } catch {
-      Toast.show('Error al subir imagen a Cloudinary', 'error')
+      Toast.show(I18n.t('toast.image_error'), 'error')
     }
   }
 
@@ -165,26 +165,26 @@ const SessionForm = (() => {
   async function handleSubmit(e) {
     e.preventDefault()
     const sesionDate = document.getElementById('sesionDate').value
-    if (!sesionDate) { Toast.show('Selecciona una fecha', 'warning'); return }
+    if (!sesionDate) { Toast.show(I18n.t('form.select_date'), 'warning'); return }
 
     const payload = collectFormData()
     const btn = document.getElementById('saveSession')
     btn.disabled = true
-    btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Guardando...'
+    btn.innerHTML = `<i class="ti ti-loader-2 spin"></i> ${I18n.t('toast.saving')}`
 
     try {
       await DB.upsertSesion(payload)
-      Toast.show('Sesión guardada correctamente', 'success')
+      Toast.show(I18n.t('toast.session_saved'), 'success')
       clearForm()
       setTimeout(() => {
         Nav.go('calendar')
         Calendar.load()
       }, 500)
     } catch (err) {
-      Toast.show('Error al guardar: ' + err.message, 'error')
+      Toast.show(I18n.t('toast.session_save_error') + ': ' + err.message, 'error')
     } finally {
       btn.disabled = false
-      btn.innerHTML = '<i class="ti ti-device-floppy"></i> Guardar sesión'
+      btn.innerHTML = `<i class="ti ti-device-floppy"></i> ${I18n.t('form.save_btn')}`
     }
   }
 
@@ -270,10 +270,10 @@ const SessionForm = (() => {
 
     document.getElementById('casAgregar').addEventListener('click', async () => {
       const casuistica = document.getElementById('casCasuistica').value
-      if (!casuistica) { Toast.show('Selecciona una situación', 'warning'); return }
-      if (!casResultado) { Toast.show('Selecciona T o S', 'warning'); return }
+      if (!casuistica) { Toast.show(I18n.t('form.select_situation'), 'warning'); return }
+      if (!casResultado) { Toast.show(I18n.t('form.select_ts'), 'warning'); return }
       const sesionDate = document.getElementById('sesionDate').value
-      if (!sesionDate) { Toast.show('Selecciona la fecha primero', 'warning'); return }
+      if (!sesionDate) { Toast.show(I18n.t('form.select_date_first'), 'warning'); return }
 
       try {
         const saved = await DB.saveCasuistica(sesionDate, casuistica, casResultado)
@@ -311,7 +311,7 @@ const SessionForm = (() => {
           casPendientes.splice(idx, 1)
           renderCasList()
         } catch (e) {
-          Toast.show('Error al eliminar', 'error')
+          Toast.show(I18n.t('toast.delete_error'), 'error')
         }
       })
     })
@@ -353,7 +353,7 @@ const SessionForm = (() => {
         chk.checked = false
         chk.disabled = true
         item.style.opacity = '0.5'
-        item.title = `Invalidado: ${velas} velas superan el máximo de 5`
+        item.title = I18n.t('form.invalidated', { velas })
       } else {
         chk.disabled = false
         item.style.opacity = '1'

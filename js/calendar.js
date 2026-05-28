@@ -23,7 +23,7 @@ const Calendar = (() => {
     const sel = document.getElementById('accountFilterCalendar')
     const prev = sel.value
 
-    sel.innerHTML = '<option value="all">Todas las cuentas</option>' +
+    sel.innerHTML = `<option value="all">${I18n.t('calendar.all_accounts')}</option>` +
       allAccountsList.map(a => `<option value="${a}">${a}</option>`).join('')
 
     // Prioridad: 1) preferencia guardada  2) selección anterior  3) PA-APEX  4) 'all'
@@ -70,23 +70,19 @@ const Calendar = (() => {
 
     const add = (d, name, emoji) => { result[iso(d)] = { name, emoji } }
 
-    add(observed(new Date(year, 0, 1)),  'Año Nuevo',                    '🎊')
-    add(nth(year, 1, 1, 3),              'Día de Martin Luther King Jr.', '✊')
-    add(nth(year, 2, 1, 3),              'Día de los Presidentes',        '🦅')
+    add(observed(new Date(year, 0, 1)),  I18n.t('holiday.new_year'),    '🎊')
+    add(nth(year, 1, 1, 3),             I18n.t('holiday.mlk'),         '✊')
+    add(nth(year, 2, 1, 3),             I18n.t('holiday.presidents'),  '🦅')
     const gf = new Date(easter(year)); gf.setDate(gf.getDate() - 2)
-    add(gf,                              'Viernes Santo',                 '✝️')
-    add(last(year, 5, 1),               'Día de los Caídos',             '🪖')
-    add(observed(new Date(year, 5, 19)), 'Juneteenth',                    '🎉')
-    add(observed(new Date(year, 6, 4)),  'Día de la Independencia',       '🎆')
-    add(nth(year, 9, 1, 1),             'Día del Trabajo',               '👷')
-    add(nth(year, 11, 4, 4),            'Día de Acción de Gracias',      '🦃')
-    add(observed(new Date(year, 11, 25)),'Navidad',                       '🎄')
+    add(gf,                             I18n.t('holiday.good_friday'), '✝️')
+    add(last(year, 5, 1),              I18n.t('holiday.memorial'),    '🪖')
+    add(observed(new Date(year, 5, 19)),I18n.t('holiday.juneteenth'),  '🎉')
+    add(observed(new Date(year, 6, 4)), I18n.t('holiday.independence'),'🎆')
+    add(nth(year, 9, 1, 1),            I18n.t('holiday.labor'),       '👷')
+    add(nth(year, 11, 4, 4),           I18n.t('holiday.thanksgiving'),'🦃')
+    add(observed(new Date(year, 11, 25)),I18n.t('holiday.christmas'), '🎄')
     return result
   }
-
-  const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-  const DAYS_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Semana']
 
   function isBreakEven(profit) {
     return Math.abs(parseFloat(profit) || 0) <= 6
@@ -158,12 +154,13 @@ const Calendar = (() => {
   }
 
   function render() {
+    cmeHolidays = calcCMEHolidays(currentYear)
     const grid = document.getElementById('calendarGrid')
     const title = document.getElementById('calendarTitle')
-    title.textContent = `${MONTHS_ES[currentMonth - 1]} ${currentYear}`
+    title.textContent = `${I18n.months()[currentMonth - 1]} ${currentYear}`
 
-    // Headers: Lun–Vie + Semana
-    let html = DAYS_ES.map((d, i) =>
+    // Headers: Mon–Fri + Week
+    let html = I18n.calendarDays().map((d, i) =>
       `<div class="cal-header${i === 5 ? ' cal-header-week' : ''}">${d}</div>`
     ).join('')
 
@@ -224,30 +221,28 @@ const Calendar = (() => {
         if (!isFuture) {
           if (sesion?.no_opero) {
             if (sesion.motivo_no_opero === 'Sin setup') {
-              statusBadge = `<div class="cal-status-badge badge-sinsetup"><i class="ti ti-eye-off"></i> Sin entradas</div>`
+              statusBadge = `<div class="cal-status-badge badge-sinsetup"><i class="ti ti-eye-off"></i> ${I18n.t('badge.no_entries')}</div>`
             } else if (sesion.motivo_no_opero === 'FOMC') {
-              statusBadge = `<div class="cal-status-badge badge-fomc"><i class="ti ti-chart-candle"></i> FOMC</div>`
+              statusBadge = `<div class="cal-status-badge badge-fomc"><i class="ti ti-chart-candle"></i> ${I18n.t('badge.fomc')}</div>`
             } else if (sesion.motivo_no_opero === 'Festivo') {
-              statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> Festivo</div>`
+              statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> ${I18n.t('badge.holiday')}</div>`
             } else {
-              statusBadge = `<div class="cal-status-badge badge-noopero"><i class="ti ti-user-off"></i> No operé</div>`
+              statusBadge = `<div class="cal-status-badge badge-noopero"><i class="ti ti-user-off"></i> ${I18n.t('badge.no_trade')}</div>`
             }
           } else if (trades.length > 0 && trades.every(t => isBreakEven(t.profit))) {
-            statusBadge = `<div class="cal-status-badge badge-be"><i class="ti ti-scale"></i> B.E.</div>`
+            statusBadge = `<div class="cal-status-badge badge-be"><i class="ti ti-scale"></i> ${I18n.t('badge.be')}</div>`
           } else if (isHoliday && !trades.length) {
-            // Festivo automático (sin sesión registrada)
-            statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> Festivo</div>`
+            statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> ${I18n.t('badge.holiday')}</div>`
           }
         }
 
         // Indicador FOMC superior izquierda (visible aunque haya operado)
         const fomcIcon = isFomc
-          ? `<div class="cal-icon-fomc" title="Día de reunión FOMC"><i class="ti ti-podium"></i></div>`
+          ? `<div class="cal-icon-fomc" title="${I18n.t('tooltip.fomc')}"><i class="ti ti-podium"></i></div>`
           : ''
 
-        // Icono error (superior derecha)
         const errorIcon = !isFuture && casuisticasCache[dateStr]
-          ? `<div class="cal-icon-error" title="Errores registrados"><i class="ti ti-alert-triangle"></i></div>`
+          ? `<div class="cal-icon-error" title="${I18n.t('tooltip.errors')}"><i class="ti ti-alert-triangle"></i></div>`
           : ''
 
         // Icono dirección (inferior derecha)
@@ -278,14 +273,14 @@ const Calendar = (() => {
         if (weekTrades > 0) {
           html += `
             <div class="cal-cell cal-week-summary ${weekPnl >= 0 ? 'week-positive' : 'week-negative'}">
-              <div class="week-label">Semana ${weekNum}</div>
+              <div class="week-label">${I18n.t('cal_days.5')} ${weekNum}</div>
               <div class="week-pnl ${weekPnl >= 0 ? 'positive' : 'negative'}">${weekPnl >= 0 ? '+' : ''}$${weekPnl.toFixed(0)}</div>
               <div class="week-trades">${weekTrades} trade${weekTrades !== 1 ? 's' : ''}</div>
             </div>`
         } else {
           html += `
             <div class="cal-cell cal-week-summary week-empty">
-              <div class="week-label">Semana ${weekNum}</div>
+              <div class="week-label">${I18n.t('cal_days.5')} ${weekNum}</div>
               <div class="week-pnl" style="color:var(--text3)">—</div>
             </div>`
         }
@@ -297,11 +292,11 @@ const Calendar = (() => {
     // Total mensual — fila extra al final del grid (4 vacías + descriptiva + número)
     const totalPnl = Object.values(tradesCache).flat()
       .reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
-    const monthName = MONTHS_ES[currentMonth - 1]
+    const monthName = I18n.months()[currentMonth - 1]
     for (let i = 0; i < 4; i++) html += `<div class="cal-cell empty-cell"></div>`
     html += `
       <div class="cal-cell cal-week-summary ${totalPnl >= 0 ? 'week-positive' : 'week-negative'}">
-        <div class="week-label" style="font-size:0.8rem;color:${totalPnl >= 0 ? 'var(--accent)' : 'var(--red)'};letter-spacing:0.04em">P&amp;L Neto</div>
+        <div class="week-label" style="font-size:0.8rem;color:${totalPnl >= 0 ? 'var(--accent)' : 'var(--red)'};letter-spacing:0.04em">${I18n.t('badge.net_pnl')}</div>
         <div class="week-trades" style="font-size:0.78rem;color:var(--text1);font-weight:600">${monthName} ${currentYear}</div>
       </div>
       <div class="cal-cell cal-week-summary cal-month-total ${totalPnl >= 0 ? 'week-positive' : 'week-negative'}">
@@ -379,11 +374,7 @@ const Calendar = (() => {
   }
 
   function fmtDateEs(d) {
-    if (!d) return '—'
-    const [y, m, day] = d.split('-')
-    const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-    return `${parseInt(day)} de ${months[parseInt(m)-1]} de ${y}`
+    return I18n.formatDate(d)
   }
 
   function openHolidayModal(dateStr, name, emoji) {
@@ -409,7 +400,7 @@ const Calendar = (() => {
 
     // Festivo registrado manualmente → también modal especial
     if (sesion?.no_opero && sesion?.motivo_no_opero === 'Festivo') {
-      openHolidayModal(dateStr, 'Día Festivo', '🏛')
+      openHolidayModal(dateStr, I18n.t('holiday.generic'), '🏛')
       return
     }
 
@@ -461,5 +452,5 @@ const Calendar = (() => {
     await load()
   }
 
-  return { init, load, getYear: () => currentYear, getMonth: () => currentMonth }
+  return { init, load, render, getYear: () => currentYear, getMonth: () => currentMonth }
 })()
