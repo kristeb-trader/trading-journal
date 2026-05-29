@@ -1001,6 +1001,30 @@
             Requerido para guardar sesiones y generar resúmenes con IA.
           </small>
         </div>
+
+        <div class="settings-divider"></div>
+        <p class="settings-section-title"><i class="ti ti-target-arrow"></i> Objetivos y reglas</p>
+        <div class="objetivos-grid">
+          <div class="form-group">
+            <label for="objStopMax">Stop máximo por trade ($)</label>
+            <input type="number" id="objStopMax" placeholder="120" min="0" step="1">
+          </div>
+          <div class="form-group">
+            <label for="objMaxTrades">Máx. trades por día</label>
+            <input type="number" id="objMaxTrades" placeholder="2" min="0" step="1">
+          </div>
+          <div class="form-group">
+            <label for="objPnlObjetivo">Objetivo de P&L diario ($)</label>
+            <input type="number" id="objPnlObjetivo" placeholder="200" step="1">
+          </div>
+          <div class="form-group">
+            <label for="objLimitePerdida">Límite de pérdida diario ($)</label>
+            <input type="number" id="objLimitePerdida" placeholder="240" min="0" step="1">
+          </div>
+        </div>
+        <small style="color:var(--text3); display:block;">
+          Se usan para calcular el <strong>Cumplimiento de Reglas</strong> en Métricas.
+        </small>
       </div>
       <div class="modal-footer" style="justify-content:flex-end;">
         <button class="btn-primary" id="saveSettings">

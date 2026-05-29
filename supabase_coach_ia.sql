@@ -288,3 +288,25 @@ WHERE e.origen = 'manual'
   );
 
 NOTIFY pgrst, 'reload schema';
+
+
+-- ============================================================
+-- FASE 3B — Objetivos y cumplimiento de reglas
+-- ============================================================
+-- Configuración de una sola fila con los límites del trader.
+CREATE TABLE IF NOT EXISTS objetivos (
+  id                 smallint PRIMARY KEY DEFAULT 1,
+  stop_max_usd       numeric  DEFAULT 120,   -- stop máximo por trade ($)
+  max_trades_dia     integer  DEFAULT 2,     -- máximo de trades por día
+  pnl_objetivo_dia   numeric,                -- meta de P&L diaria ($)
+  limite_perdida_dia numeric,                -- pérdida máxima diaria ($, valor positivo)
+  updated_at         timestamptz DEFAULT now(),
+  CONSTRAINT objetivos_single_row CHECK (id = 1)
+);
+
+ALTER TABLE objetivos DISABLE ROW LEVEL SECURITY;
+GRANT SELECT, INSERT, UPDATE ON objetivos TO anon;
+
+INSERT INTO objetivos (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+NOTIFY pgrst, 'reload schema';

@@ -235,10 +235,18 @@ async function boot() {
   const inputDashboardSecret = document.getElementById('inputDashboardSecret')
   const toggleSecretVisibility = document.getElementById('toggleSecretVisibility')
 
-  openSettings.addEventListener('click', () => {
+  openSettings.addEventListener('click', async () => {
     inputClaudeKey.value = localStorage.getItem('claude_api_key') || ''
     inputDashboardSecret.value = localStorage.getItem('dashboard_secret') || ''
     settingsModal.classList.remove('hidden')
+    // Cargar objetivos desde BD
+    try {
+      const obj = await DB.getObjetivos()
+      document.getElementById('objStopMax').value       = obj?.stop_max_usd ?? ''
+      document.getElementById('objMaxTrades').value     = obj?.max_trades_dia ?? ''
+      document.getElementById('objPnlObjetivo').value   = obj?.pnl_objetivo_dia ?? ''
+      document.getElementById('objLimitePerdida').value = obj?.limite_perdida_dia ?? ''
+    } catch (_) { /* sin conexión: campos quedan como estén */ }
   })
   closeSettings.addEventListener('click', () => settingsModal.classList.add('hidden'))
   settingsModal.addEventListener('click', e => { if (e.target === settingsModal) settingsModal.classList.add('hidden') })
@@ -255,7 +263,7 @@ async function boot() {
     toggleSecretVisibility.innerHTML = isPassword ? '<i class="ti ti-eye-off"></i>' : '<i class="ti ti-eye"></i>'
   })
 
-  document.getElementById('saveSettings').addEventListener('click', () => {
+  document.getElementById('saveSettings').addEventListener('click', async () => {
     const key = inputClaudeKey.value.trim()
     if (key) {
       localStorage.setItem('claude_api_key', key)
@@ -268,6 +276,25 @@ async function boot() {
       localStorage.setItem('dashboard_secret', secret)
     } else {
       localStorage.removeItem('dashboard_secret')
+    }
+
+    // Guardar objetivos en BD
+    const num = id => {
+      const v = document.getElementById(id).value
+      return v === '' ? null : parseFloat(v)
+    }
+    const objetivosPayload = {
+      stop_max_usd:       num('objStopMax'),
+      max_trades_dia:     num('objMaxTrades'),
+      pnl_objetivo_dia:   num('objPnlObjetivo'),
+      limite_perdida_dia: num('objLimitePerdida'),
+    }
+    try {
+      await DB.saveObjetivos(objetivosPayload)
+      if (typeof Metrics !== 'undefined' && Metrics.setObjetivos) Metrics.setObjetivos(objetivosPayload)
+    } catch (e) {
+      Toast.show('Error al guardar objetivos: ' + e.message, 'error')
+      return
     }
 
     Toast.show('Ajustes guardados', 'success')

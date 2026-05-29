@@ -344,4 +344,23 @@ const DB = {
     return data
   },
 
+  // ── Objetivos / reglas ───────────────────────────────────────────────────
+
+  async getObjetivos() {
+    const { data, error } = await supa
+      .from('objetivos')
+      .select('*')
+      .eq('id', 1)
+      .maybeSingle()
+    if (error) throw error
+    return data
+  },
+
+  async saveObjetivos(payload) {
+    const { error } = await supa
+      .from('objetivos')
+      .upsert({ id: 1, ...payload, updated_at: new Date().toISOString() }, { onConflict: 'id' })
+    if (error) throw error
+  },
+
 }

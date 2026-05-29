@@ -1608,6 +1608,17 @@ body.modal-open { overflow: hidden; }
   padding: 4px 10px; border-radius: 12px;
 }
 
+/* Panel de objetivos en Ajustes */
+.settings-divider { height: 1px; background: var(--border); margin: 20px 0 16px; }
+.settings-section-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.9rem; font-weight: 700; color: var(--text2); margin-bottom: 12px;
+}
+.objetivos-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px;
+}
+@media (max-width: 480px) { .objetivos-grid { grid-template-columns: 1fr; } }
+
 /* ── Analysis content ────────────────────────────────────────────────────── */
 .coach-analisis-content {
   margin-bottom: 24px;
