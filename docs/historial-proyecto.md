@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 27 Mayo 2026
+**Última actualización:** 29 Mayo 2026
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `C:\Users\Asus\Claro drive\Trading Journal`
@@ -71,10 +71,11 @@ trading-journal/
 │   ├── calendar.js                   ← Calendario mensual interactivo
 │   ├── metrics.js                    ← KPIs y métricas generales
 │   ├── table.js                      ← Tabla de trades paginada
-│   ├── form.js                       ← Formulario de sesión diaria
+│   ├── form.js                       ← Formulario de sesión diaria + experimentos
 │   ├── charts.js                     ← 6 gráficas con Chart.js
 │   ├── gallery.js                    ← Galería de imágenes con slots vacíos
-│   ├── coach.js                      ← Coach IA — análisis Chaumer (FASE 5)
+│   ├── data.js                       ← Gestor de catálogos (errores, emociones, experimentos)
+│   ├── coach.js                      ← Coach IA — flujo 3 etapas (FASE 5+)
 │   └── app.js                        ← Boot, navegación SPA, modales, lightbox
 ├── NinjaTrader/
 │   └── SupabaseAutoExport.cs         ← Indicador C# para NT8
@@ -91,7 +92,7 @@ trading-journal/
 
 ---
 
-## Base de datos — Esquema final
+## Base de datos — Esquema final (Mayo 2026)
 
 ### Tabla `trades`
 
@@ -109,9 +110,9 @@ CREATE TABLE trades (
   qty            INTEGER,
   market_pos     TEXT,
   exit_name      TEXT,
-  resultado      TEXT,                    -- "target" / "stop" / "otro"
+  resultado      TEXT,               -- "target" / "stop" / "otro"
   profit         NUMERIC,
-  cum_net_profit NUMERIC,                 -- calculado por trigger
+  cum_net_profit NUMERIC,            -- calculado por trigger
   commission     NUMERIC DEFAULT 0,
   mae            NUMERIC,
   mfe            NUMERIC,
@@ -120,128 +121,161 @@ CREATE TABLE trades (
 );
 ```
 
+> **Nota P&L:** `profit` en datos históricos CSV = neto (comisión ya descontada por NinjaTrader). En datos live del script C# = bruto. El campo `commission` desde v2.1 (2026-05-20) guarda solo la comisión de un leg — pendiente normalización.
+
 ### Tabla `sesiones`
 
 ```sql
--- Columnas completas (incluyendo todas las agregadas progresivamente)
 id, sesion_date (DATE UNIQUE),
 contexto, num_corrida, velas_corrida, puntos_retroceso,
 zonas_contra (BOOLEAN), setup,
--- Checklist pre-sesión (siempre visible, incluso en "No operé")
-chk_noticias,   -- Calendario económico verificado (sin noticia roja)
-chk_zonas,      -- Zonas vigentes verificadas
+-- Checklist pre-sesión (siempre visible)
+chk_noticias, chk_zonas,
 -- Checklist operativo (solo cuando sí se operó)
 chk_orden, chk_5velas, chk_consecucion, chk_estructura,
 analisis_trader, resumen_ia, imagen_url,
 no_opero (BOOLEAN), motivo_no_opero,
--- Agregadas en FASE 5 (Coach IA)
+-- Fuente única de estado emocional y confianza (Fase 2A)
 estado_emocional_id (FK → catalogo_emociones),
 nivel_confianza (INTEGER 1-5),
--- Agregadas en FASE 6 (análisis sesión 27-05-26)
-zona_naranja_habia (BOOLEAN),
-zona_naranja_reaccion (TEXT),   -- RESPETO / IGNORO / PARCIAL
-zona_naranja_nota (TEXT),
+-- Setup no tomado
 setup_valido_no_tomado (BOOLEAN DEFAULT FALSE),
-motivo_no_entrada (TEXT),       -- Duda / Miedo / Zona naranja / Desconfianza / Otro
+motivo_no_entrada (TEXT),
 setup_observado (TEXT),
 created_at, updated_at
 ```
 
-**Motivos de no operación válidos:**
-`FOMC` | `Sin setup` | `Festivo` | `Noticia roja` | `Personal` | `Setup válido no tomado` | `Otro`
-
-### Tabla `catalogo_emociones`
-
-```sql
-CREATE TABLE catalogo_emociones (
-  id         SERIAL PRIMARY KEY,
-  nombre     TEXT NOT NULL,
-  emoji      TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
--- RLS habilitado, lectura pública con anon key
-```
-
-### Tabla `estrategia_chaumer`
-
-```sql
-CREATE TABLE estrategia_chaumer (
-  id         SERIAL PRIMARY KEY,
-  seccion    TEXT UNIQUE NOT NULL,
-  titulo     TEXT NOT NULL,
-  contenido  TEXT,
-  orden      INTEGER DEFAULT 0,
-  activa     BOOLEAN DEFAULT true,
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
--- Secciones pre-cargadas (orden 1-9):
--- antes_sesion, premercado, apertura, mecanica_entrada,
--- gestion_zona, filtros, volumen, regla_de_oro, configuracion_visual
-```
+> **Fase 2A:** `estado_emocional_id` y `nivel_confianza` son la **fuente única** de emoción/confianza. Las columnas duplicadas en `diagnosticos_diarios` fueron eliminadas.
+> **Fase 4D:** `zona_naranja_habia`, `zona_naranja_reaccion`, `zona_naranja_nota` fueron eliminadas y migradas a `experimento_registros`.
 
 ### Tabla `diagnosticos_diarios`
 
 ```sql
 CREATE TABLE diagnosticos_diarios (
-  id                      SERIAL PRIMARY KEY,
+  id                      BIGSERIAL PRIMARY KEY,
   sesion_date             DATE UNIQUE NOT NULL,
+  -- Etapa 1 (Análisis Técnico)
   sec_contexto            TEXT,
   sec_desarrollo          TEXT,
   sec_validacion          TEXT,
+  -- Etapa 3 (Diagnóstico Final)
+  sec_veredicto           TEXT,      -- columna dedicada (Fase 1 Coach)
   sec_errores             TEXT,
   sec_aprendizaje         TEXT,
-  sec_resumen_compacto    TEXT,
-  errores_json            JSONB DEFAULT '[]',
+  sec_resumen_compacto    TEXT,      -- alimenta el historial de 60 días al Coach
+  -- Estructurado
   setups_json             JSONB DEFAULT '[]',
-  estado_emocional_id     INTEGER REFERENCES catalogo_emociones(id),
-  estado_emocional_fin_id INTEGER REFERENCES catalogo_emociones(id),
-  nivel_confianza         INTEGER,
+  -- Estado emocional de cierre (solo en diagnosticos — Fase 2A)
+  estado_emocional_fin_id BIGINT REFERENCES catalogo_emociones(id),
+  -- Patrones
   patron_detectado        BOOLEAN DEFAULT false,
   patron_descripcion      TEXT,
+  -- Chat
   chat_messages           JSONB DEFAULT '[]',
   modelo_usado            TEXT,
-  tokens_usados           INTEGER,
   created_at              TIMESTAMPTZ DEFAULT now(),
   updated_at              TIMESTAMPTZ DEFAULT now()
 );
 ```
 
-### Tabla `sesion_casuisticas`
+> **Fase 2A:** Se eliminaron `estado_emocional_id` y `nivel_confianza` (ahora solo en `sesiones`). Se conserva `estado_emocional_fin_id` (emoción de cierre pertenece al diagnóstico).
+
+### Tabla `catalogo_errores` (antes `catalogo_casuisticas`)
 
 ```sql
-id, sesion_date (DATE), casuistica (TEXT), resultado (TEXT), created_at
+CREATE TABLE catalogo_errores (
+  id      BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nombre  TEXT NOT NULL,           -- nombre breve del error (1-4 palabras)
+  tipo    TEXT,                    -- psicologico | analitico | operativo | marcado
+  activa  BOOLEAN DEFAULT true,
+  orden   INTEGER DEFAULT 0
+);
 ```
 
-### Tabla `catalogo_casuisticas`
+### Tabla `diagnostico_errores` (antes `errores_sesion`)
 
 ```sql
-id, nombre (TEXT), activa (BOOLEAN DEFAULT true), orden (INTEGER)
+CREATE TABLE diagnostico_errores (
+  id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  sesion_date DATE NOT NULL,
+  error       TEXT NOT NULL,        -- nombre corto (del catálogo o libre)
+  tipo        TEXT,
+  resultado   TEXT,                 -- T | S (para días no operados)
+  origen      TEXT DEFAULT 'manual',-- manual | ia | ambos
+  descripcion TEXT,                 -- detalle largo del error ese día
+  catalogo_id BIGINT REFERENCES catalogo_errores(id),
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
 ```
+
+> Registro unificado de errores (manual + IA). El modal del calendario muestra chips compactos (nombre corto) con detalle desplegable al clic. Función alias `casuistica:error` mantiene compatibilidad con código existente.
+
+### Tabla `catalogo_emociones`
+
+```sql
+id, nombre, emoji, orden, activa (BOOLEAN DEFAULT true)
+```
+
+### Tabla `estrategia_chaumer`
+
+```sql
+id, seccion, titulo, contenido, orden, activa (BOOLEAN DEFAULT true), updated_at
+-- Secciones: antes_sesion, premercado, apertura, mecanica_entrada,
+--            gestion_zona, filtros, volumen, regla_de_oro, configuracion_visual
+```
+
+### Tabla `objetivos` (Fase 3B)
+
+```sql
+CREATE TABLE objetivos (
+  id                 SMALLINT PRIMARY KEY DEFAULT 1,
+  stop_max_usd       NUMERIC DEFAULT 120,
+  max_trades_dia     INTEGER DEFAULT 2,
+  pnl_objetivo_dia   NUMERIC,
+  limite_perdida_dia NUMERIC,
+  updated_at         TIMESTAMPTZ DEFAULT now(),
+  CONSTRAINT objetivos_single_row CHECK (id = 1)
+);
+```
+
+### Tabla `catalogo_experimentos` (Fase 4D)
+
+```sql
+CREATE TABLE catalogo_experimentos (
+  id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nombre      TEXT NOT NULL,
+  descripcion TEXT,
+  activo      BOOLEAN DEFAULT true,
+  orden       INTEGER DEFAULT 0
+);
+-- Primer experimento: "Zona naranja" (migrado desde zona_naranja_* de sesiones)
+```
+
+### Tabla `experimento_registros` (Fase 4D)
+
+```sql
+CREATE TABLE experimento_registros (
+  id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  sesion_date     DATE NOT NULL,
+  experimento_id  BIGINT NOT NULL REFERENCES catalogo_experimentos(id),
+  presente        BOOLEAN DEFAULT false,
+  resultado       TEXT,              -- T | S
+  nota            TEXT,
+  created_at      TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (sesion_date, experimento_id)
+);
+```
+
+> Estadística de decisión: con ≥ 20 casos con resultado → sugerencia automática (adoptar / descartar / neutro). Sin umbral mínimo, los datos no son concluyentes.
 
 ### Tabla `fomc_dates`
 
 ```sql
-CREATE TABLE IF NOT EXISTS fomc_dates (
+CREATE TABLE fomc_dates (
   date        DATE PRIMARY KEY,
   description TEXT DEFAULT 'FOMC Meeting'
 );
--- RLS habilitado. Lectura pública con anon key.
-```
-
-**Fechas cargadas (2025-2026):**
-- 2025: Jan 28-29, Mar 18-19, May 6-7, Jun 17-18, Jul 29-30, Sep 16-17, Oct 28-29, Dec 9-10
-- 2026: Jan 27-28, Mar 17-18, Apr 28-29, Jun 9-10, Jul 28-29, Sep 15-16, Oct 27-28, Dec 8-9
-
-### Permisos Supabase (acumulados)
-
-```sql
--- RLS deshabilitado en trades, sesiones, reglas (proyecto personal)
-GRANT INSERT, SELECT, UPDATE ON trades, sesiones, reglas TO anon;
-GRANT USAGE ON SEQUENCE sesiones_id_seq TO anon;
-GRANT USAGE, SELECT ON SEQUENCE trades_trade_number_seq TO anon;
--- catalogo_emociones, estrategia_chaumer, diagnosticos_diarios:
--- RLS habilitado con política de lectura pública
-NOTIFY pgrst, 'reload schema';
+-- Fechas cargadas: 2025-2026
 ```
 
 ---
@@ -266,44 +300,32 @@ NOTIFY pgrst, 'reload schema';
 
 ## FASE 1 — Infraestructura base y base de datos
 
-### Objetivo
-Crear la estructura de datos en Supabase, cargar el historial de trades y dejar la base lista para el desarrollo del dashboard.
-
-### Qué se hizo
-- Proyecto Supabase creado
-- Tres tablas creadas: `trades`, `sesiones`, `reglas`
-- 60 trades históricos importados vía CSV
-- Repositorio GitHub creado (`trading-journal`, privado), GitHub Pages habilitado sobre rama `main`
-- RLS deshabilitado en las 3 tablas iniciales
-- Permisos GRANT configurados para el rol `anon`
+- Proyecto Supabase creado, tablas `trades`, `sesiones`, `reglas`
+- 64 trades históricos importados vía CSV
+- Repositorio GitHub creado, GitHub Pages habilitado sobre rama `main`
+- RLS deshabilitado en tablas principales (proyecto personal)
 
 ---
 
 ## FASE 2 — Dashboard web completo
-
-### Objetivo
-Construir el dashboard web como SPA en HTML + JS vanilla, con las 6 secciones funcionales y todas las integraciones externas.
 
 ### Módulos JS
 
 | Archivo | Rol |
 |---|---|
 | `js/config.js` | Credenciales Supabase y Cloudinary |
-| `js/db.js` | Capa de datos: todas las queries a Supabase via REST |
-| `js/calendar.js` | Calendario mensual con navegación, colores por resultado, festivos CME, FOMC |
-| `js/metrics.js` | KPIs: P&L, win rate, racha, mejor/peor día, disciplina (7 factores), error frecuente |
-| `js/table.js` | Tabla de trades paginada (20/página), búsqueda, filtro por resultado |
-| `js/form.js` | Formulario sesión diaria, upload Cloudinary |
-| `js/charts.js` | 6 gráficas: equity curve, win rate semanal, P&L por día, MAE vs MFE, distribución, disciplina |
-| `js/gallery.js` | Galería de imágenes por mes con slots vacíos |
-| `js/app.js` | Boot, navegación SPA, modales, toasts, lightbox |
+| `js/db.js` | Capa de datos: todas las queries a Supabase |
+| `js/calendar.js` | Calendario mensual con navegación, colores, festivos CME, FOMC |
+| `js/metrics.js` | KPIs, disciplina, métricas cuantitativas |
+| `js/table.js` | Tabla de trades paginada, filtrable |
+| `js/form.js` | Formulario sesión diaria + experimentos dinámicos |
+| `js/charts.js` | 6 gráficas Chart.js |
+| `js/gallery.js` | Galería de imágenes por mes con lightbox |
+| `js/data.js` | Gestor de catálogos (errores, emociones, experimentos) |
+| `js/coach.js` | Coach IA — flujo 3 etapas |
+| `js/app.js` | Boot, navegación SPA, modales, lightbox |
 
-### Secciones del dashboard
-
-**Sección 1 — Calendario:**
-- Vista mensual con navegación ← →
-- Filtro de cuenta (default: PA-APEX, persiste en `localStorage`)
-- Colores por resultado del día:
+### Colores del calendario
 
 | Estado | Color | Badge |
 |--------|-------|-------|
@@ -312,112 +334,67 @@ Construir el dashboard web como SPA en HTML + JS vanilla, con las 6 secciones fu
 | Break Even | ⬜ Gris | B.E. |
 | No operé | ⬜ Gris oscuro | No operé |
 | Sin entradas | 🟣 Violeta | Sin entradas |
-| **Setup válido no tomado** | **🟣 Violeta** | **⚠️ Setup válido — no entré** |
+| Setup válido no tomado | 🟣 Violeta | ⚠️ Setup válido — no entré |
 | Festivo | 🔵 Azul | Festivo |
 | FOMC | 🟡 Ámbar | FOMC |
-
-- Festivos CME calculados en JS (sin BD)
-- Fechas FOMC desde tabla `fomc_dates`
-- Clic en día → modal de detalle (4 tabs)
-
-**Sección 2 — Métricas:** P&L, win rate, racha, disciplina 7 factores, error frecuente
-
-**Sección 3 — Tabla de trades:** Paginada, filtrable, clic → modal del día
-
-**Sección 4 — Registrar sesión** (detallado en sección separada)
-
-**Sección 5 — Análisis:** 6 gráficas Chart.js
-
-**Sección 6 — Galería:** Thumbnails por mes, lightbox con navegación prev/next
-
-**Sección 7 — Imágenes (gallery)**
-
-**Sección 8 — Coach IA** (FASE 5)
-
-### Decisiones técnicas
-
-| Decisión | Motivo |
-|---|---|
-| Vanilla JS sin frameworks | Simplicidad, GitHub Pages |
-| Claude API via Cloudflare Worker | CORS bloqueado desde browser |
-| API key en localStorage | Repositorio privado, seguridad extra |
-| RLS deshabilitado en tablas principales | Proyecto personal |
-| Festivos CME en JS | Sin dependencia externa |
-| FOMC en tabla Supabase | Fechas cambian anualmente |
 
 ---
 
 ## FASE 3 — Indicador C# para NinjaTrader 8
 
-### Archivo
-`NinjaTrader/SupabaseAutoExport.cs`
+`NinjaTrader/SupabaseAutoExport.cs` — exporta trades cerrados automáticamente a Supabase.
 
-**Ruta:** `Documentos\NinjaTrader 8\bin\Custom\Indicators\SupabaseAutoExport.cs`
-
-> Después de cada recompilación hay que quitar y volver a agregar el indicador al gráfico.
-
-### Diseño
 - `State.DataLoaded`: suscribe a `ExecutionUpdate` de la cuenta configurada
-- `OnAccountExecutionUpdate`: suma/resta `netQty`. `0→N` = trade abierto. `N→0` = trade cerrado (POST async)
-- Fusión ATM: ventana de 3 segundos para acumular ejecuciones múltiples en un trade
-- `lock(syncLock)` sincroniza hilos NT8 y Account events
+- Fusión ATM: ventana 3 segundos para acumular ejecuciones múltiples
 - **Endpoint:** `POST https://jothoslozctflfrnysrx.supabase.co/rest/v1/trades`
-
-### Notas
-- `trade_number` y `etd` quedan NULL (solo disponibles desde `StrategyBase`, no `IndicatorBase`)
-- `ex.Commission` puede ser 0 en versiones NT8 anteriores a 8.x
+- `commission` desde v2.1 (2026-05-20): lee `ex.Commission` (solo leg de cierre — pendiente normalización a round-trip)
 
 ---
 
-## FASE 4 — Bot de Telegram para registro de sesiones (v4.0)
+## FASE 4 — Bot de Telegram (v4.0)
 
-### Archivos
-- `TelegramBot/worker.js`
-- `TelegramBot/wrangler.toml`
+**Flujo:** Telegram → Webhook → Cloudflare Worker #2 → KV → Supabase
 
-### Flujo
-
+**Máquina de estados v4.0:**
 ```
-Trader (Telegram) → Telegram Servers → Webhook POST
-→ Cloudflare Worker #2
-→ Cloudflare KV (estado, TTL: 3600s)
-→ POST /rest/v1/sesiones → Supabase
+OPERO → (no) MOTIVO → fin
+      → (sí) EMOCION → CONFIANZA → CONTEXTO → CORRIDA → VELAS → ZONAS_CONTRA
+              → SETUP → CHECKLIST → REFLEXION
 ```
-
-### Variables de entorno
-
-| Variable | Valor |
-|---|---|
-| `BOT_TOKEN` | Token del bot |
-| `SUPABASE_URL` | `https://jothoslozctflfrnysrx.supabase.co` |
-| `SUPABASE_KEY` | Anon key |
-| `ALLOWED_CHAT_ID` | `372127764` |
-| `TIMEZONE` | `America/Bogota` |
-
-### Máquina de estados v4.0
-
-```
-OPERO
-  ↓ (no operó) → MOTIVO → fin
-  ↓ (sí operó)
-EMOCION → CONFIANZA → CONTEXTO → CORRIDA → VELAS → ZONAS_CONTRA → SETUP → CHECKLIST → REFLEXION
-```
-
-> **v4.0:** Se agregaron los pasos `EMOCION` (estado emocional pre-sesión del catálogo) y `CONFIANZA` (nivel 1-5) al inicio del flujo operativo. Ambos se guardan en `sesiones.estado_emocional_id` y `sesiones.nivel_confianza`.
-
-**Fecha automática:** `Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' })` — evita desfase UTC vs Colombia.
-
-> **Limitación:** El bot no genera análisis IA ni soporta subida de imágenes — esas funciones solo existen en el dashboard web.
 
 ---
 
-## FASE 5 — Coach IA (Análisis Chaumer con Claude Sonnet)
+## FASE 5 — Coach IA (Análisis Chaumer)
 
-### Objetivo
-Módulo de análisis diario profesional basado en la estrategia Chaumer completa. Análisis estructurado en 6 secciones, chat multi-turn de seguimiento, historial acumulado de 60 días, y detección automática de patrones de errores.
+### Flujo en 3 etapas (rediseño completo)
 
-### Archivo
-`js/coach.js`
+El Coach IA opera en un flujo secuencial de 3 etapas, con el **chat de coaching como paso opcional**:
+
+```
+┌─ ETAPA 1 ─────────────────────────────────────┐
+│  [ Análisis Técnico ]                          │
+│   → 🌍 Contexto                               │
+│   → 📈 Desarrollo de sesión                   │
+│   → ✅ Validación de setups (sin veredicto)   │
+└────────────────────────────────────────────────┘
+              ↓ se desbloquea
+┌─ ETAPA 2 ─────────────────────────────────────┐
+│  💬 Chat de coaching (OPCIONAL)               │
+│   [ Cerrar sesión ] → notifica Etapa 3        │
+└────────────────────────────────────────────────┘
+              ↓ habilitado desde Etapa 1
+┌─ ETAPA 3 ─────────────────────────────────────┐
+│  [ Generar Diagnóstico ]  ← 2ª llamada IA    │
+│   → 🎯 Veredicto de setup (VÁLIDA/INVÁLIDA)  │
+│   → ⚠️ Errores detectados                    │
+│   → 🎓 Aprendizaje del día                   │
+│   → 📋 Resumen para diario                   │
+│  [ Lista de confirmación de errores ]         │
+└────────────────────────────────────────────────┘
+[ Guardar ] — siempre visible
+```
+
+**El chat es opcional:** el Diagnóstico se habilita directamente tras el Análisis Técnico. Si se usa el chat, el diagnóstico integra todo lo conversado.
 
 ### Modelo y configuración
 
@@ -426,207 +403,195 @@ Módulo de análisis diario profesional basado en la estrategia Chaumer completa
 | Modelo | `claude-sonnet-4-6` |
 | Max tokens | 3000 |
 | Proxy | `broad-hall-c53f.kristerock.workers.dev/api/claude` |
-| Costo estimado | ~$0.02/diagnóstico · ~$0.40/mes |
+| Etapas | 2 llamadas IA por sesión completa |
 
-### Estructura del módulo
+### Errores detectados por la IA — formato estructurado
 
-**Constantes:**
-```javascript
-const CLAUDE_URL = 'https://broad-hall-c53f.kristerock.workers.dev/api/claude'
-const MODEL      = 'claude-sonnet-4-6'
-const MAX_TOKENS = 3000
+La IA devuelve cada error en formato `NombreCorto | tipo | resultado | detalle`:
+
+```
+Miedo | psicologico | T | No tomé la entrada; el precio llegó al target.
+Error de Marcación | marcado | ninguno | Marqué la zona 10 pts arriba del nivel correcto.
 ```
 
-**Estado interno:**
-- `chatHistory[]` — conversación multi-turn en memoria
-- `systemPromptCache` — se construye una vez por sesión abierta
-- `diagnosticoActual` — 6 secciones parseadas del último análisis
-- `estrategiaCache` — contenido de `estrategia_chaumer` (1 carga por init)
-- `emocionesCache` — catálogo de emociones
-- `coachDate` — fecha activa en el coach
-- `imagenBase64` — chart subido (si existe)
+- **NombreCorto:** si coincide con el catálogo de errores → usa ese nombre exacto. Si es nuevo → lo crea en `catalogo_errores`.
+- **resultado:** T/S solo para días no operados (¿qué habría pasado?). `ninguno` para días operados.
 
-### System Prompt — Datos incluidos
+### Lista de confirmación de errores
 
-El system prompt se construye dinámicamente en `buildSystemPrompt(date)` con:
+Tras generar el diagnóstico, aparece una lista pre-marcada con los errores detectados:
+- ✅ Checkbox para confirmar/desmarcar
+- Selector de tipo (🧠/📐/⚙️/🗺️) editable
+- Badge T/S clickable (toggle) para errores de días no operados
+- Badge "nuevo" si el nombre no está en el catálogo
+- Badge "ya registrado" si ya existe ese día
+- Botón ▾ para ver el detalle largo
+- Al guardar, solo los marcados entran al registro
+
+### Sistema prompt — datos incluidos
 
 | Fuente | Contenido |
 |---|---|
-| `estrategia_chaumer` (activa=true) | 8+ secciones de la estrategia Chaumer completa |
-| `diagnosticos_diarios` (últimos 60) | Historial compacto de resúmenes anteriores |
-| `diagnosticos_diarios.errores_json` | Patrones de errores repetidos (≥2x = ⚠️ alerta, ≥3x = 🚨 crítica) |
-| `sesiones` del día | Estado emocional inicio/cierre, confianza pre-sesión, contexto, setup, checklist |
+| `estrategia_chaumer` | Estrategia Chaumer completa (8+ secciones) |
+| `diagnosticos_diarios` (60 días) | Historial compacto de resúmenes |
+| `diagnostico_errores` histórico | Patrones repetidos (≥2 = ⚠️, ≥3 = 🚨) |
+| `sesiones` del día | Emoción inicio, confianza, contexto, setup, checklist |
 | `trades` del día | P&L, targets, stops, BEs |
-| `sesion_casuisticas` | Casuísticas tipificadas del día |
-| UI en tiempo real | `coachEmocionSelect` y `coachEmocionFinSelect` (precedencia sobre BD) |
-| Zona naranja | `zona_naranja_habia`, `zona_naranja_reaccion`, `zona_naranja_nota` |
-| Setup no tomado | `setup_valido_no_tomado`, `motivo_no_entrada` |
-
-### Análisis — 6 secciones
-
-```
-**1. 🌍 CONTEXTO**
-**2. 📈 DESARROLLO DE SESIÓN**
-**3. ✅ VALIDACIÓN DE SETUPS**
-**4. ⚠️ ERRORES DETECTADOS**
-**5. 🎓 APRENDIZAJE DEL DÍA**
-**6. 📋 RESUMEN PARA DIARIO**
-```
-
-**Parsing:** `parsearSecciones(texto)` — regex que extrae cada sección por su encabezado.
-**Fallback:** si el parseo no captura ninguna sección, el texto completo se muestra en la sección CONTEXTO.
-
-### Tabs del módulo
-
-| Tab | Contenido |
-|---|---|
-| Análisis de Hoy | Selector de fecha, estado emocional inicio/fin, confianza, imagen, botón analizar, 6 secciones, chat |
-| Historial | Últimos 30 diagnósticos guardados con delta emocional (😊 → 😤) |
-| Estrategia | Editor de las secciones de `estrategia_chaumer` |
-
-### UI — Controles de la sesión
-
-- **¿Cómo llegué?** — select del `catalogo_emociones`
-- **¿Cómo terminé?** — select del `catalogo_emociones` (campo `estado_emocional_fin_id`)
-- **Confianza pre-sesión** — 5 estrellas (1-5) → `nivel_confianza`
-- **Gráfica del día** — upload manual O auto-carga desde `sesion.imagen_url`
-- **Botón Guardar** — aparece en la parte superior e inferior del chat
-
-### Auto-carga de imagen
-
-Al cargar una fecha en Coach IA, si `sesion.imagen_url` existe, se hace `fetch()` automático, se convierte a base64 y se muestra en el preview. Si falla (CORS, URL caída), el área de upload manual queda disponible como fallback.
+| `diagnostico_errores` del día | Errores manuales registrados |
+| `experimento_registros` | Experimentos presentes ese día y su resultado |
+| `catalogo_errores` | Vocabulario controlado para naming de errores |
 
 ### Guardar diagnóstico — tabla `diagnosticos_diarios`
 
-El botón "Guardar diagnóstico" hace upsert (por `sesion_date`) con:
-- Las 6 secciones parseadas
-- `errores_json` y `setups_json` extraídos del texto
-- `estado_emocional_id`, `estado_emocional_fin_id`, `nivel_confianza`
-- `chat_messages` (historial completo de la conversación)
-- `modelo_usado`, `patron_detectado`
+Upsert por `sesion_date` con:
+- Secciones de Etapa 1: `sec_contexto`, `sec_desarrollo`, `sec_validacion`
+- Secciones de Etapa 3: `sec_veredicto`, `sec_errores`, `sec_aprendizaje`, `sec_resumen_compacto`
+- `setups_json`, `estado_emocional_fin_id`, `patron_detectado`
+- `chat_messages` (conversación completa)
 
-### Navegación SPA
+Adicionalmente: errores confirmados → `diagnostico_errores` con `origen='ia'` y dedup contra manuales del día.
 
-`Coach.init()` se llama solo la primera vez (lazy init). Las visitas siguientes llaman `Coach.refresh()` que ejecuta `cargarFecha(today())` — limpia el panel y carga el diagnóstico del día si existe, sin duplicar event listeners.
+### Historial de conversaciones
+
+Al cargar una fecha pasada con diagnóstico guardado, el chat restaura la conversación completa con separador visual `── Conversación del DD/MMM/YYYY ──`.
 
 ---
 
-## FASE 6 — Mejoras UX y correcciones (Mayo 2026)
+## FASE 6 — Mejoras UX (Mayo 2026)
 
-### Cambios al formulario de sesión (`form.js` + `index.html`)
+### Formulario de sesión
 
-**Separación del checklist:**
-Los ítems del checklist se dividieron en dos grupos:
+**Checklist separado:**
 
 | Grupo | Ítems | Visibilidad |
 |---|---|---|
-| Checklist Pre-Sesión | Calendario económico verificado · Zonas vigentes | Siempre (incluso con "No operé") |
-| Checklist Operativa | Orden · 5 Velas · Consecución · Estructura | Solo cuando sí se operó |
+| Pre-Sesión | Calendario económico · Zonas vigentes | Siempre |
+| Operativo | Orden · 5 Velas · Consecución · Estructura | Solo cuando sí se operó |
 
-**Motivo:** cuando el trader marca "No operé" pero sí realizó el proceso pre-sesión (revisó calendario, zonas), antes no podía marcar esos ítems. Ahora siempre están visibles.
-
-**Nuevo motivo de no operación: "Setup válido no tomado"**
-Cuando se selecciona, aparece un bloque adicional con:
-- Setup que identificaste (select)
-- Motivo de no entrada (Duda / Miedo / Zona naranja / Desconfianza / Otro)
-- Testeo de zona naranja (¿había? → reacción del precio)
-
-**Zona naranja — testeo experimental:**
-Sección en el formulario (tanto para sesiones con trade como para "setup no tomado"):
-- ¿Había zona naranja en el camino al target? (Sí/No)
-- Si Sí: ¿El precio la respetó o ignoró? (RESPETO / IGNORO / PARCIAL)
-- Nota libre de contexto
-
-> **Regla provisional desde 2026-05-27:** Las zonas naranjas NO afectan la decisión de entrada. Solo se registran para acumular estadística (Opción A). Objetivo: 30 casos antes de concluir.
-
-### Renombrado de etiquetas
+**Renombrado de etiquetas:**
 
 | Antes | Después |
 |---|---|
 | "Estado emocional" | "¿Cómo llegué?" |
 | "Confianza" | "Confianza pre-sesión" |
-| "Sin noticia roja activa" | "Calendario económico verificado (sin noticia roja)" |
+| Nuevo campo | "¿Cómo terminé?" (emoción de cierre) |
 
-### Mapa visual del gráfico (en `estrategia_chaumer`)
+**Setup válido no tomado:** bloque adicional con setup observado, motivo de no entrada (Duda/Miedo/Zona naranja/Desconfianza/Otro).
 
-Sección `configuracion_visual` insertada en la estrategia para que el Coach no cometa errores al interpretar los colores del gráfico:
-
-| Color | Elemento |
-|---|---|
-| Gris | Zonas S/R — ÚNICAS zonas válidas de la estrategia |
-| Rojo (línea) | Mínimo de premercado |
-| Verde (línea) | Máximo de premercado |
-| Naranja (zonas/flechas) | Puntos de referencia experimentales — NO son reglas |
-| Blanco (líneas) | Referencias temporalidad superior (5 min) |
-| Azul punteado (volumen) | Velas premercado con volumen alto (NQ ≥ 2,000 / MNQ ≥ 6,000) |
-| Velas blancas | Bajistas |
-| Velas azules | Alcistas |
-| Herramienta R/R (Anchor gris · Risk salmón · Reward verde lima) | NO interpretar como zonas de mercado |
-
-### Correcciones en Coach IA
+### Correcciones Coach IA
 
 | Corrección | Detalle |
 |---|---|
-| Error 404 modelo | `claude-sonnet-4-5-20251001` → `claude-sonnet-4-6` |
-| Secciones vacías | Mensaje de usuario ahora incluye los 6 encabezados obligatorios + fallback si parseo falla |
-| Reset al volver | `Coach.refresh()` limpia el panel al navegar de vuelta a la sección |
-| Botón guardar duplicado | Aparece arriba (junto a Analizar) y abajo (al pie del chat) |
-| Auto-carga imagen | `autoCargarImagen(url)` carga `sesion.imagen_url` automáticamente |
+| Modelo correcto | `claude-sonnet-4-6` |
+| Secciones vacías | Fallback: texto completo en CONTEXTO si parseo falla |
+| Reset al navegar | `Coach.refresh()` limpia el panel |
+| Botón guardar | Aparece arriba y abajo del chat |
+| Auto-carga imagen | `autoCargarImagen(url)` desde `sesion.imagen_url` |
 
 ---
 
-## Estado actual del proyecto
+## FASE 7 — Limpieza del modelo de datos (Fase 2 del rediseño)
 
-### ✅ Todo funcionando
+### 2A — Fuente única de emoción/confianza
 
-**Dashboard web:**
-- 8 secciones: Calendario, Métricas, Trades, Registrar Sesión, Análisis, Galería, Imágenes, Coach IA
-- Calendario con colores para todos los estados incluyendo "Setup válido no tomado"
-- Festivos CME automáticos + FOMC desde BD
-- Filtro de cuenta con persistencia
-- Métricas con disciplina 7 factores y modal de detalle
-- Galería con lightbox navegable
+- `estado_emocional_id` + `nivel_confianza` → **solo en `sesiones`** (momento operativo)
+- `estado_emocional_fin_id` → **solo en `diagnosticos_diarios`** (reflexión de cierre)
+- Eliminadas las columnas redundantes de `diagnosticos_diarios`
 
-**Formulario de sesión:**
-- Checklist pre-sesión siempre visible (noticias + zonas)
-- Checklist operativo solo cuando se operó
-- Testeo de zonas naranjas con 3 opciones de reacción
-- "Setup válido no tomado" con campos de motivo y setup observado
-- Carga de imagen a Cloudinary
+### 2B — Taxonomía de errores unificada
 
-**Coach IA:**
-- Análisis en 6 secciones con Claude Sonnet
-- Chat multi-turn de seguimiento
-- System prompt dinámico con estrategia completa + historial 60 días + patrones
-- Estado emocional inicio → cierre (delta emocional)
-- Confianza pre-sesión con estrellas
-- Auto-carga de imagen desde sesión guardada
-- Historial de diagnósticos con delta emocional visual
-- Editor de estrategia Chaumer en vivo
-- Guardado en `diagnosticos_diarios` con upsert
+- Columna `tipo` agregada a `catalogo_errores`
+- Tipos: `psicologico` | `analitico` | `operativo` | `marcado`
+- Selector de tipo inline en el gestor de catálogo (se guarda automáticamente al cambiar)
 
-**Integraciones:**
-- NinjaTrader → Supabase (automático por indicador C#)
-- Telegram bot → Supabase (flujo 11 pasos con estado emocional)
-- Claude API via Cloudflare Worker proxy
+### 2C — Tabla estructurada de errores
 
-### ⚠️ A tener en cuenta
+- `diagnostico_errores`: el Coach escribe una fila por error (con tipo) en lugar de `errores_json` frágil
+- `detectarPatrones()` y el historial leen de la tabla estructurada
+- **Bug corregido:** `patron_detectado` (siempre `false`) ahora compara con el histórico real
 
-- El indicador C# fue probado con `Sim101`. En operativa real con `PA-APEX-232411-03`, verificar nombre exacto en dropdown NT8.
-- `trade_number` y `etd` quedan NULL en trades auto-exportados desde NT8.
-- `ex.Commission` puede ser 0 en NT8 anterior a 8.x.
-- El bot de Telegram no genera análisis IA ni soporta subida de imágenes.
-- La zona naranja está en testeo experimental — necesita 30 casos antes de concluir.
+---
 
-### 🔜 Posibles mejoras futuras
+## FASE 8 — Métricas cuantitativas (Fase 3 del rediseño)
 
-- Estadísticas de testeo zona naranja (% respeta vs ignora, por dirección)
-- Estadísticas de trades válidos no tomados (P&L potencial perdido)
-- Resumen IA en bot de Telegram (llamada Worker #2 → Worker #1)
-- Soporte imagen desde Telegram (upload Cloudinary desde Worker)
-- Backup periódico BD (Supabase scheduled exports)
-- Agregar campo `strategy` al POST del indicador C#
-- Botón "Agregar sección" en el editor de estrategia Coach IA
+### 3A — Disciplina dividida en 2 métricas
+
+| Métrica | Qué mide | Fuente |
+|---|---|---|
+| **Disciplina de Proceso** | % de ítems de checklist cumplidos (días operados) | `sesiones.chk_*` |
+| **Tasa de Errores** | % días con al menos un error · desglose por tipo | `diagnostico_errores` |
+
+**Modal Tasa de Errores:** barras por tipo (🧠/📐/⚙️/🗺️) + chips de origen (manual/IA/ambos) + barras por nombre.
+
+### 3B — Objetivos y cumplimiento de reglas
+
+**Panel de configuración:** ⚙ Ajustes → "Objetivos y reglas" → 4 campos guardados en BD (`objetivos`):
+- Stop máximo por trade ($)
+- Máximo de trades por día
+- Objetivo de P&L diario ($)
+- Límite de pérdida diario ($)
+
+**Card "Cumplimiento de Reglas %":**
+- Calcula: `(reglas cumplidas) / (3 × días operados) × 100`
+- 3 reglas evaluadas: stops dentro del límite · días dentro del máx de trades · días sin romper límite de pérdida
+- Stop respetado: medido por proxy del profit realizado en trades con stop (Opción A)
+- Click → modal con desglose: stops dentro del límite, días sin sobre-operar, días sin romper límite, días que lograron el objetivo (informativo, no cuenta para disciplina)
+
+---
+
+## FASE 9 — Errores tipificados + Estadísticas nuevas + Experimentos (Fase 4 del rediseño)
+
+### 4A — Registro unificado de errores
+
+**Modelo final: `catalogo_errores` + `diagnostico_errores`**
+
+- `catalogo_errores`: maestro de nombres breves + tipo (renombrado de `catalogo_casuisticas`)
+- `diagnostico_errores`: ocurrencias con nombre corto + `descripcion` larga + `resultado` T/S + `origen` + `catalogo_id` (renombrado de `errores_sesion`)
+- Tabla legado `diagnostico_errores` anterior (solo IA, texto plano) eliminada
+
+**Display compacto en modal del calendario:**
+- Chips: `emoji-tipo NombreCorto · 🤖/🤝 origen · T/S`
+- Clic en chip → despliega el detalle completo de ese día
+
+**IA auto-tipifica y crea catálogo:**
+- Formato: `NombreCorto | tipo | resultado | detalle`
+- Si el nombre ya está en el catálogo → usa ese nombre exacto (sin duplicar)
+- Si es nuevo → badge "nuevo" en la confirmación → al guardar se crea en `catalogo_errores`
+- Dedup: si IA detecta lo mismo que ya registraste manualmente → marca `origen='ambos'`, no duplica
+
+### 4C — Estadísticas nuevas
+
+**Card "Días limpios":**
+- Valor: racha actual de días consecutivos sin errores
+- Sub: X/Y días sin errores en el período
+- Modal: barra visual %, lista de días con errores
+
+**Card "Dejé de ganar":**
+- Valor: targets dejados pasar (errores con `resultado='T'` en días no operados)
+- Sub: XT · YS dejados pasar
+- Modal: lista por día (error + resultado)
+- La IA llena `resultado` T/S automáticamente para días no operados; el trader lo confirma/corrige en la lista
+
+### 4D — Experimentos (reglas en prueba)
+
+**Sistema dinámico** que reemplaza los campos `zona_naranja_*` hardcodeados:
+
+**Formulario de sesión → sección "🧪 Experimentos activos":**
+- Lista dinámica de experimentos activos del catálogo
+- Por cada uno: toggle "¿Se presentó?" → si sí: botones T/S + nota libre
+- **Se guarda automáticamente** al cambiar (no requiere botón guardar)
+
+**Ajustes → "Catálogo de Experimentos":**
+- Agregar / activar / desactivar experimentos
+- Primer experimento: "Zona naranja" (migrado desde `zona_naranja_*`)
+
+**Card "Experimentos" en Métricas:**
+- Muestra cuántos experimentos tienen datos suficientes para decidir
+- Modal con % target por experimento y conteo de muestras
+- Sugerencia automática con ≥ 20 casos:
+  - ≥ 60% target → ✅ "Candidato a regla: considera adoptarlo"
+  - ≤ 35% target → ❌ "Descartar: no aporta como filtro"
+  - Entre 35%-60% → ⚖️ "Neutro: sin evidencia suficiente"
 
 ---
 
@@ -637,16 +602,30 @@ Sección `configuracion_visual` insertada en la estrategia para que el Coach no 
 | Campo DB | Descripción |
 |---|---|
 | `chk_noticias` | Calendario económico verificado (sin noticia roja) |
-| `chk_zonas` | Zonas vigentes verificadas — ninguna zona vigente entre entrada y target |
+| `chk_zonas` | Zonas vigentes verificadas |
 
 ### Checklist Operativo (solo cuando sí se operó)
 
 | Campo DB | Descripción |
 |---|---|
-| `chk_orden` | Orden precolocada a tiempo — lista antes del cierre de la vela de rompimiento |
+| `chk_orden` | Orden precolocada a tiempo |
 | `chk_5velas` | Máx 5 velas en corrida (auto-invalida si `velas_corrida > 5`) |
-| `chk_consecucion` | Zona marcada con rompimiento + consecución + retroceso confirmado |
-| `chk_estructura` | Estructura de Impulso + Retroceso + Impulso, fluida |
+| `chk_consecucion` | Zona marcada con rompimiento + consecución + retroceso |
+| `chk_estructura` | Estructura IRI fluida |
+
+---
+
+## Mapa visual del gráfico (en `estrategia_chaumer`)
+
+| Color | Elemento |
+|---|---|
+| Gris | Zonas S/R — ÚNICAS zonas válidas de la estrategia |
+| Rojo (línea) | Mínimo de premercado |
+| Verde (línea) | Máximo de premercado |
+| Naranja (zonas/flechas) | Puntos de referencia experimentales — NO son reglas |
+| Blanco (líneas) | Referencias temporalidad superior (5 min) |
+| Azul punteado (volumen) | Velas premercado con volumen alto |
+| Herramienta R/R | Anchor gris · Risk salmón · Reward verde lima — NO son zonas de mercado |
 
 ---
 
@@ -656,21 +635,60 @@ Sección `configuracion_visual` insertada en la estrategia para que el Coach no 
 - **Marcación de zonas:** solo con rompimiento + consecución + retroceso confirmado.
 - **Zonas vigentes en target:** ninguna zona vigente entre entrada y target.
 - **Orden precolocada:** lista antes del cierre de la vela de rompimiento.
-- **Vela extensa:** señal de fuerza, no de invalidación.
 - **FOMC / Noticias rojas:** no operar en días Fed. No entrar 5 min antes de noticias rojas.
 - **Stop máximo:** 60 puntos / $120 por trade.
 - **Ratio mínimo:** 1:1.
 - **Temporalidad principal:** 1 minuto en NQ/MNQ Futures.
-- **Zonas naranjas:** puntos de referencia experimentales en testeo desde 2026-05-27. Regla provisional: NO afectan la entrada (Opción A). Se registran para estadística.
+- **Zona naranja:** experimento activo en prueba. Con ≥ 20 casos el sistema emitirá sugerencia automática de adoptar o descartar.
+
+---
+
+## Estado actual del proyecto
+
+### ✅ Funcionando
+
+**Dashboard web (9 secciones):**
+- Calendario, Métricas, Trades, Registrar Sesión, Análisis, Galería, Imágenes, Coach IA, Catálogos
+
+**Coach IA:**
+- Flujo en 3 etapas (Análisis Técnico → Chat opcional → Diagnóstico)
+- 2 llamadas a Claude por sesión completa
+- Lista de confirmación de errores con nombre corto + detalle + T/S
+- Auto-crea entradas en el catálogo de errores para nombres nuevos
+- Dedup automático contra errores manuales del día
+- Restaura conversación guardada al cargar fechas pasadas
+
+**Métricas cuantitativas:**
+- P&L · Tasa de Acierto · Disciplina de Proceso · Tasa de Errores
+- Cumplimiento de Reglas · Días Limpios · Dejé de Ganar · Experimentos
+- Racha · Mejor/Peor día · Max Drawdown · Profit Factor · Avg Win/Loss
+
+**Experimentos:**
+- Zona naranja migrada al sistema dinámico
+- Listo para agregar 3ª Corrida, Línea Blanca y los que surjan
+
+### ⚠️ Pendiente / A tener en cuenta
+
+- **P&L y comisiones:** normalización pendiente — `profit` en datos históricos CSV ya es neto; en live del C# es bruto. `commission` del C# captura solo un leg (necesita ×2 para round-trip).
+- El bot de Telegram no genera análisis IA ni soporta imágenes.
+- `trade_number` y `etd` quedan NULL en trades auto-exportados desde NT8.
+- **Recomendaciones en Coach IA (Fase 4B):** columnas de recomendaciones tipificadas y catálogo — pendiente de implementar.
+
+### 🔜 Próximas mejoras planificadas
+
+- **Fase 4B:** catálogo de recomendaciones (`catalogo_recomendaciones`) + recomendación IA + recomendación manual en `diagnostico_errores`
+- Normalización de comisiones en `trades` (fix SQL + C# para round-trip)
+- Estadísticas de "dejé de ganar" en dólares (requiere campo de target planeado)
+- Resumen IA en bot de Telegram
+- Backup periódico BD (Supabase scheduled exports)
 
 ---
 
 ## Cómo continuar en un nuevo chat
 
-1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo del proyecto
-2. Revisar también `docs/arquitectura-funcional.md` y `docs/arquitectura-tecnica.md` para detalles técnicos actualizados
-3. El código fuente está en GitHub: `https://github.com/kristeb-trader/trading-journal`
-4. Working directory local: `C:\Users\Asus\Claro drive\Trading Journal`
-5. Para cambios en la BD, usar el SQL Editor de Supabase: `https://jothoslozctflfrnysrx.supabase.co`
-6. **Regla operativa:** cada cambio en cualquier archivo debe hacerse commit y push inmediatamente a git
-7. **Flujo de trabajo con IA:** analizar → presentar diagnóstico → esperar aprobación → implementar → commit
+1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo
+2. El código fuente está en GitHub: `https://github.com/kristeb-trader/trading-journal`
+3. Working directory local: `C:\Users\Asus\Claro drive\Trading Journal`
+4. Para cambios en la BD: SQL Editor de Supabase → `https://jothoslozctflfrnysrx.supabase.co`
+5. **Regla operativa:** cada cambio en cualquier archivo debe hacerse **commit y push inmediatamente**
+6. **Flujo de trabajo con IA:** analizar → presentar diagnóstico → esperar aprobación → implementar → commit
