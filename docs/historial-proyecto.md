@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 29 Mayo 2026
+**Última actualización:** 29 Mayo 2026 (Fase 4B completa)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `C:\Users\Asus\Claro drive\Trading Journal`
@@ -203,8 +203,11 @@ CREATE TABLE diagnostico_errores (
   resultado   TEXT,                 -- T | S (para días no operados)
   origen      TEXT DEFAULT 'manual',-- manual | ia | ambos
   descripcion TEXT,                 -- detalle largo del error ese día
-  catalogo_id BIGINT REFERENCES catalogo_errores(id),
-  created_at  TIMESTAMPTZ DEFAULT now()
+  catalogo_id         BIGINT REFERENCES catalogo_errores(id),
+  recomendacion_id    BIGINT REFERENCES catalogo_recomendaciones(id),
+  recomendacion_ia    TEXT,          -- recomendación generada por la IA ese día
+  recomendacion_manual TEXT,         -- nota/ajuste del trader
+  created_at          TIMESTAMPTZ DEFAULT now()
 );
 ```
 
@@ -235,6 +238,18 @@ CREATE TABLE objetivos (
   limite_perdida_dia NUMERIC,
   updated_at         TIMESTAMPTZ DEFAULT now(),
   CONSTRAINT objetivos_single_row CHECK (id = 1)
+);
+```
+
+### Tabla `catalogo_recomendaciones` (Fase 4B)
+
+```sql
+CREATE TABLE catalogo_recomendaciones (
+  id      bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nombre  text NOT NULL,           -- nombre breve (1-4 palabras)
+  tipo    text,                    -- psicologico | analitico | operativo | marcado
+  activa  boolean DEFAULT true,
+  orden   integer DEFAULT 0
 );
 ```
 
@@ -559,6 +574,23 @@ Al cargar una fecha pasada con diagnóstico guardado, el chat restaura la conver
 - Si es nuevo → badge "nuevo" en la confirmación → al guardar se crea en `catalogo_errores`
 - Dedup: si IA detecta lo mismo que ya registraste manualmente → marca `origen='ambos'`, no duplica
 
+### 4B — Catálogo de recomendaciones
+
+**Modelo:** `catalogo_recomendaciones` (maestro) + columnas `recomendacion_id`, `recomendacion_ia`, `recomendacion_manual` en `diagnostico_errores`.
+
+**Formato IA extendido a 6 partes por error:**
+```
+NombreError | tipo | resultado | detalleError | NombreRec | textoRec
+```
+- `NombreRec`: si existe en el catálogo → enlaza. Si es nuevo → badge "nueva" → se crea al confirmar.
+- `textoRec`: acción concreta específica para ese día.
+
+**Lista de confirmación (Coach):** muestra recomendación IA debajo de cada error (en verde) + campo editable para la nota manual del trader. Al guardar: `recomendacion_ia` + `recomendacion_manual` se persisten en `diagnostico_errores`.
+
+**Modal del calendario:** el detalle desplegable del error incluye la recomendación IA y la nota manual.
+
+**Ajustes → Recomendaciones:** gestiona el catálogo (agregar, activar/desactivar, tipo inline editable).
+
 ### 4C — Estadísticas nuevas
 
 **Card "Días limpios":**
@@ -676,7 +708,6 @@ Al cargar una fecha pasada con diagnóstico guardado, el chat restaura la conver
 
 ### 🔜 Próximas mejoras planificadas
 
-- **Fase 4B:** catálogo de recomendaciones (`catalogo_recomendaciones`) + recomendación IA + recomendación manual en `diagnostico_errores`
 - Normalización de comisiones en `trades` (fix SQL + C# para round-trip)
 - Estadísticas de "dejé de ganar" en dólares (requiere campo de target planeado)
 - Resumen IA en bot de Telegram
