@@ -176,12 +176,21 @@ NOTIFY pgrst, 'reload schema';
 -- ============================================================
 
 -- ── 2A. Emoción/confianza: fuente única en `sesiones` ─────────
--- Respaldar valores que solo estuvieran en diagnosticos → sesiones
-UPDATE sesiones s
-SET estado_emocional_id = COALESCE(s.estado_emocional_id, d.estado_emocional_id),
-    nivel_confianza     = COALESCE(s.nivel_confianza, d.nivel_confianza)
-FROM diagnosticos_diarios d
-WHERE d.sesion_date = s.sesion_date;
+-- Respaldar valores que solo estuvieran en diagnosticos → sesiones.
+-- Idempotente: solo corre el backfill si las columnas aún existen en diagnosticos.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'diagnosticos_diarios' AND column_name = 'estado_emocional_id'
+  ) THEN
+    UPDATE sesiones s
+    SET estado_emocional_id = COALESCE(s.estado_emocional_id, d.estado_emocional_id),
+        nivel_confianza     = COALESCE(s.nivel_confianza, d.nivel_confianza)
+    FROM diagnosticos_diarios d
+    WHERE d.sesion_date = s.sesion_date;
+  END IF;
+END $$;
 
 -- Eliminar columnas redundantes de diagnosticos (se quedan en sesiones).
 -- estado_emocional_fin_id PERMANECE en diagnosticos (emoción de cierre).
