@@ -1,6 +1,19 @@
 // Data management — catalogo_casuisticas
 const DataManager = (() => {
 
+  // Taxonomía de errores (compartida con el Coach IA)
+  const TIPOS = [
+    { val: 'psicologico', label: '🧠 Psicológico' },
+    { val: 'analitico',   label: '📐 Analítico'   },
+    { val: 'operativo',   label: '⚙️ Operativo'   },
+    { val: 'marcado',     label: '🗺️ Marcado'     },
+  ]
+
+  function tipoOptions(selected) {
+    return '<option value="">Tipo…</option>' +
+      TIPOS.map(t => `<option value="${t.val}" ${t.val === selected ? 'selected' : ''}>${t.label}</option>`).join('')
+  }
+
   function renderList(items, containerId) {
     const el = document.getElementById(containerId)
     if (!items.length) {
@@ -15,6 +28,9 @@ const DataManager = (() => {
           <span class="toggle-track"></span>
         </label>
         <span class="catalog-nombre">${item.nombre}</span>
+        <select class="catalog-tipo-select tipo-select" data-id="${item.id}" title="Tipo de error">
+          ${tipoOptions(item.tipo)}
+        </select>
         <button class="btn-edit-catalog" data-id="${item.id}" data-nombre="${item.nombre}" title="Editar nombre">
           <i class="ti ti-pencil"></i>
         </button>
@@ -22,6 +38,18 @@ const DataManager = (() => {
           <i class="ti ti-trash"></i>
         </button>
       </div>`).join('')
+
+    // ── Tipo (taxonomía de error) ────────────────────────────────────────────
+    el.querySelectorAll('.tipo-select').forEach(sel => {
+      sel.addEventListener('change', async () => {
+        const id = parseInt(sel.dataset.id)
+        try {
+          await DB.updateCasuisticaTipo(id, sel.value)
+        } catch (e) {
+          Toast.show('Error al actualizar el tipo', 'error')
+        }
+      })
+    })
 
     // ── Toggles ────────────────────────────────────────────────────────────
     el.querySelectorAll('.tog-activa').forEach(chk => {
@@ -233,11 +261,13 @@ const DataManager = (() => {
     // ── Casuísticas ──
     document.getElementById('addCasuistica').addEventListener('click', async () => {
       const input = document.getElementById('newCasuistica')
+      const tipoSel = document.getElementById('newCasuisticaTipo')
       const nombre = input.value.trim()
       if (!nombre) { Toast.show('Escribe el nombre de la casuística', 'warning'); return }
       try {
-        await DB.addCatalogoCasuistica(nombre)
+        await DB.addCatalogoCasuistica(nombre, tipoSel?.value || null)
         input.value = ''
+        if (tipoSel) tipoSel.value = ''
         await loadCasuisticas()
         Toast.show('Casuística agregada', 'success')
       } catch (e) {

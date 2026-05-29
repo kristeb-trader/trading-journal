@@ -223,16 +223,13 @@ Cuando recibas la instrucción de diagnóstico final, integra TODO lo conversado
     const erroresData = await DB.getErroresHistoricos()
     if (!erroresData.length) return 'Sin patrones identificados aún.'
 
-    // Contar errores por tipo y descripción
+    // Contar errores por tipo y descripción (filas planas de diagnostico_errores)
     const conteo = {}
-    erroresData.forEach(d => {
-      const errores = d.errores_json || []
-      errores.forEach(e => {
-        const key = `${e.tipo}||${e.descripcion}`
-        if (!conteo[key]) conteo[key] = { tipo: e.tipo, descripcion: e.descripcion, veces: 0, fechas: [] }
-        conteo[key].veces++
-        conteo[key].fechas.push(d.sesion_date)
-      })
+    erroresData.forEach(e => {
+      const key = `${e.tipo}||${e.descripcion}`
+      if (!conteo[key]) conteo[key] = { tipo: e.tipo, descripcion: e.descripcion, veces: 0, fechas: [] }
+      conteo[key].veces++
+      conteo[key].fechas.push(e.sesion_date)
     })
 
     const alertas = Object.values(conteo)
@@ -638,6 +635,19 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       const erroresJson  = parsearErroresJson(diagnosticoActual.errores)
       // El veredicto se parsea junto con la validación para detectar VÁLIDA/INVÁLIDA
       const setuosJson   = parsearSetupsJson(`${diagnosticoActual.validacion || ''}\n${diagnosticoActual.veredicto || ''}`)
+
+      // Marcar errores repetidos comparando con el histórico estructurado
+      const historicos = await DB.getErroresHistoricos()
+      const conteoHist = {}
+      historicos
+        .filter(h => h.sesion_date !== coachDate)
+        .forEach(h => {
+          const k = (h.descripcion || '').toLowerCase().trim()
+          if (k) conteoHist[k] = (conteoHist[k] || 0) + 1
+        })
+      erroresJson.forEach(e => {
+        e.repetido = (conteoHist[(e.descripcion || '').toLowerCase().trim()] || 0) >= 2
+      })
       const patronesDetectados = erroresJson.filter(e => e.repetido)
 
       const payload = {
@@ -649,11 +659,8 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
         sec_errores:          diagnosticoActual.errores,
         sec_aprendizaje:      diagnosticoActual.aprendizaje,
         sec_resumen_compacto: diagnosticoActual.resumen,
-        errores_json:         erroresJson,
         setups_json:          setuosJson,
-        estado_emocional_id:     emocionId,
         estado_emocional_fin_id: emocionFinId,
-        nivel_confianza:         confianza,
         patron_detectado:     patronesDetectados.length > 0,
         patron_descripcion:   patronesDetectados.map(e => e.descripcion).join('; ') || null,
         chat_messages:        chatHistory,
@@ -663,7 +670,11 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
 
       await DB.saveDiagnostico(payload)
 
-      // Actualizar también la sesión con emoción y confianza
+      // Errores estructurados (tabla diagnostico_errores) — fuente de análisis
+      await DB.saveErroresDiagnostico(coachDate, erroresJson)
+
+      // Emoción de inicio y confianza → fuente única en `sesiones`
+      // (solo si ya existe la sesión; no creamos sesiones huérfanas desde el Coach)
       if (emocionId || confianza) {
         const sesion = await DB.getSesionByDate(coachDate)
         if (sesion) {
@@ -697,8 +708,12 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
     container.innerHTML = '<div class="coach-loading"><i class="ti ti-loader-2 spin"></i></div>'
 
     try {
-      const historial = await DB.getHistorialCompacto(30)
-      const emociones = emocionesCache.length ? emocionesCache : await DB.getCatalogoEmociones()
+      const [historial, emociones, sesiones, erroresFlat] = await Promise.all([
+        DB.getHistorialCompacto(30),
+        emocionesCache.length ? Promise.resolve(emocionesCache) : DB.getCatalogoEmociones(),
+        DB.getSesiones(),
+        DB.getErroresHistoricos(),
+      ])
       emocionesCache = emociones
 
       if (!historial.length) {
@@ -706,11 +721,21 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
         return
       }
 
+      // Mapas por fecha: emoción-inicio desde `sesiones`, errores desde tabla estructurada
+      const sesionMap = {}
+      sesiones.forEach(s => { sesionMap[s.sesion_date] = s })
+      const erroresMap = {}
+      erroresFlat.forEach(e => {
+        if (!erroresMap[e.sesion_date]) erroresMap[e.sesion_date] = []
+        erroresMap[e.sesion_date].push(e)
+      })
+
       container.innerHTML = historial.map(d => {
-        const emocion    = emociones.find(e => e.id === d.estado_emocional_id)
+        const sesion     = sesionMap[d.sesion_date]
+        const emocion    = emociones.find(e => e.id === sesion?.estado_emocional_id)
         const emocionFin = emociones.find(e => e.id === d.estado_emocional_fin_id)
-        const errores  = d.errores_json || []
-        const tieneAlerta = d.patron_detectado || errores.some(e => e.repetido)
+        const errores    = erroresMap[d.sesion_date] || []
+        const tieneAlerta = d.patron_detectado
         const resultado = d.sec_resumen_compacto?.includes('TARGET ✅') ? 'target'
           : d.sec_resumen_compacto?.includes('STOP ❌') ? 'stop' : 'be'
 
@@ -944,9 +969,10 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       DB.getSesionByDate(date),
       DB.getDiagnosticoByDate(date)
     ])
-    const emocionGuardada    = diagExistente?.estado_emocional_id    || sesion?.estado_emocional_id
+    // Fuente única: inicio + confianza viven en `sesiones`; cierre en `diagnosticos`
+    const emocionGuardada    = sesion?.estado_emocional_id
     const emocionFinGuardada = diagExistente?.estado_emocional_fin_id
-    const confianzaGuardada  = diagExistente?.nivel_confianza        || sesion?.nivel_confianza
+    const confianzaGuardada  = sesion?.nivel_confianza
     if (emocionGuardada)              select.value    = emocionGuardada
     if (emocionFinGuardada && selectFin) selectFin.value = emocionFinGuardada
     if (confianzaGuardada && confianza)  confianza.value = confianzaGuardada

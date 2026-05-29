@@ -167,10 +167,10 @@ const DB = {
     return data
   },
 
-  async addCatalogoCasuistica(nombre) {
+  async addCatalogoCasuistica(nombre, tipo = null) {
     const { data: all } = await supa.from('catalogo_casuisticas').select('orden').order('orden', { ascending: false }).limit(1)
     const orden = (all?.[0]?.orden || 0) + 1
-    const { data, error } = await supa.from('catalogo_casuisticas').insert({ nombre, orden }).select().single()
+    const { data, error } = await supa.from('catalogo_casuisticas').insert({ nombre, tipo, orden }).select().single()
     if (error) throw error
     return data
   },
@@ -182,6 +182,11 @@ const DB = {
 
   async renameCatalogoCasuistica(id, nombre) {
     const { error } = await supa.from('catalogo_casuisticas').update({ nombre }).eq('id', id)
+    if (error) throw error
+  },
+
+  async updateCasuisticaTipo(id, tipo) {
+    const { error } = await supa.from('catalogo_casuisticas').update({ tipo: tipo || null }).eq('id', id)
     if (error) throw error
   },
 
@@ -277,7 +282,7 @@ const DB = {
   async getHistorialCompacto(limit = 60) {
     const { data, error } = await supa
       .from('diagnosticos_diarios')
-      .select('sesion_date, sec_resumen_compacto, errores_json, setups_json, estado_emocional_id, estado_emocional_fin_id, nivel_confianza, patron_detectado, patron_descripcion')
+      .select('sesion_date, sec_resumen_compacto, setups_json, estado_emocional_fin_id, patron_detectado, patron_descripcion')
       .not('sec_resumen_compacto', 'is', null)
       .order('sesion_date', { ascending: false })
       .limit(limit)
@@ -285,13 +290,39 @@ const DB = {
     return data
   },
 
-  async getErroresHistoricos() {
+  // ── Errores estructurados (diagnostico_errores) ──────────────────────────
+
+  // Reemplaza los errores de un día por el nuevo set (origen 'ia')
+  async saveErroresDiagnostico(sesionDate, errores) {
+    await supa.from('diagnostico_errores').delete().eq('sesion_date', sesionDate).eq('origen', 'ia')
+    if (!errores?.length) return
+    const rows = errores.map(e => ({
+      sesion_date: sesionDate,
+      tipo:        e.tipo || null,
+      descripcion: e.descripcion,
+      origen:      'ia',
+    }))
+    const { error } = await supa.from('diagnostico_errores').insert(rows)
+    if (error) throw error
+  },
+
+  async getErroresByDate(date) {
     const { data, error } = await supa
-      .from('diagnosticos_diarios')
-      .select('sesion_date, errores_json')
-      .not('errores_json', 'eq', '[]')
+      .from('diagnostico_errores')
+      .select('*')
+      .eq('sesion_date', date)
+      .order('created_at', { ascending: true })
+    if (error) throw error
+    return data
+  },
+
+  // Errores recientes (planos) para detección de patrones e historial
+  async getErroresHistoricos(limit = 400) {
+    const { data, error } = await supa
+      .from('diagnostico_errores')
+      .select('sesion_date, tipo, descripcion')
       .order('sesion_date', { ascending: false })
-      .limit(90)
+      .limit(limit)
     if (error) throw error
     return data
   },

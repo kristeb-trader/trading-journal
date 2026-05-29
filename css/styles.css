@@ -904,6 +904,16 @@ body.modal-open { overflow: hidden; }
   border-radius: 0 0 var(--radius) var(--radius);
 }
 .catalog-nombre { flex: 1; font-size: 0.85rem; }
+.catalog-tipo-select {
+  font-size: 0.78rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  flex-shrink: 0;
+  max-width: 150px;
+}
 .btn-edit-catalog, .btn-del-catalog {
   color: var(--text3); font-size: 1rem; padding: 3px 5px;
   border-radius: 4px; transition: color var(--transition), background var(--transition);

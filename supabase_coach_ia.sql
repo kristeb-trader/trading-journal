@@ -169,3 +169,58 @@ ALTER TABLE sesiones
 
 -- ── 5. Recargar schema PostgREST ─────────────────────────────
 NOTIFY pgrst, 'reload schema';
+
+
+-- ============================================================
+-- FASE 2 — Limpieza del modelo de datos (mayo 2026)
+-- ============================================================
+
+-- ── 2A. Emoción/confianza: fuente única en `sesiones` ─────────
+-- Respaldar valores que solo estuvieran en diagnosticos → sesiones
+UPDATE sesiones s
+SET estado_emocional_id = COALESCE(s.estado_emocional_id, d.estado_emocional_id),
+    nivel_confianza     = COALESCE(s.nivel_confianza, d.nivel_confianza)
+FROM diagnosticos_diarios d
+WHERE d.sesion_date = s.sesion_date;
+
+-- Eliminar columnas redundantes de diagnosticos (se quedan en sesiones).
+-- estado_emocional_fin_id PERMANECE en diagnosticos (emoción de cierre).
+ALTER TABLE diagnosticos_diarios
+  DROP COLUMN IF EXISTS estado_emocional_id,
+  DROP COLUMN IF EXISTS nivel_confianza;
+
+-- ── 2B. Taxonomía de error en el catálogo ─────────────────────
+ALTER TABLE catalogo_casuisticas
+  ADD COLUMN IF NOT EXISTS tipo text;  -- psicologico | analitico | operativo | marcado
+
+-- ── 2C. Tabla estructurada de errores ─────────────────────────
+CREATE TABLE IF NOT EXISTS diagnostico_errores (
+  id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  sesion_date date NOT NULL,
+  tipo        text,                  -- psicologico/analitico/operativo/marcado
+  descripcion text NOT NULL,
+  origen      text DEFAULT 'ia',     -- 'ia' | 'manual'
+  created_at  timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_diag_errores_fecha ON diagnostico_errores(sesion_date);
+
+ALTER TABLE diagnostico_errores DISABLE ROW LEVEL SECURITY;
+GRANT SELECT, INSERT, UPDATE, DELETE ON diagnostico_errores TO anon;
+GRANT USAGE, SELECT ON SEQUENCE diagnostico_errores_id_seq TO anon;
+
+-- Migración (opcional) de los errores históricos jsonb → filas estructuradas
+INSERT INTO diagnostico_errores (sesion_date, tipo, descripcion, origen)
+SELECT d.sesion_date,
+       e->>'tipo'         AS tipo,
+       e->>'descripcion'  AS descripcion,
+       'ia'               AS origen
+FROM diagnosticos_diarios d,
+     jsonb_array_elements(COALESCE(d.errores_json, '[]'::jsonb)) AS e
+WHERE e->>'descripcion' IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM diagnostico_errores x
+    WHERE x.sesion_date = d.sesion_date
+      AND x.descripcion = e->>'descripcion'
+  );
+
+NOTIFY pgrst, 'reload schema';
