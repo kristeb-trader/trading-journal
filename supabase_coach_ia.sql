@@ -404,3 +404,28 @@ ALTER TABLE sesiones
   DROP COLUMN IF EXISTS zona_naranja_nota;
 
 NOTIFY pgrst, 'reload schema';
+
+
+-- ============================================================
+-- FASE 4B — Catálogo de recomendaciones
+-- ============================================================
+
+-- 1. Catálogo de recomendaciones
+CREATE TABLE IF NOT EXISTS catalogo_recomendaciones (
+  id      bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nombre  text NOT NULL,           -- nombre breve (1-4 palabras)
+  tipo    text,                    -- psicologico | analitico | operativo | marcado
+  activa  boolean DEFAULT true,
+  orden   integer DEFAULT 0
+);
+ALTER TABLE catalogo_recomendaciones DISABLE ROW LEVEL SECURITY;
+GRANT SELECT, INSERT, UPDATE, DELETE ON catalogo_recomendaciones TO anon;
+GRANT USAGE, SELECT ON SEQUENCE catalogo_recomendaciones_id_seq TO anon;
+
+-- 2. Columnas nuevas en diagnostico_errores
+ALTER TABLE diagnostico_errores
+  ADD COLUMN IF NOT EXISTS recomendacion_id     bigint REFERENCES catalogo_recomendaciones(id),
+  ADD COLUMN IF NOT EXISTS recomendacion_ia     text,   -- texto generado por la IA
+  ADD COLUMN IF NOT EXISTS recomendacion_manual text;   -- nota/ajuste del trader
+
+NOTIFY pgrst, 'reload schema';

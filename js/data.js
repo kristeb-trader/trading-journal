@@ -257,7 +257,7 @@ const DataManager = (() => {
   }
 
   async function init() {
-    await Promise.all([loadCasuisticas(), loadEmociones()])
+    await Promise.all([loadCasuisticas(), loadEmociones(), loadRecomendaciones()])
 
     // ── Casuísticas ──
     document.getElementById('addCasuistica').addEventListener('click', async () => {
@@ -318,6 +318,27 @@ const DataManager = (() => {
     document.getElementById('newExperimento')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); document.getElementById('addExperimento').click() }
     })
+
+    // ── Recomendaciones ──
+    await loadRecomendaciones()
+    document.getElementById('addRecomendacion')?.addEventListener('click', async () => {
+      const input  = document.getElementById('newRecomendacion')
+      const tipoSel = document.getElementById('newRecomendacionTipo')
+      const nombre = input.value.trim()
+      if (!nombre) { Toast.show('Escribe el nombre de la recomendación', 'warning'); return }
+      try {
+        await DB.addCatalogoRecomendacion(nombre, tipoSel?.value || null)
+        input.value = ''
+        if (tipoSel) tipoSel.value = ''
+        await loadRecomendaciones()
+        Toast.show('Recomendación agregada', 'success')
+      } catch (e) {
+        Toast.show('Error al agregar: ' + e.message, 'error')
+      }
+    })
+    document.getElementById('newRecomendacion')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); document.getElementById('addRecomendacion').click() }
+    })
   }
 
   function renderExperimentosList(items) {
@@ -352,6 +373,48 @@ const DataManager = (() => {
   async function loadExperimentos() {
     const items = await DB.getCatalogoExperimentos()
     renderExperimentosList(items)
+  }
+
+  function renderRecomendacionesList(items) {
+    const el = document.getElementById('catalogoRecomendacionesList')
+    if (!el) return
+    if (!items.length) { el.innerHTML = '<p class="catalog-empty">Sin recomendaciones registradas</p>'; return }
+    el.innerHTML = items.map(item => `
+      <div class="catalog-item ${!item.activa ? 'catalog-item-inactive' : ''}" data-id="${item.id}">
+        <span class="drag-handle"><i class="ti ti-grip-vertical"></i></span>
+        <label class="catalog-toggle">
+          <input type="checkbox" class="tog-rec" data-id="${item.id}" ${item.activa ? 'checked' : ''}>
+          <span class="toggle-track"></span>
+        </label>
+        <span class="catalog-nombre">${item.nombre}</span>
+        <select class="catalog-tipo-select tipo-select-rec" data-id="${item.id}" title="Tipo">
+          ${tipoOptions(item.tipo)}
+        </select>
+      </div>`).join('')
+
+    el.querySelectorAll('.tog-rec').forEach(chk => {
+      chk.addEventListener('change', async () => {
+        const id = parseInt(chk.dataset.id)
+        try {
+          await DB.toggleCatalogoRecomendacion(id, chk.checked)
+          chk.closest('.catalog-item').classList.toggle('catalog-item-inactive', !chk.checked)
+        } catch (e) {
+          Toast.show('Error al actualizar', 'error')
+          chk.checked = !chk.checked
+        }
+      })
+    })
+    el.querySelectorAll('.tipo-select-rec').forEach(sel => {
+      sel.addEventListener('change', async () => {
+        const id = parseInt(sel.dataset.id)
+        try { await supa.from('catalogo_recomendaciones').update({ tipo: sel.value || null }).eq('id', id) } catch (_) {}
+      })
+    })
+  }
+
+  async function loadRecomendaciones() {
+    const items = await DB.getCatalogoRecomendaciones()
+    renderRecomendacionesList(items)
   }
 
   return { init }

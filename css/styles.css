@@ -1631,6 +1631,28 @@ body.modal-open { overflow: hidden; }
   font-size: 0.82rem; color: var(--text2); line-height: 1.6;
   padding: 8px 12px; background: var(--bg3); border-radius: 6px; margin-top: 4px;
 }
+.modal-rec-wrap {
+  margin-top: 8px; padding: 8px 10px;
+  background: rgba(29,158,117,0.07); border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0; font-size: 0.82rem; line-height: 1.6;
+}
+.modal-rec-ia     { color: var(--text2); }
+.modal-rec-manual { color: var(--accent); font-style: italic; }
+
+/* Recomendación en lista de confirmación del Coach */
+.coach-error-rec {
+  display: flex; align-items: flex-start; flex-wrap: wrap; gap: 6px;
+  padding: 6px 12px 6px 38px; background: rgba(29,158,117,0.06);
+  border-left: 3px solid var(--accent); border-radius: 0 0 4px 4px; font-size: 0.82rem;
+}
+.coach-rec-label { color: var(--accent); font-weight: 700; flex-shrink: 0; }
+.coach-rec-nombre { color: var(--text); }
+.coach-rec-texto { color: var(--text2); flex: 1; min-width: 120px; }
+.coach-rec-manual-wrap { padding: 4px 12px 6px 38px; }
+.coach-rec-manual {
+  width: 100%; font-size: 0.82rem; padding: 5px 10px;
+  border-radius: 6px; background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+}
 
 /* Chips de origen en el modal de errores */
 .disc-origen-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }

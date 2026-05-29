@@ -97,7 +97,7 @@ const DB = {
   async getCasuisticasByDate(date) {
     const { data, error } = await supa
       .from('diagnostico_errores')
-      .select('id, sesion_date, casuistica:error, tipo, resultado, origen, descripcion, catalogo_id, created_at')
+      .select('id, sesion_date, casuistica:error, tipo, resultado, origen, descripcion, catalogo_id, recomendacion_ia, recomendacion_manual, recomendacion:recomendacion_id(nombre), created_at')
       .eq('sesion_date', date)
       .order('created_at', { ascending: true })
     if (error) throw error
@@ -312,7 +312,7 @@ const DB = {
     const existMap = {}
     ;(existentes || []).forEach(e => { existMap[(e.error || '').toLowerCase().trim()] = e })
 
-    // Catálogo (para enlazar o crear)
+    // Catálogo de errores (para enlazar o crear)
     const { data: cat } = await supa.from('catalogo_errores').select('id, nombre, orden')
     const catMap = {}
     let maxOrden = 0
@@ -320,6 +320,11 @@ const DB = {
       catMap[(c.nombre || '').toLowerCase().trim()] = c.id
       if ((c.orden || 0) > maxOrden) maxOrden = c.orden
     })
+
+    // Catálogo de recomendaciones (para enlazar o crear)
+    const { data: catRec } = await supa.from('catalogo_recomendaciones').select('id, nombre')
+    const recCatMap = {}
+    ;(catRec || []).forEach(r => { recCatMap[(r.nombre || '').toLowerCase().trim()] = r.id })
 
     for (const e of errores) {
       const nombre = (e.nombre || '').trim()
@@ -345,6 +350,24 @@ const DB = {
         catMap[key] = catId
       }
 
+      // Enlazar o crear recomendación en el catálogo
+      let recId = null
+      const recNombre = (e.recNombre || '').trim()
+      if (recNombre && recNombre.toLowerCase() !== 'ninguna') {
+        const recKey = recNombre.toLowerCase()
+        if (!recCatMap[recKey]) {
+          const { data: allRec } = await supa.from('catalogo_recomendaciones').select('orden').order('orden', { ascending: false }).limit(1)
+          const recOrden = (allRec?.[0]?.orden || 0) + 1
+          const { data: recCreado } = await supa.from('catalogo_recomendaciones')
+            .insert({ nombre: recNombre, tipo: e.tipo || null, orden: recOrden, activa: true })
+            .select('id').single()
+          recId = recCreado?.id || null
+          recCatMap[recKey] = recId
+        } else {
+          recId = recCatMap[recKey]
+        }
+      }
+
       await supa.from('diagnostico_errores').insert({
         sesion_date: sesionDate,
         error: nombre,
@@ -353,6 +376,8 @@ const DB = {
         descripcion: e.detalle || null,
         catalogo_id: catId,
         origen: 'ia',
+        recomendacion_id: recId,
+        recomendacion_ia: (e.recTexto && e.recTexto.toLowerCase() !== 'ninguna') ? e.recTexto : null,
       })
       existMap[key] = { origen: 'ia' }
     }
@@ -368,6 +393,35 @@ const DB = {
       .limit(limit)
     if (error) throw error
     return data
+  },
+
+  // ── Catálogo de Recomendaciones ──────────────────────────────────────────
+
+  async getCatalogoRecomendaciones() {
+    const { data, error } = await supa
+      .from('catalogo_recomendaciones')
+      .select('*')
+      .order('orden', { ascending: true })
+    if (error) throw error
+    return data
+  },
+
+  async addCatalogoRecomendacion(nombre, tipo = null) {
+    const { data: all } = await supa.from('catalogo_recomendaciones').select('orden').order('orden', { ascending: false }).limit(1)
+    const orden = (all?.[0]?.orden || 0) + 1
+    const { data, error } = await supa.from('catalogo_recomendaciones').insert({ nombre, tipo, orden }).select().single()
+    if (error) throw error
+    return data
+  },
+
+  async toggleCatalogoRecomendacion(id, activa) {
+    const { error } = await supa.from('catalogo_recomendaciones').update({ activa }).eq('id', id)
+    if (error) throw error
+  },
+
+  async updateRecomendacionManual(diagnosticoErrorId, texto) {
+    const { error } = await supa.from('diagnostico_errores').update({ recomendacion_manual: texto || null }).eq('id', diagnosticoErrorId)
+    if (error) throw error
   },
 
   // ── Experimentos ─────────────────────────────────────────────────────────

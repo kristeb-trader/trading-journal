@@ -117,8 +117,10 @@ const Modal = {
               ? `<span class="${c.resultado === 'T' ? 'cas-badge-t' : 'cas-badge-s'}">${c.resultado}</span>` : ''
             const origenTag = c.origen && c.origen !== 'manual'
               ? `<span class="cas-origen" title="${c.origen}">${c.origen === 'ia' ? '🤖' : '🤝'}</span>` : ''
-            const detalle = c.descripcion
-              ? `<div class="modal-cas-detalle hidden" id="modal-cas-det-${i}">${c.descripcion}</div>` : ''
+            const recHtml = (c.recomendacion_ia || c.recomendacion_manual)
+              ? `<div class="modal-rec-wrap">💡 <strong>${c.recomendacion?.nombre || 'Recomendación'}</strong>${c.recomendacion_ia ? `<br><span class="modal-rec-ia">${c.recomendacion_ia}</span>` : ''}${c.recomendacion_manual ? `<br><span class="modal-rec-manual">✍️ ${c.recomendacion_manual}</span>` : ''}</div>` : ''
+            const detalle = (c.descripcion || recHtml)
+              ? `<div class="modal-cas-detalle hidden" id="modal-cas-det-${i}">${c.descripcion || ''}${recHtml}</div>` : ''
             return `
               <div class="modal-cas-item">
                 <div class="modal-cas-row modal-cas-row-error ${c.descripcion ? 'has-detail' : ''}" ${c.descripcion ? `data-det="${i}"` : ''}>

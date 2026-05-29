@@ -214,14 +214,16 @@ Cuando recibas la instrucción de diagnóstico final, integra TODO lo conversado
 [ENTRADA VÁLIDA / ENTRADA INVÁLIDA + razón exacta, ahora sí con el cierre de toda la sesión]
 
 **⚠️ ERRORES DETECTADOS**
-Lista CADA error en UNA línea con este formato EXACTO (cuatro partes separadas por " | "):
-NombreCorto | tipo | resultado | detalle
-- NombreCorto: 1 a 4 palabras, SIN comillas ni caracteres especiales. Si coincide con el CATÁLOGO de abajo, usa EXACTAMENTE ese nombre. Si es nuevo, crea uno breve.
+Lista CADA error en UNA línea con este formato EXACTO (seis partes separadas por " | "):
+NombreError | tipo | resultado | detalleError | NombreRec | textoRec
+- NombreError: 1 a 4 palabras, SIN comillas ni caracteres especiales. Si coincide con el CATÁLOGO de abajo, usa EXACTAMENTE ese nombre. Si es nuevo, crea uno breve.
 - tipo: psicologico | analitico | operativo | marcado
-- resultado: SOLO para errores en días NO operados o setups válidos no tomados → T si el precio habría ido a target, S si habría ido a stop. Para errores en días operados, escribe ninguno.
-- detalle: explicación completa del error ese día.
-Ejemplo día operado: Error de Marcación | marcado | ninguno | Marqué la zona 10 puntos arriba del nivel correcto.
-Ejemplo día no operado: Miedo | psicologico | T | No tomé la entrada por miedo; el precio llegó al target sin mí.
+- resultado: SOLO en días NO operados/setups no tomados → T o S (qué habría pasado). En días operados → ninguno.
+- detalleError: explicación completa del error ese día.
+- NombreRec: nombre breve (1-4 palabras) de la recomendación para corregir ese error. Si existe en el CATÁLOGO de recomendaciones, úsalo exactamente. Si es nueva, crea un nombre breve.
+- textoRec: acción concreta y específica para corregir el error. Si no aplica recomendación → ninguna.
+Ejemplo día operado: Error de Marcación | marcado | ninguno | Marqué la zona 10 puntos arriba. | Revisión de zonas | Siempre verificar la zona en 5 min antes de marcarla en 1 min.
+Ejemplo día no operado: Miedo | psicologico | T | No tomé la entrada por miedo. | Visualización pre-sesión | Antes de operar visualiza 3 entradas recientes exitosas para anclar confianza.
 Si NO hubo errores, escribe exactamente: NINGUNO
 
 CATÁLOGO DE ERRORES (usa estos nombres exactos cuando apliquen):
@@ -373,10 +375,11 @@ ${catalogoStr}
         // Parte 3: resultado (T/S) — solo aplica en días no operados
         const resRaw = (parts[2] || '').toUpperCase().trim()
         const resultado = resRaw === 'T' ? 'T' : resRaw === 'S' ? 'S' : null
-        // Parte 4 (o 3 si no hay resultado): detalle
-        const detalleIdx = parts.length >= 4 ? 3 : 2
-        const detalle = parts.slice(detalleIdx).join(' | ').trim()
-        if (nombre) out.push({ nombre, tipo, resultado, detalle })
+        const detalle   = (parts[3] || '').trim()
+        // Partes 5 y 6: recomendación
+        const recNombre = parts[4] ? parts[4].replace(/^[`'"'"\s]+/, '').replace(/[`'"'"]+$/, '').trim() : ''
+        const recTexto  = (parts[5] || '').trim()
+        if (nombre) out.push({ nombre, tipo, resultado, detalle, recNombre, recTexto })
       } else if (l.length > 2) {
         out.push({ nombre: l.slice(0, 40), tipo: '', resultado: null, detalle: l })
       }
@@ -636,26 +639,32 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
 
   async function prepararErroresConfirm(textoErrores) {
     const parsed = parsearErroresEstructurado(textoErrores)
-    // Para avisar "ya registrado" (ese día) y "nuevo" (no está en el catálogo)
-    let yaRegistrados = [], catalogoNombres = []
+    let yaRegistrados = [], catalogoNombres = [], recCatalogoNombres = []
     try {
-      const [existentes, catalogo] = await Promise.all([
+      const [existentes, catalogo, catRec] = await Promise.all([
         DB.getCasuisticasByDate(coachDate),
         DB.getCatalogoCasuisticas(),
+        DB.getCatalogoRecomendaciones(),
       ])
       yaRegistrados = existentes.map(e => (e.casuistica || '').toLowerCase().trim())
       catalogoNombres = catalogo.map(c => (c.nombre || '').toLowerCase().trim())
-    } catch (_) { /* sin conexión: seguimos sin los avisos */ }
+      recCatalogoNombres = catRec.map(r => (r.nombre || '').toLowerCase().trim())
+    } catch (_) { /* sin conexión */ }
 
     erroresDetectados = parsed.map(e => {
       const key = (e.nombre || '').toLowerCase().trim()
+      const recKey = (e.recNombre || '').toLowerCase().trim()
       return {
         nombre: e.nombre,
         tipo: e.tipo || '',
         resultado: e.resultado || null,
         detalle: e.detalle || '',
+        recNombre: (e.recNombre && e.recNombre.toLowerCase() !== 'ninguna') ? e.recNombre : '',
+        recTexto:  (e.recTexto  && e.recTexto.toLowerCase()  !== 'ninguna') ? e.recTexto  : '',
+        recManual: '',
         yaRegistrado: yaRegistrados.includes(key),
         nuevo: !catalogoNombres.includes(key),
+        recNueva: recKey && !recCatalogoNombres.includes(recKey),
       }
     })
     renderErroresConfirm()
@@ -680,6 +689,16 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
           ${e.detalle ? `<button type="button" class="coach-error-toggle" data-i="${i}" title="Ver detalle"><i class="ti ti-chevron-down"></i></button>` : ''}
         </label>
         ${e.detalle ? `<div class="coach-error-detalle hidden" id="coach-error-det-${i}">${e.detalle}</div>` : ''}
+        ${e.recNombre || e.recTexto ? `
+        <div class="coach-error-rec">
+          <span class="coach-rec-label">💡 Rec:</span>
+          <strong class="coach-rec-nombre">${e.recNombre || '—'}</strong>
+          ${e.recNueva ? '<span class="coach-error-badge badge-nuevo">nueva</span>' : ''}
+          ${e.recTexto ? `<span class="coach-rec-texto">${e.recTexto}</span>` : ''}
+        </div>
+        <div class="coach-rec-manual-wrap">
+          <input type="text" class="coach-rec-manual" data-i="${i}" placeholder="Tu nota / ajuste (opcional)" value="${e.recManual}">
+        </div>` : ''}
       </div>`).join('')
     cont.innerHTML = `
       <div class="coach-errores-confirm-title">
@@ -714,6 +733,12 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
         if (det) det.classList.toggle('hidden')
       })
     })
+    cont.querySelectorAll('.coach-rec-manual').forEach(input => {
+      input.addEventListener('input', () => {
+        const i = parseInt(input.dataset.i)
+        if (erroresDetectados[i]) erroresDetectados[i].recManual = input.value.trim()
+      })
+    })
   }
 
   // Lee las casillas marcadas y devuelve los errores confirmados
@@ -725,7 +750,15 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       if (!chk.checked) return
       const i = parseInt(chk.dataset.i)
       const e = erroresDetectados[i]
-      if (e?.nombre) confirmados.push({ nombre: e.nombre, tipo: e.tipo || null, resultado: e.resultado || null, detalle: e.detalle || null })
+      if (e?.nombre) confirmados.push({
+        nombre:    e.nombre,
+        tipo:      e.tipo || null,
+        resultado: e.resultado || null,
+        detalle:   e.detalle || null,
+        recNombre: e.recNombre || null,
+        recTexto:  e.recTexto  || null,
+        recManual: e.recManual || null,
+      })
     })
     return confirmados
   }
