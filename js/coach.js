@@ -635,22 +635,17 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       const confianza    = document.getElementById('coachConfianzaVal')?.value
         ? parseInt(document.getElementById('coachConfianzaVal').value) : null
 
-      // El veredicto (Etapa 3) se concatena a la validación para conservar
-      // la sección completa en BD (alimenta el historial del Coach).
-      const validacionCompleta = [
-        diagnosticoActual.validacion,
-        diagnosticoActual.veredicto ? `\n\n**🎯 VEREDICTO DE SETUP**\n${diagnosticoActual.veredicto}` : ''
-      ].filter(Boolean).join('')
-
       const erroresJson  = parsearErroresJson(diagnosticoActual.errores)
-      const setuosJson   = parsearSetupsJson(validacionCompleta)
+      // El veredicto se parsea junto con la validación para detectar VÁLIDA/INVÁLIDA
+      const setuosJson   = parsearSetupsJson(`${diagnosticoActual.validacion || ''}\n${diagnosticoActual.veredicto || ''}`)
       const patronesDetectados = erroresJson.filter(e => e.repetido)
 
       const payload = {
         sesion_date:          coachDate,
         sec_contexto:         diagnosticoActual.contexto,
         sec_desarrollo:       diagnosticoActual.desarrollo,
-        sec_validacion:       validacionCompleta,
+        sec_validacion:       diagnosticoActual.validacion,
+        sec_veredicto:        diagnosticoActual.veredicto || null,
         sec_errores:          diagnosticoActual.errores,
         sec_aprendizaje:      diagnosticoActual.aprendizaje,
         sec_resumen_compacto: diagnosticoActual.resumen,
@@ -755,7 +750,10 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
 
   // Renderiza un diagnóstico guardado en las dos zonas y desbloquea las 3 etapas
   function mostrarDiagnosticoGuardado(diag) {
-    const { validacion, veredicto } = splitValidacion(diag.sec_validacion)
+    // Filas nuevas: veredicto en columna propia. Filas viejas: concatenado en sec_validacion.
+    const legacy = splitValidacion(diag.sec_validacion)
+    const veredicto  = diag.sec_veredicto || legacy.veredicto
+    const validacion = legacy.validacion
     renderAnalisisTecnico({
       contexto:   diag.sec_contexto,
       desarrollo: diag.sec_desarrollo,

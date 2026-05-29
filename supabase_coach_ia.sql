@@ -125,10 +125,11 @@ CREATE TABLE IF NOT EXISTS diagnosticos_diarios (
   id                    bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   sesion_date           date UNIQUE NOT NULL,
 
-  -- 6 secciones del análisis
+  -- Secciones del análisis
   sec_contexto          text,
   sec_desarrollo        text,
   sec_validacion        text,
+  sec_veredicto         text,   -- veredicto de setup (VÁLIDA/INVÁLIDA), Etapa 3
   sec_errores           text,
   sec_aprendizaje       text,
   sec_resumen_compacto  text,
