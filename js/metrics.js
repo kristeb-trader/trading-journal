@@ -4,7 +4,9 @@ const Metrics = (() => {
   let allSesiones = []
   let allCasuisticas = []
   let allCatalogo = []
-  let allObjetivos = null
+  let allObjetivos     = null
+  let allExpCatalogo   = []
+  let allExpRegistros  = []
 
   // Taxonomía de errores (debe coincidir con el catálogo)
   const TIPO_META = {
@@ -414,6 +416,51 @@ const Metrics = (() => {
     document.getElementById('disciplineModal').classList.remove('hidden')
   }
 
+  // Modal "Experimentos"
+  function openExperimentosModal(stats, minMuestras) {
+    if (!stats.length) {
+      document.getElementById('disciplineModalContent').innerHTML =
+        '<p style="padding:20px;color:var(--text3)">Sin registros de experimentos aún. Márcalos en el formulario de sesión.</p>'
+      document.getElementById('disciplineModal').classList.remove('hidden')
+      return
+    }
+    const bloques = stats.map(e => {
+      const barW = e.conRes > 0 ? (e.targets / e.conRes * 100).toFixed(0) : 0
+      const pendientes = Math.max(0, minMuestras - e.conRes)
+      let sugerencia = ''
+      if (e.conRes >= minMuestras) {
+        if (e.pctT >= 60)       sugerencia = `<span style="color:var(--accent);font-size:0.78rem">✅ Candidato a regla: se presentó a favor ${e.pctT}% de los casos → considera adoptarlo</span>`
+        else if (e.pctT <= 35)  sugerencia = `<span style="color:var(--red);font-size:0.78rem">❌ Descartar: solo ${e.pctT}% target en ${e.conRes} casos → no aporta como filtro</span>`
+        else                    sugerencia = `<span style="color:var(--warning);font-size:0.78rem">⚖️ Neutro (${e.pctT}% target) — sin evidencia suficiente para decidir</span>`
+      }
+      return `
+        <div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <strong style="font-size:0.88rem">🧪 ${e.nombre}</strong>
+            <span style="font-size:0.78rem;color:var(--text3)">${e.total} registros · ${e.conRes} con resultado</span>
+          </div>
+          ${e.conRes > 0 ? `
+            <div class="disc-item" style="margin-bottom:4px">
+              <span class="disc-item-label">% Target</span>
+              <div class="disc-bar-wrap">
+                <div class="disc-bar-fill" style="width:${barW}%;background:rgba(29,158,117,0.5)"></div>
+              </div>
+              <span class="disc-count" style="color:var(--accent)">${e.targets}T · ${e.stops}S</span>
+            </div>` : ''}
+          ${pendientes > 0
+            ? `<p style="color:var(--text3);font-size:0.78rem;margin:4px 0">Faltan ${pendientes} casos con resultado para emitir sugerencia</p>`
+            : sugerencia}
+        </div>`
+    }).join('<hr style="border:none;border-top:1px solid var(--border);margin:12px 0">')
+
+    document.getElementById('disciplineModalContent').innerHTML = `
+      <div style="padding:16px 20px 20px">
+        <p class="disc-section-title">Resultados por experimento (mín. ${minMuestras} casos para decidir)</p>
+        ${bloques}
+      </div>`
+    document.getElementById('disciplineModal').classList.remove('hidden')
+  }
+
   function abbreviateAccount(account) {
     if (!account) return '—'
     const parts = account.split('-')
@@ -558,6 +605,24 @@ const Metrics = (() => {
         .sort((a, b) => b.sesion_date.localeCompare(a.sesion_date)),
     }
 
+    // ── Experimentos (filtrar por período) ────────────────────────────────
+    const periodFrom = period === 'all' ? null
+      : period === 'month' ? `${calYear()}-${String(calMonth()).padStart(2,'0')}-01`
+      : (() => { const d = new Date(); d.setDate(d.getDate()-d.getDay()+1); return d.toISOString().slice(0,10) })()
+    const expRegistrosPeriodo = allExpRegistros.filter(r =>
+      !periodFrom || r.sesion_date >= periodFrom)
+    const expStats = allExpCatalogo.filter(e => e.activo).map(exp => {
+      const regs = expRegistrosPeriodo.filter(r => r.experimento_id === exp.id)
+      const total = regs.length
+      const targets = regs.filter(r => r.resultado === 'T').length
+      const stops   = regs.filter(r => r.resultado === 'S').length
+      const conRes  = targets + stops
+      const pctT = conRes > 0 ? Math.round(targets / conRes * 100) : null
+      return { id: exp.id, nombre: exp.nombre, total, targets, stops, conRes, pctT, regs }
+    }).filter(e => e.total > 0)
+    const MIN_MUESTRAS = 20
+    const expConSugerencia = expStats.filter(e => e.conRes >= MIN_MUESTRAS)
+
     const cards = [
       { label: 'P&L Neto Total', value: `${netPnl >= 0 ? '+' : ''}$${netPnl.toFixed(2)}`, icon: 'ti-currency-dollar', color: netPnl >= 0 ? 'green' : 'red', sub: `Promedio: ${avgPnl >= 0 ? '+' : ''}$${avgPnl.toFixed(0)}/día` },
       { label: 'Tasa de Acierto', value: `${winRate}%`, icon: 'ti-target', color: parseFloat(winRate) >= 50 ? 'green' : 'red', sub: `${targets} targets / ${stops} stops` },
@@ -566,6 +631,7 @@ const Metrics = (() => {
       { label: 'Cumplimiento de Reglas', value: cumplimientoPct != null ? `${cumplimientoPct}%` : '—', icon: 'ti-shield-check', color: cumplimientoPct == null ? 'neutral' : cumplimientoPct >= 90 ? 'green' : cumplimientoPct >= 70 ? 'warning' : 'red', sub: objStats.configurado ? `${objStats.diasOperados} días evaluados` : 'Configura objetivos en Ajustes', clickable: objStats.configurado, action: 'objetivos-detail' },
       { label: 'Días limpios', value: rachaLimpia > 0 ? `${rachaLimpia} 🏆` : '0', icon: 'ti-circle-check', color: diasLimpiosStat.pct >= 70 ? 'green' : diasLimpiosStat.pct >= 40 ? 'warning' : 'red', sub: `${diasLimpiosStat.total}/${diasLimpiosStat.totalSesiones} días sin errores`, clickable: diasLimpiosStat.totalSesiones > 0, action: 'dias-limpios' },
       { label: 'Dejé de ganar', value: dejeGanarStat.targets > 0 ? `${dejeGanarStat.targets} ⚠️` : '0 ✅', icon: 'ti-mood-sad', color: dejeGanarStat.targets === 0 ? 'green' : dejeGanarStat.targets <= 2 ? 'warning' : 'red', sub: dejeGanarStat.total > 0 ? `${dejeGanarStat.targets}T · ${dejeGanarStat.stops}S dejados pasar` : 'Sin setups perdidos', clickable: dejeGanarStat.total > 0, action: 'deje-ganar' },
+      { label: 'Experimentos', value: expConSugerencia.length > 0 ? `${expConSugerencia.length} 🔬` : expStats.length > 0 ? `${expStats.length} en curso` : '—', icon: 'ti-flask', color: expConSugerencia.length > 0 ? 'warning' : 'neutral', sub: expStats.length > 0 ? `${expStats.length} activos · ${MIN_MUESTRAS} casos para decidir` : 'Sin registros aún', clickable: expStats.length > 0, action: 'experimentos' },
       {
         label: 'Targets · Stops · Sin entrada',
         value: `<span style="color:var(--accent)">${targets}</span> · <span style="color:var(--red)">${stops}</span> · ${noOperoCount}`,
@@ -627,11 +693,14 @@ const Metrics = (() => {
     document.querySelector('[data-action="deje-ganar"]')?.addEventListener('click', () => {
       openDejeGanarModal(dejeGanarStat)
     })
+    document.querySelector('[data-action="experimentos"]')?.addEventListener('click', () => {
+      openExperimentosModal(expStats, MIN_MUESTRAS)
+    })
   }
 
   async function init() {
-    ;[allTrades, allSesiones, allCasuisticas, allCatalogo, allObjetivos] = await Promise.all([
-      DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getCatalogoCasuisticas(), DB.getObjetivos()
+    ;[allTrades, allSesiones, allCasuisticas, allCatalogo, allObjetivos, allExpCatalogo, allExpRegistros] = await Promise.all([
+      DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getCatalogoCasuisticas(), DB.getObjetivos(), DB.getCatalogoExperimentos(), DB.getAllExperimentoRegistros()
     ])
     render('month')
 

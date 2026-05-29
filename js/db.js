@@ -370,6 +370,62 @@ const DB = {
     return data
   },
 
+  // ── Experimentos ─────────────────────────────────────────────────────────
+
+  async getCatalogoExperimentos() {
+    const { data, error } = await supa
+      .from('catalogo_experimentos')
+      .select('*')
+      .order('orden', { ascending: true })
+    if (error) throw error
+    return data
+  },
+
+  async addExperimento(nombre, descripcion = null) {
+    const { data: all } = await supa.from('catalogo_experimentos').select('orden').order('orden', { ascending: false }).limit(1)
+    const orden = (all?.[0]?.orden || 0) + 1
+    const { data, error } = await supa.from('catalogo_experimentos').insert({ nombre, descripcion, orden }).select().single()
+    if (error) throw error
+    return data
+  },
+
+  async toggleExperimento(id, activo) {
+    const { error } = await supa.from('catalogo_experimentos').update({ activo }).eq('id', id)
+    if (error) throw error
+  },
+
+  async getExperimentosByDate(date) {
+    const { data, error } = await supa
+      .from('experimento_registros')
+      .select('*, experimento:catalogo_experimentos(nombre)')
+      .eq('sesion_date', date)
+    if (error) throw error
+    return data
+  },
+
+  async saveExperimentoRegistro(sesionDate, experimentoId, presente, resultado, nota) {
+    const { error } = await supa
+      .from('experimento_registros')
+      .upsert({
+        sesion_date: sesionDate,
+        experimento_id: experimentoId,
+        presente: presente ?? false,
+        resultado: resultado || null,
+        nota: nota || null,
+      }, { onConflict: 'sesion_date,experimento_id' })
+    if (error) throw error
+  },
+
+  async getAllExperimentoRegistros() {
+    const { data, error } = await supa
+      .from('experimento_registros')
+      .select('*, experimento:catalogo_experimentos(nombre)')
+      .eq('presente', true)
+      .order('sesion_date', { ascending: false })
+    if (error) throw error
+    return data
+  },
+
   // ── Objetivos / reglas ───────────────────────────────────────────────────
 
   async getObjetivos() {

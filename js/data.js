@@ -1,4 +1,4 @@
-// Data management — catalogo_casuisticas
+// Data management — catalogo_errores
 const DataManager = (() => {
 
   // Taxonomía de errores (compartida con el Coach IA)
@@ -299,6 +299,59 @@ const DataManager = (() => {
     document.getElementById('newEmocionNombre')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); document.getElementById('addEmocion').click() }
     })
+
+    // ── Experimentos ──
+    await loadExperimentos()
+    document.getElementById('addExperimento')?.addEventListener('click', async () => {
+      const input = document.getElementById('newExperimento')
+      const nombre = input.value.trim()
+      if (!nombre) { Toast.show('Escribe el nombre del experimento', 'warning'); return }
+      try {
+        await DB.addExperimento(nombre)
+        input.value = ''
+        await loadExperimentos()
+        Toast.show('Experimento agregado', 'success')
+      } catch (e) {
+        Toast.show('Error al agregar: ' + e.message, 'error')
+      }
+    })
+    document.getElementById('newExperimento')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); document.getElementById('addExperimento').click() }
+    })
+  }
+
+  function renderExperimentosList(items) {
+    const el = document.getElementById('catalogoExperimentosList')
+    if (!el) return
+    if (!items.length) { el.innerHTML = '<p class="catalog-empty">Sin experimentos registrados</p>'; return }
+    el.innerHTML = items.map(item => `
+      <div class="catalog-item ${!item.activo ? 'catalog-item-inactive' : ''}" data-id="${item.id}">
+        <span class="drag-handle"><i class="ti ti-grip-vertical"></i></span>
+        <label class="catalog-toggle">
+          <input type="checkbox" class="tog-exp" data-id="${item.id}" ${item.activo ? 'checked' : ''}>
+          <span class="toggle-track"></span>
+        </label>
+        <span class="catalog-nombre">${item.nombre}</span>
+        <button class="btn-del-catalog" data-id="${item.id}" title="Eliminar"><i class="ti ti-trash"></i></button>
+      </div>`).join('')
+
+    el.querySelectorAll('.tog-exp').forEach(chk => {
+      chk.addEventListener('change', async () => {
+        const id = parseInt(chk.dataset.id)
+        try {
+          await DB.toggleExperimento(id, chk.checked)
+          chk.closest('.catalog-item').classList.toggle('catalog-item-inactive', !chk.checked)
+        } catch (e) {
+          Toast.show('Error al actualizar', 'error')
+          chk.checked = !chk.checked
+        }
+      })
+    })
+  }
+
+  async function loadExperimentos() {
+    const items = await DB.getCatalogoExperimentos()
+    renderExperimentosList(items)
   }
 
   return { init }

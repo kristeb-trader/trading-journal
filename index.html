@@ -252,26 +252,8 @@
                 </div>
                 <input type="hidden" id="motivoNoEntradaVal" name="motivo_no_entrada">
 
-                <!-- Zona naranja testeo (setup no tomado) -->
-                <div id="zonaNaranjaSNT" style="margin-top:12px">
-                  <label style="margin-bottom:6px;display:block">🟠 ¿Había zona naranja en el camino al target?</label>
-                  <div class="btn-group" id="zonaNaranjaHabiaSNTGroup">
-                    <button type="button" class="btn-option" data-value="true">Sí</button>
-                    <button type="button" class="btn-option" data-value="false">No</button>
-                  </div>
-                  <input type="hidden" id="zonaNaranjaHabiaVal" name="zona_naranja_habia">
-                  <div id="zonaNaranjaReaccionSNT" class="hidden" style="margin-top:10px">
-                    <label style="margin-bottom:6px;display:block">¿Qué hizo el precio con la zona naranja?</label>
-                    <div class="btn-group" id="zonaNaranjaReaccionSNTGroup">
-                      <button type="button" class="btn-option" data-value="RESPETO">Respetó (rebotó)</button>
-                      <button type="button" class="btn-option" data-value="IGNORO">Ignoró (pasó de largo)</button>
-                      <button type="button" class="btn-option" data-value="PARCIAL">Parcial</button>
-                    </div>
-                    <input type="hidden" id="zonaNaranjaReaccionVal" name="zona_naranja_reaccion">
-                    <input type="text" id="zonaNaranjaNotaVal" name="zona_naranja_nota"
-                      placeholder="Contexto adicional (opcional)" style="margin-top:8px">
-                  </div>
-                </div>
+                <!-- Experimentos (dinámico) -->
+                <div id="experimentosSNTWrap" style="margin-top:12px"></div>
               </div>
             </div>
 
@@ -378,25 +360,10 @@
                 </div>
               </div>
 
-              <!-- Zona Naranja — testeo experimental (sesión con trade) -->
+              <!-- Experimentos activos (dinámico) -->
               <div class="form-group">
-                <label>🟠 Zonas Naranjas — Testeo Experimental</label>
-                <div class="btn-group" id="zonaNaranjaHabiaGroup">
-                  <button type="button" class="btn-option" data-value="true">Sí había en el camino</button>
-                  <button type="button" class="btn-option" data-value="false">No había</button>
-                </div>
-                <input type="hidden" id="zonaNaranjaHabiaTradeVal" name="zona_naranja_habia">
-                <div id="zonaNaranjaReaccionGroup" class="hidden" style="margin-top:10px">
-                  <label style="margin-bottom:6px;display:block">¿Qué hizo el precio?</label>
-                  <div class="btn-group" id="zonaNaranjaReaccionTradeGroup">
-                    <button type="button" class="btn-option" data-value="RESPETO">Respetó (rebotó)</button>
-                    <button type="button" class="btn-option" data-value="IGNORO">Ignoró (pasó de largo)</button>
-                    <button type="button" class="btn-option" data-value="PARCIAL">Parcial</button>
-                  </div>
-                  <input type="hidden" id="zonaNaranjaReaccionTradeVal" name="zona_naranja_reaccion">
-                  <input type="text" id="zonaNaranjaNotaTradeVal" name="zona_naranja_nota"
-                    placeholder="Contexto adicional (opcional)" style="margin-top:8px">
-                </div>
+                <label>🧪 Experimentos activos</label>
+                <div id="experimentosTradeWrap"></div>
               </div>
 
             </div>
@@ -519,6 +486,19 @@
               <button class="btn-primary" id="addEmocion"><i class="ti ti-plus"></i> Agregar</button>
             </div>
             <div id="catalogoEmocionesList" class="catalog-list"></div>
+          </div>
+
+          <!-- Experimentos -->
+          <div class="catalog-card">
+            <div class="catalog-header">
+              <h3><i class="ti ti-flask"></i> Experimentos</h3>
+              <span class="catalog-sub">Reglas en prueba — llevan estadística antes de decidir si se adoptan</span>
+            </div>
+            <div class="catalog-add">
+              <input type="text" id="newExperimento" placeholder="Nuevo experimento..." maxlength="60">
+              <button class="btn-primary" id="addExperimento"><i class="ti ti-plus"></i> Agregar</button>
+            </div>
+            <div id="catalogoExperimentosList" class="catalog-list"></div>
           </div>
 
         </div>

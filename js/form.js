@@ -46,27 +46,7 @@ const SessionForm = (() => {
     // Btn-group: motivo no entrada
     setupBtnGroupHidden('motivoNoEntradaGroup', 'motivoNoEntradaVal')
 
-    // Btn-group: zona naranja en setup no tomado
-    document.getElementById('zonaNaranjaHabiaSNTGroup')?.querySelectorAll('.btn-option').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.getElementById('zonaNaranjaHabiaSNTGroup').querySelectorAll('.btn-option').forEach(b => b.classList.remove('active'))
-        btn.classList.add('active')
-        document.getElementById('zonaNaranjaHabiaVal').value = btn.dataset.value
-        document.getElementById('zonaNaranjaReaccionSNT').classList.toggle('hidden', btn.dataset.value !== 'true')
-      })
-    })
-    setupBtnGroupHidden('zonaNaranjaReaccionSNTGroup', 'zonaNaranjaReaccionVal')
-
-    // Btn-group: zona naranja en trade normal
-    document.getElementById('zonaNaranjaHabiaGroup')?.querySelectorAll('.btn-option').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.getElementById('zonaNaranjaHabiaGroup').querySelectorAll('.btn-option').forEach(b => b.classList.remove('active'))
-        btn.classList.add('active')
-        document.getElementById('zonaNaranjaHabiaTradeVal').value = btn.dataset.value
-        document.getElementById('zonaNaranjaReaccionGroup').classList.toggle('hidden', btn.dataset.value !== 'true')
-      })
-    })
-    setupBtnGroupHidden('zonaNaranjaReaccionTradeGroup', 'zonaNaranjaReaccionTradeVal')
+    // Nada que hacer aquí — los experimentos se cargan dinámicamente en loadExperimentos()
   }
 
   // Helper: btn-group que escribe en un hidden input
@@ -193,18 +173,7 @@ const SessionForm = (() => {
       if (svnt) {
         payload.setup_observado   = document.getElementById('setupObservado').value || null
         payload.motivo_no_entrada = document.getElementById('motivoNoEntradaVal').value || null
-        // Zona naranja desde el bloque "setup no tomado"
-        const znHabia = document.getElementById('zonaNaranjaHabiaVal').value
-        payload.zona_naranja_habia    = znHabia === 'true' ? true : znHabia === 'false' ? false : null
-        payload.zona_naranja_reaccion = document.getElementById('zonaNaranjaReaccionVal').value || null
-        payload.zona_naranja_nota     = document.getElementById('zonaNaranjaNotaVal').value || null
       }
-    } else {
-      // Zona naranja desde el bloque de trading normal
-      const znHabia = document.getElementById('zonaNaranjaHabiaTradeVal').value
-      payload.zona_naranja_habia    = znHabia === 'true' ? true : znHabia === 'false' ? false : null
-      payload.zona_naranja_reaccion = document.getElementById('zonaNaranjaReaccionTradeVal').value || null
-      payload.zona_naranja_nota     = document.getElementById('zonaNaranjaNotaTradeVal').value || null
     }
 
     return payload
@@ -305,34 +274,10 @@ const SessionForm = (() => {
         document.getElementById('motivoNoEntradaVal').value = sesion.motivo_no_entrada
         document.querySelector(`#motivoNoEntradaGroup [data-value="${sesion.motivo_no_entrada}"]`)?.classList.add('active')
       }
-      if (sesion.zona_naranja_habia != null) {
-        const v = String(sesion.zona_naranja_habia)
-        document.getElementById('zonaNaranjaHabiaVal').value = v
-        document.querySelector(`#zonaNaranjaHabiaSNTGroup [data-value="${v}"]`)?.classList.add('active')
-        if (sesion.zona_naranja_habia) {
-          document.getElementById('zonaNaranjaReaccionSNT').classList.remove('hidden')
-          if (sesion.zona_naranja_reaccion) {
-            document.getElementById('zonaNaranjaReaccionVal').value = sesion.zona_naranja_reaccion
-            document.querySelector(`#zonaNaranjaReaccionSNTGroup [data-value="${sesion.zona_naranja_reaccion}"]`)?.classList.add('active')
-          }
-          document.getElementById('zonaNaranjaNotaVal').value = sesion.zona_naranja_nota || ''
-        }
-      }
     }
-    // Zona naranja en sesión con trade
-    if (!sesion.no_opero && sesion.zona_naranja_habia != null) {
-      const v = String(sesion.zona_naranja_habia)
-      document.getElementById('zonaNaranjaHabiaTradeVal').value = v
-      document.querySelector(`#zonaNaranjaHabiaGroup [data-value="${v}"]`)?.classList.add('active')
-      if (sesion.zona_naranja_habia) {
-        document.getElementById('zonaNaranjaReaccionGroup').classList.remove('hidden')
-        if (sesion.zona_naranja_reaccion) {
-          document.getElementById('zonaNaranjaReaccionTradeVal').value = sesion.zona_naranja_reaccion
-          document.querySelector(`#zonaNaranjaReaccionTradeGroup [data-value="${sesion.zona_naranja_reaccion}"]`)?.classList.add('active')
-        }
-        document.getElementById('zonaNaranjaNotaTradeVal').value = sesion.zona_naranja_nota || ''
-      }
-    }
+
+    // Cargar experimentos del día (se pre-llenan con los valores guardados)
+    loadExperimentos(sesion.sesion_date)
 
     document.getElementById('analisisTrader').value = sesion.analisis_trader || ''
     const taIA = document.getElementById('resumenIA')
@@ -435,6 +380,7 @@ const SessionForm = (() => {
     setupImageUpload()
     setupCasuisticas()
     loadCasuisticasDropdown()
+    loadExperimentos(document.getElementById('sesionDate').value)
     document.getElementById('resumenIA').addEventListener('input', function() {
       this.style.height = 'auto'
       this.style.height = this.scrollHeight + 'px'
@@ -447,6 +393,7 @@ const SessionForm = (() => {
       const date = document.getElementById('sesionDate').value
       loadCasuisticasForDate(date)
       updateRetroceso(date)
+      loadExperimentos(date)
     })
 
     // Auto-invalidar checklist de 5 velas si velas > 5
@@ -465,6 +412,98 @@ const SessionForm = (() => {
         item.title = ''
       }
     })
+  }
+
+  // ── Experimentos ─────────────────────────────────────────────────────────
+
+  let experimentosCatalogo  = []
+  let experimentosGuardados = {}  // { experimentoId: { presente, resultado, nota } }
+
+  async function loadExperimentos(date) {
+    try {
+      const [catalogo, registros] = await Promise.all([
+        DB.getCatalogoExperimentos(),
+        date ? DB.getExperimentosByDate(date) : Promise.resolve([]),
+      ])
+      experimentosCatalogo = catalogo.filter(e => e.activo)
+      experimentosGuardados = {}
+      registros.forEach(r => {
+        experimentosGuardados[r.experimento_id] = { presente: r.presente, resultado: r.resultado, nota: r.nota }
+      })
+      renderExperimentos()
+    } catch (_) { /* sin conexión */ }
+  }
+
+  function renderExperimentos() {
+    const wraps = ['experimentosTradeWrap', 'experimentosSNTWrap']
+    wraps.forEach(wrapId => {
+      const wrap = document.getElementById(wrapId)
+      if (!wrap) return
+      if (!experimentosCatalogo.length) { wrap.innerHTML = ''; return }
+      wrap.innerHTML = experimentosCatalogo.map(exp => {
+        const saved = experimentosGuardados[exp.id] || {}
+        const presente = saved.presente || false
+        const res = saved.resultado || ''
+        const nota = saved.nota || ''
+        return `
+          <div class="exp-item" data-id="${exp.id}">
+            <div class="exp-header">
+              <label class="exp-toggle-label">
+                <input type="checkbox" class="exp-presente" data-id="${exp.id}" ${presente ? 'checked' : ''}>
+                <span class="exp-nombre">${exp.nombre}</span>
+              </label>
+            </div>
+            <div class="exp-detalle ${presente ? '' : 'hidden'}">
+              <div class="exp-res-group">
+                <button type="button" class="exp-res-btn ${res === 'T' ? 'active-t' : ''}" data-id="${exp.id}" data-val="T">T</button>
+                <button type="button" class="exp-res-btn ${res === 'S' ? 'active-s' : ''}" data-id="${exp.id}" data-val="S">S</button>
+                <input type="text" class="exp-nota" data-id="${exp.id}" value="${nota}" placeholder="Nota (opcional)">
+              </div>
+            </div>
+          </div>`
+      }).join('')
+
+      wrap.querySelectorAll('.exp-presente').forEach(chk => {
+        chk.addEventListener('change', () => {
+          const id = parseInt(chk.dataset.id)
+          if (!experimentosGuardados[id]) experimentosGuardados[id] = {}
+          experimentosGuardados[id].presente = chk.checked
+          chk.closest('.exp-item').querySelector('.exp-detalle').classList.toggle('hidden', !chk.checked)
+          persistirExperimento(document.getElementById('sesionDate').value, id)
+        })
+      })
+
+      wrap.querySelectorAll('.exp-res-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = parseInt(btn.dataset.id)
+          const val = btn.dataset.val
+          if (!experimentosGuardados[id]) experimentosGuardados[id] = {}
+          const current = experimentosGuardados[id].resultado
+          experimentosGuardados[id].resultado = current === val ? null : val
+          const item = btn.closest('.exp-detalle')
+          item.querySelectorAll('.exp-res-btn').forEach(b => b.classList.remove('active-t', 'active-s'))
+          if (experimentosGuardados[id].resultado) btn.classList.add(val === 'T' ? 'active-t' : 'active-s')
+          persistirExperimento(document.getElementById('sesionDate').value, id)
+        })
+      })
+
+      wrap.querySelectorAll('.exp-nota').forEach(input => {
+        input.addEventListener('change', () => {
+          const id = parseInt(input.dataset.id)
+          if (!experimentosGuardados[id]) experimentosGuardados[id] = {}
+          experimentosGuardados[id].nota = input.value.trim()
+          persistirExperimento(document.getElementById('sesionDate').value, id)
+        })
+      })
+    })
+  }
+
+  async function persistirExperimento(date, experimentoId) {
+    if (!date) return
+    const data = experimentosGuardados[experimentoId] || {}
+    try {
+      await DB.saveExperimentoRegistro(date, experimentoId, data.presente || false, data.resultado || null, data.nota || null)
+    } catch (_) { /* silencioso */ }
   }
 
   return { init, prefill }

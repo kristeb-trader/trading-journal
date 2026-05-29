@@ -124,14 +124,16 @@ const Coach = (() => {
 Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
     }
 
-    // Zona naranja testeo
-    let zonaNaranjaStr = 'No registrado'
-    if (sesion?.zona_naranja_habia === true) {
-      zonaNaranjaStr = `SÍ había zona naranja en el camino al target
-  Reacción del precio: ${sesion.zona_naranja_reaccion || 'No registrado'}${sesion.zona_naranja_nota ? `\n  Nota: ${sesion.zona_naranja_nota}` : ''}`
-    } else if (sesion?.zona_naranja_habia === false) {
-      zonaNaranjaStr = 'NO había zona naranja'
-    }
+    // Experimentos del día
+    const expRegistros = await DB.getExperimentosByDate(date)
+    const expStr = expRegistros.length
+      ? expRegistros.map(r => {
+          const nombre = r.experimento?.nombre || `Experimento ${r.experimento_id}`
+          if (!r.presente) return null
+          const res = r.resultado ? ` → resultado: ${r.resultado === 'T' ? 'TARGET' : 'STOP'}` : ''
+          return `  - ${nombre} estaba presente${res}${r.nota ? ` · ${r.nota}` : ''}`
+        }).filter(Boolean).join('\n') || 'Ninguno presente hoy'
+      : 'Sin registros de experimentos'
 
     // Análisis del trader
     const analisisTrader = sesion?.analisis_trader || 'No registrado'
@@ -180,8 +182,8 @@ ${casStr}
 Análisis del trader:
   "${analisisTrader}"
 ${setupNoTomadoStr}
-Zonas naranjas (testeo experimental):
-  ${zonaNaranjaStr}
+Experimentos activos (reglas en prueba):
+${expStr}
 
 ---
 

@@ -338,3 +338,69 @@ FROM catalogo_errores c
 WHERE lower(c.nombre) = lower(d.error) AND d.catalogo_id IS NULL;
 
 NOTIFY pgrst, 'reload schema';
+
+
+-- ============================================================
+-- FASE 4D — Experimentos (reglas en prueba)
+-- ============================================================
+
+-- 1. Catálogo de experimentos
+CREATE TABLE IF NOT EXISTS catalogo_experimentos (
+  id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  nombre      text NOT NULL,
+  descripcion text,
+  activo      boolean DEFAULT true,
+  orden       integer DEFAULT 0
+);
+ALTER TABLE catalogo_experimentos DISABLE ROW LEVEL SECURITY;
+GRANT SELECT, INSERT, UPDATE, DELETE ON catalogo_experimentos TO anon;
+GRANT USAGE, SELECT ON SEQUENCE catalogo_experimentos_id_seq TO anon;
+
+-- 2. Registros por día
+CREATE TABLE IF NOT EXISTS experimento_registros (
+  id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  sesion_date     date NOT NULL,
+  experimento_id  bigint NOT NULL REFERENCES catalogo_experimentos(id),
+  presente        boolean DEFAULT false,
+  resultado       text,          -- T | S
+  nota            text,
+  created_at      timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_exp_reg_fecha ON experimento_registros(sesion_date);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_exp_reg_unique ON experimento_registros(sesion_date, experimento_id);
+ALTER TABLE experimento_registros DISABLE ROW LEVEL SECURITY;
+GRANT SELECT, INSERT, UPDATE, DELETE ON experimento_registros TO anon;
+GRANT USAGE, SELECT ON SEQUENCE experimento_registros_id_seq TO anon;
+
+-- 3. Crear "Zona naranja" como primer experimento
+INSERT INTO catalogo_experimentos (nombre, descripcion, activo, orden)
+VALUES ('Zona naranja', 'Zona de referencia visual (naranja) en el camino al target — ¿bloquea el precio o lo atraviesa?', true, 1)
+ON CONFLICT DO NOTHING;
+
+-- 4. Migrar datos históricos de zona_naranja en sesiones → experimento_registros
+INSERT INTO experimento_registros (sesion_date, experimento_id, presente, resultado, nota)
+SELECT
+  s.sesion_date,
+  (SELECT id FROM catalogo_experimentos WHERE nombre = 'Zona naranja' LIMIT 1),
+  s.zona_naranja_habia,
+  CASE
+    WHEN s.zona_naranja_reaccion = 'RESPETO' THEN 'S'
+    WHEN s.zona_naranja_reaccion = 'IGNORO'  THEN 'T'
+    ELSE NULL
+  END,
+  s.zona_naranja_nota
+FROM sesiones s
+WHERE s.zona_naranja_habia IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM experimento_registros e
+    WHERE e.sesion_date = s.sesion_date
+      AND e.experimento_id = (SELECT id FROM catalogo_experimentos WHERE nombre = 'Zona naranja' LIMIT 1)
+  );
+
+-- 5. Eliminar columnas hardcodeadas de sesiones (ya migradas)
+ALTER TABLE sesiones
+  DROP COLUMN IF EXISTS zona_naranja_habia,
+  DROP COLUMN IF EXISTS zona_naranja_reaccion,
+  DROP COLUMN IF EXISTS zona_naranja_nota;
+
+NOTIFY pgrst, 'reload schema';
