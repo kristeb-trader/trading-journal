@@ -1515,6 +1515,54 @@ body.modal-open { overflow: hidden; }
 }
 .coach-save-btn { background: var(--accent); }
 
+/* ── Etapas del flujo (Análisis Técnico → Coaching → Diagnóstico) ───────── */
+.coach-stage {
+  margin-bottom: 22px;
+  transition: opacity 0.25s ease, filter 0.25s ease;
+}
+.coach-stage-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text2);
+}
+.coach-stage-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.coach-cerrar-btn { margin-left: auto; }
+
+/* Etapa bloqueada: atenuada y sin interacción hasta que se desbloquee */
+.coach-stage-locked {
+  opacity: 0.4;
+  pointer-events: none;
+  filter: grayscale(0.5);
+}
+.coach-stage-locked .coach-stage-num { background: var(--text3); }
+
+.coach-placeholder-sm { padding: 28px 20px; }
+.coach-placeholder-sm i { font-size: 1.8rem; margin-bottom: 8px; }
+
+/* Veredicto de setup destacado */
+.coach-section.cs-veredicto {
+  border-color: rgba(63,138,255,0.45);
+  background: rgba(63,138,255,0.06);
+}
+
 /* ── Analysis content ────────────────────────────────────────────────────── */
 .coach-analisis-content {
   margin-bottom: 24px;

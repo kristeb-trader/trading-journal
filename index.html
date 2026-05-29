@@ -594,40 +594,71 @@
 
           </div><!-- /.coach-controls-row -->
 
-          <!-- Botones de acción -->
+          <!-- Botones de acción principales -->
           <div class="coach-action-row">
             <button class="btn-primary" id="coachAnalyzeBtn">
-              <i class="ti ti-robot"></i> Analizar sesión
+              <i class="ti ti-chart-dots-3"></i> Análisis Técnico
             </button>
             <button class="btn-primary coach-save-btn hidden" id="coachSaveBtn">
               <i class="ti ti-device-floppy"></i> Guardar diagnóstico
             </button>
           </div>
 
-          <!-- Análisis estructurado (6 secciones) -->
-          <div id="coachAnalisisContent" class="coach-analisis-content">
-            <div class="coach-placeholder">
-              <i class="ti ti-robot"></i>
-              <p>Haz clic en <strong>Analizar sesión</strong> para que el Coach evalúe tu operativa de hoy.</p>
-              <p class="coach-placeholder-hint">Sube la gráfica del día para un análisis más preciso. Sin imagen, usará los datos del diario.</p>
+          <!-- ═══ ETAPA 1: Análisis Técnico ═══ -->
+          <div class="coach-stage" id="coachStageTecnico">
+            <div class="coach-stage-label">
+              <span class="coach-stage-num">1</span>
+              <span>Análisis Técnico</span>
+            </div>
+            <div id="coachAnalisisContent" class="coach-analisis-content">
+              <div class="coach-placeholder">
+                <i class="ti ti-chart-dots-3"></i>
+                <p>Haz clic en <strong>Análisis Técnico</strong> para que el Coach lea el contexto, el desarrollo y la validación de setups de la sesión.</p>
+                <p class="coach-placeholder-hint">Sube la gráfica del día para un análisis más preciso. Sin imagen, usará los datos del diario.</p>
+              </div>
             </div>
           </div>
 
-          <!-- Chat de seguimiento -->
-          <div class="coach-chat-wrap">
-            <div class="coach-chat-header">
-              <i class="ti ti-messages"></i> Chat de seguimiento
-            </div>
-            <div class="coach-chat-messages" id="coachChatMessages"></div>
-            <div class="coach-chat-input-row">
-              <textarea
-                id="coachChatInput"
-                class="coach-chat-input"
-                rows="2"
-                placeholder="Pregunta sobre un setup, un error, la estrategia... (Enter para enviar, Shift+Enter para nueva línea)"></textarea>
-              <button class="btn-primary coach-send-btn" id="coachSendBtn" title="Enviar">
-                <i class="ti ti-send"></i>
+          <!-- ═══ ETAPA 2: Sesión de Coaching ═══ -->
+          <div class="coach-stage coach-stage-locked" id="coachStageChat">
+            <div class="coach-stage-label">
+              <span class="coach-stage-num">2</span>
+              <span>Sesión de Coaching</span>
+              <button class="btn-sm btn-ghost coach-cerrar-btn hidden" id="coachCerrarSesionBtn" title="Cerrar la sesión de coaching y habilitar el diagnóstico">
+                <i class="ti ti-circle-check"></i> Cerrar sesión
               </button>
+            </div>
+            <div class="coach-chat-wrap">
+              <div class="coach-chat-messages" id="coachChatMessages"></div>
+              <div class="coach-chat-input-row">
+                <textarea
+                  id="coachChatInput"
+                  class="coach-chat-input"
+                  rows="2"
+                  placeholder="Pregunta sobre un setup, un error, la estrategia... (Enter para enviar, Shift+Enter para nueva línea)"></textarea>
+                <button class="btn-primary coach-send-btn" id="coachSendBtn" title="Enviar">
+                  <i class="ti ti-send"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══ ETAPA 3: Diagnóstico Final ═══ -->
+          <div class="coach-stage coach-stage-locked" id="coachStageDiagnostico">
+            <div class="coach-stage-label">
+              <span class="coach-stage-num">3</span>
+              <span>Diagnóstico Final</span>
+            </div>
+            <div class="coach-action-row">
+              <button class="btn-primary" id="coachDiagnosticoBtn" disabled>
+                <i class="ti ti-clipboard-check"></i> Generar Diagnóstico
+              </button>
+            </div>
+            <div id="coachDiagnosticoContent" class="coach-analisis-content">
+              <div class="coach-placeholder coach-placeholder-sm">
+                <i class="ti ti-lock"></i>
+                <p>Cierra la sesión de coaching para generar el veredicto, los errores y el aprendizaje del día.</p>
+              </div>
             </div>
             <div class="coach-action-row coach-action-row-bottom">
               <button class="btn-primary coach-save-btn hidden" id="coachSaveBtnBottom">

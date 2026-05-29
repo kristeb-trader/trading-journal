@@ -15,6 +15,11 @@ const Coach = (() => {
   let imagenBase64      = null // chart subido (si existe)
   let diagnosticoGuardado = false
 
+  // Máquina de estados del flujo en 3 etapas
+  let analisisHecho     = false // etapa 1 completada
+  let sesionCerrada     = false // etapa 2 cerrada (habilita etapa 3)
+  let diagnosticoHecho  = false // etapa 3 completada
+
   // ── Helpers ────────────────────────────────────────────────────────────
 
   function today() {
@@ -157,31 +162,41 @@ Zonas naranjas (testeo experimental):
 
 ---
 
-## INSTRUCCIÓN INICIAL
+## FLUJO DE TRABAJO EN 3 ETAPAS
 
-Al recibir el primer mensaje (o la imagen del gráfico), analiza la sesión en exactamente 6 secciones con este orden y formato:
+El análisis se realiza en un flujo guiado de tres etapas. Tú produces dos entregables estructurados; entre ellos hay una sesión de chat libre.
+
+### ETAPA 1 — ANÁLISIS TÉCNICO (primer entregable)
+Cuando recibas la instrucción de análisis técnico (o la imagen del gráfico), produce EXACTAMENTE estas 3 secciones:
 
 **1. 🌍 CONTEXTO**
-[Lectura del gráfico de 5 min, tendencia del día anterior, niveles clave, dirección probable, noticias relevantes]
+[Lectura del gráfico, tendencia del día anterior, niveles clave, dirección probable, noticias relevantes]
 
 **2. 📈 DESARROLLO DE SESIÓN**
 [Descripción cronológica: corridas, retrocesos, rompimientos, consecuciones identificadas]
 
 **3. ✅ VALIDACIÓN DE SETUPS**
 [Para cada setup potencial: ✅ o ❌ en cada filtro, stop en puntos y dólares, obstáculos en target]
-[Veredicto final: ENTRADA VÁLIDA / ENTRADA INVÁLIDA + razón exacta]
+IMPORTANTE: En esta etapa NO des el veredicto final (VÁLIDA/INVÁLIDA). Solo analiza filtro por filtro. El veredicto lo emitirás en el diagnóstico final.
 
-**4. ⚠️ ERRORES DETECTADOS**
+### ETAPA 2 — SESIÓN DE COACHING (chat libre)
+Después del análisis técnico, el trader conversa contigo. Responde sus preguntas con rigor, profundiza en setups, errores y dudas. Mantén memoria de todo lo discutido.
+
+### ETAPA 3 — DIAGNÓSTICO FINAL (segundo entregable)
+Cuando recibas la instrucción de diagnóstico final, integra TODO lo conversado en el chat y produce EXACTAMENTE estas 4 secciones:
+
+**🎯 VEREDICTO DE SETUP**
+[ENTRADA VÁLIDA / ENTRADA INVÁLIDA + razón exacta, ahora sí con el cierre de toda la sesión]
+
+**⚠️ ERRORES DETECTADOS**
 [Clasificar: 🧠 Psicológico / 📐 Analítico / ⚙️ Operativo / 🗺️ Marcado]
 [Comparar con historial — alertar si el error se repite 3+ veces]
 
-**5. 🎓 APRENDIZAJE DEL DÍA**
+**🎓 APRENDIZAJE DEL DÍA**
 [Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para mañana]
 
-**6. 📋 RESUMEN PARA DIARIO**
-[Una sola línea: [FECHA] · [DIRECCIÓN] · [SETUP] · [RESULTADO] · [APRENDIZAJE CLAVE]]
-
-Tras el análisis inicial, responde preguntas de seguimiento del trader con el mismo nivel de rigor.`
+**📋 RESUMEN PARA DIARIO**
+[Una sola línea: [FECHA] · [DIRECCIÓN] · [SETUP] · [RESULTADO] · [APRENDIZAJE CLAVE]]`
   }
 
   // ── Carga de datos ─────────────────────────────────────────────────────
@@ -278,18 +293,29 @@ Tras el análisis inicial, responde preguntas de seguimiento del trader con el m
 
   // ── Parsear secciones del análisis ────────────────────────────────────
 
-  function parsearSecciones(texto) {
-    const secciones = {
-      contexto: '', desarrollo: '', validacion: '',
-      errores: '', aprendizaje: '', resumen: ''
-    }
+  // Etapa 1 — Análisis técnico (3 secciones)
+  function parsearTecnico(texto) {
+    const secciones = { contexto: '', desarrollo: '', validacion: '' }
     const patrones = [
       { key: 'contexto',   re: /\*\*1[.\s]*🌍\s*CONTEXTO\*\*([\s\S]*?)(?=\*\*2[.\s]*📈|\*\*2[.\s]*DESARROLLO|$)/i },
       { key: 'desarrollo', re: /\*\*2[.\s]*📈\s*DESARROLLO[^*]*\*\*([\s\S]*?)(?=\*\*3[.\s]*✅|\*\*3[.\s]*VALIDACIÓN|$)/i },
-      { key: 'validacion', re: /\*\*3[.\s]*✅\s*VALIDACIÓN[^*]*\*\*([\s\S]*?)(?=\*\*4[.\s]*⚠️|\*\*4[.\s]*ERRORES|$)/i },
-      { key: 'errores',    re: /\*\*4[.\s]*⚠️\s*ERRORES[^*]*\*\*([\s\S]*?)(?=\*\*5[.\s]*🎓|\*\*5[.\s]*APRENDIZAJE|$)/i },
-      { key: 'aprendizaje',re: /\*\*5[.\s]*🎓\s*APRENDIZAJE[^*]*\*\*([\s\S]*?)(?=\*\*6[.\s]*📋|\*\*6[.\s]*RESUMEN|$)/i },
-      { key: 'resumen',    re: /\*\*6[.\s]*📋\s*RESUMEN[^*]*\*\*([\s\S]*?)$/i },
+      { key: 'validacion', re: /\*\*3[.\s]*✅\s*VALIDACIÓN[^*]*\*\*([\s\S]*?)$/i },
+    ]
+    patrones.forEach(({ key, re }) => {
+      const match = texto.match(re)
+      if (match) secciones[key] = match[1].trim()
+    })
+    return secciones
+  }
+
+  // Etapa 3 — Diagnóstico final (4 secciones)
+  function parsearDiagnostico(texto) {
+    const secciones = { veredicto: '', errores: '', aprendizaje: '', resumen: '' }
+    const patrones = [
+      { key: 'veredicto',  re: /\*\*🎯\s*VEREDICTO[^*]*\*\*([\s\S]*?)(?=\*\*⚠️|\*\*ERRORES|$)/i },
+      { key: 'errores',    re: /\*\*⚠️\s*ERRORES[^*]*\*\*([\s\S]*?)(?=\*\*🎓|\*\*APRENDIZAJE|$)/i },
+      { key: 'aprendizaje',re: /\*\*🎓\s*APRENDIZAJE[^*]*\*\*([\s\S]*?)(?=\*\*📋|\*\*RESUMEN|$)/i },
+      { key: 'resumen',    re: /\*\*📋\s*RESUMEN[^*]*\*\*([\s\S]*?)$/i },
     ]
     patrones.forEach(({ key, re }) => {
       const match = texto.match(re)
@@ -329,11 +355,8 @@ Tras el análisis inicial, responde preguntas de seguimiento del trader con el m
 
   // ── Render del análisis estructurado ──────────────────────────────────
 
-  function renderAnalisis(secciones) {
-    const container = document.getElementById('coachAnalisisContent')
-    if (!container) return
-
-    const md = text => text
+  function mdAnalisis(text) {
+    return (text || '—')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/✅/g, '<span class="coach-valid">✅</span>')
@@ -341,31 +364,48 @@ Tras el análisis inicial, responde preguntas de seguimiento del trader con el m
       .replace(/🚨/g, '<span class="coach-alert-critical">🚨</span>')
       .replace(/⚠️/g, '<span class="coach-alert-warn">⚠️</span>')
       .replace(/\n/g, '<br>')
+  }
 
+  // Etapa 1 — render del análisis técnico (3 secciones)
+  function renderAnalisisTecnico(secciones) {
+    const container = document.getElementById('coachAnalisisContent')
+    if (!container) return
     container.innerHTML = `
       <div class="coach-section" id="cs-contexto">
         <div class="coach-section-header"><span class="cs-icon">🌍</span><span>CONTEXTO</span></div>
-        <div class="coach-section-body">${md(secciones.contexto || '—')}</div>
+        <div class="coach-section-body">${mdAnalisis(secciones.contexto)}</div>
       </div>
       <div class="coach-section" id="cs-desarrollo">
         <div class="coach-section-header"><span class="cs-icon">📈</span><span>DESARROLLO DE SESIÓN</span></div>
-        <div class="coach-section-body">${md(secciones.desarrollo || '—')}</div>
+        <div class="coach-section-body">${mdAnalisis(secciones.desarrollo)}</div>
       </div>
       <div class="coach-section" id="cs-validacion">
         <div class="coach-section-header"><span class="cs-icon">✅</span><span>VALIDACIÓN DE SETUPS</span></div>
-        <div class="coach-section-body">${md(secciones.validacion || '—')}</div>
+        <div class="coach-section-body">${mdAnalisis(secciones.validacion)}</div>
+      </div>
+    `
+  }
+
+  // Etapa 3 — render del diagnóstico final (veredicto + errores + aprendizaje + resumen)
+  function renderDiagnostico(secciones) {
+    const container = document.getElementById('coachDiagnosticoContent')
+    if (!container) return
+    container.innerHTML = `
+      <div class="coach-section cs-veredicto" id="cs-veredicto">
+        <div class="coach-section-header"><span class="cs-icon">🎯</span><span>VEREDICTO DE SETUP</span></div>
+        <div class="coach-section-body">${mdAnalisis(secciones.veredicto)}</div>
       </div>
       <div class="coach-section ${secciones.errores && secciones.errores.length > 10 ? 'cs-has-errors' : ''}" id="cs-errores">
         <div class="coach-section-header"><span class="cs-icon">⚠️</span><span>ERRORES DETECTADOS</span></div>
-        <div class="coach-section-body">${md(secciones.errores || 'Ninguno detectado.')}</div>
+        <div class="coach-section-body">${mdAnalisis(secciones.errores || 'Ninguno detectado.')}</div>
       </div>
       <div class="coach-section" id="cs-aprendizaje">
         <div class="coach-section-header"><span class="cs-icon">🎓</span><span>APRENDIZAJE DEL DÍA</span></div>
-        <div class="coach-section-body">${md(secciones.aprendizaje || '—')}</div>
+        <div class="coach-section-body">${mdAnalisis(secciones.aprendizaje)}</div>
       </div>
       <div class="coach-section cs-resumen" id="cs-resumen">
         <div class="coach-section-header"><span class="cs-icon">📋</span><span>RESUMEN PARA DIARIO</span></div>
-        <div class="coach-section-body">${md(secciones.resumen || '—')}</div>
+        <div class="coach-section-body">${mdAnalisis(secciones.resumen)}</div>
       </div>
     `
   }
@@ -405,9 +445,14 @@ Tras el análisis inicial, responde preguntas de seguimiento del trader con el m
     chat.scrollTop = chat.scrollHeight
   }
 
-  // ── Iniciar análisis ──────────────────────────────────────────────────
+  // ── Helpers de etapas (bloqueo / desbloqueo visual) ───────────────────
 
-  async function iniciarAnalisis() {
+  function lockStage(id)   { document.getElementById(id)?.classList.add('coach-stage-locked') }
+  function unlockStage(id) { document.getElementById(id)?.classList.remove('coach-stage-locked') }
+
+  // ── ETAPA 1: Análisis técnico ─────────────────────────────────────────
+
+  async function analisisTecnico() {
     const btn = document.getElementById('coachAnalyzeBtn')
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Analizando...' }
 
@@ -415,25 +460,25 @@ Tras el análisis inicial, responde preguntas de seguimiento del trader con el m
     chatHistory = []
     diagnosticoActual = {}
     diagnosticoGuardado = false
+    analisisHecho = false
+    sesionCerrada = false
+    diagnosticoHecho = false
     systemPromptCache = null
+
     const chatEl = document.getElementById('coachChatMessages')
     if (chatEl) chatEl.innerHTML = ''
     const analisisEl = document.getElementById('coachAnalisisContent')
-    if (analisisEl) analisisEl.innerHTML = '<div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Construyendo análisis...</div>'
+    if (analisisEl) analisisEl.innerHTML = '<div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Construyendo análisis técnico...</div>'
     ocultarGuardar()
 
     try {
-      // Construir el contenido del usuario (texto + imagen si existe)
-      const instruccionFormato = `Realiza el análisis completo en exactamente 6 secciones. USA OBLIGATORIAMENTE estos encabezados con este formato exacto (negrita + número + emoji):
+      const instruccionFormato = `Realiza el ANÁLISIS TÉCNICO (Etapa 1) en exactamente 3 secciones. USA OBLIGATORIAMENTE estos encabezados con este formato exacto:
 
 **1. 🌍 CONTEXTO**
 **2. 📈 DESARROLLO DE SESIÓN**
 **3. ✅ VALIDACIÓN DE SETUPS**
-**4. ⚠️ ERRORES DETECTADOS**
-**5. 🎓 APRENDIZAJE DEL DÍA**
-**6. 📋 RESUMEN PARA DIARIO**
 
-Si no hay datos de sesión registrados, igual completa las 6 secciones basándote en lo disponible e indicando la falta de información donde corresponda.`
+NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstico. Si faltan datos, complétalo igual indicando la falta.`
 
       let userContent
       if (imagenBase64) {
@@ -446,25 +491,95 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
       }
 
       const respuesta = await llamarClaude(userContent, true)
-      diagnosticoActual = parsearSecciones(respuesta)
+      const tecnico = parsearTecnico(respuesta)
 
-      // Fallback: si el parseo no capturó ninguna sección, mostrar respuesta completa en "contexto"
-      const hayContenido = Object.values(diagnosticoActual).some(v => v && v.trim().length > 20)
-      if (!hayContenido) {
-        diagnosticoActual.contexto = respuesta
-      }
+      // Fallback: si el parseo no capturó nada, volcar la respuesta en "contexto"
+      const hayContenido = Object.values(tecnico).some(v => v && v.trim().length > 20)
+      if (!hayContenido) tecnico.contexto = respuesta
 
-      renderAnalisis(diagnosticoActual)
+      Object.assign(diagnosticoActual, tecnico)
+      renderAnalisisTecnico(tecnico)
 
-      // Mostrar mensaje inicial en el chat
-      renderMensaje('assistant', '✅ Análisis completado. ¿Tienes alguna pregunta sobre la sesión de hoy? Puedes preguntarme sobre cualquier setup, error o aspecto de tu operativa.')
+      // Desbloquear etapa 2 (chat) y mostrar botón de cerrar sesión
+      analisisHecho = true
+      unlockStage('coachStageChat')
+      document.getElementById('coachCerrarSesionBtn')?.classList.remove('hidden')
+      renderMensaje('assistant', '✅ Análisis técnico completado. Conversemos sobre la sesión: pregúntame sobre cualquier setup, error o duda. Cuando termines, pulsa **Cerrar sesión** para generar el diagnóstico final.')
       mostrarGuardar()
 
     } catch (err) {
       if (analisisEl) analisisEl.innerHTML = `<div class="coach-error"><i class="ti ti-alert-triangle"></i> Error: ${err.message}</div>`
       Toast.show('Error al analizar: ' + err.message, 'error')
     } finally {
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-robot"></i> Analizar sesión' }
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-chart-dots-3"></i> Análisis Técnico' }
+    }
+  }
+
+  // ── ETAPA 2: Cerrar sesión de coaching ────────────────────────────────
+
+  function cerrarSesion() {
+    if (!analisisHecho) { Toast.show('Primero haz el análisis técnico', 'warning'); return }
+    sesionCerrada = true
+
+    const cerrarBtn = document.getElementById('coachCerrarSesionBtn')
+    if (cerrarBtn) {
+      cerrarBtn.innerHTML = '<i class="ti ti-circle-check"></i> Sesión cerrada'
+      cerrarBtn.disabled = true
+    }
+
+    // Desbloquear etapa 3
+    unlockStage('coachStageDiagnostico')
+    const diagBtn = document.getElementById('coachDiagnosticoBtn')
+    if (diagBtn) diagBtn.disabled = false
+
+    const diagEl = document.getElementById('coachDiagnosticoContent')
+    if (diagEl) diagEl.innerHTML = `
+      <div class="coach-placeholder coach-placeholder-sm">
+        <i class="ti ti-clipboard-check"></i>
+        <p>Pulsa <strong>Generar Diagnóstico</strong> para el veredicto, errores y aprendizaje del día.</p>
+      </div>`
+
+    Toast.show('Sesión cerrada — ya puedes generar el diagnóstico', 'success')
+    document.getElementById('coachStageDiagnostico')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
+  // ── ETAPA 3: Generar diagnóstico final ────────────────────────────────
+
+  async function generarDiagnostico() {
+    if (!sesionCerrada) { Toast.show('Primero cierra la sesión de coaching', 'warning'); return }
+
+    const btn = document.getElementById('coachDiagnosticoBtn')
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Generando...' }
+
+    const diagEl = document.getElementById('coachDiagnosticoContent')
+    if (diagEl) diagEl.innerHTML = '<div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Generando diagnóstico final...</div>'
+
+    try {
+      const instruccion = `La sesión de coaching terminó. Emite el DIAGNÓSTICO FINAL (Etapa 3) integrando TODO lo conversado en el chat. USA OBLIGATORIAMENTE estos 4 encabezados con este formato exacto:
+
+**🎯 VEREDICTO DE SETUP**
+**⚠️ ERRORES DETECTADOS**
+**🎓 APRENDIZAJE DEL DÍA**
+**📋 RESUMEN PARA DIARIO**`
+
+      const respuesta = await llamarClaude(instruccion, false)
+      const diag = parsearDiagnostico(respuesta)
+
+      const hayContenido = Object.values(diag).some(v => v && v.trim().length > 10)
+      if (!hayContenido) diag.veredicto = respuesta
+
+      Object.assign(diagnosticoActual, diag)
+      renderDiagnostico(diag)
+
+      diagnosticoHecho = true
+      mostrarGuardar()
+      Toast.show('Diagnóstico generado. No olvides guardar.', 'success')
+
+    } catch (err) {
+      if (diagEl) diagEl.innerHTML = `<div class="coach-error"><i class="ti ti-alert-triangle"></i> Error: ${err.message}</div>`
+      Toast.show('Error al generar diagnóstico: ' + err.message, 'error')
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-clipboard-check"></i> Generar Diagnóstico' }
     }
   }
 
@@ -521,15 +636,22 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
       const confianza    = document.getElementById('coachConfianzaVal')?.value
         ? parseInt(document.getElementById('coachConfianzaVal').value) : null
 
+      // El veredicto (Etapa 3) se concatena a la validación para conservar
+      // la sección completa en BD (alimenta el historial del Coach).
+      const validacionCompleta = [
+        diagnosticoActual.validacion,
+        diagnosticoActual.veredicto ? `\n\n**🎯 VEREDICTO DE SETUP**\n${diagnosticoActual.veredicto}` : ''
+      ].filter(Boolean).join('')
+
       const erroresJson  = parsearErroresJson(diagnosticoActual.errores)
-      const setuosJson   = parsearSetupsJson(diagnosticoActual.validacion)
+      const setuosJson   = parsearSetupsJson(validacionCompleta)
       const patronesDetectados = erroresJson.filter(e => e.repetido)
 
       const payload = {
         sesion_date:          coachDate,
         sec_contexto:         diagnosticoActual.contexto,
         sec_desarrollo:       diagnosticoActual.desarrollo,
-        sec_validacion:       diagnosticoActual.validacion,
+        sec_validacion:       validacionCompleta,
         sec_errores:          diagnosticoActual.errores,
         sec_aprendizaje:      diagnosticoActual.aprendizaje,
         sec_resumen_compacto: diagnosticoActual.resumen,
@@ -620,21 +742,45 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
     }
   }
 
-  async function verDiagnostico(date) {
-    const diag = await DB.getDiagnosticoByDate(date)
-    if (!diag) { Toast.show('Sin diagnóstico para ese día', 'info'); return }
+  // Separa el veredicto (Etapa 3) que quedó concatenado dentro de sec_validacion
+  function splitValidacion(full) {
+    const texto = full || ''
+    const marca = '**🎯 VEREDICTO DE SETUP**'
+    const idx = texto.indexOf(marca)
+    if (idx < 0) return { validacion: texto.trim(), veredicto: '' }
+    return {
+      validacion: texto.slice(0, idx).trim(),
+      veredicto:  texto.slice(idx + marca.length).trim(),
+    }
+  }
 
-    // Cambiar a pestaña análisis y mostrar el diagnóstico del día seleccionado
-    switchTab('analisis')
-    renderAnalisis({
-      contexto:    diag.sec_contexto,
-      desarrollo:  diag.sec_desarrollo,
-      validacion:  diag.sec_validacion,
+  // Renderiza un diagnóstico guardado en las dos zonas y desbloquea las 3 etapas
+  function mostrarDiagnosticoGuardado(diag) {
+    const { validacion, veredicto } = splitValidacion(diag.sec_validacion)
+    renderAnalisisTecnico({
+      contexto:   diag.sec_contexto,
+      desarrollo: diag.sec_desarrollo,
+      validacion,
+    })
+    renderDiagnostico({
+      veredicto,
       errores:     diag.sec_errores,
       aprendizaje: diag.sec_aprendizaje,
       resumen:     diag.sec_resumen_compacto,
     })
-    Toast.show(`Mostrando diagnóstico del ${fmtDate(date)}`, 'info')
+    unlockStage('coachStageChat')
+    unlockStage('coachStageDiagnostico')
+    analisisHecho = true
+    sesionCerrada = true
+    diagnosticoHecho = true
+  }
+
+  async function verDiagnostico(date) {
+    // Cargar la fecha completa (restaura emoción, chat y ambas zonas)
+    const picker = document.getElementById('coachDatePicker')
+    if (picker) picker.value = date
+    switchTab('analisis')
+    await cargarFecha(date)
   }
 
   // ── Sección estrategia ────────────────────────────────────────────────
@@ -831,11 +977,14 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
   // ── Cambio de fecha ───────────────────────────────────────────────────
 
   function resetPanel() {
-    chatHistory        = []
-    diagnosticoActual  = {}
+    chatHistory         = []
+    diagnosticoActual   = {}
     diagnosticoGuardado = false
-    systemPromptCache  = null
-    imagenBase64       = null
+    analisisHecho       = false
+    sesionCerrada       = false
+    diagnosticoHecho    = false
+    systemPromptCache   = null
+    imagenBase64        = null
 
     const chatEl = document.getElementById('coachChatMessages')
     if (chatEl) chatEl.innerHTML = ''
@@ -843,15 +992,31 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
     const analisisEl = document.getElementById('coachAnalisisContent')
     if (analisisEl) analisisEl.innerHTML = `
       <div class="coach-placeholder">
-        <i class="ti ti-robot"></i>
-        <p>Haz clic en <strong>Analizar sesión</strong> para que el Coach evalúe esta sesión.</p>
+        <i class="ti ti-chart-dots-3"></i>
+        <p>Haz clic en <strong>Análisis Técnico</strong> para que el Coach evalúe esta sesión.</p>
         <p class="coach-placeholder-hint">Sube la gráfica del día para un análisis más preciso.</p>
       </div>`
+
+    const diagEl = document.getElementById('coachDiagnosticoContent')
+    if (diagEl) diagEl.innerHTML = `
+      <div class="coach-placeholder coach-placeholder-sm">
+        <i class="ti ti-lock"></i>
+        <p>Cierra la sesión de coaching para generar el veredicto, los errores y el aprendizaje del día.</p>
+      </div>`
+
+    // Bloquear etapas 2 y 3
+    lockStage('coachStageChat')
+    lockStage('coachStageDiagnostico')
+
+    // Reset botones de etapa
+    const cerrarBtn = document.getElementById('coachCerrarSesionBtn')
+    if (cerrarBtn) { cerrarBtn.classList.add('hidden'); cerrarBtn.disabled = false; cerrarBtn.innerHTML = '<i class="ti ti-circle-check"></i> Cerrar sesión' }
+    const diagBtn = document.getElementById('coachDiagnosticoBtn')
+    if (diagBtn) { diagBtn.disabled = true; diagBtn.innerHTML = '<i class="ti ti-clipboard-check"></i> Generar Diagnóstico' }
 
     ocultarGuardar()
 
     // Reset imagen
-    imagenBase64 = null
     const preview = document.getElementById('coachImagePreview')
     const area    = document.getElementById('coachUploadArea')
     const img     = document.getElementById('coachPreviewImg')
@@ -879,14 +1044,7 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
     // Si ya existe diagnóstico para esa fecha, mostrarlo directamente
     const diag = await DB.getDiagnosticoByDate(date)
     if (diag?.sec_contexto) {
-      renderAnalisis({
-        contexto:    diag.sec_contexto,
-        desarrollo:  diag.sec_desarrollo,
-        validacion:  diag.sec_validacion,
-        errores:     diag.sec_errores,
-        aprendizaje: diag.sec_aprendizaje,
-        resumen:     diag.sec_resumen_compacto,
-      })
+      mostrarDiagnosticoGuardado(diag)
 
       // Restaurar conversación guardada en el chat
       if (diag.chat_messages?.length) {
@@ -924,14 +1082,18 @@ Si no hay datos de sesión registrados, igual completa las 6 secciones basándot
       btn.addEventListener('click', () => switchTab(btn.dataset.tab))
     })
 
-    // Botón analizar
-    document.getElementById('coachAnalyzeBtn')?.addEventListener('click', iniciarAnalisis)
+    // Etapa 1: Análisis técnico
+    document.getElementById('coachAnalyzeBtn')?.addEventListener('click', analisisTecnico)
 
-    // Chat
+    // Etapa 2: Chat + cerrar sesión
     document.getElementById('coachSendBtn')?.addEventListener('click', enviarMensaje)
     document.getElementById('coachChatInput')?.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensaje() }
     })
+    document.getElementById('coachCerrarSesionBtn')?.addEventListener('click', cerrarSesion)
+
+    // Etapa 3: Generar diagnóstico
+    document.getElementById('coachDiagnosticoBtn')?.addEventListener('click', generarDiagnostico)
 
     // Guardar (ambos botones: arriba y abajo del chat)
     document.querySelectorAll('.coach-save-btn').forEach(btn => btn.addEventListener('click', guardarDiagnostico))
