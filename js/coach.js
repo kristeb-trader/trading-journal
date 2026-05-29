@@ -213,12 +213,12 @@ Cuando recibas la instrucción de diagnóstico final, integra TODO lo conversado
 
 **⚠️ ERRORES DETECTADOS**
 Lista CADA error en UNA línea con este formato EXACTO (tres partes separadas por " | "):
-\`NombreCorto | tipo | detalle\`
-- NombreCorto: 1 a 4 palabras. Si coincide con uno del CATÁLOGO de abajo, usa EXACTAMENTE ese nombre. Si es nuevo, inventa un nombre breve y descriptivo (ej: 10 trades → "Sobreoperación").
+NombreCorto | tipo | detalle
+- NombreCorto: 1 a 4 palabras, SIN comillas ni caracteres especiales al inicio. Si coincide con uno del CATÁLOGO de abajo, usa EXACTAMENTE ese nombre. Si es nuevo, inventa un nombre breve y descriptivo (ej: "Sobreoperación").
 - tipo: uno de → psicologico | analitico | operativo | marcado
 - detalle: explicación completa del error ese día.
-Ejemplo: \`Miedo | psicologico | No tomé la entrada por temor a dañar las estadísticas del mes.\`
-Si NO hubo errores, escribe exactamente una línea: NINGUNO
+Ejemplo de línea: Miedo | psicologico | No tomé la entrada por temor a dañar las estadísticas del mes.
+Si NO hubo errores, escribe exactamente: NINGUNO
 
 CATÁLOGO DE ERRORES (usa estos nombres exactos cuando apliquen):
 ${catalogoStr}
@@ -362,7 +362,8 @@ ${catalogoStr}
       if (!l || /^ninguno/i.test(l)) return
       const parts = l.split('|').map(s => s.trim())
       if (parts.length >= 2) {
-        const nombre = parts[0].replace(/^[🧠📐⚙️🗺️\s]+/, '').trim()
+        // Limpiar backticks, comillas y caracteres especiales del nombre
+        const nombre = parts[0].replace(/^[`'"'"\s🧠📐⚙️🗺️]+/, '').replace(/[`'"'"]+$/, '').trim()
         const tipoRaw = (parts[1] || '').toLowerCase()
         const tipo = tipos.find(t => tipoRaw.includes(t)) || ''
         const detalle = parts.slice(2).join(' | ').trim()
