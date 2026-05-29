@@ -107,15 +107,28 @@ const Modal = {
       ? `<div class="modal-image-wrap"><img src="${sesion.imagen_url}" alt="Captura del día" loading="lazy" style="cursor:zoom-in" title="Clic para ver en tamaño completo"></div>`
       : '<div class="modal-no-trade"><i class="ti ti-photo-off"></i><p>Sin imagen para este día</p></div>'
 
+    const TIPO_EMO = { psicologico: '🧠', analitico: '📐', operativo: '⚙️', marcado: '🗺️' }
     const erroresHtml = `
       <div class="modal-section-title"><span style="font-size:0.95rem">⚠️</span> Errores</div>
       ${casuisticas.length > 0
-        ? casuisticas.map(c => `
-            <div class="modal-cas-row modal-cas-row-error">
-              <span>${c.casuistica}</span>
-              <span class="${c.resultado === 'T' ? 'cas-badge-t' : 'cas-badge-s'}">${c.resultado}</span>
-            </div>`).join('')
-        : '<p class="modal-empty-sub">Sin errores registrados</p>'}`
+        ? casuisticas.map((c, i) => {
+            const emo = TIPO_EMO[c.tipo] || '•'
+            const res = (c.resultado === 'T' || c.resultado === 'S')
+              ? `<span class="${c.resultado === 'T' ? 'cas-badge-t' : 'cas-badge-s'}">${c.resultado}</span>` : ''
+            const origenTag = c.origen && c.origen !== 'manual'
+              ? `<span class="cas-origen" title="${c.origen}">${c.origen === 'ia' ? '🤖' : '🤝'}</span>` : ''
+            const detalle = c.descripcion
+              ? `<div class="modal-cas-detalle hidden" id="modal-cas-det-${i}">${c.descripcion}</div>` : ''
+            return `
+              <div class="modal-cas-item">
+                <div class="modal-cas-row modal-cas-row-error ${c.descripcion ? 'has-detail' : ''}" ${c.descripcion ? `data-det="${i}"` : ''}>
+                  <span>${emo} ${c.casuistica}</span>
+                  <span class="modal-cas-right">${origenTag}${res}${c.descripcion ? '<i class="ti ti-chevron-down cas-chevron"></i>' : ''}</span>
+                </div>
+                ${detalle}
+              </div>`
+          }).join('')
+        : '<p class="modal-empty-sub">✅ Sin errores registrados</p>'}`
 
     const sugerenciasHtml = `
       <div class="modal-section-title" style="margin-top:16px"><i class="ti ti-bulb"></i> Sugerencias</div>
@@ -123,10 +136,17 @@ const Modal = {
 
     document.getElementById('modalImagen').innerHTML = imgHtml + erroresHtml + sugerenciasHtml
 
-    // Lightbox al hacer clic en la imagen
+    // Lightbox al hacer clic en la imagen + toggle de detalle de errores
     setTimeout(() => {
       const img = document.querySelector('#modalImagen img')
       if (img) img.addEventListener('click', () => Lightbox.open(img.src))
+      document.querySelectorAll('#modalImagen .modal-cas-row.has-detail').forEach(row => {
+        row.addEventListener('click', () => {
+          const det = document.getElementById(`modal-cas-det-${row.dataset.det}`)
+          if (det) det.classList.toggle('hidden')
+          row.classList.toggle('open')
+        })
+      })
     }, 50)
 
     // Reset to first tab

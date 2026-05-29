@@ -212,9 +212,13 @@ Cuando recibas la instrucción de diagnóstico final, integra TODO lo conversado
 [ENTRADA VÁLIDA / ENTRADA INVÁLIDA + razón exacta, ahora sí con el cierre de toda la sesión]
 
 **⚠️ ERRORES DETECTADOS**
-[Clasificar cada error con su tipo: 🧠 Psicológico / 📐 Analítico / ⚙️ Operativo / 🗺️ Marcado]
-[IMPORTANTE: cuando un error coincida con uno del CATÁLOGO DE ERRORES de abajo, usa EXACTAMENTE ese nombre (así se evita duplicar el registro). Solo describe en texto libre los errores que sean realmente nuevos y no estén en el catálogo.]
-[Comparar con historial — alertar si el error se repite 3+ veces]
+Lista CADA error en UNA línea con este formato EXACTO (tres partes separadas por " | "):
+\`NombreCorto | tipo | detalle\`
+- NombreCorto: 1 a 4 palabras. Si coincide con uno del CATÁLOGO de abajo, usa EXACTAMENTE ese nombre. Si es nuevo, inventa un nombre breve y descriptivo (ej: 10 trades → "Sobreoperación").
+- tipo: uno de → psicologico | analitico | operativo | marcado
+- detalle: explicación completa del error ese día.
+Ejemplo: \`Miedo | psicologico | No tomé la entrada por temor a dañar las estadísticas del mes.\`
+Si NO hubo errores, escribe exactamente una línea: NINGUNO
 
 CATÁLOGO DE ERRORES (usa estos nombres exactos cuando apliquen):
 ${catalogoStr}
@@ -250,7 +254,7 @@ ${catalogoStr}
     const erroresData = await DB.getErroresHistoricos()
     if (!erroresData.length) return 'Sin patrones identificados aún.'
 
-    // Contar errores por tipo y descripción (filas planas de errores_sesion)
+    // Contar errores por tipo y descripción (filas planas de diagnostico_errores)
     const conteo = {}
     erroresData.forEach(e => {
       const key = `${e.tipo}||${e.descripcion}`
@@ -348,17 +352,27 @@ ${catalogoStr}
     return secciones
   }
 
-  function parsearErroresJson(textoErrores) {
-    if (!textoErrores || textoErrores.trim() === 'Ninguno detectado.') return []
+  // Parser estructurado: cada línea "NombreCorto | tipo | detalle"
+  function parsearErroresEstructurado(textoErrores) {
+    if (!textoErrores) return []
     const tipos = ['psicologico', 'analitico', 'operativo', 'marcado']
-    const errores = []
-    const lines = textoErrores.split('\n').filter(l => l.trim())
-    lines.forEach(line => {
-      const tipo = tipos.find(t => line.toLowerCase().includes(t)) || 'otro'
-      const desc = line.replace(/^[-*•🧠📐⚙️🗺️\s]+/, '').trim()
-      if (desc) errores.push({ tipo, descripcion: desc })
+    const out = []
+    textoErrores.split('\n').forEach(raw => {
+      let l = raw.replace(/^[-*•🧠📐⚙️🗺️\s]+/, '').trim()
+      if (!l || /^ninguno/i.test(l)) return
+      const parts = l.split('|').map(s => s.trim())
+      if (parts.length >= 2) {
+        const nombre = parts[0].replace(/^[🧠📐⚙️🗺️\s]+/, '').trim()
+        const tipoRaw = (parts[1] || '').toLowerCase()
+        const tipo = tipos.find(t => tipoRaw.includes(t)) || ''
+        const detalle = parts.slice(2).join(' | ').trim()
+        if (nombre) out.push({ nombre, tipo, detalle })
+      } else if (l.length > 2) {
+        // Fallback si la IA no respetó el formato: nombre recortado + todo como detalle
+        out.push({ nombre: l.slice(0, 40), tipo: '', detalle: l })
+      }
     })
-    return errores
+    return out
   }
 
   function parsearSetupsJson(textoValidacion) {
@@ -612,19 +626,28 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
   // ── Confirmación de errores (registro unificado) ──────────────────────
 
   async function prepararErroresConfirm(textoErrores) {
-    const parsed = parsearErroresJson(textoErrores)
-    // Errores ya registrados ese día (para avisar "ya registrado")
-    let yaRegistrados = []
+    const parsed = parsearErroresEstructurado(textoErrores)
+    // Para avisar "ya registrado" (ese día) y "nuevo" (no está en el catálogo)
+    let yaRegistrados = [], catalogoNombres = []
     try {
-      const existentes = await DB.getCasuisticasByDate(coachDate)
+      const [existentes, catalogo] = await Promise.all([
+        DB.getCasuisticasByDate(coachDate),
+        DB.getCatalogoCasuisticas(),
+      ])
       yaRegistrados = existentes.map(e => (e.casuistica || '').toLowerCase().trim())
-    } catch (_) { /* sin conexión: seguimos sin el aviso */ }
+      catalogoNombres = catalogo.map(c => (c.nombre || '').toLowerCase().trim())
+    } catch (_) { /* sin conexión: seguimos sin los avisos */ }
 
-    erroresDetectados = parsed.map(e => ({
-      descripcion: e.descripcion,
-      tipo: e.tipo && e.tipo !== 'otro' ? e.tipo : '',
-      yaRegistrado: yaRegistrados.includes((e.descripcion || '').toLowerCase().trim()),
-    }))
+    erroresDetectados = parsed.map(e => {
+      const key = (e.nombre || '').toLowerCase().trim()
+      return {
+        nombre: e.nombre,
+        tipo: e.tipo || '',
+        detalle: e.detalle || '',
+        yaRegistrado: yaRegistrados.includes(key),
+        nuevo: !catalogoNombres.includes(key),
+      }
+    })
     renderErroresConfirm()
   }
 
@@ -632,28 +655,38 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
     const cont = document.getElementById('coachErroresConfirm')
     if (!cont) return
     if (!erroresDetectados.length) {
-      cont.innerHTML = '<div class="coach-errores-empty">✓ La IA no detectó errores para registrar.</div>'
+      cont.innerHTML = '<div class="coach-errores-empty">✅ Día limpio — la IA no detectó errores para registrar.</div>'
       return
     }
     const rows = erroresDetectados.map((e, i) => `
-      <label class="coach-error-row">
-        <input type="checkbox" class="coach-error-chk" data-i="${i}" checked>
-        <select class="coach-error-tipo" data-i="${i}">${tipoOptions(e.tipo)}</select>
-        <span class="coach-error-desc">${e.descripcion}</span>
-        ${e.yaRegistrado ? '<span class="coach-error-badge">ya registrado</span>' : ''}
-      </label>`).join('')
+      <div class="coach-error-item">
+        <label class="coach-error-row">
+          <input type="checkbox" class="coach-error-chk" data-i="${i}" checked>
+          <select class="coach-error-tipo" data-i="${i}">${tipoOptions(e.tipo)}</select>
+          <span class="coach-error-desc"><strong>${e.nombre}</strong></span>
+          ${e.nuevo ? '<span class="coach-error-badge badge-nuevo">nuevo</span>' : ''}
+          ${e.yaRegistrado ? '<span class="coach-error-badge">ya registrado</span>' : ''}
+          ${e.detalle ? `<button type="button" class="coach-error-toggle" data-i="${i}" title="Ver detalle"><i class="ti ti-chevron-down"></i></button>` : ''}
+        </label>
+        ${e.detalle ? `<div class="coach-error-detalle hidden" id="coach-error-det-${i}">${e.detalle}</div>` : ''}
+      </div>`).join('')
     cont.innerHTML = `
       <div class="coach-errores-confirm-title">
         <i class="ti ti-checklist"></i> Errores a registrar
-        <span class="coach-errores-hint">desmarca los que no apliquen · ajusta el tipo si hace falta</span>
+        <span class="coach-errores-hint">desmarca los que no apliquen · ajusta el tipo · ▾ ver detalle</span>
       </div>
       ${rows}`
 
-    // Sincronizar cambios de tipo con el estado
     cont.querySelectorAll('.coach-error-tipo').forEach(sel => {
       sel.addEventListener('change', () => {
         const i = parseInt(sel.dataset.i)
         if (erroresDetectados[i]) erroresDetectados[i].tipo = sel.value
+      })
+    })
+    cont.querySelectorAll('.coach-error-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const det = document.getElementById(`coach-error-det-${btn.dataset.i}`)
+        if (det) det.classList.toggle('hidden')
       })
     })
   }
@@ -667,7 +700,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       if (!chk.checked) return
       const i = parseInt(chk.dataset.i)
       const e = erroresDetectados[i]
-      if (e?.descripcion) confirmados.push({ descripcion: e.descripcion, tipo: e.tipo || null })
+      if (e?.nombre) confirmados.push({ nombre: e.nombre, tipo: e.tipo || null, detalle: e.detalle || null })
     })
     return confirmados
   }
@@ -740,7 +773,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
           if (k) conteoHist[k] = (conteoHist[k] || 0) + 1
         })
       const patronesDetectados = erroresConfirmados.filter(e =>
-        (conteoHist[(e.descripcion || '').toLowerCase().trim()] || 0) >= 2)
+        (conteoHist[(e.nombre || '').toLowerCase().trim()] || 0) >= 2)
 
       const payload = {
         sesion_date:          coachDate,
@@ -754,7 +787,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
         setups_json:          setuosJson,
         estado_emocional_fin_id: emocionFinId,
         patron_detectado:     patronesDetectados.length > 0,
-        patron_descripcion:   patronesDetectados.map(e => e.descripcion).join('; ') || null,
+        patron_descripcion:   patronesDetectados.map(e => e.nombre).join('; ') || null,
         chat_messages:        chatHistory,
         modelo_usado:         MODEL,
         updated_at:           new Date().toISOString(),
@@ -762,7 +795,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
 
       await DB.saveDiagnostico(payload)
 
-      // Errores confirmados → registro unificado (errores_sesion, origen 'ia'/'ambos')
+      // Errores confirmados → ocurrencias (diagnostico_errores, origen 'ia'/'ambos')
       await DB.saveErroresIA(coachDate, erroresConfirmados)
 
       // Emoción de inicio y confianza → fuente única en `sesiones`

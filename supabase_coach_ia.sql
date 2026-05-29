@@ -310,3 +310,31 @@ GRANT SELECT, INSERT, UPDATE ON objetivos TO anon;
 INSERT INTO objetivos (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 
 NOTIFY pgrst, 'reload schema';
+
+
+-- ============================================================
+-- FASE 4A — Errores tipificados (catálogo vs ocurrencias)
+-- ============================================================
+-- Modelo final:
+--   catalogo_errores      = maestro (nombre breve + tipo)
+--   diagnostico_errores   = ocurrencias (error corto + detalle + resultado + origen)
+
+-- 1. Renombrar el catálogo
+ALTER TABLE IF EXISTS catalogo_casuisticas RENAME TO catalogo_errores;
+
+-- 2. Consolidar ocurrencias: eliminar la tabla legado y renombrar la unificada
+DROP TABLE IF EXISTS diagnostico_errores;          -- legado (ya migrado a errores_sesion)
+ALTER TABLE IF EXISTS errores_sesion RENAME TO diagnostico_errores;
+
+-- 3. Columnas nuevas: link al catálogo + descripción larga
+ALTER TABLE diagnostico_errores
+  ADD COLUMN IF NOT EXISTS catalogo_id bigint REFERENCES catalogo_errores(id),
+  ADD COLUMN IF NOT EXISTS descripcion text;
+
+-- 4. Backfill catalogo_id emparejando por nombre
+UPDATE diagnostico_errores d
+SET catalogo_id = c.id
+FROM catalogo_errores c
+WHERE lower(c.nombre) = lower(d.error) AND d.catalogo_id IS NULL;
+
+NOTIFY pgrst, 'reload schema';

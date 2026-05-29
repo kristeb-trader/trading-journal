@@ -1599,6 +1599,32 @@ body.modal-open { overflow: hidden; }
   background: rgba(186,117,23,0.15); border: 1px solid rgba(186,117,23,0.3);
   padding: 2px 7px; border-radius: 10px; flex-shrink: 0;
 }
+.coach-error-badge.badge-nuevo {
+  color: var(--accent); background: var(--accent-dim); border-color: rgba(29,158,117,0.35);
+}
+.coach-error-item { margin-bottom: 6px; }
+.coach-error-item .coach-error-row { margin-bottom: 0; }
+.coach-error-toggle {
+  flex-shrink: 0; color: var(--text3); padding: 2px 4px;
+  background: none; border: none; cursor: pointer;
+}
+.coach-error-detalle {
+  font-size: 0.82rem; color: var(--text2); line-height: 1.6;
+  padding: 8px 12px 10px 38px; background: var(--bg3);
+  border-radius: 0 0 8px 8px; margin-top: -2px;
+}
+
+/* Detalle de error en el modal del calendario */
+.modal-cas-item { margin-bottom: 6px; }
+.modal-cas-row.has-detail { cursor: pointer; }
+.modal-cas-right { display: inline-flex; align-items: center; gap: 6px; }
+.cas-origen { font-size: 0.85rem; }
+.cas-chevron { color: var(--text3); transition: transform var(--transition); }
+.modal-cas-row.open .cas-chevron { transform: rotate(180deg); }
+.modal-cas-detalle {
+  font-size: 0.82rem; color: var(--text2); line-height: 1.6;
+  padding: 8px 12px; background: var(--bg3); border-radius: 6px; margin-top: 4px;
+}
 
 /* Chips de origen en el modal de errores */
 .disc-origen-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
