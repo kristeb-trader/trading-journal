@@ -233,3 +233,58 @@ WHERE e->>'descripcion' IS NOT NULL
   );
 
 NOTIFY pgrst, 'reload schema';
+
+
+-- ============================================================
+-- FASE 3 — Registro UNIFICADO de errores (manual + IA)
+-- ============================================================
+-- Una sola tabla para todos los errores, con `origen` que distingue
+-- la procedencia. Sustituye conceptualmente a sesion_casuisticas (manual)
+-- y diagnostico_errores (IA). Las tablas viejas se conservan por seguridad.
+
+CREATE TABLE IF NOT EXISTS errores_sesion (
+  id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  sesion_date date NOT NULL,
+  error       text NOT NULL,            -- nombre del catálogo o descripción libre
+  tipo        text,                     -- psicologico/analitico/operativo/marcado
+  resultado   text,                     -- 'T' | 'S' (manual) | null (IA)
+  origen      text DEFAULT 'manual',    -- 'manual' | 'ia' | 'ambos'
+  created_at  timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_errores_sesion_fecha ON errores_sesion(sesion_date);
+
+ALTER TABLE errores_sesion DISABLE ROW LEVEL SECURITY;
+GRANT SELECT, INSERT, UPDATE, DELETE ON errores_sesion TO anon;
+GRANT USAGE, SELECT ON SEQUENCE errores_sesion_id_seq TO anon;
+
+-- Migrar errores MANUALES (con su tipo desde el catálogo)
+INSERT INTO errores_sesion (sesion_date, error, tipo, resultado, origen, created_at)
+SELECT sc.sesion_date, sc.casuistica, cc.tipo, sc.resultado, 'manual', sc.created_at
+FROM sesion_casuisticas sc
+LEFT JOIN catalogo_casuisticas cc ON cc.nombre = sc.casuistica
+WHERE NOT EXISTS (
+  SELECT 1 FROM errores_sesion e
+  WHERE e.sesion_date = sc.sesion_date
+    AND lower(e.error) = lower(sc.casuistica)
+    AND e.origen IN ('manual','ambos')
+);
+
+-- Migrar errores de la IA (dedup: si ya existe manual ese día con el mismo
+-- nombre, se marca 'ambos' abajo en vez de duplicar)
+INSERT INTO errores_sesion (sesion_date, error, tipo, origen, created_at)
+SELECT de.sesion_date, de.descripcion, de.tipo, 'ia', de.created_at
+FROM diagnostico_errores de
+WHERE NOT EXISTS (
+  SELECT 1 FROM errores_sesion e
+  WHERE e.sesion_date = de.sesion_date AND lower(e.error) = lower(de.descripcion)
+);
+
+UPDATE errores_sesion e
+SET origen = 'ambos'
+WHERE e.origen = 'manual'
+  AND EXISTS (
+    SELECT 1 FROM diagnostico_errores de
+    WHERE de.sesion_date = e.sesion_date AND lower(de.descripcion) = lower(e.error)
+  );
+
+NOTIFY pgrst, 'reload schema';

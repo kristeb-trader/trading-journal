@@ -91,21 +91,24 @@ const DB = {
 
   // ── Casuísticas ──────────────────────────────────────────────────────────
 
+  // Nota: estas funciones ahora leen/escriben en `errores_sesion` (registro
+  // unificado). Se conserva el alias `casuistica:error` para no romper a los
+  // consumidores existentes; las columnas nuevas (tipo, origen) van incluidas.
   async getCasuisticasByDate(date) {
     const { data, error } = await supa
-      .from('sesion_casuisticas')
-      .select('*')
+      .from('errores_sesion')
+      .select('id, sesion_date, casuistica:error, tipo, resultado, origen, created_at')
       .eq('sesion_date', date)
       .order('created_at', { ascending: true })
     if (error) throw error
     return data
   },
 
-  async saveCasuistica(sesionDate, casuistica, resultado) {
+  async saveCasuistica(sesionDate, casuistica, resultado, tipo = null) {
     const { data, error } = await supa
-      .from('sesion_casuisticas')
-      .insert({ sesion_date: sesionDate, casuistica, resultado })
-      .select()
+      .from('errores_sesion')
+      .insert({ sesion_date: sesionDate, error: casuistica, resultado, tipo, origen: 'manual' })
+      .select('id, sesion_date, casuistica:error, tipo, resultado, origen, created_at')
       .single()
     if (error) throw error
     return data
@@ -113,7 +116,7 @@ const DB = {
 
   async deleteCasuistica(id) {
     const { error } = await supa
-      .from('sesion_casuisticas')
+      .from('errores_sesion')
       .delete()
       .eq('id', id)
     if (error) throw error
@@ -121,8 +124,8 @@ const DB = {
 
   async getAllCasuisticas() {
     const { data, error } = await supa
-      .from('sesion_casuisticas')
-      .select('*')
+      .from('errores_sesion')
+      .select('id, sesion_date, casuistica:error, tipo, resultado, origen, created_at')
       .order('sesion_date', { ascending: false })
     if (error) throw error
     return data
@@ -133,7 +136,7 @@ const DB = {
     const lastDay = new Date(year, month, 0).getDate()
     const to = `${year}-${String(month).padStart(2, '0')}-${lastDay}`
     const { data, error } = await supa
-      .from('sesion_casuisticas')
+      .from('errores_sesion')
       .select('sesion_date')
       .gte('sesion_date', from)
       .lte('sesion_date', to)
@@ -290,37 +293,51 @@ const DB = {
     return data
   },
 
-  // ── Errores estructurados (diagnostico_errores) ──────────────────────────
+  // ── Errores de la IA (registro unificado: errores_sesion) ────────────────
 
-  // Reemplaza los errores de un día por el nuevo set (origen 'ia')
-  async saveErroresDiagnostico(sesionDate, errores) {
-    await supa.from('diagnostico_errores').delete().eq('sesion_date', sesionDate).eq('origen', 'ia')
+  // Reemplaza los errores IA del día y aplica dedup contra los manuales:
+  // - si un error IA coincide con uno manual del día → ese manual pasa a 'ambos'
+  // - si es nuevo → se inserta con origen 'ia'
+  async saveErroresIA(sesionDate, errores) {
+    // Reset: borrar IA previos y revertir 'ambos' → 'manual' para recalcular
+    await supa.from('errores_sesion').delete().eq('sesion_date', sesionDate).eq('origen', 'ia')
+    await supa.from('errores_sesion').update({ origen: 'manual' })
+      .eq('sesion_date', sesionDate).eq('origen', 'ambos')
+
     if (!errores?.length) return
-    const rows = errores.map(e => ({
-      sesion_date: sesionDate,
-      tipo:        e.tipo || null,
-      descripcion: e.descripcion,
-      origen:      'ia',
-    }))
-    const { error } = await supa.from('diagnostico_errores').insert(rows)
-    if (error) throw error
+
+    const { data: existentes } = await supa.from('errores_sesion')
+      .select('id, error, origen').eq('sesion_date', sesionDate)
+    const existMap = {}
+    ;(existentes || []).forEach(e => { existMap[(e.error || '').toLowerCase().trim()] = e })
+
+    const toInsert = []
+    for (const e of errores) {
+      const desc = (e.descripcion || '').trim()
+      const key = desc.toLowerCase()
+      if (!desc) continue
+      const match = existMap[key]
+      if (match) {
+        if (match.origen === 'manual') {
+          await supa.from('errores_sesion').update({ origen: 'ambos' }).eq('id', match.id)
+        }
+      } else {
+        toInsert.push({ sesion_date: sesionDate, error: desc, tipo: e.tipo || null, origen: 'ia' })
+        existMap[key] = { origen: 'ia' } // evitar duplicar entre los propios IA
+      }
+    }
+    if (toInsert.length) {
+      const { error } = await supa.from('errores_sesion').insert(toInsert)
+      if (error) throw error
+    }
   },
 
-  async getErroresByDate(date) {
+  // Errores recientes (planos) para detección de patrones e historial.
+  // Devuelve `descripcion` (alias de error) para compatibilidad con el Coach.
+  async getErroresHistoricos(limit = 600) {
     const { data, error } = await supa
-      .from('diagnostico_errores')
-      .select('*')
-      .eq('sesion_date', date)
-      .order('created_at', { ascending: true })
-    if (error) throw error
-    return data
-  },
-
-  // Errores recientes (planos) para detección de patrones e historial
-  async getErroresHistoricos(limit = 400) {
-    const { data, error } = await supa
-      .from('diagnostico_errores')
-      .select('sesion_date, tipo, descripcion')
+      .from('errores_sesion')
+      .select('sesion_date, tipo, descripcion:error, origen')
       .order('sesion_date', { ascending: false })
       .limit(limit)
     if (error) throw error

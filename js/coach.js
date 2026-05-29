@@ -20,6 +20,21 @@ const Coach = (() => {
   let sesionCerrada     = false // etapa 2 cerrada (habilita etapa 3)
   let diagnosticoHecho  = false // etapa 3 completada
 
+  // Errores detectados por la IA pendientes de confirmar (registro unificado)
+  let erroresDetectados = []   // [{ descripcion, tipo, yaRegistrado }]
+
+  // Taxonomía de errores (debe coincidir con el catálogo)
+  const TIPOS = [
+    { val: 'psicologico', label: '🧠 Psicológico' },
+    { val: 'analitico',   label: '📐 Analítico'   },
+    { val: 'operativo',   label: '⚙️ Operativo'   },
+    { val: 'marcado',     label: '🗺️ Marcado'     },
+  ]
+  function tipoOptions(selected) {
+    return '<option value="">Sin tipo</option>' +
+      TIPOS.map(t => `<option value="${t.val}" ${t.val === selected ? 'selected' : ''}>${t.label}</option>`).join('')
+  }
+
   // ── Helpers ────────────────────────────────────────────────────────────
 
   function today() {
@@ -41,15 +56,23 @@ const Coach = (() => {
   // ── Construcción del System Prompt ────────────────────────────────────
 
   async function buildSystemPrompt(date) {
-    const [estrategia, historial, patrones, sesion, trades, casuisticas, emociones] = await Promise.all([
+    const [estrategia, historial, patrones, sesion, trades, casuisticas, emociones, catalogoErrores] = await Promise.all([
       cargarEstrategia(),
       cargarHistorialCompacto(),
       detectarPatrones(),
       DB.getSesionByDate(date),
       DB.getTradesByDate(date),
       DB.getCasuisticasByDate(date),
-      DB.getCatalogoEmociones()
+      DB.getCatalogoEmociones(),
+      DB.getCatalogoCasuisticas()
     ])
+
+    // Catálogo de errores (vocabulario controlado para evitar duplicados)
+    const tipoNombre = { psicologico: 'Psicológico', analitico: 'Analítico', operativo: 'Operativo', marcado: 'Marcado' }
+    const catalogoStr = (catalogoErrores || [])
+      .filter(c => c.activa !== false)
+      .map(c => `  - "${c.nombre}"${c.tipo ? ` [${tipoNombre[c.tipo] || c.tipo}]` : ''}`)
+      .join('\n') || '  (catálogo vacío)'
 
     // Emoción inicio (UI tiene precedencia para capturar lo recién seleccionado)
     const emocionInicioId = parseInt(document.getElementById('coachEmocionSelect')?.value) || sesion?.estado_emocional_id
@@ -189,8 +212,12 @@ Cuando recibas la instrucción de diagnóstico final, integra TODO lo conversado
 [ENTRADA VÁLIDA / ENTRADA INVÁLIDA + razón exacta, ahora sí con el cierre de toda la sesión]
 
 **⚠️ ERRORES DETECTADOS**
-[Clasificar: 🧠 Psicológico / 📐 Analítico / ⚙️ Operativo / 🗺️ Marcado]
+[Clasificar cada error con su tipo: 🧠 Psicológico / 📐 Analítico / ⚙️ Operativo / 🗺️ Marcado]
+[IMPORTANTE: cuando un error coincida con uno del CATÁLOGO DE ERRORES de abajo, usa EXACTAMENTE ese nombre (así se evita duplicar el registro). Solo describe en texto libre los errores que sean realmente nuevos y no estén en el catálogo.]
 [Comparar con historial — alertar si el error se repite 3+ veces]
+
+CATÁLOGO DE ERRORES (usa estos nombres exactos cuando apliquen):
+${catalogoStr}
 
 **🎓 APRENDIZAJE DEL DÍA**
 [Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para mañana]
@@ -223,7 +250,7 @@ Cuando recibas la instrucción de diagnóstico final, integra TODO lo conversado
     const erroresData = await DB.getErroresHistoricos()
     if (!erroresData.length) return 'Sin patrones identificados aún.'
 
-    // Contar errores por tipo y descripción (filas planas de diagnostico_errores)
+    // Contar errores por tipo y descripción (filas planas de errores_sesion)
     const conteo = {}
     erroresData.forEach(e => {
       const key = `${e.tipo}||${e.descripcion}`
@@ -567,9 +594,12 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       Object.assign(diagnosticoActual, diag)
       renderDiagnostico(diag)
 
+      // Preparar la lista de errores a confirmar (registro unificado)
+      await prepararErroresConfirm(diag.errores)
+
       diagnosticoHecho = true
       mostrarGuardar()
-      Toast.show('Diagnóstico generado. No olvides guardar.', 'success')
+      Toast.show('Diagnóstico generado. Revisa los errores a registrar y guarda.', 'success')
 
     } catch (err) {
       if (diagEl) diagEl.innerHTML = `<div class="coach-error"><i class="ti ti-alert-triangle"></i> Error: ${err.message}</div>`
@@ -577,6 +607,69 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
     } finally {
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-clipboard-check"></i> Generar Diagnóstico' }
     }
+  }
+
+  // ── Confirmación de errores (registro unificado) ──────────────────────
+
+  async function prepararErroresConfirm(textoErrores) {
+    const parsed = parsearErroresJson(textoErrores)
+    // Errores ya registrados ese día (para avisar "ya registrado")
+    let yaRegistrados = []
+    try {
+      const existentes = await DB.getCasuisticasByDate(coachDate)
+      yaRegistrados = existentes.map(e => (e.casuistica || '').toLowerCase().trim())
+    } catch (_) { /* sin conexión: seguimos sin el aviso */ }
+
+    erroresDetectados = parsed.map(e => ({
+      descripcion: e.descripcion,
+      tipo: e.tipo && e.tipo !== 'otro' ? e.tipo : '',
+      yaRegistrado: yaRegistrados.includes((e.descripcion || '').toLowerCase().trim()),
+    }))
+    renderErroresConfirm()
+  }
+
+  function renderErroresConfirm() {
+    const cont = document.getElementById('coachErroresConfirm')
+    if (!cont) return
+    if (!erroresDetectados.length) {
+      cont.innerHTML = '<div class="coach-errores-empty">✓ La IA no detectó errores para registrar.</div>'
+      return
+    }
+    const rows = erroresDetectados.map((e, i) => `
+      <label class="coach-error-row">
+        <input type="checkbox" class="coach-error-chk" data-i="${i}" checked>
+        <select class="coach-error-tipo" data-i="${i}">${tipoOptions(e.tipo)}</select>
+        <span class="coach-error-desc">${e.descripcion}</span>
+        ${e.yaRegistrado ? '<span class="coach-error-badge">ya registrado</span>' : ''}
+      </label>`).join('')
+    cont.innerHTML = `
+      <div class="coach-errores-confirm-title">
+        <i class="ti ti-checklist"></i> Errores a registrar
+        <span class="coach-errores-hint">desmarca los que no apliquen · ajusta el tipo si hace falta</span>
+      </div>
+      ${rows}`
+
+    // Sincronizar cambios de tipo con el estado
+    cont.querySelectorAll('.coach-error-tipo').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const i = parseInt(sel.dataset.i)
+        if (erroresDetectados[i]) erroresDetectados[i].tipo = sel.value
+      })
+    })
+  }
+
+  // Lee las casillas marcadas y devuelve los errores confirmados
+  function leerErroresConfirmados() {
+    const cont = document.getElementById('coachErroresConfirm')
+    if (!cont) return []
+    const confirmados = []
+    cont.querySelectorAll('.coach-error-chk').forEach(chk => {
+      if (!chk.checked) return
+      const i = parseInt(chk.dataset.i)
+      const e = erroresDetectados[i]
+      if (e?.descripcion) confirmados.push({ descripcion: e.descripcion, tipo: e.tipo || null })
+    })
+    return confirmados
   }
 
   // ── Enviar mensaje del chat ────────────────────────────────────────────
@@ -632,11 +725,12 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       const confianza    = document.getElementById('coachConfianzaVal')?.value
         ? parseInt(document.getElementById('coachConfianzaVal').value) : null
 
-      const erroresJson  = parsearErroresJson(diagnosticoActual.errores)
+      // Errores confirmados por el usuario en la lista (registro unificado)
+      const erroresConfirmados = leerErroresConfirmados()
       // El veredicto se parsea junto con la validación para detectar VÁLIDA/INVÁLIDA
       const setuosJson   = parsearSetupsJson(`${diagnosticoActual.validacion || ''}\n${diagnosticoActual.veredicto || ''}`)
 
-      // Marcar errores repetidos comparando con el histórico estructurado
+      // Marcar errores repetidos comparando con el histórico
       const historicos = await DB.getErroresHistoricos()
       const conteoHist = {}
       historicos
@@ -645,10 +739,8 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
           const k = (h.descripcion || '').toLowerCase().trim()
           if (k) conteoHist[k] = (conteoHist[k] || 0) + 1
         })
-      erroresJson.forEach(e => {
-        e.repetido = (conteoHist[(e.descripcion || '').toLowerCase().trim()] || 0) >= 2
-      })
-      const patronesDetectados = erroresJson.filter(e => e.repetido)
+      const patronesDetectados = erroresConfirmados.filter(e =>
+        (conteoHist[(e.descripcion || '').toLowerCase().trim()] || 0) >= 2)
 
       const payload = {
         sesion_date:          coachDate,
@@ -670,8 +762,8 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
 
       await DB.saveDiagnostico(payload)
 
-      // Errores estructurados (tabla diagnostico_errores) — fuente de análisis
-      await DB.saveErroresDiagnostico(coachDate, erroresJson)
+      // Errores confirmados → registro unificado (errores_sesion, origen 'ia'/'ambos')
+      await DB.saveErroresIA(coachDate, erroresConfirmados)
 
       // Emoción de inicio y confianza → fuente única en `sesiones`
       // (solo si ya existe la sesión; no creamos sesiones huérfanas desde el Coach)
@@ -1006,11 +1098,15 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
     analisisHecho       = false
     sesionCerrada       = false
     diagnosticoHecho    = false
+    erroresDetectados   = []
     systemPromptCache   = null
     imagenBase64        = null
 
     const chatEl = document.getElementById('coachChatMessages')
     if (chatEl) chatEl.innerHTML = ''
+
+    const erroresEl = document.getElementById('coachErroresConfirm')
+    if (erroresEl) erroresEl.innerHTML = ''
 
     const analisisEl = document.getElementById('coachAnalisisContent')
     if (analisisEl) analisisEl.innerHTML = `

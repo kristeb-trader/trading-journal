@@ -351,10 +351,14 @@ const SessionForm = (() => {
   let casResultado = null
   let casPendientes = [] // { casuistica, resultado } — sin guardar aún
 
+  let casCatalogoTipo = {}  // nombre → tipo (para denormalizar al registrar)
+
   async function loadCasuisticasDropdown() {
     const items = await DB.getCatalogoCasuisticas()
     const select = document.getElementById('casCasuistica')
     const active = items.filter(i => i.activa)
+    casCatalogoTipo = {}
+    items.forEach(i => { casCatalogoTipo[i.nombre] = i.tipo || null })
     select.innerHTML = '<option value="">Seleccionar situación...</option>' +
       active.map(i => `<option value="${i.nombre}">${i.nombre}</option>`).join('')
   }
@@ -377,7 +381,7 @@ const SessionForm = (() => {
       if (!sesionDate) { Toast.show('Selecciona la fecha primero', 'warning'); return }
 
       try {
-        const saved = await DB.saveCasuistica(sesionDate, casuistica, casResultado)
+        const saved = await DB.saveCasuistica(sesionDate, casuistica, casResultado, casCatalogoTipo[casuistica] || null)
         casPendientes.push(saved)
         renderCasList()
         document.getElementById('casCasuistica').value = ''

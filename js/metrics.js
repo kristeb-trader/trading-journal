@@ -3,6 +3,16 @@ const Metrics = (() => {
   let allTrades = []
   let allSesiones = []
   let allCasuisticas = []
+  let allCatalogo = []
+
+  // Taxonomía de errores (debe coincidir con el catálogo)
+  const TIPO_META = {
+    psicologico: { label: '🧠 Psicológico', color: 'rgba(226,75,74,0.55)'  },
+    analitico:   { label: '📐 Analítico',   color: 'rgba(63,138,255,0.55)' },
+    operativo:   { label: '⚙️ Operativo',   color: 'rgba(186,117,23,0.55)' },
+    marcado:     { label: '🗺️ Marcado',     color: 'rgba(124,108,243,0.55)'},
+    sintipo:     { label: '❔ Sin clasificar', color: 'rgba(150,150,150,0.4)' },
+  }
 
   function calcStreak(trades) {
     // Group by date, determine daily result (overall win/loss)
@@ -166,34 +176,24 @@ const Metrics = (() => {
     { key: '_noErrors',       label: 'Sin errores de tipificación'      },
   ]
 
-  function openDisciplineDetailModal(activeSesiones, casByDate, periodCasuisticas) {
-    const total = activeSesiones.length
+  // Modal "Disciplina de Proceso" — solo adherencia al checklist
+  function openDisciplineDetailModal(activeSesiones) {
+    const operatedSesiones = activeSesiones.filter(s => !s.no_opero)
 
-    if (total === 0) {
+    if (operatedSesiones.length === 0) {
       document.getElementById('disciplineModalContent').innerHTML =
-        '<p style="padding:20px;color:var(--text3)">Sin sesiones en el período.</p>'
+        '<p style="padding:20px;color:var(--text3)">Sin días operados en el período.</p>'
       document.getElementById('disciplineModal').classList.remove('hidden')
       return
     }
 
-    // Checklist: 6 factores sobre días operados
-    const operatedSesiones = activeSesiones.filter(s => !s.no_opero)
     const CHECKLIST_FACTORS = DISC_FACTORS.filter(f => f.key !== '_noErrors')
     const checklistStats = CHECKLIST_FACTORS.map(f => {
       const fails = operatedSesiones.filter(s => !s[f.key])
-      const denominator = operatedSesiones.length || 1
-      return { label: f.label, count: fails.length, pct: fails.length / denominator * 100 }
+      return { label: f.label, count: fails.length, pct: fails.length / operatedSesiones.length * 100 }
     }).sort((a, b) => b.count - a.count)
 
-    // Casuísticas: contar por tipo exacto
-    const casCountMap = {}
-    periodCasuisticas.forEach(c => { casCountMap[c.casuistica] = (casCountMap[c.casuistica] || 0) + 1 })
-    const casStats = Object.entries(casCountMap)
-      .map(([label, count]) => ({ label, count }))
-      .sort((a, b) => b.count - a.count)
-
     const maxChk = checklistStats[0]?.count || 1
-    const maxCas = casStats[0]?.count || 1
 
     const chkBarsHtml = checklistStats.map(f => {
       const cls = f.pct >= 50 ? 'level-high' : f.pct >= 25 ? 'level-mid' : 'level-low'
@@ -210,74 +210,35 @@ const Metrics = (() => {
         </div>`
     }).join('')
 
-    const topErrorLabel = casStats[0]?.label || null
-    const casBarsHtml = casStats.length > 0
-      ? casStats.map((f, i) => {
-          const barW = (f.count / maxCas * 100).toFixed(0)
-          const isTop = i === 0
-          const barColor = isTop ? 'rgba(226,75,74,0.45)' : 'var(--warning)'
-          const labelStyle = isTop ? 'style="color:rgba(226,75,74,0.85)"' : ''
-          return `
-            <div class="disc-item">
-              <span class="disc-item-label" ${labelStyle}>${f.label}</span>
-              <div class="disc-bar-wrap">
-                <div class="disc-bar-fill" style="width:${barW}%;background:${barColor}"></div>
-              </div>
-              <span class="disc-count">${f.count}</span>
-            </div>`
-        }).join('')
-      : '<p style="color:var(--accent);font-size:0.85rem;padding:4px 0">✓ Sin errores de ejecución</p>'
-
-    // Agrupar casuísticas por fecha (sin duplicar tipo en el mismo día)
-    const casByDateDetail = {}
-    periodCasuisticas.forEach(c => {
-      if (!casByDateDetail[c.sesion_date]) casByDateDetail[c.sesion_date] = []
-      if (!casByDateDetail[c.sesion_date].includes(c.casuistica))
-        casByDateDetail[c.sesion_date].push(c.casuistica)
-    })
-
-    // Días con fallos: no_opero → solo casuísticas; operados → checklist + casuísticas
-    const failedDays = activeSesiones
-      .map(s => {
-        const chkFails = s.no_opero ? [] : CHECKLIST_FACTORS.filter(f => !s[f.key])
-        const casFails = casByDateDetail[s.sesion_date] || []
-        return { date: s.sesion_date, noOpero: s.no_opero, chkFails, casFails }
-      })
-      .filter(d => d.chkFails.length > 0 || d.casFails.length > 0)
+    // Días con fallos de checklist (solo días operados)
+    const failedDays = operatedSesiones
+      .map(s => ({ date: s.sesion_date, chkFails: CHECKLIST_FACTORS.filter(f => !s[f.key]) }))
+      .filter(d => d.chkFails.length > 0)
       .sort((a, b) => b.date.localeCompare(a.date))
 
     const daysHtml = failedDays.length > 0
       ? failedDays.map(d => {
           const dow = DAYS[new Date(d.date + 'T12:00:00').getDay()]
-          const totalFails = d.chkFails.length + d.casFails.length
-          const noOpBadge = d.noOpero
-            ? '<span style="font-size:0.7rem;color:var(--text3);background:rgba(255,255,255,0.06);padding:1px 6px;border-radius:3px;margin-left:6px">sin operar</span>'
-            : ''
           const amberTag = t => `<span class="disc-fail-tag" style="background:rgba(186,117,23,0.18);color:var(--warning);border-color:rgba(186,117,23,0.3)">${t}</span>`
           const chkTags = d.chkFails.map(f => amberTag(f.label)).join('')
-          const casTags = d.casFails.map(c =>
-            c === topErrorLabel
-              ? `<span class="disc-fail-tag">${c}</span>`
-              : amberTag(c)
-          ).join('')
           return `
             <div class="disc-fail-day" data-date="${d.date}">
               <div class="disc-fail-day-header">
                 <span class="disc-date-dow">${dow}</span>
-                <span class="disc-date-val">${d.date}${noOpBadge}</span>
-                <span class="disc-fail-count">${totalFails} fallo${totalFails !== 1 ? 's' : ''}</span>
+                <span class="disc-date-val">${d.date}</span>
+                <span class="disc-fail-count">${d.chkFails.length} fallo${d.chkFails.length !== 1 ? 's' : ''}</span>
               </div>
-              <div class="disc-fail-tags">${chkTags}${casTags}</div>
+              <div class="disc-fail-tags">${chkTags}</div>
             </div>`
         }).join('')
-      : '<p style="color:var(--accent);font-size:0.85rem;padding:8px 0">¡Disciplina perfecta en el período! 🎯</p>'
+      : '<p style="color:var(--accent);font-size:0.85rem;padding:8px 0">¡Checklist perfecto en el período! 🎯</p>'
 
     document.getElementById('disciplineModalContent').innerHTML = `
       <div style="padding:16px 20px 20px">
-        <p class="disc-section-title">Errores de ejecución</p>
-        ${casBarsHtml}
+        <p class="disc-section-title">Incumplimientos del checklist por factor</p>
+        ${chkBarsHtml}
         <div class="disc-dates" style="margin-top:12px">
-          <p class="disc-section-title">Días con fallos</p>
+          <p class="disc-section-title">Días con fallos de checklist</p>
           ${daysHtml}
         </div>
       </div>`
@@ -285,32 +246,43 @@ const Metrics = (() => {
     document.getElementById('disciplineModal').classList.remove('hidden')
   }
 
-  function openDisciplineModal(casuisticas, trades) {
-    // Agrupar casuísticas por nombre y contar
+  // Modal "Tasa de Errores" — desglose por tipo, por origen y por nombre
+  function openDisciplineModal(casuisticas, trades, tipoMap = {}, tipoCount = {}, origenCount = {}) {
+    const total = casuisticas.length
+
+    // Por nombre
     const countMap = {}
-    casuisticas.forEach(c => {
-      countMap[c.casuistica] = (countMap[c.casuistica] || 0) + 1
-    })
+    casuisticas.forEach(c => { countMap[c.casuistica] = (countMap[c.casuistica] || 0) + 1 })
     const counts = Object.entries(countMap)
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count)
     const maxCount = counts[0]?.count || 1
-    const total = casuisticas.length
 
-    // P&L por fecha para mostrar junto a las fechas del error top
-    const pnlByDate = {}
-    trades.forEach(t => {
-      if (!t.trade_date) return
-      pnlByDate[t.trade_date] = (pnlByDate[t.trade_date] || 0) + (parseFloat(t.profit) || 0)
-    })
+    // Por tipo (taxonomía)
+    const tipoEntries = Object.entries(tipoCount).sort((a, b) => b[1] - a[1])
+    const maxTipo = tipoEntries[0]?.[1] || 1
+    const tipoBarsHtml = tipoEntries.length > 0
+      ? tipoEntries.map(([tipo, count]) => {
+          const meta = TIPO_META[tipo] || TIPO_META.sintipo
+          return `
+            <div class="disc-item">
+              <span class="disc-item-label">${meta.label}</span>
+              <div class="disc-bar-wrap">
+                <div class="disc-bar-fill" style="width:${(count / maxTipo * 100).toFixed(0)}%;background:${meta.color}"></div>
+              </div>
+              <span class="disc-count">${count}</span>
+            </div>`
+        }).join('')
+      : '<p style="color:var(--text3);font-size:0.85rem">Sin errores en el período</p>'
 
-    // Fechas donde ocurrió el error más frecuente
-    const topLabel = counts[0]?.label
-    const failDates = topLabel
-      ? [...new Set(casuisticas.filter(c => c.casuistica === topLabel).map(c => c.sesion_date))]
-          .sort((a, b) => b.localeCompare(a))
-      : []
+    // Por origen (manual / IA / ambos)
+    const origenLabels = { manual: '✍️ Manual', ia: '🤖 IA', ambos: '🤝 Ambos' }
+    const origenHtml = Object.entries(origenLabels).map(([k, lbl]) => {
+      const n = origenCount[k] || 0
+      return `<span class="disc-origen-chip">${lbl}: <b>${n}</b></span>`
+    }).join('')
 
+    // Por nombre
     const barsHtml = counts.length > 0
       ? counts.map(({ label, count }) => {
           const pct = total > 0 ? (count / total * 100) : 0
@@ -326,29 +298,13 @@ const Metrics = (() => {
         }).join('')
       : '<p style="color:var(--text3);font-size:0.85rem">Sin errores registrados</p>'
 
-    const datesHtml = failDates.map(date => {
-      const pnl = pnlByDate[date]
-      const dow  = DAYS[new Date(date + 'T12:00:00').getDay()]
-      const pnlHtml = pnl != null
-        ? `<span class="disc-date-pnl ${pnl >= 0 ? 'pos' : 'neg'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</span>`
-        : `<span class="disc-date-pnl neutral">Sin trades</span>`
-      return `
-        <div class="disc-date-row">
-          <span class="disc-date-dow">${dow}</span>
-          <span class="disc-date-val">${date}</span>
-          ${pnlHtml}
-        </div>`
-    }).join('')
-
     document.getElementById('disciplineModalContent').innerHTML = `
       <div style="padding:16px 20px 20px">
-        <p class="disc-section-title">Errores de tipificación (${total} registros)</p>
+        <p class="disc-section-title">Errores por tipo</p>
+        ${tipoBarsHtml}
+        <div class="disc-origen-row">${origenHtml}</div>
+        <p class="disc-section-title" style="margin-top:14px">Errores por nombre (${total} registros)</p>
         ${barsHtml}
-        ${topLabel && failDates.length > 0 ? `
-          <div class="disc-dates">
-            <p class="disc-section-title" style="margin-top:8px">Días con "${topLabel}"</p>
-            ${datesHtml}
-          </div>` : ''}
       </div>`
 
     document.getElementById('disciplineModal').classList.remove('hidden')
@@ -399,31 +355,37 @@ const Metrics = (() => {
 
     // Casuísticas filtradas por el mismo período
     const periodCasuisticas = filterCasuisticasByPeriod(allCasuisticas, period)
-    const casByDate = {}
-    periodCasuisticas.forEach(c => { casByDate[c.sesion_date] = true })
 
-    // clean usa los 7 factores (checklist + sin errores) sobre activeSesiones
-    const clean = cleanSessions(activeSesiones, casByDate)
-    const failedCount = activeSesiones.length - clean
+    // ── Disciplina de Proceso: % de ítems de checklist cumplidos (días operados) ──
+    const operatedSes  = activeSesiones.filter(s => !s.no_opero)
+    const chkItemsTotal = operatedSes.length * 6
+    const chkItemsOk    = operatedSes.reduce((sum, s) =>
+      sum + [s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
+        .filter(Boolean).length, 0)
+    const disciplinaProceso = chkItemsTotal > 0 ? Math.round(chkItemsOk / chkItemsTotal * 100) : 0
 
-    // Disciplina: días operados → 7 factores; días no_opero → solo casuística (1 factor)
-    const disciplinePct = activeSesiones.length > 0
-      ? Math.round(activeSesiones.reduce((sum, s) => {
-          if (s.no_opero) return sum + (casByDate[s.sesion_date] ? 0 : 1)
-          const chkScore = [s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
-            .filter(Boolean).length
-          const noErrors = casByDate[s.sesion_date] ? 0 : 1
-          return sum + (chkScore + noErrors) / 7
-        }, 0) / activeSesiones.length * 100)
-      : 0
+    // ── Tasa de Errores: % de días registrados con al menos un error ──
+    const diasConError = new Set(periodCasuisticas.map(c => c.sesion_date)).size
+    const totalDiasReg = activeSesiones.length
+    const tasaErrorPct = totalDiasReg > 0 ? Math.round(diasConError / totalDiasReg * 100) : 0
 
-    const topError = casuisticaFrequency(periodCasuisticas)
+    // ── Tipo (preferir el de la fila; fallback al catálogo) y conteos ──
+    const tipoMap = {}
+    allCatalogo.forEach(c => { tipoMap[c.nombre] = c.tipo || 'sintipo' })
+    const tipoCount = {}
+    const origenCount = { manual: 0, ia: 0, ambos: 0 }
+    periodCasuisticas.forEach(c => {
+      const t = c.tipo || tipoMap[c.casuistica] || 'sintipo'
+      tipoCount[t] = (tipoCount[t] || 0) + 1
+      const o = c.origen || 'manual'
+      origenCount[o] = (origenCount[o] || 0) + 1
+    })
 
     const cards = [
       { label: 'P&L Neto Total', value: `${netPnl >= 0 ? '+' : ''}$${netPnl.toFixed(2)}`, icon: 'ti-currency-dollar', color: netPnl >= 0 ? 'green' : 'red', sub: `Promedio: ${avgPnl >= 0 ? '+' : ''}$${avgPnl.toFixed(0)}/día` },
       { label: 'Tasa de Acierto', value: `${winRate}%`, icon: 'ti-target', color: parseFloat(winRate) >= 50 ? 'green' : 'red', sub: `${targets} targets / ${stops} stops` },
-      { label: 'Disciplina', value: `${disciplinePct}%`, icon: 'ti-checkup-list', color: disciplinePct >= 80 ? 'green' : disciplinePct >= 50 ? 'warning' : 'red', sub: activeSesiones.length > 0 ? `${failedCount}/${activeSesiones.length} sesiones con fallos` : 'Sin sesiones', clickable: true, action: 'disc-detail' },
-      { label: 'Error más frecuente', value: topError ? topError[0] : '—', icon: 'ti-alert-triangle', color: 'warning', sub: topError ? `${topError[1]} ${topError[1] === 1 ? 'Error' : 'Errores'}` : 'Sin errores registrados', clickable: true, action: 'disc-errors' },
+      { label: 'Disciplina de Proceso', value: `${disciplinaProceso}%`, icon: 'ti-checkup-list', color: disciplinaProceso >= 80 ? 'green' : disciplinaProceso >= 50 ? 'warning' : 'red', sub: chkItemsTotal > 0 ? `${chkItemsOk}/${chkItemsTotal} ítems de checklist` : 'Sin días operados', clickable: true, action: 'disc-detail' },
+      { label: 'Tasa de Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
       {
         label: 'Targets · Stops · Sin entrada',
         value: `<span style="color:var(--accent)">${targets}</span> · <span style="color:var(--red)">${stops}</span> · ${noOperoCount}`,
@@ -471,15 +433,17 @@ const Metrics = (() => {
       </div>`).join('')
 
     document.querySelector('[data-action="disc-detail"]')?.addEventListener('click', () => {
-      openDisciplineDetailModal(activeSesiones, casByDate, periodCasuisticas)
+      openDisciplineDetailModal(activeSesiones)
     })
     document.querySelector('[data-action="disc-errors"]')?.addEventListener('click', () => {
-      openDisciplineModal(periodCasuisticas, trades)
+      openDisciplineModal(periodCasuisticas, trades, tipoMap, tipoCount, origenCount)
     })
   }
 
   async function init() {
-    ;[allTrades, allSesiones, allCasuisticas] = await Promise.all([DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas()])
+    ;[allTrades, allSesiones, allCasuisticas, allCatalogo] = await Promise.all([
+      DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getCatalogoCasuisticas()
+    ])
     render('month')
 
     document.querySelectorAll('.period-btn').forEach(btn => {
