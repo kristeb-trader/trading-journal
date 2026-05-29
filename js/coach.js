@@ -212,12 +212,14 @@ Cuando recibas la instrucción de diagnóstico final, integra TODO lo conversado
 [ENTRADA VÁLIDA / ENTRADA INVÁLIDA + razón exacta, ahora sí con el cierre de toda la sesión]
 
 **⚠️ ERRORES DETECTADOS**
-Lista CADA error en UNA línea con este formato EXACTO (tres partes separadas por " | "):
-NombreCorto | tipo | detalle
-- NombreCorto: 1 a 4 palabras, SIN comillas ni caracteres especiales al inicio. Si coincide con uno del CATÁLOGO de abajo, usa EXACTAMENTE ese nombre. Si es nuevo, inventa un nombre breve y descriptivo (ej: "Sobreoperación").
-- tipo: uno de → psicologico | analitico | operativo | marcado
+Lista CADA error en UNA línea con este formato EXACTO (cuatro partes separadas por " | "):
+NombreCorto | tipo | resultado | detalle
+- NombreCorto: 1 a 4 palabras, SIN comillas ni caracteres especiales. Si coincide con el CATÁLOGO de abajo, usa EXACTAMENTE ese nombre. Si es nuevo, crea uno breve.
+- tipo: psicologico | analitico | operativo | marcado
+- resultado: SOLO para errores en días NO operados o setups válidos no tomados → T si el precio habría ido a target, S si habría ido a stop. Para errores en días operados, escribe ninguno.
 - detalle: explicación completa del error ese día.
-Ejemplo de línea: Miedo | psicologico | No tomé la entrada por temor a dañar las estadísticas del mes.
+Ejemplo día operado: Error de Marcación | marcado | ninguno | Marqué la zona 10 puntos arriba del nivel correcto.
+Ejemplo día no operado: Miedo | psicologico | T | No tomé la entrada por miedo; el precio llegó al target sin mí.
 Si NO hubo errores, escribe exactamente: NINGUNO
 
 CATÁLOGO DE ERRORES (usa estos nombres exactos cuando apliquen):
@@ -366,11 +368,15 @@ ${catalogoStr}
         const nombre = parts[0].replace(/^[`'"'"\s🧠📐⚙️🗺️]+/, '').replace(/[`'"'"]+$/, '').trim()
         const tipoRaw = (parts[1] || '').toLowerCase()
         const tipo = tipos.find(t => tipoRaw.includes(t)) || ''
-        const detalle = parts.slice(2).join(' | ').trim()
-        if (nombre) out.push({ nombre, tipo, detalle })
+        // Parte 3: resultado (T/S) — solo aplica en días no operados
+        const resRaw = (parts[2] || '').toUpperCase().trim()
+        const resultado = resRaw === 'T' ? 'T' : resRaw === 'S' ? 'S' : null
+        // Parte 4 (o 3 si no hay resultado): detalle
+        const detalleIdx = parts.length >= 4 ? 3 : 2
+        const detalle = parts.slice(detalleIdx).join(' | ').trim()
+        if (nombre) out.push({ nombre, tipo, resultado, detalle })
       } else if (l.length > 2) {
-        // Fallback si la IA no respetó el formato: nombre recortado + todo como detalle
-        out.push({ nombre: l.slice(0, 40), tipo: '', detalle: l })
+        out.push({ nombre: l.slice(0, 40), tipo: '', resultado: null, detalle: l })
       }
     })
     return out
@@ -644,6 +650,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       return {
         nombre: e.nombre,
         tipo: e.tipo || '',
+        resultado: e.resultado || null,
         detalle: e.detalle || '',
         yaRegistrado: yaRegistrados.includes(key),
         nuevo: !catalogoNombres.includes(key),
@@ -665,6 +672,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
           <input type="checkbox" class="coach-error-chk" data-i="${i}" checked>
           <select class="coach-error-tipo" data-i="${i}">${tipoOptions(e.tipo)}</select>
           <span class="coach-error-desc"><strong>${e.nombre}</strong></span>
+          ${e.resultado ? `<span class="coach-error-res ${e.resultado === 'T' ? 'res-t' : 'res-s'}" data-i="${i}" title="Clic para cambiar">${e.resultado}</span>` : ''}
           ${e.nuevo ? '<span class="coach-error-badge badge-nuevo">nuevo</span>' : ''}
           ${e.yaRegistrado ? '<span class="coach-error-badge">ya registrado</span>' : ''}
           ${e.detalle ? `<button type="button" class="coach-error-toggle" data-i="${i}" title="Ver detalle"><i class="ti ti-chevron-down"></i></button>` : ''}
@@ -684,6 +692,20 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
         if (erroresDetectados[i]) erroresDetectados[i].tipo = sel.value
       })
     })
+    // Toggle T/S al hacer clic en el badge de resultado
+    cont.querySelectorAll('.coach-error-res').forEach(badge => {
+      badge.addEventListener('click', e => {
+        e.preventDefault()
+        const i = parseInt(badge.dataset.i)
+        if (!erroresDetectados[i]) return
+        const cur = erroresDetectados[i].resultado
+        const next = cur === 'T' ? 'S' : cur === 'S' ? null : 'T'
+        erroresDetectados[i].resultado = next
+        badge.textContent = next || ''
+        badge.className = `coach-error-res${next ? ` ${next === 'T' ? 'res-t' : 'res-s'}` : ''}`
+        if (!next) badge.style.display = 'none'
+      })
+    })
     cont.querySelectorAll('.coach-error-toggle').forEach(btn => {
       btn.addEventListener('click', () => {
         const det = document.getElementById(`coach-error-det-${btn.dataset.i}`)
@@ -701,7 +723,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       if (!chk.checked) return
       const i = parseInt(chk.dataset.i)
       const e = erroresDetectados[i]
-      if (e?.nombre) confirmados.push({ nombre: e.nombre, tipo: e.tipo || null, detalle: e.detalle || null })
+      if (e?.nombre) confirmados.push({ nombre: e.nombre, tipo: e.tipo || null, resultado: e.resultado || null, detalle: e.detalle || null })
     })
     return confirmados
   }

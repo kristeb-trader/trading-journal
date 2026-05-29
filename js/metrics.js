@@ -347,6 +347,73 @@ const Metrics = (() => {
     document.getElementById('disciplineModal').classList.remove('hidden')
   }
 
+  // Modal "Días limpios"
+  function openDiasLimpiosModal(s) {
+    const barW = s.totalSesiones > 0 ? (s.total / s.totalSesiones * 100).toFixed(0) : 0
+    const rachaMsg = s.racha > 0
+      ? `<p style="color:var(--accent);font-size:0.9rem;font-weight:600;margin-bottom:12px">🏆 Racha actual: ${s.racha} día${s.racha !== 1 ? 's' : ''} limpio${s.racha !== 1 ? 's' : ''} consecutivo${s.racha !== 1 ? 's' : ''}</p>`
+      : `<p style="color:var(--text3);font-size:0.85rem;margin-bottom:12px">Sin racha activa — el último día registrado tuvo errores.</p>`
+
+    const daysHtml = s.fechasConError.length > 0
+      ? [...s.fechasConError].sort((a,b) => b.localeCompare(a)).map(d => {
+          const dow = DAYS[new Date(d + 'T12:00:00').getDay()]
+          return `<div class="disc-date-row"><span class="disc-date-dow">${dow}</span><span class="disc-date-val">${d}</span><span style="color:var(--red);font-size:0.78rem">con errores</span></div>`
+        }).join('')
+      : '<p style="color:var(--accent);font-size:0.85rem">¡Todos los días del período fueron limpios!</p>'
+
+    document.getElementById('disciplineModalContent').innerHTML = `
+      <div style="padding:16px 20px 20px">
+        ${rachaMsg}
+        <div class="disc-item" style="margin-bottom:14px">
+          <span class="disc-item-label">Días sin errores</span>
+          <div class="disc-bar-wrap">
+            <div class="disc-bar-fill" style="width:${barW}%;background:rgba(29,158,117,0.5)"></div>
+          </div>
+          <span class="disc-count" style="color:var(--accent)">${s.total}/${s.totalSesiones} (${s.pct}%)</span>
+        </div>
+        <p class="disc-section-title">Días con errores en el período</p>
+        ${daysHtml}
+      </div>`
+    document.getElementById('disciplineModal').classList.remove('hidden')
+  }
+
+  // Modal "Dejé de ganar"
+  function openDejeGanarModal(s) {
+    if (!s.total) {
+      document.getElementById('disciplineModalContent').innerHTML =
+        '<p style="padding:20px;color:var(--accent)">✅ Sin setups perdidos en el período.</p>'
+      document.getElementById('disciplineModal').classList.remove('hidden')
+      return
+    }
+    const rows = s.items.map(c => {
+      const dow = DAYS[new Date(c.sesion_date + 'T12:00:00').getDay()]
+      const resClass = c.resultado === 'T' ? 'cas-badge-t' : 'cas-badge-s'
+      const tipo = { psicologico:'🧠', analitico:'📐', operativo:'⚙️', marcado:'🗺️' }[c.tipo] || '•'
+      return `
+        <div class="disc-fail-day">
+          <div class="disc-fail-day-header">
+            <span class="disc-date-dow">${dow}</span>
+            <span class="disc-date-val">${c.sesion_date}</span>
+            <span class="${resClass}">${c.resultado}</span>
+          </div>
+          <div class="disc-fail-tags">
+            <span class="disc-fail-tag">${tipo} ${c.casuistica}</span>
+          </div>
+        </div>`
+    }).join('')
+
+    document.getElementById('disciplineModalContent').innerHTML = `
+      <div style="padding:16px 20px 20px">
+        <div style="display:flex;gap:16px;margin-bottom:14px">
+          <span style="color:var(--accent);font-size:0.85rem"><strong>${s.targets}</strong> targets dejados pasar</span>
+          <span style="color:var(--red);font-size:0.85rem"><strong>${s.stops}</strong> stops evitados</span>
+        </div>
+        <p class="disc-section-title">Detalle por día</p>
+        ${rows}
+      </div>`
+    document.getElementById('disciplineModal').classList.remove('hidden')
+  }
+
   function abbreviateAccount(account) {
     if (!account) return '—'
     const parts = account.split('-')
@@ -457,12 +524,48 @@ const Metrics = (() => {
       diasLogroObjetivo, diasOperados: fechasOperadas.length, cumplimientoPct,
     }
 
+    // ── Días limpios (sin errores en el período) ──────────────────────────
+    const fechasConError = new Set(periodCasuisticas.map(c => c.sesion_date))
+    const diasConSesion  = activeSesiones.map(s => s.sesion_date)
+    const diasLimpios    = diasConSesion.filter(d => !fechasConError.has(d))
+    const totalSesiones  = diasConSesion.length
+
+    // Racha actual de días limpios (contando desde hoy hacia atrás)
+    const sesionesOrd = [...activeSesiones].sort((a, b) => b.sesion_date.localeCompare(a.sesion_date))
+    let rachaLimpia = 0
+    for (const s of sesionesOrd) {
+      if (!fechasConError.has(s.sesion_date)) rachaLimpia++
+      else break
+    }
+    const diasLimpiosStat = {
+      total: diasLimpios.length,
+      totalSesiones,
+      pct: totalSesiones > 0 ? Math.round(diasLimpios.length / totalSesiones * 100) : 0,
+      racha: rachaLimpia,
+      fechasLimpias: diasLimpios,
+      fechasConError: [...fechasConError],
+    }
+
+    // ── Dejé de ganar (errores con resultado=T en días no operados) ──────
+    const perdidas = periodCasuisticas.filter(c => c.resultado === 'T')
+    const ganadas  = periodCasuisticas.filter(c => c.resultado === 'S')
+    const dejeGanarStat = {
+      total: perdidas.length + ganadas.length,
+      targets: perdidas.length,
+      stops: ganadas.length,
+      items: periodCasuisticas
+        .filter(c => c.resultado === 'T' || c.resultado === 'S')
+        .sort((a, b) => b.sesion_date.localeCompare(a.sesion_date)),
+    }
+
     const cards = [
       { label: 'P&L Neto Total', value: `${netPnl >= 0 ? '+' : ''}$${netPnl.toFixed(2)}`, icon: 'ti-currency-dollar', color: netPnl >= 0 ? 'green' : 'red', sub: `Promedio: ${avgPnl >= 0 ? '+' : ''}$${avgPnl.toFixed(0)}/día` },
       { label: 'Tasa de Acierto', value: `${winRate}%`, icon: 'ti-target', color: parseFloat(winRate) >= 50 ? 'green' : 'red', sub: `${targets} targets / ${stops} stops` },
       { label: 'Disciplina de Proceso', value: `${disciplinaProceso}%`, icon: 'ti-checkup-list', color: disciplinaProceso >= 80 ? 'green' : disciplinaProceso >= 50 ? 'warning' : 'red', sub: chkItemsTotal > 0 ? `${chkItemsOk}/${chkItemsTotal} ítems de checklist` : 'Sin días operados', clickable: true, action: 'disc-detail' },
       { label: 'Tasa de Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
       { label: 'Cumplimiento de Reglas', value: cumplimientoPct != null ? `${cumplimientoPct}%` : '—', icon: 'ti-shield-check', color: cumplimientoPct == null ? 'neutral' : cumplimientoPct >= 90 ? 'green' : cumplimientoPct >= 70 ? 'warning' : 'red', sub: objStats.configurado ? `${objStats.diasOperados} días evaluados` : 'Configura objetivos en Ajustes', clickable: objStats.configurado, action: 'objetivos-detail' },
+      { label: 'Días limpios', value: rachaLimpia > 0 ? `${rachaLimpia} 🏆` : '0', icon: 'ti-circle-check', color: diasLimpiosStat.pct >= 70 ? 'green' : diasLimpiosStat.pct >= 40 ? 'warning' : 'red', sub: `${diasLimpiosStat.total}/${diasLimpiosStat.totalSesiones} días sin errores`, clickable: diasLimpiosStat.totalSesiones > 0, action: 'dias-limpios' },
+      { label: 'Dejé de ganar', value: dejeGanarStat.targets > 0 ? `${dejeGanarStat.targets} ⚠️` : '0 ✅', icon: 'ti-mood-sad', color: dejeGanarStat.targets === 0 ? 'green' : dejeGanarStat.targets <= 2 ? 'warning' : 'red', sub: dejeGanarStat.total > 0 ? `${dejeGanarStat.targets}T · ${dejeGanarStat.stops}S dejados pasar` : 'Sin setups perdidos', clickable: dejeGanarStat.total > 0, action: 'deje-ganar' },
       {
         label: 'Targets · Stops · Sin entrada',
         value: `<span style="color:var(--accent)">${targets}</span> · <span style="color:var(--red)">${stops}</span> · ${noOperoCount}`,
@@ -517,6 +620,12 @@ const Metrics = (() => {
     })
     document.querySelector('[data-action="objetivos-detail"]')?.addEventListener('click', () => {
       openObjetivosModal(objStats)
+    })
+    document.querySelector('[data-action="dias-limpios"]')?.addEventListener('click', () => {
+      openDiasLimpiosModal(diasLimpiosStat)
+    })
+    document.querySelector('[data-action="deje-ganar"]')?.addEventListener('click', () => {
+      openDejeGanarModal(dejeGanarStat)
     })
   }
 

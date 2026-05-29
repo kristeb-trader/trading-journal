@@ -349,6 +349,7 @@ const DB = {
         sesion_date: sesionDate,
         error: nombre,
         tipo: e.tipo || null,
+        resultado: e.resultado || null,
         descripcion: e.detalle || null,
         catalogo_id: catId,
         origen: 'ia',
@@ -362,7 +363,7 @@ const DB = {
   async getErroresHistoricos(limit = 600) {
     const { data, error } = await supa
       .from('diagnostico_errores')
-      .select('sesion_date, tipo, descripcion:error, origen')
+      .select('sesion_date, tipo, descripcion:error, origen, resultado')
       .order('sesion_date', { ascending: false })
       .limit(limit)
     if (error) throw error
