@@ -500,11 +500,21 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       Object.assign(diagnosticoActual, tecnico)
       renderAnalisisTecnico(tecnico)
 
-      // Desbloquear etapa 2 (chat) y mostrar botón de cerrar sesión
+      // Desbloquear etapa 2 (chat, opcional) y etapa 3 (diagnóstico, ya disponible)
       analisisHecho = true
+      sesionCerrada = true   // el chat es opcional: el diagnóstico queda habilitado de una vez
       unlockStage('coachStageChat')
+      unlockStage('coachStageDiagnostico')
       document.getElementById('coachCerrarSesionBtn')?.classList.remove('hidden')
-      renderMensaje('assistant', '✅ Análisis técnico completado. Conversemos sobre la sesión: pregúntame sobre cualquier setup, error o duda. Cuando termines, pulsa **Cerrar sesión** para generar el diagnóstico final.')
+      const diagBtn = document.getElementById('coachDiagnosticoBtn')
+      if (diagBtn) diagBtn.disabled = false
+      const diagEl = document.getElementById('coachDiagnosticoContent')
+      if (diagEl) diagEl.innerHTML = `
+        <div class="coach-placeholder coach-placeholder-sm">
+          <i class="ti ti-clipboard-check"></i>
+          <p>Pulsa <strong>Generar Diagnóstico</strong> cuando quieras el veredicto, errores y aprendizaje. El chat de coaching es opcional.</p>
+        </div>`
+      renderMensaje('assistant', '✅ Análisis técnico completado. Puedes conversar sobre la sesión (opcional) o ir directo a **Generar Diagnóstico**. Si chateas, el diagnóstico integrará todo lo discutido.')
       mostrarGuardar()
 
     } catch (err) {
@@ -527,26 +537,15 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       cerrarBtn.disabled = true
     }
 
-    // Desbloquear etapa 3
-    unlockStage('coachStageDiagnostico')
-    const diagBtn = document.getElementById('coachDiagnosticoBtn')
-    if (diagBtn) diagBtn.disabled = false
-
-    const diagEl = document.getElementById('coachDiagnosticoContent')
-    if (diagEl) diagEl.innerHTML = `
-      <div class="coach-placeholder coach-placeholder-sm">
-        <i class="ti ti-clipboard-check"></i>
-        <p>Pulsa <strong>Generar Diagnóstico</strong> para el veredicto, errores y aprendizaje del día.</p>
-      </div>`
-
-    Toast.show('Sesión cerrada — ya puedes generar el diagnóstico', 'success')
+    // La etapa 3 ya está desbloqueada desde el análisis técnico; solo guiamos al usuario.
+    Toast.show('Sesión cerrada — genera el diagnóstico cuando quieras', 'success')
     document.getElementById('coachStageDiagnostico')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
   // ── ETAPA 3: Generar diagnóstico final ────────────────────────────────
 
   async function generarDiagnostico() {
-    if (!sesionCerrada) { Toast.show('Primero cierra la sesión de coaching', 'warning'); return }
+    if (!analisisHecho) { Toast.show('Primero haz el análisis técnico', 'warning'); return }
 
     const btn = document.getElementById('coachDiagnosticoBtn')
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Generando...' }
