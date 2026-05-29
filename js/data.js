@@ -45,6 +45,7 @@ const DataManager = (() => {
         const id = parseInt(sel.dataset.id)
         try {
           await DB.updateCasuisticaTipo(id, sel.value)
+          Toast.show('Tipo guardado', 'success')
         } catch (e) {
           Toast.show('Error al actualizar el tipo', 'error')
         }
