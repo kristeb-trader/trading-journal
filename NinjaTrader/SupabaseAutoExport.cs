@@ -26,6 +26,12 @@ using NinjaTrader.NinjaScript.Indicators;
  *   un ExecutionUpdate independiente. El indicador espera 3 segundos antes
  *   de publicar, acumulando todos los cierres del mismo instrumento y
  *   dirección en un único trade consolidado.
+ *
+ * P&L y comisiones (v2.2 — 2026-06-02):
+ *   - commission = round-trip: suma la comisión de TODAS las patas del trade
+ *     (entrada + salida + scaling). Antes solo capturaba la pata de salida.
+ *   - profit = NETO: bruto en puntos menos la comisión round-trip, para
+ *     alinear con la convención de los datos históricos importados por CSV.
  */
 
 namespace NinjaTrader.NinjaScript.Indicators
@@ -70,6 +76,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         private double   maeExtreme;
         private double   mfeExtreme;
         private int      netQty;
+        private double   tradeCommission;   // acumulado de todas las patas (entrada + salida + scaling)
 
         // ── Ventana de fusión ATM (3 segundos) ───────────────────────────────
         private readonly object mergeLock = new object();
@@ -226,22 +233,27 @@ namespace NinjaTrader.NinjaScript.Indicators
 
                     if (prevQty == 0 && netQty != 0)
                     {
-                        isLong       = netQty > 0;
-                        entryPrice   = ex.Price;
-                        entryTime    = ex.Time;
-                        tradeQty     = Math.Abs(netQty);
-                        maeExtreme   = ex.Price;
-                        mfeExtreme   = ex.Price;
-                        inTrade      = true;
+                        // Apertura de un nuevo trade
+                        isLong          = netQty > 0;
+                        entryPrice      = ex.Price;
+                        entryTime       = ex.Time;
+                        tradeQty        = Math.Abs(netQty);
+                        maeExtreme      = ex.Price;
+                        mfeExtreme      = ex.Price;
+                        inTrade         = true;
+                        tradeCommission = ex.Commission;   // comisión de la pata de entrada
                     }
                     else if (inTrade && Math.Sign(netQty) == Math.Sign(prevQty) && Math.Abs(netQty) > Math.Abs(prevQty))
                     {
-                        // Scaling in — actualizar qty al máximo alcanzado
+                        // Scaling in — sumar comisión y actualizar qty al máximo alcanzado
+                        tradeCommission += ex.Commission;
                         tradeQty = Math.Abs(netQty);
                     }
                     else if (prevQty != 0 && netQty == 0)
                     {
+                        // Cierre total del trade
                         inTrade = false;
+                        tradeCommission += ex.Commission;   // comisión de la pata de salida
 
                         postEntryPrice = entryPrice;
                         postExitPrice  = ex.Price;
@@ -255,7 +267,12 @@ namespace NinjaTrader.NinjaScript.Indicators
                         double profitPoints = isLong
                             ? postExitPrice - postEntryPrice
                             : postEntryPrice - postExitPrice;
-                        postProfit = Math.Round(profitPoints * pointValue * postQty, 2);
+                        double grossProfit  = profitPoints * pointValue * postQty;
+
+                        // Comisión round-trip (todas las patas) y profit NETO,
+                        // alineado con la convención de los datos históricos.
+                        postCommission = Math.Round(tradeCommission, 2);
+                        postProfit     = Math.Round(grossProfit - postCommission, 2);
 
                         postMae = isLong
                             ? Math.Max(0, postEntryPrice - maeExtreme)
@@ -267,10 +284,12 @@ namespace NinjaTrader.NinjaScript.Indicators
                         postMae = Math.Round(postMae * pointValue * postQty, 2);
                         postMfe = Math.Round(postMfe * pointValue * postQty, 2);
 
-                        // Capturar comisión reportada por NT8 (puede ser 0 en versiones antiguas)
-                        postCommission = Math.Round(ex.Commission, 2);
-
                         shouldPost = true;
+                    }
+                    else if (inTrade)
+                    {
+                        // Cierre parcial u otra ejecución dentro del trade — acumular comisión
+                        tradeCommission += ex.Commission;
                     }
                 }
 
