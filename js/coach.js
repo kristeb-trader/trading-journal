@@ -42,6 +42,13 @@ const Coach = (() => {
     return new Date().toISOString().slice(0, 10)
   }
 
+  // Desplaza una fecha 'YYYY-MM-DD' en delta días (sin problemas de zona horaria)
+  function shiftDay(dateStr, delta) {
+    const d = new Date(dateStr + 'T12:00:00')
+    d.setDate(d.getDate() + delta)
+    return d.toISOString().slice(0, 10)
+  }
+
   function fmtDate(d) {
     if (!d) return ''
     const [y, m, day] = d.split('-')
@@ -1204,6 +1211,10 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
     const picker = document.getElementById('coachDatePicker')
     if (picker && picker.value !== date) picker.value = date
 
+    // Botón "adelante" deshabilitado en hoy (no hay sesiones futuras)
+    const nextBtn = document.getElementById('coachNextDay')
+    if (nextBtn) nextBtn.disabled = date >= today()
+
     // Hint: hoy / ayer / hace N días
     const hintEl = document.getElementById('coachDateHint')
     if (hintEl) {
@@ -1280,6 +1291,14 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
         if (datePicker.value) cargarFecha(datePicker.value)
       })
     }
+
+    // Botones día anterior / siguiente
+    document.getElementById('coachPrevDay')?.addEventListener('click', () => {
+      if (coachDate) cargarFecha(shiftDay(coachDate, -1))
+    })
+    document.getElementById('coachNextDay')?.addEventListener('click', () => {
+      if (coachDate && coachDate < today()) cargarFecha(shiftDay(coachDate, 1))
+    })
 
     // Cargar la fecha pendiente (si se entró desde Historial) o la de hoy
     await cargarFecha(pendingDate || today())

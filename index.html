@@ -579,7 +579,15 @@
           <div class="coach-date-row">
             <div class="coach-date-group">
               <label class="coach-label" for="coachDatePicker">Sesión a analizar</label>
-              <input type="date" id="coachDatePicker" class="coach-date-input">
+              <div class="coach-date-nav">
+                <button type="button" class="coach-date-arrow" id="coachPrevDay" title="Día anterior">
+                  <i class="ti ti-chevron-left"></i>
+                </button>
+                <input type="date" id="coachDatePicker" class="coach-date-input">
+                <button type="button" class="coach-date-arrow" id="coachNextDay" title="Día siguiente">
+                  <i class="ti ti-chevron-right"></i>
+                </button>
+              </div>
             </div>
             <span class="coach-date-hint" id="coachDateHint"></span>
           </div>

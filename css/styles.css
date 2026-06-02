@@ -1375,6 +1375,34 @@ body.modal-open { overflow: hidden; }
   transition: border-color var(--transition);
 }
 .coach-date-input:focus { outline: none; border-color: var(--accent); }
+.coach-date-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.coach-date-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 36px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text2);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.coach-date-arrow:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.coach-date-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
 .coach-date-hint {
   font-size: 0.82rem;
   font-weight: 500;
