@@ -35,6 +35,7 @@ const SessionForm = (() => {
         motivoGroup.classList.add('hidden')
         tradingFields.classList.remove('hidden')
       }
+      renderExperimentos()
     })
 
     // Mostrar campos extra cuando el motivo es "Setup válido no tomado"
