@@ -260,11 +260,12 @@ ${catalogoStr}
     const erroresData = await DB.getErroresHistoricos()
     if (!erroresData.length) return 'Sin patrones identificados aún.'
 
-    // Contar errores por tipo y descripción (filas planas de diagnostico_errores)
+    // Contar errores por nombre — el tipo puede variar entre sesiones, usamos el más reciente
     const conteo = {}
     erroresData.forEach(e => {
-      const key = `${e.tipo}||${e.descripcion}`
+      const key = (e.descripcion || '').toLowerCase().trim()
       if (!conteo[key]) conteo[key] = { tipo: e.tipo, descripcion: e.descripcion, veces: 0, fechas: [] }
+      else if (e.tipo && !conteo[key].tipo) conteo[key].tipo = e.tipo
       conteo[key].veces++
       conteo[key].fechas.push(e.sesion_date)
     })
