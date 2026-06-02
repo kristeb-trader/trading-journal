@@ -49,6 +49,16 @@ const Coach = (() => {
     return d.toISOString().slice(0, 10)
   }
 
+  // Desplaza al día hábil anterior/siguiente, saltando sábados y domingos
+  // (el mercado está cerrado esos días, no hay nada que cargar)
+  function shiftWeekday(dateStr, direction) {
+    let d = dateStr
+    do {
+      d = shiftDay(d, direction)
+    } while ([0, 6].includes(new Date(d + 'T12:00:00').getDay()))
+    return d
+  }
+
   function fmtDate(d) {
     if (!d) return ''
     const [y, m, day] = d.split('-')
@@ -1218,9 +1228,9 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
     const picker = document.getElementById('coachDatePicker')
     if (picker && picker.value !== date) picker.value = date
 
-    // Botón "adelante" deshabilitado en hoy (no hay sesiones futuras)
+    // Botón "adelante" deshabilitado si el próximo día hábil ya sería futuro
     const nextBtn = document.getElementById('coachNextDay')
-    if (nextBtn) nextBtn.disabled = date >= today()
+    if (nextBtn) nextBtn.disabled = shiftWeekday(date, 1) > today()
 
     // Hint: hoy / ayer / hace N días
     const hintEl = document.getElementById('coachDateHint')
@@ -1299,12 +1309,14 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       })
     }
 
-    // Botones día anterior / siguiente
+    // Botones día anterior / siguiente (saltan fines de semana)
     document.getElementById('coachPrevDay')?.addEventListener('click', () => {
-      if (coachDate) cargarFecha(shiftDay(coachDate, -1))
+      if (coachDate) cargarFecha(shiftWeekday(coachDate, -1))
     })
     document.getElementById('coachNextDay')?.addEventListener('click', () => {
-      if (coachDate && coachDate < today()) cargarFecha(shiftDay(coachDate, 1))
+      if (!coachDate) return
+      const nd = shiftWeekday(coachDate, 1)
+      if (nd <= today()) cargarFecha(nd)
     })
 
     // Cargar la fecha pendiente (si se entró desde Historial) o la de hoy
