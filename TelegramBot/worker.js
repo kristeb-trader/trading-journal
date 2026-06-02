@@ -108,16 +108,34 @@ function scoreChecklist(data) {
   return CHECKLIST_ITEMS.filter(({ key }) => data[key]).length;
 }
 
-// ── Emociones desde Supabase ────────────────────────────────────────────────
+// ── Emociones ───────────────────────────────────────────────────────────────
+// Fallback local con los IDs REALES del catálogo (catalogo_emociones).
+// Se usa si la consulta a Supabase falla o devuelve vacío, para que el paso
+// emocional del bot SIEMPRE muestre opciones seleccionables.
+// Si actualizas el catálogo en la web, sincroniza esta lista.
+const EMOCIONES_FALLBACK = [
+  { id: 1,  nombre: 'En zona',       emoji: '🟢' },
+  { id: 2,  nombre: 'Tranquilo',     emoji: '😌' },
+  { id: 3,  nombre: 'Confiado',      emoji: '💪' },
+  { id: 4,  nombre: 'Neutral',       emoji: '😐' },
+  { id: 5,  nombre: 'Ansioso',       emoji: '😰' },
+  { id: 6,  nombre: 'Presionado',    emoji: '😤' },
+  { id: 7,  nombre: 'Cansado',       emoji: '😴' },
+  { id: 8,  nombre: 'Sobreconfiado', emoji: '🚫' },
+  { id: 9,  nombre: 'Rabia',         emoji: '😤' },
+  { id: 10, nombre: 'Con Duda',      emoji: '😕' },
+];
+
 async function fetchEmociones(env) {
   try {
     const res = await fetch(
       `${env.SUPABASE_URL}/rest/v1/catalogo_emociones?activa=eq.true&order=orden.asc&select=id,nombre,emoji`,
       { headers: { apikey: env.SUPABASE_KEY, Authorization: `Bearer ${env.SUPABASE_KEY}` } }
     );
-    if (!res.ok) return [];
-    return await res.json();
-  } catch { return []; }
+    if (!res.ok) return EMOCIONES_FALLBACK;
+    const data = await res.json();
+    return Array.isArray(data) && data.length ? data : EMOCIONES_FALLBACK;
+  } catch { return EMOCIONES_FALLBACK; }
 }
 
 function emocionKeyboard(emociones) {
