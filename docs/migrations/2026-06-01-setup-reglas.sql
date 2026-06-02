@@ -24,6 +24,10 @@ CREATE TABLE IF NOT EXISTS setup_reglas (
 -- Proyecto personal: sin RLS (igual que el resto de catálogos)
 ALTER TABLE setup_reglas DISABLE ROW LEVEL SECURITY;
 
+-- Otorgar privilegios al rol anon (API key del navegador) y authenticated.
+-- Necesario: las tablas nuevas no siempre heredan estos grants automáticamente.
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.setup_reglas TO anon, authenticated;
+
 -- ── Seed: Reingreso (Común) — caso base capturado por el Coach el 2026-06-01 ──
 INSERT INTO setup_reglas (setup, direccion, orden, activacion, secuencia, entrada, stop, gestion, invalidacion, notas)
 VALUES (
