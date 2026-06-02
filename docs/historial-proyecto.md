@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 29 Mayo 2026 (Fase 4B completa)
+**Última actualización:** 1 Junio 2026 (Fase 10 — Módulo de Reglas por Setup)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `C:\Users\Asus\Claro drive\Trading Journal`
@@ -75,6 +75,7 @@ trading-journal/
 │   ├── charts.js                     ← 6 gráficas con Chart.js
 │   ├── gallery.js                    ← Galería de imágenes con slots vacíos
 │   ├── data.js                       ← Gestor de catálogos (errores, emociones, experimentos)
+│   ├── estrategia.js                 ← Reglas por setup + estrategia general Chaumer (FASE 10)
 │   ├── coach.js                      ← Coach IA — flujo 3 etapas (FASE 5+)
 │   └── app.js                        ← Boot, navegación SPA, modales, lightbox
 ├── NinjaTrader/
@@ -226,6 +227,30 @@ id, seccion, titulo, contenido, orden, activa (BOOLEAN DEFAULT true), updated_at
 -- Secciones: antes_sesion, premercado, apertura, mecanica_entrada,
 --            gestion_zona, filtros, volumen, regla_de_oro, configuracion_visual
 ```
+
+### Tabla `setup_reglas` (Fase 10)
+
+```sql
+CREATE TABLE setup_reglas (
+  id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  setup        TEXT NOT NULL,                 -- iri_apertura | iri_continuacion | reingreso
+  direccion    TEXT NOT NULL DEFAULT 'ambas', -- alcista | bajista | ambas
+  activacion   TEXT,   -- contexto: cuándo aparece este setup
+  secuencia    TEXT,   -- estructura de velas (IRI, consecución, reingreso…)
+  entrada      TEXT,   -- gatillo y nivel exacto de entrada
+  stop         TEXT,   -- ubicación y tamaño del stop
+  gestion      TEXT,   -- target, R:R mínimo, gestión de zona
+  invalidacion TEXT,   -- filtros / qué invalida el setup
+  notas        TEXT,   -- observaciones que evolucionan
+  activa       BOOLEAN DEFAULT true,
+  orden        INTEGER DEFAULT 0,
+  updated_at   TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (setup, direccion)
+);
+-- SQL + seed del Reingreso: docs/migrations/2026-06-01-setup-reglas.sql
+```
+
+> 3 setups × 3 direcciones (común/alcista/bajista) = hasta 9 filas. El upsert usa `onConflict: 'setup,direccion'`. El Coach IA lee esta tabla en su system prompt para validar entradas contra las reglas escritas del trader.
 
 ### Tabla `objetivos` (Fase 3B)
 
@@ -448,6 +473,7 @@ Tras generar el diagnóstico, aparece una lista pre-marcada con los errores dete
 | Fuente | Contenido |
 |---|---|
 | `estrategia_chaumer` | Estrategia Chaumer completa (8+ secciones) |
+| `setup_reglas` | Reglas documentadas por setup (valida entradas contra reglas escritas) |
 | `diagnosticos_diarios` (60 días) | Historial compacto de resúmenes |
 | `diagnostico_errores` histórico | Patrones repetidos (≥2 = ⚠️, ≥3 = 🚨) |
 | `sesiones` del día | Emoción inicio, confianza, contexto, setup, checklist |
@@ -627,6 +653,44 @@ NombreError | tipo | resultado | detalleError | NombreRec | textoRec
 
 ---
 
+## FASE 10 — Módulo de Reglas por Setup
+
+**Motivación:** El Coach IA diagnosticó (2026-06-01) que operar un setup sin reglas escritas es una fuente de error, no de ventaja. Esta fase cierra esa brecha de forma estructural.
+
+### Nueva sección principal "Estrategia"
+
+- "Estrategia" sale de ser una **pestaña del Coach IA** y pasa a ser **sección principal** del menú lateral (entre *Registrar* y *Datos*, ícono 📖 `ti-book-2`).
+- Módulo nuevo `js/estrategia.js`. Lazy-init en `Nav.go('estrategia')`.
+- La sección contiene **dos bloques**:
+  1. **Reglas por Setup** (módulo nuevo)
+  2. **Estrategia general Chaumer** (editor movido tal cual desde el Coach)
+- La pestaña "Estrategia" del Coach fue **eliminada** (`renderEstrategia` removida de `coach.js`).
+
+### Reglas por Setup
+
+**3 setups** (tarjetas), cada uno con **toggle de dirección** Común / Alcista / Bajista:
+
+| Setup | Key | Descripción |
+|---|---|---|
+| IRI en Apertura | `iri_apertura` | Primer impulso tras rompimiento del rango de premercado |
+| IRI en Continuación | `iri_continuacion` | Continuación clásica Impulso·Retroceso·Impulso desde zona |
+| Reingreso | `reingreso` | Reentrada tras consecución fallida + reversión + rompimiento del retroceso |
+
+**7 campos estructurados por setup+dirección:** activación/contexto, secuencia/estructura, entrada, stop, gestión/target, invalidación/filtros, notas.
+
+- Persisten en `setup_reglas` vía `DB.saveSetupRegla` (upsert por `setup,direccion`).
+- **Memoria por dirección:** al cambiar de toggle, los cambios sin guardar de la dirección anterior se conservan en memoria.
+- Guardado explícito por tarjeta (botón "Guardar reglas").
+- **Caso base pre-cargado:** Reingreso (Común) con la secuencia capturada por el Coach el 2026-06-01 (reingreso alcista 09:08 → TARGET en simulación).
+
+### Coach IA — integración
+
+- `buildSystemPrompt` agrega un bloque **"REGLAS DE SETUPS DOCUMENTADAS POR EL TRADER"** (`cargarReglasSetup`).
+- El Coach valida cada entrada contra estas reglas y **advierte si un setup no tiene reglas escritas** (no operar en real sin reglas documentadas y testeadas).
+- `Coach.clearCache()` expuesto para invalidar la caché de estrategia al editar reglas/secciones desde la nueva sección.
+
+---
+
 ## Checklist — Separación pre-sesión / operativo
 
 ### Checklist Pre-Sesión (siempre visible)
@@ -679,8 +743,8 @@ NombreError | tipo | resultado | detalleError | NombreRec | textoRec
 
 ### ✅ Funcionando
 
-**Dashboard web (9 secciones):**
-- Calendario, Métricas, Trades, Registrar Sesión, Análisis, Galería, Imágenes, Coach IA, Catálogos
+**Dashboard web (10 secciones):**
+- Calendario, Métricas, Trades, Registrar Sesión, Análisis, Galería/Imágenes, Resumen Anual, Coach IA, Estrategia, Datos/Catálogos
 
 **Coach IA:**
 - Flujo en 3 etapas (Análisis Técnico → Chat opcional → Diagnóstico)
@@ -698,6 +762,11 @@ NombreError | tipo | resultado | detalleError | NombreRec | textoRec
 **Experimentos:**
 - Zona naranja migrada al sistema dinámico
 - Listo para agregar 3ª Corrida, Línea Blanca y los que surjan
+
+**Reglas por Setup (Fase 10):**
+- Sección Estrategia con reglas estructuradas por setup + dirección
+- Coach IA valida entradas contra las reglas escritas
+- Reingreso documentado como caso base; IRI Apertura/Continuación listos para llenar
 
 ### ⚠️ Pendiente / A tener en cuenta
 
