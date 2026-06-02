@@ -71,6 +71,12 @@ const Coach = (() => {
     return `${n >= 0 ? '+' : ''}$${n.toFixed(2)}`
   }
 
+  // ¿Es un mensaje de orquestación (instrucción de análisis/diagnóstico que la app
+  // envía a la IA)? No es parte de la conversación real; vive en su panel, no en el chat.
+  function esInstruccionSistema(texto) {
+    return /Realiza el AN[ÁA]LISIS T[ÉE]CNICO|Emite el DIAGN[ÓO]STICO FINAL/i.test(texto || '')
+  }
+
   // ── Construcción del System Prompt ────────────────────────────────────
 
   async function buildSystemPrompt(date) {
@@ -233,6 +239,7 @@ IMPORTANTE: En esta etapa NO des el veredicto final (VÁLIDA/INVÁLIDA). Solo an
 
 ### ETAPA 2 — SESIÓN DE COACHING (chat libre)
 Después del análisis técnico, el trader conversa contigo. Responde sus preguntas con rigor, profundiza en setups, errores y dudas. Mantén memoria de todo lo discutido.
+IMPORTANTE: durante el chat NO emitas el diagnóstico final estructurado (las 4 secciones 🎯 VEREDICTO / ⚠️ ERRORES / 🎓 APRENDIZAJE / 📋 RESUMEN). Puedes discutir y adelantar opiniones en prosa, pero si el trader pide el veredicto o el diagnóstico formal, respóndele breve y dile que lo genere con el botón "Generar Diagnóstico". El diagnóstico estructurado solo se produce en la Etapa 3.
 
 ### ETAPA 3 — DIAGNÓSTICO FINAL (segundo entregable)
 Cuando recibas la instrucción de diagnóstico final, integra TODO lo conversado en el chat y produce EXACTAMENTE estas 4 secciones:
@@ -1259,11 +1266,17 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
           sep.className = 'chat-separator'
           sep.innerHTML = `<span>── Conversación del ${fmtDate(date)} ──</span>`
           chatEl.appendChild(sep)
+          // Saltar mensajes de orquestación (instrucción de análisis/diagnóstico y su
+          // respuesta estructurada): ya viven en sus paneles, no deben duplicarse en el chat.
+          let prevFueInstruccion = false
           diag.chat_messages.forEach(msg => {
             // content puede ser string (texto) o array (imagen + texto)
             const texto = Array.isArray(msg.content)
               ? (msg.content.find(c => c.type === 'text')?.text || '')
               : (msg.content || '')
+            if (msg.role === 'user' && esInstruccionSistema(texto)) { prevFueInstruccion = true; return }
+            if (msg.role === 'assistant' && prevFueInstruccion) { prevFueInstruccion = false; return }
+            prevFueInstruccion = false
             if (texto.trim()) renderMensaje(msg.role, texto)
           })
         }
