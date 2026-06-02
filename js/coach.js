@@ -405,7 +405,14 @@ ${catalogoStr}
       const match = texto.match(re)
       if (match) secciones[key] = match[1].trim()
     })
+    // La IA suele envolver el resumen en backticks (```code```); los quitamos
+    secciones.resumen = limpiarResumen(secciones.resumen)
     return secciones
+  }
+
+  // Quita los backticks con que la IA envuelve la línea de resumen
+  function limpiarResumen(s) {
+    return (s || '').replace(/`/g, '').trim()
   }
 
   // Parser estructurado: cada línea "NombreCorto | tipo | detalle"
@@ -979,7 +986,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
               ${emocion ? `<span class="hist-emocion">${emocion.emoji} ${emocion.nombre}${emocionFin ? ` → ${emocionFin.emoji} ${emocionFin.nombre}` : ''}</span>` : ''}
               ${tieneAlerta ? '<span class="hist-alert">⚠️</span>' : ''}
             </div>
-            <div class="hist-resumen">${d.sec_resumen_compacto || '—'}</div>
+            <div class="hist-resumen">${limpiarResumen(d.sec_resumen_compacto) || '—'}</div>
             ${errores.length ? `<div class="hist-errores">${errores.map(e => `<span class="hist-error-tag">${e.descripcion}</span>`).join('')}</div>` : ''}
           </div>`
       }).join('')
@@ -1021,7 +1028,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       veredicto,
       errores:     diag.sec_errores,
       aprendizaje: diag.sec_aprendizaje,
-      resumen:     diag.sec_resumen_compacto,
+      resumen:     limpiarResumen(diag.sec_resumen_compacto),
     })
     unlockStage('coachStageChat')
     unlockStage('coachStageDiagnostico')
