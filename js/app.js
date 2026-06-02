@@ -189,6 +189,7 @@ const Nav = {
     register: 'Registrar Sesión',
     analysis: 'Análisis',
     annual: 'Resumen Anual',
+    historial: 'Historial',
     estrategia: 'Estrategia',
     data: 'Datos',
   },
@@ -215,12 +216,15 @@ const Nav = {
         if (sectionId === 'annual') await Annual.init()
         if (sectionId === 'coach') await Coach.init()
         if (sectionId === 'estrategia') await Estrategia.init()
+        if (sectionId === 'historial') await Coach.renderHistorial()
         if (sectionId === 'data') await DataManager.init()
       } catch (err) {
         Toast.show('Error cargando sección: ' + err.message, 'error')
       }
     } else if (sectionId === 'coach') {
       Coach.refresh()
+    } else if (sectionId === 'historial') {
+      Coach.renderHistorial()
     }
   },
 

@@ -58,6 +58,10 @@
         <i class="ti ti-calendar-stats"></i>
         <span>Anual</span>
       </li>
+      <li class="nav-item" data-section="historial" title="Historial">
+        <i class="ti ti-history"></i>
+        <span>Historial</span>
+      </li>
       <li class="nav-item" data-section="coach" title="Coach IA">
         <i class="ti ti-robot"></i>
         <span>Coach IA</span>
@@ -568,16 +572,6 @@
           <h2><i class="ti ti-robot"></i> Coach IA — Estrategia Chaumer</h2>
         </div>
 
-        <!-- Tabs -->
-        <div class="coach-tabs">
-          <button class="coach-tab-btn active" data-tab="analisis">
-            <i class="ti ti-chart-dots-3"></i> Análisis de Hoy
-          </button>
-          <button class="coach-tab-btn" data-tab="historial">
-            <i class="ti ti-history"></i> Historial
-          </button>
-        </div>
-
         <!-- ── Panel: Análisis de Hoy ─────────────────────────────────────── -->
         <div class="coach-tab-panel active" id="coach-panel-analisis">
 
@@ -712,17 +706,20 @@
 
         </div><!-- /#coach-panel-analisis -->
 
-        <!-- ── Panel: Historial ────────────────────────────────────────────── -->
-        <div class="coach-tab-panel" id="coach-panel-historial">
-          <div id="coachHistorialList" class="coach-historial-list">
-            <div class="coach-placeholder">
-              <i class="ti ti-history"></i>
-              <p>Los diagnósticos guardados aparecerán aquí.</p>
-            </div>
+      </section><!-- /#section-coach -->
+
+      <!-- ═══ HISTORIAL ═══════════════════════════════════════════════════════ -->
+      <section class="section" id="section-historial">
+        <div class="section-header">
+          <h2><i class="ti ti-history"></i> Historial de Diagnósticos</h2>
+        </div>
+        <div id="coachHistorialList" class="coach-historial-list">
+          <div class="coach-placeholder">
+            <i class="ti ti-history"></i>
+            <p>Los diagnósticos guardados aparecerán aquí.</p>
           </div>
         </div>
-
-      </section><!-- /#section-coach -->
+      </section><!-- /#section-historial -->
 
       <!-- ═══ 7. GALERÍA DE IMÁGENES ═══════════════════════════════════════ -->
       <section class="section" id="section-gallery">

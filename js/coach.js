@@ -12,6 +12,7 @@ const Coach = (() => {
   let estrategiaCache   = null // se recarga 1x por init
   let emocionesCache    = []   // catálogo de emociones
   let coachDate         = null // fecha activa en el coach
+  let pendingDate       = null // fecha solicitada desde Historial, se carga al entrar al Coach
   let imagenBase64      = null // chart subido (si existe)
   let diagnosticoGuardado = false
 
@@ -1022,20 +1023,10 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
     diagnosticoHecho = true
   }
 
+  // Desde la sección Historial: navega al Coach y carga esa fecha (sin doble carga)
   async function verDiagnostico(date) {
-    // Cargar la fecha completa (restaura emoción, chat y ambas zonas)
-    const picker = document.getElementById('coachDatePicker')
-    if (picker) picker.value = date
-    switchTab('analisis')
-    await cargarFecha(date)
-  }
-
-  // ── Tabs ───────────────────────────────────────────────────────────────
-
-  function switchTab(tabId) {
-    document.querySelectorAll('.coach-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId))
-    document.querySelectorAll('.coach-tab-panel').forEach(p => p.classList.toggle('active', p.id === `coach-panel-${tabId}`))
-    if (tabId === 'historial') renderHistorial()
+    pendingDate = date
+    await Nav.go('coach')
   }
 
   // ── Imagen del chart ──────────────────────────────────────────────────
@@ -1209,6 +1200,10 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
   async function cargarFecha(date) {
     coachDate = date
 
+    // Sincronizar el selector de fecha (relevante al venir desde Historial)
+    const picker = document.getElementById('coachDatePicker')
+    if (picker && picker.value !== date) picker.value = date
+
     // Hint: hoy / ayer / hace N días
     const hintEl = document.getElementById('coachDateHint')
     if (hintEl) {
@@ -1258,11 +1253,6 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
   // ── init ──────────────────────────────────────────────────────────────
 
   async function init() {
-    // Tabs
-    document.querySelectorAll('.coach-tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => switchTab(btn.dataset.tab))
-    })
-
     // Etapa 1: Análisis técnico
     document.getElementById('coachAnalyzeBtn')?.addEventListener('click', analisisTecnico)
 
@@ -1291,12 +1281,14 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       })
     }
 
-    // Cargar con la fecha de hoy
-    await cargarFecha(today())
+    // Cargar la fecha pendiente (si se entró desde Historial) o la de hoy
+    await cargarFecha(pendingDate || today())
+    pendingDate = null
   }
 
   function refresh() {
-    cargarFecha(coachDate || today())
+    cargarFecha(pendingDate || coachDate || today())
+    pendingDate = null
   }
 
   // Invalida la caché de estrategia para que el próximo análisis use lo recién editado
@@ -1304,5 +1296,5 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
     estrategiaCache = null
   }
 
-  return { init, refresh, clearCache }
+  return { init, refresh, clearCache, renderHistorial }
 })()
