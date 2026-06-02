@@ -378,6 +378,7 @@ const DB = {
         origen: 'ia',
         recomendacion_id: recId,
         recomendacion_ia: (e.recTexto && e.recTexto.toLowerCase() !== 'ninguna') ? e.recTexto : null,
+        recomendacion_manual: e.recManual || null,
       })
       existMap[key] = { origen: 'ia' }
     }
