@@ -75,11 +75,11 @@ const Modal = {
       })
     }, 50)
 
-    // Reset a la pestaña Resumen
+    // Reset a la pestaña Gráfica (primera)
     modal.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
     modal.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'))
-    modal.querySelector('.tab-btn[data-tab="resumen"]').classList.add('active')
-    document.getElementById('tab-resumen').classList.add('active')
+    modal.querySelector('.tab-btn[data-tab="grafica"]').classList.add('active')
+    document.getElementById('tab-grafica').classList.add('active')
 
     modal.classList.remove('hidden')
     document.body.classList.add('modal-open')
