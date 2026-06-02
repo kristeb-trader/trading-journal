@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 1 Junio 2026 (Fase 11 — Historial como sección propia)
+**Última actualización:** 2 Junio 2026 (Normalización P&L neto + comisiones round-trip · script v2.2)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `C:\Users\Asus\Claro drive\Trading Journal`
@@ -122,7 +122,7 @@ CREATE TABLE trades (
 );
 ```
 
-> **Nota P&L:** `profit` en datos históricos CSV = neto (comisión ya descontada por NinjaTrader). En datos live del script C# = bruto. El campo `commission` desde v2.1 (2026-05-20) guarda solo la comisión de un leg — pendiente normalización.
+> **Nota P&L (normalizado — Jun 2026):** convención única **NETO**. `profit` = neto (comisión round-trip descontada) en todo el histórico y en el live. `commission` = round-trip (suma de todas las patas). El script C# v2.2 (2026-06-02) acumula la comisión de entrada + salida + scaling y envía profit neto. Los 7 trades "era live" previos se normalizaron por SQL (`docs/migrations/2026-06-02-normalizar-pnl-live.sql`).
 
 ### Tabla `sesiones`
 
@@ -387,7 +387,7 @@ CREATE TABLE fomc_dates (
 - `State.DataLoaded`: suscribe a `ExecutionUpdate` de la cuenta configurada
 - Fusión ATM: ventana 3 segundos para acumular ejecuciones múltiples
 - **Endpoint:** `POST https://jothoslozctflfrnysrx.supabase.co/rest/v1/trades`
-- `commission` desde v2.1 (2026-05-20): lee `ex.Commission` (solo leg de cierre — pendiente normalización a round-trip)
+- `commission` v2.2 (2026-06-02): `tradeCommission` acumula `ex.Commission` de **todas las patas** (entrada + salida + scaling + cierres parciales) → round-trip real. `profit` se envía **neto** (bruto − comisión). Antes (v2.1) solo leía la pata de salida → guardaba medio valor. El cambio se gatilló porque NT 8.1.7.0 empezó a reportar $0.65/pata (antes devolvía 0).
 
 ---
 
@@ -790,14 +790,15 @@ A diferencia de Estrategia (módulo independiente), el render del Historial **pe
 
 ### ⚠️ Pendiente / A tener en cuenta
 
-- **P&L y comisiones:** normalización pendiente — `profit` en datos históricos CSV ya es neto; en live del C# es bruto. `commission` del C# captura solo un leg (necesita ×2 para round-trip).
+- ✅ **P&L y comisiones (RESUELTO Jun 2026):** convención NETO unificada. Script v2.2 envía profit neto + comisión round-trip; los 7 trades live previos normalizados por SQL.
+- 🔒 **Seguridad RLS (pendiente):** las tablas tienen RLS deshabilitado ("UNRESTRICTED"). Es intencional para proyecto personal, pero la `anon key` viaja en el JS público de GitHub Pages → con RLS off da acceso total. Pendiente endurecer con RLS + políticas si se comparte la URL o crece el proyecto.
 - El bot de Telegram no genera análisis IA ni soporta imágenes.
 - `trade_number` y `etd` quedan NULL en trades auto-exportados desde NT8.
 - **Recomendaciones en Coach IA (Fase 4B):** columnas de recomendaciones tipificadas y catálogo — pendiente de implementar.
 
 ### 🔜 Próximas mejoras planificadas
 
-- Normalización de comisiones en `trades` (fix SQL + C# para round-trip)
+- 🔒 Endurecer seguridad con RLS + políticas (ver Pendiente arriba)
 - Estadísticas de "dejé de ganar" en dólares (requiere campo de target planeado)
 - Resumen IA en bot de Telegram
 - Backup periódico BD (Supabase scheduled exports)
