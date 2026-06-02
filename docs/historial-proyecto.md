@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 1 Junio 2026 (Fase 10 — Módulo de Reglas por Setup)
+**Última actualización:** 1 Junio 2026 (Fase 11 — Historial como sección propia)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `C:\Users\Asus\Claro drive\Trading Journal`
@@ -691,6 +691,26 @@ NombreError | tipo | resultado | detalleError | NombreRec | textoRec
 
 ---
 
+## FASE 11 — Historial como sección propia
+
+**Continuación de la limpieza del Coach IA** (tras sacar Estrategia en Fase 10).
+
+- "Historial" sale de ser **pestaña del Coach IA** y pasa a **sección principal** del menú (entre *Anual* y *Coach IA*, ícono 🕐 `ti-history`).
+- El Coach IA **ya no tiene barra de tabs**: es un flujo único de análisis (Estrategia e Historial ahora son secciones propias).
+
+### Acoplamiento — render se queda en `coach.js`
+
+A diferencia de Estrategia (módulo independiente), el render del Historial **permanece en `coach.js`** porque está acoplado al Coach: al hacer clic en un día carga ese diagnóstico en el panel de análisis. Se expone `Coach.renderHistorial()` para que `Nav.go('historial')` lo invoque (y se re-renderiza en cada visita para reflejar diagnósticos nuevos).
+
+### Flujo Historial → Coach (sin doble carga)
+
+- Clic en un día → `verDiagnostico(date)` setea `pendingDate` y llama `Nav.go('coach')`.
+- `init()` y `refresh()` honran `pendingDate` (cargan esa fecha; si no, hoy/coachDate) y lo limpian. Evita la condición de carrera de cargar dos fechas a la vez.
+- `cargarFecha()` sincroniza el `coachDatePicker` con la fecha cargada.
+- Eliminados: `switchTab`, listeners de tabs, CSS muerto de `.coach-tabs` / `.coach-tab-btn`.
+
+---
+
 ## Checklist — Separación pre-sesión / operativo
 
 ### Checklist Pre-Sesión (siempre visible)
@@ -743,8 +763,8 @@ NombreError | tipo | resultado | detalleError | NombreRec | textoRec
 
 ### ✅ Funcionando
 
-**Dashboard web (10 secciones):**
-- Calendario, Métricas, Trades, Registrar Sesión, Análisis, Galería/Imágenes, Resumen Anual, Coach IA, Estrategia, Datos/Catálogos
+**Dashboard web (11 secciones):**
+- Calendario, Métricas, Trades, Registrar Sesión, Análisis, Galería/Imágenes, Resumen Anual, Historial, Coach IA, Estrategia, Datos/Catálogos
 
 **Coach IA:**
 - Flujo en 3 etapas (Análisis Técnico → Chat opcional → Diagnóstico)
