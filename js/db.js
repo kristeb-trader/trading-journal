@@ -263,6 +263,24 @@ const DB = {
     if (error) throw error
   },
 
+  // ── Reglas por Setup ─────────────────────────────────────────────────────
+
+  async getSetupReglas() {
+    const { data, error } = await supa
+      .from('setup_reglas')
+      .select('*')
+      .order('orden', { ascending: true })
+    if (error) throw error
+    return data
+  },
+
+  async saveSetupRegla(payload) {
+    const { error } = await supa
+      .from('setup_reglas')
+      .upsert({ ...payload, updated_at: new Date().toISOString() }, { onConflict: 'setup,direccion' })
+    if (error) throw error
+  },
+
   // ── Diagnósticos Diarios ─────────────────────────────────────────────────
 
   async getDiagnosticoByDate(date) {

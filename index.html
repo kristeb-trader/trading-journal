@@ -66,6 +66,10 @@
         <i class="ti ti-square-rounded-plus"></i>
         <span>Registrar</span>
       </li>
+      <li class="nav-item" data-section="estrategia" title="Estrategia">
+        <i class="ti ti-book-2"></i>
+        <span>Estrategia</span>
+      </li>
       <li class="nav-item" data-section="data" title="Datos">
         <i class="ti ti-database"></i>
         <span>Datos</span>
@@ -524,6 +528,40 @@
         </div>
       </section>
 
+      <!-- ═══ ESTRATEGIA ══════════════════════════════════════════════════════ -->
+      <section class="section" id="section-estrategia">
+        <div class="section-header">
+          <h2><i class="ti ti-book-2"></i> Estrategia Chaumer</h2>
+        </div>
+
+        <!-- ── Reglas por Setup ─────────────────────────────────────────────── -->
+        <div class="estrat-block">
+          <div class="estrat-block-header">
+            <h3><i class="ti ti-checklist"></i> Reglas por Setup</h3>
+            <span class="estrat-block-sub">
+              Documenta las reglas exactas de cada setup. El Coach IA las usa para validar tus entradas contra tus propias reglas escritas.
+            </span>
+          </div>
+          <div id="setupReglasList" class="setup-reglas-list">
+            <div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Cargando...</div>
+          </div>
+        </div>
+
+        <!-- ── Estrategia general Chaumer ───────────────────────────────────── -->
+        <div class="estrat-block">
+          <div class="estrat-block-header">
+            <h3><i class="ti ti-book-2"></i> Estrategia general</h3>
+            <span class="estrat-block-sub">
+              Secciones generales de la metodología. Los cambios se guardan en la base de datos y el Coach los usa en el próximo análisis.
+            </span>
+          </div>
+          <div id="estrategiaGeneralList" class="coach-estrategia-list">
+            <div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Cargando...</div>
+          </div>
+        </div>
+
+      </section>
+
       <!-- ═══ COACH IA ════════════════════════════════════════════════════════ -->
       <section class="section" id="section-coach">
         <div class="section-header">
@@ -537,9 +575,6 @@
           </button>
           <button class="coach-tab-btn" data-tab="historial">
             <i class="ti ti-history"></i> Historial
-          </button>
-          <button class="coach-tab-btn" data-tab="estrategia">
-            <i class="ti ti-book-2"></i> Estrategia
           </button>
         </div>
 
@@ -684,17 +719,6 @@
               <i class="ti ti-history"></i>
               <p>Los diagnósticos guardados aparecerán aquí.</p>
             </div>
-          </div>
-        </div>
-
-        <!-- ── Panel: Estrategia ──────────────────────────────────────────── -->
-        <div class="coach-tab-panel" id="coach-panel-estrategia">
-          <p class="coach-estrat-desc">
-            <i class="ti ti-info-circle"></i>
-            Edita las secciones de tu estrategia Chaumer. Los cambios se guardan en la base de datos y el Coach los usará automáticamente en el próximo análisis.
-          </p>
-          <div id="coachEstrategiaList" class="coach-estrategia-list">
-            <div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Cargando...</div>
           </div>
         </div>
 
@@ -1061,6 +1085,7 @@
   <script src="js/data.js"></script>
   <script src="js/gallery.js"></script>
   <script src="js/annual.js"></script>
+  <script src="js/estrategia.js"></script>
   <script src="js/coach.js"></script>
   <script src="js/app.js"></script>
 

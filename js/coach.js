@@ -56,8 +56,9 @@ const Coach = (() => {
   // ── Construcción del System Prompt ────────────────────────────────────
 
   async function buildSystemPrompt(date) {
-    const [estrategia, historial, patrones, sesion, trades, casuisticas, emociones, catalogoErrores] = await Promise.all([
+    const [estrategia, reglasSetup, historial, patrones, sesion, trades, casuisticas, emociones, catalogoErrores] = await Promise.all([
       cargarEstrategia(),
+      cargarReglasSetup(),
       cargarHistorialCompacto(),
       detectarPatrones(),
       DB.getSesionByDate(date),
@@ -147,6 +148,14 @@ Responde SIEMPRE en español. Sé estricto y directo — si el trader cometió e
 ## ESTRATEGIA CHAUMER COMPLETA (v4)
 
 ${estrategia}
+
+---
+
+## REGLAS DE SETUPS DOCUMENTADAS POR EL TRADER
+
+${reglasSetup}
+
+Valida cada entrada contra estas reglas. Si un setup NO tiene reglas documentadas, adviértelo explícitamente: no se debe operar en real un setup sin reglas escritas y testeadas en simulación.
 
 ---
 
@@ -243,6 +252,38 @@ ${catalogoStr}
     const secciones = await DB.getEstrategiaSecciones()
     estrategiaCache = secciones.map(s => `### ${s.titulo}\n${s.contenido}`).join('\n\n')
     return estrategiaCache
+  }
+
+  async function cargarReglasSetup() {
+    let filas = []
+    try { filas = await DB.getSetupReglas() } catch (_) { return 'Sin reglas de setup documentadas aún.' }
+    if (!filas.length) return 'El trader aún NO ha documentado reglas para ningún setup.'
+
+    const setupNombre = {
+      iri_apertura: 'IRI en Apertura',
+      iri_continuacion: 'IRI en Continuación',
+      reingreso: 'Reingreso',
+    }
+    const dirNombre = { ambas: 'Común', alcista: 'Alcista', bajista: 'Bajista' }
+    const campos = [
+      ['activacion', 'Activación/Contexto'],
+      ['secuencia', 'Secuencia/Estructura'],
+      ['entrada', 'Entrada'],
+      ['stop', 'Stop'],
+      ['gestion', 'Gestión/Target'],
+      ['invalidacion', 'Invalidación/Filtros'],
+      ['notas', 'Notas'],
+    ]
+
+    return filas.map(f => {
+      const cuerpo = campos
+        .filter(([k]) => (f[k] || '').trim())
+        .map(([k, label]) => `  - ${label}: ${f[k].trim()}`)
+        .join('\n')
+      if (!cuerpo) return null
+      const titulo = `${setupNombre[f.setup] || f.setup} (${dirNombre[f.direccion] || f.direccion})`
+      return `### ${titulo}\n${cuerpo}`
+    }).filter(Boolean).join('\n\n') || 'El trader aún NO ha documentado reglas con contenido para ningún setup.'
   }
 
   async function cargarHistorialCompacto() {
@@ -989,83 +1030,12 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
     await cargarFecha(date)
   }
 
-  // ── Sección estrategia ────────────────────────────────────────────────
-
-  async function renderEstrategia() {
-    const container = document.getElementById('coachEstrategiaList')
-    if (!container) return
-    container.innerHTML = '<div class="coach-loading"><i class="ti ti-loader-2 spin"></i></div>'
-
-    try {
-      const secciones = await DB.getEstrategiaSecciones()
-      estrategiaCache = null // forzar recarga en próximo análisis
-
-      container.innerHTML = secciones.map(s => `
-        <div class="estrat-item" data-id="${s.id}">
-          <div class="estrat-header">
-            <span class="estrat-titulo">${s.titulo}</span>
-            <span class="estrat-updated">actualizado: ${s.updated_at?.slice(0,10) || '—'}</span>
-            <button class="estrat-edit-btn btn-icon" data-id="${s.id}" title="Editar"><i class="ti ti-pencil"></i></button>
-          </div>
-          <pre class="estrat-contenido" id="estrat-content-${s.id}">${s.contenido}</pre>
-          <div class="estrat-editor hidden" id="estrat-editor-${s.id}">
-            <textarea class="estrat-textarea" id="estrat-ta-${s.id}" rows="10">${s.contenido}</textarea>
-            <div class="estrat-actions">
-              <button class="btn-sm btn-primary estrat-save-btn" data-id="${s.id}"><i class="ti ti-device-floppy"></i> Guardar</button>
-              <button class="btn-sm btn-ghost estrat-cancel-btn" data-id="${s.id}">Cancelar</button>
-            </div>
-          </div>
-        </div>`).join('')
-
-      // Eventos editar / guardar / cancelar
-      container.querySelectorAll('.estrat-edit-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.dataset.id
-          document.getElementById(`estrat-content-${id}`).classList.add('hidden')
-          document.getElementById(`estrat-editor-${id}`).classList.remove('hidden')
-          btn.classList.add('hidden')
-        })
-      })
-
-      container.querySelectorAll('.estrat-save-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const id = parseInt(btn.dataset.id)
-          const contenido = document.getElementById(`estrat-ta-${id}`).value.trim()
-          try {
-            await DB.updateEstrategiaSeccion(id, contenido)
-            document.getElementById(`estrat-content-${id}`).textContent = contenido
-            document.getElementById(`estrat-content-${id}`).classList.remove('hidden')
-            document.getElementById(`estrat-editor-${id}`).classList.add('hidden')
-            container.querySelector(`.estrat-edit-btn[data-id="${id}"]`).classList.remove('hidden')
-            estrategiaCache = null
-            Toast.show('Sección actualizada', 'success')
-          } catch (e) {
-            Toast.show('Error al guardar: ' + e.message, 'error')
-          }
-        })
-      })
-
-      container.querySelectorAll('.estrat-cancel-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.dataset.id
-          document.getElementById(`estrat-content-${id}`).classList.remove('hidden')
-          document.getElementById(`estrat-editor-${id}`).classList.add('hidden')
-          container.querySelector(`.estrat-edit-btn[data-id="${id}"]`).classList.remove('hidden')
-        })
-      })
-
-    } catch (err) {
-      container.innerHTML = `<p class="coach-error">Error: ${err.message}</p>`
-    }
-  }
-
   // ── Tabs ───────────────────────────────────────────────────────────────
 
   function switchTab(tabId) {
     document.querySelectorAll('.coach-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId))
     document.querySelectorAll('.coach-tab-panel').forEach(p => p.classList.toggle('active', p.id === `coach-panel-${tabId}`))
     if (tabId === 'historial') renderHistorial()
-    if (tabId === 'estrategia') renderEstrategia()
   }
 
   // ── Imagen del chart ──────────────────────────────────────────────────
@@ -1329,5 +1299,10 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
     cargarFecha(coachDate || today())
   }
 
-  return { init, refresh }
+  // Invalida la caché de estrategia para que el próximo análisis use lo recién editado
+  function clearCache() {
+    estrategiaCache = null
+  }
+
+  return { init, refresh, clearCache }
 })()
