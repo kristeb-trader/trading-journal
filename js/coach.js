@@ -1347,5 +1347,11 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
     estrategiaCache = null
   }
 
-  return { init, refresh, clearCache, renderHistorial }
+  // Abre el Coach IA con una fecha específica cargada (desde el modal del día)
+  function abrirFecha(date) {
+    pendingDate = date
+    Nav.go('coach')
+  }
+
+  return { init, refresh, clearCache, renderHistorial, abrirFecha }
 })()
