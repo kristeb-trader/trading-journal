@@ -528,6 +528,31 @@ input::placeholder, textarea::placeholder { color: var(--text3); }
 select option { background: var(--bg2); }
 textarea { resize: vertical; min-height: 80px; }
 
+/* ── Premercado ─────────────────────────────────────────────────────────── */
+#premercadoSection {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;
+}
+#premercadoSection > label:first-child { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+.premkt-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+.premkt-field { display: flex; flex-direction: column; gap: 4px; }
+.premkt-field label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.02em; color: var(--text3); }
+.premkt-puntos {
+  margin-top: 8px; font-size: 0.82rem; color: var(--text2);
+  background: rgba(186,117,23,0.10); border: 1px solid rgba(186,117,23,0.25);
+  border-radius: 6px; padding: 6px 10px; display: inline-block;
+}
+.premkt-puntos b { color: var(--warning); }
+.premkt-lines { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+.premkt-lines-col > label { font-size: 0.8rem; color: var(--text2); display: block; margin-bottom: 6px; }
+.premkt-lines-wrap { display: flex; flex-direction: column; gap: 6px; }
+.premkt-line { font-size: 0.85rem; }
+
+@media (max-width: 640px) {
+  .premkt-grid { grid-template-columns: repeat(2, 1fr); }
+  .premkt-lines { grid-template-columns: 1fr; }
+}
+
 /* Toggle switch */
 .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
 .toggle-switch input { opacity: 0; width: 0; height: 0; }

@@ -224,6 +224,55 @@
               </div>
             </div>
 
+            <!-- ¿Te conectaste a analizar? (solo cuando No operé) -->
+            <div class="form-group hidden" id="seConectoGroup">
+              <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="seConecto" name="se_conecto" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <span style="font-size:0.88rem; color:var(--text2);">Me conecté a analizar (no hubo setup válido) — registrar premercado y análisis</span>
+              </label>
+            </div>
+
+            <!-- 🌅 Premercado — contexto técnico para el análisis -->
+            <div class="form-group" id="premercadoSection">
+              <label>🌅 Premercado — contexto técnico</label>
+              <div class="premkt-grid">
+                <div class="premkt-field">
+                  <label>Cierre ayer</label>
+                  <input type="number" step="0.25" id="precioCierreAyer" placeholder="30763">
+                </div>
+                <div class="premkt-field">
+                  <label>Apertura</label>
+                  <input type="number" step="0.25" id="precioApertura" placeholder="30743.50">
+                </div>
+                <div class="premkt-field">
+                  <label>Máx premercado</label>
+                  <input type="number" step="0.25" id="precioMaxPre" placeholder="30800">
+                </div>
+                <div class="premkt-field">
+                  <label>Mín premercado</label>
+                  <input type="number" step="0.25" id="precioMinPre" placeholder="30561">
+                </div>
+              </div>
+              <div class="premkt-puntos" id="premktPuntos">Rango premercado: <b>— pts</b></div>
+
+              <div class="premkt-lines">
+                <div class="premkt-lines-col">
+                  <label>🟠 Soportes (líneas naranjas)</label>
+                  <div id="soportesNaranjaWrap" class="premkt-lines-wrap"></div>
+                </div>
+                <div class="premkt-lines-col">
+                  <label>🟠 Resistencias (líneas naranjas)</label>
+                  <div id="resistenciasNaranjaWrap" class="premkt-lines-wrap"></div>
+                </div>
+              </div>
+
+              <label style="margin-top:12px;display:block">📰 Noticias del día</label>
+              <textarea id="noticias" rows="2" placeholder="9:00am → ISM Services PMI"></textarea>
+            </div>
+
             <!-- Motivo no operé (oculto por defecto) -->
             <div class="form-group hidden" id="motivoGroup">
               <label for="motivoNoOpero">Motivo de no operación</label>

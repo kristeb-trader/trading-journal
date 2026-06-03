@@ -35,6 +35,7 @@ const SessionForm = (() => {
         motivoGroup.classList.add('hidden')
         tradingFields.classList.remove('hidden')
       }
+      updatePremercadoVisibility()
       renderExperimentos()
     })
 
@@ -59,6 +60,62 @@ const SessionForm = (() => {
         document.getElementById(hiddenId).value = btn.dataset.value
       })
     })
+  }
+
+  // ── Premercado ─────────────────────────────────────────────────────────────
+  let soportesNaranja = null
+  let resistenciasNaranja = null
+
+  // Líneas naranjas progresivas: muestra una input vacía a la vez; al llenarla
+  // se revela la siguiente, hasta 5. Ninguna obligatoria.
+  function setupNaranjaLines(wrapId) {
+    const wrap = document.getElementById(wrapId)
+    if (!wrap) return null
+    wrap.innerHTML = Array.from({ length: 5 }, (_, i) =>
+      `<input type="number" step="0.25" class="premkt-line${i > 0 ? ' hidden' : ''}" data-i="${i}" placeholder="Línea ${i + 1}">`
+    ).join('')
+    const inputs = [...wrap.querySelectorAll('.premkt-line')]
+    const refresh = () => {
+      inputs.forEach((inp, i) => {
+        const reveal = i === 0 || inputs[i - 1].value.trim() !== ''
+        inp.classList.toggle('hidden', !reveal && inp.value.trim() === '')
+      })
+    }
+    inputs.forEach(inp => inp.addEventListener('input', refresh))
+    return {
+      refresh,
+      getValues: () => inputs.map(i => i.value.trim()).filter(v => v !== '').map(Number),
+      setValues: (arr) => { inputs.forEach((inp, i) => { inp.value = (arr && arr[i] != null) ? arr[i] : '' }); refresh() },
+      clear: () => { inputs.forEach(i => { i.value = '' }); refresh() },
+    }
+  }
+
+  function updatePremktPuntos() {
+    const max = parseFloat(document.getElementById('precioMaxPre')?.value)
+    const min = parseFloat(document.getElementById('precioMinPre')?.value)
+    const el = document.getElementById('premktPuntos')
+    if (!el) return
+    el.innerHTML = (!isNaN(max) && !isNaN(min))
+      ? `Rango premercado: <b>${(max - min).toFixed(2)} pts</b>`
+      : 'Rango premercado: <b>— pts</b>'
+  }
+
+  // Premercado visible cuando se operó, o cuando no se operó pero sí se conectó
+  function updatePremercadoVisibility() {
+    const noOpero = document.getElementById('noOpero')?.checked
+    const seConecto = document.getElementById('seConecto')?.checked
+    document.getElementById('seConectoGroup')?.classList.toggle('hidden', !noOpero)
+    const show = !noOpero || seConecto
+    document.getElementById('premercadoSection')?.classList.toggle('hidden', !show)
+  }
+
+  function setupPremercado() {
+    soportesNaranja     = setupNaranjaLines('soportesNaranjaWrap')
+    resistenciasNaranja = setupNaranjaLines('resistenciasNaranjaWrap')
+    document.getElementById('precioMaxPre')?.addEventListener('input', updatePremktPuntos)
+    document.getElementById('precioMinPre')?.addEventListener('input', updatePremktPuntos)
+    document.getElementById('seConecto')?.addEventListener('change', updatePremercadoVisibility)
+    updatePremercadoVisibility()
   }
 
   function setupImageUpload() {
@@ -167,6 +224,28 @@ const SessionForm = (() => {
     payload.resumen_ia = document.getElementById('resumenIA').value || null
     payload.imagen_url = document.getElementById('imagenUrl').value || null
 
+    // ── Premercado (se captura si operó, o si no operó pero se conectó) ──
+    const seConecto = noOpero ? document.getElementById('seConecto').checked : true
+    payload.se_conecto = seConecto
+    const numOrNull = id => { const v = document.getElementById(id).value; return v === '' ? null : parseFloat(v) }
+    if (seConecto) {
+      payload.precio_cierre_ayer   = numOrNull('precioCierreAyer')
+      payload.precio_apertura      = numOrNull('precioApertura')
+      payload.precio_max_pre       = numOrNull('precioMaxPre')
+      payload.precio_min_pre       = numOrNull('precioMinPre')
+      payload.soportes_naranja     = soportesNaranja ? soportesNaranja.getValues() : []
+      payload.resistencias_naranja = resistenciasNaranja ? resistenciasNaranja.getValues() : []
+      payload.noticias             = document.getElementById('noticias').value.trim() || null
+    } else {
+      payload.precio_cierre_ayer = null
+      payload.precio_apertura    = null
+      payload.precio_max_pre     = null
+      payload.precio_min_pre     = null
+      payload.soportes_naranja     = []
+      payload.resistencias_naranja = []
+      payload.noticias           = null
+    }
+
     // Setup válido no tomado (aplica cuando no_opero = true)
     if (noOpero) {
       const svnt = document.getElementById('motivoNoOpero').value === 'Setup válido no tomado'
@@ -188,6 +267,13 @@ const SessionForm = (() => {
     document.getElementById('imagePreview').classList.add('hidden')
     document.getElementById('uploadArea').classList.remove('hidden')
     document.getElementById('imagenUrl').value = ''
+    // Premercado
+    soportesNaranja?.clear()
+    resistenciasNaranja?.clear()
+    const seConectoEl = document.getElementById('seConecto')
+    if (seConectoEl) seConectoEl.checked = true
+    updatePremktPuntos()
+    updatePremercadoVisibility()
     updateRetroceso(document.getElementById('sesionDate').value)
     casPendientes = []
     renderCasList()
@@ -241,6 +327,19 @@ const SessionForm = (() => {
     updateRetroceso(sesion.sesion_date)
     document.getElementById('noOpero').checked = sesion.no_opero || false
     document.getElementById('noOpero').dispatchEvent(new Event('change'))
+
+    // ── Premercado ──
+    const seConectoEl = document.getElementById('seConecto')
+    if (seConectoEl) seConectoEl.checked = sesion.se_conecto !== false
+    document.getElementById('precioCierreAyer').value = sesion.precio_cierre_ayer ?? ''
+    document.getElementById('precioApertura').value   = sesion.precio_apertura ?? ''
+    document.getElementById('precioMaxPre').value     = sesion.precio_max_pre ?? ''
+    document.getElementById('precioMinPre').value     = sesion.precio_min_pre ?? ''
+    document.getElementById('noticias').value         = sesion.noticias || ''
+    soportesNaranja?.setValues(sesion.soportes_naranja || [])
+    resistenciasNaranja?.setValues(sesion.resistencias_naranja || [])
+    updatePremktPuntos()
+    updatePremercadoVisibility()
 
     if (!sesion.no_opero) {
       document.getElementById('contexto').value = sesion.contexto || ''
@@ -378,6 +477,7 @@ const SessionForm = (() => {
     updateRetroceso(document.getElementById('sesionDate').value)
     setupBtnGroups()
     setupNoOperoToggle()
+    setupPremercado()
     setupImageUpload()
     setupCasuisticas()
     loadCasuisticasDropdown()

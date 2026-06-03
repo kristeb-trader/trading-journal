@@ -163,6 +163,23 @@ Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
     // Análisis del trader
     const analisisTrader = sesion?.analisis_trader || 'No registrado'
 
+    // Premercado / contexto técnico
+    const premkt = []
+    if (sesion?.precio_cierre_ayer != null) premkt.push(`Cierre de ayer: ${sesion.precio_cierre_ayer}`)
+    if (sesion?.precio_apertura != null)    premkt.push(`Apertura: ${sesion.precio_apertura}`)
+    if (sesion?.precio_max_pre != null && sesion?.precio_min_pre != null)
+      premkt.push(`Premercado: máx ${sesion.precio_max_pre} / mín ${sesion.precio_min_pre} (rango ${(sesion.precio_max_pre - sesion.precio_min_pre).toFixed(2)} pts)`)
+    else {
+      if (sesion?.precio_max_pre != null) premkt.push(`Máximo premercado: ${sesion.precio_max_pre}`)
+      if (sesion?.precio_min_pre != null) premkt.push(`Mínimo premercado: ${sesion.precio_min_pre}`)
+    }
+    const sopN = Array.isArray(sesion?.soportes_naranja) ? sesion.soportes_naranja : []
+    const resN = Array.isArray(sesion?.resistencias_naranja) ? sesion.resistencias_naranja : []
+    if (sopN.length) premkt.push(`Soportes (líneas naranjas): ${sopN.join(', ')}`)
+    if (resN.length) premkt.push(`Resistencias (líneas naranjas): ${resN.join(', ')}`)
+    if (sesion?.noticias) premkt.push(`Noticias: ${sesion.noticias}`)
+    const premktStr = premkt.length ? premkt.map(l => `  ${l}`).join('\n') : '  No registrado'
+
     return `Eres un analista experto en la estrategia de trading de Chaumer (trader_sociologist), especializado en futuros MNQ/NQ en gráfico de 1 minuto con NinjaTrader. Tu rol es analizar la sesión diaria, validar setups según las reglas exactas de la estrategia, y acumular aprendizaje sesión a sesión para dar recomendaciones cada vez más precisas.
 
 Responde SIEMPRE en español. Sé estricto y directo — si el trader cometió errores, señálalos sin suavizarlos. No des falsas motivaciones cuando los datos muestran mal desempeño. Si algo no está claro, pregunta antes de dar veredicto. Nunca recomendar entrar si algún filtro falla. Veredictos: VÁLIDO o INVÁLIDO, con la razón exacta.
@@ -202,6 +219,9 @@ Estado emocional al cierre: ${emocionFin}
 Confianza pre-sesión: ${confianza}
 Contexto de mercado: ${sesion?.contexto || 'No indicado'}
 Setup del día: ${sesion?.setup || 'No indicado'}
+
+Premercado / contexto técnico:
+${premktStr}
 
 Trades:
   ${tradesStr}
