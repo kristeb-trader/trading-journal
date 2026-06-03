@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 2 Junio 2026 (Normalización P&L neto + comisiones round-trip · script v2.2)
+**Última actualización:** 3 Junio 2026 (Fase 12 Premercado · Fase 13 limpieza errores/experimentos · modal del día rediseñado)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `C:\Users\Asus\Claro drive\Trading Journal`
@@ -143,11 +143,17 @@ nivel_confianza (INTEGER 1-5),
 setup_valido_no_tomado (BOOLEAN DEFAULT FALSE),
 motivo_no_entrada (TEXT),
 setup_observado (TEXT),
+-- Premercado / contexto técnico (Fase 12)
+precio_cierre_ayer, precio_apertura, precio_max_pre, precio_min_pre (NUMERIC),
+soportes_naranja (JSONB), resistencias_naranja (JSONB),  -- hasta 5 líneas naranjas c/u
+noticias (TEXT),
+se_conecto (BOOLEAN DEFAULT true),  -- distingue los 2 "no operé"
 created_at, updated_at
 ```
 
 > **Fase 2A:** `estado_emocional_id` y `nivel_confianza` son la **fuente única** de emoción/confianza. Las columnas duplicadas en `diagnosticos_diarios` fueron eliminadas.
-> **Fase 4D:** `zona_naranja_habia`, `zona_naranja_reaccion`, `zona_naranja_nota` fueron eliminadas y migradas a `experimento_registros`.
+> **Fase 4D:** `zona_naranja_habia`, `zona_naranja_reaccion`, `zona_naranja_nota` fueron eliminadas y migradas a `diagnostico_experimentos`.
+> **Fase 12:** premercado para enriquecer el análisis IA. `se_conecto` distingue: no operé sin conectarme (caso 1, mínimo) vs me conecté sin setup válido (caso 2, sí pide premercado + análisis). Los puntos del rango premercado se calculan (max−min), no se almacenan.
 
 ### Tabla `diagnosticos_diarios`
 
@@ -291,14 +297,16 @@ CREATE TABLE catalogo_experimentos (
 -- Primer experimento: "Zona naranja" (migrado desde zona_naranja_* de sesiones)
 ```
 
-### Tabla `experimento_registros` (Fase 4D)
+### Tabla `diagnostico_experimentos` (Fase 4D · renombrada en Fase 13)
 
 ```sql
-CREATE TABLE experimento_registros (
+-- Antes: experimento_registros. Renombrada a diagnostico_experimentos (Fase 13)
+-- por consistencia con diagnostico_errores.
+CREATE TABLE diagnostico_experimentos (
   id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   sesion_date     DATE NOT NULL,
   experimento_id  BIGINT NOT NULL REFERENCES catalogo_experimentos(id),
-  presente        BOOLEAN DEFAULT false,
+  presente        BOOLEAN DEFAULT false,  -- ¿la condición apareció ese día?
   resultado       TEXT,              -- T | S
   nota            TEXT,
   created_at      TIMESTAMPTZ DEFAULT now(),
@@ -307,6 +315,7 @@ CREATE TABLE experimento_registros (
 ```
 
 > Estadística de decisión: con ≥ 20 casos con resultado → sugerencia automática (adoptar / descartar / neutro). Sin umbral mínimo, los datos no son concluyentes.
+> **Fase 13:** la tabla legado `sesion_casuisticas` (errores viejos, duplicados en `diagnostico_errores`) fue **eliminada**. Las condiciones de mercado que estaban registradas como errores (Contra Resistencia, Contra Máximo Premercado, 3ª Corrida, etc.) se **migraron a experimentos** con su T/S.
 
 ### Tabla `fomc_dates`
 
@@ -711,6 +720,40 @@ A diferencia de Estrategia (módulo independiente), el render del Historial **pe
 
 ---
 
+## FASE Extra — UX Coach IA + Skill de trabajo (3 Jun 2026)
+
+- **Coach IA — navegación día a día:** botones `‹ ›` junto al date picker para ir al día anterior/siguiente. `shiftWeekday()` **salta sábados y domingos**. El botón "adelante" se deshabilita si el próximo día hábil sería futuro. El picker se conserva para saltar a cualquier fecha.
+- **Coach IA — diagnóstico duplicado (fix):** (A) regla en el prompt para que la IA no emita el diagnóstico estructurado durante el chat; (B) al restaurar el chat de una fecha, se filtran los mensajes de orquestación (instrucción + respuesta de análisis/diagnóstico) para que no se dupliquen con sus paneles.
+- **Resumen del diario:** se quitan los backticks con que la IA envuelve la línea (`limpiarResumen`).
+- **Skill global `flujo-desarrollo`** (en `~/.claude/skills/`): captura el flujo de trabajo (analizar→aprobar→implementar→verificar→commit, español, conventional commits, verificación real, UI moderna). Reutilizable en los 3 proyectos (Trading Journal, app IA, finanzas).
+
+---
+
+## FASE 12 — Premercado / contexto técnico
+
+Captura el contexto técnico del premercado para enriquecer el análisis de la IA. **Web + Telegram + IA.**
+
+- **Campos** (en `sesiones`): cierre ayer, apertura, máx/mín premercado (+ rango auto-calculado), hasta 5 líneas naranjas de soporte y 5 de resistencia (progresivas), noticias.
+- **Dos "no operé"** (`se_conecto`): caso 1 (no me conecté → mínimo) vs caso 2 (me conecté sin setup → pide premercado + análisis).
+- **Web:** sección "🌅 Premercado" en Registrar Sesión (`form.js`), líneas naranjas que se revelan una a una al llenarse.
+- **Telegram (`worker.js`):** flujo de premercado tras "¿Operaste?"; líneas naranjas por comas; `/skip` en cada paso; pregunta "¿Te conectaste a analizar?" para el caso 2.
+- **IA:** bloque "PREMERCADO / CONTEXTO TÉCNICO" en el system prompt del Coach.
+- **Fix de despliegue del bot:** `wrangler deploy` borraba las Variables del dashboard (quedaba `SUPABASE_URL` undefined → no leía emociones ni guardaba sesiones). Se definieron en `wrangler.toml` `[vars]` para que persistan. `BOT_TOKEN` queda como Secret.
+
+> **Pendiente:** verificar que el Worker `/api/session` (no versionado) pase los campos de premercado al guardar desde la **web** (el bot ya guarda OK).
+
+---
+
+## FASE 13 — Limpieza del modelo de errores / experimentos
+
+- **Modal del día rediseñado** (3 pestañas: 🖼 Gráfica · 📌 Resumen · 📊 Operativa). El Resumen es visual "de un vistazo": estado, P&L, emoción in→cierre, confianza, veredicto, ✅Bien/⚠️A mejorar, 💡Para la próxima, y botón "Ver diagnóstico completo" → Coach. Usa `diagnosticos_diarios` (antes no se cargaba). Arregla el bug de días `no_opero` con diagnóstico que no mostraban resumen.
+- **Limpieza `diagnostico_errores`:** 5 fechas viejas (abr–may) tenían el texto del diagnóstico partido en ~60 fragmentos en el campo `error`. Se reconstruyeron a filas limpias (error = nombre de catálogo, descripción = texto completo), creando ~9 entradas de catálogo nuevas (Rabia, FOMO, Ansiedad, Sobreconfianza, etc.).
+- **Tabla `sesion_casuisticas` eliminada** (legado de errores, 100% duplicada en `diagnostico_errores`).
+- **`experimento_registros` → `diagnostico_experimentos`** (rename por consistencia).
+- **Condiciones de mercado migradas a experimentos:** ~18 ocurrencias que estaban como errores (Contra Resistencia, Contra Máximo Premercado, 3ª Corrida, Contra Máximo de la Apertura, etc.) se movieron a experimentos con su T/S, creando los experimentos faltantes. Verificado: 0 pérdida de datos.
+
+---
+
 ## Checklist — Separación pre-sesión / operativo
 
 ### Checklist Pre-Sesión (siempre visible)
@@ -779,9 +822,10 @@ A diferencia de Estrategia (módulo independiente), el render del Historial **pe
 - Cumplimiento de Reglas · Días Limpios · Dejé de Ganar · Experimentos
 - Racha · Mejor/Peor día · Max Drawdown · Profit Factor · Avg Win/Loss
 
-**Experimentos:**
-- Zona naranja migrada al sistema dinámico
-- Listo para agregar 3ª Corrida, Línea Blanca y los que surjan
+**Experimentos (`diagnostico_experimentos` + `catalogo_experimentos`):**
+- ~16 condiciones bajo prueba: Zona naranja/blanca, Contra Resistencia/Soporte/Máx/Mín Premercado/Apertura/Histórico, 3ª Corrida, Reingreso, Mercado/Rompimiento Extendido, Target Largo, etc.
+- Cada una acumula T/S; con ≥ 20 casos sugiere adoptar/descartar
+- `presente` marca si la condición apareció ese día (solo presentes cuentan)
 
 **Reglas por Setup (Fase 10):**
 - Sección Estrategia con reglas estructuradas por setup + dirección
@@ -791,6 +835,7 @@ A diferencia de Estrategia (módulo independiente), el render del Historial **pe
 ### ⚠️ Pendiente / A tener en cuenta
 
 - ✅ **P&L y comisiones (RESUELTO Jun 2026):** convención NETO unificada. Script v2.2 envía profit neto + comisión round-trip; los 7 trades live previos normalizados por SQL.
+- 🌅 **Premercado web — verificar guardado (pendiente):** el bot guarda premercado OK, pero falta confirmar que el Worker `/api/session` (no versionado) pase los campos nuevos al guardar desde la **web**. Registrar una sesión con premercado en el sitio real y verificar en BD.
 - 🔒 **Seguridad RLS (pendiente):** las tablas tienen RLS deshabilitado ("UNRESTRICTED"). Es intencional para proyecto personal, pero la `anon key` viaja en el JS público de GitHub Pages → con RLS off da acceso total. Pendiente endurecer con RLS + políticas si se comparte la URL o crece el proyecto.
 - El bot de Telegram no genera análisis IA ni soporta imágenes.
 - `trade_number` y `etd` quedan NULL en trades auto-exportados desde NT8.
