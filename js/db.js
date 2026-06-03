@@ -469,7 +469,7 @@ const DB = {
 
   async getExperimentosByDate(date) {
     const { data, error } = await supa
-      .from('experimento_registros')
+      .from('diagnostico_experimentos')
       .select('*, experimento:catalogo_experimentos(nombre)')
       .eq('sesion_date', date)
     if (error) throw error
@@ -478,7 +478,7 @@ const DB = {
 
   async saveExperimentoRegistro(sesionDate, experimentoId, presente, resultado, nota) {
     const { error } = await supa
-      .from('experimento_registros')
+      .from('diagnostico_experimentos')
       .upsert({
         sesion_date: sesionDate,
         experimento_id: experimentoId,
@@ -491,7 +491,7 @@ const DB = {
 
   async getAllExperimentoRegistros() {
     const { data, error } = await supa
-      .from('experimento_registros')
+      .from('diagnostico_experimentos')
       .select('*, experimento:catalogo_experimentos(nombre)')
       .eq('presente', true)
       .order('sesion_date', { ascending: false })
