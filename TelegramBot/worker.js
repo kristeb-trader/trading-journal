@@ -15,7 +15,17 @@
 // ── Constantes del flujo ────────────────────────────────────────────────────
 const STEPS = {
   OPERO:        'opero',
+  SE_CONECTO:   'se_conecto',
   MOTIVO:       'motivo',
+  // Premercado / contexto técnico
+  PRE_CIERRE:   'pre_cierre',
+  PRE_APERTURA: 'pre_apertura',
+  PRE_MAX:      'pre_max',
+  PRE_MIN:      'pre_min',
+  PRE_SOPORTES: 'pre_soportes',
+  PRE_RESIST:   'pre_resist',
+  PRE_NOTICIAS: 'pre_noticias',
+  // Resto del flujo operativo
   EMOCION:      'emocion',
   CONFIANZA:    'confianza',
   CONTEXTO:     'contexto',
@@ -26,6 +36,21 @@ const STEPS = {
   CHECKLIST:    'checklist',
   REFLEXION:    'reflexion',
 };
+
+// Parsea un número (acepta coma decimal). Devuelve null si no es válido o es /skip.
+function parseNum(text) {
+  const t = (text || '').trim().toLowerCase();
+  if (!t || t === '/skip' || t === 'skip' || t === '-') return null;
+  const n = parseFloat(t.replace(',', '.'));
+  return isNaN(n) ? NaN : n;  // NaN => entrada inválida (re-preguntar)
+}
+
+// Parsea una lista de números separados por coma (líneas naranjas). [] si /skip.
+function parseNumList(text) {
+  const t = (text || '').trim().toLowerCase();
+  if (!t || t === '/skip' || t === 'skip' || t === '-') return [];
+  return t.split(/[,;]+/).map(s => parseFloat(s.trim().replace(',', '.'))).filter(n => !isNaN(n));
+}
 
 const CONTEXTOS = [
   { label: '📈 Alcista fuerte', value: 'Alcista fuerte' },
@@ -52,6 +77,17 @@ const CHECKLIST_ITEMS = [
   { key: 'chk_consecucion', label: 'Zona con rompimiento + consecución'   },
   { key: 'chk_estructura',  label: 'Estructura Impulso-Retroceso-Impulso' },
 ];
+
+// Prompts del flujo de premercado (todos opcionales: /skip para omitir)
+const PREMKT_PROMPTS = {
+  pre_cierre:   '🌅 <b>Premercado</b>\n\nPrecio de <b>cierre de ayer</b>:\n<i>(número, o /skip)</i>',
+  pre_apertura: 'Precio de <b>apertura</b>:\n<i>(número, o /skip)</i>',
+  pre_max:      'Precio <b>máximo de premercado</b>:\n<i>(número, o /skip)</i>',
+  pre_min:      'Precio <b>mínimo de premercado</b>:\n<i>(número, o /skip)</i>',
+  pre_soportes: '🟠 <b>Soportes (líneas naranjas)</b>\n\nSepara por comas, ej: <code>30669, 30700</code>\n<i>(o /skip)</i>',
+  pre_resist:   '🟠 <b>Resistencias (líneas naranjas)</b>\n\nSepara por comas, ej: <code>30810, 30850</code>\n<i>(o /skip)</i>',
+  pre_noticias: '📰 <b>Noticias del día</b>\n\nej: <code>9:00am → ISM Services PMI</code>\n<i>(o /skip)</i>',
+};
 
 // ── Helpers de Telegram API ─────────────────────────────────────────────────
 async function tg(token, method, body) {
@@ -171,8 +207,34 @@ function setupKeyboard() {
   return { inline_keyboard: rows };
 }
 
+// Resumen del premercado (solo líneas con dato)
+function premktResumen(d) {
+  const lines = [];
+  if (d.precio_cierre_ayer != null) lines.push(`Cierre ayer: ${d.precio_cierre_ayer}`);
+  if (d.precio_apertura != null)    lines.push(`Apertura: ${d.precio_apertura}`);
+  if (d.precio_max_pre != null && d.precio_min_pre != null)
+    lines.push(`Pre: ${d.precio_min_pre}–${d.precio_max_pre} (${(d.precio_max_pre - d.precio_min_pre).toFixed(2)} pts)`);
+  if (d.soportes_naranja && d.soportes_naranja.length)         lines.push(`🟠 Soportes: ${d.soportes_naranja.join(', ')}`);
+  if (d.resistencias_naranja && d.resistencias_naranja.length) lines.push(`🟠 Resist: ${d.resistencias_naranja.join(', ')}`);
+  if (d.noticias) lines.push(`📰 ${d.noticias}`);
+  return lines.length ? `🌅 <b>Premercado:</b>\n${lines.map(l => '  ' + l).join('\n')}\n\n` : '';
+}
+
 // ── Resumen completo de la sesión ───────────────────────────────────────────
 function buildResumen(data) {
+  const premkt = premktResumen(data);
+
+  // Caso 2: me conecté a analizar pero no hubo setup válido
+  if (data.no_opero) {
+    return (
+      `✅ <b>Sesión guardada</b>\n\n` +
+      `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
+      `🔌 Me conecté a analizar (sin setup válido)\n\n` +
+      premkt +
+      `✍️ <b>Análisis del día:</b>\n${data.analisis_trader || '—'}`
+    );
+  }
+
   const score = scoreChecklist(data);
   const chkLines = CHECKLIST_ITEMS
     .map(({ key, label }) => `  ${data[key] ? '✅' : '❌'} ${label}`)
@@ -184,6 +246,7 @@ function buildResumen(data) {
     `✅ <b>Sesión guardada</b>\n\n` +
     `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
     (stars ? `⭐ <b>Confianza:</b> ${stars}\n` : '') +
+    premkt +
     `📊 <b>Contexto:</b> ${data.contexto}\n` +
     `🔢 <b>Corrida:</b> ${data.num_corrida}ª\n` +
     `🕯️ <b>Velas:</b> ${data.velas_corrida}\n` +
@@ -215,6 +278,15 @@ async function saveSession(data, env) {
     analisis_trader:       data.analisis_trader       ?? null,
     estado_emocional_id:   data.estado_emocional_id   ?? null,
     nivel_confianza:       data.nivel_confianza        ?? null,
+    // Premercado / contexto técnico
+    se_conecto:            data.se_conecto            ?? true,
+    precio_cierre_ayer:    data.precio_cierre_ayer    ?? null,
+    precio_apertura:       data.precio_apertura       ?? null,
+    precio_max_pre:        data.precio_max_pre        ?? null,
+    precio_min_pre:        data.precio_min_pre        ?? null,
+    soportes_naranja:      data.soportes_naranja      ?? [],
+    resistencias_naranja:  data.resistencias_naranja  ?? [],
+    noticias:              data.noticias              ?? null,
   };
 
   const res = await fetch(`${env.SUPABASE_URL}/rest/v1/sesiones`, {
@@ -392,23 +464,39 @@ async function handleCallback(cbq, env) {
 
   // ── Flujo principal ───────────────────────────────────────────────────────
   switch (action) {
-    case 'opero_si': {
+    case 'opero_si':
       state.data.no_opero = false;
-      state.step = STEPS.EMOCION;
+      state.data.se_conecto = true;
+      state.step = STEPS.PRE_CIERRE;
       await saveState(env.KV, chatId, state);
-      const emociones = await fetchEmociones(env);
-      await editMessage(token, chatId, msgId,
-        '😊 <b>Estado emocional</b>\n\n¿Cómo llegas a la sesión de hoy?',
-        emociones.length ? emocionKeyboard(emociones) : { inline_keyboard: [[{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]] }
-      );
+      await editMessage(token, chatId, msgId, PREMKT_PROMPTS.pre_cierre);
       break;
-    }
 
     case 'opero_no':
       state.data.no_opero = true;
+      state.step = STEPS.SE_CONECTO;
+      await saveState(env.KV, chatId, state);
+      await editMessage(token, chatId, msgId,
+        '🔌 <b>¿Te conectaste a analizar el día?</b>\n\n(aunque no hayas tomado ningún trade)',
+        { inline_keyboard: [[
+          { text: '✅ Sí, analicé', callback_data: 'conecto_si' },
+          { text: '❌ No me conecté', callback_data: 'conecto_no' },
+        ]] }
+      );
+      break;
+
+    case 'conecto_si':
+      state.data.se_conecto = true;
+      state.step = STEPS.PRE_CIERRE;
+      await saveState(env.KV, chatId, state);
+      await editMessage(token, chatId, msgId, PREMKT_PROMPTS.pre_cierre);
+      break;
+
+    case 'conecto_no':
+      state.data.se_conecto = false;
       state.step = STEPS.MOTIVO;
       await saveState(env.KV, chatId, state);
-      await editMessage(token, chatId, msgId, '📝 ¿Cuál fue el motivo para no operar hoy?');
+      await editMessage(token, chatId, msgId, '📝 ¿Cuál fue el motivo para no conectarte hoy?');
       break;
 
     default:
@@ -466,7 +554,8 @@ async function handleText(msg, env) {
   const text   = msg.text.trim();
   const token  = env.BOT_TOKEN;
 
-  if (text.startsWith('/')) return;
+  // Permitir /skip dentro del flujo; ignorar el resto de comandos
+  if (text.startsWith('/') && text.toLowerCase() !== '/skip') return;
 
   const state = await getState(env.KV, chatId);
   if (!state) return;
@@ -481,6 +570,78 @@ async function handleText(msg, env) {
         `✅ <b>Sesión guardada</b>\n\n📅 ${state.data.sesion_date}\n❌ Sin operación — ${text}`
       );
       break;
+
+    // ── Premercado (números opcionales con /skip) ──
+    case STEPS.PRE_CIERRE: {
+      const n = parseNum(text);
+      if (Number.isNaN(n)) { await sendMessage(token, chatId, '⚠️ Ingresa un número válido o /skip.'); return; }
+      state.data.precio_cierre_ayer = n;
+      state.step = STEPS.PRE_APERTURA;
+      await saveState(env.KV, chatId, state);
+      await sendMessage(token, chatId, PREMKT_PROMPTS.pre_apertura);
+      break;
+    }
+    case STEPS.PRE_APERTURA: {
+      const n = parseNum(text);
+      if (Number.isNaN(n)) { await sendMessage(token, chatId, '⚠️ Número válido o /skip.'); return; }
+      state.data.precio_apertura = n;
+      state.step = STEPS.PRE_MAX;
+      await saveState(env.KV, chatId, state);
+      await sendMessage(token, chatId, PREMKT_PROMPTS.pre_max);
+      break;
+    }
+    case STEPS.PRE_MAX: {
+      const n = parseNum(text);
+      if (Number.isNaN(n)) { await sendMessage(token, chatId, '⚠️ Número válido o /skip.'); return; }
+      state.data.precio_max_pre = n;
+      state.step = STEPS.PRE_MIN;
+      await saveState(env.KV, chatId, state);
+      await sendMessage(token, chatId, PREMKT_PROMPTS.pre_min);
+      break;
+    }
+    case STEPS.PRE_MIN: {
+      const n = parseNum(text);
+      if (Number.isNaN(n)) { await sendMessage(token, chatId, '⚠️ Número válido o /skip.'); return; }
+      state.data.precio_min_pre = n;
+      const max = state.data.precio_max_pre;
+      const rango = (max != null && n != null) ? `📏 Rango premercado: <b>${(max - n).toFixed(2)} pts</b>\n\n` : '';
+      state.step = STEPS.PRE_SOPORTES;
+      await saveState(env.KV, chatId, state);
+      await sendMessage(token, chatId, rango + PREMKT_PROMPTS.pre_soportes);
+      break;
+    }
+    case STEPS.PRE_SOPORTES:
+      state.data.soportes_naranja = parseNumList(text);
+      state.step = STEPS.PRE_RESIST;
+      await saveState(env.KV, chatId, state);
+      await sendMessage(token, chatId, PREMKT_PROMPTS.pre_resist);
+      break;
+    case STEPS.PRE_RESIST:
+      state.data.resistencias_naranja = parseNumList(text);
+      state.step = STEPS.PRE_NOTICIAS;
+      await saveState(env.KV, chatId, state);
+      await sendMessage(token, chatId, PREMKT_PROMPTS.pre_noticias);
+      break;
+    case STEPS.PRE_NOTICIAS: {
+      const t = text.toLowerCase();
+      state.data.noticias = (t === '/skip' || t === 'skip' || t === '-') ? null : text;
+      if (state.data.no_opero) {
+        // Caso 2: me conecté sin setup → directo a la reflexión
+        state.step = STEPS.REFLEXION;
+        await saveState(env.KV, chatId, state);
+        await sendMessage(token, chatId, '✍️ <b>Análisis del día</b>\n\nEscribe tu análisis de la sesión (no hubo setup válido):');
+      } else {
+        // Día operado → continúa con emoción
+        state.step = STEPS.EMOCION;
+        await saveState(env.KV, chatId, state);
+        const emociones = await fetchEmociones(env);
+        await sendMessage(token, chatId,
+          '😊 <b>Estado emocional</b>\n\n¿Cómo llegas a la sesión de hoy?',
+          emociones.length ? emocionKeyboard(emociones) : { inline_keyboard: [[{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]] }
+        );
+      }
+      break;
+    }
 
     case STEPS.VELAS: {
       const n = parseInt(text);
@@ -577,7 +738,9 @@ export default {
       }
 
       if (update.message?.text) {
-        if (update.message.text.startsWith('/')) {
+        const txt = update.message.text.trim();
+        // /skip es entrada del flujo (omitir paso), no un comando
+        if (txt.startsWith('/') && txt.toLowerCase() !== '/skip') {
           await handleCommand(update.message, env);
         } else {
           await handleText(update.message, env);
