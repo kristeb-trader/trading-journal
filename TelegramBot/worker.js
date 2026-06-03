@@ -289,18 +289,23 @@ async function saveSession(data, env) {
     noticias:              data.noticias              ?? null,
   };
 
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/sesiones`, {
-    method: 'POST',
-    headers: {
-      apikey:          env.SUPABASE_KEY,
-      Authorization:   `Bearer ${env.SUPABASE_KEY}`,
-      'Content-Type':  'application/json',
-      Prefer:          'resolution=merge-duplicates',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  return res.ok;
+  try {
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/sesiones`, {
+      method: 'POST',
+      headers: {
+        apikey:          env.SUPABASE_KEY,
+        Authorization:   `Bearer ${env.SUPABASE_KEY}`,
+        'Content-Type':  'application/json',
+        Prefer:          'resolution=merge-duplicates',
+      },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) return { ok: true };
+    const body = await res.text();
+    return { ok: false, status: res.status, error: (body || '').slice(0, 300) };
+  } catch (e) {
+    return { ok: false, status: 0, error: String((e && e.message) || e) };
+  }
 }
 
 // ── Stats desde Supabase ────────────────────────────────────────────────────
@@ -562,14 +567,17 @@ async function handleText(msg, env) {
 
   switch (state.step) {
 
-    case STEPS.MOTIVO:
+    case STEPS.MOTIVO: {
       state.data.motivo_no_opero = text;
-      await saveSession(state.data, env);
+      const r = await saveSession(state.data, env);
       await delState(env.KV, chatId);
       await sendMessage(token, chatId,
-        `✅ <b>Sesión guardada</b>\n\n📅 ${state.data.sesion_date}\n❌ Sin operación — ${text}`
+        r.ok
+          ? `✅ <b>Sesión guardada</b>\n\n📅 ${state.data.sesion_date}\n❌ Sin operación — ${text}`
+          : `⚠️ <b>Error al guardar (HTTP ${r.status})</b>\n<code>${(r.error || 'sin detalle').replace(/[<>]/g, '')}</code>\n\nReintenta con /sesion.`
       );
       break;
+    }
 
     // ── Premercado (números opcionales con /skip) ──
     case STEPS.PRE_CIERRE: {
@@ -665,11 +673,15 @@ async function handleText(msg, env) {
 
     case STEPS.REFLEXION: {
       state.data.analisis_trader = text;
-      const ok = await saveSession(state.data, env);
+      const r = await saveSession(state.data, env);
       await delState(env.KV, chatId);
-      await sendMessage(token, chatId,
-        ok ? buildResumen(state.data) : '⚠️ Error al guardar en Supabase. Intenta de nuevo con /sesion.'
-      );
+      if (r.ok) {
+        await sendMessage(token, chatId, buildResumen(state.data));
+      } else {
+        await sendMessage(token, chatId,
+          `⚠️ <b>Error al guardar (HTTP ${r.status})</b>\n<code>${(r.error || 'sin detalle').replace(/[<>]/g, '')}</code>\n\nReintenta con /sesion.`
+        );
+      }
       break;
     }
   }
