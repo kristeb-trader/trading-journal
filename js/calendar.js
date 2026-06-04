@@ -30,8 +30,8 @@ const Calendar = (() => {
     const saved  = localStorage.getItem(ACCOUNT_STORAGE_KEY)
     const paApex = allAccountsList.find(a => a.startsWith('PA-APEX'))
 
-    if (saved && allAccountsList.includes(saved))           sel.value = saved
-    else if (prev && prev !== 'all' && allAccountsList.includes(prev)) sel.value = prev
+    if (saved === 'all' || (saved && allAccountsList.includes(saved))) sel.value = saved
+    else if (prev === 'all' || (prev && allAccountsList.includes(prev))) sel.value = prev
     else if (paApex)                                        sel.value = paApex
   }
 
@@ -416,7 +416,13 @@ const Calendar = (() => {
       return
     }
 
-    Modal.openDay(dateStr, trades, sesion)
+    // Filtrar por la cuenta seleccionada (igual que el calendario)
+    const accountVal = document.getElementById('accountFilterCalendar')?.value || 'all'
+    const tradesCuenta = accountVal === 'all'
+      ? trades
+      : trades.filter(t => abbreviateAccount(t.account) === accountVal)
+
+    Modal.openDay(dateStr, tradesCuenta, sesion)
   }
 
   function navigate(delta) {
