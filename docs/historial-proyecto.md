@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 3 Junio 2026 (Fase 12 Premercado · Fase 13 limpieza errores/experimentos · modal del día rediseñado)
+**Última actualización:** 4 Junio 2026 (Fase 12 Premercado · Fase 13 limpieza errores/experimentos · modal del día rediseñado + filtro de cuenta)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `C:\Users\Asus\Claro drive\Trading Journal`
@@ -751,6 +751,7 @@ Captura el contexto técnico del premercado para enriquecer el análisis de la I
 - **Tabla `sesion_casuisticas` eliminada** (legado de errores, 100% duplicada en `diagnostico_errores`).
 - **`experimento_registros` → `diagnostico_experimentos`** (rename por consistencia).
 - **Condiciones de mercado migradas a experimentos:** ~18 ocurrencias que estaban como errores (Contra Resistencia, Contra Máximo Premercado, 3ª Corrida, Contra Máximo de la Apertura, etc.) se movieron a experimentos con su T/S, creando los experimentos faltantes. Verificado: 0 pérdida de datos.
+- **Fix filtro de cuenta (modal del calendario):** `openDayModal` ahora filtra los trades por la cuenta seleccionada en el dropdown (`accountFilterCalendar`) antes de abrir el modal — antes el Resumen y Operativa sumaban todas las cuentas. Además, fix pre-existente: "Todas las cuentas" no persistía (la restauración no reconocía `'all'` porque `allAccountsList` solo tiene cuentas reales) → revertía a PA-APEX al recargar/navegar. Ahora `'all'` persiste.
 
 ---
 
