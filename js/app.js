@@ -230,7 +230,9 @@ const Modal = {
     if (sesion?.contexto) campos.push(['Contexto', sesion.contexto])
     if (sesion?.num_corrida) campos.push(['Corrida', `${sesion.num_corrida}ª`])
     if (sesion?.velas_corrida) campos.push(['Velas', sesion.velas_corrida])
-    if (sesion?.puntos_retroceso) campos.push(['Retroceso', `${sesion.puntos_retroceso} pts`])
+    // Retroceso = |P&L de la cuenta seleccionada / 2| (derivado de los trades ya filtrados)
+    if (trades.length) campos.push(['Retroceso', `${Math.abs(pnl / 2).toFixed(2)} pts`])
+    else if (sesion?.puntos_retroceso) campos.push(['Retroceso', `${sesion.puntos_retroceso} pts`])
     if (sesion?.setup) campos.push(['Setup', sesion.setup])
     const camposHtml = campos.length
       ? `<div class="modal-fields">${campos.map(([l, v]) => `<div class="mf-item"><label>${l}</label><span>${v}</span></div>`).join('')}</div>`

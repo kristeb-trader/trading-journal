@@ -183,8 +183,14 @@ const SessionForm = (() => {
     display.textContent = '— pts'
     hidden.value = ''
     if (!date) return
-    const trades = await DB.getTradesByDate(date)
+    let trades = await DB.getTradesByDate(date)
     if (myId !== retrocesoCancelId) return
+    // Filtrar por la cuenta seleccionada (persistida en el calendario)
+    const acc = localStorage.getItem('calendarAccount')
+    if (acc && acc !== 'all') {
+      const abbr = a => { if (!a) return '—'; const p = a.split('-'); return p.length > 2 ? p.slice(0, 2).join('-') : a }
+      trades = trades.filter(t => abbr(t.account) === acc)
+    }
     if (trades.length > 0) {
       const netPnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
       const pts = Math.abs(netPnl / 2).toFixed(2)
