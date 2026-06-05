@@ -26,13 +26,15 @@ const Calendar = (() => {
     sel.innerHTML = '<option value="all">Todas las cuentas</option>' +
       allAccountsList.map(a => `<option value="${a}">${a}</option>`).join('')
 
-    // Prioridad: 1) preferencia guardada  2) selección anterior  3) PA-APEX  4) 'all'
+    // Prioridad: 1) preferencia guardada  2) selección anterior (solo si es cuenta real)  3) PA-APEX  4) 'all'
+    // Nota: prev='all' es el default del browser cuando no hay nada guardado — no se usa como fallback
+    // para no bloquear el default a PA-APEX en la primera carga.
     const saved  = localStorage.getItem(ACCOUNT_STORAGE_KEY)
     const paApex = allAccountsList.find(a => a.startsWith('PA-APEX'))
 
     if (saved === 'all' || (saved && allAccountsList.includes(saved))) sel.value = saved
-    else if (prev === 'all' || (prev && allAccountsList.includes(prev))) sel.value = prev
-    else if (paApex)                                        sel.value = paApex
+    else if (prev && prev !== 'all' && allAccountsList.includes(prev)) sel.value = prev
+    else if (paApex)                                                    sel.value = paApex
   }
 
   // ── Festivos CME (calculados algorítmicamente) ────────────────────────────
