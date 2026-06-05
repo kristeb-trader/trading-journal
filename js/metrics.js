@@ -641,7 +641,7 @@ const Metrics = (() => {
       },
       { label: 'Racha actual', value: streak.count > 0 ? `${streak.count} ${streak.type === 'win' ? '🟢' : '🔴'}` : '—', icon: 'ti-flame', color: streak.type === 'win' ? 'green' : 'red', sub: streak.type === 'win' ? 'victorias seguidas' : streak.type === 'loss' ? 'pérdidas seguidas' : '' },
       { label: 'Mejor día', value: best ? `+$${best[1].toFixed(0)}` : '—', icon: 'ti-trending-up', color: 'green', sub: best ? best[0] : '' },
-      { label: 'Peor día', value: worst ? `$${worst[1].toFixed(0)}` : '—', icon: 'ti-trending-down', color: 'red', sub: worst ? worst[0] : '' },
+      { label: 'Peor día', value: worst ? `${worst[1] >= 0 ? '+' : ''}$${worst[1].toFixed(0)}` : '—', icon: 'ti-trending-down', color: worst ? (worst[1] >= 0 ? 'green' : 'red') : 'neutral', sub: worst ? worst[0] : '' },
       {
         label: 'Max Drawdown',
         value: maxDD > 0 ? `-$${maxDD.toFixed(2)}` : '$0',
