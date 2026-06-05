@@ -752,6 +752,7 @@ Captura el contexto técnico del premercado para enriquecer el análisis de la I
 - **`experimento_registros` → `diagnostico_experimentos`** (rename por consistencia).
 - **Condiciones de mercado migradas a experimentos:** ~18 ocurrencias que estaban como errores (Contra Resistencia, Contra Máximo Premercado, 3ª Corrida, Contra Máximo de la Apertura, etc.) se movieron a experimentos con su T/S, creando los experimentos faltantes. Verificado: 0 pérdida de datos.
 - **Fix filtro de cuenta (modal del calendario):** `openDayModal` ahora filtra los trades por la cuenta seleccionada en el dropdown (`accountFilterCalendar`) antes de abrir el modal — antes el Resumen y Operativa sumaban todas las cuentas. Además, fix pre-existente: "Todas las cuentas" no persistía (la restauración no reconocía `'all'` porque `allAccountsList` solo tiene cuentas reales) → revertía a PA-APEX al recargar/navegar. Ahora `'all'` persiste.
+- **Fix puntos de retroceso (4 Jun):** se calculaba como `|P&L de TODAS las cuentas / 2|` (mezclaba Apex + Sim). Ahora el modal lo deriva de los trades ya filtrados por cuenta (`|P&L cuenta / 2|`), y `updateRetroceso` (form) filtra por la cuenta persistida antes de calcular. Corregido el dato del 2026-06-04 en BD (74 → 47).
 
 ---
 
