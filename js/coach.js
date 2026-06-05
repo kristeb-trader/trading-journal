@@ -481,6 +481,48 @@ ${catalogoStr}
     return out
   }
 
+  // Detecta si una respuesta del chat contiene el diagnóstico estructurado completo
+  function esDiagnosticoEnChat(texto) {
+    const secciones = [
+      /\*\*🎯\s*VEREDICTO/i,
+      /\*\*⚠️\s*ERRORES/i,
+      /\*\*🎓\s*APRENDIZAJE/i,
+      /\*\*📋\s*RESUMEN/i,
+    ]
+    return secciones.filter(re => re.test(texto)).length >= 3
+  }
+
+  // Cuando la IA genera el diagnóstico dentro del chat, lo aplica en el Step 3
+  // automáticamente sin requerir una segunda llamada a la API.
+  async function procesarDiagnosticoDesdeChat(respuesta) {
+    const diag = parsearDiagnostico(respuesta)
+    const hayContenido = Object.values(diag).some(v => v && v.trim().length > 10)
+    if (!hayContenido) return
+
+    Object.assign(diagnosticoActual, diag)
+    renderDiagnostico(diag)
+    await prepararErroresConfirm(diag.errores)
+
+    diagnosticoHecho = true
+    sesionCerrada = true
+
+    const cerrarBtn = document.getElementById('coachCerrarSesionBtn')
+    if (cerrarBtn) {
+      cerrarBtn.innerHTML = '<i class="ti ti-circle-check"></i> Sesión cerrada'
+      cerrarBtn.disabled = true
+    }
+
+    const diagBtn = document.getElementById('coachDiagnosticoBtn')
+    if (diagBtn) {
+      diagBtn.disabled = true
+      diagBtn.innerHTML = '<i class="ti ti-circle-check"></i> Diagnóstico generado'
+    }
+
+    mostrarGuardar()
+    Toast.show('✅ Diagnóstico aplicado automáticamente. Revisa los errores y guarda.', 'success')
+    document.getElementById('coachStageDiagnostico')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   function parsearSetupsJson(textoValidacion) {
     if (!textoValidacion) return []
     const setups = []
@@ -876,6 +918,12 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
       const respuesta = await llamarClaude(texto, false)
       renderTyping(false)
       renderMensaje('assistant', respuesta)
+
+      // Si la IA generó el diagnóstico estructurado en el chat, aplicarlo
+      // en el Step 3 automáticamente (sin segunda llamada a la API).
+      if (esDiagnosticoEnChat(respuesta)) {
+        await procesarDiagnosticoDesdeChat(respuesta)
+      }
     } catch (err) {
       renderTyping(false)
       renderMensaje('assistant', `❌ Error: ${err.message}`)
