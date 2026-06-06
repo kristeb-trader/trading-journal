@@ -229,7 +229,7 @@ Trades:
 Checklist:
   ${checklistStr}
 
-Casuísticas:
+Errores cometidos:
 ${casStr}
 
 Análisis del trader:

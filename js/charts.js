@@ -44,11 +44,11 @@ const Charts = (() => {
     results:    { title: 'Distribución de Resultados',
       text: 'Proporción de Targets, Stops, Break Even y Otros sobre el total de trades en el período. Muestra de forma visual el balance de resultados.' },
     discipline: { title: 'Disciplina por Sesión',
-      text: 'Puntuación de disciplina (0–100%) calculada con el modelo de 7 factores: 6 ítems del checklist operativo + ausencia de casuísticas/errores. Una sesión con todo el checklist cumplido y sin errores = 100%.' },
+      text: 'Puntuación de disciplina (0–100%) calculada con el modelo de 7 factores: 6 ítems del checklist operativo + ausencia de errores. Una sesión con todo el checklist cumplido y sin errores = 100%.' },
     discPnl:    { title: 'Disciplina vs P&L',
       text: 'Scatter plot donde cada punto es una sesión. El eje X muestra la disciplina (%) y el eje Y el P&L del día. Un patrón positivo (puntos verdes arriba a la derecha) confirma que seguir las reglas genera rentabilidad.' },
     errorsTime: { title: 'Errores en el Tiempo',
-      text: 'Frecuencia de cada tipo de casuística/error agrupada por semana. Las barras apiladas muestran qué errores se repiten más y si están aumentando o disminuyendo con el tiempo.' },
+      text: 'Frecuencia de cada error agrupada por semana. Las barras apiladas muestran qué errores se repiten más y si están aumentando o disminuyendo con el tiempo.' },
   }
 
   const COLORS = {

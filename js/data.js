@@ -87,7 +87,7 @@ const DataManager = (() => {
     // ── Eliminar ───────────────────────────────────────────────────────────
     el.querySelectorAll('.btn-del-catalog').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('¿Eliminar esta casuística? Los registros históricos conservarán el nombre anterior.')) return
+        if (!confirm('¿Eliminar este error? Los registros históricos conservarán el nombre anterior.')) return
         const id = parseInt(btn.dataset.id)
         try {
           await DB.deleteCatalogoCasuistica(id)
@@ -264,13 +264,13 @@ const DataManager = (() => {
       const input = document.getElementById('newCasuistica')
       const tipoSel = document.getElementById('newCasuisticaTipo')
       const nombre = input.value.trim()
-      if (!nombre) { Toast.show('Escribe el nombre de la casuística', 'warning'); return }
+      if (!nombre) { Toast.show('Escribe el nombre del error', 'warning'); return }
       try {
         await DB.addCatalogoCasuistica(nombre, tipoSel?.value || null)
         input.value = ''
         if (tipoSel) tipoSel.value = ''
         await loadCasuisticas()
-        Toast.show('Casuística agregada', 'success')
+        Toast.show('Error agregado', 'success')
       } catch (e) {
         Toast.show('Error al agregar: ' + e.message, 'error')
       }
