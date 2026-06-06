@@ -36,7 +36,7 @@ const SessionForm = (() => {
         tradingFields.classList.remove('hidden')
       }
       updatePremercadoVisibility()
-      renderExperimentos()
+      renderExpList()
     })
 
     // Mostrar campos extra cuando el motivo es "Setup válido no tomado"
@@ -486,6 +486,7 @@ const SessionForm = (() => {
     setupPremercado()
     setupImageUpload()
     setupCasuisticas()
+    setupExperimentos()
     loadCasuisticasDropdown()
     loadExperimentos(document.getElementById('sesionDate').value)
     document.getElementById('resumenIA').addEventListener('input', function() {
@@ -523,8 +524,9 @@ const SessionForm = (() => {
 
   // ── Experimentos ─────────────────────────────────────────────────────────
 
-  let experimentosCatalogo  = []
-  let experimentosGuardados = {}  // { experimentoId: { presente, resultado, nota } }
+  let expRegistros      = []  // [{ id, experimento_id, nombre, resultado, nota }]
+  let expResulTrade     = null
+  let expResulSNT       = null
 
   async function loadExperimentos(date) {
     try {
@@ -532,85 +534,131 @@ const SessionForm = (() => {
         DB.getCatalogoExperimentos(),
         date ? DB.getExperimentosByDate(date) : Promise.resolve([]),
       ])
-      experimentosCatalogo = catalogo.filter(e => e.activo)
-      experimentosGuardados = {}
-      registros.forEach(r => {
-        experimentosGuardados[r.experimento_id] = { presente: r.presente, resultado: r.resultado, nota: r.nota }
-      })
-      renderExperimentos()
+
+      // Poblar ambos dropdowns con TODOS los experimentos (activos e inactivos)
+      const options = '<option value="">Seleccionar experimento...</option>' +
+        catalogo.map(e =>
+          `<option value="${e.id}">${e.nombre}${!e.activo ? ' (inactivo)' : ''}</option>`
+        ).join('')
+      const selTrade = document.getElementById('expTradeSelect')
+      const selSNT   = document.getElementById('expSNTSelect')
+      if (selTrade) selTrade.innerHTML = options
+      if (selSNT)   selSNT.innerHTML   = options
+
+      // Cargar los registrados hoy (solo los presentes)
+      expRegistros = registros
+        .filter(r => r.presente)
+        .map(r => ({
+          id:            r.id,
+          experimento_id: r.experimento_id,
+          nombre:        r.experimento?.nombre || `Experimento ${r.experimento_id}`,
+          resultado:     r.resultado || null,
+          nota:          r.nota || '',
+        }))
+
+      renderExpList()
     } catch (_) { /* sin conexión */ }
   }
 
-  function renderExperimentos() {
-    const wraps = ['experimentosTradeWrap', 'experimentosSNTWrap']
-    wraps.forEach(wrapId => {
-      const wrap = document.getElementById(wrapId)
-      if (!wrap) return
-      if (!experimentosCatalogo.length) { wrap.innerHTML = ''; return }
-      wrap.innerHTML = experimentosCatalogo.map(exp => {
-        const saved = experimentosGuardados[exp.id] || {}
-        const presente = saved.presente || false
-        const res = saved.resultado || ''
-        const nota = saved.nota || ''
-        return `
-          <div class="exp-item" data-id="${exp.id}">
-            <div class="exp-header">
-              <label class="exp-toggle-label">
-                <input type="checkbox" class="exp-presente" data-id="${exp.id}" ${presente ? 'checked' : ''}>
-                <span class="exp-nombre">${exp.nombre}</span>
-              </label>
-            </div>
-            <div class="exp-detalle ${presente ? '' : 'hidden'}">
-              <div class="exp-res-group">
-                <button type="button" class="exp-res-btn ${res === 'T' ? 'active-t' : ''}" data-id="${exp.id}" data-val="T">T</button>
-                <button type="button" class="exp-res-btn ${res === 'S' ? 'active-s' : ''}" data-id="${exp.id}" data-val="S">S</button>
-                <input type="text" class="exp-nota" data-id="${exp.id}" value="${nota}" placeholder="Nota (opcional)">
-              </div>
-            </div>
-          </div>`
-      }).join('')
+  function setupExperimentos() {
+    _setupExpRow('expTradeResultGrp', 'expTradeAgregar', 'expTradeSelect', 'expTradeNota', 'trade')
+    _setupExpRow('expSNTResultGrp',   'expSNTAgregar',   'expSNTSelect',   'expSNTNota',   'snt')
+  }
 
-      wrap.querySelectorAll('.exp-presente').forEach(chk => {
-        chk.addEventListener('change', () => {
-          const id = parseInt(chk.dataset.id)
-          if (!experimentosGuardados[id]) experimentosGuardados[id] = {}
-          experimentosGuardados[id].presente = chk.checked
-          chk.closest('.exp-item').querySelector('.exp-detalle').classList.toggle('hidden', !chk.checked)
-          persistirExperimento(document.getElementById('sesionDate').value, id)
-        })
-      })
+  function _setupExpRow(grpId, btnId, selectId, notaId, key) {
+    const grp = document.getElementById(grpId)
+    const btn = document.getElementById(btnId)
+    if (!grp || !btn) return
 
-      wrap.querySelectorAll('.exp-res-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = parseInt(btn.dataset.id)
-          const val = btn.dataset.val
-          if (!experimentosGuardados[id]) experimentosGuardados[id] = {}
-          const current = experimentosGuardados[id].resultado
-          experimentosGuardados[id].resultado = current === val ? null : val
-          const item = btn.closest('.exp-detalle')
-          item.querySelectorAll('.exp-res-btn').forEach(b => b.classList.remove('active-t', 'active-s'))
-          if (experimentosGuardados[id].resultado) btn.classList.add(val === 'T' ? 'active-t' : 'active-s')
-          persistirExperimento(document.getElementById('sesionDate').value, id)
-        })
+    grp.querySelectorAll('.btn-option').forEach(b => {
+      b.addEventListener('click', () => {
+        const val = b.dataset.value
+        const cur = key === 'trade' ? expResulTrade : expResulSNT
+        const next = cur === val ? null : val
+        if (key === 'trade') expResulTrade = next
+        else                 expResulSNT   = next
+        grp.querySelectorAll('.btn-option').forEach(x => x.classList.remove('active'))
+        if (next) b.classList.add('active')
       })
+    })
 
-      wrap.querySelectorAll('.exp-nota').forEach(input => {
-        input.addEventListener('change', () => {
-          const id = parseInt(input.dataset.id)
-          if (!experimentosGuardados[id]) experimentosGuardados[id] = {}
-          experimentosGuardados[id].nota = input.value.trim()
-          persistirExperimento(document.getElementById('sesionDate').value, id)
+    btn.addEventListener('click', async () => {
+      const sel   = document.getElementById(selectId)
+      const nota  = document.getElementById(notaId)
+      const expId = parseInt(sel?.value)
+      const res   = key === 'trade' ? expResulTrade : expResulSNT
+      const date  = document.getElementById('sesionDate').value
+
+      if (!expId) { Toast.show('Selecciona un experimento', 'warning'); return }
+      if (!res)   { Toast.show('Selecciona T o S', 'warning'); return }
+      if (!date)  { Toast.show('Selecciona la fecha primero', 'warning'); return }
+      if (expRegistros.find(r => r.experimento_id === expId)) {
+        Toast.show('Ese experimento ya está registrado hoy', 'warning'); return
+      }
+
+      const nombre   = sel.options[sel.selectedIndex].text.replace(' (inactivo)', '').trim()
+      const notaVal  = nota?.value?.trim() || null
+
+      try {
+        await DB.saveExperimentoRegistro(date, expId, true, res, notaVal)
+        // Recargar para obtener el id real de la fila
+        const todos  = await DB.getExperimentosByDate(date)
+        const nuevo  = todos.find(r => r.experimento_id === expId && r.presente)
+        expRegistros.push({
+          id:             nuevo?.id || null,
+          experimento_id: expId,
+          nombre,
+          resultado:      res,
+          nota:           notaVal || '',
         })
-      })
+        // Reset controles
+        sel.value = ''
+        if (nota) nota.value = ''
+        grp.querySelectorAll('.btn-option').forEach(x => x.classList.remove('active'))
+        if (key === 'trade') expResulTrade = null
+        else                 expResulSNT   = null
+        renderExpList()
+      } catch (e) {
+        Toast.show('Error al guardar: ' + e.message, 'error')
+      }
     })
   }
 
-  async function persistirExperimento(date, experimentoId) {
-    if (!date) return
-    const data = experimentosGuardados[experimentoId] || {}
-    try {
-      await DB.saveExperimentoRegistro(date, experimentoId, data.presente || false, data.resultado || null, data.nota || null)
-    } catch (_) { /* silencioso */ }
+  function renderExpList() {
+    ['expTradeList', 'expSNTList'].forEach(listId => {
+      const list = document.getElementById(listId)
+      if (!list) return
+
+      if (!expRegistros.length) { list.innerHTML = ''; return }
+
+      list.innerHTML = expRegistros.map((r, i) => `
+        <div class="exp-tag">
+          <div class="exp-tag-left">
+            <span class="${r.resultado === 'T' ? 'cas-badge-t' : 'cas-badge-s'}">${r.resultado || '?'}</span>
+            <span class="exp-tag-nombre">${r.nombre}</span>
+            ${r.nota ? `<span class="exp-tag-nota">· ${r.nota}</span>` : ''}
+          </div>
+          <button type="button" class="cas-del" data-idx="${i}" title="Eliminar">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>`).join('')
+
+      list.querySelectorAll('.cas-del').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const i   = parseInt(btn.dataset.idx)
+          const reg = expRegistros[i]
+          if (!reg) return
+          try {
+            const date = document.getElementById('sesionDate').value
+            await DB.saveExperimentoRegistro(date, reg.experimento_id, false, null, null)
+            expRegistros.splice(i, 1)
+            renderExpList()
+          } catch (e) {
+            Toast.show('Error al eliminar', 'error')
+          }
+        })
+      })
+    })
   }
 
   return { init, prefill }

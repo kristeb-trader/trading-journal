@@ -309,8 +309,20 @@
                 </div>
                 <input type="hidden" id="motivoNoEntradaVal" name="motivo_no_entrada">
 
-                <!-- Experimentos (dinámico) -->
-                <div id="experimentosSNTWrap" style="margin-top:12px"></div>
+                <!-- Experimentos del día (SNT) -->
+                <div style="margin-top:12px">
+                  <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text2)"><i class="ti ti-flask" style="margin-right:4px"></i>Experimentos del día</label>
+                  <div class="exp-add-row">
+                    <select id="expSNTSelect"><option value="">Seleccionar experimento...</option></select>
+                    <div class="btn-group" id="expSNTResultGrp">
+                      <button type="button" class="btn-option cas-t" data-value="T">T</button>
+                      <button type="button" class="btn-option cas-s" data-value="S">S</button>
+                    </div>
+                    <input type="text" class="exp-nota-input" id="expSNTNota" placeholder="Nota (opcional)">
+                    <button type="button" class="btn-secondary" id="expSNTAgregar"><i class="ti ti-plus"></i> Agregar</button>
+                  </div>
+                  <div id="expSNTList" class="exp-list"></div>
+                </div>
               </div>
             </div>
 
@@ -417,17 +429,26 @@
                 </div>
               </div>
 
-              <!-- Experimentos activos (dinámico) -->
+              <!-- Experimentos del día (Trade) -->
               <div class="form-group">
-                <label>🧪 Experimentos activos</label>
-                <div id="experimentosTradeWrap"></div>
+                <label><i class="ti ti-flask" style="font-size:0.9rem;margin-right:4px"></i>Experimentos del día</label>
+                <div class="exp-add-row">
+                  <select id="expTradeSelect"><option value="">Seleccionar experimento...</option></select>
+                  <div class="btn-group" id="expTradeResultGrp">
+                    <button type="button" class="btn-option cas-t" data-value="T">T</button>
+                    <button type="button" class="btn-option cas-s" data-value="S">S</button>
+                  </div>
+                  <input type="text" class="exp-nota-input" id="expTradeNota" placeholder="Nota (opcional)">
+                  <button type="button" class="btn-secondary" id="expTradeAgregar"><i class="ti ti-plus"></i> Agregar</button>
+                </div>
+                <div id="expTradeList" class="exp-list"></div>
               </div>
 
             </div>
 
-            <!-- Casuísticas / Tipificación de errores -->
+            <!-- Errores cometidos -->
             <div class="form-group" id="casuisticasGroup">
-              <label>Tipificación del día</label>
+              <label><i class="ti ti-alert-triangle" style="margin-right:6px;color:var(--warning)"></i>Errores cometidos</label>
               <div class="cas-input-row">
                 <select id="casCasuistica">
                   <option value="">Seleccionar situación...</option>
