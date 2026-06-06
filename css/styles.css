@@ -1123,6 +1123,22 @@ body.modal-open { overflow: hidden; }
   border: 1px solid rgba(226,75,74,0.2);
 }
 
+/* Drill-down del modal de Errores */
+.disc-clickable { cursor: pointer; border-radius: 6px; padding: 4px 6px; margin: 0 -6px; transition: background 0.15s; }
+.disc-clickable:hover { background: rgba(255,255,255,0.05); }
+.disc-chevron { color: var(--text3); font-size: 0.95rem; flex-shrink: 0; }
+.disc-clickable:hover .disc-chevron { color: var(--accent); }
+.disc-hint { color: var(--text3); font-weight: 400; font-size: 0.78rem; text-transform: none; letter-spacing: 0; }
+.disc-back {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--bg3); color: var(--text2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.disc-back:hover { background: var(--bg); color: var(--text); }
+.res-t { color: var(--accent); }
+.res-s { color: var(--red); }
+
 .metric-card.clickable { cursor: pointer; }
 .metric-card.clickable:hover { border-color: var(--accent); background: var(--accent-dim); }
 

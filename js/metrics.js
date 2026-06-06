@@ -17,6 +17,12 @@ const Metrics = (() => {
     sintipo:     { label: '❔ Sin clasificar', color: 'rgba(150,150,150,0.4)' },
   }
 
+  // Fija el título del modal compartido (icono Tabler + texto)
+  function setModalTitle(icon, text) {
+    const h = document.getElementById('disciplineModalTitle')
+    if (h) h.innerHTML = `<i class="ti ${icon}"></i> ${text}`
+  }
+
   function calcStreak(trades) {
     // Group by date, determine daily result (overall win/loss)
     const byDate = {}
@@ -181,6 +187,7 @@ const Metrics = (() => {
 
   // Modal "Disciplina de Proceso" — solo adherencia al checklist
   function openDisciplineDetailModal(activeSesiones) {
+    setModalTitle('ti-checkup-list', 'Análisis de Disciplina')
     const operatedSesiones = activeSesiones.filter(s => !s.no_opero)
 
     if (operatedSesiones.length === 0) {
@@ -249,72 +256,152 @@ const Metrics = (() => {
     document.getElementById('disciplineModal').classList.remove('hidden')
   }
 
-  // Modal "Tasa de Errores" — desglose por tipo, por origen y por nombre
+  // Modal "Tasa de Errores" — desglose por tipo/origen/nombre con drill-down
+  // Navegación: raíz → errores de un tipo → fechas de un error → imagen del día
   function openDisciplineModal(casuisticas, trades, tipoMap = {}, tipoCount = {}, origenCount = {}) {
-    const total = casuisticas.length
+    const total    = casuisticas.length
+    const contentEl = document.getElementById('disciplineModalContent')
+    const getTipo  = c => c.tipo || tipoMap[c.casuistica] || 'sintipo'
 
-    // Por nombre
-    const countMap = {}
-    casuisticas.forEach(c => { countMap[c.casuistica] = (countMap[c.casuistica] || 0) + 1 })
-    const counts = Object.entries(countMap)
-      .map(([label, count]) => ({ label, count }))
-      .sort((a, b) => b.count - a.count)
-    const maxCount = counts[0]?.count || 1
-
-    // Por tipo (taxonomía)
-    const tipoEntries = Object.entries(tipoCount).sort((a, b) => b[1] - a[1])
-    const maxTipo = tipoEntries[0]?.[1] || 1
-    const tipoBarsHtml = tipoEntries.length > 0
-      ? tipoEntries.map(([tipo, count]) => {
-          const meta = TIPO_META[tipo] || TIPO_META.sintipo
-          return `
-            <div class="disc-item">
-              <span class="disc-item-label">${meta.label}</span>
-              <div class="disc-bar-wrap">
-                <div class="disc-bar-fill" style="width:${(count / maxTipo * 100).toFixed(0)}%;background:${meta.color}"></div>
-              </div>
-              <span class="disc-count">${count}</span>
-            </div>`
-        }).join('')
-      : '<p style="color:var(--text3);font-size:0.85rem">Sin errores en el período</p>'
-
-    // Por origen (manual / IA / ambos)
-    const origenLabels = { manual: '✍️ Manual', ia: '🤖 IA', ambos: '🤝 Ambos' }
-    const origenHtml = Object.entries(origenLabels).map(([k, lbl]) => {
-      const n = origenCount[k] || 0
-      return `<span class="disc-origen-chip">${lbl}: <b>${n}</b></span>`
-    }).join('')
-
-    // Por nombre
-    const barsHtml = counts.length > 0
-      ? counts.map(({ label, count }) => {
-          const pct = total > 0 ? (count / total * 100) : 0
-          const cls  = pct >= 40 ? 'level-high' : pct >= 20 ? 'level-mid' : 'level-low'
-          return `
-            <div class="disc-item">
-              <span class="disc-item-label">${label}</span>
-              <div class="disc-bar-wrap">
-                <div class="disc-bar-fill ${cls}" style="width:${(count/maxCount*100).toFixed(0)}%"></div>
-              </div>
-              <span class="disc-count">${count}</span>
-            </div>`
-        }).join('')
-      : '<p style="color:var(--text3);font-size:0.85rem">Sin errores registrados</p>'
-
-    document.getElementById('disciplineModalContent').innerHTML = `
-      <div style="padding:16px 20px 20px">
-        <p class="disc-section-title">Errores por tipo</p>
-        ${tipoBarsHtml}
-        <div class="disc-origen-row">${origenHtml}</div>
-        <p class="disc-section-title" style="margin-top:14px">Errores por nombre (${total} registros)</p>
-        ${barsHtml}
+    // Barra reutilizable
+    const barRow = (label, count, max, color, cls, data) => `
+      <div class="disc-item ${data ? 'disc-clickable' : ''}" ${data || ''}>
+        <span class="disc-item-label">${label}</span>
+        <div class="disc-bar-wrap">
+          <div class="disc-bar-fill ${cls || ''}" style="width:${(count / max * 100).toFixed(0)}%${color ? `;background:${color}` : ''}"></div>
+        </div>
+        <span class="disc-count">${count}</span>
+        ${data ? '<i class="ti ti-chevron-right disc-chevron"></i>' : ''}
       </div>`
 
+    // ── Vista raíz: tipo + origen + nombre ───────────────────────────────
+    function renderRoot() {
+      setModalTitle('ti-alert-triangle', 'Análisis de Errores')
+
+      // Por tipo (clickable)
+      const tipoEntries = Object.entries(tipoCount).sort((a, b) => b[1] - a[1])
+      const maxTipo = tipoEntries[0]?.[1] || 1
+      const tipoBarsHtml = tipoEntries.length > 0
+        ? tipoEntries.map(([tipo, count]) => {
+            const meta = TIPO_META[tipo] || TIPO_META.sintipo
+            return barRow(meta.label, count, maxTipo, meta.color, '', `data-tipo="${tipo}"`)
+          }).join('')
+        : '<p style="color:var(--text3);font-size:0.85rem">Sin errores en el período</p>'
+
+      // Origen
+      const origenLabels = { manual: '✍️ Manual', ia: '🤖 IA', ambos: '🤝 Ambos' }
+      const origenHtml = Object.entries(origenLabels).map(([k, lbl]) => {
+        const n = origenCount[k] || 0
+        return `<span class="disc-origen-chip">${lbl}: <b>${n}</b></span>`
+      }).join('')
+
+      // Por nombre global (clickable → fechas)
+      const countMap = {}
+      casuisticas.forEach(c => { countMap[c.casuistica] = (countMap[c.casuistica] || 0) + 1 })
+      const counts = Object.entries(countMap).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count)
+      const maxCount = counts[0]?.count || 1
+      const barsHtml = counts.length > 0
+        ? counts.map(({ label, count }) => {
+            const pct = total > 0 ? (count / total * 100) : 0
+            const cls = pct >= 40 ? 'level-high' : pct >= 20 ? 'level-mid' : 'level-low'
+            return barRow(label, count, maxCount, '', cls, `data-nombre="${encodeURIComponent(label)}"`)
+          }).join('')
+        : '<p style="color:var(--text3);font-size:0.85rem">Sin errores registrados</p>'
+
+      contentEl.innerHTML = `
+        <div style="padding:16px 20px 20px">
+          <p class="disc-section-title">Errores por tipo <span class="disc-hint">· toca para ver detalle</span></p>
+          ${tipoBarsHtml}
+          <div class="disc-origen-row">${origenHtml}</div>
+          <p class="disc-section-title" style="margin-top:14px">Errores por nombre (${total} registros)</p>
+          ${barsHtml}
+        </div>`
+    }
+
+    // ── Vista de un tipo: nombres de error dentro del tipo ────────────────
+    function renderPorTipo(tipo) {
+      const meta = TIPO_META[tipo] || TIPO_META.sintipo
+      setModalTitle('ti-alert-triangle', meta.label)
+      const items = casuisticas.filter(c => getTipo(c) === tipo)
+      const countMap = {}
+      items.forEach(c => { countMap[c.casuistica] = (countMap[c.casuistica] || 0) + 1 })
+      const counts = Object.entries(countMap).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count)
+      const maxCount = counts[0]?.count || 1
+      const barsHtml = counts.length > 0
+        ? counts.map(({ label, count }) =>
+            barRow(label, count, maxCount, meta.color, '', `data-nombre="${encodeURIComponent(label)}" data-tipo="${tipo}"`)
+          ).join('')
+        : '<p style="color:var(--text3);font-size:0.85rem">Sin errores de este tipo</p>'
+
+      contentEl.innerHTML = `
+        <div style="padding:16px 20px 20px">
+          <button class="disc-back" data-back="root"><i class="ti ti-arrow-left"></i> Volver</button>
+          <p class="disc-section-title" style="margin-top:10px">${meta.label} — ${items.length} ${items.length === 1 ? 'registro' : 'registros'}</p>
+          <p class="disc-hint" style="display:block;margin-bottom:6px">Toca un error para ver sus fechas</p>
+          ${barsHtml}
+        </div>`
+    }
+
+    // ── Vista de un error: fechas (clickable → imagen del día) ────────────
+    function renderPorNombre(nombre, tipo) {
+      setModalTitle('ti-alert-triangle', nombre)
+      let items = casuisticas.filter(c => c.casuistica === nombre)
+      if (tipo) items = items.filter(c => getTipo(c) === tipo)
+      const dates = items
+        .map(c => ({ date: c.sesion_date, resultado: c.resultado }))
+        .sort((a, b) => b.date.localeCompare(a.date))
+
+      const backTarget = tipo ? `tipo:${tipo}` : 'root'
+      const daysHtml = dates.map(d => {
+        const dow = DAYS[new Date(d.date + 'T12:00:00').getDay()]
+        const res = (d.resultado === 'T' || d.resultado === 'S')
+          ? `<span class="disc-fail-count"><b class="${d.resultado === 'T' ? 'res-t' : 'res-s'}">${d.resultado}</b></span>` : ''
+        return `
+          <div class="disc-fail-day" data-date="${d.date}">
+            <div class="disc-fail-day-header">
+              <span class="disc-date-dow">${dow}</span>
+              <span class="disc-date-val">${d.date}</span>
+              ${res}
+              <i class="ti ti-photo disc-chevron" style="margin-left:${res ? '6px' : 'auto'}"></i>
+            </div>
+          </div>`
+      }).join('')
+
+      contentEl.innerHTML = `
+        <div style="padding:16px 20px 20px">
+          <button class="disc-back" data-back="${backTarget}"><i class="ti ti-arrow-left"></i> Volver</button>
+          <p class="disc-section-title" style="margin-top:10px">${nombre} — ${dates.length} ${dates.length === 1 ? 'día' : 'días'}</p>
+          <p class="disc-hint" style="display:block;margin-bottom:6px">Toca una fecha para ver la imagen del día</p>
+          ${daysHtml}
+        </div>`
+    }
+
+    // Navegación interna (los clics en fechas los maneja el listener global)
+    contentEl.onclick = e => {
+      const backBtn = e.target.closest('.disc-back')
+      if (backBtn) {
+        const target = backBtn.dataset.back
+        if (target === 'root') renderRoot()
+        else if (target.startsWith('tipo:')) renderPorTipo(target.slice(5))
+        return
+      }
+      if (e.target.closest('.disc-fail-day')) return  // → listener global (imagen)
+      const nombreEl = e.target.closest('.disc-item[data-nombre]')
+      if (nombreEl) {
+        renderPorNombre(decodeURIComponent(nombreEl.dataset.nombre), nombreEl.dataset.tipo || null)
+        return
+      }
+      const tipoEl = e.target.closest('.disc-item[data-tipo]')
+      if (tipoEl) { renderPorTipo(tipoEl.dataset.tipo); return }
+    }
+
+    renderRoot()
     document.getElementById('disciplineModal').classList.remove('hidden')
   }
 
   // Modal "Cumplimiento de Reglas" — desglose de objetivos
   function openObjetivosModal(s) {
+    setModalTitle('ti-shield-check', 'Cumplimiento de Reglas')
     const fmtCfg = (v, suffix = '') => v != null ? `${v}${suffix}` : '<span style="color:var(--text3)">sin definir</span>'
     const row = (label, value, ok) => `
       <div class="disc-item" style="align-items:center">
@@ -351,6 +438,7 @@ const Metrics = (() => {
 
   // Modal "Días limpios"
   function openDiasLimpiosModal(s) {
+    setModalTitle('ti-circle-check', 'Días limpios')
     const barW = s.totalSesiones > 0 ? (s.total / s.totalSesiones * 100).toFixed(0) : 0
     const rachaMsg = s.racha > 0
       ? `<p style="color:var(--accent);font-size:0.9rem;font-weight:600;margin-bottom:12px">🏆 Racha actual: ${s.racha} día${s.racha !== 1 ? 's' : ''} limpio${s.racha !== 1 ? 's' : ''} consecutivo${s.racha !== 1 ? 's' : ''}</p>`
@@ -381,6 +469,7 @@ const Metrics = (() => {
 
   // Modal "Dejé de ganar"
   function openDejeGanarModal(s) {
+    setModalTitle('ti-mood-sad', 'Dejé de ganar')
     if (!s.total) {
       document.getElementById('disciplineModalContent').innerHTML =
         '<p style="padding:20px;color:var(--accent)">✅ Sin setups perdidos en el período.</p>'
@@ -418,6 +507,7 @@ const Metrics = (() => {
 
   // Modal "Experimentos"
   function openExperimentosModal(stats, minMuestras) {
+    setModalTitle('ti-flask', 'Experimentos')
     if (!stats.length) {
       document.getElementById('disciplineModalContent').innerHTML =
         '<p style="padding:20px;color:var(--text3)">Sin registros de experimentos aún. Márcalos en el formulario de sesión.</p>'
