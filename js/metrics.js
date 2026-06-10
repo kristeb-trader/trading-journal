@@ -164,6 +164,34 @@ const Metrics = (() => {
     return casuisticas.filter(c => c.sesion_date >= from)
   }
 
+  // Rango del período inmediatamente anterior (para tendencias)
+  function getPrevRange(period) {
+    if (period === 'all') return null
+    if (period === 'month') {
+      let y = calYear(), m = calMonth() - 1
+      if (m === 0) { m = 12; y-- }
+      const from = `${y}-${String(m).padStart(2, '0')}-01`
+      const to = `${y}-${String(m).padStart(2, '0')}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`
+      return { from, to, label: 'mes anterior' }
+    }
+    // week: lunes a domingo de la semana pasada
+    const mon = new Date()
+    mon.setDate(mon.getDate() - mon.getDay() + 1)
+    const prevMon = new Date(mon); prevMon.setDate(mon.getDate() - 7)
+    const prevSun = new Date(mon); prevSun.setDate(mon.getDate() - 1)
+    return { from: prevMon.toISOString().slice(0, 10), to: prevSun.toISOString().slice(0, 10), label: 'semana anterior' }
+  }
+
+  // Chip de tendencia: compara % actual vs anterior; goodWhenUp indica si subir es bueno
+  function trendChip(curr, prev, goodWhenUp, label) {
+    if (prev == null || curr == null) return ''
+    const delta = curr - prev
+    if (delta === 0) return `<span class="trend-chip neutral">= sin cambio vs ${label}</span>`
+    const up = delta > 0
+    const good = up === goodWhenUp
+    return `<span class="trend-chip ${good ? 'good' : 'bad'}">${up ? '▲' : '▼'} ${up ? '+' : '−'}${Math.abs(delta)} pts vs ${label}</span>`
+  }
+
   const CHECKLIST_KEYS = [
     { key: 'chk_zonas',       label: 'Zonas vigentes'       },
     { key: 'chk_orden',       label: 'Orden a tiempo'       },
@@ -258,10 +286,18 @@ const Metrics = (() => {
 
   // Modal "Tasa de Errores" — desglose por tipo/origen/nombre con drill-down
   // Navegación: raíz → errores de un tipo → fechas de un error → imagen del día
-  function openDisciplineModal(casuisticas, trades, tipoMap = {}, tipoCount = {}, origenCount = {}) {
+  function openDisciplineModal(casuisticas, trades, tipoMap = {}, tipoCount = {}, origenCount = {}, extras = {}) {
     const total    = casuisticas.length
     const contentEl = document.getElementById('disciplineModalContent')
     const getTipo  = c => c.tipo || tipoMap[c.casuistica] || 'sintipo'
+
+    // P&L por fecha (para mostrar el costo del día en el drill-down)
+    const pnlByDate = {}
+    ;(trades || []).forEach(t => {
+      if (!t.trade_date) return
+      pnlByDate[t.trade_date] = (pnlByDate[t.trade_date] || 0) + (parseFloat(t.profit) || 0)
+    })
+    const fmt$ = v => `${v < 0 ? '-' : '+'}$${Math.abs(v).toFixed(0)}`
 
     // Barra reutilizable
     const barRow = (label, count, max, color, cls, data) => `
@@ -277,6 +313,24 @@ const Metrics = (() => {
     // ── Vista raíz: tipo + origen + nombre ───────────────────────────────
     function renderRoot() {
       setModalTitle('ti-alert-triangle', 'Análisis de Errores')
+
+      // Impacto en P&L (costo de errores)
+      const imp = extras.impacto
+      const impactoHtml = imp && (imp.diasError > 0 || imp.diasLimpios > 0) ? `
+        <div class="disc-impacto">
+          ${imp.costoErrores > 0 ? `<div class="disc-impacto-main">Tus errores te costaron ≈ <b>-$${imp.costoErrores.toFixed(0)}</b> en stops este período</div>` : ''}
+          <div class="disc-impacto-row">
+            <span>P&L medio día limpio: <b class="${(imp.avgPnlLimpio ?? 0) >= 0 ? 'res-t' : 'res-s'}">${imp.avgPnlLimpio != null ? fmt$(imp.avgPnlLimpio) : '—'}</b> (${imp.diasLimpios} ${imp.diasLimpios === 1 ? 'día' : 'días'})</span>
+            <span>P&L medio día con error: <b class="${(imp.avgPnlConErr ?? 0) >= 0 ? 'res-t' : 'res-s'}">${imp.avgPnlConErr != null ? fmt$(imp.avgPnlConErr) : '—'}</b> (${imp.diasError} ${imp.diasError === 1 ? 'día' : 'días'})</span>
+          </div>
+        </div>` : ''
+
+      // Errores recurrentes (≥3 de las últimas 4 semanas)
+      const rec = extras.recurrentes || []
+      const recHtml = rec.length ? `
+        <div class="disc-recurrente">
+          🔁 <b>Recurrente:</b> ${rec.map(r => `${r.nombre} (${r.semanas} de las últimas 4 semanas)`).join(' · ')}
+        </div>` : ''
 
       // Por tipo (clickable)
       const tipoEntries = Object.entries(tipoCount).sort((a, b) => b[1] - a[1])
@@ -310,6 +364,8 @@ const Metrics = (() => {
 
       contentEl.innerHTML = `
         <div style="padding:16px 20px 20px">
+          ${impactoHtml}
+          ${recHtml}
           <p class="disc-section-title">Errores por tipo <span class="disc-hint">· toca para ver detalle</span></p>
           ${tipoBarsHtml}
           <div class="disc-origen-row">${origenHtml}</div>
@@ -354,15 +410,19 @@ const Metrics = (() => {
       const backTarget = tipo ? `tipo:${tipo}` : 'root'
       const daysHtml = dates.map(d => {
         const dow = DAYS[new Date(d.date + 'T12:00:00').getDay()]
+        const pnl = pnlByDate[d.date]
+        const pnlHtml = pnl != null
+          ? `<span class="disc-date-pnl ${pnl > 0 ? 'pos' : pnl < 0 ? 'neg' : 'neutral'}" style="font-size:0.78rem;margin-left:auto">${fmt$(pnl)}</span>` : ''
         const res = (d.resultado === 'T' || d.resultado === 'S')
-          ? `<span class="disc-fail-count"><b class="${d.resultado === 'T' ? 'res-t' : 'res-s'}">${d.resultado}</b></span>` : ''
+          ? `<span class="disc-fail-count" style="${pnl != null ? 'margin-left:8px' : ''}"><b class="${d.resultado === 'T' ? 'res-t' : 'res-s'}">${d.resultado}</b></span>` : ''
         return `
           <div class="disc-fail-day" data-date="${d.date}">
             <div class="disc-fail-day-header">
               <span class="disc-date-dow">${dow}</span>
               <span class="disc-date-val">${d.date}</span>
+              ${pnlHtml}
               ${res}
-              <i class="ti ti-photo disc-chevron" style="margin-left:${res ? '6px' : 'auto'}"></i>
+              <i class="ti ti-photo disc-chevron" style="margin-left:${(res || pnlHtml) ? '6px' : 'auto'}"></i>
             </div>
           </div>`
       }).join('')
@@ -506,7 +566,7 @@ const Metrics = (() => {
   }
 
   // Modal "Experimentos"
-  function openExperimentosModal(stats, minMuestras) {
+  function openExperimentosModal(stats, minMuestras, baseWinRate = null) {
     setModalTitle('ti-flask', 'Experimentos')
     if (!stats.length) {
       document.getElementById('disciplineModalContent').innerHTML =
@@ -514,9 +574,23 @@ const Metrics = (() => {
       document.getElementById('disciplineModal').classList.remove('hidden')
       return
     }
+    const base = baseWinRate != null ? Math.round(baseWinRate) : null
     const bloques = stats.map(e => {
       const barW = e.conRes > 0 ? (e.targets / e.conRes * 100).toFixed(0) : 0
       const pendientes = Math.max(0, minMuestras - e.conRes)
+      const progW = Math.min(100, (e.conRes / minMuestras * 100)).toFixed(0)
+
+      // Comparación vs tasa de acierto base del período
+      let baseHtml = ''
+      if (e.pctT != null && base != null) {
+        const delta = e.pctT - base
+        const col = delta > 0 ? 'var(--accent)' : delta < 0 ? 'var(--red)' : 'var(--text3)'
+        baseHtml = `<p style="font-size:0.78rem;color:var(--text2);margin:2px 0 4px">
+          ${e.pctT}% target con el experimento vs <b>${base}%</b> tasa base
+          <span style="color:${col};font-weight:600">(${delta > 0 ? '+' : ''}${delta} pts)</span>
+        </p>`
+      }
+
       let sugerencia = ''
       if (e.conRes >= minMuestras) {
         if (e.pctT >= 60)       sugerencia = `<span style="color:var(--accent);font-size:0.78rem">✅ Candidato a regla: se presentó a favor ${e.pctT}% de los casos → considera adoptarlo</span>`
@@ -537,8 +611,16 @@ const Metrics = (() => {
               </div>
               <span class="disc-count" style="color:var(--accent)">${e.targets}T · ${e.stops}S</span>
             </div>` : ''}
-          ${pendientes > 0
-            ? `<p style="color:var(--text3);font-size:0.78rem;margin:4px 0">Faltan ${pendientes} casos con resultado para emitir sugerencia</p>`
+          ${baseHtml}
+          ${pendientes > 0 ? `
+            <div class="disc-item" style="margin-bottom:4px">
+              <span class="disc-item-label">Progreso a ${minMuestras} casos</span>
+              <div class="disc-bar-wrap">
+                <div class="disc-bar-fill" style="width:${progW}%;background:rgba(124,108,243,0.55)"></div>
+              </div>
+              <span class="disc-count">${e.conRes}/${minMuestras}</span>
+            </div>
+            <p style="color:var(--text3);font-size:0.78rem;margin:4px 0">Faltan ${pendientes} casos con resultado para emitir sugerencia</p>`
             : sugerencia}
         </div>`
     }).join('<hr style="border:none;border-top:1px solid var(--border);margin:12px 0">')
@@ -695,6 +777,58 @@ const Metrics = (() => {
         .sort((a, b) => b.sesion_date.localeCompare(a.sesion_date)),
     }
 
+    // ── Impacto $ de errores: P&L medio día limpio vs con error + costo en stops ──
+    const pnlDia = d => (tradesByDate[d] || []).reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
+    const diasOpConError = Object.keys(tradesByDate).filter(d => fechasConError.has(d))
+    const diasOpLimpios  = Object.keys(tradesByDate).filter(d => !fechasConError.has(d))
+    const avgDe = arr => arr.length ? arr.reduce((s, d) => s + pnlDia(d), 0) / arr.length : null
+    const fechasErrorS = new Set(periodCasuisticas.filter(c => c.resultado === 'S').map(c => c.sesion_date))
+    const costoErrores = trades
+      .filter(t => t.resultado === 'stop' && fechasErrorS.has(t.trade_date))
+      .reduce((s, t) => s + Math.abs(parseFloat(t.profit) || 0), 0)
+    const impactoErrores = {
+      avgPnlLimpio: avgDe(diasOpLimpios),
+      avgPnlConErr: avgDe(diasOpConError),
+      costoErrores,
+      diasLimpios: diasOpLimpios.length,
+      diasError: diasOpConError.length,
+    }
+
+    // ── Errores recurrentes: presentes en ≥3 de las últimas 4 semanas (global) ──
+    const _hoy = new Date()
+    const _wkByName = {}
+    allCasuisticas.forEach(c => {
+      const diff = Math.floor((_hoy - new Date(c.sesion_date + 'T12:00:00')) / 86400000)
+      if (diff < 0 || diff >= 28) return
+      const wk = Math.floor(diff / 7)
+      if (!_wkByName[c.casuistica]) _wkByName[c.casuistica] = new Set()
+      _wkByName[c.casuistica].add(wk)
+    })
+    const erroresRecurrentes = Object.entries(_wkByName)
+      .filter(([, wks]) => wks.size >= 3)
+      .map(([nombre, wks]) => ({ nombre, semanas: wks.size }))
+      .sort((a, b) => b.semanas - a.semanas)
+
+    // ── Tendencias vs período anterior (disciplina, errores, días limpios) ──
+    const prevRange = getPrevRange(period)
+    let trendDisc = '', trendErr = '', trendLimpios = ''
+    if (prevRange) {
+      const pSes  = allSesiones.filter(s => s.sesion_date >= prevRange.from && s.sesion_date <= prevRange.to)
+      const pCas  = allCasuisticas.filter(c => c.sesion_date >= prevRange.from && c.sesion_date <= prevRange.to)
+      const pOper = pSes.filter(s => !s.no_opero)
+      const pTot  = pOper.length * 6
+      const pOk   = pOper.reduce((sum, s) =>
+        sum + [s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
+          .filter(Boolean).length, 0)
+      const pDisc     = pTot > 0 ? Math.round(pOk / pTot * 100) : null
+      const pDiasErr  = new Set(pCas.map(c => c.sesion_date)).size
+      const pTasa     = pSes.length > 0 ? Math.round(pDiasErr / pSes.length * 100) : null
+      const pLimpios  = pSes.length > 0 ? Math.round((pSes.length - pDiasErr) / pSes.length * 100) : null
+      if (chkItemsTotal > 0) trendDisc    = trendChip(disciplinaProceso, pDisc, true, prevRange.label)
+      if (totalDiasReg > 0)  trendErr     = trendChip(tasaErrorPct, pTasa, false, prevRange.label)
+      if (totalDiasReg > 0)  trendLimpios = trendChip(diasLimpiosStat.pct, pLimpios, true, prevRange.label)
+    }
+
     // ── Experimentos (filtrar por período) ────────────────────────────────
     const periodFrom = period === 'all' ? null
       : period === 'month' ? `${calYear()}-${String(calMonth()).padStart(2,'0')}-01`
@@ -716,10 +850,10 @@ const Metrics = (() => {
     const cards = [
       { label: 'P&L Neto Total', value: `${netPnl >= 0 ? '+' : ''}$${netPnl.toFixed(2)}`, icon: 'ti-currency-dollar', color: netPnl >= 0 ? 'green' : 'red', sub: `Promedio: ${avgPnl >= 0 ? '+' : ''}$${avgPnl.toFixed(0)}/día` },
       { label: 'Tasa de Acierto', value: `${winRate}%`, icon: 'ti-target', color: parseFloat(winRate) >= 50 ? 'green' : 'red', sub: `${targets} targets / ${stops} stops` },
-      { label: 'Disciplina de Proceso', value: `${disciplinaProceso}%`, icon: 'ti-checkup-list', color: disciplinaProceso >= 80 ? 'green' : disciplinaProceso >= 50 ? 'warning' : 'red', sub: chkItemsTotal > 0 ? `${chkItemsOk}/${chkItemsTotal} ítems de checklist` : 'Sin días operados', clickable: true, action: 'disc-detail' },
-      { label: 'Tasa de Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
+      { label: 'Disciplina de Proceso', value: `${disciplinaProceso}%`, icon: 'ti-checkup-list', color: disciplinaProceso >= 80 ? 'green' : disciplinaProceso >= 50 ? 'warning' : 'red', sub: chkItemsTotal > 0 ? `${chkItemsOk}/${chkItemsTotal} ítems de checklist${trendDisc}` : 'Sin días operados', clickable: true, action: 'disc-detail' },
+      { label: 'Tasa de Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días${costoErrores > 0 ? ` · ≈ <span style="color:var(--red)">-$${costoErrores.toFixed(0)}</span>` : ''}${trendErr}` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
       { label: 'Cumplimiento de Reglas', value: cumplimientoPct != null ? `${cumplimientoPct}%` : '—', icon: 'ti-shield-check', color: cumplimientoPct == null ? 'neutral' : cumplimientoPct >= 90 ? 'green' : cumplimientoPct >= 70 ? 'warning' : 'red', sub: objStats.configurado ? `${objStats.diasOperados} días evaluados` : 'Configura objetivos en Ajustes', clickable: objStats.configurado, action: 'objetivos-detail' },
-      { label: 'Días limpios', value: rachaLimpia > 0 ? `${rachaLimpia} 🏆` : '0', icon: 'ti-circle-check', color: diasLimpiosStat.pct >= 70 ? 'green' : diasLimpiosStat.pct >= 40 ? 'warning' : 'red', sub: `${diasLimpiosStat.total}/${diasLimpiosStat.totalSesiones} días sin errores`, clickable: diasLimpiosStat.totalSesiones > 0, action: 'dias-limpios' },
+      { label: 'Días limpios', value: rachaLimpia > 0 ? `${rachaLimpia} 🏆` : '0', icon: 'ti-circle-check', color: diasLimpiosStat.pct >= 70 ? 'green' : diasLimpiosStat.pct >= 40 ? 'warning' : 'red', sub: `${diasLimpiosStat.total}/${diasLimpiosStat.totalSesiones} días sin errores${trendLimpios}`, clickable: diasLimpiosStat.totalSesiones > 0, action: 'dias-limpios' },
       { label: 'Dejé de ganar', value: dejeGanarStat.targets > 0 ? `${dejeGanarStat.targets} ⚠️` : '0 ✅', icon: 'ti-mood-sad', color: dejeGanarStat.targets === 0 ? 'green' : dejeGanarStat.targets <= 2 ? 'warning' : 'red', sub: dejeGanarStat.total > 0 ? `${dejeGanarStat.targets}T · ${dejeGanarStat.stops}S dejados pasar` : 'Sin setups perdidos', clickable: dejeGanarStat.total > 0, action: 'deje-ganar' },
       { label: 'Experimentos', value: expConSugerencia.length > 0 ? `${expConSugerencia.length} 🔬` : expStats.length > 0 ? `${expStats.length} en curso` : '—', icon: 'ti-flask', color: expConSugerencia.length > 0 ? 'warning' : 'neutral', sub: expStats.length > 0 ? `${expStats.length} activos · ${MIN_MUESTRAS} casos para decidir` : 'Sin registros aún', clickable: expStats.length > 0, action: 'experimentos' },
       {
@@ -772,7 +906,8 @@ const Metrics = (() => {
       openDisciplineDetailModal(activeSesiones)
     })
     document.querySelector('[data-action="disc-errors"]')?.addEventListener('click', () => {
-      openDisciplineModal(periodCasuisticas, trades, tipoMap, tipoCount, origenCount)
+      openDisciplineModal(periodCasuisticas, trades, tipoMap, tipoCount, origenCount,
+        { impacto: impactoErrores, recurrentes: erroresRecurrentes })
     })
     document.querySelector('[data-action="objetivos-detail"]')?.addEventListener('click', () => {
       openObjetivosModal(objStats)
@@ -784,7 +919,7 @@ const Metrics = (() => {
       openDejeGanarModal(dejeGanarStat)
     })
     document.querySelector('[data-action="experimentos"]')?.addEventListener('click', () => {
-      openExperimentosModal(expStats, MIN_MUESTRAS)
+      openExperimentosModal(expStats, MIN_MUESTRAS, nonBETrades.length > 0 ? parseFloat(winRate) : null)
     })
   }
 

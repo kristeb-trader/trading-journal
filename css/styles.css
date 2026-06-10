@@ -1139,6 +1139,26 @@ body.modal-open { overflow: hidden; }
 .res-t { color: var(--accent); }
 .res-s { color: var(--red); }
 
+/* Tendencias vs período anterior (tarjetas de métricas) */
+.trend-chip { display: block; font-size: 0.72rem; font-weight: 600; margin-top: 3px; }
+.trend-chip.good { color: var(--accent); }
+.trend-chip.bad { color: var(--red); }
+.trend-chip.neutral { color: var(--text3); }
+
+/* Impacto $ y errores recurrentes (modal de Errores) */
+.disc-impacto {
+  background: var(--bg3); border-radius: 8px;
+  padding: 10px 12px; margin-bottom: 12px;
+}
+.disc-impacto-main { font-size: 0.88rem; margin-bottom: 6px; }
+.disc-impacto-main b { color: var(--red); }
+.disc-impacto-row { display: flex; flex-direction: column; gap: 3px; font-size: 0.8rem; color: var(--text2); }
+.disc-recurrente {
+  background: rgba(186,117,23,0.12); border: 1px solid rgba(186,117,23,0.3);
+  border-radius: 8px; padding: 8px 12px; margin-bottom: 12px;
+  font-size: 0.8rem; color: var(--warning);
+}
+
 .metric-card.clickable { cursor: pointer; }
 .metric-card.clickable:hover { border-color: var(--accent); background: var(--accent-dim); }
 
