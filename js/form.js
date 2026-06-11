@@ -39,10 +39,14 @@ const SessionForm = (() => {
       renderExpList()
     })
 
-    // Mostrar campos extra cuando el motivo es "Setup válido no tomado"
+    // Mostrar campos extra cuando el motivo es "Setup válido no tomado".
+    // Experimentos visibles en motivos donde hubo conexión y análisis de jornada
+    // (aunque no se operara); ocultos si no hubo conexión (festivo, personal, otro).
+    const MOTIVOS_CONECTADO = ['Setup válido no tomado', 'Sin setup', 'Noticia roja', 'FOMC']
     document.getElementById('motivoNoOpero').addEventListener('change', function() {
       const isSetupNoTomado = this.value === 'Setup válido no tomado'
       document.getElementById('setupNoTomadoGroup').classList.toggle('hidden', !isSetupNoTomado)
+      document.getElementById('expNoOperoWrap').classList.toggle('hidden', !MOTIVOS_CONECTADO.includes(this.value))
     })
 
     // Btn-group: motivo no entrada
@@ -269,6 +273,8 @@ const SessionForm = (() => {
     document.getElementById('sessionForm').reset()
     document.querySelectorAll('.btn-option').forEach(b => b.classList.remove('active'))
     document.getElementById('motivoGroup').classList.add('hidden')
+    document.getElementById('setupNoTomadoGroup').classList.add('hidden')
+    document.getElementById('expNoOperoWrap').classList.add('hidden')
     document.getElementById('tradingFields').classList.remove('hidden')
     document.getElementById('imagePreview').classList.add('hidden')
     document.getElementById('uploadArea').classList.remove('hidden')
@@ -369,6 +375,7 @@ const SessionForm = (() => {
       }
     } else {
       document.getElementById('motivoNoOpero').value = sesion.motivo_no_opero || ''
+      document.getElementById('motivoNoOpero').dispatchEvent(new Event('change'))
     }
 
     // Setup válido no tomado

@@ -308,21 +308,21 @@
                   <button type="button" class="btn-option" data-value="Otro">Otro</button>
                 </div>
                 <input type="hidden" id="motivoNoEntradaVal" name="motivo_no_entrada">
+              </div>
 
-                <!-- Experimentos del día (SNT) -->
-                <div style="margin-top:12px">
-                  <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text2)"><i class="ti ti-flask" style="margin-right:4px"></i>Experimentos del día</label>
-                  <div class="exp-add-row">
-                    <select id="expSNTSelect"><option value="">Seleccionar experimento...</option></select>
-                    <div class="btn-group" id="expSNTResultGrp">
-                      <button type="button" class="btn-option cas-t" data-value="T">T</button>
-                      <button type="button" class="btn-option cas-s" data-value="S">S</button>
-                    </div>
-                    <input type="text" class="exp-nota-input" id="expSNTNota" placeholder="Nota (opcional)">
-                    <button type="button" class="btn-secondary" id="expSNTAgregar"><i class="ti ti-plus"></i> Agregar</button>
+              <!-- Experimentos del día (visible si estuve conectado aunque no operara) -->
+              <div id="expNoOperoWrap" class="hidden" style="margin-top:12px">
+                <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text2)"><i class="ti ti-flask" style="margin-right:4px"></i>Experimentos del día</label>
+                <div class="exp-add-row">
+                  <select id="expSNTSelect"><option value="">Seleccionar experimento...</option></select>
+                  <div class="btn-group" id="expSNTResultGrp">
+                    <button type="button" class="btn-option cas-t" data-value="T">T</button>
+                    <button type="button" class="btn-option cas-s" data-value="S">S</button>
                   </div>
-                  <div id="expSNTList" class="exp-list"></div>
+                  <input type="text" class="exp-nota-input" id="expSNTNota" placeholder="Nota (opcional)">
+                  <button type="button" class="btn-secondary" id="expSNTAgregar"><i class="ti ti-plus"></i> Agregar</button>
                 </div>
+                <div id="expSNTList" class="exp-list"></div>
               </div>
             </div>
 
