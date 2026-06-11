@@ -273,6 +273,23 @@
               <textarea id="noticias" rows="2" placeholder="9:00am → ISM Services PMI"></textarea>
             </div>
 
+            <!-- Checklist Pre-Sesión (siempre visible) -->
+            <div class="form-group">
+              <label>Checklist Pre-Sesión</label>
+              <div class="checklist" id="checklistPreSesion">
+                <label class="check-item">
+                  <input type="checkbox" id="chkNoticias" name="chk_noticias">
+                  <span class="check-box"></span>
+                  <span>Calendario económico verificado (sin noticia roja)</span>
+                </label>
+                <label class="check-item">
+                  <input type="checkbox" id="chkZonas" name="chk_zonas">
+                  <span class="check-box"></span>
+                  <span>Zonas vigentes verificadas</span>
+                </label>
+              </div>
+            </div>
+
             <!-- Motivo no operé (oculto por defecto) -->
             <div class="form-group hidden" id="motivoGroup">
               <label for="motivoNoOpero">Motivo de no operación</label>
@@ -323,23 +340,6 @@
                   <button type="button" class="btn-secondary" id="expSNTAgregar"><i class="ti ti-plus"></i> Agregar</button>
                 </div>
                 <div id="expSNTList" class="exp-list"></div>
-              </div>
-            </div>
-
-            <!-- Checklist Pre-Sesión (siempre visible) -->
-            <div class="form-group">
-              <label>Checklist Pre-Sesión</label>
-              <div class="checklist" id="checklistPreSesion">
-                <label class="check-item">
-                  <input type="checkbox" id="chkNoticias" name="chk_noticias">
-                  <span class="check-box"></span>
-                  <span>Calendario económico verificado (sin noticia roja)</span>
-                </label>
-                <label class="check-item">
-                  <input type="checkbox" id="chkZonas" name="chk_zonas">
-                  <span class="check-box"></span>
-                  <span>Zonas vigentes verificadas</span>
-                </label>
               </div>
             </div>
 
