@@ -54,6 +54,10 @@
         <i class="ti ti-chart-line"></i>
         <span>Análisis</span>
       </li>
+      <li class="nav-item" data-section="experimentos" title="Experimentos">
+        <i class="ti ti-flask"></i>
+        <span>Experimentos</span>
+      </li>
       <li class="nav-item" data-section="annual" title="Resumen Anual">
         <i class="ti ti-calendar-stats"></i>
         <span>Anual</span>
@@ -913,6 +917,37 @@
         </div>
       </section>
 
+      <!-- ═══ EXPERIMENTOS ═══════════════════════════════════════════════ -->
+      <section class="section" id="section-experimentos">
+        <div class="section-header">
+          <h2>Laboratorio de Experimentos</h2>
+        </div>
+
+        <div class="analysis-controls">
+          <div class="period-selector" id="expdPeriodSelector">
+            <button class="period-btn" data-period="month">Este mes</button>
+            <button class="period-btn" data-period="3m">3 meses</button>
+            <button class="period-btn active" data-period="all">Todo</button>
+          </div>
+          <span class="expd-base-info" id="expdBaseInfo"></span>
+        </div>
+
+        <!-- KPIs del laboratorio -->
+        <div class="expd-kpis" id="expdKpis"></div>
+
+        <!-- Tarjetas de veredicto por experimento -->
+        <div class="expd-cards" id="expdCards"></div>
+
+        <!-- Matriz cronológica (vista Excel) -->
+        <div class="expd-matrix-card">
+          <div class="expd-matrix-title">
+            <i class="ti ti-calendar-week"></i> Matriz cronológica
+            <span class="expd-matrix-hint">desliza para ver el histórico — lo más reciente a la derecha</span>
+          </div>
+          <div class="expd-matrix-scroll" id="expdMatrix"></div>
+        </div>
+      </section>
+
       <!-- ── Section: Anual ──────────────────────────────────────────────── -->
       <section class="section" id="section-annual">
 
@@ -1156,6 +1191,7 @@
   <script src="js/data.js"></script>
   <script src="js/gallery.js"></script>
   <script src="js/annual.js"></script>
+  <script src="js/experimentos.js"></script>
   <script src="js/estrategia.js"></script>
   <script src="js/coach.js"></script>
   <script src="js/app.js"></script>

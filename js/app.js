@@ -315,6 +315,7 @@ const Nav = {
     coach: 'Coach IA',
     register: 'Registrar Sesión',
     analysis: 'Análisis',
+    experimentos: 'Experimentos',
     annual: 'Resumen Anual',
     historial: 'Historial',
     estrategia: 'Estrategia',
@@ -340,6 +341,7 @@ const Nav = {
         if (sectionId === 'register') SessionForm.init()
         if (sectionId === 'gallery') await Gallery.init()
         if (sectionId === 'analysis') await Charts.init()
+        if (sectionId === 'experimentos') await Experimentos.init()
         if (sectionId === 'annual') await Annual.init()
         if (sectionId === 'coach') await Coach.init()
         if (sectionId === 'estrategia') await Estrategia.init()
@@ -352,6 +354,8 @@ const Nav = {
       Coach.refresh()
     } else if (sectionId === 'historial') {
       Coach.renderHistorial()
+    } else if (sectionId === 'experimentos') {
+      Experimentos.reload()
     }
   },
 

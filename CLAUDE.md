@@ -34,6 +34,7 @@ js/coach.js      — Coach IA: flujo 3 etapas, chat, diagnóstico, guardar
 js/metrics.js    — KPIs y métricas generales
 js/form.js       — Formulario de sesión diaria + experimentos
 js/db.js         — Capa de datos Supabase (todas las queries)
+js/experimentos.js — Laboratorio de Experimentos: veredictos + matriz cronológica
 js/estrategia.js — Sección Estrategia: reglas por setup + Chaumer
 css/styles.css   — Dark mode completo + responsive mobile
 TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
@@ -72,7 +73,7 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 
 ## Estado actual (Jun 2026)
 ### Funcionando
-- 11 secciones: Calendario, Métricas, Trades, Registrar, Análisis, Galería, Anual, Historial, Coach IA, Estrategia, Datos
+- 12 secciones: Calendario, Métricas, Trades, Registrar, Análisis, Experimentos, Galería, Anual, Historial, Coach IA, Estrategia, Datos
 - Coach IA 3 etapas + auto-detección diagnóstico en chat
 - Filtro de cuenta: carga PA-APEX por defecto, persiste en localStorage
 - Nav mobile scrollable horizontal
