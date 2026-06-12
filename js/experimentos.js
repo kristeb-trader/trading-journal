@@ -218,18 +218,55 @@ const Experimentos = (() => {
             <span class="disc-date-val">${r.sesion_date}</span>
             ${valHtml}
             ${res}
-            <i class="ti ti-photo disc-chevron" style="margin-left:6px"></i>
+            <button type="button" class="btn-icon expd-edit-val" data-date="${r.sesion_date}" title="Editar valor" style="margin-left:4px"><i class="ti ti-pencil" style="font-size:0.85rem"></i></button>
+            <i class="ti ti-photo disc-chevron" style="margin-left:2px"></i>
           </div>
           ${nota}
         </div>`
     }).join('')
 
-    document.getElementById('disciplineModalContent').innerHTML = `
+    const contentEl = document.getElementById('disciplineModalContent')
+    contentEl.innerHTML = `
       <div style="padding:16px 20px 20px">
         <p class="disc-section-title">${e.targets}T · ${e.stops}S — ${e.pctT != null ? e.pctT + '% target' : 'sin resultados'}${deltaStr}${pnlStr}</p>
-        <p class="disc-hint" style="display:block;margin-bottom:6px">El monto es el valor propio del experimento · toca una fecha para ver el día</p>
+        <p class="disc-hint" style="display:block;margin-bottom:6px">El monto es el valor propio del experimento · ✏️ edita el valor · toca la fecha para ver el día</p>
         ${rows}
       </div>`
+
+    // Editar valor de un registro histórico (conserva resultado y nota)
+    contentEl.querySelectorAll('.expd-edit-val').forEach(btn => {
+      btn.addEventListener('click', async ev => {
+        ev.stopPropagation()
+        const fecha = btn.dataset.date
+        const reg = e.regs.find(r => r.sesion_date === fecha)
+        if (!reg) return
+        const actual = reg.valor != null ? Math.abs(parseFloat(reg.valor)) : ''
+        const input = prompt(
+          `Valor del experimento "${e.nombre}" el ${fecha}` +
+          (reg.resultado ? ` (resultado ${reg.resultado}, el signo se aplica solo)` : '') +
+          `\nDeja vacío para quitar el valor:`, actual)
+        if (input === null) return // canceló
+        let valor = null
+        if (input.trim() !== '') {
+          const n = parseFloat(input)
+          if (isNaN(n)) { Toast.show('Valor inválido', 'warning'); return }
+          valor = reg.resultado === 'S' ? -Math.abs(n) : reg.resultado === 'T' ? Math.abs(n) : n
+        }
+        try {
+          await DB.saveExperimentoRegistro(fecha, e.id, true, reg.resultado || null, reg.nota || null, valor)
+          await loadData()
+          render(currentPeriod)
+          // Reabrir el modal con los datos actualizados
+          const { stats, base: nuevaBase } = computeStats(currentPeriod)
+          const actualizado = stats.find(s => s.id === e.id)
+          if (actualizado) openExpModal(actualizado, nuevaBase)
+          Toast.show('Valor actualizado', 'success')
+        } catch (err) {
+          Toast.show('Error al guardar: ' + err.message, 'error')
+        }
+      })
+    })
+
     document.getElementById('disciplineModal').classList.remove('hidden')
   }
 
