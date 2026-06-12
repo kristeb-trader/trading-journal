@@ -531,7 +531,7 @@ const SessionForm = (() => {
 
   // ── Experimentos ─────────────────────────────────────────────────────────
 
-  let expRegistros      = []  // [{ id, experimento_id, nombre, resultado, nota }]
+  let expRegistros      = []  // [{ id, experimento_id, nombre, resultado, valor, nota }]
   let expResulTrade     = null
   let expResulSNT       = null
 
@@ -560,6 +560,7 @@ const SessionForm = (() => {
           experimento_id: r.experimento_id,
           nombre:        r.experimento?.nombre || `Experimento ${r.experimento_id}`,
           resultado:     r.resultado || null,
+          valor:         r.valor != null ? parseFloat(r.valor) : null,
           nota:          r.nota || '',
         }))
 
@@ -568,11 +569,11 @@ const SessionForm = (() => {
   }
 
   function setupExperimentos() {
-    _setupExpRow('expTradeResultGrp', 'expTradeAgregar', 'expTradeSelect', 'expTradeNota', 'trade')
-    _setupExpRow('expSNTResultGrp',   'expSNTAgregar',   'expSNTSelect',   'expSNTNota',   'snt')
+    _setupExpRow('expTradeResultGrp', 'expTradeAgregar', 'expTradeSelect', 'expTradeNota', 'expTradeValor', 'trade')
+    _setupExpRow('expSNTResultGrp',   'expSNTAgregar',   'expSNTSelect',   'expSNTNota',   'expSNTValor',   'snt')
   }
 
-  function _setupExpRow(grpId, btnId, selectId, notaId, key) {
+  function _setupExpRow(grpId, btnId, selectId, notaId, valorId, key) {
     const grp = document.getElementById(grpId)
     const btn = document.getElementById(btnId)
     if (!grp || !btn) return
@@ -592,6 +593,7 @@ const SessionForm = (() => {
     btn.addEventListener('click', async () => {
       const sel   = document.getElementById(selectId)
       const nota  = document.getElementById(notaId)
+      const valor = document.getElementById(valorId)
       const expId = parseInt(sel?.value)
       const res   = key === 'trade' ? expResulTrade : expResulSNT
       const date  = document.getElementById('sesionDate').value
@@ -605,9 +607,13 @@ const SessionForm = (() => {
 
       const nombre   = sel.options[sel.selectedIndex].text.replace(' (inactivo)', '').trim()
       const notaVal  = nota?.value?.trim() || null
+      // Valor propio del experimento: signo automático según resultado (T +, S −)
+      let valorVal = parseFloat(valor?.value)
+      if (isNaN(valorVal)) valorVal = null
+      else valorVal = res === 'T' ? Math.abs(valorVal) : -Math.abs(valorVal)
 
       try {
-        await DB.saveExperimentoRegistro(date, expId, true, res, notaVal)
+        await DB.saveExperimentoRegistro(date, expId, true, res, notaVal, valorVal)
         // Recargar para obtener el id real de la fila
         const todos  = await DB.getExperimentosByDate(date)
         const nuevo  = todos.find(r => r.experimento_id === expId && r.presente)
@@ -616,11 +622,13 @@ const SessionForm = (() => {
           experimento_id: expId,
           nombre,
           resultado:      res,
+          valor:          valorVal,
           nota:           notaVal || '',
         })
         // Reset controles
         sel.value = ''
         if (nota) nota.value = ''
+        if (valor) valor.value = ''
         grp.querySelectorAll('.btn-option').forEach(x => x.classList.remove('active'))
         if (key === 'trade') expResulTrade = null
         else                 expResulSNT   = null
@@ -643,6 +651,7 @@ const SessionForm = (() => {
           <div class="exp-tag-left">
             <span class="${r.resultado === 'T' ? 'cas-badge-t' : 'cas-badge-s'}">${r.resultado || '?'}</span>
             <span class="exp-tag-nombre">${r.nombre}</span>
+            ${r.valor != null ? `<span class="exp-tag-valor" style="color:${r.valor >= 0 ? 'var(--accent)' : 'var(--red)'}">${r.valor >= 0 ? '+' : '−'}$${Math.abs(r.valor).toFixed(0)}</span>` : ''}
             ${r.nota ? `<span class="exp-tag-nota">· ${r.nota}</span>` : ''}
           </div>
           <button type="button" class="cas-del" data-idx="${i}" title="Eliminar">

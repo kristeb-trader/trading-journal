@@ -1978,6 +1978,9 @@ body.modal-open { overflow: hidden; }
 .exp-add-row select { flex: 1; min-width: 160px; }
 .exp-add-row .btn-group { flex-shrink: 0; }
 .exp-nota-input { flex: 1; min-width: 120px; font-size: 0.85rem; padding: 6px 10px; }
+.exp-valor-input { width: 90px; flex-shrink: 0; font-size: 0.85rem; padding: 6px 10px; }
+.exp-tag-valor { font-weight: 600; font-size: 0.82rem; }
+.expd-pnl-propio { font-size: 0.76rem; color: var(--text2); margin-top: 6px; }
 .exp-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
 .exp-tag {
   display: flex; align-items: center; justify-content: space-between;

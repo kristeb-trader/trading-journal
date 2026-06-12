@@ -43,6 +43,11 @@ const Experimentos = (() => {
       const conRes  = targets + stops
       const pctT    = conRes > 0 ? Math.round(targets / conRes * 100) : null
 
+      // P&L propio del experimento (suma de valores registrados, T +, S −)
+      const conValor  = r.filter(x => x.valor != null)
+      const pnlPropio = conValor.length ? conValor.reduce((s, x) => s + parseFloat(x.valor), 0) : null
+      const avgValor  = conValor.length ? pnlPropio / conValor.length : null
+
       let estado, estadoLabel
       if (conRes >= MIN_MUESTRAS) {
         if (pctT >= UMBRAL_ADOPTAR)        { estado = 'candidato'; estadoLabel = 'Candidato a regla' }
@@ -59,6 +64,7 @@ const Experimentos = (() => {
       return {
         id: exp.id, nombre: exp.nombre, activo: exp.activo,
         regs: r, total: r.length, targets, stops, conRes, pctT,
+        pnlPropio, avgValor, conValorN: conValor.length,
         estado, estadoLabel,
         ultima: r.length ? r[r.length - 1].sesion_date : null,
       }
@@ -140,6 +146,15 @@ const Experimentos = (() => {
           </div>`
       }
 
+      // P&L propio del experimento (valores registrados, no P&L del día)
+      const fmtV = v => `${v < 0 ? '−' : '+'}$${Math.abs(v).toFixed(0)}`
+      const pnlHtml = e.pnlPropio != null ? `
+        <div class="expd-pnl-propio">
+          P&L propio: <b style="color:${e.pnlPropio >= 0 ? 'var(--accent)' : 'var(--red)'}">${fmtV(e.pnlPropio)}</b>
+          · prom ${fmtV(e.avgValor)}/caso
+          ${e.conValorN < e.conRes ? `<span style="color:var(--text3)">(${e.conValorN}/${e.conRes} con valor)</span>` : ''}
+        </div>` : ''
+
       const ultimaHtml = e.ultima
         ? `<div class="expd-ultima">Última aparición: ${e.ultima}${e.activo ? '' : ' · <span style="color:var(--text3)">inactivo</span>'}</div>` : ''
 
@@ -156,6 +171,7 @@ const Experimentos = (() => {
           </div>
           ${barHtml}
           ${footHtml}
+          ${pnlHtml}
           ${ultimaHtml}
         </div>`
     }).join('')
@@ -170,39 +186,37 @@ const Experimentos = (() => {
   }
 
   // Modal con la lista de fechas de un experimento (reusa el overlay compartido)
+  // Muestra el VALOR PROPIO del experimento (no el P&L del día)
   function openExpModal(e, base) {
     const titleEl = document.getElementById('disciplineModalTitle')
     if (titleEl) titleEl.innerHTML = `<i class="ti ti-flask"></i> ${e.nombre}`
 
-    // P&L por fecha (para mostrar el resultado del día junto a cada registro)
-    const pnlByDate = {}
-    allTrades.forEach(t => {
-      if (!t.trade_date) return
-      pnlByDate[t.trade_date] = (pnlByDate[t.trade_date] || 0) + (parseFloat(t.profit) || 0)
-    })
-    const fmt$ = v => `${v < 0 ? '-' : '+'}$${Math.abs(v).toFixed(0)}`
+    const fmt$ = v => `${v < 0 ? '−' : '+'}$${Math.abs(v).toFixed(0)}`
 
     let deltaStr = ''
     if (e.pctT != null && base != null) {
       const d = e.pctT - base
       deltaStr = ` · <span style="color:${d > 0 ? 'var(--accent)' : d < 0 ? 'var(--red)' : 'var(--text3)'}">${d > 0 ? '+' : ''}${d} pts vs base</span>`
     }
+    const pnlStr = e.pnlPropio != null
+      ? ` · P&L propio: <span style="color:${e.pnlPropio >= 0 ? 'var(--accent)' : 'var(--red)'}">${fmt$(e.pnlPropio)}</span>` : ''
 
     const rows = [...e.regs].sort((a, b) => b.sesion_date.localeCompare(a.sesion_date)).map(r => {
       const dow = DAYS[new Date(r.sesion_date + 'T12:00:00').getDay()]
-      const pnl = pnlByDate[r.sesion_date]
-      const pnlHtml = pnl != null
-        ? `<span class="disc-date-pnl ${pnl > 0 ? 'pos' : pnl < 0 ? 'neg' : 'neutral'}" style="font-size:0.78rem;margin-left:auto">${fmt$(pnl)}</span>` : ''
+      const val = r.valor != null ? parseFloat(r.valor) : null
+      const valHtml = val != null
+        ? `<span class="disc-date-pnl ${val > 0 ? 'pos' : val < 0 ? 'neg' : 'neutral'}" style="font-size:0.78rem;margin-left:auto">${fmt$(val)}</span>`
+        : `<span style="color:var(--text3);font-size:0.72rem;margin-left:auto">sin valor</span>`
       const res = (r.resultado === 'T' || r.resultado === 'S')
-        ? `<span style="${pnl != null ? 'margin-left:8px' : 'margin-left:auto'}"><b class="${r.resultado === 'T' ? 'res-t' : 'res-s'}">${r.resultado}</b></span>`
-        : `<span style="color:var(--text3);font-size:0.75rem;${pnl != null ? 'margin-left:8px' : 'margin-left:auto'}">sin resultado</span>`
+        ? `<span style="margin-left:8px"><b class="${r.resultado === 'T' ? 'res-t' : 'res-s'}">${r.resultado}</b></span>`
+        : `<span style="color:var(--text3);font-size:0.75rem;margin-left:8px">sin resultado</span>`
       const nota = r.nota ? `<div class="expd-modal-nota">${r.nota}</div>` : ''
       return `
         <div class="disc-fail-day" data-date="${r.sesion_date}">
           <div class="disc-fail-day-header">
             <span class="disc-date-dow">${dow}</span>
             <span class="disc-date-val">${r.sesion_date}</span>
-            ${pnlHtml}
+            ${valHtml}
             ${res}
             <i class="ti ti-photo disc-chevron" style="margin-left:6px"></i>
           </div>
@@ -212,8 +226,8 @@ const Experimentos = (() => {
 
     document.getElementById('disciplineModalContent').innerHTML = `
       <div style="padding:16px 20px 20px">
-        <p class="disc-section-title">${e.targets}T · ${e.stops}S — ${e.pctT != null ? e.pctT + '% target' : 'sin resultados'}${deltaStr}</p>
-        <p class="disc-hint" style="display:block;margin-bottom:6px">Toca una fecha para ver el detalle del día</p>
+        <p class="disc-section-title">${e.targets}T · ${e.stops}S — ${e.pctT != null ? e.pctT + '% target' : 'sin resultados'}${deltaStr}${pnlStr}</p>
+        <p class="disc-hint" style="display:block;margin-bottom:6px">El monto es el valor propio del experimento · toca una fecha para ver el día</p>
         ${rows}
       </div>`
     document.getElementById('disciplineModal').classList.remove('hidden')
@@ -226,11 +240,11 @@ const Experimentos = (() => {
     // Solo fechas con al menos un registro, ascendente (recientes a la derecha)
     const fechas = [...new Set(regs.map(r => r.sesion_date))].sort()
 
-    // Mapa experimento → fecha → resultado
+    // Mapa experimento → fecha → registro (resultado + valor)
     const mapa = {}
     regs.forEach(r => {
       if (!mapa[r.experimento_id]) mapa[r.experimento_id] = {}
-      mapa[r.experimento_id][r.sesion_date] = r.resultado || '·'
+      mapa[r.experimento_id][r.sesion_date] = r
     })
 
     const headHtml = fechas.map(f => {
@@ -240,10 +254,12 @@ const Experimentos = (() => {
 
     const rowsHtml = stats.map(e => {
       const cells = fechas.map(f => {
-        const res = mapa[e.id]?.[f]
-        if (!res) return '<td></td>'
+        const reg = mapa[e.id]?.[f]
+        if (!reg) return '<td></td>'
+        const res = reg.resultado || '·'
         const cls = res === 'T' ? 'mx-t' : res === 'S' ? 'mx-s' : 'mx-n'
-        return `<td class="${cls}" title="${e.nombre} — ${f}">${res}</td>`
+        const valStr = reg.valor != null ? ` · ${parseFloat(reg.valor) >= 0 ? '+' : '−'}$${Math.abs(parseFloat(reg.valor)).toFixed(0)}` : ''
+        return `<td class="${cls}" title="${e.nombre} — ${f}${valStr}">${res}</td>`
       }).join('')
       return `
         <tr>

@@ -601,7 +601,7 @@ const Metrics = (() => {
         <div style="margin-bottom:16px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <strong style="font-size:0.88rem">🧪 ${e.nombre}</strong>
-            <span style="font-size:0.78rem;color:var(--text3)">${e.total} registros · ${e.conRes} con resultado</span>
+            <span style="font-size:0.78rem;color:var(--text3)">${e.total} registros · ${e.conRes} con resultado${e.pnlPropio != null ? ` · <b style="color:${e.pnlPropio >= 0 ? 'var(--accent)' : 'var(--red)'}">${e.pnlPropio >= 0 ? '+' : '−'}$${Math.abs(e.pnlPropio).toFixed(0)}</b>` : ''}</span>
           </div>
           ${e.conRes > 0 ? `
             <div class="disc-item" style="margin-bottom:4px">
@@ -842,7 +842,10 @@ const Metrics = (() => {
       const stops   = regs.filter(r => r.resultado === 'S').length
       const conRes  = targets + stops
       const pctT = conRes > 0 ? Math.round(targets / conRes * 100) : null
-      return { id: exp.id, nombre: exp.nombre, total, targets, stops, conRes, pctT, regs }
+      // P&L propio del experimento (valores registrados, no P&L del día)
+      const conValor  = regs.filter(r => r.valor != null)
+      const pnlPropio = conValor.length ? conValor.reduce((s, r) => s + parseFloat(r.valor), 0) : null
+      return { id: exp.id, nombre: exp.nombre, total, targets, stops, conRes, pctT, pnlPropio, regs }
     }).filter(e => e.total > 0)
     const MIN_MUESTRAS = 20
     const expConSugerencia = expStats.filter(e => e.conRes >= MIN_MUESTRAS)

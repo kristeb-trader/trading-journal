@@ -476,7 +476,7 @@ const DB = {
     return data
   },
 
-  async saveExperimentoRegistro(sesionDate, experimentoId, presente, resultado, nota) {
+  async saveExperimentoRegistro(sesionDate, experimentoId, presente, resultado, nota, valor) {
     const { error } = await supa
       .from('diagnostico_experimentos')
       .upsert({
@@ -485,6 +485,7 @@ const DB = {
         presente: presente ?? false,
         resultado: resultado || null,
         nota: nota || null,
+        valor: valor ?? null,
       }, { onConflict: 'sesion_date,experimento_id' })
     if (error) throw error
   },

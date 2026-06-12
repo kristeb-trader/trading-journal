@@ -156,7 +156,8 @@ Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
           const nombre = r.experimento?.nombre || `Experimento ${r.experimento_id}`
           if (!r.presente) return null
           const res = r.resultado ? ` → resultado: ${r.resultado === 'T' ? 'TARGET' : 'STOP'}` : ''
-          return `  - ${nombre} estaba presente${res}${r.nota ? ` · ${r.nota}` : ''}`
+          const val = r.valor != null ? ` (${parseFloat(r.valor) >= 0 ? '+' : ''}$${parseFloat(r.valor).toFixed(0)} propio del experimento)` : ''
+          return `  - ${nombre} estaba presente${res}${val}${r.nota ? ` · ${r.nota}` : ''}`
         }).filter(Boolean).join('\n') || 'Ninguno presente hoy'
       : 'Sin registros de experimentos'
 
