@@ -518,4 +518,46 @@ const DB = {
     if (error) throw error
   },
 
+  // ── Apex Tracker ─────────────────────────────────────────────────────────
+
+  async getApexCuentas() {
+    const { data, error } = await supa
+      .from('apex_cuentas')
+      .select('*')
+      .order('nombre', { ascending: true })
+    if (error) throw error
+    return data
+  },
+
+  async saveApexCuenta(payload) {
+    const { data, error } = await supa
+      .from('apex_cuentas')
+      .upsert(payload)
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  },
+
+  async getApexRegistros() {
+    const { data, error } = await supa
+      .from('apex_registros')
+      .select('*')
+      .order('fecha', { ascending: true })
+    if (error) throw error
+    return data
+  },
+
+  async saveApexRegistro(payload) {
+    const { error } = await supa
+      .from('apex_registros')
+      .upsert(payload, { onConflict: 'cuenta_id,fecha' })
+    if (error) throw error
+  },
+
+  async deleteApexRegistro(id) {
+    const { error } = await supa.from('apex_registros').delete().eq('id', id)
+    if (error) throw error
+  },
+
 }

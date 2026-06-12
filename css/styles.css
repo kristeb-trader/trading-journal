@@ -1264,6 +1264,77 @@ body.modal-open { overflow: hidden; }
   .expd-cards { grid-template-columns: 1fr; }
 }
 
+/* ── Apex Tracker ────────────────────────────────────────────────────── */
+.ax-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px;
+}
+.ax-card.ax-borde-ok   { border-color: rgba(29,158,117,0.4); }
+.ax-card.ax-borde-warn { border-color: rgba(186,117,23,0.45); }
+.ax-card.ax-borde-crit { border-color: rgba(226,75,74,0.55); }
+.ax-card.ax-inactiva   { opacity: 0.55; }
+.ax-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.ax-head-left { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.ax-head-right { display: flex; align-items: center; gap: 6px; }
+.ax-nombre { font-size: 0.98rem; font-weight: 600; }
+.ax-numero { font-size: 0.72rem; color: var(--text3); }
+.ax-badge {
+  font-size: 0.68rem; font-weight: 600; padding: 3px 10px;
+  border-radius: 11px; white-space: nowrap;
+}
+.ax-badge.ax-ev   { background: var(--bg3); color: var(--text2); }
+.ax-badge.ax-rec  { background: rgba(186,117,23,0.18); color: var(--warning); }
+.ax-badge.ax-crit { background: rgba(226,75,74,0.18); color: var(--red); }
+.ax-badge.ax-safe { background: rgba(124,108,243,0.18); color: #a99cff; }
+.ax-badge.ax-ok   { background: rgba(29,158,117,0.18); color: var(--accent); }
+.ax-badge.ax-dead { background: var(--bg3); color: var(--text3); }
+.ax-alerta {
+  background: rgba(226,75,74,0.1); border: 1px solid rgba(226,75,74,0.3);
+  border-radius: 8px; padding: 8px 12px; margin-bottom: 11px;
+  color: var(--red); font-size: 0.8rem;
+  display: flex; align-items: center; gap: 7px;
+}
+.ax-stats {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px; margin-bottom: 11px;
+}
+.ax-stat-label { font-size: 0.7rem; color: var(--text3); }
+.ax-stat-val { font-size: 1.05rem; font-weight: 600; }
+.ax-prog-head {
+  display: flex; justify-content: space-between;
+  font-size: 0.72rem; color: var(--text2); margin-bottom: 4px;
+}
+.ax-prog { height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; margin-bottom: 9px; }
+.ax-prog > div { height: 100%; background: var(--accent); transition: width 0.4s ease; }
+.ax-hitos { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.ax-hito {
+  background: var(--bg3); color: var(--text3);
+  font-size: 0.7rem; padding: 3px 9px; border-radius: 10px;
+}
+.ax-hito.hito-ok   { background: rgba(29,158,117,0.15); color: var(--accent); }
+.ax-hito.hito-next { background: rgba(186,117,23,0.18); color: var(--warning); }
+.ax-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; border-top: 1px solid var(--border); padding-top: 9px; flex-wrap: wrap;
+}
+.ax-foot-stats { font-size: 0.76rem; color: var(--text2); }
+.ax-foot-actions { display: flex; gap: 6px; }
+.ax-hist { margin-top: 10px; overflow-x: auto; }
+.ax-hist-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.ax-hist-table th {
+  text-align: left; color: var(--text3); font-weight: 500;
+  font-size: 0.7rem; padding: 4px 8px; border-bottom: 1px solid var(--border);
+}
+.ax-hist-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.ax-hist-nota { color: var(--text3); font-size: 0.74rem; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.apex-hint { font-size: 0.76rem; color: var(--text3); margin: -4px 0 10px; }
+.apex-hint b { color: var(--text2); }
+
+@media (max-width: 768px) {
+  .ax-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ax-foot { flex-direction: column; align-items: flex-start; }
+}
+
 .metric-card.clickable { cursor: pointer; }
 .metric-card.clickable:hover { border-color: var(--accent); background: var(--accent-dim); }
 

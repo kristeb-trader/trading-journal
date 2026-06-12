@@ -316,6 +316,7 @@ const Nav = {
     register: 'Registrar Sesión',
     analysis: 'Análisis',
     experimentos: 'Experimentos',
+    apex: 'Apex Tracker',
     annual: 'Resumen Anual',
     historial: 'Historial',
     estrategia: 'Estrategia',
@@ -342,6 +343,7 @@ const Nav = {
         if (sectionId === 'gallery') await Gallery.init()
         if (sectionId === 'analysis') await Charts.init()
         if (sectionId === 'experimentos') await Experimentos.init()
+        if (sectionId === 'apex') await Apex.init()
         if (sectionId === 'annual') await Annual.init()
         if (sectionId === 'coach') await Coach.init()
         if (sectionId === 'estrategia') await Estrategia.init()
@@ -356,6 +358,8 @@ const Nav = {
       Coach.renderHistorial()
     } else if (sectionId === 'experimentos') {
       Experimentos.reload()
+    } else if (sectionId === 'apex') {
+      Apex.reload()
     }
   },
 
