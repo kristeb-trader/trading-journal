@@ -144,7 +144,7 @@ const Experimentos = (() => {
         ? `<div class="expd-ultima">Última aparición: ${e.ultima}${e.activo ? '' : ' · <span style="color:var(--text3)">inactivo</span>'}</div>` : ''
 
       return `
-        <div class="expd-card estado-${e.estado}">
+        <div class="expd-card estado-${e.estado}" data-exp-id="${e.id}" title="Ver fechas de ${e.nombre}">
           <div class="expd-card-head">
             <span class="expd-nombre">${e.nombre}</span>
             <span class="expd-badge ${badgeClass}">${e.estadoLabel}</span>
@@ -159,6 +159,64 @@ const Experimentos = (() => {
           ${ultimaHtml}
         </div>`
     }).join('')
+
+    // Clic en tarjeta → modal con las fechas del experimento
+    wrap.querySelectorAll('.expd-card[data-exp-id]').forEach(card => {
+      card.addEventListener('click', () => {
+        const stat = stats.find(s => s.id === parseInt(card.dataset.expId))
+        if (stat) openExpModal(stat, base)
+      })
+    })
+  }
+
+  // Modal con la lista de fechas de un experimento (reusa el overlay compartido)
+  function openExpModal(e, base) {
+    const titleEl = document.getElementById('disciplineModalTitle')
+    if (titleEl) titleEl.innerHTML = `<i class="ti ti-flask"></i> ${e.nombre}`
+
+    // P&L por fecha (para mostrar el resultado del día junto a cada registro)
+    const pnlByDate = {}
+    allTrades.forEach(t => {
+      if (!t.trade_date) return
+      pnlByDate[t.trade_date] = (pnlByDate[t.trade_date] || 0) + (parseFloat(t.profit) || 0)
+    })
+    const fmt$ = v => `${v < 0 ? '-' : '+'}$${Math.abs(v).toFixed(0)}`
+
+    let deltaStr = ''
+    if (e.pctT != null && base != null) {
+      const d = e.pctT - base
+      deltaStr = ` · <span style="color:${d > 0 ? 'var(--accent)' : d < 0 ? 'var(--red)' : 'var(--text3)'}">${d > 0 ? '+' : ''}${d} pts vs base</span>`
+    }
+
+    const rows = [...e.regs].sort((a, b) => b.sesion_date.localeCompare(a.sesion_date)).map(r => {
+      const dow = DAYS[new Date(r.sesion_date + 'T12:00:00').getDay()]
+      const pnl = pnlByDate[r.sesion_date]
+      const pnlHtml = pnl != null
+        ? `<span class="disc-date-pnl ${pnl > 0 ? 'pos' : pnl < 0 ? 'neg' : 'neutral'}" style="font-size:0.78rem;margin-left:auto">${fmt$(pnl)}</span>` : ''
+      const res = (r.resultado === 'T' || r.resultado === 'S')
+        ? `<span style="${pnl != null ? 'margin-left:8px' : 'margin-left:auto'}"><b class="${r.resultado === 'T' ? 'res-t' : 'res-s'}">${r.resultado}</b></span>`
+        : `<span style="color:var(--text3);font-size:0.75rem;${pnl != null ? 'margin-left:8px' : 'margin-left:auto'}">sin resultado</span>`
+      const nota = r.nota ? `<div class="expd-modal-nota">${r.nota}</div>` : ''
+      return `
+        <div class="disc-fail-day" data-date="${r.sesion_date}">
+          <div class="disc-fail-day-header">
+            <span class="disc-date-dow">${dow}</span>
+            <span class="disc-date-val">${r.sesion_date}</span>
+            ${pnlHtml}
+            ${res}
+            <i class="ti ti-photo disc-chevron" style="margin-left:6px"></i>
+          </div>
+          ${nota}
+        </div>`
+    }).join('')
+
+    document.getElementById('disciplineModalContent').innerHTML = `
+      <div style="padding:16px 20px 20px">
+        <p class="disc-section-title">${e.targets}T · ${e.stops}S — ${e.pctT != null ? e.pctT + '% target' : 'sin resultados'}${deltaStr}</p>
+        <p class="disc-hint" style="display:block;margin-bottom:6px">Toca una fecha para ver el detalle del día</p>
+        ${rows}
+      </div>`
+    document.getElementById('disciplineModal').classList.remove('hidden')
   }
 
   function renderMatrix(stats, regs) {

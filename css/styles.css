@@ -1183,7 +1183,13 @@ body.modal-open { overflow: hidden; }
 .expd-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 14px 15px;
-  transition: border-color 150ms;
+  transition: border-color 150ms, background 150ms;
+  cursor: pointer;
+}
+.expd-card:hover { background: var(--bg3); }
+.expd-modal-nota {
+  font-size: 0.78rem; color: var(--text2);
+  margin-top: 4px; padding-left: 38px;
 }
 .expd-card.estado-candidato { border-color: rgba(29,158,117,0.5); }
 .expd-card.estado-descartar { border-color: rgba(226,75,74,0.5); }
