@@ -1375,11 +1375,35 @@ body.modal-open { overflow: hidden; }
 .ax-instr-chip.ax-instr-nq { background: rgba(226,75,74,0.12); }
 .ax-instr-tag { font-size: 0.72rem; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: rgba(29,158,117,0.15); color: var(--accent); }
 .ax-instr-tag.ax-instr-nq { background: rgba(226,75,74,0.18); color: var(--red); }
+.ax-row-exc { background: rgba(226,75,74,0.08); }
+
+/* Plan para pasar — panel dinámico */
+.ax-plan-card { background: var(--card); border: 1px solid rgba(29,158,117,0.4); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+.ax-plan-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.ax-plan-title { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; font-weight: 600; flex-wrap: wrap; }
+.ax-plan-selects { display: flex; gap: 6px; }
+.ax-plan-selects select { font-size: 0.78rem; padding: 4px 8px; background: var(--bg3); color: var(--text); border: 1px solid var(--border); border-radius: 7px; cursor: pointer; }
+.ax-plan-desc { font-size: 0.8rem; color: var(--text2); margin: 0 0 12px; }
+.ax-plan-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.ax-plan-kpi { background: var(--bg); border-radius: 8px; padding: 9px 11px; }
+.ax-plan-klabel { font-size: 0.7rem; color: var(--text3); }
+.ax-plan-kval { font-size: 1.15rem; font-weight: 600; }
+.ax-plan-rules { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.ax-plan-rule { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text2); }
+.ax-plan-rule b { color: var(--text); font-weight: 600; }
+.ax-plan-esc-title { font-size: 0.74rem; color: var(--text3); margin-bottom: 8px; }
+.ax-plan-esc { display: flex; align-items: flex-end; gap: 4px; }
+.ax-esc { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ax-esc-bar { width: 100%; background: var(--bg3); border-radius: 3px; }
+.ax-esc.esc-actual .ax-esc-bar { background: rgba(29,158,117,0.5); }
+.ax-esc-lbl { font-size: 0.64rem; color: var(--text3); text-align: center; line-height: 1.2; }
+.ax-esc.esc-actual .ax-esc-lbl { color: var(--warning); }
 
 @media (max-width: 768px) {
   .ax-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ax-foot { flex-direction: column; align-items: flex-start; }
   .ax-det-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ax-plan-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ax-det-panels { grid-template-columns: 1fr; }
   .ax-det-tmetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

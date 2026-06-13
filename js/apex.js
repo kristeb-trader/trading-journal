@@ -24,6 +24,146 @@ const Apex = (() => {
     return `${n < 0 ? '−' : ''}$${s}`
   }
 
+  // ── Plan para pasar: perfiles de riesgo y ritmos (configurables en vivo) ──
+  const PLAN_PERFILES = {
+    conservador: { label: 'Conservador', trade: 0.08, dia: 0.24 },
+    moderado:    { label: 'Moderado',    trade: 0.10, dia: 0.30 },
+    agresivo:    { label: 'Agresivo',    trade: 0.15, dia: 0.45 },
+  }
+  const PLAN_RITMOS = {
+    lento:       { label: 'Sin prisa',   dias: 20 },
+    equilibrado: { label: 'Equilibrado', dias: 12 },
+    rapido:      { label: 'Rápido',      dias: 7 },
+  }
+  const VP_MNQ = 2  // $ por punto MNQ
+
+  function getPlanCfg(cuentaId) {
+    try {
+      const raw = localStorage.getItem('apexPlan_' + cuentaId)
+      if (raw) { const c = JSON.parse(raw); if (PLAN_PERFILES[c.perfil] && PLAN_RITMOS[c.ritmo]) return c }
+    } catch (_) { /* ignore */ }
+    return { perfil: 'moderado', ritmo: 'equilibrado' }
+  }
+  function setPlanCfg(cuentaId, cfg) {
+    try { localStorage.setItem('apexPlan_' + cuentaId, JSON.stringify(cfg)) } catch (_) { /* ignore */ }
+  }
+
+  // Stop de referencia en $/contrato MNQ, derivado de los stops reales (o default)
+  function stopRefMNQ(cta) {
+    const ts = tradesDe(cta.id).filter(t => t.resultado === 'stop' && parseFloat(t.profit) < 0)
+    const vals = ts.map(t => {
+      const base = (t.instrument || '').split(' ')[0]
+      const vp = base === 'NQ' ? 20 : 2
+      const qty = parseInt(t.qty) || 1
+      const puntos = Math.abs(parseFloat(t.profit)) / (vp * qty)
+      return puntos * VP_MNQ
+    }).filter(v => v > 0)
+    if (!vals.length) return 40  // ~20 pts MNQ por defecto
+    return Math.max(10, Math.round(vals.reduce((a, b) => a + b, 0) / vals.length))
+  }
+
+  // Calcula el plan del día según el estado de la cuenta y la config (perfil+ritmo)
+  function calcPlan(cta, s, cfg) {
+    const perfil = PLAN_PERFILES[cfg.perfil] || PLAN_PERFILES.moderado
+    const ritmo  = PLAN_RITMOS[cfg.ritmo]   || PLAN_RITMOS.equilibrado
+    const colchon = s.espacio
+    const stopRef = stopRefMNQ(cta)
+    const maxApex = cta.contratos_max || null
+
+    const riesgoTrade = colchon > 0 ? colchon * perfil.trade : 0
+    const perdidaDia  = colchon > 0 ? colchon * perfil.dia : 0
+
+    let contratos = stopRef > 0 ? Math.floor(riesgoTrade / stopRef) : 0
+    contratos = Math.max(colchon > 0 ? 1 : 0, contratos)
+    if (maxApex) contratos = Math.min(contratos, maxApex)
+
+    const faltan = Math.max(0, s.targetBal - s.balance)
+    const horizonte = Math.max(ritmo.dias, cta.min_dias || 0)
+    const diasRest = Math.max(1, horizonte - s.diasOperados)
+    const metaDia = faltan / diasRest
+
+    const colchonParaN = n => n * stopRef / perfil.trade
+    const topeEscalon = maxApex || (contratos + 4)
+    const escalones = []
+    for (let n = 1; n <= topeEscalon; n++) {
+      escalones.push({ n, balance: s.threshold + colchonParaN(n), actual: n === contratos })
+    }
+    const subirA = contratos + 1
+    const balSubir = s.threshold + colchonParaN(subirA)
+    const balBajar = s.threshold + colchonParaN(contratos)  // si cae bajo esto → baja
+
+    // Fase según balance
+    const f2 = s.inicial + 0.25 * parseFloat(cta.profit_target)
+    const f3 = cta.safety_net_balance != null ? parseFloat(cta.safety_net_balance) : s.targetBal
+    let fase, faseLabel, faseDesc
+    if (s.balance >= f3)      { fase = 3; faseLabel = 'Cerrar seguro';    faseDesc = 'Piso congelado, mucho colchón fijo. Empuje final al target sin avaricia.' }
+    else if (s.balance >= f2) { fase = 2; faseLabel = 'Acelerar';         faseDesc = 'El piso ya sube contigo. Escala contratos con el colchón.' }
+    else                      { fase = 1; faseLabel = 'Construir colchón'; faseDesc = 'Cerca del piso. Tamaño mínimo, aléjate del suelo antes de empujar.' }
+
+    return { perfil, ritmo, colchon, stopRef, riesgoTrade, perdidaDia, contratos, maxApex,
+      metaDia, diasRest, faltan, escalones, subirA, balSubir, balBajar, fase, faseLabel, faseDesc }
+  }
+
+  function planPanelHtml(cta, s, cfg) {
+    const p = calcPlan(cta, s, cfg)
+    const opt = (obj, cur) => Object.entries(obj).map(([k, v]) =>
+      `<option value="${k}" ${k === cur ? 'selected' : ''}>${v.label}</option>`).join('')
+    const faseCls = p.fase === 3 ? 'ax-ok' : p.fase === 2 ? 'ax-rec' : 'ax-ev'
+    const noColchon = p.colchon <= 0
+
+    const kpis = noColchon ? '' : `
+      <div class="ax-plan-kpis">
+        <div class="ax-plan-kpi"><div class="ax-plan-klabel">Opera máx</div><div class="ax-plan-kval">${p.contratos} MNQ</div></div>
+        <div class="ax-plan-kpi"><div class="ax-plan-klabel">Riesgo / trade</div><div class="ax-plan-kval">${fmt$(p.riesgoTrade)}</div></div>
+        <div class="ax-plan-kpi"><div class="ax-plan-klabel">Meta del día</div><div class="ax-plan-kval" style="color:var(--accent)">+${fmt$(p.metaDia)}</div></div>
+        <div class="ax-plan-kpi"><div class="ax-plan-klabel">Pérdida máx día</div><div class="ax-plan-kval" style="color:var(--red)">${fmt$(p.perdidaDia)}</div></div>
+      </div>`
+
+    const reglas = noColchon
+      ? `<div class="ax-plan-rule" style="color:var(--red)"><i class="ti ti-alert-octagon"></i> Sin colchón: no operar hasta verificar el estado real de la cuenta.</div>`
+      : `
+        <div class="ax-plan-rule"><i class="ti ti-arrow-up-circle" style="color:var(--accent)"></i> Sube a <b>${p.subirA} MNQ</b> cuando el balance llegue a <b>${fmt$(p.balSubir)}</b></div>
+        ${p.contratos > 1 ? `<div class="ax-plan-rule"><i class="ti ti-arrow-down-circle" style="color:var(--red)"></i> Baja a <b>${p.contratos - 1} MNQ</b> si el balance cae bajo <b>${fmt$(p.balBajar)}</b></div>` : ''}
+        <div class="ax-plan-rule"><i class="ti ti-flag" style="color:var(--warning)"></i> Al ganar <b>+${fmt$(p.metaDia)}</b> hoy → baja tamaño o cierra el día. No devuelvas la meta</div>`
+
+    const maxN = p.escalones.length
+    const escHtml = p.escalones.map((e, i) => {
+      const h = 16 + (maxN > 1 ? (i / (maxN - 1)) * 34 : 0)
+      return `<div class="ax-esc ${e.actual ? 'esc-actual' : ''}">
+        <div class="ax-esc-bar" style="height:${h}px"></div>
+        <span class="ax-esc-lbl">${e.actual ? '●hoy ' : ''}${e.n}<br>${(e.balance / 1000).toFixed(1)}k</span></div>`
+    }).join('')
+
+    return `
+      <div class="ax-plan-head">
+        <div class="ax-plan-title"><i class="ti ti-map-2" style="color:var(--accent)"></i> Plan para pasar — hoy
+          <span class="ax-badge ${faseCls}">Fase ${p.fase} · ${p.faseLabel}</span></div>
+        <div class="ax-plan-selects">
+          <select id="planPerfil" title="Perfil de riesgo">${opt(PLAN_PERFILES, cfg.perfil)}</select>
+          <select id="planRitmo" title="Ritmo">${opt(PLAN_RITMOS, cfg.ritmo)}</select>
+        </div>
+      </div>
+      <p class="ax-plan-desc">${p.faseDesc} <span style="color:var(--text3)">· stop ref ${fmt$(p.stopRef)}/MNQ · ${p.diasRest} días al ritmo ${p.ritmo.label.toLowerCase()}</span></p>
+      ${kpis}
+      <div class="ax-plan-rules">${reglas}</div>
+      ${noColchon ? '' : `<div class="ax-plan-esc-wrap"><div class="ax-plan-esc-title">Escalones de contratos hacia ${fmt$(s.targetBal)}</div><div class="ax-plan-esc">${escHtml}</div></div>`}`
+  }
+
+  function wirePlanPanel(cta, s) {
+    const reRender = () => {
+      const cfg = {
+        perfil: document.getElementById('planPerfil').value,
+        ritmo:  document.getElementById('planRitmo').value,
+      }
+      setPlanCfg(cta.id, cfg)
+      const panel = document.getElementById('apexPlanPanel')
+      panel.innerHTML = planPanelHtml(cta, s, cfg)
+      wirePlanPanel(cta, s)
+    }
+    document.getElementById('planPerfil')?.addEventListener('change', reRender)
+    document.getElementById('planRitmo')?.addEventListener('change', reRender)
+  }
+
   function regsDe(cuentaId) {
     return seriesPorCuenta[cuentaId] || []
   }
@@ -346,6 +486,7 @@ const Apex = (() => {
     if (!cta) return
     detalleCuentaId = cuentaId
     const s = calc(cta)
+    const planCfg = getPlanCfg(cta.id)
     const est = ESTADOS[cta.estado] || ESTADOS.evaluacion
 
     // KPIs
@@ -430,6 +571,15 @@ const Apex = (() => {
           Usaste contratos <b>NQ full size</b> (10× el riesgo del MNQ) en esta cuenta — el error que más rápido quema una evaluación.
         </div>` : ''
 
+      // Alerta de contratos máximos: trades cuya posición (qty) supera el límite Apex
+      const maxApex = cta.contratos_max || null
+      const excedidos = maxApex ? ctaTrades.filter(t => (parseInt(t.qty) || 0) > maxApex) : []
+      const alertaCtos = excedidos.length ? `
+        <div class="ax-alerta" style="margin-bottom:10px">
+          <i class="ti ti-alert-octagon"></i>
+          <b>Contratos máximos (${maxApex}):</b> ${excedidos.length} trade${excedidos.length !== 1 ? 's' : ''} superó el límite — la mayor posición fue <b>${Math.max(...excedidos.map(t => parseInt(t.qty)))} contratos</b>. Exceder el máximo de Apex anula la cuenta.
+        </div>` : ''
+
       const chips = [
         { l: 'Win rate', v: `${winRate}%`, c: winRate >= 50 ? 'var(--accent)' : 'var(--red)' },
         { l: 'Profit factor', v: pf === Infinity ? '∞' : pf.toFixed(2), c: pf >= 1.5 ? 'var(--accent)' : pf >= 1 ? 'var(--warning)' : 'var(--red)' },
@@ -443,12 +593,13 @@ const Apex = (() => {
         const p = parseFloat(t.profit) || 0
         const base = (t.instrument || '?').split(' ')[0]
         const resCls = t.resultado === 'target' ? 'res-t' : t.resultado === 'stop' ? 'res-s' : ''
-        return `<tr>
+        const qtyExc = maxApex && (parseInt(t.qty) || 0) > maxApex
+        return `<tr class="${qtyExc ? 'ax-row-exc' : ''}">
           <td>${t.trade_date}</td>
           <td>${(t.entry_time || '').slice(0, 5)}</td>
           <td><span class="ax-instr-tag ${base === 'NQ' ? 'ax-instr-nq' : ''}">${base}</span></td>
           <td>${t.market_pos || ''}</td>
-          <td>${t.qty ?? '—'}</td>
+          <td>${qtyExc ? `<b style="color:var(--red)">${t.qty} ⚠</b>` : (t.qty ?? '—')}</td>
           <td style="color:${p > 0 ? 'var(--accent)' : p < 0 ? 'var(--red)' : 'var(--text3)'}">${fmt$(p, 2)}</td>
           <td style="color:var(--red)">${t.mae != null ? fmt$(-Math.abs(t.mae), 0) : '—'}</td>
           <td style="color:var(--accent)">${t.mfe != null ? fmt$(Math.abs(t.mfe), 0) : '—'}</td>
@@ -461,6 +612,7 @@ const Apex = (() => {
         <div class="ax-det-trades-card">
           <div class="expd-matrix-title"><i class="ti ti-list-details"></i> Trading History <span class="expd-matrix-hint">${ctaTrades.length} trades auto-importados de NinjaTrader</span></div>
           ${alertaNQ}
+          ${alertaCtos}
           <div class="ax-det-tmetrics">
             ${chips.map(c => `<div class="expd-kpi"><div class="expd-kpi-label">${c.l}</div><div class="expd-kpi-value" style="color:${c.c};font-size:1.2rem">${c.v}</div></div>`).join('')}
           </div>
@@ -515,6 +667,8 @@ const Apex = (() => {
         </div>
       </div>
 
+      <div class="ax-plan-card" id="apexPlanPanel">${planPanelHtml(cta, s, planCfg)}</div>
+
       <div class="ax-det-panels">
         <div class="ax-det-panel ax-panel-ok">
           <div class="ax-panel-title" style="color:var(--accent)"><i class="ti ti-target-arrow"></i> Para pasar la prueba</div>
@@ -544,6 +698,7 @@ const Apex = (() => {
 
     document.getElementById('apexVolver').addEventListener('click', volverLista)
     document.querySelector('#apexDetalle .ax-reg-dia').addEventListener('click', () => openDiaModal(cta.id))
+    wirePlanPanel(cta, s)
 
     renderDetalleChart(cta, s)
   }
