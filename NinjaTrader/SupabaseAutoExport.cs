@@ -27,6 +27,12 @@ using NinjaTrader.NinjaScript.Indicators;
  *   - Evaluación Apex (checkbox ON): trades → tabla `apex_trades`, SIN Telegram.
  *     La app deriva días/balance/threshold automáticamente desde estos trades.
  *
+ * Comisiones (v2.4 — 2026-06-13):
+ *   - "Comisión por lado": si NinjaTrader reporta comisión $0, configurar este
+ *     valor por gráfico (NQ: 1.99, MNQ: 0.51). El indicador la calcula como
+ *     qty × valor en cada fill y la descuenta del profit (NETO). Si es 0, usa
+ *     la comisión que reporte NT (comportamiento previo).
+ *
  * Fusión de contratos ATM:
  *   Cuando el ATM opera 2+ contratos por separado, cada contrato genera
  *   un ExecutionUpdate independiente. El indicador espera 3 segundos antes
@@ -124,6 +130,15 @@ namespace NinjaTrader.NinjaScript.Indicators
                  Description = "Si está marcado, los trades van a apex_trades (Apex Tracker) y NO notifican por Telegram")]
         public bool ApexEvalAccount { get; set; }
 
+        [NinjaScriptProperty]
+        [Display(Name = "Comisión por lado", Order = 3, GroupName = "Supabase Export",
+                 Description = "Comisión por contrato por lado. NQ: 1.99, MNQ: 0.51. Si es 0 usa la comisión que reporta NinjaTrader.")]
+        public double CommissionPerSide { get; set; }
+
+        // Comisión de un fill: calculada por lado si se configuró, si no la de NT
+        private double FillCommission(Execution ex) =>
+            CommissionPerSide > 0 ? ex.Quantity * CommissionPerSide : ex.Commission;
+
         protected override void OnStateChange()
         {
             if (State == State.SetDefaults)
@@ -137,6 +152,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 IsSuspendedWhileInactive = false;
                 AccountName  = string.Empty;
                 ApexEvalAccount = false;
+                CommissionPerSide = 0;
             }
             else if (State == State.Configure)
             {
@@ -257,19 +273,19 @@ namespace NinjaTrader.NinjaScript.Indicators
                         maeExtreme      = ex.Price;
                         mfeExtreme      = ex.Price;
                         inTrade         = true;
-                        tradeCommission = ex.Commission;   // comisión de la pata de entrada
+                        tradeCommission = FillCommission(ex);   // comisión de la pata de entrada
                     }
                     else if (inTrade && Math.Sign(netQty) == Math.Sign(prevQty) && Math.Abs(netQty) > Math.Abs(prevQty))
                     {
                         // Scaling in — sumar comisión y actualizar qty al máximo alcanzado
-                        tradeCommission += ex.Commission;
+                        tradeCommission += FillCommission(ex);
                         tradeQty = Math.Abs(netQty);
                     }
                     else if (prevQty != 0 && netQty == 0)
                     {
                         // Cierre total del trade
                         inTrade = false;
-                        tradeCommission += ex.Commission;   // comisión de la pata de salida
+                        tradeCommission += FillCommission(ex);   // comisión de la pata de salida
 
                         postEntryPrice = entryPrice;
                         postExitPrice  = ex.Price;
@@ -305,7 +321,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                     else if (inTrade)
                     {
                         // Cierre parcial u otra ejecución dentro del trade — acumular comisión
-                        tradeCommission += ex.Commission;
+                        tradeCommission += FillCommission(ex);
                     }
                 }
 
