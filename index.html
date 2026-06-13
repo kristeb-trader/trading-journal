@@ -956,16 +956,18 @@
 
       <!-- ═══ APEX TRACKER ═══════════════════════════════════════════════ -->
       <section class="section" id="section-apex">
-        <div class="section-header">
-          <h2>Apex Tracker — Pruebas de Fondeo</h2>
-          <button class="btn-primary btn-sm" id="apexNuevaCuenta"><i class="ti ti-plus"></i> Nueva cuenta</button>
+        <!-- Vista lista: KPIs globales + cards por cuenta -->
+        <div id="apexLista">
+          <div class="section-header">
+            <h2>Apex Tracker — Pruebas de Fondeo</h2>
+            <button class="btn-primary btn-sm" id="apexNuevaCuenta"><i class="ti ti-plus"></i> Nueva cuenta</button>
+          </div>
+          <div class="expd-kpis" id="apexKpis"></div>
+          <div id="apexCuentas"></div>
         </div>
 
-        <!-- KPIs globales -->
-        <div class="expd-kpis" id="apexKpis"></div>
-
-        <!-- Cards por cuenta -->
-        <div id="apexCuentas"></div>
+        <!-- Vista detalle de una cuenta (oculta por defecto) -->
+        <div id="apexDetalle" class="hidden"></div>
       </section>
 
       <!-- Modal: crear/editar cuenta Apex -->

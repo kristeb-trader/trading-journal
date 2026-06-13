@@ -1330,9 +1330,48 @@ body.modal-open { overflow: hidden; }
 .apex-hint { font-size: 0.76rem; color: var(--text3); margin: -4px 0 10px; }
 .apex-hint b { color: var(--text2); }
 
+/* Vista de detalle de cuenta Apex */
+.ax-det-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.ax-det-title { display: flex; align-items: center; gap: 8px; }
+.ax-det-kpis {
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px; margin-bottom: 14px;
+}
+.ax-det-chart-card, .ax-det-bar-card, .ax-det-hist-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px;
+}
+.ax-det-legend { display: flex; gap: 16px; font-size: 0.78rem; margin-bottom: 10px; }
+.ax-det-bar-head, .ax-det-bar-foot {
+  display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--text2);
+}
+.ax-det-bar-head { margin-bottom: 7px; }
+.ax-det-bar-foot { margin-top: 9px; }
+.ax-det-bar-foot b, .ax-det-bar-head { font-weight: 500; }
+.ax-det-bar {
+  position: relative; height: 10px; border-radius: 5px;
+  background: linear-gradient(90deg, rgba(226,75,74,0.35), var(--bg3) 35%, var(--bg3) 65%, rgba(29,158,117,0.35));
+}
+.ax-det-bar-fill {
+  position: absolute; left: 0; top: 0; height: 100%;
+  background: rgba(29,158,117,0.25); border-radius: 5px 0 0 5px;
+}
+.ax-det-bar-mark { position: absolute; border-radius: 2px; }
+.ax-mark-inicio { top: -3px; width: 2px; height: 16px; background: var(--text3); transform: translateX(-1px); }
+.ax-mark-balance { top: -4px; width: 4px; height: 18px; background: var(--accent); transform: translateX(-2px); }
+.ax-det-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.ax-det-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+.ax-det-panel.ax-panel-ok   { border-color: rgba(29,158,117,0.35); }
+.ax-det-panel.ax-panel-risk { border-color: rgba(226,75,74,0.4); }
+.ax-panel-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; }
+.ax-panel-row { font-size: 0.8rem; color: var(--text2); line-height: 1.95; }
+.ax-panel-row b { color: var(--text); font-weight: 600; }
+
 @media (max-width: 768px) {
   .ax-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ax-foot { flex-direction: column; align-items: flex-start; }
+  .ax-det-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ax-det-panels { grid-template-columns: 1fr; }
 }
 
 .metric-card.clickable { cursor: pointer; }

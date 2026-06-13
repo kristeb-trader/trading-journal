@@ -64,9 +64,24 @@ const Apex = (() => {
 
     const progreso = Math.max(0, Math.min(100, (balance - inicial) / parseFloat(cta.profit_target) * 100))
 
+    // P&L total acumulado
+    const pnlTotal = balance - inicial
+
+    // Drawdown usado: cuánto del colchón total ya se consumió (sobre el máximo alcanzado)
+    const ddMax = parseFloat(cta.drawdown_max)
+    const drawdownUsado = Math.max(0, ddMax - espacio)
+
+    // Regla de consistencia (Apex PA): el mejor día no debe superar el 30% de las
+    // ganancias brutas acumuladas. consistencia = mejorDía / sumaGanancias × 100
+    const gananciasBrutas = wins.reduce((s, r) => s + parseFloat(r.pnl_dia), 0)
+    const mejorDia = wins.length ? Math.max(...wins.map(r => parseFloat(r.pnl_dia))) : 0
+    const consistencia = gananciasBrutas > 0 ? Math.round(mejorDia / gananciasBrutas * 100) : null
+    const consistenciaOk = consistencia == null || consistencia <= 30
+
     return { regs, last, balance, threshold, espacio, inicial, targetBal, maxBal,
       diasOperados, wins: wins.length, losses: losses.length, avgWin, riesgo,
-      stopMax, hitos, siguiente, proyeccion }
+      stopMax, hitos, siguiente, proyeccion, progreso, pnlTotal,
+      ddMax, drawdownUsado, gananciasBrutas, mejorDia, consistencia, consistenciaOk }
   }
 
   // Sugerencia de threshold para un nuevo registro (trail + congelamiento)
@@ -176,6 +191,7 @@ const Apex = (() => {
           <div class="ax-foot">
             <span class="ax-foot-stats">${statsLine}</span>
             <span class="ax-foot-actions">
+              <button class="btn-secondary btn-sm ax-ver-detalle" data-id="${cta.id}"><i class="ti ti-chart-area-line"></i> Ver detalle</button>
               <button class="btn-secondary btn-sm ax-toggle-hist" data-id="${cta.id}"><i class="ti ti-history"></i> Historial</button>
               <button class="btn-primary btn-sm ax-reg-dia" data-id="${cta.id}"><i class="ti ti-plus"></i> Registrar día</button>
             </span>
@@ -199,6 +215,9 @@ const Apex = (() => {
     wrap.querySelectorAll('.ax-reg-dia').forEach(btn => {
       btn.addEventListener('click', () => openDiaModal(parseInt(btn.dataset.id)))
     })
+    wrap.querySelectorAll('.ax-ver-detalle').forEach(btn => {
+      btn.addEventListener('click', () => openDetalle(parseInt(btn.dataset.id)))
+    })
     wrap.querySelectorAll('.ax-edit').forEach(btn => {
       btn.addEventListener('click', () => openCuentaModal(parseInt(btn.dataset.id)))
     })
@@ -217,6 +236,195 @@ const Apex = (() => {
   function render() {
     renderKpis()
     renderCuentas()
+  }
+
+  // ── Vista de detalle de una cuenta ─────────────────────────────────────────
+
+  let detalleChart = null
+  let detalleCuentaId = null
+
+  function volverLista() {
+    if (detalleChart) { detalleChart.destroy(); detalleChart = null }
+    detalleCuentaId = null
+    document.getElementById('apexDetalle').classList.add('hidden')
+    document.getElementById('apexLista').classList.remove('hidden')
+  }
+
+  function openDetalle(cuentaId) {
+    const cta = cuentas.find(c => c.id === cuentaId)
+    if (!cta) return
+    detalleCuentaId = cuentaId
+    const s = calc(cta)
+    const est = ESTADOS[cta.estado] || ESTADOS.evaluacion
+
+    // KPIs
+    const consColor = s.consistencia == null ? 'var(--text3)' : s.consistenciaOk ? 'var(--accent)' : 'var(--red)'
+    const espColor = s.espacio <= 0 ? 'var(--red)' : s.riesgo === 'alto' ? 'var(--red)' : s.riesgo === 'medio' ? 'var(--warning)' : 'var(--accent)'
+    const kpis = [
+      { l: 'Balance', v: fmt$(s.balance), c: 'var(--text)' },
+      { l: 'Piso (threshold)', v: fmt$(s.threshold), c: 'var(--text)' },
+      { l: 'Espacio al piso', v: fmt$(s.espacio), c: espColor },
+      { l: 'P&L total', v: fmt$(s.pnlTotal), c: s.pnlTotal >= 0 ? 'var(--accent)' : 'var(--red)' },
+      { l: 'Días operados', v: `${s.diasOperados} / ${cta.min_dias || '—'}`, c: 'var(--text)' },
+      { l: 'Consistencia', v: s.consistencia != null ? `${s.consistencia}%` : '—', c: consColor },
+    ]
+
+    // Barra MLL → Target con marcadores
+    const piso = s.threshold, ini = s.inicial, tgt = s.targetBal
+    const rango = tgt - piso
+    const posInicio = Math.max(0, Math.min(100, (ini - piso) / rango * 100))
+    const posBalance = Math.max(0, Math.min(100, (s.balance - piso) / rango * 100))
+    const faltan = tgt - s.balance
+
+    // Paneles
+    const ddPct = Math.round(s.drawdownUsado / s.ddMax * 100)
+    const espPctDD = Math.round(s.espacio / s.ddMax * 100)
+    const minRestantes = cta.min_dias ? Math.max(0, cta.min_dias - s.diasOperados) : null
+
+    const paraPasar = [
+      faltan > 0 ? `Faltan <b>${fmt$(faltan)}</b> para el target` : `<b style="color:var(--accent)">🎯 Target alcanzado</b>`,
+      minRestantes != null ? `Días mínimos: <b>${s.diasOperados} de ${cta.min_dias}</b>${minRestantes > 0 ? ` (faltan ${minRestantes})` : ' ✓'}` : null,
+      s.avgWin ? `Ritmo de día ganador: <b>${fmt$(s.avgWin)}</b>` : 'Aún sin días ganadores',
+      (s.proyeccion != null && s.proyeccion > 0) ? `Proyección: <b style="color:var(--accent)">~${s.proyeccion} días</b> al target` : null,
+    ].filter(Boolean)
+
+    const riesgo = [
+      `Espacio al piso: <b style="color:${espColor}">${fmt$(s.espacio)}</b> (${espPctDD}% del DD)`,
+      `Drawdown usado: <b>${fmt$(s.drawdownUsado)} de ${fmt$(s.ddMax)}</b> (${ddPct}%)`,
+      `Stop máx hoy: <b>${s.stopMax > 0 ? fmt$(s.stopMax) : 'No operar'}</b> (⅓ del colchón)`,
+      s.consistencia != null
+        ? `Consistencia: <b style="color:${consColor}">${s.consistencia}%</b> (límite 30%)${!s.consistenciaOk ? ' ⚠️' : ''}`
+        : `Consistencia: <span style="color:var(--text3)">sin días ganadores aún</span>`,
+    ]
+
+    // Historial (con espacio del día)
+    const histRows = [...s.regs].reverse().map(r => {
+      const esp = parseFloat(r.balance) - parseFloat(r.threshold)
+      const espC = esp <= 0 ? 'var(--red)' : esp < s.ddMax * 0.25 ? 'var(--red)' : esp < s.ddMax * 0.5 ? 'var(--warning)' : 'var(--accent)'
+      const pnl = parseFloat(r.pnl_dia)
+      return `<tr>
+        <td>${r.fecha}</td>
+        <td style="color:${pnl > 0 ? 'var(--accent)' : pnl < 0 ? 'var(--red)' : 'var(--text3)'}">${fmt$(pnl, 2)}</td>
+        <td>${fmt$(r.balance, 2)}</td>
+        <td>${fmt$(r.threshold, 2)}</td>
+        <td style="color:${espC}">${fmt$(esp, 0)}</td>
+        <td>${r.contratos ?? '—'}</td>
+        <td class="ax-hist-nota">${r.nota || ''}</td>
+      </tr>`
+    }).join('')
+
+    document.getElementById('apexDetalle').innerHTML = `
+      <div class="ax-det-head">
+        <button class="btn-icon" id="apexVolver" title="Volver"><i class="ti ti-arrow-left"></i></button>
+        <div>
+          <div class="ax-det-title"><span class="ax-nombre">${cta.nombre}</span><span class="ax-badge ${est.cls}">${est.label}</span></div>
+          <div class="ax-numero">${cta.numero_cuenta || ''} · ${(parseFloat(cta.tamano) / 1000).toFixed(0)}K Intraday Trail</div>
+        </div>
+        <button class="btn-primary btn-sm ax-reg-dia" data-id="${cta.id}" style="margin-left:auto"><i class="ti ti-plus"></i> Registrar día</button>
+      </div>
+
+      <div class="ax-det-kpis">
+        ${kpis.map(k => `<div class="expd-kpi"><div class="expd-kpi-label">${k.l}</div><div class="expd-kpi-value" style="color:${k.c}">${k.v}</div></div>`).join('')}
+      </div>
+
+      <div class="ax-det-chart-card">
+        <div class="ax-det-legend">
+          <span style="color:var(--accent)">● Balance</span>
+          <span style="color:var(--red)">● Piso (threshold)</span>
+          <span style="color:var(--text3)">— Target</span>
+        </div>
+        <div style="height:240px"><canvas id="apexDetChart"></canvas></div>
+      </div>
+
+      <div class="ax-det-bar-card">
+        <div class="ax-det-bar-head">
+          <span style="color:var(--red)">${fmt$(piso)} piso</span>
+          <span style="color:var(--text3)">${fmt$(ini)} inicio</span>
+          <span style="color:var(--accent)">${fmt$(tgt)} target</span>
+        </div>
+        <div class="ax-det-bar">
+          <div class="ax-det-bar-fill" style="width:${posBalance}%"></div>
+          <div class="ax-det-bar-mark ax-mark-inicio" style="left:${posInicio}%" title="Inicio"></div>
+          <div class="ax-det-bar-mark ax-mark-balance" style="left:${posBalance}%" title="Balance actual"></div>
+        </div>
+        <div class="ax-det-bar-foot">
+          <span><b style="color:${espColor}">${fmt$(s.espacio)}</b> colchón</span>
+          <span><b>${fmt$(s.balance)}</b> balance</span>
+          <span><b>${faltan > 0 ? fmt$(faltan) : '$0'}</b> al target</span>
+        </div>
+      </div>
+
+      <div class="ax-det-panels">
+        <div class="ax-det-panel ax-panel-ok">
+          <div class="ax-panel-title" style="color:var(--accent)"><i class="ti ti-target-arrow"></i> Para pasar la prueba</div>
+          ${paraPasar.map(t => `<div class="ax-panel-row">${t}</div>`).join('')}
+        </div>
+        <div class="ax-det-panel ax-panel-risk">
+          <div class="ax-panel-title" style="color:var(--red)"><i class="ti ti-alert-triangle"></i> Riesgo de perderla</div>
+          ${riesgo.map(t => `<div class="ax-panel-row">${t}</div>`).join('')}
+        </div>
+      </div>
+
+      <div class="ax-det-hist-card">
+        <div class="expd-matrix-title"><i class="ti ti-history"></i> Historial diario</div>
+        <div style="overflow-x:auto">
+          ${s.regs.length ? `
+            <table class="ax-hist-table">
+              <thead><tr><th>Fecha</th><th>P&L</th><th>Balance</th><th>Piso</th><th>Espacio</th><th>Ctos</th><th>Nota</th></tr></thead>
+              <tbody>${histRows}</tbody>
+            </table>` : '<p style="color:var(--text3);font-size:0.82rem;padding:8px 0">Sin registros aún</p>'}
+        </div>
+      </div>`
+
+    document.getElementById('apexLista').classList.add('hidden')
+    document.getElementById('apexDetalle').classList.remove('hidden')
+
+    document.getElementById('apexVolver').addEventListener('click', volverLista)
+    document.querySelector('#apexDetalle .ax-reg-dia').addEventListener('click', () => openDiaModal(cta.id))
+
+    renderDetalleChart(cta, s)
+  }
+
+  function renderDetalleChart(cta, s) {
+    if (detalleChart) { detalleChart.destroy(); detalleChart = null }
+    const ctx = document.getElementById('apexDetChart')
+    if (!ctx || typeof Chart === 'undefined' || !s.regs.length) return
+
+    const labels = s.regs.map(r => r.fecha.slice(5))  // MM-DD
+    const balData = s.regs.map(r => parseFloat(r.balance))
+    const thrData = s.regs.map(r => parseFloat(r.threshold))
+    const tgtData = s.regs.map(() => s.targetBal)
+
+    detalleChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Balance', data: balData, borderColor: '#1D9E75', backgroundColor: 'rgba(29,158,117,0.12)',
+            fill: true, tension: 0.35, pointRadius: 2, pointBackgroundColor: '#1D9E75', borderWidth: 2.5 },
+          { label: 'Piso', data: thrData, borderColor: '#E24B4A', backgroundColor: 'transparent',
+            fill: false, tension: 0.35, pointRadius: 0, borderWidth: 2, borderDash: [5, 4] },
+          { label: 'Target', data: tgtData, borderColor: 'rgba(136,135,128,0.6)', backgroundColor: 'transparent',
+            fill: false, pointRadius: 0, borderWidth: 1, borderDash: [2, 3] },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#2a2a28', titleColor: '#F4F3EF', bodyColor: '#9B9B8E',
+            borderColor: 'rgba(255,255,255,0.06)', borderWidth: 1,
+            callbacks: { label: c => `${c.dataset.label}: ${fmt$(c.parsed.y, 0)}` },
+          },
+        },
+        scales: {
+          x: { ticks: { color: '#9B9B8E', maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.06)' } },
+          y: { ticks: { color: '#9B9B8E', callback: v => '$' + (v / 1000).toFixed(1) + 'k' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+        },
+      },
+    })
   }
 
   // ── Modal: cuenta ─────────────────────────────────────────────────────────
@@ -338,6 +546,11 @@ const Apex = (() => {
     try {
       await loadData()
       render()
+      // Si estábamos en una vista de detalle, refrescarla con los datos nuevos
+      if (detalleCuentaId != null) {
+        if (cuentas.find(c => c.id === detalleCuentaId)) openDetalle(detalleCuentaId)
+        else volverLista()
+      }
     } catch (_) { /* tablas aún no creadas — init ya mostró el aviso */ }
   }
 
