@@ -259,6 +259,17 @@ const DataManager = (() => {
   async function init() {
     await Promise.all([loadCasuisticas(), loadEmociones(), loadRecomendaciones()])
 
+    // ── Capital inicial (para rentabilidad % en Análisis) ──
+    const capInput = document.getElementById('dataCapitalInicial')
+    if (capInput) {
+      const saved = parseFloat(localStorage.getItem('annual_capital_inicial') || '0')
+      if (saved > 0) capInput.value = saved
+      capInput.addEventListener('change', () => {
+        localStorage.setItem('annual_capital_inicial', String(parseFloat(capInput.value) || 0))
+        Toast.show('Capital inicial guardado', 'success')
+      })
+    }
+
     // ── Casuísticas ──
     document.getElementById('addCasuistica').addEventListener('click', async () => {
       const input = document.getElementById('newCasuistica')

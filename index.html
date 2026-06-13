@@ -536,6 +536,19 @@
         <div class="section-header">
           <h2><i class="ti ti-database"></i> Gestión de Datos</h2>
         </div>
+
+        <!-- Capital inicial (para la rentabilidad % en Análisis) -->
+        <div class="catalog-card" style="margin-bottom:16px;max-width:420px">
+          <div class="catalog-header">
+            <h3><i class="ti ti-coin" style="color:var(--accent)"></i> Capital inicial</h3>
+            <span class="catalog-sub">Base para el cálculo de rentabilidad % en Análisis</span>
+          </div>
+          <div class="annual-capital-input" style="margin-top:6px">
+            <span>$</span>
+            <input type="number" id="dataCapitalInicial" placeholder="5000" min="0" step="100">
+          </div>
+        </div>
+
         <div class="data-catalogs">
 
           <!-- Errores -->
@@ -836,56 +849,29 @@
               <i class="ti ti-chevron-right"></i>
             </button>
           </div>
-          <select id="accountFilterAnalysis" class="filter-select">
+          <select id="accountFilterAnalysis" class="filter-select filter-select-sm">
             <option value="all">Todas las cuentas</option>
           </select>
-          <div class="annual-capital-wrap">
-            <label for="analysisCapital">Capital inicial <span style="color:var(--text3)">(rentabilidad %)</span></label>
-            <div class="annual-capital-input">
-              <span>$</span>
-              <input type="number" id="analysisCapital" placeholder="5000" min="0" step="100">
-            </div>
-          </div>
         </div>
 
         <!-- KPI Strip -->
         <div id="analysisKpiStrip"></div>
 
-        <div class="charts-grid">
-          <div class="chart-card wide">
+        <!-- Equity + P&L por período (una fila) -->
+        <div class="annual-charts-row">
+          <div class="card">
             <div class="chart-header">
               <h3><i class="ti ti-trending-up"></i> Curva de Equity — P&amp;L Acumulado</h3>
               <button class="help-btn" data-help="equity" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
             </div>
-            <canvas id="equityChart"></canvas>
+            <canvas id="equityChart" height="110"></canvas>
           </div>
-          <div class="chart-card wide">
+          <div class="card">
             <div class="chart-header">
               <h3><i class="ti ti-chart-bar"></i> <span id="pnlBarsTitle">P&amp;L por semana</span></h3>
               <button class="help-btn" data-help="pnlBars" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
             </div>
-            <canvas id="pnlBarsChart"></canvas>
-          </div>
-          <div class="chart-card">
-            <div class="chart-header">
-              <h3><i class="ti ti-calendar-week"></i> P&amp;L promedio por día de semana</h3>
-              <button class="help-btn" data-help="pnlByDay" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-            </div>
-            <canvas id="pnlByDayChart"></canvas>
-          </div>
-          <div class="chart-card">
-            <div class="chart-header">
-              <h3><i class="ti ti-clock"></i> P&amp;L promedio por hora (ET)</h3>
-              <button class="help-btn" data-help="pnlByHour" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-            </div>
-            <canvas id="pnlByHourChart"></canvas>
-          </div>
-          <div class="chart-card">
-            <div class="chart-header">
-              <h3><i class="ti ti-chart-donut"></i> Distribución de resultados</h3>
-              <button class="help-btn" data-help="results" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-            </div>
-            <canvas id="resultsChart"></canvas>
+            <canvas id="pnlBarsChart" height="110"></canvas>
           </div>
         </div>
 
@@ -911,6 +897,24 @@
               <tbody id="analysisTablaBody"></tbody>
               <tfoot id="analysisTablaFoot"></tfoot>
             </table>
+          </div>
+        </div>
+
+        <!-- Gráficas operativas -->
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3><i class="ti ti-clock"></i> P&amp;L promedio por hora (ET)</h3>
+              <button class="help-btn" data-help="pnlByHour" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
+            <canvas id="pnlByHourChart"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3><i class="ti ti-chart-donut"></i> Distribución de resultados</h3>
+              <button class="help-btn" data-help="results" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
+            <canvas id="resultsChart"></canvas>
           </div>
         </div>
       </section>

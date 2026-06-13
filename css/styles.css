@@ -665,6 +665,10 @@ textarea { resize: vertical; min-height: 80px; }
   display: flex; align-items: center; gap: 12px;
   margin-bottom: 16px; flex-wrap: wrap;
 }
+.filter-select-sm { margin-left: auto; max-width: 150px; font-size: 0.82rem; padding: 6px 10px; }
+@media (max-width: 768px) {
+  .filter-select-sm { margin-left: 0; max-width: none; flex: 1 0 100%; }
+}
 #analysisKpiStrip { margin-bottom: 20px; }
 .analysis-kpi-row {
   display: flex; gap: 10px; flex-wrap: wrap;
@@ -1656,6 +1660,7 @@ body.modal-open { overflow: hidden; }
   gap: 16px; margin-bottom: 20px;
 }
 .annual-charts-row .card { padding: 16px; }
+.annual-charts-row .card canvas { height: 240px !important; }
 .annual-table-card { padding: 16px; }
 .annual-table-wrap { overflow-x: auto; margin-top: 12px; }
 .annual-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }

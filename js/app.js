@@ -358,6 +358,8 @@ const Nav = {
       Experimentos.reload()
     } else if (sectionId === 'apex') {
       Apex.reload()
+    } else if (sectionId === 'analysis') {
+      Charts.refresh()
     }
   },
 

@@ -210,7 +210,10 @@ const Charts = (() => {
   // ── Barras P&L por sub-período ──────────────────────────────────────────
   function renderPnlBars(trades, subs) {
     destroy('pnlBars')
-    document.getElementById('pnlBarsTitle').textContent = period === 'month' ? 'P&L por semana' : 'P&L por mes'
+    document.getElementById('pnlBarsTitle').textContent =
+      period === 'month'   ? 'P&L por semana del mes'
+      : period === 'quarter' ? 'P&L por mes del trimestre'
+      : 'P&L por mes del año'
     const data = subs.map(sp => parseFloat(trades
       .filter(t => (t.trade_date || '') >= sp.from && (t.trade_date || '') <= sp.to)
       .reduce((a, t) => a + (parseFloat(t.profit) || 0), 0).toFixed(2)))
@@ -222,25 +225,6 @@ const Charts = (() => {
       options: { ...baseOptions, plugins: { ...baseOptions.plugins, legend:{ display:false },
         tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => ` P&L: ${c.parsed.y>=0?'+':''}$${c.parsed.y.toFixed(2)}` } } },
         scales: { ...baseOptions.scales, y:{ ...baseOptions.scales.y, ticks:{ color:COLORS.text, callback:v=>`$${v}` } } } },
-    })
-  }
-
-  // ── P&L por día de semana ───────────────────────────────────────────────
-  function renderPnlByDay(trades) {
-    destroy('pnlByDay')
-    const DAYS = ['Lun','Mar','Mié','Jue','Vie']
-    const buckets = {1:[],2:[],3:[],4:[],5:[]}
-    trades.forEach(t => {
-      if (!t.trade_date) return
-      const dow = new Date(t.trade_date + 'T12:00:00').getDay()
-      if (dow >= 1 && dow <= 5) buckets[dow].push(parseFloat(t.profit) || 0)
-    })
-    const avgs = [1,2,3,4,5].map(d => buckets[d].length ? parseFloat((buckets[d].reduce((a,b)=>a+b,0)/buckets[d].length).toFixed(2)) : 0)
-    instances.pnlByDay = new Chart(document.getElementById('pnlByDayChart'), {
-      type: 'bar',
-      data: { labels:DAYS, datasets:[{ label:'P&L promedio', data:avgs,
-        backgroundColor: avgs.map(v=>v>=0?'rgba(29,158,117,0.7)':'rgba(226,75,74,0.7)'), borderRadius:4 }] },
-      options: baseOptions,
     })
   }
 
@@ -359,7 +343,6 @@ const Charts = (() => {
     renderKpis(trades, sesiones, casByDate, subs)
     renderEquity(trades)
     renderPnlBars(trades, subs)
-    renderPnlByDay(trades)
     renderPnlByHour(trades)
     renderResults(trades)
     renderTabla(trades, sesiones, casByDate, subs)
@@ -380,7 +363,6 @@ const Charts = (() => {
   async function init() {
     ;[allTrades, allSesiones, allCas] = await Promise.all([DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas()])
     buildAccountFilter()
-    if (capital > 0) document.getElementById('analysisCapital').value = capital
     render()
 
     document.querySelectorAll('#analysisPeriodSel .period-btn').forEach(btn => {
@@ -397,11 +379,6 @@ const Charts = (() => {
 
     document.getElementById('accountFilterAnalysis').addEventListener('change', e => {
       localStorage.setItem('annualAccount', e.target.value)
-      render()
-    })
-    document.getElementById('analysisCapital').addEventListener('change', e => {
-      capital = parseFloat(e.target.value) || 0
-      localStorage.setItem('annual_capital_inicial', String(capital))
       render()
     })
 
@@ -438,5 +415,12 @@ const Charts = (() => {
     }
   }
 
-  return { init }
+  // Re-lee el capital (configurado en Datos) y re-renderiza
+  function refresh() {
+    if (!allTrades.length) return
+    capital = parseFloat(localStorage.getItem('annual_capital_inicial') || '0')
+    render()
+  }
+
+  return { init, refresh }
 })()
