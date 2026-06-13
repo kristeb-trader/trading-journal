@@ -62,10 +62,6 @@
         <i class="ti ti-trophy"></i>
         <span>Apex</span>
       </li>
-      <li class="nav-item" data-section="annual" title="Resumen Anual">
-        <i class="ti ti-calendar-stats"></i>
-        <span>Anual</span>
-      </li>
       <li class="nav-item" data-section="historial" title="Historial">
         <i class="ti ti-history"></i>
         <span>Historial</span>
@@ -826,24 +822,30 @@
 
         <!-- Filtros -->
         <div class="analysis-controls">
-          <div class="period-selector">
-            <button class="period-btn" data-period="week">Semana</button>
+          <div class="period-selector" id="analysisPeriodSel">
             <button class="period-btn active" data-period="month">Mes</button>
-            <button class="period-btn" data-period="all">Todo</button>
+            <button class="period-btn" data-period="quarter">Trimestre</button>
+            <button class="period-btn" data-period="year">Anual</button>
           </div>
-          <!-- Navegador de mes (visible solo en período "Mes") -->
-          <div class="analysis-month-nav" id="analysisMonthNav">
-            <button class="btn-icon" id="analysisPrevMonth" title="Mes anterior">
+          <div class="analysis-month-nav" id="analysisPeriodNav">
+            <button class="btn-icon" id="analysisPrevPeriod" title="Anterior">
               <i class="ti ti-chevron-left"></i>
             </button>
-            <span id="analysisMonthLabel">Mayo 2026</span>
-            <button class="btn-icon" id="analysisNextMonth" title="Mes siguiente">
+            <span id="analysisPeriodLabel">Junio 2026</span>
+            <button class="btn-icon" id="analysisNextPeriod" title="Siguiente">
               <i class="ti ti-chevron-right"></i>
             </button>
           </div>
           <select id="accountFilterAnalysis" class="filter-select">
             <option value="all">Todas las cuentas</option>
           </select>
+          <div class="annual-capital-wrap">
+            <label for="analysisCapital">Capital inicial <span style="color:var(--text3)">(rentabilidad %)</span></label>
+            <div class="annual-capital-input">
+              <span>$</span>
+              <input type="number" id="analysisCapital" placeholder="5000" min="0" step="100">
+            </div>
+          </div>
         </div>
 
         <!-- KPI Strip -->
@@ -857,12 +859,12 @@
             </div>
             <canvas id="equityChart"></canvas>
           </div>
-          <div class="chart-card">
+          <div class="chart-card wide">
             <div class="chart-header">
-              <h3><i class="ti ti-target"></i> Win Rate semanal</h3>
-              <button class="help-btn" data-help="winRate" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+              <h3><i class="ti ti-chart-bar"></i> <span id="pnlBarsTitle">P&amp;L por semana</span></h3>
+              <button class="help-btn" data-help="pnlBars" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
             </div>
-            <canvas id="winRateChart"></canvas>
+            <canvas id="pnlBarsChart"></canvas>
           </div>
           <div class="chart-card">
             <div class="chart-header">
@@ -878,20 +880,6 @@
             </div>
             <canvas id="pnlByHourChart"></canvas>
           </div>
-          <div class="chart-card wide">
-            <div class="chart-header">
-              <h3><i class="ti ti-arrows-maximize"></i> MAE vs MFE — Gestión de excursiones</h3>
-              <button class="help-btn" data-help="maeMfe" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-            </div>
-            <canvas id="maeMfeChart"></canvas>
-          </div>
-          <div class="chart-card wide">
-            <div class="chart-header">
-              <h3><i class="ti ti-chart-histogram"></i> Distribución de P&amp;L — Frecuencia por rango</h3>
-              <button class="help-btn" data-help="pnlHist" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-            </div>
-            <canvas id="pnlHistChart"></canvas>
-          </div>
           <div class="chart-card">
             <div class="chart-header">
               <h3><i class="ti ti-chart-donut"></i> Distribución de resultados</h3>
@@ -899,26 +887,30 @@
             </div>
             <canvas id="resultsChart"></canvas>
           </div>
-          <div class="chart-card">
-            <div class="chart-header">
-              <h3><i class="ti ti-checkup-list"></i> Disciplina por sesión</h3>
-              <button class="help-btn" data-help="discipline" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-            </div>
-            <canvas id="disciplineChart"></canvas>
+        </div>
+
+        <!-- Tabla resumen adaptativa -->
+        <div class="card annual-table-card">
+          <div class="chart-header">
+            <h3><i class="ti ti-table"></i> <span id="analysisTablaTitle">Resumen por semana</span></h3>
           </div>
-          <div class="chart-card">
-            <div class="chart-header">
-              <h3><i class="ti ti-chart-dots"></i> Disciplina vs P&amp;L — ¿Las reglas generan dinero?</h3>
-              <button class="help-btn" data-help="discPnl" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-            </div>
-            <canvas id="disciplinePnlChart"></canvas>
-          </div>
-          <div class="chart-card wide">
-            <div class="chart-header">
-              <h3><i class="ti ti-timeline"></i> Errores en el tiempo — Evolución semanal</h3>
-              <button class="help-btn" data-help="errorsTime" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-            </div>
-            <canvas id="errorsTimeChart"></canvas>
+          <div class="annual-table-wrap">
+            <table class="annual-table">
+              <thead>
+                <tr>
+                  <th id="analysisTablaCol1">Semana</th>
+                  <th>P&amp;L Neto</th>
+                  <th>Acumulado</th>
+                  <th>Rentabilidad</th>
+                  <th>Efectividad</th>
+                  <th>Disciplina</th>
+                  <th>Trades</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="analysisTablaBody"></tbody>
+              <tfoot id="analysisTablaFoot"></tfoot>
+            </table>
           </div>
         </div>
       </section>
@@ -1047,90 +1039,6 @@
           </div>
         </div>
       </div>
-
-      <!-- ── Section: Anual ──────────────────────────────────────────────── -->
-      <section class="section" id="section-annual">
-
-        <!-- Header: año + capital inicial -->
-        <div class="annual-header">
-          <div class="annual-year-nav">
-            <button class="btn-icon" id="annualPrevYear" title="Año anterior">
-              <i class="ti ti-chevron-left"></i>
-            </button>
-            <span id="annualYearLabel" class="annual-year-label">2026</span>
-            <button class="btn-icon" id="annualNextYear" title="Año siguiente">
-              <i class="ti ti-chevron-right"></i>
-            </button>
-          </div>
-          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-            <select id="accountFilterAnnual" class="filter-select">
-              <option value="all">Todas las cuentas</option>
-            </select>
-            <div class="annual-capital-wrap">
-              <label for="annualCapitalInicial">Capital inicial <span style="color:var(--text3)">(para rentabilidad %)</span></label>
-              <div class="annual-capital-input">
-                <span>$</span>
-                <input type="number" id="annualCapitalInicial" placeholder="5000" min="0" step="100">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Loading state -->
-        <div id="annualLoadingState" style="text-align:center;padding:60px 0;color:var(--text3)">
-          <i class="ti ti-loader-2 spin" style="font-size:2rem"></i>
-          <p style="margin-top:12px">Cargando datos anuales...</p>
-        </div>
-
-        <!-- Main content -->
-        <div id="annualContent" class="hidden">
-
-          <!-- KPI strip -->
-          <div class="annual-kpi-strip" id="annualKpiStrip"></div>
-
-          <!-- Charts row -->
-          <div class="annual-charts-row">
-            <div class="card">
-              <div class="chart-header">
-                <h3><i class="ti ti-trending-up"></i> Equity Curve Anual</h3>
-              </div>
-              <canvas id="annualEquityChart" height="110"></canvas>
-            </div>
-            <div class="card">
-              <div class="chart-header">
-                <h3><i class="ti ti-chart-bar"></i> P&amp;L por Mes</h3>
-              </div>
-              <canvas id="annualPnlBarChart" height="110"></canvas>
-            </div>
-          </div>
-
-          <!-- Monthly table -->
-          <div class="card annual-table-card">
-            <div class="chart-header">
-              <h3><i class="ti ti-table"></i> Resumen por Mes</h3>
-            </div>
-            <div class="annual-table-wrap">
-              <table class="annual-table">
-                <thead>
-                  <tr>
-                    <th>Mes</th>
-                    <th>P&amp;L Neto</th>
-                    <th>Acumulado</th>
-                    <th>Rentabilidad</th>
-                    <th>Efectividad</th>
-                    <th>Disciplina</th>
-                    <th>Trades</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody id="annualMonthTableBody"></tbody>
-                <tfoot id="annualMonthTableFoot"></tfoot>
-              </table>
-            </div>
-          </div>
-
-        </div>
-      </section>
 
     </div>
   </main>
@@ -1290,7 +1198,6 @@
   <script src="js/charts.js"></script>
   <script src="js/data.js"></script>
   <script src="js/gallery.js"></script>
-  <script src="js/annual.js"></script>
   <script src="js/experimentos.js"></script>
   <script src="js/apex.js"></script>
   <script src="js/estrategia.js"></script>

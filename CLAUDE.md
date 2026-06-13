@@ -31,7 +31,8 @@ Dashboard personal para registro y análisis de operativa diaria en NQ/MNQ Futur
 js/app.js        — Boot, navegación SPA, Modal.openDay (modal del calendario)
 js/calendar.js   — Calendario mensual, filtro de cuenta, openDayModal
 js/coach.js      — Coach IA: flujo 3 etapas, chat, diagnóstico, guardar
-js/metrics.js    — KPIs y métricas generales
+js/metrics.js    — KPIs y métricas generales (cards del calendario)
+js/charts.js     — Sección Análisis unificada: filtros Mes/Trimestre/Anual adaptativos
 js/form.js       — Formulario de sesión diaria + experimentos
 js/db.js         — Capa de datos Supabase (todas las queries)
 js/experimentos.js — Laboratorio de Experimentos: veredictos + matriz cronológica
@@ -77,7 +78,7 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 
 ## Estado actual (Jun 2026)
 ### Funcionando
-- 12 secciones: Calendario, Métricas, Trades, Registrar, Análisis, Experimentos, Galería, Anual, Historial, Coach IA, Estrategia, Datos
+- Secciones: Calendario+Métricas, Trades, Registrar, Análisis (unificado: Mes/Trimestre/Anual), Experimentos, Apex Tracker, Galería, Historial, Coach IA, Estrategia, Datos
 - Coach IA 3 etapas + auto-detección diagnóstico en chat
 - Filtro de cuenta: carga PA-APEX por defecto, persiste en localStorage
 - Nav mobile scrollable horizontal

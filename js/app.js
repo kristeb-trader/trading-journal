@@ -317,7 +317,6 @@ const Nav = {
     analysis: 'Análisis',
     experimentos: 'Experimentos',
     apex: 'Apex Tracker',
-    annual: 'Resumen Anual',
     historial: 'Historial',
     estrategia: 'Estrategia',
     data: 'Datos',
@@ -344,7 +343,6 @@ const Nav = {
         if (sectionId === 'analysis') await Charts.init()
         if (sectionId === 'experimentos') await Experimentos.init()
         if (sectionId === 'apex') await Apex.init()
-        if (sectionId === 'annual') await Annual.init()
         if (sectionId === 'coach') await Coach.init()
         if (sectionId === 'estrategia') await Estrategia.init()
         if (sectionId === 'historial') await Coach.renderHistorial()
