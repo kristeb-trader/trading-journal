@@ -14,7 +14,7 @@ Dashboard personal para registro y análisis de operativa diaria en NQ/MNQ Futur
 | Análisis IA | Claude API `claude-sonnet-4-6` |
 | Imágenes | Cloudinary (cloud: `dq4n7bjta`, preset: `trading-journal`) |
 | Bot | Telegram → Cloudflare Worker #2 + KV |
-| Exportación | Indicador C# en NinjaTrader 8 (`NinjaTrader/SupabaseAutoExport.cs`) |
+| Exportación | Indicador C# en NinjaTrader 8 (`NinjaTrader/SupabaseAutoExport.cs`) — routing: PA→`trades`+Telegram, eval Apex→`apex_trades` sin notificar |
 
 ## URLs clave
 - **Producción:** `https://kristeb-trader.github.io/trading-journal`
@@ -35,6 +35,7 @@ js/metrics.js    — KPIs y métricas generales
 js/form.js       — Formulario de sesión diaria + experimentos
 js/db.js         — Capa de datos Supabase (todas las queries)
 js/experimentos.js — Laboratorio de Experimentos: veredictos + matriz cronológica
+js/apex.js       — Apex Tracker: cuentas de fondeo, vista detalle, auto-carga NT8
 js/estrategia.js — Sección Estrategia: reglas por setup + Chaumer
 css/styles.css   — Dark mode completo + responsive mobile
 TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
@@ -55,6 +56,9 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 | `estrategia_chaumer` | Secciones editables de la estrategia |
 | `objetivos` | Stop máx, trades/día, P&L objetivo, límite pérdida |
 | `fomc_dates` | Fechas FOMC 2025-2026 |
+| `apex_cuentas` | Cuentas de fondeo Apex: parámetros (DD, target, safety net) y estado |
+| `apex_registros` | Registro diario manual por cuenta Apex (P&L, balance, threshold) |
+| `apex_trades` | Trades individuales auto-exportados de NT8 (cuentas de evaluación) |
 
 ## Coach IA — flujo
 1. **Análisis Técnico** → 1ª llamada IA → 3 secciones (Contexto / Desarrollo / Validación)

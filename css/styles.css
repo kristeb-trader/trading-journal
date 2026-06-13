@@ -1367,11 +1367,21 @@ body.modal-open { overflow: hidden; }
 .ax-panel-row { font-size: 0.8rem; color: var(--text2); line-height: 1.95; }
 .ax-panel-row b { color: var(--text); font-weight: 600; }
 
+/* Trading History trade-por-trade */
+.ax-det-trades-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+.ax-det-tmetrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 10px 0; }
+.ax-instr-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.ax-instr-chip { background: var(--bg3); border-radius: 8px; padding: 5px 11px; font-size: 0.78rem; color: var(--text2); }
+.ax-instr-chip.ax-instr-nq { background: rgba(226,75,74,0.12); }
+.ax-instr-tag { font-size: 0.72rem; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: rgba(29,158,117,0.15); color: var(--accent); }
+.ax-instr-tag.ax-instr-nq { background: rgba(226,75,74,0.18); color: var(--red); }
+
 @media (max-width: 768px) {
   .ax-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ax-foot { flex-direction: column; align-items: flex-start; }
   .ax-det-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ax-det-panels { grid-template-columns: 1fr; }
+  .ax-det-tmetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 .metric-card.clickable { cursor: pointer; }

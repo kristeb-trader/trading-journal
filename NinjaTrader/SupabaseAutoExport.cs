@@ -20,6 +20,12 @@ using NinjaTrader.NinjaScript.Indicators;
  *   2. NinjaScript Editor → compilar (F5)
  *   3. Agregar al gráfico de NQ/MNQ
  *   4. Seleccionar la cuenta en el dropdown "Account Name"
+ *   5. Para cuentas de evaluación de fondeo: marcar "Cuenta de evaluación Apex"
+ *
+ * Routing por cuenta (v2.3 — 2026-06-13):
+ *   - PA real (checkbox OFF): trades → tabla `trades` + notificación Telegram.
+ *   - Evaluación Apex (checkbox ON): trades → tabla `apex_trades`, SIN Telegram.
+ *     La app deriva días/balance/threshold automáticamente desde estos trades.
  *
  * Fusión de contratos ATM:
  *   Cuando el ATM opera 2+ contratos por separado, cada contrato genera
@@ -57,6 +63,10 @@ namespace NinjaTrader.NinjaScript.Indicators
     {
         private const string SUPABASE_ENDPOINT =
             "https://jothoslozctflfrnysrx.supabase.co/rest/v1/trades";
+
+        // Cuentas de evaluación de fondeo: tabla separada, sin notificación Telegram
+        private const string APEX_ENDPOINT =
+            "https://jothoslozctflfrnysrx.supabase.co/rest/v1/apex_trades";
 
         private const string NOTIFY_ENDPOINT =
             "https://trading-journal-bot.kristerock.workers.dev/notify";
@@ -109,6 +119,11 @@ namespace NinjaTrader.NinjaScript.Indicators
                  Description = "Seleccionar la cuenta a monitorear")]
         public string AccountName { get; set; }
 
+        [NinjaScriptProperty]
+        [Display(Name = "Cuenta de evaluación Apex", Order = 2, GroupName = "Supabase Export",
+                 Description = "Si está marcado, los trades van a apex_trades (Apex Tracker) y NO notifican por Telegram")]
+        public bool ApexEvalAccount { get; set; }
+
         protected override void OnStateChange()
         {
             if (State == State.SetDefaults)
@@ -121,6 +136,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 DrawOnPricePanel         = false;
                 IsSuspendedWhileInactive = false;
                 AccountName  = string.Empty;
+                ApexEvalAccount = false;
             }
             else if (State == State.Configure)
             {
@@ -400,9 +416,11 @@ namespace NinjaTrader.NinjaScript.Indicators
                 entryPrc, exitPrc, entryT, exitT, exitName,
                 profit, commission, mae, mfe, bars, tradeDate, resultado));
 
-            Task.Run(() => SendNotificationAsync(
-                instrument, marketPos, qty,
-                entryPrc, exitPrc, profit, commission, mae, mfe, resultado));
+            // Las cuentas de evaluación no notifican por Telegram (solo la PA real)
+            if (!ApexEvalAccount)
+                Task.Run(() => SendNotificationAsync(
+                    instrument, marketPos, qty,
+                    entryPrc, exitPrc, profit, commission, mae, mfe, resultado));
         }
 
         private async Task PostTradeAsync(
@@ -450,7 +468,8 @@ namespace NinjaTrader.NinjaScript.Indicators
                 );
 
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                await client.PostAsync(SUPABASE_ENDPOINT, content);
+                string endpoint = ApexEvalAccount ? APEX_ENDPOINT : SUPABASE_ENDPOINT;
+                await client.PostAsync(endpoint, content);
             }
             catch { }
         }

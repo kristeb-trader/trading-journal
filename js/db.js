@@ -561,4 +561,14 @@ const DB = {
     if (error) throw error
   },
 
+  async getApexTrades() {
+    const { data, error } = await supa
+      .from('apex_trades')
+      .select('*')
+      .order('trade_date', { ascending: true })
+      .order('entry_time', { ascending: true })
+    if (error) throw error
+    return data
+  },
+
 }

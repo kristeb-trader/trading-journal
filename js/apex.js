@@ -3,7 +3,10 @@
 // historial diario, registro de días y gestión de cuentas.
 const Apex = (() => {
   let cuentas   = []
-  let registros = []   // todos, orden fecha asc
+  let registros = []   // apex_registros manuales, orden fecha asc
+  let trades    = []   // apex_trades (auto-export NT8), orden fecha asc
+  let seriesPorCuenta = {}  // cuentaId → serie de días combinada (manual + derivada)
+  let tradesPorCuenta = {}  // cuentaId → trades individuales de esa cuenta
 
   const ESTADOS = {
     evaluacion:   { label: 'Evaluación',       cls: 'ax-ev' },
@@ -22,7 +25,95 @@ const Apex = (() => {
   }
 
   function regsDe(cuentaId) {
-    return registros.filter(r => r.cuenta_id === cuentaId)
+    return seriesPorCuenta[cuentaId] || []
+  }
+
+  function tradesDe(cuentaId) {
+    return tradesPorCuenta[cuentaId] || []
+  }
+
+  // Construye, por cuenta, la serie de días combinando los registros manuales
+  // (apex_registros) con los derivados de los trades auto-exportados (apex_trades).
+  // Recalcula balance y threshold trailing (HWM desde MFE) sobre la serie unificada.
+  function buildSeries() {
+    seriesPorCuenta = {}
+    tradesPorCuenta = {}
+
+    cuentas.forEach(cta => {
+      const dd     = parseFloat(cta.drawdown_max)
+      const inicial = parseFloat(cta.balance_inicial)
+      const safety = cta.safety_net_balance != null ? parseFloat(cta.safety_net_balance) : null
+      const piso   = cta.piso_congelado    != null ? parseFloat(cta.piso_congelado)    : null
+
+      // Trades de esta cuenta (match por número de cuenta = AccountName de NT)
+      const ctaTrades = trades.filter(t => t.account === cta.numero_cuenta)
+      tradesPorCuenta[cta.id] = ctaTrades
+
+      // Días auto: agrupar trades por fecha
+      const autoPorFecha = {}
+      ctaTrades.forEach(t => {
+        const f = t.trade_date
+        if (!autoPorFecha[f]) autoPorFecha[f] = []
+        autoPorFecha[f].push(t)
+      })
+
+      // Días manuales: por fecha
+      const manualPorFecha = {}
+      registros.filter(r => r.cuenta_id === cta.id).forEach(r => { manualPorFecha[r.fecha] = r })
+
+      // Unión de fechas, orden cronológico
+      const fechas = [...new Set([...Object.keys(autoPorFecha), ...Object.keys(manualPorFecha)])].sort()
+
+      let balanceAnt = inicial
+      let hwm = inicial
+      const serie = fechas.map(fecha => {
+        const man = manualPorFecha[fecha]
+        const dayTrades = autoPorFecha[fecha] || []
+
+        if (man) {
+          // Día manual: respetar sus valores guardados (verdad ajustada a Rithmic).
+          // Recuperar el HWM implícito del threshold guardado.
+          const bal = parseFloat(man.balance)
+          const thr = parseFloat(man.threshold)
+          hwm = Math.max(hwm, thr + dd)
+          balanceAnt = bal
+          return {
+            id: man.id, cuenta_id: cta.id, fecha,
+            pnl_dia: parseFloat(man.pnl_dia), balance: bal, threshold: thr,
+            contratos: man.contratos, nota: man.nota || '', _auto: false,
+            trades: dayTrades,
+          }
+        }
+
+        // Día derivado de los trades auto
+        const pnl = dayTrades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
+        // HWM intradía: recorrer trades en orden sumando, considerando el MFE de cada uno
+        let run = balanceAnt
+        dayTrades.forEach(t => {
+          const peak = run + (parseFloat(t.mfe) || 0)
+          if (peak > hwm) hwm = peak
+          run += parseFloat(t.profit) || 0
+        })
+        const balance = Math.round((balanceAnt + pnl) * 100) / 100
+        balanceAnt = balance
+        // Threshold trailing: congelado en piso si el HWM tocó el safety net
+        let thr
+        if (safety != null && piso != null && hwm >= safety) thr = piso
+        else { thr = hwm - dd; if (piso != null) thr = Math.min(thr, piso) }
+        thr = Math.round(thr * 100) / 100
+        const maxQty = dayTrades.reduce((m, t) => Math.max(m, parseInt(t.qty) || 0), 0)
+        const instrs = [...new Set(dayTrades.map(t => (t.instrument || '').split(' ')[0]))].filter(Boolean)
+        return {
+          id: null, cuenta_id: cta.id, fecha,
+          pnl_dia: pnl, balance, threshold: thr,
+          contratos: maxQty || null,
+          nota: `${dayTrades.length} trade${dayTrades.length !== 1 ? 's' : ''}${instrs.length ? ' · ' + instrs.join('/') : ''}`,
+          _auto: true, trades: dayTrades,
+        }
+      })
+
+      seriesPorCuenta[cta.id] = serie
+    })
   }
 
   // Estado calculado de una cuenta a partir de su último registro
@@ -160,8 +251,8 @@ const Apex = (() => {
           <td>${fmt$(r.balance, 2)}</td>
           <td>${fmt$(r.threshold, 2)}</td>
           <td>${r.contratos ?? '—'}</td>
-          <td class="ax-hist-nota">${r.nota || ''}</td>
-          <td><button class="btn-icon ax-del-reg" data-id="${r.id}" title="Eliminar registro"><i class="ti ti-trash" style="font-size:0.85rem"></i></button></td>
+          <td class="ax-hist-nota">${r._auto ? '<i class="ti ti-bolt" title="Auto desde NinjaTrader" style="color:var(--accent)"></i> ' : ''}${r.nota || ''}</td>
+          <td>${r._auto ? '' : `<button class="btn-icon ax-del-reg" data-id="${r.id}" title="Eliminar registro"><i class="ti ti-trash" style="font-size:0.85rem"></i></button>`}</td>
         </tr>`).join('')
 
       const faltan = s.targetBal - s.balance
@@ -313,6 +404,76 @@ const Apex = (() => {
       </tr>`
     }).join('')
 
+    // ── Trading History trade-por-trade + métricas (desde apex_trades) ──
+    const ctaTrades = tradesDe(cta.id)
+    let tradingHtml = ''
+    if (ctaTrades.length) {
+      const profits = ctaTrades.map(t => parseFloat(t.profit) || 0)
+      const wins = profits.filter(p => p > 0), losses = profits.filter(p => p < 0)
+      const grossWin = wins.reduce((a, b) => a + b, 0)
+      const grossLoss = Math.abs(losses.reduce((a, b) => a + b, 0))
+      const winRate = (wins.length + losses.length) ? Math.round(wins.length / (wins.length + losses.length) * 100) : 0
+      const pf = grossLoss > 0 ? (grossWin / grossLoss) : (grossWin > 0 ? Infinity : 0)
+      const expectativa = ctaTrades.length ? profits.reduce((a, b) => a + b, 0) / ctaTrades.length : 0
+
+      // Distribución por instrumento base (NQ full vs MNQ micro)
+      const porInstr = {}
+      ctaTrades.forEach(t => {
+        const base = (t.instrument || '?').split(' ')[0]
+        if (!porInstr[base]) porInstr[base] = { n: 0, pnl: 0 }
+        porInstr[base].n++; porInstr[base].pnl += parseFloat(t.profit) || 0
+      })
+      const usaNQ = Object.keys(porInstr).some(k => k === 'NQ')
+      const alertaNQ = usaNQ ? `
+        <div class="ax-alerta" style="margin-bottom:10px">
+          <i class="ti ti-alert-triangle"></i>
+          Usaste contratos <b>NQ full size</b> (10× el riesgo del MNQ) en esta cuenta — el error que más rápido quema una evaluación.
+        </div>` : ''
+
+      const chips = [
+        { l: 'Win rate', v: `${winRate}%`, c: winRate >= 50 ? 'var(--accent)' : 'var(--red)' },
+        { l: 'Profit factor', v: pf === Infinity ? '∞' : pf.toFixed(2), c: pf >= 1.5 ? 'var(--accent)' : pf >= 1 ? 'var(--warning)' : 'var(--red)' },
+        { l: 'Expectativa/trade', v: fmt$(expectativa, 1), c: expectativa >= 0 ? 'var(--accent)' : 'var(--red)' },
+        { l: 'Trades', v: ctaTrades.length, c: 'var(--text)' },
+      ]
+      const distChips = Object.entries(porInstr).map(([k, v]) =>
+        `<span class="ax-instr-chip ${k === 'NQ' ? 'ax-instr-nq' : ''}">${k}: <b>${v.n}</b> · <b style="color:${v.pnl >= 0 ? 'var(--accent)' : 'var(--red)'}">${fmt$(v.pnl, 0)}</b></span>`).join('')
+
+      const tRows = [...ctaTrades].reverse().map(t => {
+        const p = parseFloat(t.profit) || 0
+        const base = (t.instrument || '?').split(' ')[0]
+        const resCls = t.resultado === 'target' ? 'res-t' : t.resultado === 'stop' ? 'res-s' : ''
+        return `<tr>
+          <td>${t.trade_date}</td>
+          <td>${(t.entry_time || '').slice(0, 5)}</td>
+          <td><span class="ax-instr-tag ${base === 'NQ' ? 'ax-instr-nq' : ''}">${base}</span></td>
+          <td>${t.market_pos || ''}</td>
+          <td>${t.qty ?? '—'}</td>
+          <td style="color:${p > 0 ? 'var(--accent)' : p < 0 ? 'var(--red)' : 'var(--text3)'}">${fmt$(p, 2)}</td>
+          <td style="color:var(--red)">${t.mae != null ? fmt$(-Math.abs(t.mae), 0) : '—'}</td>
+          <td style="color:var(--accent)">${t.mfe != null ? fmt$(Math.abs(t.mfe), 0) : '—'}</td>
+          <td>${t.bars != null ? t.bars + ' min' : '—'}</td>
+          <td class="${resCls}">${t.resultado || ''}</td>
+        </tr>`
+      }).join('')
+
+      tradingHtml = `
+        <div class="ax-det-trades-card">
+          <div class="expd-matrix-title"><i class="ti ti-list-details"></i> Trading History <span class="expd-matrix-hint">${ctaTrades.length} trades auto-importados de NinjaTrader</span></div>
+          ${alertaNQ}
+          <div class="ax-det-tmetrics">
+            ${chips.map(c => `<div class="expd-kpi"><div class="expd-kpi-label">${c.l}</div><div class="expd-kpi-value" style="color:${c.c};font-size:1.2rem">${c.v}</div></div>`).join('')}
+          </div>
+          <div class="ax-instr-row">${distChips}</div>
+          <div style="overflow-x:auto;margin-top:10px">
+            <table class="ax-hist-table">
+              <thead><tr><th>Fecha</th><th>Hora</th><th>Instr</th><th>Dir</th><th>Qty</th><th>P&L</th><th>MAE</th><th>MFE</th><th>Dur</th><th>Resultado</th></tr></thead>
+              <tbody>${tRows}</tbody>
+            </table>
+          </div>
+        </div>`
+    }
+
     document.getElementById('apexDetalle').innerHTML = `
       <div class="ax-det-head">
         <button class="btn-icon" id="apexVolver" title="Volver"><i class="ti ti-arrow-left"></i></button>
@@ -364,6 +525,8 @@ const Apex = (() => {
           ${riesgo.map(t => `<div class="ax-panel-row">${t}</div>`).join('')}
         </div>
       </div>
+
+      ${tradingHtml}
 
       <div class="ax-det-hist-card">
         <div class="expd-matrix-title"><i class="ti ti-history"></i> Historial diario</div>
@@ -539,7 +702,11 @@ const Apex = (() => {
   // ── Carga e init ─────────────────────────────────────────────────────────
 
   async function loadData() {
-    ;[cuentas, registros] = await Promise.all([DB.getApexCuentas(), DB.getApexRegistros()])
+    ;[cuentas, registros, trades] = await Promise.all([
+      DB.getApexCuentas(), DB.getApexRegistros(),
+      DB.getApexTrades().catch(() => []),  // tabla puede no existir aún
+    ])
+    buildSeries()
   }
 
   async function reload() {
