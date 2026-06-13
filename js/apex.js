@@ -38,14 +38,16 @@ const Apex = (() => {
   const VP_MNQ = 2  // $ por punto MNQ
 
   function getPlanCfg(cuentaId) {
-    try {
-      const raw = localStorage.getItem('apexPlan_' + cuentaId)
-      if (raw) { const c = JSON.parse(raw); if (PLAN_PERFILES[c.perfil] && PLAN_RITMOS[c.ritmo]) return c }
-    } catch (_) { /* ignore */ }
-    return { perfil: 'moderado', ritmo: 'equilibrado' }
+    const cta = cuentas.find(c => c.id === cuentaId)
+    const perfil = cta && PLAN_PERFILES[cta.plan_perfil] ? cta.plan_perfil : 'moderado'
+    const ritmo  = cta && PLAN_RITMOS[cta.plan_ritmo]   ? cta.plan_ritmo   : 'equilibrado'
+    return { perfil, ritmo }
   }
   function setPlanCfg(cuentaId, cfg) {
-    try { localStorage.setItem('apexPlan_' + cuentaId, JSON.stringify(cfg)) } catch (_) { /* ignore */ }
+    // Actualiza memoria al instante (render síncrono) y persiste en BD en background
+    const cta = cuentas.find(c => c.id === cuentaId)
+    if (cta) { cta.plan_perfil = cfg.perfil; cta.plan_ritmo = cfg.ritmo }
+    DB.saveApexPlan(cuentaId, cfg.perfil, cfg.ritmo).catch(() => { /* tabla sin columnas aún */ })
   }
 
   // Stop de referencia en $/contrato MNQ, derivado de los stops reales (o default)

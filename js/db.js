@@ -561,6 +561,14 @@ const DB = {
     if (error) throw error
   },
 
+  async saveApexPlan(cuentaId, perfil, ritmo) {
+    const { error } = await supa
+      .from('apex_cuentas')
+      .update({ plan_perfil: perfil, plan_ritmo: ritmo })
+      .eq('id', cuentaId)
+    if (error) throw error
+  },
+
   async getApexTrades() {
     const { data, error } = await supa
       .from('apex_trades')
