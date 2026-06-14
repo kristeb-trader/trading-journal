@@ -80,6 +80,32 @@ const Charts = (() => {
     return `${curYear}`
   }
 
+  // Años disponibles para el selector (los de los trades + el actual)
+  function yearsRange() {
+    const ys = new Set([new Date().getFullYear(), curYear])
+    allTrades.forEach(t => { if (t.trade_date) ys.add(parseInt(t.trade_date.slice(0, 4))) })
+    return [...ys].sort((a, b) => a - b)
+  }
+
+  // Selectores directos de mes / trimestre / año según el período
+  function renderPicker() {
+    const el = document.getElementById('analysisPeriodPicker')
+    if (!el) return
+    const yearOpts = yearsRange().map(y => `<option value="${y}" ${y === curYear ? 'selected' : ''}>${y}</option>`).join('')
+    if (period === 'month') {
+      const mOpts = MONTHS.map((m, i) => `<option value="${i + 1}" ${i + 1 === curMonth ? 'selected' : ''}>${m}</option>`).join('')
+      el.innerHTML = `<select id="pickMonth" class="period-pick">${mOpts}</select><select id="pickYear" class="period-pick">${yearOpts}</select>`
+    } else if (period === 'quarter') {
+      const qOpts = [1,2,3,4].map(q => `<option value="${q}" ${q === curQ ? 'selected' : ''}>Q${q} (${MONTH_S[(q-1)*3]}–${MONTH_S[(q-1)*3+2]})</option>`).join('')
+      el.innerHTML = `<select id="pickQ" class="period-pick">${qOpts}</select><select id="pickYear" class="period-pick">${yearOpts}</select>`
+    } else {
+      el.innerHTML = `<select id="pickYear" class="period-pick">${yearOpts}</select>`
+    }
+    document.getElementById('pickYear')?.addEventListener('change', e => { curYear = parseInt(e.target.value); render() })
+    document.getElementById('pickMonth')?.addEventListener('change', e => { curMonth = parseInt(e.target.value); render() })
+    document.getElementById('pickQ')?.addEventListener('change', e => { curQ = parseInt(e.target.value); render() })
+  }
+
   // ── Sub-períodos para barras y tabla (Mes→semanas, Trim/Año→meses) ────────
   function subPeriods() {
     const { from, to } = periodRange()
@@ -329,7 +355,7 @@ const Charts = (() => {
 
   // ── Render principal ────────────────────────────────────────────────────
   function render() {
-    document.getElementById('analysisPeriodLabel').textContent = periodLabel()
+    renderPicker()
 
     const accountVal = document.getElementById('accountFilterAnalysis')?.value || 'all'
     const filtered = accountVal === 'all' ? allTrades : allTrades.filter(t => abbreviateAccount(t.account) === accountVal)

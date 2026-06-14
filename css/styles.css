@@ -666,6 +666,13 @@ textarea { resize: vertical; min-height: 80px; }
   margin-bottom: 16px; flex-wrap: wrap;
 }
 .filter-select-sm { margin-left: auto; max-width: 150px; font-size: 0.82rem; padding: 6px 10px; }
+.period-picker { display: flex; align-items: center; gap: 6px; }
+.period-pick {
+  background: var(--bg3); color: var(--text); border: 1px solid var(--border);
+  border-radius: 7px; padding: 5px 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer;
+}
+.period-pick:focus { border-color: var(--accent); outline: none; }
+.period-pick option { background: var(--bg2); }
 @media (max-width: 768px) {
   .filter-select-sm { margin-left: 0; max-width: none; flex: 1 0 100%; }
 }
