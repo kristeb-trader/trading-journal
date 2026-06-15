@@ -5,6 +5,9 @@ const Coach = (() => {
   const MODEL      = 'claude-sonnet-4-6'
   const MAX_TOKENS = 3000
 
+  // El Coach IA solo analiza la cuenta PA real. Las demás (evaluación, sim) se ignoran.
+  const CUENTA_ANALISIS = 'PA-APEX-232411-03'
+
   // ── Estado interno ─────────────────────────────────────────────────────
   let chatHistory       = []   // conversación del día en memoria
   let systemPromptCache = null // se construye una vez por sesión abierta
@@ -92,6 +95,10 @@ const Coach = (() => {
       DB.getCatalogoCasuisticas()
     ])
 
+    // El Coach analiza ÚNICAMENTE la cuenta PA real (PA-APEX-232411-03).
+    // Las cuentas de evaluación y simulación no se analizan.
+    const tradesPA = (trades || []).filter(t => (t.account || '') === CUENTA_ANALISIS)
+
     // Catálogo de errores (vocabulario controlado para evitar duplicados)
     const tipoNombre = { psicologico: 'Psicológico', analitico: 'Analítico', operativo: 'Operativo', marcado: 'Marcado' }
     const catalogoStr = (catalogoErrores || [])
@@ -115,13 +122,13 @@ const Coach = (() => {
       ? `${sesion.nivel_confianza}/5`
       : 'No indicado'
 
-    // Trades de hoy
-    const pnlHoy      = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
-    const targetsHoy  = trades.filter(t => t.resultado === 'target').length
-    const stopsHoy    = trades.filter(t => t.resultado === 'stop').length
-    const besHoy      = trades.filter(t => t.resultado === 'be').length
-    const tradesStr   = trades.length > 0
-      ? `${trades.length} trades (Targets: ${targetsHoy} | Stops: ${stopsHoy} | BEs: ${besHoy}) — P&L: ${fmtPnl(pnlHoy)}`
+    // Trades de hoy (solo cuenta PA real)
+    const pnlHoy      = tradesPA.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
+    const targetsHoy  = tradesPA.filter(t => t.resultado === 'target').length
+    const stopsHoy    = tradesPA.filter(t => t.resultado === 'stop').length
+    const besHoy      = tradesPA.filter(t => t.resultado === 'be').length
+    const tradesStr   = tradesPA.length > 0
+      ? `${tradesPA.length} trades (Targets: ${targetsHoy} | Stops: ${stopsHoy} | BEs: ${besHoy}) — P&L: ${fmtPnl(pnlHoy)}`
       : 'Sin trades registrados'
 
     // Checklist
