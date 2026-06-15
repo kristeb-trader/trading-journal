@@ -1697,6 +1697,7 @@ body.modal-open { overflow: hidden; }
 .annual-charts-row .card canvas { height: 240px !important; }
 .annual-table-card { padding: 16px; margin-bottom: 28px; }
 #section-analysis .charts-grid { margin-top: 4px; }
+#section-analysis .annual-charts-row { grid-template-columns: 0.92fr 1.08fr; }
 .annual-table-wrap { overflow-x: auto; margin-top: 12px; }
 .annual-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 .annual-table th {
@@ -1717,7 +1718,7 @@ body.modal-open { overflow: hidden; }
 .annual-row:hover td { background: rgba(255,255,255,0.025); }
 .annual-row-empty td { opacity: 0.4; font-style: italic; }
 .annual-empty-cell { color: var(--text3) !important; font-size: 0.8rem; }
-.annual-totals-row td { font-weight: 600; color: var(--text) !important; }
+.annual-totals-row td { font-weight: 600; color: var(--text); }
 .annual-pos  { color: var(--accent)  !important; }
 .annual-neg  { color: var(--red)     !important; }
 .annual-warn { color: var(--warning) !important; }

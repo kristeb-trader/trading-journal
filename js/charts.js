@@ -211,17 +211,36 @@ const Charts = (() => {
     const last = equity[equity.length - 1] || 0
 
     const ctx = document.getElementById('equityChart').getContext('2d')
-    const grad = ctx.createLinearGradient(0, 0, 0, 300)
-    grad.addColorStop(0, 'rgba(29,158,117,0.55)'); grad.addColorStop(1, 'rgba(29,158,117,0.02)')
+    // Color por signo: verde sobre cero, rojo bajo cero (por segmento y relleno)
+    const segColor = c => (c.p0.parsed.y < 0 || c.p1.parsed.y < 0) ? COLORS.red : COLORS.accent
     instances.equity = new Chart(ctx, {
       type: 'line',
       data: { labels, datasets: [
-        { label:'P&L Acumulado', data:equity, borderColor:last>=0?COLORS.accent:COLORS.red,
-          backgroundColor:last>=0?grad:'rgba(226,75,74,0.18)', borderWidth:3,
-          pointRadius:keys.length>30?2:4, pointHoverRadius:7, pointBackgroundColor:last>=0?COLORS.accent:COLORS.red,
-          tension:0.3, fill:true },
+        { label:'P&L Acumulado', data:equity, borderColor: last>=0?COLORS.accent:COLORS.red, borderWidth:3,
+          segment: { borderColor: segColor },
+          pointRadius:keys.length>30?2:4, pointHoverRadius:7,
+          pointBackgroundColor: equity.map(v => v < 0 ? COLORS.red : COLORS.accent),
+          tension:0.3, fill:true,
+          backgroundColor: c => {
+            const { chart } = c
+            const { ctx: cx, chartArea } = chart
+            if (!chartArea) return 'rgba(29,158,117,0.15)'
+            // Gradiente que parte del cero: verde arriba, rojo abajo
+            const yScale = chart.scales.y
+            const zeroY = yScale.getPixelForValue(0)
+            const top = chartArea.top, bottom = chartArea.bottom
+            const g = cx.createLinearGradient(0, top, 0, bottom)
+            const zeroStop = Math.max(0, Math.min(1, (zeroY - top) / (bottom - top)))
+            g.addColorStop(0, 'rgba(29,158,117,0.5)')
+            g.addColorStop(Math.max(0, zeroStop - 0.001), 'rgba(29,158,117,0.04)')
+            g.addColorStop(Math.min(1, zeroStop + 0.001), 'rgba(226,75,74,0.04)')
+            g.addColorStop(1, 'rgba(226,75,74,0.45)')
+            return g
+          },
+        },
       ]},
       options: { ...baseOptions, interaction:{ mode:'index', intersect:false },
+        layout: { padding: { left: 2, right: 4 } },
         plugins: { ...baseOptions.plugins,
           legend:{ display:false },
           tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => ` P&L acumulado: ${c.raw>=0?'+':''}$${c.raw}` } } } },
@@ -242,8 +261,9 @@ const Charts = (() => {
       type: 'bar',
       data: { labels: subs.map(s => s.label), datasets: [{ label:'P&L',
         data, backgroundColor: data.map(v => v>=0?'rgba(29,158,117,0.65)':'rgba(226,75,74,0.65)'),
-        borderColor: data.map(v => v>=0?'rgba(29,158,117,1)':'rgba(226,75,74,1)'), borderWidth:1, borderRadius:4 }] },
-      options: { ...baseOptions, layout: { padding: { right: 10, left: 2 } },
+        borderColor: data.map(v => v>=0?'rgba(29,158,117,1)':'rgba(226,75,74,1)'), borderWidth:1, borderRadius:4,
+        maxBarThickness: 64, categoryPercentage: 0.8, barPercentage: 0.9 }] },
+      options: { ...baseOptions, layout: { padding: { right: 18, left: 2 } },
         plugins: { ...baseOptions.plugins, legend:{ display:false },
         tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => ` P&L: ${c.parsed.y>=0?'+':''}$${c.parsed.y.toFixed(2)}` } } },
         scales: { ...baseOptions.scales,
@@ -252,11 +272,11 @@ const Charts = (() => {
     })
   }
 
-  // ── P&L por hora (ET) ───────────────────────────────────────────────────
+  // ── P&L por hora (hora local) ───────────────────────────────────────────
   function renderPnlByHour(trades) {
     destroy('pnlByHour')
-    // Solo las primeras 2 horas de la apertura de NY: 9:30 a 11:30
-    const slots = { '09:30':[], '10:00':[], '10:30':[], '11:00':[], '11:30':[] }
+    // Primeras 2 horas de la apertura de NY en hora local (08:30 a 10:30)
+    const slots = { '08:30':[], '09:00':[], '09:30':[], '10:00':[], '10:30':[] }
     trades.forEach(t => {
       if (!t.entry_time) return
       const [h,m] = t.entry_time.split(':').map(Number)
@@ -368,7 +388,7 @@ const Charts = (() => {
         <td class="annual-totals-label">Total ${periodLabel()}</td>
         <td class="${tot.pnl>=0?'annual-totals-pos':'annual-totals-neg'}">${tot.pnl>=0?'+':''}$${tot.pnl.toFixed(2)}</td>
         <td class="${tot.pnl>=0?'annual-totals-pos':'annual-totals-neg'}">${tot.pnl>=0?'+':''}$${tot.pnl.toFixed(2)}</td>
-        <td class="annual-totals-neutral">${totRent}</td>
+        <td class="${capital<=0?'annual-totals-neutral':tot.pnl>=0?'annual-totals-pos':'annual-totals-neg'}">${totRent}</td>
         <td class="${tot.efec==null?'annual-totals-neutral':tot.efec>=50?'annual-totals-pos':tot.efec>=40?'annual-totals-warn':'annual-totals-neg'}">${totEfec}</td>
         <td class="${totDisc==null?'annual-totals-neutral':totDisc>=80?'annual-totals-pos':totDisc>=55?'annual-totals-warn':'annual-totals-neg'}">${totDisc!=null?totDisc+'%':'—'}</td>
         <td class="annual-totals-neutral">${tot.total}</td>
