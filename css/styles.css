@@ -436,6 +436,15 @@ small { font-size: 0.82em; }
 .metric-value.color-warning { color: var(--warning); }
 .metric-sub { font-size: 0.75rem; color: var(--text3); margin-top: 4px; }
 
+/* Variante compacta (Calendario, arriba) — sin icono, tipo chips de Análisis */
+.metrics-grid-compact { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.metrics-grid-compact .metric-card { padding: 10px 12px; gap: 0; }
+.metrics-grid-compact .metric-icon { display: none; }
+.metrics-grid-compact .metric-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.metrics-grid-compact .metric-value { font-size: 1.1rem; }
+.metrics-grid-compact .metric-sub { font-size: 0.68rem; }
+@media (max-width: 768px) { .metrics-grid-compact { grid-template-columns: repeat(2, 1fr); } }
+
 /* ── Trades Table ────────────────────────────────────────────────────── */
 .table-controls { display: flex; gap: 8px; }
 .search-input, .filter-select {

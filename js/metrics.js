@@ -639,7 +639,12 @@ const Metrics = (() => {
     return parts.length > 2 ? parts.slice(0, 2).join('-') : account
   }
 
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+
   function render(period = 'all') {
+    const heroEl = document.getElementById('calHeroTitle')
+    if (heroEl) heroEl.textContent = `Estadísticas — ${MESES[calMonth() - 1]} ${calYear()}`
+
     const accountVal = document.getElementById('accountFilterCalendar')?.value || 'all'
     const accountFiltered = accountVal === 'all'
       ? allTrades
@@ -858,7 +863,6 @@ const Metrics = (() => {
       { label: 'Cumplimiento de Reglas', value: cumplimientoPct != null ? `${cumplimientoPct}%` : '—', icon: 'ti-shield-check', color: cumplimientoPct == null ? 'neutral' : cumplimientoPct >= 90 ? 'green' : cumplimientoPct >= 70 ? 'warning' : 'red', sub: objStats.configurado ? `${objStats.diasOperados} días evaluados` : 'Configura objetivos en Ajustes', clickable: objStats.configurado, action: 'objetivos-detail' },
       { label: 'Días limpios', value: rachaLimpia > 0 ? `${rachaLimpia} 🏆` : '0', icon: 'ti-circle-check', color: diasLimpiosStat.pct >= 70 ? 'green' : diasLimpiosStat.pct >= 40 ? 'warning' : 'red', sub: `${diasLimpiosStat.total}/${diasLimpiosStat.totalSesiones} días sin errores${trendLimpios}`, clickable: diasLimpiosStat.totalSesiones > 0, action: 'dias-limpios' },
       { label: 'Dejé de ganar', value: dejeGanarStat.targets > 0 ? `${dejeGanarStat.targets} ⚠️` : '0 ✅', icon: 'ti-mood-sad', color: dejeGanarStat.targets === 0 ? 'green' : dejeGanarStat.targets <= 2 ? 'warning' : 'red', sub: dejeGanarStat.total > 0 ? `${dejeGanarStat.targets}T · ${dejeGanarStat.stops}S dejados pasar` : 'Sin setups perdidos', clickable: dejeGanarStat.total > 0, action: 'deje-ganar' },
-      { label: 'Experimentos', value: expConSugerencia.length > 0 ? `${expConSugerencia.length} 🔬` : expStats.length > 0 ? `${expStats.length} en curso` : '—', icon: 'ti-flask', color: expConSugerencia.length > 0 ? 'warning' : 'neutral', sub: expStats.length > 0 ? `${expStats.length} activos · ${MIN_MUESTRAS} casos para decidir` : 'Sin registros aún', clickable: expStats.length > 0, action: 'experimentos' },
       {
         label: 'Targets · Stops · Sin entrada',
         value: `<span style="color:var(--accent)">${targets}</span> · <span style="color:var(--red)">${stops}</span> · ${noOperoCount}`,
