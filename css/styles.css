@@ -229,6 +229,11 @@ small { font-size: 0.82em; }
 /* ── Calendar ────────────────────────────────────────────────────────── */
 .calendar-nav { display: flex; align-items: center; gap: 12px; }
 .calendar-nav span { font-weight: 600; font-size: 1rem; min-width: 140px; text-align: center; }
+.calendar-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.calendar-topbar .filter-select-sm { margin-left: 0; }
 
 .calendar-legend {
   display: flex; gap: 16px; margin-bottom: 16px;

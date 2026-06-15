@@ -866,31 +866,6 @@ const Metrics = (() => {
         color: 'neutral',
         sub: `Ratio T/S: ${stops > 0 ? (targets / stops).toFixed(2) : targets > 0 ? '∞' : '—'}`,
       },
-      { label: 'Racha actual', value: streak.count > 0 ? `${streak.count} ${streak.type === 'win' ? '🟢' : '🔴'}` : '—', icon: 'ti-flame', color: streak.type === 'win' ? 'green' : 'red', sub: streak.type === 'win' ? 'victorias seguidas' : streak.type === 'loss' ? 'pérdidas seguidas' : '' },
-      { label: 'Mejor día', value: best ? `+$${best[1].toFixed(0)}` : '—', icon: 'ti-trending-up', color: 'green', sub: best ? best[0] : '' },
-      { label: 'Peor día', value: worst ? `${worst[1] >= 0 ? '+' : ''}$${worst[1].toFixed(0)}` : '—', icon: 'ti-trending-down', color: worst ? (worst[1] >= 0 ? 'green' : 'red') : 'neutral', sub: worst ? worst[0] : '' },
-      {
-        label: 'Max Drawdown',
-        value: maxDD > 0 ? `-$${maxDD.toFixed(2)}` : '$0',
-        icon: 'ti-chart-arrows-vertical',
-        color: maxDD === 0 ? 'green' : maxDD < 200 ? 'neutral' : 'red',
-        sub: 'Máxima caída desde pico',
-      },
-      {
-        label: 'Profit Factor',
-        value: pf != null ? pf.toFixed(2) : '—',
-        icon: 'ti-math-function',
-        color: pf == null ? 'neutral' : pf >= 2 ? 'green' : pf >= 1 ? 'neutral' : 'red',
-        sub: pf != null ? (pf >= 2 ? 'Sistema sólido' : pf >= 1 ? 'Sistema marginal' : 'Sistema negativo') : 'Sin pérdidas en el período',
-      },
-      {
-        label: 'Avg Win / Avg Loss',
-        value: avgWin != null && avgLoss != null ? `$${avgWin.toFixed(0)} / $${avgLoss.toFixed(0)}` : avgWin != null ? `$${avgWin.toFixed(0)} / —` : '—',
-        icon: 'ti-arrows-diff',
-        color: avgWin != null && avgLoss != null && avgWin >= avgLoss ? 'green' : 'neutral',
-        sub: avgWin != null && avgLoss != null ? `Ratio: ${(avgWin / avgLoss).toFixed(2)}x` : 'Sin datos suficientes',
-      },
-      { label: 'Total Trades', value: totalTrades, icon: 'ti-list-numbers', color: 'neutral', sub: `${tradingDays} días operados` },
     ]
 
     document.getElementById('metricsGrid').innerHTML = cards.map(c => `
@@ -924,6 +899,44 @@ const Metrics = (() => {
     document.querySelector('[data-action="experimentos"]')?.addEventListener('click', () => {
       openExperimentosModal(expStats, MIN_MUESTRAS, nonBETrades.length > 0 ? parseFloat(winRate) : null)
     })
+
+    renderCalEquity(trades)
+  }
+
+  // Curva de equity del mes seleccionado (sección Calendario)
+  let calEquityInst = null
+  function renderCalEquity(trades) {
+    const ctx = document.getElementById('calEquityChart')
+    if (!ctx || typeof Chart === 'undefined') return
+    if (calEquityInst) { calEquityInst.destroy(); calEquityInst = null }
+    const byDate = {}
+    trades.forEach(t => { if (t.trade_date) byDate[t.trade_date] = (byDate[t.trade_date] || 0) + (parseFloat(t.profit) || 0) })
+    const dates = Object.keys(byDate).sort()
+    let cum = 0
+    const data = dates.map(d => { cum += byDate[d]; return parseFloat(cum.toFixed(2)) })
+    const last = data[data.length - 1] || 0
+    const grd = ctx.getContext('2d').createLinearGradient(0, 0, 0, 240)
+    grd.addColorStop(0, 'rgba(29,158,117,0.5)'); grd.addColorStop(1, 'rgba(29,158,117,0.02)')
+    calEquityInst = new Chart(ctx, {
+      type: 'line',
+      data: { labels: dates.map(d => d.slice(5)), datasets: [{
+        label: 'P&L Acumulado', data,
+        borderColor: last >= 0 ? '#1D9E75' : '#E24B4A',
+        backgroundColor: last >= 0 ? grd : 'rgba(226,75,74,0.18)',
+        borderWidth: 3, pointRadius: dates.length > 25 ? 2 : 4, pointHoverRadius: 7,
+        pointBackgroundColor: last >= 0 ? '#1D9E75' : '#E24B4A', tension: 0.3, fill: true,
+      }]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false },
+          tooltip: { backgroundColor:'#2a2a28', titleColor:'#F4F3EF', bodyColor:'#9B9B8E',
+            callbacks: { label: c => ` P&L acumulado: ${c.raw>=0?'+':''}$${c.raw}` } } },
+        scales: {
+          x: { ticks:{ color:'#9B9B8E', maxRotation:45 }, grid:{ color:'rgba(255,255,255,0.06)' } },
+          y: { ticks:{ color:'#9B9B8E', callback:v=>`$${v}` }, grid:{ color:'rgba(255,255,255,0.06)' } },
+        },
+      },
+    })
   }
 
   async function init() {
@@ -931,14 +944,6 @@ const Metrics = (() => {
       DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getCatalogoCasuisticas(), DB.getObjetivos(), DB.getCatalogoExperimentos(), DB.getAllExperimentoRegistros()
     ])
     render('month')
-
-    document.querySelectorAll('.period-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'))
-        btn.classList.add('active')
-        render(btn.dataset.period)
-      })
-    })
 
     document.getElementById('closeDisciplineModal').addEventListener('click', () => {
       document.getElementById('disciplineModal').classList.add('hidden')
@@ -967,8 +972,7 @@ const Metrics = (() => {
   }
 
   function rerender() {
-    const active = document.querySelector('.period-btn.active')
-    render(active?.dataset.period || 'month')
+    render('month')
   }
 
   function setObjetivos(obj) {
