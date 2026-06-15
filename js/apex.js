@@ -486,6 +486,7 @@ const Apex = (() => {
     const s = calc(cta)
     const planCfg = getPlanCfg(cta.id)
     const est = ESTADOS[cta.estado] || ESTADOS.evaluacion
+    const esPACuenta = ['pa', 'aprobada'].includes(cta.estado)
 
     // KPIs
     const consColor = s.consistencia == null ? 'var(--text3)' : s.consistenciaOk ? 'var(--accent)' : 'var(--red)'
@@ -629,7 +630,7 @@ const Apex = (() => {
         <button class="btn-icon" id="apexVolver" title="Volver"><i class="ti ti-arrow-left"></i></button>
         <div>
           <div class="ax-det-title"><span class="ax-nombre">${cta.nombre}</span><span class="ax-badge ${est.cls}">${est.label}</span></div>
-          <div class="ax-numero">${cta.numero_cuenta || ''} · ${(parseFloat(cta.tamano) / 1000).toFixed(0)}K Intraday Trail</div>
+          <div class="ax-numero">${cta.numero_cuenta || ''} · ${(parseFloat(cta.tamano) / 1000).toFixed(0)}K ${esPACuenta ? 'PA fondeada' : 'Intraday Trail'}</div>
         </div>
       </div>
 
@@ -664,7 +665,7 @@ const Apex = (() => {
         </div>
       </div>
 
-      <div class="ax-plan-card" id="apexPlanPanel">${planPanelHtml(cta, s, planCfg)}</div>
+      ${esPACuenta ? '' : `<div class="ax-plan-card" id="apexPlanPanel">${planPanelHtml(cta, s, planCfg)}</div>`}
 
       <div class="ax-det-panels">
         <div class="ax-det-panel ax-panel-ok">
