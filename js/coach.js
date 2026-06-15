@@ -450,7 +450,8 @@ ${catalogoStr}
 
   // Quita los backticks con que la IA envuelve la línea de resumen
   function limpiarResumen(s) {
-    return (s || '').replace(/`/g, '').trim()
+    // Quita el prefijo de fecha "YYYY-MM-DD · " (ya se muestra en el encabezado)
+    return (s || '').replace(/`/g, '').replace(/^\s*\d{4}-\d{2}-\d{2}\s*[·\-—]\s*/, '').trim()
   }
 
   // Parser estructurado: cada línea "NombreCorto | tipo | detalle"

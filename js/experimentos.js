@@ -155,8 +155,8 @@ const Experimentos = (() => {
           ${e.conValorN < e.conRes ? `<span style="color:var(--text3)">(${e.conValorN}/${e.conRes} con valor)</span>` : ''}
         </div>` : ''
 
-      const ultimaHtml = e.ultima
-        ? `<div class="expd-ultima">Última aparición: ${e.ultima}${e.activo ? '' : ' · <span style="color:var(--text3)">inactivo</span>'}</div>` : ''
+      const inactivoHtml = !e.activo
+        ? `<div class="expd-ultima"><span style="color:var(--text3)">inactivo</span></div>` : ''
 
       return `
         <div class="expd-card estado-${e.estado}" data-exp-id="${e.id}" title="Ver fechas de ${e.nombre}">
@@ -172,7 +172,7 @@ const Experimentos = (() => {
           ${barHtml}
           ${footHtml}
           ${pnlHtml}
-          ${ultimaHtml}
+          ${inactivoHtml}
         </div>`
     }).join('')
 

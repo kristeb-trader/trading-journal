@@ -226,6 +226,11 @@ const Gallery = (() => {
     errorDates = {}
     casuisticas.forEach(c => { errorDates[c.sesion_date] = true })
 
+    // Por defecto, mes actual si tiene imágenes; si no, queda en "Todas"
+    const now = new Date()
+    const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    if (allImages.some(i => i.sesion_date.slice(0, 7) === curMonth)) activeMonth = curMonth
+
     buildMonthsBar()
     render()
   }
