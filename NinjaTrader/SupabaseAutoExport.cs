@@ -55,11 +55,29 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext context)
         {
+            // Solo cuentas activas (conexión conectada). Evita listar cuentas
+            // antiguas o de conexiones que ya no existen.
             var names = new List<string>();
             lock (Account.All)
             {
                 foreach (Account acc in Account.All)
-                    names.Add(acc.Name);
+                {
+                    try
+                    {
+                        if (acc.Connection != null && acc.Connection.Status == ConnectionStatus.Connected)
+                            names.Add(acc.Name);
+                    }
+                    catch { }
+                }
+            }
+            // Fallback: si no hay ninguna conectada (p. ej. en diseño), mostrar todas
+            if (names.Count == 0)
+            {
+                lock (Account.All)
+                {
+                    foreach (Account acc in Account.All)
+                        names.Add(acc.Name);
+                }
             }
             return new StandardValuesCollection(names);
         }
