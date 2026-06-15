@@ -23,6 +23,8 @@
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="css/styles.css">
@@ -829,8 +831,8 @@
 
       <!-- ═══ 6. ANÁLISIS ══════════════════════════════════════════════════ -->
       <section class="section" id="section-analysis">
-        <div class="section-header">
-          <h2>Análisis y Estadísticas</h2>
+        <div class="analysis-hero">
+          <h2 class="analysis-hero-title">Análisis &amp; Estadísticas</h2>
         </div>
 
         <!-- Filtros -->
@@ -849,10 +851,17 @@
               <i class="ti ti-chevron-right"></i>
             </button>
           </div>
-          <select id="accountFilterAnalysis" class="filter-select filter-select-sm">
-            <option value="all">Todas las cuentas</option>
-          </select>
+          <div class="analysis-right">
+            <select id="accountFilterAnalysis" class="filter-select filter-select-sm">
+              <option value="all">Todas las cuentas</option>
+            </select>
+            <button class="btn-secondary btn-sm" id="analysisExportPdf" title="Exportar a PDF"><i class="ti ti-file-type-pdf"></i> PDF</button>
+            <button class="btn-secondary btn-sm" id="analysisExportImg" title="Exportar como imagen"><i class="ti ti-photo-down"></i> Imagen</button>
+          </div>
         </div>
+
+        <!-- Contenido exportable -->
+        <div id="analysisExportArea">
 
         <!-- KPI Strip -->
         <div id="analysisKpiStrip"></div>
@@ -917,6 +926,7 @@
             <canvas id="resultsChart"></canvas>
           </div>
         </div>
+        </div><!-- /analysisExportArea -->
       </section>
 
       <!-- ═══ EXPERIMENTOS ═══════════════════════════════════════════════ -->

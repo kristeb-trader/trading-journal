@@ -189,12 +189,11 @@ const Charts = (() => {
       <div class="analysis-kpi-row">
         ${chip('P&L Neto', `${s.pnl>=0?'+':''}$${s.pnl.toFixed(0)}`, s.pnl>=0?'kpi-green':'kpi-red', 'kpiPnl')}
         ${chip('Win Rate', `${winV}%`, parseFloat(winV)>=50?'kpi-green':'kpi-red', 'kpiWin')}
-        ${chip('Total Trades', `${s.nonBE}${s.beCount>0?` <small style="color:var(--text3);font-weight:400">+${s.beCount} B.E.</small>`:''}`, 'kpi-neutral', 'kpiTrades')}
         ${chip('Rentabilidad', rent, capital>0 ? (s.pnl>=0?'kpi-green':'kpi-red') : 'kpi-neutral', 'kpiRent')}
-        ${chip('Efectividad', efecV==='—'?'—':`${efecV}%`, s.efec!=null && s.efec>=50?'kpi-green':s.efec!=null?'kpi-red':'kpi-neutral', 'kpiEfec')}
-        ${chip('Disciplina Total', disc!=null?`${disc}%`:'—', disc==null?'kpi-neutral':disc>=80?'kpi-green':disc>=55?'kpi-neutral':'kpi-red', 'kpiDisc')}
+        ${chip('Disciplina', disc!=null?`${disc}%`:'—', disc==null?'kpi-neutral':disc>=80?'kpi-green':disc>=55?'kpi-neutral':'kpi-red', 'kpiDisc')}
         ${chip('Consistencia', activeSub?`${posSub}/${activeSub} · ${consPct}%`:'—', consPct>=60?'kpi-green':consPct>=40?'kpi-neutral':'kpi-red', 'kpiCons')}
         ${chip('Profit Factor', pfStr, pfCls, 'kpiPf')}
+        ${chip('Total Trades', `${s.total}`, 'kpi-neutral', 'kpiTrades')}
       </div>`
   }
 
@@ -208,28 +207,24 @@ const Charts = (() => {
     const keys = Object.keys(byKey).sort()
     let cum = 0
     const equity = keys.map(k => { cum += byKey[k]; return parseFloat(cum.toFixed(2)) })
-    let peak = -Infinity
-    const dd = equity.map(v => { if (v > peak) peak = v; return parseFloat((v - peak).toFixed(2)) })
     const labels = keys.map(k => period === 'year' ? MONTH_S[parseInt(k.slice(5, 7)) - 1] : k.slice(5))
     const last = equity[equity.length - 1] || 0
 
     const ctx = document.getElementById('equityChart').getContext('2d')
     const grad = ctx.createLinearGradient(0, 0, 0, 300)
-    grad.addColorStop(0, 'rgba(29,158,117,0.3)'); grad.addColorStop(1, 'rgba(29,158,117,0)')
+    grad.addColorStop(0, 'rgba(29,158,117,0.55)'); grad.addColorStop(1, 'rgba(29,158,117,0.02)')
     instances.equity = new Chart(ctx, {
       type: 'line',
       data: { labels, datasets: [
         { label:'P&L Acumulado', data:equity, borderColor:last>=0?COLORS.accent:COLORS.red,
-          backgroundColor:last>=0?grad:'rgba(226,75,74,0.1)', borderWidth:2,
-          pointRadius:keys.length>30?2:4, pointHoverRadius:7, tension:0.3, fill:true, order:1 },
-        { label:'Drawdown', data:dd, borderColor:'rgba(226,75,74,0.5)', backgroundColor:'rgba(226,75,74,0.15)',
-          borderWidth:1, pointRadius:0, tension:0.3, fill:'origin', order:2 },
+          backgroundColor:last>=0?grad:'rgba(226,75,74,0.18)', borderWidth:3,
+          pointRadius:keys.length>30?2:4, pointHoverRadius:7, pointBackgroundColor:last>=0?COLORS.accent:COLORS.red,
+          tension:0.3, fill:true },
       ]},
       options: { ...baseOptions, interaction:{ mode:'index', intersect:false },
         plugins: { ...baseOptions.plugins,
-          legend:{ display:true, labels:{ color:COLORS.text, font:{size:11}, boxWidth:14 } },
-          tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c =>
-            c.datasetIndex===0 ? ` P&L acumulado: ${c.raw>=0?'+':''}$${c.raw}` : (c.raw<0?` Drawdown: $${c.raw}`:null) } } } },
+          legend:{ display:false },
+          tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => ` P&L acumulado: ${c.raw>=0?'+':''}$${c.raw}` } } } },
     })
   }
 
@@ -248,25 +243,24 @@ const Charts = (() => {
       data: { labels: subs.map(s => s.label), datasets: [{ label:'P&L',
         data, backgroundColor: data.map(v => v>=0?'rgba(29,158,117,0.65)':'rgba(226,75,74,0.65)'),
         borderColor: data.map(v => v>=0?'rgba(29,158,117,1)':'rgba(226,75,74,1)'), borderWidth:1, borderRadius:4 }] },
-      options: { ...baseOptions, plugins: { ...baseOptions.plugins, legend:{ display:false },
+      options: { ...baseOptions, layout: { padding: { right: 10, left: 2 } },
+        plugins: { ...baseOptions.plugins, legend:{ display:false },
         tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => ` P&L: ${c.parsed.y>=0?'+':''}$${c.parsed.y.toFixed(2)}` } } },
-        scales: { ...baseOptions.scales, y:{ ...baseOptions.scales.y, ticks:{ color:COLORS.text, callback:v=>`$${v}` } } } },
+        scales: { ...baseOptions.scales,
+          x:{ ...baseOptions.scales.x, ticks:{ color:COLORS.text, maxRotation:0, autoSkip:false } },
+          y:{ ...baseOptions.scales.y, ticks:{ color:COLORS.text, callback:v=>`$${v}` } } } },
     })
   }
 
   // ── P&L por hora (ET) ───────────────────────────────────────────────────
   function renderPnlByHour(trades) {
     destroy('pnlByHour')
-    const slots = {}
-    for (let h=9; h<=14; h++) for (let m=0; m<60; m+=30) { if (h===9 && m<30) continue; slots[`${p2(h)}:${m===0?'00':'30'}`] = [] }
-    slots['15:00'] = []
+    // Solo las primeras 2 horas de la apertura de NY: 9:30 a 11:30
+    const slots = { '09:30':[], '10:00':[], '10:30':[], '11:00':[], '11:30':[] }
     trades.forEach(t => {
       if (!t.entry_time) return
       const [h,m] = t.entry_time.split(':').map(Number)
-      if (h<9 || h>15) return
       const sm = m<30?0:30
-      if (h===9 && sm<30) return
-      if (h>15 || (h===15 && sm>0)) return
       const key = `${p2(h)}:${sm===0?'00':'30'}`
       if (slots[key] !== undefined) slots[key].push(parseFloat(t.profit) || 0)
     })
@@ -287,19 +281,44 @@ const Charts = (() => {
     destroy('results')
     const targets = trades.filter(t => !BE(t) && t.resultado==='target').length
     const stops   = trades.filter(t => !BE(t) && t.resultado==='stop').length
-    const bes     = trades.filter(t => BE(t)).length
-    const otros   = trades.filter(t => !BE(t) && t.resultado!=='target' && t.resultado!=='stop').length
+    const tot = targets + stops
     instances.results = new Chart(document.getElementById('resultsChart'), {
       type: 'doughnut',
-      data: { labels:['Target','Stop','B.E.','Otro'], datasets:[{ data:[targets,stops,bes,otros],
-        backgroundColor:['rgba(29,158,117,0.8)','rgba(226,75,74,0.8)','rgba(155,155,142,0.6)','rgba(74,74,69,0.8)'], borderWidth:0 }] },
-      options: { ...baseOptions, scales:{} },
+      data: { labels:['Target','Stop'], datasets:[{ data:[targets,stops],
+        backgroundColor:['rgba(29,158,117,0.85)','rgba(226,75,74,0.85)'], borderWidth:0 }] },
+      options: { ...baseOptions, scales:{},
+        plugins: { ...baseOptions.plugins,
+          tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => {
+            const pct = tot ? Math.round(c.parsed / tot * 100) : 0
+            return ` ${c.label}: ${c.parsed} (${pct}%)`
+          } } } } },
+      plugins: [{
+        id: 'resultsPct',
+        afterDraw(chart) {
+          const { ctx } = chart
+          const meta = chart.getDatasetMeta(0)
+          meta.data.forEach((arc, i) => {
+            const v = chart.data.datasets[0].data[i]
+            if (!v || !tot) return
+            const pct = Math.round(v / tot * 100)
+            const pos = arc.tooltipPosition()
+            ctx.save()
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 13px system-ui, sans-serif'
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+            ctx.fillText(`${pct}%`, pos.x, pos.y)
+            ctx.restore()
+          })
+        }
+      }],
     })
   }
 
   // ── Tabla resumen adaptativa ────────────────────────────────────────────
   function renderTabla(trades, sesiones, casByDate, subs) {
-    document.getElementById('analysisTablaTitle').textContent = period === 'month' ? 'Resumen por semana' : 'Resumen por mes'
+    document.getElementById('analysisTablaTitle').textContent =
+      period === 'month'   ? 'Resumen por semana del mes'
+      : period === 'quarter' ? 'Resumen por mes del trimestre'
+      : 'Resumen por mes del año'
     document.getElementById('analysisTablaCol1').textContent = period === 'month' ? 'Semana' : 'Mes'
 
     let cum = 0
@@ -339,17 +358,21 @@ const Charts = (() => {
     const totRent = capital > 0 ? `${(tot.pnl / capital * 100).toFixed(2)}%` : '—'
     const totEfec = tot.efec != null ? `${tot.efec.toFixed(1)}%` : '—'
 
+    const totEstado = tot.pnl > 0 ? '<span class="annual-badge annual-badge-pos">▲ Positivo</span>'
+      : tot.pnl < 0 ? '<span class="annual-badge annual-badge-neg">▼ Negativo</span>'
+      : '<span class="annual-badge annual-badge-be">— Neutro</span>'
+
     document.getElementById('analysisTablaBody').innerHTML = rows
     document.getElementById('analysisTablaFoot').innerHTML = `
       <tr class="annual-totals-row">
         <td class="annual-totals-label">Total ${periodLabel()}</td>
         <td class="${tot.pnl>=0?'annual-totals-pos':'annual-totals-neg'}">${tot.pnl>=0?'+':''}$${tot.pnl.toFixed(2)}</td>
-        <td class="annual-totals-neutral">—</td>
+        <td class="${tot.pnl>=0?'annual-totals-pos':'annual-totals-neg'}">${tot.pnl>=0?'+':''}$${tot.pnl.toFixed(2)}</td>
         <td class="annual-totals-neutral">${totRent}</td>
         <td class="${tot.efec==null?'annual-totals-neutral':tot.efec>=50?'annual-totals-pos':tot.efec>=40?'annual-totals-warn':'annual-totals-neg'}">${totEfec}</td>
         <td class="${totDisc==null?'annual-totals-neutral':totDisc>=80?'annual-totals-pos':totDisc>=55?'annual-totals-warn':'annual-totals-neg'}">${totDisc!=null?totDisc+'%':'—'}</td>
         <td class="annual-totals-neutral">${tot.total}</td>
-        <td></td>
+        <td>${totEstado}</td>
       </tr>`
   }
 
@@ -408,6 +431,9 @@ const Charts = (() => {
       render()
     })
 
+    document.getElementById('analysisExportPdf')?.addEventListener('click', () => exportAnalysis('pdf'))
+    document.getElementById('analysisExportImg')?.addEventListener('click', () => exportAnalysis('img'))
+
     document.addEventListener('click', e => {
       const btn = e.target.closest('[data-help]')
       if (!btn || !document.getElementById('section-analysis').classList.contains('active')) return
@@ -438,6 +464,37 @@ const Charts = (() => {
       if (curQ > 4) { curQ = 1; curYear++ }
     } else {
       curYear += dir
+    }
+  }
+
+  // Exporta el análisis a PDF o imagen (captura el área #analysisExportArea)
+  async function exportAnalysis(fmt) {
+    const area = document.getElementById('analysisExportArea')
+    if (!area || typeof html2canvas === 'undefined') { Toast.show('No se pudo cargar la herramienta de exportación', 'error'); return }
+    const acct = document.getElementById('accountFilterAnalysis')?.value || 'cuenta'
+    const name = `analisis_${periodLabel().replace(/\s+/g, '-')}_${acct}`
+    try {
+      Toast.show('Generando exportación…', 'info')
+      const canvas = await html2canvas(area, { backgroundColor: '#1a1a18', scale: 2, useCORS: true })
+      if (fmt === 'img') {
+        const a = document.createElement('a')
+        a.href = canvas.toDataURL('image/png'); a.download = `${name}.png`; a.click()
+      } else {
+        const { jsPDF } = window.jspdf
+        const imgW = 280, imgH = canvas.height * imgW / canvas.width
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+        pdf.setFillColor(26, 26, 24); pdf.rect(0, 0, 297, 210, 'F')
+        let y = 8
+        // Si es muy alto, escalar para caber en la página
+        const maxH = 194
+        const w = imgH > maxH ? imgW * maxH / imgH : imgW
+        const h = imgH > maxH ? maxH : imgH
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (297 - w) / 2, y, w, h)
+        pdf.save(`${name}.pdf`)
+      }
+      Toast.show('Exportación lista', 'success')
+    } catch (e) {
+      Toast.show('Error al exportar: ' + e.message, 'error')
     }
   }
 
