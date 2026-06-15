@@ -374,70 +374,56 @@ const Apex = (() => {
           Balance (${fmt$(s.balance)}) por debajo del threshold (${fmt$(s.threshold)}) — verificar estado real en Rithmic antes de operar
         </div>` : ''
 
-      const hitosHtml = s.hitos.map(h => {
-        const cls = h.alcanzado ? 'hito-ok' : (s.siguiente && h.valor === s.siguiente.valor) ? 'hito-next' : ''
-        return `<span class="ax-hito ${cls}">${h.alcanzado ? '✓ ' : ''}${h.label}</span>`
-      }).join('')
-
-      const statsLine = [
-        s.diasOperados ? `${s.wins}W · ${s.losses}L días` : 'Sin días operados',
-        cta.min_dias ? `${s.diasOperados}/${cta.min_dias} días mín` : null,
-        s.avgWin ? `prom. +${fmt$(s.avgWin)}/día ganador` : null,
-        (s.proyeccion != null && s.proyeccion > 0 && s.siguiente) ? `~${s.proyeccion} días a ${s.siguiente.label.split(' ')[0].toLowerCase()}` : null,
-      ].filter(Boolean).join(' · ')
-
-      const histRows = [...s.regs].reverse().map(r => `
-        <tr>
-          <td>${r.fecha}</td>
-          <td style="color:${parseFloat(r.pnl_dia) > 0 ? 'var(--accent)' : parseFloat(r.pnl_dia) < 0 ? 'var(--red)' : 'var(--text3)'}">${fmt$(r.pnl_dia, 2)}</td>
-          <td>${fmt$(r.balance, 2)}</td>
-          <td>${fmt$(r.threshold, 2)}</td>
-          <td>${r.contratos ?? '—'}</td>
-          <td class="ax-hist-nota">${r._auto ? '<i class="ti ti-bolt" title="Auto desde NinjaTrader" style="color:var(--accent)"></i> ' : ''}${r.nota || ''}</td>
-          <td>${r._auto ? '' : `<button class="btn-icon ax-del-reg" data-id="${r.id}" title="Eliminar registro"><i class="ti ti-trash" style="font-size:0.85rem"></i></button>`}</td>
-        </tr>`).join('')
-
+      const esPACta = ['pa', 'aprobada'].includes(cta.estado)
+      const quemada = cta.estado === 'quemada'
       const faltan = s.targetBal - s.balance
+      const pnlColor = s.pnlTotal >= 0 ? 'var(--accent)' : 'var(--red)'
+
+      const progLabel = esPACta ? 'Progreso al retiro' : 'Progreso al target'
+      const progRight = quemada ? 'Cuenta quemada'
+        : faltan > 0 ? `faltan ${fmt$(faltan)}` : '🎯 Alcanzado'
 
       return `
-        <div class="ax-card ${bordeCls} ${cta.activa ? '' : 'ax-inactiva'}">
-          <div class="ax-head">
-            <div class="ax-head-left">
-              <span class="ax-nombre">${cta.nombre}</span>
-              <span class="ax-numero">${cta.numero_cuenta || ''} · ${(parseFloat(cta.tamano) / 1000).toFixed(0)}K${cta.contratos_max ? ` · máx ${cta.contratos_max} ctos` : ''}</span>
-            </div>
-            <div class="ax-head-right">
+        <div class="axm-card ${bordeCls} ${cta.activa ? '' : 'ax-inactiva'}">
+          <div class="axm-top">
+            <div class="axm-id">
+              <span class="axm-nombre">${cta.nombre}</span>
               <span class="ax-badge ${est.cls}">${est.label}</span>
-              <button class="btn-icon ax-edit" data-id="${cta.id}" title="Editar cuenta"><i class="ti ti-pencil"></i></button>
             </div>
+            <button class="btn-icon ax-edit" data-id="${cta.id}" title="Editar cuenta"><i class="ti ti-pencil"></i></button>
           </div>
           ${alerta}
-          <div class="ax-stats">
-            <div><div class="ax-stat-label">Balance</div><div class="ax-stat-val">${fmt$(s.balance)}</div></div>
-            <div><div class="ax-stat-label">Threshold</div><div class="ax-stat-val">${fmt$(s.threshold)}</div></div>
-            <div><div class="ax-stat-label">Espacio</div><div class="ax-stat-val" style="color:${espColor}">${fmt$(s.espacio)}</div></div>
-            <div><div class="ax-stat-label">Stop máx sugerido</div><div class="ax-stat-val" style="color:${s.stopMax > 0 ? 'var(--text)' : 'var(--red)'}">${s.stopMax > 0 ? fmt$(s.stopMax) : 'No operar'}</div></div>
+          <div class="axm-balance">
+            <span class="axm-balance-label">Balance</span>
+            <span class="axm-balance-val">${fmt$(s.balance)}</span>
           </div>
-          <div class="ax-prog-head"><span>Progreso al target ${fmt$(s.targetBal)}</span><span>${faltan > 0 ? `faltan ${fmt$(faltan)}` : '🎯 ¡Target alcanzado!'}</span></div>
-          <div class="ax-prog"><div style="width:${s.progreso ?? 0}%"></div></div>
-          <div class="ax-hitos">${hitosHtml}</div>
-          <div class="ax-foot">
-            <span class="ax-foot-stats">${statsLine}</span>
-            <span class="ax-foot-actions">
-              <button class="btn-primary btn-sm ax-ver-detalle" data-id="${cta.id}"><i class="ti ti-chart-area-line"></i> Ver detalle</button>
-            </span>
+          <div class="axm-metrics">
+            <div class="axm-metric">
+              <span class="axm-m-label">Colchón al piso</span>
+              <span class="axm-m-val" style="color:${espColor}">${fmt$(s.espacio)}</span>
+            </div>
+            <div class="axm-metric">
+              <span class="axm-m-label">P&L total</span>
+              <span class="axm-m-val" style="color:${pnlColor}">${s.pnlTotal >= 0 ? '+' : ''}${fmt$(Math.abs(s.pnlTotal))}</span>
+            </div>
           </div>
+          <div class="axm-prog-head"><span>${progLabel}</span><span>${progRight}</span></div>
+          <div class="ax-prog"><div style="width:${quemada ? 0 : (s.progreso ?? 0)}%;${quemada ? 'background:var(--red)' : ''}"></div></div>
+          <button class="btn-primary ax-ver-detalle axm-btn" data-id="${cta.id}"><i class="ti ti-chart-area-line"></i> Ver detalle</button>
         </div>`
     }
 
-    // Dos zonas: PA (fondeadas) arriba, evaluación abajo
+    // Dos zonas en bloques separados: PA (fondeadas) arriba, evaluación abajo.
+    // El contador muestra las cuentas ACTIVAS de la zona.
     const esPA = c => ['pa', 'aprobada'].includes(c.estado)
+    const activa = c => c.activa && c.estado !== 'quemada'
     const paAccts  = ordenadas.filter(esPA)
     const evalAccts = ordenadas.filter(c => !esPA(c))
     const zona = (titulo, icon, accts) => accts.length ? `
-      <div class="ax-zona">
-        <div class="ax-zona-title"><i class="ti ${icon}"></i> ${titulo} <span class="ax-zona-count">${accts.length}</span></div>
-        ${accts.map(cardHtml).join('')}
+      <div class="ax-zona-block">
+        <div class="ax-zona-title"><i class="ti ${icon}"></i> ${titulo}
+          <span class="ax-zona-count">${accts.filter(activa).length} activas</span></div>
+        <div class="axm-grid">${accts.map(cardHtml).join('')}</div>
       </div>` : ''
     wrap.innerHTML =
       zona('Cuentas PA (fondeadas)', 'ti-trophy', paAccts) +
