@@ -362,7 +362,7 @@ const Apex = (() => {
 
     const ordenadas = [...cuentas].sort((a, b) => (b.activa - a.activa) || a.nombre.localeCompare(b.nombre))
 
-    wrap.innerHTML = ordenadas.map(cta => {
+    const cardHtml = cta => {
       const s = calc(cta)
       const est = ESTADOS[cta.estado] || ESTADOS.evaluacion
       const espColor = s.espacio <= 0 ? 'var(--red)' : s.riesgo === 'alto' ? 'var(--red)' : s.riesgo === 'medio' ? 'var(--warning)' : 'var(--accent)'
@@ -424,30 +424,26 @@ const Apex = (() => {
           <div class="ax-foot">
             <span class="ax-foot-stats">${statsLine}</span>
             <span class="ax-foot-actions">
-              <button class="btn-secondary btn-sm ax-ver-detalle" data-id="${cta.id}"><i class="ti ti-chart-area-line"></i> Ver detalle</button>
-              <button class="btn-secondary btn-sm ax-toggle-hist" data-id="${cta.id}"><i class="ti ti-history"></i> Historial</button>
-              <button class="btn-primary btn-sm ax-reg-dia" data-id="${cta.id}"><i class="ti ti-plus"></i> Registrar día</button>
+              <button class="btn-primary btn-sm ax-ver-detalle" data-id="${cta.id}"><i class="ti ti-chart-area-line"></i> Ver detalle</button>
             </span>
           </div>
-          <div class="ax-hist hidden" id="axHist-${cta.id}">
-            ${s.regs.length ? `
-              <table class="ax-hist-table">
-                <thead><tr><th>Fecha</th><th>P&L</th><th>Balance</th><th>Threshold</th><th>Ctos</th><th>Nota</th><th></th></tr></thead>
-                <tbody>${histRows}</tbody>
-              </table>` : '<p style="color:var(--text3);font-size:0.82rem;padding:8px 0">Sin registros aún</p>'}
-          </div>
         </div>`
-    }).join('')
+    }
+
+    // Dos zonas: PA (fondeadas) arriba, evaluación abajo
+    const esPA = c => ['pa', 'aprobada'].includes(c.estado)
+    const paAccts  = ordenadas.filter(esPA)
+    const evalAccts = ordenadas.filter(c => !esPA(c))
+    const zona = (titulo, icon, accts) => accts.length ? `
+      <div class="ax-zona">
+        <div class="ax-zona-title"><i class="ti ${icon}"></i> ${titulo} <span class="ax-zona-count">${accts.length}</span></div>
+        ${accts.map(cardHtml).join('')}
+      </div>` : ''
+    wrap.innerHTML =
+      zona('Cuentas PA (fondeadas)', 'ti-trophy', paAccts) +
+      zona('Cuentas de evaluación', 'ti-target', evalAccts)
 
     // Wire de acciones
-    wrap.querySelectorAll('.ax-toggle-hist').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.getElementById(`axHist-${btn.dataset.id}`)?.classList.toggle('hidden')
-      })
-    })
-    wrap.querySelectorAll('.ax-reg-dia').forEach(btn => {
-      btn.addEventListener('click', () => openDiaModal(parseInt(btn.dataset.id)))
-    })
     wrap.querySelectorAll('.ax-ver-detalle').forEach(btn => {
       btn.addEventListener('click', () => openDetalle(parseInt(btn.dataset.id)))
     })
@@ -635,7 +631,6 @@ const Apex = (() => {
           <div class="ax-det-title"><span class="ax-nombre">${cta.nombre}</span><span class="ax-badge ${est.cls}">${est.label}</span></div>
           <div class="ax-numero">${cta.numero_cuenta || ''} · ${(parseFloat(cta.tamano) / 1000).toFixed(0)}K Intraday Trail</div>
         </div>
-        <button class="btn-primary btn-sm ax-reg-dia" data-id="${cta.id}" style="margin-left:auto"><i class="ti ti-plus"></i> Registrar día</button>
       </div>
 
       <div class="ax-det-kpis">
@@ -699,7 +694,6 @@ const Apex = (() => {
     document.getElementById('apexDetalle').classList.remove('hidden')
 
     document.getElementById('apexVolver').addEventListener('click', volverLista)
-    document.querySelector('#apexDetalle .ax-reg-dia').addEventListener('click', () => openDiaModal(cta.id))
     wirePlanPanel(cta, s)
 
     renderDetalleChart(cta, s)

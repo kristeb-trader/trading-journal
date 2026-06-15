@@ -1310,7 +1310,17 @@ body.modal-open { overflow: hidden; }
 .ax-badge.ax-crit { background: rgba(226,75,74,0.18); color: var(--red); }
 .ax-badge.ax-safe { background: rgba(124,108,243,0.18); color: #a99cff; }
 .ax-badge.ax-ok   { background: rgba(29,158,117,0.18); color: var(--accent); }
-.ax-badge.ax-dead { background: var(--bg3); color: var(--text3); }
+.ax-badge.ax-dead { background: rgba(226,75,74,0.22); color: var(--red); font-weight: 700; }
+.ax-zona { margin-bottom: 22px; }
+.ax-zona-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text2); margin-bottom: 10px;
+}
+.ax-zona-count {
+  background: var(--bg3); color: var(--text3); border-radius: 10px;
+  padding: 1px 9px; font-size: 0.72rem; font-weight: 600;
+}
 .ax-alerta {
   background: rgba(226,75,74,0.1); border: 1px solid rgba(226,75,74,0.3);
   border-radius: 8px; padding: 8px 12px; margin-bottom: 11px;
