@@ -218,8 +218,9 @@ const Charts = (() => {
       data: { labels, datasets: [
         { label:'P&L Acumulado', data:equity, borderColor: last>=0?COLORS.accent:COLORS.red, borderWidth:3,
           segment: { borderColor: segColor },
-          pointRadius:keys.length>30?2:4, pointHoverRadius:7,
+          pointRadius:keys.length>30?2:4, pointHoverRadius:7, pointBorderWidth:2,
           pointBackgroundColor: equity.map(v => v < 0 ? COLORS.red : COLORS.accent),
+          pointBorderColor:     equity.map(v => v < 0 ? COLORS.red : COLORS.accent),
           tension:0.3, fill:true,
           backgroundColor: c => {
             const { chart } = c
