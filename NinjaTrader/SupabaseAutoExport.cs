@@ -20,12 +20,15 @@ using NinjaTrader.NinjaScript.Indicators;
  *   2. NinjaScript Editor → compilar (F5)
  *   3. Agregar al gráfico de NQ/MNQ
  *   4. Seleccionar la cuenta en el dropdown "Account Name"
- *   5. Para cuentas de evaluación de fondeo: marcar "Cuenta de evaluación Apex"
+ *   5. El routing es AUTOMÁTICO por nombre de cuenta (no hay que marcar nada).
  *
- * Routing por cuenta (v2.3 — 2026-06-13):
- *   - PA real (checkbox OFF): trades → tabla `trades` + notificación Telegram.
- *   - Evaluación Apex (checkbox ON): trades → tabla `apex_trades`, SIN Telegram.
- *     La app deriva días/balance/threshold automáticamente desde estos trades.
+ * Routing automático por nombre de cuenta (v2.5 — 2026-06-16):
+ *   - Cuenta PA real (nombre empieza con "PA-"): trades → tabla `trades`
+ *     + notificación Telegram. La app deriva sus días recientes desde `trades`.
+ *   - Cualquier otra cuenta (evaluación): trades → tabla `apex_trades`, SIN
+ *     Telegram. La app deriva días/balance/threshold desde estos trades.
+ *   - El checkbox "Forzar cuenta de evaluación" es OPCIONAL: solo se usa para
+ *     forzar a `apex_trades` una cuenta que no siga la convención "PA-".
  *
  * Comisiones (v2.4 — 2026-06-13):
  *   - "Comisión por lado": si NinjaTrader reporta comisión $0, configurar este
@@ -144,9 +147,15 @@ namespace NinjaTrader.NinjaScript.Indicators
         public string AccountName { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Cuenta de evaluación Apex", Order = 2, GroupName = "Supabase Export",
-                 Description = "Si está marcado, los trades van a apex_trades (Apex Tracker) y NO notifican por Telegram")]
+        [Display(Name = "Forzar cuenta de evaluación", Order = 2, GroupName = "Supabase Export",
+                 Description = "OPCIONAL. El routing es automático por nombre de cuenta: las que empiezan con 'PA-' van al journal (trades) + Telegram; el resto van a apex_trades sin Telegram. Marca esto solo para forzar evaluación en una cuenta que no siga esa convención.")]
         public bool ApexEvalAccount { get; set; }
+
+        // Routing automático: la cuenta PA real empieza con "PA-".
+        // Las demás (evaluación) van a apex_trades. El checkbox solo fuerza eval.
+        private bool EsCuentaEval() =>
+            ApexEvalAccount || !(AccountName != null &&
+                AccountName.StartsWith("PA-", StringComparison.OrdinalIgnoreCase));
 
         [NinjaScriptProperty]
         [Display(Name = "Comisión por lado", Order = 3, GroupName = "Supabase Export",
@@ -451,7 +460,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 profit, commission, mae, mfe, bars, tradeDate, resultado));
 
             // Las cuentas de evaluación no notifican por Telegram (solo la PA real)
-            if (!ApexEvalAccount)
+            if (!EsCuentaEval())
                 Task.Run(() => SendNotificationAsync(
                     instrument, marketPos, qty,
                     entryPrc, exitPrc, profit, commission, mae, mfe, resultado));
@@ -502,7 +511,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 );
 
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                string endpoint = ApexEvalAccount ? APEX_ENDPOINT : SUPABASE_ENDPOINT;
+                string endpoint = EsCuentaEval() ? APEX_ENDPOINT : SUPABASE_ENDPOINT;
                 await client.PostAsync(endpoint, content);
             }
             catch { }
