@@ -4,7 +4,8 @@
 const Apex = (() => {
   let cuentas   = []
   let registros = []   // apex_registros manuales, orden fecha asc
-  let trades    = []   // apex_trades (auto-export NT8), orden fecha asc
+  let trades    = []   // apex_trades (auto-export NT8 de cuentas de evaluación)
+  let mainTrades = []  // tabla `trades` (journal): de aquí derivan los días de la PA
   let seriesPorCuenta = {}  // cuentaId → serie de días combinada (manual + derivada)
   let tradesPorCuenta = {}  // cuentaId → trades individuales de esa cuenta
 
@@ -187,8 +188,11 @@ const Apex = (() => {
       const safety = cta.safety_net_balance != null ? parseFloat(cta.safety_net_balance) : null
       const piso   = cta.piso_congelado    != null ? parseFloat(cta.piso_congelado)    : null
 
-      // Trades de esta cuenta (match por número de cuenta = AccountName de NT)
-      const ctaTrades = trades.filter(t => t.account === cta.numero_cuenta)
+      // Trades de esta cuenta (match por número de cuenta = AccountName de NT).
+      // La PA real vive en la tabla `trades` (journal); las cuentas de
+      // evaluación viven en `apex_trades`. Como cada cuenta solo existe en una
+      // de las dos tablas, concatenar ambas fuentes nunca duplica.
+      const ctaTrades = [...trades, ...mainTrades].filter(t => t.account === cta.numero_cuenta)
       tradesPorCuenta[cta.id] = ctaTrades
 
       // Días auto: agrupar trades por fecha
@@ -840,9 +844,10 @@ const Apex = (() => {
   // ── Carga e init ─────────────────────────────────────────────────────────
 
   async function loadData() {
-    ;[cuentas, registros, trades] = await Promise.all([
+    ;[cuentas, registros, trades, mainTrades] = await Promise.all([
       DB.getApexCuentas(), DB.getApexRegistros(),
       DB.getApexTrades().catch(() => []),  // tabla puede no existir aún
+      DB.getTrades().catch(() => []),      // journal: días recientes de la PA
     ])
     buildSeries()
   }
