@@ -213,8 +213,11 @@ const Calendar = (() => {
         let result = isFuture ? null : dayResult(trades, sesion, dateStr)
         // Día FOMC automático (en fomc_dates) sin operar: mismo look que el FOMC manual
         if (!isFuture && isFomc && !sesion?.no_opero && trades.length === 0) result = 'fomc'
+        // Día FOMC en el que SÍ se operó: fondo FOMC + borde según el resultado
+        const fomcTraded = !isFuture && isFomc && !sesion?.no_opero && trades.length > 0
         let cellClass = 'cal-cell'
         if (isFuture) cellClass += ' future'
+        else if (fomcTraded) cellClass += ` day-fomc fomc-res-${result}`
         else cellClass += ` day-${result}`
         if (isToday) cellClass += ' today'
 
@@ -246,8 +249,8 @@ const Calendar = (() => {
             // Festivo automático (sin sesión registrada)
             statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> Festivo</div>`
           }
-          // FOMC automático (en fomc_dates, sin sesión): mismo badge que el manual
-          if (!statusBadge && isFomc && trades.length === 0) {
+          // FOMC (en fomc_dates): badge aunque se haya operado, para no perder la marca
+          if (!statusBadge && isFomc) {
             statusBadge = `<div class="cal-status-badge badge-fomc"><i class="ti ti-chart-candle"></i> FOMC</div>`
           }
         }

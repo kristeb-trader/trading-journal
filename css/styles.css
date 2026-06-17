@@ -292,6 +292,13 @@ small { font-size: 0.82em; }
 .cal-cell.day-festivo  { background: rgba(56,131,246,0.09);  border-color: rgba(56,131,246,0.28); }
 .cal-cell.day-fomc     { background: rgba(194,137,72,0.12);  border-color: rgba(194,137,72,0.35); }
 
+/* Día FOMC en el que SÍ se operó: fondo FOMC, borde según el resultado */
+.cal-cell.day-fomc.fomc-res-target { border-color: rgba(29,158,117,0.7) !important; }
+.cal-cell.day-fomc.fomc-res-stop   { border-color: rgba(226,75,74,0.7)  !important; }
+.cal-cell.day-fomc.fomc-res-mixed  { border-color: rgba(186,117,23,0.7) !important; }
+.cal-cell.day-fomc.fomc-res-be     { border-color: rgba(255,255,255,0.3) !important; }
+.cal-cell.day-fomc.fomc-res-other  { border-color: rgba(255,255,255,0.3) !important; }
+
 .cal-status-badge {
   font-size: 0.6rem; font-weight: 700; letter-spacing: 0.03em;
   display: flex; align-items: center; gap: 3px; margin-top: auto;
