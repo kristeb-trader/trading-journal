@@ -239,9 +239,10 @@ const SessionForm = (() => {
     payload.se_conecto = seConecto
     const numOrNull = id => { const v = document.getElementById(id).value; return v === '' ? null : parseFloat(v) }
     if (seConecto) {
-      payload.precio_cierre_ayer   = numOrNull('precioCierreAyer')
+      payload.precio_apertura_ayer = numOrNull('precioAperturaAyer')
       payload.precio_max_ayer      = numOrNull('precioMaxAyer')
       payload.precio_min_ayer      = numOrNull('precioMinAyer')
+      payload.precio_cierre_ayer   = numOrNull('precioCierreAyer')
       payload.precio_apertura      = numOrNull('precioApertura')
       payload.precio_max_pre       = numOrNull('precioMaxPre')
       payload.precio_min_pre       = numOrNull('precioMinPre')
@@ -249,9 +250,10 @@ const SessionForm = (() => {
       payload.resistencias_naranja = resistenciasNaranja ? resistenciasNaranja.getValues() : []
       payload.noticias             = document.getElementById('noticias').value.trim() || null
     } else {
-      payload.precio_cierre_ayer = null
+      payload.precio_apertura_ayer = null
       payload.precio_max_ayer    = null
       payload.precio_min_ayer    = null
+      payload.precio_cierre_ayer = null
       payload.precio_apertura    = null
       payload.precio_max_pre     = null
       payload.precio_min_pre     = null
@@ -347,9 +349,10 @@ const SessionForm = (() => {
     // ── Premercado ──
     const seConectoEl = document.getElementById('seConecto')
     if (seConectoEl) seConectoEl.checked = sesion.se_conecto !== false
-    document.getElementById('precioCierreAyer').value = sesion.precio_cierre_ayer ?? ''
+    document.getElementById('precioAperturaAyer').value = sesion.precio_apertura_ayer ?? ''
     document.getElementById('precioMaxAyer').value    = sesion.precio_max_ayer ?? ''
     document.getElementById('precioMinAyer').value    = sesion.precio_min_ayer ?? ''
+    document.getElementById('precioCierreAyer').value = sesion.precio_cierre_ayer ?? ''
     document.getElementById('precioApertura').value   = sesion.precio_apertura ?? ''
     document.getElementById('precioMaxPre').value     = sesion.precio_max_pre ?? ''
     document.getElementById('precioMinPre').value     = sesion.precio_min_pre ?? ''

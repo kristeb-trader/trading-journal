@@ -172,33 +172,42 @@ Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
     const analisisTrader = sesion?.analisis_trader || 'No registrado'
 
     // Premercado / contexto técnico (futuro continuo: ver sección de interpretación)
-    const premkt = []
     const cAyer = sesion?.precio_cierre_ayer
     const aHoy  = sesion?.precio_apertura
-    if (cAyer != null) premkt.push(`Cierre RTH de ayer (sesión US): ${cAyer}`)
+
+    // Datos de referencia (OHLC de ayer + rango)
+    const ref = []
+    if (sesion?.precio_apertura_ayer != null) ref.push(`PDO (apertura de ayer): ${sesion.precio_apertura_ayer}`)
+    if (sesion?.precio_max_ayer != null)      ref.push(`PDH (máximo de ayer): ${sesion.precio_max_ayer}`)
+    if (sesion?.precio_min_ayer != null)      ref.push(`PDL (mínimo de ayer): ${sesion.precio_min_ayer}`)
+    if (cAyer != null)                        ref.push(`Cierre RTH de ayer (PDC): ${cAyer}`)
     if (sesion?.precio_max_ayer != null && sesion?.precio_min_ayer != null)
-      premkt.push(`Rango de ayer (PDH/PDL): máx ${sesion.precio_max_ayer} / mín ${sesion.precio_min_ayer}`)
-    else {
-      if (sesion?.precio_max_ayer != null) premkt.push(`Máximo de ayer (PDH): ${sesion.precio_max_ayer}`)
-      if (sesion?.precio_min_ayer != null) premkt.push(`Mínimo de ayer (PDL): ${sesion.precio_min_ayer}`)
-    }
-    if (aHoy != null) premkt.push(`Apertura de hoy: ${aHoy}`)
+      ref.push(`PDR (rango de ayer = PDH − PDL): ${(sesion.precio_max_ayer - sesion.precio_min_ayer).toFixed(2)} pts`)
+
+    // Contexto adicional
+    const otros = []
     if (cAyer != null && aHoy != null) {
       const d = aHoy - cAyer
-      premkt.push(`Deriva overnight (apertura − cierre US, NO es un gap tradeable): ${(d >= 0 ? '+' : '') + d.toFixed(2)} pts`)
+      otros.push(`Deriva overnight (apertura hoy ${aHoy} − cierre US ayer, NO es un gap tradeable): ${(d >= 0 ? '+' : '') + d.toFixed(2)} pts`)
+    } else if (aHoy != null) {
+      otros.push(`Apertura de hoy: ${aHoy}`)
     }
     if (sesion?.precio_max_pre != null && sesion?.precio_min_pre != null)
-      premkt.push(`Rango overnight / premercado (ONH/ONL): máx ${sesion.precio_max_pre} / mín ${sesion.precio_min_pre} (${(sesion.precio_max_pre - sesion.precio_min_pre).toFixed(2)} pts)`)
+      otros.push(`Rango overnight / premercado (ONH/ONL): máx ${sesion.precio_max_pre} / mín ${sesion.precio_min_pre} (${(sesion.precio_max_pre - sesion.precio_min_pre).toFixed(2)} pts)`)
     else {
-      if (sesion?.precio_max_pre != null) premkt.push(`Máximo premercado (ONH): ${sesion.precio_max_pre}`)
-      if (sesion?.precio_min_pre != null) premkt.push(`Mínimo premercado (ONL): ${sesion.precio_min_pre}`)
+      if (sesion?.precio_max_pre != null) otros.push(`ONH (máx premercado): ${sesion.precio_max_pre}`)
+      if (sesion?.precio_min_pre != null) otros.push(`ONL (mín premercado): ${sesion.precio_min_pre}`)
     }
     const sopN = Array.isArray(sesion?.soportes_naranja) ? sesion.soportes_naranja : []
     const resN = Array.isArray(sesion?.resistencias_naranja) ? sesion.resistencias_naranja : []
-    if (sopN.length) premkt.push(`Soportes (líneas naranjas): ${sopN.join(', ')}`)
-    if (resN.length) premkt.push(`Resistencias (líneas naranjas): ${resN.join(', ')}`)
-    if (sesion?.noticias) premkt.push(`Noticias: ${sesion.noticias}`)
-    const premktStr = premkt.length ? premkt.map(l => `  ${l}`).join('\n') : '  No registrado'
+    if (sopN.length) otros.push(`Soporte(s) naranja: ${sopN.join(', ')}`)
+    if (resN.length) otros.push(`Resistencia(s) naranja: ${resN.join(', ')}`)
+    if (sesion?.noticias) otros.push(`Noticias: ${sesion.noticias}`)
+
+    const fmtGrupo = arr => arr.length ? arr.map(l => `  - ${l}`).join('\n') : '  - No registrado'
+    const premktStr = (ref.length || otros.length)
+      ? `Datos de referencia:\n${fmtGrupo(ref)}\n\nContexto adicional:\n${fmtGrupo(otros)}`
+      : '  No registrado'
 
     return `Eres un analista experto en la estrategia de trading de Chaumer (trader_sociologist), especializado en futuros MNQ/NQ en gráfico de 1 minuto con NinjaTrader. Tu rol es analizar la sesión diaria, validar setups según las reglas exactas de la estrategia, y acumular aprendizaje sesión a sesión para dar recomendaciones cada vez más precisas.
 
@@ -280,7 +289,7 @@ El análisis se realiza en un flujo guiado de tres etapas. Tú produces dos entr
 Cuando recibas la instrucción de análisis técnico (o la imagen del gráfico), produce EXACTAMENTE estas 3 secciones:
 
 **1. 🌍 CONTEXTO**
-[Lectura del gráfico, tendencia del día anterior, niveles clave, dirección probable, noticias relevantes]
+Empieza SIEMPRE con un bloque "Datos de referencia" mostrando, en este orden exacto y solo los que existan: PDO, PDH, PDL, Cierre RTH (PDC) y PDR (rango de ayer en puntos). Debajo, "Contexto adicional": deriva overnight, soporte(s) naranja y resistencia(s) naranja. Luego haz la lectura: tendencia del día anterior, relación de apertura (dentro/fuera del rango de ayer y overnight), niveles clave, dirección probable y noticias relevantes.
 
 **2. 📈 DESARROLLO DE SESIÓN**
 [Descripción cronológica: corridas, retrocesos, rompimientos, consecuciones identificadas]
