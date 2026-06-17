@@ -541,7 +541,7 @@ textarea { resize: vertical; min-height: 80px; }
   border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;
 }
 #premercadoSection > label:first-child { font-size: 0.95rem; font-weight: 600; color: var(--text); }
-.premkt-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+.premkt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
 .premkt-field { display: flex; flex-direction: column; gap: 4px; }
 .premkt-field label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.02em; color: var(--text3); }
 .premkt-puntos {

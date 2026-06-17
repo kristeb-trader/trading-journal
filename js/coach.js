@@ -171,15 +171,27 @@ Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
     // Análisis del trader
     const analisisTrader = sesion?.analisis_trader || 'No registrado'
 
-    // Premercado / contexto técnico
+    // Premercado / contexto técnico (futuro continuo: ver sección de interpretación)
     const premkt = []
-    if (sesion?.precio_cierre_ayer != null) premkt.push(`Cierre de ayer: ${sesion.precio_cierre_ayer}`)
-    if (sesion?.precio_apertura != null)    premkt.push(`Apertura: ${sesion.precio_apertura}`)
-    if (sesion?.precio_max_pre != null && sesion?.precio_min_pre != null)
-      premkt.push(`Premercado: máx ${sesion.precio_max_pre} / mín ${sesion.precio_min_pre} (rango ${(sesion.precio_max_pre - sesion.precio_min_pre).toFixed(2)} pts)`)
+    const cAyer = sesion?.precio_cierre_ayer
+    const aHoy  = sesion?.precio_apertura
+    if (cAyer != null) premkt.push(`Cierre RTH de ayer (sesión US): ${cAyer}`)
+    if (sesion?.precio_max_ayer != null && sesion?.precio_min_ayer != null)
+      premkt.push(`Rango de ayer (PDH/PDL): máx ${sesion.precio_max_ayer} / mín ${sesion.precio_min_ayer}`)
     else {
-      if (sesion?.precio_max_pre != null) premkt.push(`Máximo premercado: ${sesion.precio_max_pre}`)
-      if (sesion?.precio_min_pre != null) premkt.push(`Mínimo premercado: ${sesion.precio_min_pre}`)
+      if (sesion?.precio_max_ayer != null) premkt.push(`Máximo de ayer (PDH): ${sesion.precio_max_ayer}`)
+      if (sesion?.precio_min_ayer != null) premkt.push(`Mínimo de ayer (PDL): ${sesion.precio_min_ayer}`)
+    }
+    if (aHoy != null) premkt.push(`Apertura de hoy: ${aHoy}`)
+    if (cAyer != null && aHoy != null) {
+      const d = aHoy - cAyer
+      premkt.push(`Deriva overnight (apertura − cierre US, NO es un gap tradeable): ${(d >= 0 ? '+' : '') + d.toFixed(2)} pts`)
+    }
+    if (sesion?.precio_max_pre != null && sesion?.precio_min_pre != null)
+      premkt.push(`Rango overnight / premercado (ONH/ONL): máx ${sesion.precio_max_pre} / mín ${sesion.precio_min_pre} (${(sesion.precio_max_pre - sesion.precio_min_pre).toFixed(2)} pts)`)
+    else {
+      if (sesion?.precio_max_pre != null) premkt.push(`Máximo premercado (ONH): ${sesion.precio_max_pre}`)
+      if (sesion?.precio_min_pre != null) premkt.push(`Mínimo premercado (ONL): ${sesion.precio_min_pre}`)
     }
     const sopN = Array.isArray(sesion?.soportes_naranja) ? sesion.soportes_naranja : []
     const resN = Array.isArray(sesion?.resistencias_naranja) ? sesion.resistencias_naranja : []
@@ -217,6 +229,18 @@ ${patrones}
 ## HISTORIAL DE SESIONES (últimos 60 días)
 
 ${historial}
+
+---
+
+## CÓMO LEER EL CONTEXTO DE PREMERCADO (MUY IMPORTANTE)
+
+NQ/MNQ es un FUTURO que cotiza casi 23 h continuas (domingo 6pm – viernes 5pm ET, con un corte de mantenimiento de ~1 h). NO es una acción: entre el cierre de la sesión americana de ayer y la apertura de hoy el precio se mueve de forma CONTINUA durante las sesiones asiática y de Londres.
+
+Por lo tanto:
+- La diferencia entre "Cierre RTH de ayer" y "Apertura de hoy" NO es un gap tradeable: es la DERIVA OVERNIGHT (Asia + Londres). NO la reportes como "gap" salvo que sea (a) un gap de fin de semana (cierre del viernes → apertura del domingo) o (b) un salto grande y discontinuo por noticia. Nunca abras un análisis con "hay un gap entre el cierre de ayer y la apertura": eso es ruido.
+- Si comentas esa diferencia, hazlo SIEMPRE con magnitud y contexto: tamaño en puntos y en relación al rango overnight (ONH/ONL) y al rango de ayer (PDH/PDL).
+- RELACIÓN DE APERTURA (lo accionable): ¿la apertura de hoy queda por encima, por debajo o DENTRO del rango de ayer (PDH/PDL) y del rango overnight? Abrir fuera del rango → sesgo tendencial / continuación. Abrir dentro → sesgo rotacional y mayor probabilidad de buscar el cierre de ayer (gap-fill).
+- Usa PDH/PDL (máx/mín de ayer) y ONH/ONL (máx/mín premercado) como NIVELES DE REFERENCIA: son los imanes y las zonas de reacción más probables en la sesión US. Relaciónalos con las líneas naranjas marcadas por el trader.
 
 ---
 
