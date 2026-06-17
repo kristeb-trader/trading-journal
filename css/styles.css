@@ -302,14 +302,6 @@ small { font-size: 0.82em; }
 .badge-festivo  { color: rgba(96,165,250,0.9); }
 .badge-fomc     { color: rgba(214,157,92,0.95); }
 
-/* Icono FOMC — superior izquierda */
-.cal-icon-fomc {
-  position: absolute; top: 5px; left: 6px;
-  font-size: 0.68rem; line-height: 1;
-  color: rgba(214,157,92,0.85);
-}
-.cal-icon-fomc i { font-size: 0.68rem; }
-
 /* Icono error — superior derecha */
 .cal-icon-error {
   position: absolute; top: 5px; right: 6px;

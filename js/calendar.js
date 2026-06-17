@@ -210,9 +210,12 @@ const Calendar = (() => {
         const isHoliday = !isFuture && (dateStr in cmeHolidays)
         const isFomc    = !isFuture && fomcDates.has(dateStr)
 
+        let result = isFuture ? null : dayResult(trades, sesion, dateStr)
+        // Día FOMC automático (en fomc_dates) sin operar: mismo look que el FOMC manual
+        if (!isFuture && isFomc && !sesion?.no_opero && trades.length === 0) result = 'fomc'
         let cellClass = 'cal-cell'
         if (isFuture) cellClass += ' future'
-        else cellClass += ` day-${dayResult(trades, sesion, dateStr)}`
+        else cellClass += ` day-${result}`
         if (isToday) cellClass += ' today'
 
         const pnl = dayPnl(trades)
@@ -243,12 +246,11 @@ const Calendar = (() => {
             // Festivo automático (sin sesión registrada)
             statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> Festivo</div>`
           }
+          // FOMC automático (en fomc_dates, sin sesión): mismo badge que el manual
+          if (!statusBadge && isFomc && trades.length === 0) {
+            statusBadge = `<div class="cal-status-badge badge-fomc"><i class="ti ti-chart-candle"></i> FOMC</div>`
+          }
         }
-
-        // Indicador FOMC superior izquierda (visible aunque haya operado)
-        const fomcIcon = isFomc
-          ? `<div class="cal-icon-fomc" title="Día de reunión FOMC"><i class="ti ti-podium"></i></div>`
-          : ''
 
         // Icono error (superior derecha)
         const errorIcon = !isFuture && casuisticasCache[dateStr]
@@ -268,7 +270,6 @@ const Calendar = (() => {
         html += `
           <div class="${cellClass}" ${clickable}>
             <div class="cal-day-num">${parseInt(dateStr.slice(8))}</div>
-            ${fomcIcon}
             ${errorIcon}
             ${pnlHtml}
             ${tradeCount}
