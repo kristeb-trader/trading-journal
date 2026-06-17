@@ -19,16 +19,22 @@ using NinjaTrader.NinjaScript.Indicators;
  *   1. Copiar a: Documentos\NinjaTrader 8\bin\Custom\Indicators\
  *   2. NinjaScript Editor → compilar (F5)
  *   3. Agregar al gráfico de NQ/MNQ
- *   4. Seleccionar la cuenta en el dropdown "Account Name"
- *   5. El routing es AUTOMÁTICO por nombre de cuenta (no hay que marcar nada).
+ *   4. Una sola instancia en el gráfico de MNQ captura TODAS las cuentas
+ *      seleccionadas (no hace falta una instancia por cuenta).
  *
- * Routing automático por nombre de cuenta (v2.5 — 2026-06-16):
+ * Multi-cuenta + selección (v3.0 — 2026-06-17):
+ *   - Una sola instancia monitorea varias cuentas a la vez, cada una con su
+ *     propio estado de trade (no se mezclan trades simultáneos).
+ *   - "Registrar todas las cuentas conectadas" (ON por defecto): registra todas.
+ *     Si se apaga, registra solo las cuentas elegidas en los slots Cuenta 1..6.
+ *   - Sigue filtrando por el instrumento del gráfico (una instancia por
+ *     instrumento si se opera más de uno).
+ *
+ * Routing automático por nombre de cuenta:
  *   - Cuenta PA real (nombre empieza con "PA-"): trades → tabla `trades`
  *     + notificación Telegram. La app deriva sus días recientes desde `trades`.
  *   - Cualquier otra cuenta (evaluación): trades → tabla `apex_trades`, SIN
  *     Telegram. La app deriva días/balance/threshold desde estos trades.
- *   - El checkbox "Forzar cuenta de evaluación" es OPCIONAL: solo se usa para
- *     forzar a `apex_trades` una cuenta que no siga la convención "PA-".
  *
  * Comisiones (v2.4 — 2026-06-13):
  *   - "Comisión por lado": si NinjaTrader reporta comisión $0, configurar este
@@ -58,9 +64,9 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext context)
         {
-            // Solo cuentas activas (conexión conectada). Evita listar cuentas
-            // antiguas o de conexiones que ya no existen.
-            var names = new List<string>();
+            // Primer valor en blanco: permite dejar un slot "Cuenta N" sin usar.
+            // Luego solo cuentas activas (conexión conectada).
+            var names = new List<string> { string.Empty };
             lock (Account.All)
             {
                 foreach (Account acc in Account.All)
@@ -74,7 +80,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 }
             }
             // Fallback: si no hay ninguna conectada (p. ej. en diseño), mostrar todas
-            if (names.Count == 0)
+            if (names.Count == 1)
             {
                 lock (Account.All)
                 {
@@ -103,64 +109,109 @@ namespace NinjaTrader.NinjaScript.Indicators
         private const string SUPABASE_KEY =
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvdGhvc2xvemN0Zmxmcm55c3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzODQ1MTMsImV4cCI6MjA5Mzk2MDUxM30.8perbSMHaE2K73aRU2NjfrUsWgbwmm2lL2dA-e2CG18";
 
-        // ── Estado de posición ────────────────────────────────────────────────
+        // ── Estado de posición POR CUENTA ─────────────────────────────────────
+        // Cada cuenta monitoreada lleva su propio trade abierto, para que operar
+        // varias cuentas a la vez (mismo instrumento) no mezcle datos.
         private readonly object syncLock = new object();
-        private bool     inTrade;
-        private double   entryPrice;
-        private DateTime entryTime;
-        private int      tradeQty;
-        private bool     isLong;
-        private double   maeExtreme;
-        private double   mfeExtreme;
-        private int      netQty;
-        private double   tradeCommission;   // acumulado de todas las patas (entrada + salida + scaling)
 
-        // ── Ventana de fusión ATM (3 segundos) ───────────────────────────────
+        private class AcctState
+        {
+            public int      NetQty;
+            public bool     InTrade;
+            public bool     IsLong;
+            public double   EntryPrice;
+            public DateTime EntryTime;
+            public int      TradeQty;
+            public double   MaeExtreme;
+            public double   MfeExtreme;
+            public double   Commission;   // acumulado de todas las patas del trade abierto
+        }
+        private readonly Dictionary<string, AcctState> states =
+            new Dictionary<string, AcctState>(StringComparer.OrdinalIgnoreCase);
+
+        // ── Ventana de fusión ATM (3 segundos), un buffer por cuenta ──────────
         private readonly object mergeLock = new object();
-        private Timer    mergeTimer;
-        private bool     hasPending;
 
-        private string   pendingInstrument;
-        private string   pendingAccount;
-        private string   pendingMarketPos;
-        private int      pendingQty;
-        private double   pendingEntryPrice;   // promedio ponderado
-        private double   pendingExitPrice;    // promedio ponderado
-        private DateTime pendingEntryTime;
-        private DateTime pendingExitTime;
-        private string   pendingExitName;
-        private double   pendingProfit;       // suma
-        private double   pendingCommission;   // suma
-        private double   pendingMae;          // suma
-        private double   pendingMfe;          // suma
-        private int      pendingBars;
-        private string   pendingTradeDate;
-        private string   pendingResultado;
+        private class PendingTrade
+        {
+            public string   Instrument, Account, MarketPos, ExitName, TradeDate, Resultado;
+            public int      Qty, Bars;
+            public double   EntryPrice, ExitPrice, Profit, Commission, Mae, Mfe;
+            public DateTime EntryTime, ExitTime;
+            public Timer    Timer;
+        }
+        private readonly Dictionary<string, PendingTrade> pendingByAccount =
+            new Dictionary<string, PendingTrade>(StringComparer.OrdinalIgnoreCase);
 
-        private Account    monitoredAccount;
+        private readonly List<Account> monitoredAccounts = new List<Account>();
         private HttpClient httpClient;
 
         [NinjaScriptProperty]
-        [TypeConverter(typeof(AccountNameConverter))]
-        [Display(Name = "Account Name", Order = 1, GroupName = "Supabase Export",
-                 Description = "Seleccionar la cuenta a monitorear")]
-        public string AccountName { get; set; }
+        [Display(Name = "Registrar todas las cuentas conectadas", Order = 1, GroupName = "Supabase Export",
+                 Description = "ON: registra los trades de TODAS las cuentas conectadas. OFF: registra solo las cuentas elegidas abajo (Cuenta 1..6).")]
+        public bool RegistrarTodas { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "Forzar cuenta de evaluación", Order = 2, GroupName = "Supabase Export",
-                 Description = "OPCIONAL. El routing es automático por nombre de cuenta: las que empiezan con 'PA-' van al journal (trades) + Telegram; el resto van a apex_trades sin Telegram. Marca esto solo para forzar evaluación en una cuenta que no siga esa convención.")]
-        public bool ApexEvalAccount { get; set; }
-
-        // Routing automático: la cuenta PA real empieza con "PA-".
-        // Las demás (evaluación) van a apex_trades. El checkbox solo fuerza eval.
-        private bool EsCuentaEval() =>
-            ApexEvalAccount || !(AccountName != null &&
-                AccountName.StartsWith("PA-", StringComparison.OrdinalIgnoreCase));
-
-        [NinjaScriptProperty]
-        [Display(Name = "Comisión por lado", Order = 3, GroupName = "Supabase Export",
+        [Display(Name = "Comisión por lado", Order = 2, GroupName = "Supabase Export",
                  Description = "Comisión por contrato por lado. NQ: 1.99, MNQ: 0.51. Si es 0 usa la comisión que reporta NinjaTrader.")]
         public double CommissionPerSide { get; set; }
+
+        [NinjaScriptProperty]
+        [TypeConverter(typeof(AccountNameConverter))]
+        [Display(Name = "Cuenta 1", Order = 1, GroupName = "Cuentas a registrar (si 'todas' está OFF)",
+                 Description = "Cuenta a registrar. Dejar en blanco si no se usa.")]
+        public string Cuenta1 { get; set; }
+
+        [NinjaScriptProperty]
+        [TypeConverter(typeof(AccountNameConverter))]
+        [Display(Name = "Cuenta 2", Order = 2, GroupName = "Cuentas a registrar (si 'todas' está OFF)",
+                 Description = "Opcional. Dejar en blanco si no se usa.")]
+        public string Cuenta2 { get; set; }
+
+        [NinjaScriptProperty]
+        [TypeConverter(typeof(AccountNameConverter))]
+        [Display(Name = "Cuenta 3", Order = 3, GroupName = "Cuentas a registrar (si 'todas' está OFF)",
+                 Description = "Opcional. Dejar en blanco si no se usa.")]
+        public string Cuenta3 { get; set; }
+
+        [NinjaScriptProperty]
+        [TypeConverter(typeof(AccountNameConverter))]
+        [Display(Name = "Cuenta 4", Order = 4, GroupName = "Cuentas a registrar (si 'todas' está OFF)",
+                 Description = "Opcional. Dejar en blanco si no se usa.")]
+        public string Cuenta4 { get; set; }
+
+        [NinjaScriptProperty]
+        [TypeConverter(typeof(AccountNameConverter))]
+        [Display(Name = "Cuenta 5", Order = 5, GroupName = "Cuentas a registrar (si 'todas' está OFF)",
+                 Description = "Opcional. Dejar en blanco si no se usa.")]
+        public string Cuenta5 { get; set; }
+
+        [NinjaScriptProperty]
+        [TypeConverter(typeof(AccountNameConverter))]
+        [Display(Name = "Cuenta 6", Order = 6, GroupName = "Cuentas a registrar (si 'todas' está OFF)",
+                 Description = "Opcional. Dejar en blanco si no se usa.")]
+        public string Cuenta6 { get; set; }
+
+        // Routing automático por nombre: la cuenta PA real empieza con "PA-" y va
+        // al journal (trades) + Telegram; el resto a apex_trades sin notificar.
+        private static bool EsCuentaEval(string account) =>
+            !(account != null && account.StartsWith("PA-", StringComparison.OrdinalIgnoreCase));
+
+        // Cuentas elegidas en los slots (no vacías)
+        private IEnumerable<string> CuentasSeleccionadas()
+        {
+            foreach (var c in new[] { Cuenta1, Cuenta2, Cuenta3, Cuenta4, Cuenta5, Cuenta6 })
+                if (!string.IsNullOrWhiteSpace(c)) yield return c;
+        }
+
+        // ¿Debe monitorear esta cuenta? Todas (si el toggle está ON) o las elegidas.
+        private bool DebeMonitorear(string name)
+        {
+            if (RegistrarTodas) return true;
+            foreach (var c in CuentasSeleccionadas())
+                if (string.Equals(c, name, StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
+        }
 
         // Comisión de un fill: calculada por lado si se configuró, si no la de NT
         private double FillCommission(Execution ex) =>
@@ -177,8 +228,8 @@ namespace NinjaTrader.NinjaScript.Indicators
                 DisplayInDataBox         = false;
                 DrawOnPricePanel         = false;
                 IsSuspendedWhileInactive = false;
-                AccountName  = string.Empty;
-                ApexEvalAccount = false;
+                RegistrarTodas    = true;
+                Cuenta1 = Cuenta2 = Cuenta3 = Cuenta4 = Cuenta5 = Cuenta6 = string.Empty;
                 CommissionPerSide = 0;
             }
             else if (State == State.Configure)
@@ -194,33 +245,26 @@ namespace NinjaTrader.NinjaScript.Indicators
                 {
                     foreach (Account acc in Account.All)
                     {
-                        if (acc.Name == AccountName)
+                        if (DebeMonitorear(acc.Name))
                         {
-                            monitoredAccount = acc;
-                            break;
+                            monitoredAccounts.Add(acc);
+                            acc.ExecutionUpdate += OnAccountExecutionUpdate;
                         }
                     }
                 }
-
-                if (monitoredAccount != null)
-                    monitoredAccount.ExecutionUpdate += OnAccountExecutionUpdate;
             }
             else if (State == State.Terminated)
             {
-                if (monitoredAccount != null)
+                foreach (Account acc in monitoredAccounts)
                 {
-                    monitoredAccount.ExecutionUpdate -= OnAccountExecutionUpdate;
-                    monitoredAccount = null;
+                    try { acc.ExecutionUpdate -= OnAccountExecutionUpdate; } catch { }
                 }
+                monitoredAccounts.Clear();
 
-                // Publicar cualquier trade pendiente antes de terminar
-                lock (mergeLock)
-                {
-                    mergeTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-                    mergeTimer?.Dispose();
-                    mergeTimer = null;
-                }
-                FlushPendingTrade(null);
+                // Publicar cualquier trade pendiente (de cualquier cuenta) antes de terminar
+                List<string> cuentas;
+                lock (mergeLock) { cuentas = new List<string>(pendingByAccount.Keys); }
+                foreach (var c in cuentas) FlushAccount(c);
 
                 httpClient?.Dispose();
                 httpClient = null;
@@ -231,17 +275,19 @@ namespace NinjaTrader.NinjaScript.Indicators
         {
             lock (syncLock)
             {
-                if (!inTrade) return;
-
-                if (isLong)
+                foreach (var st in states.Values)
                 {
-                    if (Low[0]  < maeExtreme) maeExtreme = Low[0];
-                    if (High[0] > mfeExtreme) mfeExtreme = High[0];
-                }
-                else
-                {
-                    if (High[0] > maeExtreme) maeExtreme = High[0];
-                    if (Low[0]  < mfeExtreme) mfeExtreme = Low[0];
+                    if (!st.InTrade) continue;
+                    if (st.IsLong)
+                    {
+                        if (Low[0]  < st.MaeExtreme) st.MaeExtreme = Low[0];
+                        if (High[0] > st.MfeExtreme) st.MfeExtreme = High[0];
+                    }
+                    else
+                    {
+                        if (High[0] > st.MaeExtreme) st.MaeExtreme = High[0];
+                        if (Low[0]  < st.MfeExtreme) st.MfeExtreme = Low[0];
+                    }
                 }
             }
         }
@@ -256,6 +302,9 @@ namespace NinjaTrader.NinjaScript.Indicators
                     return;
 
                 if (ex.Order == null) return;
+
+                string acctName = ex.Account != null ? ex.Account.Name : (sender as Account)?.Name;
+                if (string.IsNullOrEmpty(acctName)) return;
 
                 int qtyDelta;
                 switch (ex.Order.OrderAction)
@@ -279,7 +328,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 DateTime postEntryTime = DateTime.MinValue, postExitTime = DateTime.MinValue;
                 string   postExitName = string.Empty;
                 string   postInstrument = Instrument.FullName;
-                string   postAccount    = AccountName;
+                string   postAccount    = acctName;
                 string   postMarketPos  = string.Empty;
                 int      postQty = 0;
                 double   postProfit = 0;
@@ -287,68 +336,75 @@ namespace NinjaTrader.NinjaScript.Indicators
 
                 lock (syncLock)
                 {
-                    int prevQty = netQty;
-                    netQty += qtyDelta;
+                    AcctState st;
+                    if (!states.TryGetValue(acctName, out st))
+                    {
+                        st = new AcctState();
+                        states[acctName] = st;
+                    }
 
-                    if (prevQty == 0 && netQty != 0)
+                    int prevQty = st.NetQty;
+                    st.NetQty += qtyDelta;
+
+                    if (prevQty == 0 && st.NetQty != 0)
                     {
                         // Apertura de un nuevo trade
-                        isLong          = netQty > 0;
-                        entryPrice      = ex.Price;
-                        entryTime       = ex.Time;
-                        tradeQty        = Math.Abs(netQty);
-                        maeExtreme      = ex.Price;
-                        mfeExtreme      = ex.Price;
-                        inTrade         = true;
-                        tradeCommission = FillCommission(ex);   // comisión de la pata de entrada
+                        st.IsLong     = st.NetQty > 0;
+                        st.EntryPrice = ex.Price;
+                        st.EntryTime  = ex.Time;
+                        st.TradeQty   = Math.Abs(st.NetQty);
+                        st.MaeExtreme = ex.Price;
+                        st.MfeExtreme = ex.Price;
+                        st.InTrade    = true;
+                        st.Commission = FillCommission(ex);   // comisión de la pata de entrada
                     }
-                    else if (inTrade && Math.Sign(netQty) == Math.Sign(prevQty) && Math.Abs(netQty) > Math.Abs(prevQty))
+                    else if (st.InTrade && Math.Sign(st.NetQty) == Math.Sign(prevQty) && Math.Abs(st.NetQty) > Math.Abs(prevQty))
                     {
                         // Scaling in — sumar comisión y actualizar qty al máximo alcanzado
-                        tradeCommission += FillCommission(ex);
-                        tradeQty = Math.Abs(netQty);
+                        st.Commission += FillCommission(ex);
+                        st.TradeQty = Math.Abs(st.NetQty);
                     }
-                    else if (prevQty != 0 && netQty == 0)
+                    else if (prevQty != 0 && st.NetQty == 0)
                     {
                         // Cierre total del trade
-                        inTrade = false;
-                        tradeCommission += FillCommission(ex);   // comisión de la pata de salida
+                        st.InTrade = false;
+                        st.Commission += FillCommission(ex);   // comisión de la pata de salida
 
-                        postEntryPrice = entryPrice;
+                        postEntryPrice = st.EntryPrice;
                         postExitPrice  = ex.Price;
-                        postEntryTime  = entryTime;
+                        postEntryTime  = st.EntryTime;
                         postExitTime   = ex.Time;
                         postExitName   = ex.Name ?? ex.Order.Name ?? string.Empty;
-                        postMarketPos  = isLong ? "Long" : "Short";
-                        postQty        = tradeQty;
+                        postMarketPos  = st.IsLong ? "Long" : "Short";
+                        postQty        = st.TradeQty;
 
                         double pointValue   = Instrument.MasterInstrument.PointValue;
-                        double profitPoints = isLong
+                        double profitPoints = st.IsLong
                             ? postExitPrice - postEntryPrice
                             : postEntryPrice - postExitPrice;
                         double grossProfit  = profitPoints * pointValue * postQty;
 
                         // Comisión round-trip (todas las patas) y profit NETO,
                         // alineado con la convención de los datos históricos.
-                        postCommission = Math.Round(tradeCommission, 2);
+                        postCommission = Math.Round(st.Commission, 2);
                         postProfit     = Math.Round(grossProfit - postCommission, 2);
 
-                        postMae = isLong
-                            ? Math.Max(0, postEntryPrice - maeExtreme)
-                            : Math.Max(0, maeExtreme     - postEntryPrice);
-                        postMfe = isLong
-                            ? Math.Max(0, mfeExtreme     - postEntryPrice)
-                            : Math.Max(0, postEntryPrice - mfeExtreme);
+                        postMae = st.IsLong
+                            ? Math.Max(0, postEntryPrice - st.MaeExtreme)
+                            : Math.Max(0, st.MaeExtreme  - postEntryPrice);
+                        postMfe = st.IsLong
+                            ? Math.Max(0, st.MfeExtreme  - postEntryPrice)
+                            : Math.Max(0, postEntryPrice - st.MfeExtreme);
 
                         postMae = Math.Round(postMae * pointValue * postQty, 2);
                         postMfe = Math.Round(postMfe * pointValue * postQty, 2);
 
                         shouldPost = true;
                     }
-                    else if (inTrade)
+                    else if (st.InTrade)
                     {
                         // Cierre parcial u otra ejecución dentro del trade — acumular comisión
-                        tradeCommission += FillCommission(ex);
+                        st.Commission += FillCommission(ex);
                     }
                 }
 
@@ -363,107 +419,99 @@ namespace NinjaTrader.NinjaScript.Indicators
 
                     lock (mergeLock)
                     {
-                        // Cancelar el timer actual mientras decidimos
-                        mergeTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+                        PendingTrade p;
+                        pendingByAccount.TryGetValue(postAccount, out p);
 
                         bool merged = false;
-                        if (hasPending &&
-                            pendingMarketPos   == postMarketPos   &&
-                            pendingInstrument  == postInstrument  &&
-                            pendingAccount     == postAccount     &&
-                            (postEntryTime - pendingEntryTime).TotalSeconds <= 30)
+                        if (p != null &&
+                            p.MarketPos  == postMarketPos  &&
+                            p.Instrument == postInstrument &&
+                            (postEntryTime - p.EntryTime).TotalSeconds <= 30)
                         {
-                            // Fusionar con el trade pendiente
-                            int totalQty = pendingQty + postQty;
-                            pendingEntryPrice = (pendingEntryPrice * pendingQty + postEntryPrice * postQty) / totalQty;
-                            pendingExitPrice  = (pendingExitPrice  * pendingQty + postExitPrice  * postQty) / totalQty;
-                            pendingQty        = totalQty;
-                            pendingProfit    += postProfit;
-                            pendingCommission += postCommission;
-                            pendingMae       += postMae;
-                            pendingMfe       += postMfe;
-                            pendingExitTime   = postExitTime > pendingExitTime ? postExitTime : pendingExitTime;
-                            pendingBars       = Math.Max(pendingBars, bars);
-                            if (pendingResultado != resultado) pendingResultado = "otro";
+                            // Fusionar con el trade pendiente de esta cuenta
+                            p.Timer?.Change(Timeout.Infinite, Timeout.Infinite);
+                            int totalQty = p.Qty + postQty;
+                            p.EntryPrice = (p.EntryPrice * p.Qty + postEntryPrice * postQty) / totalQty;
+                            p.ExitPrice  = (p.ExitPrice  * p.Qty + postExitPrice  * postQty) / totalQty;
+                            p.Qty        = totalQty;
+                            p.Profit    += postProfit;
+                            p.Commission += postCommission;
+                            p.Mae       += postMae;
+                            p.Mfe       += postMfe;
+                            p.ExitTime   = postExitTime > p.ExitTime ? postExitTime : p.ExitTime;
+                            p.Bars       = Math.Max(p.Bars, bars);
+                            if (p.Resultado != resultado) p.Resultado = "otro";
                             merged = true;
                         }
 
                         if (!merged)
                         {
-                            // Publicar el pendiente anterior si existe
-                            if (hasPending) FlushPendingTrade(null);
+                            // Publicar el pendiente anterior de esta cuenta si existe
+                            if (p != null)
+                            {
+                                p.Timer?.Change(Timeout.Infinite, Timeout.Infinite);
+                                p.Timer?.Dispose();
+                                PostPending(p);
+                            }
 
-                            // Guardar el nuevo trade como pendiente
-                            hasPending        = true;
-                            pendingInstrument = postInstrument;
-                            pendingAccount    = postAccount;
-                            pendingMarketPos  = postMarketPos;
-                            pendingQty        = postQty;
-                            pendingEntryPrice = postEntryPrice;
-                            pendingExitPrice  = postExitPrice;
-                            pendingEntryTime  = postEntryTime;
-                            pendingExitTime   = postExitTime;
-                            pendingExitName   = postExitName;
-                            pendingProfit     = postProfit;
-                            pendingCommission = postCommission;
-                            pendingMae        = postMae;
-                            pendingMfe        = postMfe;
-                            pendingBars       = bars;
-                            pendingTradeDate  = tradeDate;
-                            pendingResultado  = resultado;
+                            // Guardar el nuevo trade como pendiente de esta cuenta
+                            p = new PendingTrade
+                            {
+                                Instrument = postInstrument, Account = postAccount,
+                                MarketPos  = postMarketPos,  Qty = postQty,
+                                EntryPrice = postEntryPrice, ExitPrice = postExitPrice,
+                                EntryTime  = postEntryTime,  ExitTime = postExitTime,
+                                ExitName   = postExitName,   Profit = postProfit,
+                                Commission = postCommission, Mae = postMae, Mfe = postMfe,
+                                Bars = bars, TradeDate = tradeDate, Resultado = resultado
+                            };
+                            pendingByAccount[postAccount] = p;
                         }
 
-                        // Reiniciar timer de 3 segundos
-                        if (mergeTimer == null)
-                            mergeTimer = new Timer(FlushPendingTrade, null, 3000, Timeout.Infinite);
+                        // (Re)iniciar timer de 3 segundos de esta cuenta
+                        if (p.Timer == null)
+                            p.Timer = new Timer(OnMergeTimer, postAccount, 3000, Timeout.Infinite);
                         else
-                            mergeTimer.Change(3000, Timeout.Infinite);
+                            p.Timer.Change(3000, Timeout.Infinite);
                     }
                 }
             }
             catch { }
         }
 
-        private void FlushPendingTrade(object state)
-        {
-            string instrument, account, marketPos, exitName, tradeDate, resultado;
-            int qty, bars;
-            double entryPrc, exitPrc, profit, commission, mae, mfe;
-            DateTime entryT, exitT;
+        // Callback del timer de fusión: publica el pendiente de esa cuenta.
+        private void OnMergeTimer(object state) => FlushAccount(state as string);
 
+        // Saca el pendiente de una cuenta del buffer y lo publica.
+        private void FlushAccount(string account)
+        {
+            if (account == null) return;
+            PendingTrade p;
             lock (mergeLock)
             {
-                if (!hasPending) return;
-
-                instrument = pendingInstrument;
-                account    = pendingAccount;
-                marketPos  = pendingMarketPos;
-                qty        = pendingQty;
-                entryPrc   = pendingEntryPrice;
-                exitPrc    = pendingExitPrice;
-                entryT     = pendingEntryTime;
-                exitT      = pendingExitTime;
-                exitName   = pendingExitName;
-                profit     = pendingProfit;
-                commission = pendingCommission;
-                mae        = pendingMae;
-                mfe        = pendingMfe;
-                bars       = pendingBars;
-                tradeDate  = pendingTradeDate;
-                resultado  = pendingResultado;
-                hasPending = false;
+                if (!pendingByAccount.TryGetValue(account, out p) || p == null) return;
+                pendingByAccount.Remove(account);
+                p.Timer?.Change(Timeout.Infinite, Timeout.Infinite);
+                p.Timer?.Dispose();
             }
+            PostPending(p);
+        }
+
+        // Publica un trade: a `trades`+Telegram si es PA, o a `apex_trades` si no.
+        private void PostPending(PendingTrade p)
+        {
+            if (p == null) return;
 
             Task.Run(() => PostTradeAsync(
-                instrument, account, marketPos, qty,
-                entryPrc, exitPrc, entryT, exitT, exitName,
-                profit, commission, mae, mfe, bars, tradeDate, resultado));
+                p.Instrument, p.Account, p.MarketPos, p.Qty,
+                p.EntryPrice, p.ExitPrice, p.EntryTime, p.ExitTime, p.ExitName,
+                p.Profit, p.Commission, p.Mae, p.Mfe, p.Bars, p.TradeDate, p.Resultado));
 
             // Las cuentas de evaluación no notifican por Telegram (solo la PA real)
-            if (!EsCuentaEval())
+            if (!EsCuentaEval(p.Account))
                 Task.Run(() => SendNotificationAsync(
-                    instrument, marketPos, qty,
-                    entryPrc, exitPrc, profit, commission, mae, mfe, resultado));
+                    p.Instrument, p.MarketPos, p.Qty,
+                    p.EntryPrice, p.ExitPrice, p.Profit, p.Commission, p.Mae, p.Mfe, p.Resultado));
         }
 
         private async Task PostTradeAsync(
@@ -511,7 +559,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 );
 
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                string endpoint = EsCuentaEval() ? APEX_ENDPOINT : SUPABASE_ENDPOINT;
+                string endpoint = EsCuentaEval(account) ? APEX_ENDPOINT : SUPABASE_ENDPOINT;
                 await client.PostAsync(endpoint, content);
             }
             catch { }
