@@ -1,5 +1,7 @@
 #region Using declarations
 using System;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Net.Http;
 using System.Text;
@@ -10,20 +12,25 @@ using NinjaTrader.NinjaScript;
 #endregion
 
 /*
- * SupabaseDailyLevels — Indicador NinjaTrader 8 (v1.0 — 2026-06-17)
+ * SupabaseDailyLevels — Indicador NinjaTrader 8 (v1.1 — 2026-06-18)
  *
  * Calcula automáticamente los niveles de referencia del día y los sube a la
  * sesión de hoy en Supabase, para no tener que escribirlos a mano:
- *   - PDO / PDH / PDL / PDC  → OHLC de la sesión RTH de AYER (ya completa)
- *   - Apertura de hoy        → open de la sesión RTH de HOY
+ *   - PDO / PDH / PDL / PDC  → OHLC de la sesión de AYER (ya completa)
+ *   - Apertura de hoy        → open de la sesión de HOY
  *
  * Cómo lo hace:
- *   Añade una serie DIARIA con la plantilla de horario "CME US Index Futures
- *   RTH", así el OHLC diario corresponde a la sesión cash (9:30–16:00 ET),
- *   independientemente de la plantilla del gráfico. En la apertura RTH de hoy
- *   se forma un nuevo bar diario: ayer queda en [1][1] y hoy en [1][0].
- *   Hace un UPSERT a `sesiones` por `sesion_date` (solo toca estas columnas;
- *   no pisa el resto de la sesión). El formulario sigue editable como respaldo.
+ *   Añade una serie DIARIA con la plantilla de horario del parámetro
+ *   "Plantilla de horario (sesión)" — por defecto "US Equities RTH" (cash
+ *   9:30–16:00 ET) — así el OHLC diario corresponde a esa sesión,
+ *   independientemente de la plantilla del gráfico. En la apertura de hoy se
+ *   forma un nuevo bar diario: ayer queda en [1][1] y hoy en [1][0]. Hace un
+ *   UPSERT a `sesiones` por `sesion_date` (solo toca estas columnas; no pisa
+ *   el resto de la sesión). El formulario sigue editable como respaldo.
+ *
+ *   v1.1: el horario ahora se aplica con el overload de 5 argumentos de
+ *   AddDataSeries (la forma anterior caía al horario por defecto = ETH) y la
+ *   plantilla es configurable desde los parámetros del indicador.
  *
  * Instalación:
  *   1. Copiar a: Documentos\NinjaTrader 8\bin\Custom\Indicators\
@@ -47,12 +54,18 @@ namespace NinjaTrader.NinjaScript.Indicators
         private const string SUPABASE_KEY =
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvdGhvc2xvemN0Zmxmcm55c3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzODQ1MTMsImV4cCI6MjA5Mzk2MDUxM30.8perbSMHaE2K73aRU2NjfrUsWgbwmm2lL2dA-e2CG18";
 
-        // Nombre de la plantilla de horario RTH del CME (índices). Si tu versión
-        // de NT la nombra distinto, ajústalo aquí.
-        private const string RTH_TEMPLATE = "CME US Index Futures RTH";
-
         private HttpClient httpClient;
         private int        lastDailyBar = -1;
+
+        // Plantilla de horario que define la sesión de la que se calcula el OHLC.
+        // Por defecto "US Equities RTH" (cash 9:30–16:00 ET). Si tus niveles no
+        // cuadran, prueba "CME US Index Futures RTH" desde los parámetros del
+        // indicador (sin recompilar). Debe coincidir EXACTO con un nombre de la
+        // lista de Trading Hours de NinjaTrader.
+        [NinjaScriptProperty]
+        [Display(Name = "Plantilla de horario (sesión)", Order = 1, GroupName = "Niveles",
+                 Description = "Sesión para el OHLC de ayer. RTH cash = 'US Equities RTH'. Alterna a 'CME US Index Futures RTH' si no cuadra. Debe ser un nombre exacto de Trading Hours.")]
+        public string RthTemplate { get; set; }
 
         protected override void OnStateChange()
         {
@@ -65,13 +78,14 @@ namespace NinjaTrader.NinjaScript.Indicators
                 DisplayInDataBox         = false;
                 DrawOnPricePanel         = false;
                 IsSuspendedWhileInactive = false;
+                RthTemplate              = "US Equities RTH";
             }
             else if (State == State.Configure)
             {
-                // Serie diaria con sesión RTH (BarsArray[1])
-                AddDataSeries(Instrument.FullName,
-                    new BarsPeriod { BarsPeriodType = BarsPeriodType.Day, Value = 1 },
-                    RTH_TEMPLATE);
+                // Serie diaria con la sesión de la plantilla elegida (BarsArray[1]).
+                // Overload de 5 args: aplica el tradingHoursName de forma fiable.
+                AddDataSeries(Instrument.FullName, BarsPeriodType.Day, 1,
+                    MarketDataType.Last, RthTemplate);
 
                 httpClient = new HttpClient();
                 httpClient.DefaultRequestHeaders.Add("apikey",        SUPABASE_KEY);
@@ -94,11 +108,11 @@ namespace NinjaTrader.NinjaScript.Indicators
             if (CurrentBars[1] == lastDailyBar) return; // ya enviado para este día
             lastDailyBar = CurrentBars[1];
 
-            double pdo = Opens[1][1];   // OHLC de AYER (bar diario RTH completo)
+            double pdo = Opens[1][1];   // OHLC de AYER (bar diario de la sesión elegida)
             double pdh = Highs[1][1];
             double pdl = Lows[1][1];
             double pdc = Closes[1][1];
-            double openHoy = Opens[1][0];               // apertura RTH de HOY
+            double openHoy = Opens[1][0];               // apertura de HOY (sesión elegida)
             string fecha = Times[1][0].ToString("yyyy-MM-dd");
 
             Task.Run(() => SendLevelsAsync(fecha, pdo, pdh, pdl, pdc, openHoy));
