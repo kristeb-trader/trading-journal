@@ -17,9 +17,7 @@ const STEPS = {
   OPERO:        'opero',
   SE_CONECTO:   'se_conecto',
   MOTIVO:       'motivo',
-  // Premercado / contexto técnico (cierre/apertura los pone el indicador)
-  PRE_MAX:      'pre_max',
-  PRE_MIN:      'pre_min',
+  // Premercado: los niveles de precio los pone el indicador; el bot solo lo cualitativo
   PRE_SOPORTES: 'pre_soportes',
   PRE_RESIST:   'pre_resist',
   PRE_NOTICIAS: 'pre_noticias',
@@ -78,10 +76,8 @@ const CHECKLIST_ITEMS = [
 
 // Prompts del flujo de premercado (todos opcionales: /skip para omitir)
 const PREMKT_PROMPTS = {
-  // Cierre de ayer y apertura los calcula el indicador SupabaseDailyLevels;
-  // el bot ya no los pide. Solo el overnight (máx/mín premercado) es manual.
-  pre_max:      '🌅 <b>Premercado</b>\n\nPrecio <b>máximo de premercado</b> (overnight):\n<i>(número, o /skip)</i>',
-  pre_min:      'Precio <b>mínimo de premercado</b> (overnight):\n<i>(número, o /skip)</i>',
+  // Todos los niveles de precio (cierre/apertura, OHLC de ayer y overnight) los
+  // calcula el indicador SupabaseDailyLevels; el bot solo pide lo cualitativo.
   pre_soportes: '🟠 <b>Soportes (líneas naranjas)</b>\n\nSepara por comas, ej: <code>30669, 30700</code>\n<i>(o /skip)</i>',
   pre_resist:   '🟠 <b>Resistencias (líneas naranjas)</b>\n\nSepara por comas, ej: <code>30810, 30850</code>\n<i>(o /skip)</i>',
   pre_noticias: '📰 <b>Noticias del día</b>\n\nej: <code>9:00am → ISM Services PMI</code>\n<i>(o /skip)</i>',
@@ -208,8 +204,6 @@ function setupKeyboard() {
 // Resumen del premercado (solo líneas con dato)
 function premktResumen(d) {
   const lines = [];
-  if (d.precio_max_pre != null && d.precio_min_pre != null)
-    lines.push(`Pre: ${d.precio_min_pre}–${d.precio_max_pre} (${(d.precio_max_pre - d.precio_min_pre).toFixed(2)} pts)`);
   if (d.soportes_naranja && d.soportes_naranja.length)         lines.push(`🟠 Soportes: ${d.soportes_naranja.join(', ')}`);
   if (d.resistencias_naranja && d.resistencias_naranja.length) lines.push(`🟠 Resist: ${d.resistencias_naranja.join(', ')}`);
   if (d.noticias) lines.push(`📰 ${d.noticias}`);
@@ -275,11 +269,10 @@ async function saveSession(data, env) {
     estado_emocional_id:   data.estado_emocional_id   ?? null,
     nivel_confianza:       data.nivel_confianza        ?? null,
     // Premercado / contexto técnico
-    // OJO: NO se incluyen precio_cierre_ayer ni precio_apertura — los escribe
-    // el indicador SupabaseDailyLevels. Mandarlos aquí (en null) los borraría.
+    // OJO: NO se incluyen los niveles de precio (cierre/apertura, OHLC de ayer ni
+    // overnight precio_max_pre/min_pre) — los escribe el indicador
+    // SupabaseDailyLevels. Mandarlos aquí (en null) los borraría.
     se_conecto:            data.se_conecto            ?? true,
-    precio_max_pre:        data.precio_max_pre        ?? null,
-    precio_min_pre:        data.precio_min_pre        ?? null,
     soportes_naranja:      data.soportes_naranja      ?? [],
     resistencias_naranja:  data.resistencias_naranja  ?? [],
     noticias:              data.noticias              ?? null,
@@ -468,9 +461,9 @@ async function handleCallback(cbq, env) {
     case 'opero_si':
       state.data.no_opero = false;
       state.data.se_conecto = true;
-      state.step = STEPS.PRE_MAX;
+      state.step = STEPS.PRE_SOPORTES;
       await saveState(env.KV, chatId, state);
-      await editMessage(token, chatId, msgId, PREMKT_PROMPTS.pre_max);
+      await editMessage(token, chatId, msgId, PREMKT_PROMPTS.pre_soportes);
       break;
 
     case 'opero_no':
@@ -488,9 +481,9 @@ async function handleCallback(cbq, env) {
 
     case 'conecto_si':
       state.data.se_conecto = true;
-      state.step = STEPS.PRE_MAX;
+      state.step = STEPS.PRE_SOPORTES;
       await saveState(env.KV, chatId, state);
-      await editMessage(token, chatId, msgId, PREMKT_PROMPTS.pre_max);
+      await editMessage(token, chatId, msgId, PREMKT_PROMPTS.pre_soportes);
       break;
 
     case 'conecto_no':
@@ -575,29 +568,10 @@ async function handleText(msg, env) {
       break;
     }
 
-    // ── Premercado (números opcionales con /skip) ──
-    // Cierre de ayer y apertura ya no se piden: los escribe el indicador
-    // SupabaseDailyLevels. El bot solo captura el overnight (máx/mín premercado).
-    case STEPS.PRE_MAX: {
-      const n = parseNum(text);
-      if (Number.isNaN(n)) { await sendMessage(token, chatId, '⚠️ Número válido o /skip.'); return; }
-      state.data.precio_max_pre = n;
-      state.step = STEPS.PRE_MIN;
-      await saveState(env.KV, chatId, state);
-      await sendMessage(token, chatId, PREMKT_PROMPTS.pre_min);
-      break;
-    }
-    case STEPS.PRE_MIN: {
-      const n = parseNum(text);
-      if (Number.isNaN(n)) { await sendMessage(token, chatId, '⚠️ Número válido o /skip.'); return; }
-      state.data.precio_min_pre = n;
-      const max = state.data.precio_max_pre;
-      const rango = (max != null && n != null) ? `📏 Rango premercado: <b>${(max - n).toFixed(2)} pts</b>\n\n` : '';
-      state.step = STEPS.PRE_SOPORTES;
-      await saveState(env.KV, chatId, state);
-      await sendMessage(token, chatId, rango + PREMKT_PROMPTS.pre_soportes);
-      break;
-    }
+    // ── Premercado ──
+    // Los niveles de precio (cierre/apertura/OHLC ayer y overnight ONH/ONL) los
+    // escribe el indicador SupabaseDailyLevels. El bot solo captura lo cualitativo:
+    // soportes/resistencias naranja y noticias.
     case STEPS.PRE_SOPORTES:
       state.data.soportes_naranja = parseNumList(text);
       state.step = STEPS.PRE_RESIST;
