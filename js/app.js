@@ -338,7 +338,7 @@ const Nav = {
       try {
         if (sectionId === 'calendar') { await Calendar.init(); await Metrics.init() }
         if (sectionId === 'trades') await TradesTable.init()
-        if (sectionId === 'register') SessionForm.init()
+        if (sectionId === 'register') { SessionForm.init(); SessionForm.onShow() }
         if (sectionId === 'gallery') await Gallery.init()
         if (sectionId === 'analysis') await Charts.init()
         if (sectionId === 'experimentos') await Experimentos.init()
@@ -360,6 +360,8 @@ const Nav = {
       Apex.reload()
     } else if (sectionId === 'analysis') {
       Charts.refresh()
+    } else if (sectionId === 'register') {
+      SessionForm.onShow()
     }
   },
 

@@ -2,6 +2,7 @@
 const SessionForm = (() => {
   let editingDate = null // set when editing an existing session
   let retrocesoCancelId = 0
+  let suppressAutoLoad = false // evita que onShow pise la carga de prefill (editar día pasado)
 
   function setToday() {
     const today = new Date().toISOString().slice(0, 10)
@@ -326,6 +327,9 @@ const SessionForm = (() => {
   }
 
   function prefill(sesion, date) {
+    // Al navegar, prefill dispara Nav.go('register') → onShow(); este flag evita
+    // que onShow recargue la sesión de hoy y pise lo que vamos a cargar aquí.
+    suppressAutoLoad = true
     clearForm()
     // Navegar primero: si es la primera vez, init() llama setToday() aquí.
     // Los valores correctos se asignan DESPUÉS para pisarlo.
@@ -686,5 +690,17 @@ const SessionForm = (() => {
     })
   }
 
-  return { init, prefill }
+  // Al entrar a "Registrar" (sin editar un día pasado), carga la sesión de HOY
+  // si ya existe — así se muestran (y se conservan al guardar) los niveles que
+  // escribió el indicador SupabaseDailyLevels. Si no existe, deja el form limpio.
+  async function onShow() {
+    if (suppressAutoLoad) { suppressAutoLoad = false; return }
+    const today = new Date().toISOString().slice(0, 10)
+    let sesion = null
+    try { sesion = await DB.getSesionByDate(today) } catch (_) { return }
+    if (sesion) prefill(sesion)
+    else clearForm()
+  }
+
+  return { init, prefill, onShow }
 })()
