@@ -33,9 +33,9 @@ using NinjaTrader.NinjaScript;
  *   UPSERT a `sesiones` por `sesion_date` (solo toca estas columnas; no pisa
  *   el resto de la sesión). El formulario sigue editable como respaldo.
  *
- *   v1.1: el horario ahora se aplica con el overload de 5 argumentos de
- *   AddDataSeries (la forma anterior caía al horario por defecto = ETH) y la
- *   plantilla es configurable desde los parámetros del indicador.
+ *   Las plantillas RTH y ETH son configurables desde los parámetros del
+ *   indicador. El horario se aplica con AddDataSeries(string, BarsPeriod,
+ *   tradingHoursName).
  *
  * Instalación:
  *   1. Copiar a: Documentos\NinjaTrader 8\bin\Custom\Indicators\
@@ -102,11 +102,14 @@ namespace NinjaTrader.NinjaScript.Indicators
             {
                 // [1] serie diaria RTH (cash) → PDO/PDH/PDL/PDC + apertura.
                 // [2] serie diaria ETH (Globex) → overnight (ONH/ONL).
-                // Overload de 5 args: aplica el tradingHoursName de forma fiable.
-                AddDataSeries(Instrument.FullName, BarsPeriodType.Day, 1,
-                    MarketDataType.Last, RthTemplate);
-                AddDataSeries(Instrument.FullName, BarsPeriodType.Day, 1,
-                    MarketDataType.Last, EthTemplate);
+                // Overload (string, BarsPeriod, string tradingHoursName): aplica la
+                // plantilla de horario a cada serie.
+                AddDataSeries(Instrument.FullName,
+                    new BarsPeriod { BarsPeriodType = BarsPeriodType.Day, Value = 1 },
+                    RthTemplate);
+                AddDataSeries(Instrument.FullName,
+                    new BarsPeriod { BarsPeriodType = BarsPeriodType.Day, Value = 1 },
+                    EthTemplate);
 
                 httpClient = new HttpClient();
                 httpClient.DefaultRequestHeaders.Add("apikey",        SUPABASE_KEY);
