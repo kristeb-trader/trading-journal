@@ -102,11 +102,14 @@ namespace NinjaTrader.NinjaScript.Indicators
             {
                 // [1] serie diaria RTH (cash) → PDO/PDH/PDL/PDC + apertura.
                 // [2] serie diaria ETH (Globex) → overnight (ONH/ONL).
-                // Overload (string, BarsPeriodType, int, string tradingHoursName):
-                // el 4º parámetro SÍ aplica la plantilla de horario (a diferencia
-                // del overload con BarsPeriod, cuyo string es un nombre de serie).
-                AddDataSeries(Instrument.FullName, BarsPeriodType.Day, 1, RthTemplate);
-                AddDataSeries(Instrument.FullName, BarsPeriodType.Day, 1, EthTemplate);
+                // Overload (string, BarsPeriod, int, string tradingHoursName, bool
+                // isResetOnNewTradingDay): el 4º parámetro aplica la plantilla.
+                AddDataSeries(Instrument.FullName,
+                    new BarsPeriod { BarsPeriodType = BarsPeriodType.Day, Value = 1 },
+                    1, RthTemplate, true);
+                AddDataSeries(Instrument.FullName,
+                    new BarsPeriod { BarsPeriodType = BarsPeriodType.Day, Value = 1 },
+                    1, EthTemplate, true);
 
                 httpClient = new HttpClient();
                 httpClient.DefaultRequestHeaders.Add("apikey",        SUPABASE_KEY);
