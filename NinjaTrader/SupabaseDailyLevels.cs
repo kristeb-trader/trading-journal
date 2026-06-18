@@ -67,6 +67,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         private double onHigh = double.NaN, onLow = double.NaN;
         private int    lastEthBar = -1;
         private bool   rthOpened;
+        private int    lastPrintBar = -1;   // diagnóstico: imprime una vez por día RTH
 
         // Plantilla de horario que define la sesión RTH (cash) del OHLC de ayer.
         // Por defecto "US Equities RTH" (9:30–16:00 ET). Si tus niveles no cuadran,
@@ -148,6 +149,18 @@ namespace NinjaTrader.NinjaScript.Indicators
             if (BarsInProgress != 1) return;  // [1] RTH diaria
 
             rthOpened = true;                 // abrió RTH → congelar overnight
+
+            // DIAGNÓSTICO: imprime una línea por día RTH en la ventana de Output,
+            // también con datos históricos (no necesita tiempo real). Sirve para
+            // confirmar si la serie [1] entrega RTH o ETH sin esperar a un push.
+            if (CurrentBars[1] >= 1 && CurrentBars[1] != lastPrintBar)
+            {
+                lastPrintBar = CurrentBars[1];
+                Print(string.Format(CultureInfo.InvariantCulture,
+                    "[DailyLevels] {0:yyyy-MM-dd}  PDO={1} PDH={2} PDL={3} PDC={4}  RTHopen={5}  ONH={6} ONL={7}",
+                    Times[1][0], Opens[1][1], Highs[1][1], Lows[1][1], Closes[1][1],
+                    Opens[1][0], onHigh, onLow));
+            }
 
             // El envío solo en tiempo real (no reenviar todos los días históricos).
             if (State != State.Realtime) return;
