@@ -12,12 +12,17 @@ using NinjaTrader.NinjaScript;
 #endregion
 
 /*
- * SupabaseDailyLevels — Indicador NinjaTrader 8 (v1.1 — 2026-06-18)
+ * SupabaseDailyLevels — Indicador NinjaTrader 8 (v1.2 — 2026-06-18)
  *
  * Calcula automáticamente los niveles de referencia del día y los sube a la
  * sesión de hoy en Supabase, para no tener que escribirlos a mano:
- *   - PDO / PDH / PDL / PDC  → OHLC de la sesión de AYER (ya completa)
- *   - Apertura de hoy        → open de la sesión de HOY
+ *   - PDO / PDH / PDL / PDC  → OHLC RTH (cash) de AYER (ya completa)
+ *   - ONH / ONL              → máx/mín del overnight (sesión ETH antes del open)
+ *   - Apertura de hoy        → open RTH de HOY
+ *
+ * v1.2: añade ONH/ONL usando una segunda serie diaria con la sesión ETH/Globex
+ *   (su máx/mín antes de la apertura RTH = el overnight). Se guardan en
+ *   precio_max_pre / precio_min_pre.
  *
  * Cómo lo hace:
  *   Añade una serie DIARIA con la plantilla de horario del parámetro
@@ -57,15 +62,27 @@ namespace NinjaTrader.NinjaScript.Indicators
         private HttpClient httpClient;
         private int        lastDailyBar = -1;
 
-        // Plantilla de horario que define la sesión de la que se calcula el OHLC.
-        // Por defecto "US Equities RTH" (cash 9:30–16:00 ET). Si tus niveles no
-        // cuadran, prueba "CME US Index Futures RTH" desde los parámetros del
-        // indicador (sin recompilar). Debe coincidir EXACTO con un nombre de la
-        // lista de Trading Hours de NinjaTrader.
+        // Overnight (ONH/ONL): se acumula sobre la serie ETH [2] mientras no haya
+        // abierto el RTH del día; se congela al abrir RTH.
+        private double onHigh = double.NaN, onLow = double.NaN;
+        private int    lastEthBar = -1;
+        private bool   rthOpened;
+
+        // Plantilla de horario que define la sesión RTH (cash) del OHLC de ayer.
+        // Por defecto "US Equities RTH" (9:30–16:00 ET). Si tus niveles no cuadran,
+        // prueba "CME US Index Futures RTH" desde los parámetros (sin recompilar).
+        // Debe coincidir EXACTO con un nombre de la lista de Trading Hours.
         [NinjaScriptProperty]
-        [Display(Name = "Plantilla de horario (sesión)", Order = 1, GroupName = "Niveles",
-                 Description = "Sesión para el OHLC de ayer. RTH cash = 'US Equities RTH'. Alterna a 'CME US Index Futures RTH' si no cuadra. Debe ser un nombre exacto de Trading Hours.")]
+        [Display(Name = "Plantilla RTH (sesión cash)", Order = 1, GroupName = "Niveles",
+                 Description = "Sesión para PDO/PDH/PDL/PDC + apertura. RTH cash = 'US Equities RTH'. Alterna a 'CME US Index Futures RTH' si no cuadra.")]
         public string RthTemplate { get; set; }
+
+        // Plantilla de la sesión completa Globex/ETH, para calcular el overnight
+        // (ONH/ONL = máx/mín desde que abre el ETH en la tarde hasta el open RTH).
+        [NinjaScriptProperty]
+        [Display(Name = "Plantilla ETH (overnight)", Order = 2, GroupName = "Niveles",
+                 Description = "Sesión Globex/ETH para el overnight (ONH/ONL). Por defecto 'CME US Index Futures ETH'.")]
+        public string EthTemplate { get; set; }
 
         protected override void OnStateChange()
         {
@@ -79,13 +96,17 @@ namespace NinjaTrader.NinjaScript.Indicators
                 DrawOnPricePanel         = false;
                 IsSuspendedWhileInactive = false;
                 RthTemplate              = "US Equities RTH";
+                EthTemplate              = "CME US Index Futures ETH";
             }
             else if (State == State.Configure)
             {
-                // Serie diaria con la sesión de la plantilla elegida (BarsArray[1]).
+                // [1] serie diaria RTH (cash) → PDO/PDH/PDL/PDC + apertura.
+                // [2] serie diaria ETH (Globex) → overnight (ONH/ONL).
                 // Overload de 5 args: aplica el tradingHoursName de forma fiable.
                 AddDataSeries(Instrument.FullName, BarsPeriodType.Day, 1,
                     MarketDataType.Last, RthTemplate);
+                AddDataSeries(Instrument.FullName, BarsPeriodType.Day, 1,
+                    MarketDataType.Last, EthTemplate);
 
                 httpClient = new HttpClient();
                 httpClient.DefaultRequestHeaders.Add("apikey",        SUPABASE_KEY);
@@ -100,31 +121,62 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         protected override void OnBarUpdate()
         {
-            // Solo en tiempo real (no reenviar todos los días históricos) y solo
-            // sobre la serie diaria RTH.
+            // [2] ETH diaria: mantener máx/mín del overnight. El bar ETH empieza en
+            // la tarde (Globex); mientras NO haya abierto el RTH del día, su máx/mín
+            // es el overnight. (Corre también en histórico para tener el dato al
+            // arrancar a mitad de la noche.)
+            if (BarsInProgress == 2)
+            {
+                if (CurrentBars[2] != lastEthBar)
+                {
+                    lastEthBar = CurrentBars[2];
+                    onHigh = Highs[2][0];
+                    onLow  = Lows[2][0];
+                    rthOpened = false;        // nuevo día ETH → nuevo overnight
+                }
+                else if (!rthOpened)
+                {
+                    if (Highs[2][0] > onHigh) onHigh = Highs[2][0];
+                    if (Lows[2][0]  < onLow)  onLow  = Lows[2][0];
+                }
+                return;
+            }
+
+            if (BarsInProgress != 1) return;  // [1] RTH diaria
+
+            rthOpened = true;                 // abrió RTH → congelar overnight
+
+            // El envío solo en tiempo real (no reenviar todos los días históricos).
             if (State != State.Realtime) return;
-            if (BarsInProgress != 1) return;
             if (CurrentBars[1] < 1) return;            // necesito ayer + hoy
             if (CurrentBars[1] == lastDailyBar) return; // ya enviado para este día
             lastDailyBar = CurrentBars[1];
 
-            double pdo = Opens[1][1];   // OHLC de AYER (bar diario de la sesión elegida)
+            double pdo = Opens[1][1];   // OHLC RTH de AYER (bar diario cash completo)
             double pdh = Highs[1][1];
             double pdl = Lows[1][1];
             double pdc = Closes[1][1];
-            double openHoy = Opens[1][0];               // apertura de HOY (sesión elegida)
+            double openHoy = Opens[1][0];               // apertura RTH de HOY
             string fecha = Times[1][0].ToString("yyyy-MM-dd");
 
-            Task.Run(() => SendLevelsAsync(fecha, pdo, pdh, pdl, pdc, openHoy));
+            Task.Run(() => SendLevelsAsync(fecha, pdo, pdh, pdl, pdc, openHoy, onHigh, onLow));
         }
 
         private async Task SendLevelsAsync(
-            string fecha, double pdo, double pdh, double pdl, double pdc, double openHoy)
+            string fecha, double pdo, double pdh, double pdl, double pdc, double openHoy,
+            double onh, double onl)
         {
             try
             {
                 HttpClient client = httpClient;
                 if (client == null) return;
+
+                // ONH/ONL (overnight) → precio_max_pre / precio_min_pre. Solo se
+                // incluyen si son válidos (NaN = aún sin datos overnight).
+                string onhJson = double.IsNaN(onh) ? ""
+                    : string.Format(CultureInfo.InvariantCulture, ",\"precio_max_pre\":{0}", onh);
+                string onlJson = double.IsNaN(onl) ? ""
+                    : string.Format(CultureInfo.InvariantCulture, ",\"precio_min_pre\":{0}", onl);
 
                 string json = string.Format(
                     CultureInfo.InvariantCulture,
@@ -135,8 +187,9 @@ namespace NinjaTrader.NinjaScript.Indicators
                     "\"precio_min_ayer\":{3},"        +
                     "\"precio_cierre_ayer\":{4},"     +
                     "\"precio_apertura\":{5}"         +
+                    "{6}{7}"                          +
                     "}}",
-                    fecha, pdo, pdh, pdl, pdc, openHoy);
+                    fecha, pdo, pdh, pdl, pdc, openHoy, onhJson, onlJson);
 
                 // UPSERT por sesion_date: solo actualiza estas columnas.
                 var req = new HttpRequestMessage(HttpMethod.Post,
