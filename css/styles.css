@@ -235,6 +235,20 @@ small { font-size: 0.82em; }
 }
 .calendar-topbar .filter-select-sm { margin-left: 0; }
 
+/* Header del Calendario: cuenta | título central | nav de mes en una fila */
+.calendar-header {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  gap: 12px; margin-bottom: 18px;
+}
+.calendar-header > .filter-select-sm { justify-self: start; margin-left: 0; max-width: 200px; }
+.calendar-header > .analysis-hero-title { justify-self: center; font-size: 1.55rem; }
+.calendar-header > .calendar-nav { justify-self: end; }
+@media (max-width: 768px) {
+  .calendar-header { grid-template-columns: 1fr; justify-items: center; gap: 8px; }
+  .calendar-header > .filter-select-sm { justify-self: stretch; max-width: none; }
+  .calendar-header > .analysis-hero-title { font-size: 1.4rem; }
+}
+
 .calendar-legend {
   display: flex; gap: 16px; margin-bottom: 16px;
   font-size: 0.82rem; color: var(--text2);
@@ -435,13 +449,16 @@ small { font-size: 0.82em; }
 .metric-value.color-warning { color: var(--warning); }
 .metric-sub { font-size: 0.75rem; color: var(--text3); margin-top: 4px; }
 
-/* Variante compacta (Calendario, arriba) — sin icono, tipo chips de Análisis */
-.metrics-grid-compact { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
-.metrics-grid-compact .metric-card { padding: 10px 12px; gap: 0; }
+/* Variante compacta (Calendario, arriba) — solo título + valor, tipo chips de Análisis */
+.metrics-grid-compact { grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 8px; margin-bottom: 16px; }
+.metrics-grid-compact .metric-card { padding: 8px 12px; gap: 0; }
 .metrics-grid-compact .metric-icon { display: none; }
-.metrics-grid-compact .metric-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; }
-.metrics-grid-compact .metric-value { font-size: 1.1rem; }
-.metrics-grid-compact .metric-sub { font-size: 0.68rem; }
+.metrics-grid-compact .metric-label {
+  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em;
+  font-weight: 600; color: var(--text2); margin-bottom: 3px;
+}
+.metrics-grid-compact .metric-value { font-size: 1.05rem; }
+.metrics-grid-compact .metric-sub { display: none; }
 @media (max-width: 768px) { .metrics-grid-compact { grid-template-columns: repeat(2, 1fr); } }
 
 /* ── Trades Table ────────────────────────────────────────────────────── */
