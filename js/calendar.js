@@ -163,7 +163,7 @@ const Calendar = (() => {
   function render() {
     const grid = document.getElementById('calendarGrid')
     const title = document.getElementById('calendarTitle')
-    title.textContent = `${MONTHS_ES[currentMonth - 1]} ${currentYear}`
+    if (title) title.textContent = `${MONTHS_ES[currentMonth - 1]} ${currentYear}`
 
     // Headers: Lun–Vie + Semana
     let html = DAYS_ES.map((d, i) =>
