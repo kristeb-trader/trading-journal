@@ -314,7 +314,7 @@ const Calendar = (() => {
         <div class="week-trades" style="font-size:0.78rem;color:var(--text1);font-weight:600">${monthName} ${currentYear}</div>
       </div>
       <div class="cal-cell cal-week-summary cal-month-total ${totalPnl >= 0 ? 'week-positive' : 'week-negative'}">
-        <div class="week-pnl ${totalPnl >= 0 ? 'positive' : 'negative'} month-total-amount">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}</div>
+        <div class="week-pnl ${totalPnl >= 0 ? 'positive' : 'negative'} month-total-amount">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(0)}</div>
       </div>`
 
     grid.innerHTML = html
@@ -383,7 +383,7 @@ const Calendar = (() => {
       </div>
       <div class="ms-right">
         <div class="ms-label">NET P&amp;L</div>
-        <div class="ms-pnl ${totalPnl >= 0 ? 'positive' : 'negative'}">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}</div>
+        <div class="ms-pnl ${totalPnl >= 0 ? 'positive' : 'negative'}">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(0)}</div>
       </div>`
   }
 
