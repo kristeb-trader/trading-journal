@@ -43,6 +43,27 @@ const Charts = (() => {
     },
   }
 
+  // Plugin: etiqueta de valor ($) encima/debajo de cada barra
+  const barValueLabels = {
+    id: 'barValueLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart
+      const meta = chart.getDatasetMeta(0)
+      const data = chart.data.datasets[0].data
+      ctx.save()
+      ctx.font = '600 11px system-ui, sans-serif'
+      ctx.textAlign = 'center'
+      meta.data.forEach((bar, i) => {
+        const v = data[i]
+        if (v === null || v === undefined) return
+        ctx.fillStyle = v >= 0 ? COLORS.accent : COLORS.red
+        ctx.textBaseline = v >= 0 ? 'bottom' : 'top'
+        ctx.fillText(`${v >= 0 ? '+' : ''}$${Math.round(v)}`, bar.x, bar.y + (v >= 0 ? -6 : 6))
+      })
+      ctx.restore()
+    },
+  }
+
   const BE = t => Math.abs(parseFloat(t.profit) || 0) <= 6
   const p2 = n => String(n).padStart(2, '0')
   function destroy(id) { if (instances[id]) { instances[id].destroy(); delete instances[id] } }
@@ -241,7 +262,7 @@ const Charts = (() => {
         },
       ]},
       options: { ...baseOptions, interaction:{ mode:'index', intersect:false },
-        layout: { padding: { left: 2, right: 4 } },
+        layout: { padding: { left: 12, right: 12, top: 8, bottom: 2 } },
         plugins: { ...baseOptions.plugins,
           legend:{ display:false },
           tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => ` P&L acumulado: ${c.raw>=0?'+':''}$${c.raw}` } } } },
@@ -290,10 +311,15 @@ const Charts = (() => {
     instances.pnlByHour = new Chart(document.getElementById('pnlByHourChart'), {
       type: 'bar',
       data: { labels, datasets:[{ label:'P&L promedio/trade', data:avgs,
-        backgroundColor: avgs.map(v=>v===null?'rgba(255,255,255,0.05)':v>=0?'rgba(29,158,117,0.7)':'rgba(226,75,74,0.7)'), borderRadius:4 }] },
-      options: { ...baseOptions,
-        plugins: { ...baseOptions.plugins, tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => c.raw===null?'Sin trades':`$${c.raw}` } } },
-        scales: { ...baseOptions.scales, y:{ ...baseOptions.scales.y, ticks:{ color:COLORS.text, callback:v=>`$${v}` } } } },
+        backgroundColor: avgs.map(v=>v===null?'rgba(255,255,255,0.05)':v>=0?COLORS.accent:COLORS.red),
+        borderRadius:6, borderSkipped:false, maxBarThickness:40, categoryPercentage:0.7, barPercentage:0.85 }] },
+      options: { ...baseOptions, layout:{ padding:{ top:22, bottom:2 } },
+        plugins: { ...baseOptions.plugins, legend:{ display:false },
+          tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => c.raw===null?'Sin trades':` ${c.raw>=0?'+':''}$${c.raw}` } } },
+        scales: { ...baseOptions.scales,
+          x:{ ...baseOptions.scales.x, grid:{ display:false }, ticks:{ color:COLORS.text, maxRotation:0 } },
+          y:{ ...baseOptions.scales.y, ticks:{ color:COLORS.text, callback:v=>`$${v}` } } } },
+      plugins: [ barValueLabels ],
     })
   }
 
@@ -303,32 +329,44 @@ const Charts = (() => {
     const targets = trades.filter(t => !BE(t) && t.resultado==='target').length
     const stops   = trades.filter(t => !BE(t) && t.resultado==='stop').length
     const tot = targets + stops
+    const winRate = tot ? Math.round(targets / tot * 100) : 0
     instances.results = new Chart(document.getElementById('resultsChart'), {
       type: 'doughnut',
       data: { labels:['Target','Stop'], datasets:[{ data:[targets,stops],
-        backgroundColor:['rgba(29,158,117,0.85)','rgba(226,75,74,0.85)'], borderWidth:0 }] },
-      options: { ...baseOptions, scales:{},
+        backgroundColor:[COLORS.accent, COLORS.red], borderWidth:0,
+        spacing:3, borderRadius:6, hoverOffset:8 }] },
+      options: { ...baseOptions, cutout:'70%', scales:{}, layout:{ padding:6 },
         plugins: { ...baseOptions.plugins,
+          legend:{ display:true, position:'bottom',
+            labels:{ color:COLORS.text, usePointStyle:true, pointStyle:'circle', padding:18, font:{ size:12.5 },
+              generateLabels: chart => {
+                const ds = chart.data.datasets[0]
+                return chart.data.labels.map((l, i) => ({
+                  text: `${l}  ·  ${ds.data[i]} (${tot ? Math.round(ds.data[i] / tot * 100) : 0}%)`,
+                  fillStyle: ds.backgroundColor[i], strokeStyle: 'transparent', pointStyle: 'circle', index: i,
+                }))
+              } } },
           tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => {
             const pct = tot ? Math.round(c.parsed / tot * 100) : 0
             return ` ${c.label}: ${c.parsed} (${pct}%)`
           } } } } },
       plugins: [{
-        id: 'resultsPct',
+        id: 'resultsCenter',
         afterDraw(chart) {
           const { ctx } = chart
           const meta = chart.getDatasetMeta(0)
-          meta.data.forEach((arc, i) => {
-            const v = chart.data.datasets[0].data[i]
-            if (!v || !tot) return
-            const pct = Math.round(v / tot * 100)
-            const pos = arc.tooltipPosition()
-            ctx.save()
-            ctx.fillStyle = '#fff'; ctx.font = 'bold 13px system-ui, sans-serif'
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-            ctx.fillText(`${pct}%`, pos.x, pos.y)
-            ctx.restore()
-          })
+          if (!meta.data.length) return
+          const { x, y } = meta.data[0]   // centro del doughnut
+          ctx.save()
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+          ctx.fillStyle = tot ? (winRate >= 50 ? COLORS.accent : COLORS.red) : COLORS.text
+          ctx.font = '700 28px system-ui, sans-serif'
+          ctx.fillText(tot ? `${winRate}%` : '—', x, y - 9)
+          ctx.fillStyle = COLORS.text
+          ctx.font = '500 11px system-ui, sans-serif'
+          ctx.fillText('Acierto', x, y + 13)
+          if (tot) ctx.fillText(`${tot} trades`, x, y + 28)
+          ctx.restore()
         }
       }],
     })
