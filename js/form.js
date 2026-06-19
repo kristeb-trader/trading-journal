@@ -27,14 +27,16 @@ const SessionForm = (() => {
   function setupNoOperoToggle() {
     const toggle = document.getElementById('noOpero')
     const motivoGroup = document.getElementById('motivoGroup')
-    const tradingFields = document.getElementById('tradingFields')
+    // Bloques que solo aplican cuando sí se operó (Operativa, checklist operativa, experimentos)
+    const setOpOnly = hidden =>
+      document.querySelectorAll('.op-only').forEach(el => el.classList.toggle('hidden', hidden))
     toggle.addEventListener('change', () => {
       if (toggle.checked) {
         motivoGroup.classList.remove('hidden')
-        tradingFields.classList.add('hidden')
+        setOpOnly(true)
       } else {
         motivoGroup.classList.add('hidden')
-        tradingFields.classList.remove('hidden')
+        setOpOnly(false)
       }
       updatePremercadoVisibility()
       renderExpList()
@@ -96,13 +98,12 @@ const SessionForm = (() => {
   }
 
   function updatePremktPuntos() {
-    const max = parseFloat(document.getElementById('precioMaxPre')?.value)
-    const min = parseFloat(document.getElementById('precioMinPre')?.value)
-    const el = document.getElementById('premktPuntos')
-    if (!el) return
-    el.innerHTML = (!isNaN(max) && !isNaN(min))
-      ? `Rango premercado: <b>${(max - min).toFixed(2)} pts</b>`
-      : 'Rango premercado: <b>— pts</b>'
+    const num = id => parseFloat(document.getElementById(id)?.value)
+    const rango = (a, b) => (!isNaN(a) && !isNaN(b)) ? `${(a - b).toFixed(2)} pts` : '— pts'
+    const prev = document.getElementById('rangoPrevDay')   // PDH − PDL
+    const on   = document.getElementById('rangoOvernight') // ONH − ONL
+    if (prev) prev.textContent = rango(num('precioMaxAyer'), num('precioMinAyer'))
+    if (on)   on.textContent   = rango(num('precioMaxPre'), num('precioMinPre'))
   }
 
   // Premercado visible cuando se operó, o cuando no se operó pero sí se conectó
@@ -117,8 +118,8 @@ const SessionForm = (() => {
   function setupPremercado() {
     soportesNaranja     = setupNaranjaLines('soportesNaranjaWrap')
     resistenciasNaranja = setupNaranjaLines('resistenciasNaranjaWrap')
-    document.getElementById('precioMaxPre')?.addEventListener('input', updatePremktPuntos)
-    document.getElementById('precioMinPre')?.addEventListener('input', updatePremktPuntos)
+    ;['precioMaxAyer','precioMinAyer','precioMaxPre','precioMinPre'].forEach(id =>
+      document.getElementById(id)?.addEventListener('input', updatePremktPuntos))
     document.getElementById('seConecto')?.addEventListener('change', updatePremercadoVisibility)
     updatePremercadoVisibility()
   }
@@ -223,6 +224,7 @@ const SessionForm = (() => {
       const zonasVal = document.getElementById('zonasContraVal').value
       payload.zonas_contra = zonasVal === 'true' ? true : zonasVal === 'false' ? false : null
       payload.setup = document.getElementById('setup').value || null
+      payload.chk_cuenta_pa = document.getElementById('chkCuentaPa').checked
       payload.chk_zonas = document.getElementById('chkZonas').checked
       payload.chk_orden = document.getElementById('chkOrden').checked
       payload.chk_5velas = document.getElementById('chk5Velas').checked
@@ -282,7 +284,7 @@ const SessionForm = (() => {
     document.getElementById('motivoGroup').classList.add('hidden')
     document.getElementById('setupNoTomadoGroup').classList.add('hidden')
     document.getElementById('expNoOperoWrap').classList.add('hidden')
-    document.getElementById('tradingFields').classList.remove('hidden')
+    document.querySelectorAll('.op-only').forEach(el => el.classList.remove('hidden'))
     document.getElementById('imagePreview').classList.add('hidden')
     document.getElementById('uploadArea').classList.remove('hidden')
     document.getElementById('imagenUrl').value = ''
@@ -370,6 +372,7 @@ const SessionForm = (() => {
       document.getElementById('contexto').value = sesion.contexto || ''
       document.getElementById('velasCorrida').value = sesion.velas_corrida || ''
       document.getElementById('setup').value = sesion.setup || ''
+      document.getElementById('chkCuentaPa').checked = sesion.chk_cuenta_pa || false
       document.getElementById('chkZonas').checked = sesion.chk_zonas || false
       document.getElementById('chkOrden').checked = sesion.chk_orden || false
       document.getElementById('chk5Velas').checked = sesion.chk_5velas || false

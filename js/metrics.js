@@ -193,6 +193,7 @@ const Metrics = (() => {
   }
 
   const CHECKLIST_KEYS = [
+    { key: 'chk_cuenta_pa',   label: 'Cuenta PA activa'     },
     { key: 'chk_zonas',       label: 'Zonas vigentes'       },
     { key: 'chk_orden',       label: 'Orden a tiempo'       },
     { key: 'chk_5velas',      label: 'Máx 5 velas'          },
@@ -204,6 +205,7 @@ const Metrics = (() => {
   const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
 
   const DISC_FACTORS = [
+    { key: 'chk_cuenta_pa',   label: 'Cuenta PA activa verificada'      },
     { key: 'chk_zonas',       label: 'Zonas vigentes verificadas'       },
     { key: 'chk_orden',       label: 'Orden precolocada a tiempo'       },
     { key: 'chk_5velas',      label: 'Máx 5 velas en corrida'           },
@@ -686,9 +688,9 @@ const Metrics = (() => {
 
     // ── Disciplina de Proceso: % de ítems de checklist cumplidos (días operados) ──
     const operatedSes  = activeSesiones.filter(s => !s.no_opero)
-    const chkItemsTotal = operatedSes.length * 6
+    const chkItemsTotal = operatedSes.length * 7
     const chkItemsOk    = operatedSes.reduce((sum, s) =>
-      sum + [s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
+      sum + [s.chk_cuenta_pa, s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
         .filter(Boolean).length, 0)
     const disciplinaProceso = chkItemsTotal > 0 ? Math.round(chkItemsOk / chkItemsTotal * 100) : 0
 
@@ -821,9 +823,9 @@ const Metrics = (() => {
       const pSes  = allSesiones.filter(s => s.sesion_date >= prevRange.from && s.sesion_date <= prevRange.to)
       const pCas  = allCasuisticas.filter(c => c.sesion_date >= prevRange.from && c.sesion_date <= prevRange.to)
       const pOper = pSes.filter(s => !s.no_opero)
-      const pTot  = pOper.length * 6
+      const pTot  = pOper.length * 7
       const pOk   = pOper.reduce((sum, s) =>
-        sum + [s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
+        sum + [s.chk_cuenta_pa, s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
           .filter(Boolean).length, 0)
       const pDisc     = pTot > 0 ? Math.round(pOk / pTot * 100) : null
       const pDiasErr  = new Set(pCas.map(c => c.sesion_date)).size

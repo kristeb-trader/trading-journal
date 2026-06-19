@@ -540,6 +540,18 @@ small { font-size: 0.82em; }
 /* ── Form ────────────────────────────────────────────────────────────── */
 .form-container { max-width: 720px; }
 
+/* Título de sección dentro del formulario de Registrar */
+.form-section-title {
+  font-size: 0.95rem; font-weight: 600; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  margin: 30px 0 16px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.form-section-title:first-child { margin-top: 0; }
+.form-section-title.hidden { display: none; }
+.form-subtitle { font-size: 0.82rem; color: var(--text2); font-weight: 600; margin: 14px 0 8px; }
+
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
 

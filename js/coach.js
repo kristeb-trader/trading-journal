@@ -133,6 +133,7 @@ const Coach = (() => {
 
     // Checklist
     const chkLabels = [
+      ['chk_cuenta_pa',  'Cuenta PA activa verificada (visualmente)'],
       ['chk_zonas',      'Zonas vigentes verificadas'],
       ['chk_orden',      'Orden precolocada a tiempo'],
       ['chk_5velas',     'Máx 5 velas en corrida'],

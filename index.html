@@ -238,9 +238,9 @@
               </label>
             </div>
 
-            <!-- 🌅 Premercado — contexto técnico para el análisis -->
+            <!-- ═══ 1. Premercado — contexto técnico ═══ -->
             <div class="form-group" id="premercadoSection">
-              <label>🌅 Premercado — contexto técnico</label>
+              <div class="form-section-title"><i class="ti ti-sunrise"></i> Premercado — contexto técnico</div>
               <div class="premkt-grid">
                 <div class="premkt-field">
                   <label>Apertura ayer (PDO)</label>
@@ -259,19 +259,19 @@
                   <input type="number" step="0.25" id="precioCierreAyer" placeholder="30763">
                 </div>
                 <div class="premkt-field">
-                  <label>Apertura hoy</label>
-                  <input type="number" step="0.25" id="precioApertura" placeholder="30743.50">
-                </div>
-                <div class="premkt-field">
-                  <label>Máx premercado</label>
+                  <label>Overnight High (ONH)</label>
                   <input type="number" step="0.25" id="precioMaxPre" placeholder="30800">
                 </div>
                 <div class="premkt-field">
-                  <label>Mín premercado</label>
+                  <label>Overnight Low (ONL)</label>
                   <input type="number" step="0.25" id="precioMinPre" placeholder="30561">
                 </div>
+                <div class="premkt-field">
+                  <label>Apertura hoy</label>
+                  <input type="number" step="0.25" id="precioApertura" placeholder="30743.50">
+                </div>
               </div>
-              <div class="premkt-puntos" id="premktPuntos">Rango premercado: <b>— pts</b></div>
+              <div class="premkt-puntos" id="premktPuntos">Rango día anterior: <b id="rangoPrevDay">— pts</b> &nbsp;·&nbsp; Rango Overnight: <b id="rangoOvernight">— pts</b></div>
 
               <div class="premkt-lines">
                 <div class="premkt-lines-col">
@@ -288,10 +288,18 @@
               <textarea id="noticias" rows="2" placeholder="9:00am → ISM Services PMI"></textarea>
             </div>
 
+            <!-- ═══ 2. Checklist ═══ -->
+            <div class="form-section-title"><i class="ti ti-checklist"></i> Checklist</div>
+
             <!-- Checklist Pre-Sesión (siempre visible) -->
             <div class="form-group">
               <label>Checklist Pre-Sesión</label>
               <div class="checklist" id="checklistPreSesion">
+                <label class="check-item">
+                  <input type="checkbox" id="chkCuentaPa" name="chk_cuenta_pa">
+                  <span class="check-box"></span>
+                  <span>¿Cuenta PA activa? — verificada <b>visualmente</b> en la plataforma antes de operar (no de memoria)</span>
+                </label>
                 <label class="check-item">
                   <input type="checkbox" id="chkNoticias" name="chk_noticias">
                   <span class="check-box"></span>
@@ -301,6 +309,33 @@
                   <input type="checkbox" id="chkZonas" name="chk_zonas">
                   <span class="check-box"></span>
                   <span>Zonas vigentes verificadas</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Checklist Operativa (solo cuando se operó) -->
+            <div class="form-group op-only">
+              <label>Checklist Operativa</label>
+              <div class="checklist" id="checklistRules">
+                <label class="check-item">
+                  <input type="checkbox" id="chkOrden" name="chk_orden">
+                  <span class="check-box"></span>
+                  <span>Orden precolocada a tiempo</span>
+                </label>
+                <label class="check-item">
+                  <input type="checkbox" id="chk5Velas" name="chk_5velas">
+                  <span class="check-box"></span>
+                  <span>Máx 5 velas en el impulso de la corrida</span>
+                </label>
+                <label class="check-item">
+                  <input type="checkbox" id="chkConsecucion" name="chk_consecucion">
+                  <span class="check-box"></span>
+                  <span>Zona marcada con rompimiento + consecución + retroceso confirmado</span>
+                </label>
+                <label class="check-item">
+                  <input type="checkbox" id="chkEstructura" name="chk_estructura">
+                  <span class="check-box"></span>
+                  <span>Estructura de Impulso + Retroceso + Impulso, Fluida</span>
                 </label>
               </div>
             </div>
@@ -359,8 +394,9 @@
               </div>
             </div>
 
-            <!-- Campos de trading (visibles cuando sí operó) -->
-            <div id="tradingFields">
+            <!-- ═══ 3. Operativa (visible cuando sí operó) ═══ -->
+            <div id="tradingFields" class="op-only">
+              <div class="form-section-title"><i class="ti ti-chart-candle"></i> Operativa</div>
               <div class="form-row">
                 <div class="form-group">
                   <label for="contexto">Contexto de mercado</label>
@@ -386,7 +422,7 @@
 
               <div class="form-row">
                 <div class="form-group">
-                  <label for="velasCorrida">Velas en la corrida (máx. 5)</label>
+                  <label for="velasCorrida">Velas en la corrida</label>
                   <input type="number" id="velasCorrida" name="velas_corrida" min="1" max="20" placeholder="1 – 20">
                 </div>
                 <div class="form-group">
@@ -417,50 +453,25 @@
                   <option>Reingreso Bajista</option>
                 </select>
               </div>
+            </div>
 
-              <!-- Checklist -->
-              <div class="form-group">
-                <label>Checklist Operativa</label>
-                <div class="checklist" id="checklistRules">
-                  <label class="check-item">
-                    <input type="checkbox" id="chkOrden" name="chk_orden">
-                    <span class="check-box"></span>
-                    <span>Orden precolocada a tiempo</span>
-                  </label>
-                  <label class="check-item">
-                    <input type="checkbox" id="chk5Velas" name="chk_5velas">
-                    <span class="check-box"></span>
-                    <span>Máx 5 velas en el impulso de la corrida</span>
-                  </label>
-                  <label class="check-item">
-                    <input type="checkbox" id="chkConsecucion" name="chk_consecucion">
-                    <span class="check-box"></span>
-                    <span>Zona marcada con rompimiento + consecución + retroceso confirmado</span>
-                  </label>
-                  <label class="check-item">
-                    <input type="checkbox" id="chkEstructura" name="chk_estructura">
-                    <span class="check-box"></span>
-                    <span>Estructura de Impulso + Retroceso + Impulso, Fluida</span>
-                  </label>
+            <!-- ═══ 4. Post-Operativa ═══ -->
+            <div class="form-section-title"><i class="ti ti-clipboard-check"></i> Post-Operativa</div>
+
+            <!-- Experimentos del día (solo cuando sí operó) -->
+            <div class="form-group op-only">
+              <label><i class="ti ti-flask" style="font-size:0.9rem;margin-right:4px"></i>Experimentos del día</label>
+              <div class="exp-add-row">
+                <select id="expTradeSelect"><option value="">Seleccionar experimento...</option></select>
+                <div class="btn-group" id="expTradeResultGrp">
+                  <button type="button" class="btn-option cas-t" data-value="T">T</button>
+                  <button type="button" class="btn-option cas-s" data-value="S">S</button>
                 </div>
+                <input type="number" step="0.01" class="exp-valor-input" id="expTradeValor" placeholder="Valor $" title="Resultado en $ del experimento (target/stop propio)">
+                <input type="text" class="exp-nota-input" id="expTradeNota" placeholder="Nota (opcional)">
+                <button type="button" class="btn-secondary" id="expTradeAgregar"><i class="ti ti-plus"></i> Agregar</button>
               </div>
-
-              <!-- Experimentos del día (Trade) -->
-              <div class="form-group">
-                <label><i class="ti ti-flask" style="font-size:0.9rem;margin-right:4px"></i>Experimentos del día</label>
-                <div class="exp-add-row">
-                  <select id="expTradeSelect"><option value="">Seleccionar experimento...</option></select>
-                  <div class="btn-group" id="expTradeResultGrp">
-                    <button type="button" class="btn-option cas-t" data-value="T">T</button>
-                    <button type="button" class="btn-option cas-s" data-value="S">S</button>
-                  </div>
-                  <input type="number" step="0.01" class="exp-valor-input" id="expTradeValor" placeholder="Valor $" title="Resultado en $ del experimento (target/stop propio)">
-                  <input type="text" class="exp-nota-input" id="expTradeNota" placeholder="Nota (opcional)">
-                  <button type="button" class="btn-secondary" id="expTradeAgregar"><i class="ti ti-plus"></i> Agregar</button>
-                </div>
-                <div id="expTradeList" class="exp-list"></div>
-              </div>
-
+              <div id="expTradeList" class="exp-list"></div>
             </div>
 
             <!-- Errores cometidos -->
@@ -510,7 +521,8 @@
                 placeholder="Apuntes extra, ideas para mañana, contexto adicional..."></textarea>
             </div>
 
-            <!-- Imagen -->
+            <!-- ═══ 5. Imagen ═══ -->
+            <div class="form-section-title"><i class="ti ti-photo"></i> Imagen</div>
             <div class="form-group">
               <label>Imagen / captura del día</label>
               <div class="upload-area" id="uploadArea">
