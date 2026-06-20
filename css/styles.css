@@ -552,6 +552,21 @@ small { font-size: 0.82em; }
 .form-section-title.hidden { display: none; }
 .form-subtitle { font-size: 0.82rem; color: var(--text2); font-weight: 600; margin: 14px 0 8px; }
 
+/* Etiquetas de fase del checklist (Fase 1/2/3) */
+.phase-label { font-size: 0.82rem; font-weight: 600; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.phase-label .phase-when { font-size: 0.7rem; font-weight: 400; color: var(--text3); }
+.phase-label.phase-1 { color: var(--accent); }
+.phase-label.phase-2 { color: var(--warning); }
+.phase-label.phase-3 { color: #5b94c9; }
+
+/* Alerta de riesgo (retroceso > stop máximo) */
+.riesgo-alert {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: rgba(226,75,74,0.12); border: 1px solid rgba(226,75,74,0.4);
+  border-radius: 8px; padding: 12px 14px; font-size: 0.85rem; color: var(--text);
+}
+.riesgo-alert i { color: var(--red); font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
 

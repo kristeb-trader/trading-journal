@@ -157,6 +157,13 @@ const Coach = (() => {
 Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
     }
 
+    // Alerta de riesgo (retroceso > stop máximo): distinguir impulsividad vs falla analítica
+    let riesgoStr = ''
+    if (sesion?.alerta_riesgo_vista === true)
+      riesgoStr = '\nALERTA DE RIESGO: el retroceso superó el stop máximo y el trader CONFIRMA que LO VIO antes de entrar y entró igual → impulsividad / regla vista y violada (error psicológico grave).'
+    else if (sesion?.alerta_riesgo_vista === false)
+      riesgoStr = '\nALERTA DE RIESGO: el retroceso superó el stop máximo pero el trader NO lo vio a tiempo → falla analítica / de proceso (no de disciplina).'
+
     // Experimentos del día
     const expRegistros = await DB.getExperimentosByDate(date)
     const expStr = expRegistros.length
@@ -276,7 +283,7 @@ ${casStr}
 
 Análisis del trader:
   "${analisisTrader}"
-${setupNoTomadoStr}
+${setupNoTomadoStr}${riesgoStr}
 Experimentos activos (reglas en prueba):
 ${expStr}
 
@@ -321,6 +328,7 @@ NombreError | tipo | resultado | detalleError | NombreRec | textoRec
 Ejemplo día operado: Error de Marcación | marcado | ninguno | Marqué la zona 10 puntos arriba. | Revisión de zonas | Siempre verificar la zona en 5 min antes de marcarla en 1 min.
 Ejemplo día no operado: Miedo | psicologico | T | No tomé la entrada por miedo. | Visualización pre-sesión | Antes de operar visualiza 3 entradas recientes exitosas para anclar confianza.
 Si NO hubo errores, escribe exactamente: NINGUNO
+- Si hay una ALERTA DE RIESGO arriba: cuando el trader VIO la alerta y entró igual, clasifícalo como error psicológico de impulsividad (el más grave, prioritario); si NO la vio a tiempo, clasifícalo como error analítico/de proceso. El límite de stop máximo es una regla NO negociable: si el stop en dólares lo supera, la entrada es INVÁLIDA por más bueno que se vea el resto del setup.
 
 CATÁLOGO DE ERRORES (usa estos nombres exactos cuando apliquen):
 ${catalogoStr}

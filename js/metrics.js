@@ -205,15 +205,21 @@ const Metrics = (() => {
   const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
 
   const DISC_FACTORS = [
-    { key: 'chk_cuenta_pa',   label: 'Cuenta PA activa verificada'      },
-    { key: 'chk_zonas',       label: 'Zonas vigentes verificadas'       },
-    { key: 'chk_orden',       label: 'Orden precolocada a tiempo'       },
-    { key: 'chk_5velas',      label: 'Máx 5 velas en corrida'           },
-    { key: 'chk_noticias',    label: 'Calendario económico verificado'  },
-    { key: 'chk_consecucion', label: 'Zona con consecución'             },
-    { key: 'chk_estructura',  label: 'Estructura IRI fluida'            },
-    { key: '_noErrors',       label: 'Sin errores de tipificación'      },
+    { key: 'chk_cuenta_pa',   label: 'Cuenta PA activa verificada',      fase: 1 },
+    { key: 'chk_noticias',    label: 'Calendario económico verificado',  fase: 1 },
+    { key: 'chk_zonas',       label: 'Zonas vigentes verificadas',       fase: 1 },
+    { key: 'chk_5velas',      label: 'Máx 5 velas en corrida',           fase: 2 },
+    { key: 'chk_consecucion', label: 'Zona con consecución',             fase: 2 },
+    { key: 'chk_estructura',  label: 'Estructura IRI fluida',            fase: 2 },
+    { key: 'chk_orden',       label: 'Orden precolocada a tiempo',       fase: 3 },
+    { key: '_noErrors',       label: 'Sin errores de tipificación'                },
   ]
+
+  const FASES = {
+    1: { label: 'Fase 1 · Pre-sesión',      color: 'var(--accent)' },
+    2: { label: 'Fase 2 · Lectura del setup', color: 'var(--warning)' },
+    3: { label: 'Fase 3 · Ejecución',       color: '#5b94c9' },
+  }
 
   // Modal "Disciplina de Proceso" — solo adherencia al checklist
   function openDisciplineDetailModal(activeSesiones) {
@@ -232,6 +238,25 @@ const Metrics = (() => {
       const fails = operatedSesiones.filter(s => !s[f.key])
       return { label: f.label, count: fails.length, pct: fails.length / operatedSesiones.length * 100 }
     }).sort((a, b) => b.count - a.count)
+
+    // Cumplimiento por fase (% de ítems cumplidos en los días operados)
+    const phaseStats = [1, 2, 3].map(fase => {
+      const facs = CHECKLIST_FACTORS.filter(f => f.fase === fase)
+      const total = facs.length * operatedSesiones.length
+      const ok = operatedSesiones.reduce((sum, s) => sum + facs.filter(f => s[f.key]).length, 0)
+      return { fase, pct: total > 0 ? Math.round(ok / total * 100) : null, ...FASES[fase] }
+    })
+    const phaseHtml = phaseStats.map(p => {
+      const cls = p.pct == null ? '' : p.pct >= 90 ? 'level-low' : p.pct >= 70 ? 'level-mid' : 'level-high'
+      return `
+        <div class="disc-item">
+          <span class="disc-item-label" style="color:${p.color}">${p.label}</span>
+          <div class="disc-bar-wrap">
+            <div class="disc-bar-fill ${cls}" style="width:${p.pct ?? 0}%"></div>
+          </div>
+          <span class="disc-count">${p.pct == null ? '—' : p.pct + '%'}</span>
+        </div>`
+    }).join('')
 
     const maxChk = checklistStats[0]?.count || 1
 
@@ -275,7 +300,9 @@ const Metrics = (() => {
 
     document.getElementById('disciplineModalContent').innerHTML = `
       <div style="padding:16px 20px 20px">
-        <p class="disc-section-title">Incumplimientos del checklist por factor</p>
+        <p class="disc-section-title">Cumplimiento por fase del proceso</p>
+        ${phaseHtml}
+        <p class="disc-section-title" style="margin-top:16px">Incumplimientos del checklist por factor</p>
         ${chkBarsHtml}
         <div class="disc-dates" style="margin-top:12px">
           <p class="disc-section-title">Días con fallos de checklist</p>

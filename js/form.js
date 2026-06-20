@@ -3,6 +3,7 @@ const SessionForm = (() => {
   let editingDate = null // set when editing an existing session
   let retrocesoCancelId = 0
   let suppressAutoLoad = false // evita que onShow pise la carga de prefill (editar día pasado)
+  let objetivos = null // stop_max_usd etc. para la alerta de riesgo (Bloque 1)
 
   function setToday() {
     const today = new Date().toISOString().slice(0, 10)
@@ -16,8 +17,8 @@ const SessionForm = (() => {
           group.querySelectorAll('.btn-option').forEach(b => b.classList.remove('active'))
           btn.classList.add('active')
           // write value to associated hidden input
-          const hiddenId = group.id === 'corrida' ? 'numCorrida' : 'zonasContraVal'
-          const hidden = document.getElementById(hiddenId)
+          const hiddenId = { corrida:'numCorrida', zonasContra:'zonasContraVal', alertaVista:'alertaVistaVal' }[group.id]
+          const hidden = hiddenId && document.getElementById(hiddenId)
           if (hidden) hidden.value = btn.dataset.value
         })
       })
@@ -197,11 +198,28 @@ const SessionForm = (() => {
       const abbr = a => { if (!a) return '—'; const p = a.split('-'); return p.length > 2 ? p.slice(0, 2).join('-') : a }
       trades = trades.filter(t => abbr(t.account) === acc)
     }
+    let pts = null
     if (trades.length > 0) {
       const netPnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
-      const pts = Math.abs(netPnl / 2).toFixed(2)
-      display.textContent = `${pts} pts`
-      hidden.value = pts
+      pts = Math.abs(netPnl / 2)
+      display.textContent = `${pts.toFixed(2)} pts`
+      hidden.value = pts.toFixed(2)
+    }
+    evalRiesgo(pts)
+  }
+
+  // Bloque 1: alerta proactiva si el retroceso (en $) supera el stop máximo.
+  function evalRiesgo(pts) {
+    const group = document.getElementById('riesgoAlertGroup')
+    if (!group) return
+    const stopMax = objetivos && objetivos.stop_max_usd != null ? parseFloat(objetivos.stop_max_usd) : null
+    const riesgo = pts != null ? pts * 2 : null   // MNQ: $2/punto
+    if (stopMax != null && riesgo != null && riesgo > stopMax) {
+      group.classList.remove('hidden')
+      const txt = document.getElementById('riesgoAlertText')
+      if (txt) txt.innerHTML = `El retroceso fue <b>${pts.toFixed(2)} pts (≈ $${riesgo.toFixed(0)})</b> y supera tu límite de <b>$${stopMax.toFixed(0)}</b>.`
+    } else {
+      group.classList.add('hidden')
     }
   }
 
@@ -224,6 +242,10 @@ const SessionForm = (() => {
       const zonasVal = document.getElementById('zonasContraVal').value
       payload.zonas_contra = zonasVal === 'true' ? true : zonasVal === 'false' ? false : null
       payload.setup = document.getElementById('setup').value || null
+      // Alerta de riesgo (Bloque 1): solo si se mostró la alerta y se respondió
+      const alertaShown = !document.getElementById('riesgoAlertGroup').classList.contains('hidden')
+      const alertaVal = document.getElementById('alertaVistaVal').value
+      payload.alerta_riesgo_vista = (alertaShown && alertaVal !== '') ? (alertaVal === 'true') : null
       payload.chk_cuenta_pa = document.getElementById('chkCuentaPa').checked
       payload.chk_zonas = document.getElementById('chkZonas').checked
       payload.chk_orden = document.getElementById('chkOrden').checked
@@ -389,6 +411,13 @@ const SessionForm = (() => {
         document.getElementById('zonasContraVal').value = v
         document.querySelector(`#zonasContra [data-value="${v}"]`)?.classList.add('active')
       }
+      // Alerta de riesgo: updateRetroceso (más abajo) muestra/oculta el bloque;
+      // aquí restauramos la respuesta guardada de "¿la viste?".
+      if (sesion.alerta_riesgo_vista != null) {
+        const v = String(sesion.alerta_riesgo_vista)
+        document.getElementById('alertaVistaVal').value = v
+        document.querySelector(`#alertaVista [data-value="${v}"]`)?.classList.add('active')
+      }
     } else {
       document.getElementById('motivoNoOpero').value = sesion.motivo_no_opero || ''
       document.getElementById('motivoNoOpero').dispatchEvent(new Event('change'))
@@ -503,6 +532,7 @@ const SessionForm = (() => {
 
   function init() {
     setToday()
+    DB.getObjetivos().then(o => { objetivos = o; updateRetroceso(document.getElementById('sesionDate').value) }).catch(() => {})
     updateRetroceso(document.getElementById('sesionDate').value)
     setupBtnGroups()
     setupNoOperoToggle()

@@ -84,11 +84,17 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 - Nav mobile scrollable horizontal
 
 ### Pendientes
-- Verificar que Worker web `/api/session` guarde campos de premercado correctamente
+- **Reestructuración Disciplina/Reglas/Errores por fases** — ver `docs/plan-disciplina-fases.md`.
+  Bloques 1 y 2 hechos (2026-06-19); faltan 3 (error unificado), 4 (métricas), 5 (UX por fases).
+- **Migraciones por correr** (Supabase SQL): `2026-06-19-sesiones-chk-cuenta-pa.sql`,
+  `2026-06-19-sesiones-alerta-riesgo.sql`.
+- Verificar que Worker web `/api/session` guarde los campos nuevos (`chk_cuenta_pa`,
+  `alerta_riesgo_vista`) y los de premercado correctamente
 - Recomendaciones tipificadas en Coach IA (Fase 4B) — pendiente de implementar
 - Estadísticas de 3 corridas, volumen en trades, tasa de ejecución de setups válidos
 
 ## Para contexto adicional
+- Plan disciplina por fases: `docs/plan-disciplina-fases.md`
 - Historial completo de fases: `docs/historial-proyecto.md`
 - Esquema BD detallado: `memory/db-schema.md`
 - Perfil del usuario: `memory/user-profile.md`
