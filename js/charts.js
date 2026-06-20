@@ -338,7 +338,7 @@ const Charts = (() => {
       options: { ...baseOptions, cutout:'70%', scales:{}, layout:{ padding:6 },
         plugins: { ...baseOptions.plugins,
           legend:{ display:true, position:'bottom',
-            labels:{ color:COLORS.text, usePointStyle:true, pointStyle:'circle', padding:18, font:{ size:12.5 },
+            labels:{ color:'#E4E3DA', usePointStyle:true, pointStyle:'circle', padding:18, font:{ size:13 },
               generateLabels: chart => {
                 const ds = chart.data.datasets[0]
                 return chart.data.labels.map((l, i) => ({
