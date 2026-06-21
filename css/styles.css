@@ -604,10 +604,17 @@ select option { background: var(--bg2); }
 textarea { resize: vertical; min-height: 80px; }
 
 /* ── Premercado ─────────────────────────────────────────────────────────── */
-#premercadoSection {
+/* Tarjeta de sección del formulario (Premercado, Checklist, Operativa, etc.) */
+.form-card, #premercadoSection {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;
+  border-radius: 12px; padding: 16px 18px 18px; margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
 }
+.form-card.hidden { display: none; }
+.form-card > .form-section-title:first-child,
+#premercadoSection > .form-section-title:first-child { margin-top: 0; }
+.form-card > .form-group:last-child,
+.form-card > *:last-child { margin-bottom: 0; }
 #premercadoSection > label:first-child { font-size: 0.95rem; font-weight: 600; color: var(--text); }
 .premkt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
 .premkt-field { display: flex; flex-direction: column; gap: 4px; }
