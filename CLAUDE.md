@@ -85,7 +85,7 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 
 ### Pendientes
 - **Reestructuración Disciplina/Reglas/Errores por fases** — ver `docs/plan-disciplina-fases.md`.
-  Bloques 1, 2 y 3 hechos (2026-06-19); faltan 4 (métricas conectadas) y 5 (rediseño Registrar por fases).
+  Bloques 1, 2, 3 y 4 hechos (2026-06-19); falta 5 (rediseño Registrar por fases).
 - **Migraciones por correr** (Supabase SQL): `2026-06-19-sesiones-chk-cuenta-pa.sql`,
   `2026-06-19-sesiones-alerta-riesgo.sql`.
 - Verificar que Worker web `/api/session` guarde los campos nuevos (`chk_cuenta_pa`,

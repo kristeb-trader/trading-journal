@@ -97,7 +97,7 @@ const DB = {
   async getCasuisticasByDate(date) {
     const { data, error } = await supa
       .from('diagnostico_errores')
-      .select('id, sesion_date, casuistica:error, tipo, resultado, origen, descripcion, catalogo_id, fase, recomendacion_ia, recomendacion_manual, recomendacion:recomendacion_id(nombre), created_at')
+      .select('id, sesion_date, casuistica:error, tipo, resultado, origen, descripcion, catalogo_id, fase, regla_vista, recomendacion_ia, recomendacion_manual, recomendacion:recomendacion_id(nombre), created_at')
       .eq('sesion_date', date)
       .order('created_at', { ascending: true })
     if (error) throw error
@@ -125,7 +125,7 @@ const DB = {
   async getAllCasuisticas() {
     const { data, error } = await supa
       .from('diagnostico_errores')
-      .select('id, sesion_date, casuistica:error, tipo, resultado, origen, descripcion, catalogo_id, fase, created_at')
+      .select('id, sesion_date, casuistica:error, tipo, resultado, origen, descripcion, catalogo_id, fase, regla_vista, created_at')
       .order('sesion_date', { ascending: false })
     if (error) throw error
     return data

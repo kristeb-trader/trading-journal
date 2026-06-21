@@ -258,6 +258,16 @@ const Metrics = (() => {
         </div>`
     }).join('')
 
+    // Racha de disciplina (Bloque 4): días operados consecutivos (desde el más
+    // reciente) con el checklist 100% completo.
+    const opOrd = [...operatedSesiones].sort((a, b) => b.sesion_date.localeCompare(a.sesion_date))
+    let rachaDisc = 0
+    for (const s of opOrd) { if (CHECKLIST_FACTORS.every(f => s[f.key])) rachaDisc++; else break }
+    const rachaHtml = rachaDisc > 0
+      ? `<div class="disc-racha"><span class="disc-racha-num">${rachaDisc}</span>
+           <span class="disc-racha-txt">día${rachaDisc !== 1 ? 's' : ''} operado${rachaDisc !== 1 ? 's' : ''} con checklist <b>100%</b> seguido${rachaDisc !== 1 ? 's' : ''} 🎯</span></div>`
+      : `<div class="disc-racha disc-racha-off"><span class="disc-racha-txt">Sin racha de checklist 100% — el último día operado tuvo algún ítem sin marcar.</span></div>`
+
     const maxChk = checklistStats[0]?.count || 1
 
     const chkBarsHtml = checklistStats.map(f => {
@@ -300,6 +310,7 @@ const Metrics = (() => {
 
     document.getElementById('disciplineModalContent').innerHTML = `
       <div style="padding:16px 20px 20px">
+        ${rachaHtml}
         <p class="disc-section-title">Cumplimiento por fase del proceso</p>
         ${phaseHtml}
         <p class="disc-section-title" style="margin-top:16px">Incumplimientos del checklist por factor</p>
@@ -403,10 +414,27 @@ const Metrics = (() => {
              .map(k => barRow(faseLbl[k], faseCount[k], maxFase, FASES[k]?.color || 'rgba(255,255,255,0.2)', '', null)).join('')}`
         : ''
 
+      // Impulsividad vs falla analítica (Bloque 4) — usa regla_vista
+      const impulsiva = casuisticas.filter(c => c.regla_vista === true).length
+      const analitica = casuisticas.filter(c => c.regla_vista === false).length
+      const behavHtml = (impulsiva + analitica) > 0 ? `
+        <p class="disc-section-title">Reglas: impulsividad vs análisis</p>
+        <div class="disc-behav">
+          <div class="disc-behav-item imp">
+            <div class="disc-behav-num">${impulsiva}</div>
+            <div class="disc-behav-lbl">Vio la regla y la violó<span>impulsividad · disciplina</span></div>
+          </div>
+          <div class="disc-behav-item ana">
+            <div class="disc-behav-num">${analitica}</div>
+            <div class="disc-behav-lbl">No la vio a tiempo<span>falla analítica · habilidad</span></div>
+          </div>
+        </div>` : ''
+
       contentEl.innerHTML = `
         <div style="padding:16px 20px 20px">
           ${impactoHtml}
           ${recHtml}
+          ${behavHtml}
           ${faseHtml}
           <p class="disc-section-title">Errores por tipo <span class="disc-hint">· toca para ver detalle</span></p>
           ${tipoBarsHtml}

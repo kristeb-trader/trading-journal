@@ -64,5 +64,9 @@
       (parse → confirmar → guardar) persiste fase/regla_vista en diagnostico_errores;
       la confirmación de errores muestra badge de fase + indicador "regla vista/no
       vista" (impulsividad vs falla analítica).
-- [ ] Bloque 4 — métricas conectadas (racha #1, fuga por fase, impulsividad vs analítica)
+- [x] Bloque 4 — métricas conectadas (2026-06-19). En el modal de Disciplina:
+      banner de "racha de disciplina" (días operados consecutivos con checklist 100%).
+      En el modal de Errores: bloque "Reglas: impulsividad vs análisis" (cuenta errores
+      con regla_vista=true=impulsividad vs false=falla analítica). Selects de
+      diagnostico_errores ahora traen regla_vista. Sin migración. Solo metrics.js + db.js.
 - [ ] Bloque 5 — rediseño del Registrar por fases (UX)
