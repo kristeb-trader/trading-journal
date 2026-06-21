@@ -353,7 +353,10 @@ const DB = {
       if (match) {
         // ya existe ese día (manual) → confirmado por ambos
         if (match.origen === 'manual') {
-          await supa.from('diagnostico_errores').update({ origen: 'ambos', descripcion: e.detalle || null }).eq('id', match.id)
+          const upd = { origen: 'ambos', descripcion: e.detalle || null }
+          if (e.fase) upd.fase = e.fase
+          if (e.reglaVista != null) upd.regla_vista = e.reglaVista
+          await supa.from('diagnostico_errores').update(upd).eq('id', match.id)
         }
         continue
       }
@@ -394,6 +397,8 @@ const DB = {
         descripcion: e.detalle || null,
         catalogo_id: catId,
         origen: 'ia',
+        fase: e.fase || null,
+        regla_vista: e.reglaVista == null ? null : e.reglaVista,
         recomendacion_id: recId,
         recomendacion_ia: (e.recTexto && e.recTexto.toLowerCase() !== 'ninguna') ? e.recTexto : null,
         recomendacion_manual: e.recManual || null,
