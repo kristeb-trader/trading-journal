@@ -391,10 +391,23 @@ const Metrics = (() => {
           }).join('')
         : '<p style="color:var(--text3);font-size:0.85rem">Sin errores registrados</p>'
 
+      // Errores por fase del proceso (Bloque 3)
+      const faseCount = { 1: 0, 2: 0, 3: 0, sin: 0 }
+      casuisticas.forEach(c => { const f = c.fase; (f === 1 || f === 2 || f === 3) ? faseCount[f]++ : faseCount.sin++ })
+      const conFase = faseCount[1] + faseCount[2] + faseCount[3]
+      const faseLbl = { 1: FASES[1].label, 2: FASES[2].label, 3: FASES[3].label, sin: 'Sin fase asignada' }
+      const maxFase = Math.max(1, faseCount[1], faseCount[2], faseCount[3], faseCount.sin)
+      const faseHtml = conFase > 0
+        ? `<p class="disc-section-title">Errores por fase del proceso</p>
+           ${['1', '2', '3', 'sin'].filter(k => faseCount[k] > 0)
+             .map(k => barRow(faseLbl[k], faseCount[k], maxFase, FASES[k]?.color || 'rgba(255,255,255,0.2)', '', null)).join('')}`
+        : ''
+
       contentEl.innerHTML = `
         <div style="padding:16px 20px 20px">
           ${impactoHtml}
           ${recHtml}
+          ${faseHtml}
           <p class="disc-section-title">Errores por tipo <span class="disc-hint">· toca para ver detalle</span></p>
           ${tipoBarsHtml}
           <div class="disc-origen-row">${origenHtml}</div>

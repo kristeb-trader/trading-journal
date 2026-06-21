@@ -567,6 +567,12 @@ small { font-size: 0.82em; }
 }
 .riesgo-alert i { color: var(--red); font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
 
+/* Badge de fase en los errores (F1/F2/F3) */
+.cas-fase-badge { font-size: 0.66rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; letter-spacing: 0.02em; }
+.cas-fase-badge.fase-1 { background: var(--accent-dim); color: var(--accent); }
+.cas-fase-badge.fase-2 { background: var(--warning-dim); color: var(--warning); }
+.cas-fase-badge.fase-3 { background: rgba(91,148,201,0.16); color: #7fb0e0; }
+
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
 

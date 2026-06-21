@@ -484,10 +484,12 @@ const SessionForm = (() => {
       if (!sesionDate) { Toast.show('Selecciona la fecha primero', 'warning'); return }
 
       try {
-        const saved = await DB.saveCasuistica(sesionDate, casuistica, casResultado, casCatalogoTipo[casuistica] || null)
+        const fase = parseInt(document.getElementById('casFase').value) || null
+        const saved = await DB.saveCasuistica(sesionDate, casuistica, casResultado, casCatalogoTipo[casuistica] || null, fase)
         casPendientes.push(saved)
         renderCasList()
         document.getElementById('casCasuistica').value = ''
+        document.getElementById('casFase').value = ''
         document.querySelectorAll('#casResultadoGroup .btn-option').forEach(b => b.classList.remove('active'))
         casResultado = null
       } catch (e) {
@@ -503,6 +505,7 @@ const SessionForm = (() => {
       <div class="cas-tag">
         <div class="cas-tag-left">
           <span class="${c.resultado === 'T' ? 'cas-badge-t' : 'cas-badge-s'}">${c.resultado}</span>
+          ${c.fase ? `<span class="cas-fase-badge fase-${c.fase}">F${c.fase}</span>` : ''}
           <span>${c.casuistica}</span>
         </div>
         <button type="button" class="cas-del" data-idx="${i}" data-id="${c.id}" title="Eliminar">

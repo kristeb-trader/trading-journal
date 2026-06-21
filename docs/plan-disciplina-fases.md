@@ -54,6 +54,11 @@
       impulsividad vs falla analítica. Migración: 2026-06-19-sesiones-alerta-riesgo.sql.
 - [x] Bloque 2 — checklist por 3 fases (2026-06-19). Form reorganizado en Fase 1/2/3,
       métrica "Cumplimiento por fase" en el modal de Disciplina. Sin migración.
-- [ ] Bloque 3 — modelo de error unificado (fase + tipo + regla vista/no vista)
+- [~] Bloque 3 — modelo de error unificado. PARTE A hecha (2026-06-19): columnas
+      `fase` y `regla_vista` en diagnostico_errores; selector de fase manual al
+      registrar un error; badge de fase en la lista; "Errores por fase" en el modal
+      de errores. Migración: 2026-06-19-errores-fase-regla.sql.
+      PARTE B PENDIENTE: que el Coach IA asigne fase + regla_vista (extender el
+      formato de error de 6 a 7-8 partes y su parser) — se dejó aparte por riesgo.
 - [ ] Bloque 4 — métricas conectadas (racha #1, fuga por fase, impulsividad vs analítica)
 - [ ] Bloque 5 — rediseño del Registrar por fases (UX)
