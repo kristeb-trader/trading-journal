@@ -558,6 +558,17 @@ small { font-size: 0.82em; }
 .phase-label.phase-1 { color: var(--accent); }
 .phase-label.phase-2 { color: var(--warning); }
 .phase-label.phase-3 { color: #5b94c9; }
+.phase-progress {
+  font-size: 0.7rem; font-weight: 700; color: var(--text3);
+  background: var(--bg3); border-radius: 10px; padding: 1px 8px; margin-left: auto;
+}
+.phase-progress.complete { background: var(--accent-dim); color: var(--accent); }
+
+/* Fases como columna vertebral: acento de color a la izquierda */
+.phase-group { border-left: 3px solid var(--border); padding-left: 14px; }
+.phase-group-1 { border-left-color: var(--accent); }
+.phase-group-2 { border-left-color: var(--warning); }
+.phase-group-3 { border-left-color: #5b94c9; }
 
 /* Alerta de riesgo (retroceso > stop máximo) */
 .riesgo-alert {

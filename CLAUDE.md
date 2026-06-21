@@ -84,8 +84,8 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 - Nav mobile scrollable horizontal
 
 ### Pendientes
-- **Reestructuración Disciplina/Reglas/Errores por fases** — ver `docs/plan-disciplina-fases.md`.
-  Bloques 1, 2, 3 y 4 hechos (2026-06-19); falta 5 (rediseño Registrar por fases).
+- **Reestructuración Disciplina/Reglas/Errores por fases** — COMPLETA (Bloques 1-5,
+  2026-06-19). Ver `docs/plan-disciplina-fases.md`.
 - **Migraciones por correr** (Supabase SQL): `2026-06-19-sesiones-chk-cuenta-pa.sql`,
   `2026-06-19-sesiones-alerta-riesgo.sql`.
 - Verificar que Worker web `/api/session` guarde los campos nuevos (`chk_cuenta_pa`,

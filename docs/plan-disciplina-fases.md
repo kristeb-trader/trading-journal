@@ -69,4 +69,11 @@
       En el modal de Errores: bloque "Reglas: impulsividad vs análisis" (cuenta errores
       con regla_vista=true=impulsividad vs false=falla analítica). Selects de
       diagnostico_errores ahora traen regla_vista. Sin migración. Solo metrics.js + db.js.
-- [ ] Bloque 5 — rediseño del Registrar por fases (UX)
+- [x] Bloque 5 — rediseño del Registrar por fases (2026-06-19). Cada fase del
+      checklist es columna vertebral con acento de color a la izquierda y un badge
+      de progreso en vivo (0/3 → 3/3, verde al completar) que se actualiza al marcar.
+      Solo index.html + form.js (setupPhaseProgress/updatePhaseProgress) + css.
+
+PLAN COMPLETO: Bloques 1-5 entregados (2026-06-19). Disciplina, Reglas y Errores
+quedan conectados por las 3 fases del proceso y por la distinción impulsividad
+(regla vista) vs falla analítica (no vista).

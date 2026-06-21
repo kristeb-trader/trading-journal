@@ -292,8 +292,8 @@
             <div class="form-section-title"><i class="ti ti-checklist"></i> Checklist</div>
 
             <!-- Fase 1 — Pre-sesión (siempre visible) -->
-            <div class="form-group">
-              <label class="phase-label phase-1">Fase 1 · Pre-sesión <span class="phase-when">antes de que exista setup</span></label>
+            <div class="form-group phase-group phase-group-1">
+              <label class="phase-label phase-1">Fase 1 · Pre-sesión <span class="phase-when">antes de que exista setup</span> <span class="phase-progress" id="phaseProg1">0/3</span></label>
               <div class="checklist" id="checklistPreSesion">
                 <label class="check-item">
                   <input type="checkbox" id="chkCuentaPa" name="chk_cuenta_pa">
@@ -314,8 +314,8 @@
             </div>
 
             <!-- Fase 2 — Lectura del setup (solo cuando se operó) -->
-            <div class="form-group op-only">
-              <label class="phase-label phase-2">Fase 2 · Lectura del setup <span class="phase-when">análisis antes de entrar</span></label>
+            <div class="form-group op-only phase-group phase-group-2">
+              <label class="phase-label phase-2">Fase 2 · Lectura del setup <span class="phase-when">análisis antes de entrar</span> <span class="phase-progress" id="phaseProg2">0/3</span></label>
               <div class="checklist" id="checklistFase2">
                 <label class="check-item">
                   <input type="checkbox" id="chk5Velas" name="chk_5velas">
@@ -336,8 +336,8 @@
             </div>
 
             <!-- Fase 3 — Ejecución (solo cuando se operó) -->
-            <div class="form-group op-only">
-              <label class="phase-label phase-3">Fase 3 · Ejecución <span class="phase-when">colocar y gestionar la orden</span></label>
+            <div class="form-group op-only phase-group phase-group-3">
+              <label class="phase-label phase-3">Fase 3 · Ejecución <span class="phase-when">colocar y gestionar la orden</span> <span class="phase-progress" id="phaseProg3">0/1</span></label>
               <div class="checklist" id="checklistFase3">
                 <label class="check-item">
                   <input type="checkbox" id="chkOrden" name="chk_orden">

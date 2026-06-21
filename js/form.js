@@ -10,6 +10,25 @@ const SessionForm = (() => {
     document.getElementById('sesionDate').value = today
   }
 
+  // Progreso en vivo del checklist por fase (Bloque 5)
+  const PHASE_CHECKS = {
+    1: ['chkCuentaPa', 'chkNoticias', 'chkZonas'],
+    2: ['chk5Velas', 'chkConsecucion', 'chkEstructura'],
+    3: ['chkOrden'],
+  }
+  function updatePhaseProgress() {
+    for (const [fase, ids] of Object.entries(PHASE_CHECKS)) {
+      const done = ids.filter(id => document.getElementById(id)?.checked).length
+      const el = document.getElementById('phaseProg' + fase)
+      if (el) { el.textContent = `${done}/${ids.length}`; el.classList.toggle('complete', done === ids.length) }
+    }
+  }
+  function setupPhaseProgress() {
+    Object.values(PHASE_CHECKS).flat().forEach(id =>
+      document.getElementById(id)?.addEventListener('change', updatePhaseProgress))
+    updatePhaseProgress()
+  }
+
   function setupBtnGroups() {
     document.querySelectorAll('.btn-group').forEach(group => {
       group.querySelectorAll('.btn-option').forEach(btn => {
@@ -302,6 +321,7 @@ const SessionForm = (() => {
 
   function clearForm() {
     document.getElementById('sessionForm').reset()
+    updatePhaseProgress()
     document.querySelectorAll('.btn-option').forEach(b => b.classList.remove('active'))
     document.getElementById('motivoGroup').classList.add('hidden')
     document.getElementById('setupNoTomadoGroup').classList.add('hidden')
@@ -401,6 +421,7 @@ const SessionForm = (() => {
       document.getElementById('chkNoticias').checked = sesion.chk_noticias || false
       document.getElementById('chkConsecucion').checked = sesion.chk_consecucion || false
       document.getElementById('chkEstructura').checked = sesion.chk_estructura || false
+      updatePhaseProgress()
 
       if (sesion.num_corrida) {
         document.getElementById('numCorrida').value = sesion.num_corrida
@@ -540,6 +561,7 @@ const SessionForm = (() => {
     setupBtnGroups()
     setupNoOperoToggle()
     setupPremercado()
+    setupPhaseProgress()
     setupImageUpload()
     setupCasuisticas()
     setupExperimentos()
