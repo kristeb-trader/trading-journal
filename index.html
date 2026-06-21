@@ -205,10 +205,14 @@
       <section class="section" id="section-register">
         <div class="section-header">
           <h2>Registrar Sesión</h2>
+          <button type="button" class="btn-secondary" id="editarSesionBtn">
+            <i class="ti ti-edit"></i> Editar sesión
+          </button>
         </div>
 
         <div class="form-container">
           <form id="sessionForm" autocomplete="off">
+          <fieldset id="sessionFieldset">
 
             <!-- Fecha + No operé -->
             <div class="form-row">
@@ -583,6 +587,7 @@
                 <i class="ti ti-refresh"></i> Limpiar formulario
               </button>
             </div>
+          </fieldset>
 
           </form>
         </div>
@@ -1139,7 +1144,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" id="editSessionBtn">
-          <i class="ti ti-edit"></i> Editar sesión
+          <i class="ti ti-eye"></i> Ver sesión
         </button>
       </div>
     </div>

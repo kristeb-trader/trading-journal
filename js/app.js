@@ -54,7 +54,7 @@ const Modal = {
     // Footer: Editar vs Registrar según exista la sesión
     const editBtn = document.getElementById('editSessionBtn')
     if (editBtn) editBtn.innerHTML = sesion
-      ? '<i class="ti ti-edit"></i> Editar sesión'
+      ? '<i class="ti ti-eye"></i> Ver sesión'
       : '<i class="ti ti-square-rounded-plus"></i> Registrar sesión'
 
     // Eventos: lightbox, toggles de errores, ver completo

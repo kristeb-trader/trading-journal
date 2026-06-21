@@ -10,6 +10,16 @@ const SessionForm = (() => {
     document.getElementById('sesionDate').value = today
   }
 
+  // Modo lectura ('view') vs edición ('edit'). En 'view' se bloquea todo el
+  // fieldset y se ocultan acciones; el botón "Editar sesión" desbloquea.
+  function setMode(mode) {
+    const view = mode === 'view'
+    const fs  = document.getElementById('sessionFieldset')
+    const sec = document.getElementById('section-register')
+    if (fs)  fs.disabled = view
+    if (sec) sec.classList.toggle('view-mode', view)
+  }
+
   // Progreso en vivo del checklist por fase (Bloque 5)
   const PHASE_CHECKS = {
     1: ['chkCuentaPa', 'chkNoticias', 'chkZonas'],
@@ -342,6 +352,7 @@ const SessionForm = (() => {
     renderCasList()
     editingDate = null
     setToday()
+    setMode('edit')
   }
 
   async function handleSubmit(e) {
@@ -384,6 +395,7 @@ const SessionForm = (() => {
         document.getElementById('sesionDate').value = date
         updateRetroceso(date)
       }
+      setMode('edit') // día sin sesión: abrir editable para crear
       return
     }
 
@@ -469,6 +481,8 @@ const SessionForm = (() => {
       document.getElementById('imagePreview').classList.remove('hidden')
       document.getElementById('uploadArea').classList.add('hidden')
     }
+
+    setMode('view') // sesión existente: abrir en modo lectura
   }
 
   // ── Casuísticas ──────────────────────────────────────────────────────────
@@ -573,6 +587,7 @@ const SessionForm = (() => {
     })
     document.getElementById('sessionForm').addEventListener('submit', handleSubmit)
     document.getElementById('clearForm').addEventListener('click', clearForm)
+    document.getElementById('editarSesionBtn')?.addEventListener('click', () => setMode('edit'))
 
     // Cargar casuísticas y auto-calcular retroceso al cambiar fecha
     document.getElementById('sesionDate').addEventListener('change', () => {

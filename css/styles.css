@@ -540,6 +540,33 @@ small { font-size: 0.82em; }
 /* ── Form ────────────────────────────────────────────────────────────── */
 .form-container { max-width: 720px; }
 
+/* Fieldset envolvente: sin estilos por defecto del navegador */
+#sessionFieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+
+/* Botón "Editar sesión" del encabezado: solo visible en modo lectura */
+#section-register:not(.view-mode) #editarSesionBtn { display: none; }
+
+/* ── Modo lectura (visualización) ─────────────────────────────────────── */
+/* Oculta acciones de edición y deja todo legible (no "deshabilitado feo") */
+#section-register.view-mode .form-actions,
+#section-register.view-mode #casAgregar,
+#section-register.view-mode #expTradeAgregar,
+#section-register.view-mode #expSNTAgregar,
+#section-register.view-mode #uploadArea,
+#section-register.view-mode .cas-del { display: none; }
+
+#sessionFieldset:disabled { opacity: 1; }
+#sessionFieldset:disabled input,
+#sessionFieldset:disabled select,
+#sessionFieldset:disabled textarea {
+  opacity: 1; cursor: default;
+  color: var(--text); -webkit-text-fill-color: var(--text);
+}
+#sessionFieldset:disabled .btn-option { opacity: 1; cursor: default; }
+#sessionFieldset:disabled .btn-option:not(.active) { opacity: 0.4; }
+#sessionFieldset:disabled .toggle-switch,
+#sessionFieldset:disabled label { cursor: default; }
+
 /* Título de sección dentro del formulario de Registrar */
 .form-section-title {
   font-size: 0.95rem; font-weight: 600; color: var(--accent);
