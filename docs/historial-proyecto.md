@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 4 Junio 2026 (Fase 12 Premercado · Fase 13 limpieza errores/experimentos · modal del día rediseñado + filtro de cuenta)
+**Última actualización:** 21 Junio 2026 (Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `C:\Users\Asus\Claro drive\Trading Journal`
@@ -76,19 +76,24 @@ trading-journal/
 │   ├── gallery.js                    ← Galería de imágenes con slots vacíos
 │   ├── data.js                       ← Gestor de catálogos (errores, emociones, experimentos)
 │   ├── estrategia.js                 ← Reglas por setup + estrategia general Chaumer (FASE 10)
+│   ├── experimentos.js               ← Laboratorio de Experimentos: veredictos + matriz (FASE 15)
+│   ├── apex.js                       ← Apex Tracker: cuentas de fondeo + auto-carga NT8 (FASE 16)
 │   ├── coach.js                      ← Coach IA — flujo 3 etapas (FASE 5+)
 │   └── app.js                        ← Boot, navegación SPA, modales, lightbox
 ├── NinjaTrader/
-│   └── SupabaseAutoExport.cs         ← Indicador C# para NT8
+│   ├── SupabaseAutoExport.cs         ← Indicador C# de trades (routing por cuenta, FASE 18)
+│   └── SupabaseDailyLevels.cs        ← Indicador C# de niveles diarios OHLC/overnight (FASE 18)
 ├── TelegramBot/
 │   ├── worker.js                     ← Cloudflare Worker del bot
 │   └── wrangler.toml                 ← Config KV binding
 └── docs/
     ├── historial-proyecto.md         ← Este archivo
+    ├── plan-disciplina-fases.md      ← Plan de Disciplina/Reglas/Errores por fases (Bloques 1-5)
     ├── arquitectura-funcional.md
     ├── arquitectura-tecnica.md
     ├── manual-tecnico.md
-    └── manual-usuario.md
+    ├── manual-usuario.md
+    └── migrations/                   ← SQL por correr en Supabase (1 archivo por cambio de BD)
 ```
 
 ---
@@ -130,10 +135,12 @@ CREATE TABLE trades (
 id, sesion_date (DATE UNIQUE),
 contexto, num_corrida, velas_corrida, puntos_retroceso,
 zonas_contra (BOOLEAN), setup,
--- Checklist pre-sesión (siempre visible)
-chk_noticias, chk_zonas,
--- Checklist operativo (solo cuando sí se operó)
-chk_orden, chk_5velas, chk_consecucion, chk_estructura,
+-- Checklist Fase 1 — Pre-sesión (siempre visible)
+chk_cuenta_pa (BOOLEAN DEFAULT false), chk_noticias, chk_zonas,
+-- Checklist Fase 2 — Lectura del setup (solo cuando sí se operó)
+chk_5velas, chk_consecucion, chk_estructura,
+-- Checklist Fase 3 — Ejecución (solo cuando sí se operó)
+chk_orden,
 analisis_trader, resumen_ia, imagen_url,
 no_opero (BOOLEAN), motivo_no_opero,
 -- Fuente única de estado emocional y confianza (Fase 2A)
@@ -143,17 +150,22 @@ nivel_confianza (INTEGER 1-5),
 setup_valido_no_tomado (BOOLEAN DEFAULT FALSE),
 motivo_no_entrada (TEXT),
 setup_observado (TEXT),
--- Premercado / contexto técnico (Fase 12)
-precio_cierre_ayer, precio_apertura, precio_max_pre, precio_min_pre (NUMERIC),
+-- Premercado / contexto técnico (Fase 12 + niveles de ayer Fase 18)
+precio_apertura_ayer, precio_max_ayer, precio_min_ayer, precio_cierre_ayer (NUMERIC),  -- PDO/PDH/PDL/PDC
+precio_apertura, precio_max_pre, precio_min_pre (NUMERIC),
 soportes_naranja (JSONB), resistencias_naranja (JSONB),  -- hasta 5 líneas naranjas c/u
 noticias (TEXT),
 se_conecto (BOOLEAN DEFAULT true),  -- distingue los 2 "no operé"
+-- Disciplina por fases (Fase 21 — Bloque 1)
+alerta_riesgo_vista (BOOLEAN),  -- true=impulsividad, false=falla analítica, null=sin exceso
 created_at, updated_at
 ```
 
 > **Fase 2A:** `estado_emocional_id` y `nivel_confianza` son la **fuente única** de emoción/confianza. Las columnas duplicadas en `diagnosticos_diarios` fueron eliminadas.
 > **Fase 4D:** `zona_naranja_habia`, `zona_naranja_reaccion`, `zona_naranja_nota` fueron eliminadas y migradas a `diagnostico_experimentos`.
 > **Fase 12:** premercado para enriquecer el análisis IA. `se_conecto` distingue: no operé sin conectarme (caso 1, mínimo) vs me conecté sin setup válido (caso 2, sí pide premercado + análisis). Los puntos del rango premercado se calculan (max−min), no se almacenan.
+> **Fase 18:** `precio_apertura_ayer`/`precio_max_ayer`/`precio_min_ayer` (PDO/PDH/PDL) completan el OHLC de ayer. Los **escribe el indicador `SupabaseDailyLevels`** en NT8, no el formulario web ni el bot.
+> **Fase 21:** `chk_cuenta_pa` es el 7º ítem del checklist (Fase 1). `alerta_riesgo_vista` registra si el trader vio que el retroceso superaba su stop máximo antes de entrar (impulsividad vs falla analítica). El checklist se reorganizó en 3 fases del proceso (la fase es metadata de código, no columna).
 
 ### Tabla `diagnosticos_diarios`
 
@@ -214,11 +226,14 @@ CREATE TABLE diagnostico_errores (
   recomendacion_id    BIGINT REFERENCES catalogo_recomendaciones(id),
   recomendacion_ia    TEXT,          -- recomendación generada por la IA ese día
   recomendacion_manual TEXT,         -- nota/ajuste del trader
+  fase                SMALLINT,      -- 1 Pre-sesión | 2 Lectura | 3 Ejecución (Fase 21 — Bloque 3)
+  regla_vista         BOOLEAN,       -- true=impulsividad, false=falla analítica, null=N/A (Fase 21)
   created_at          TIMESTAMPTZ DEFAULT now()
 );
 ```
 
 > Registro unificado de errores (manual + IA). El modal del calendario muestra chips compactos (nombre corto) con detalle desplegable al clic. Función alias `casuistica:error` mantiene compatibilidad con código existente.
+> **Fase 21 (Bloque 3):** `fase` y `regla_vista` conectan cada error con la fase del proceso y con la distinción psicológica impulsividad (vio la regla y la violó) vs falla analítica (no la vio a tiempo). El Coach IA los asigna automáticamente (formato de error del prompt pasa de 6 a 8 partes); el parser es retro-compatible con las líneas viejas de 6 partes.
 
 ### Tabla `catalogo_emociones`
 
@@ -308,6 +323,7 @@ CREATE TABLE diagnostico_experimentos (
   experimento_id  BIGINT NOT NULL REFERENCES catalogo_experimentos(id),
   presente        BOOLEAN DEFAULT false,  -- ¿la condición apareció ese día?
   resultado       TEXT,              -- T | S
+  valor           NUMERIC,           -- $ propio del experimento (T +, S −) — Fase 15
   nota            TEXT,
   created_at      TIMESTAMPTZ DEFAULT now(),
   UNIQUE (sesion_date, experimento_id)
@@ -324,8 +340,42 @@ CREATE TABLE fomc_dates (
   date        DATE PRIMARY KEY,
   description TEXT DEFAULT 'FOMC Meeting'
 );
--- Fechas cargadas: 2025-2026
+-- Fechas cargadas: 2025-2026 (migraciones 2026-06-17-fomc-dates-*.sql)
 ```
+
+### Tablas Apex Tracker (Fase 16)
+
+```sql
+-- Cuentas de evaluación / PA de Apex
+CREATE TABLE apex_cuentas (
+  id, nombre, numero_cuenta,
+  tamano, balance_inicial, drawdown_max, profit_target,
+  safety_net_balance, piso_congelado,   -- safety net: congela el threshold tras tocarlo
+  min_dias, contratos_max,
+  estado,            -- evaluacion | recuperacion | critico | safety_net | aprobada | pa | quemada
+  fecha_inicio, activa, notas, created_at,
+  plan_perfil DEFAULT 'moderado',       -- conservador | moderado | agresivo  (Fase 16, plan dinámico)
+  plan_ritmo  DEFAULT 'equilibrado'     -- config del plan persistida en BD (sincroniza dispositivos)
+);
+
+-- Registro diario MANUAL por cuenta (cuentas sin auto-export)
+CREATE TABLE apex_registros (
+  id, cuenta_id (FK → apex_cuentas ON DELETE CASCADE),
+  fecha, pnl_dia, balance, threshold, contratos, nota, created_at,
+  UNIQUE (cuenta_id, fecha)
+);
+
+-- Trades individuales auto-exportados de NT8 (cuentas de evaluación)
+CREATE TABLE apex_trades (
+  id, account, instrument, market_pos, qty,
+  entry_price, exit_price, entry_time, exit_time, exit_name,
+  profit (NETO), commission, mae, mfe, etd, bars,
+  trade_date, resultado, created_at
+);
+-- Tabla SEPARADA de `trades` para no mezclar dinero real (PA) con evaluación.
+```
+
+> **Apex Tracker (Fase 16):** `apex_cuentas` define los parámetros de cada prueba (drawdown, target, safety net). Los días de cada cuenta se obtienen de **dos fuentes combinadas**: registro manual (`apex_registros`) y/o derivados de trades (`apex_trades` para evaluación; tabla `trades` para la PA real fondeada). El indicador NT8 hace **routing automático por nombre de cuenta**: cuentas `PA-*` → `trades` + Telegram; cuentas de evaluación Apex → `apex_trades` sin notificar.
 
 ---
 
@@ -756,23 +806,124 @@ Captura el contexto técnico del premercado para enriquecer el análisis de la I
 
 ---
 
-## Checklist — Separación pre-sesión / operativo
+## FASE 14 — Errores (renombrado) + métricas de costo y tendencias (5-10 Jun)
 
-### Checklist Pre-Sesión (siempre visible)
+- **Renombrado global "Casuísticas" → "Errores"** en toda la UI (5266a5c... `533765a`). El concepto pasa a llamarse explícitamente *errores* (la función alias `casuistica:error` se mantiene por compatibilidad de código).
+- **Experimentos en Registrar — rediseño:** dropdown + botones T/S en lugar de lista hardcodeada; sección "Tipificación" renombrada.
+- **Experimentos en días no operados con conexión:** si me conecté a analizar (aunque no operé) ya puedo registrar el resultado T/S de los experimentos del día.
+- **Checklist Pre-Sesión movido** antes del bloque de "motivo de no operación".
+- **Métricas (drill-down):** modal de Errores con desglose navegable y títulos dinámicos; **costo $ de errores**, tendencias, experimentos vs base (tasa de acierto base del período) y recurrencia.
+- **Fixes:** color/signo de "Peor Día" según el P&L real; nav inferior mobile scrollable horizontal; filtro de cuenta carga PA-APEX por defecto en la primera visita; `CLAUDE.md` agregado como contexto automático.
+- **Coach:** auto-aplica el diagnóstico cuando la IA lo genera dentro del chat.
+
+---
+
+## FASE 15 — Laboratorio de Experimentos (sección propia, 12 Jun)
+
+Los experimentos salen de ser solo unas cards en Métricas y pasan a **sección principal** (`js/experimentos.js`).
+
+- **Dashboard de decisión:** tarjetas de veredicto por experimento (adoptar / descartar / neutro) con umbrales `MIN_MUESTRAS=20`, `UMBRAL_ADOPTAR=60%`, `UMBRAL_DESCARTAR=35%`.
+- **Matriz cronológica** tipo Excel (fechas × experimentos) para ver el patrón en el tiempo.
+- **Clic en tarjeta** → modal con todas las fechas de ese experimento; permite **editar el valor de registros históricos** desde el modal.
+- **Valor propio en $** por experimento (`diagnostico_experimentos.valor`): target/stop de la prueba, independiente del P&L del día (T → +, S → −). Migración `2026-06-12-valor-experimentos.sql`.
+
+---
+
+## FASE 16 — Apex Tracker (12-16 Jun)
+
+Nueva sección **Apex Tracker** (`js/apex.js`) para seguir las pruebas de fondeo Apex sin mezclarlas con la operativa real.
+
+- **Tablas nuevas:** `apex_cuentas` (parámetros de cada prueba: drawdown, target, safety net, piso congelado, contratos máx, estado), `apex_registros` (registro diario manual) y `apex_trades` (trades individuales auto-exportados de NT8 para cuentas de evaluación). Migraciones `2026-06-12-apex-tracker.sql`, `2026-06-13-apex-trades.sql`.
+- **Cards por cuenta** con rediseño moderno: balance / threshold / espacio al drawdown, progreso al target, hitos, estado (Evaluación, En recuperación, Crítico, Safety net, Aprobada, PA, **Quemada** en rojo).
+- **Dos zonas:** PA (fondeada) vs cuentas de evaluación.
+- **Vista de detalle por cuenta** con gráfica y análisis de riesgo.
+- **Auto-carga de trades desde NinjaTrader (fase 2):** la app deriva los días (P&L, balance, threshold) desde `apex_trades`; comisiones por lado en el indicador.
+- **Plan dinámico para pasar la prueba:** perfil de riesgo + ritmo (`plan_perfil`, `plan_ritmo`) persistidos **en BD** para sincronizar entre dispositivos (antes en localStorage); alerta de contratos máximos. Migración `2026-06-13-apex-plan-config.sql`.
+- **La PA real** (`PA-APEX-232411-03`) deriva sus días recientes de la tabla `trades` (journal), no de `apex_trades`. Historial reconstruido desde el Excel oficial de Apex.
+
+---
+
+## FASE 17 — Análisis unificado (Análisis + Anual, 13 Jun)
+
+`js/charts.js` se reescribe: las antiguas secciones "Análisis" y "Resumen Anual" se **fusionan en una sola sección adaptativa** con selector de período **Mes / Trimestre / Anual**.
+
+- Selectores directos de mes/trimestre/año en el navegador; layout tipo Anual.
+- Gráficas adaptativas según el período; el **capital inicial** se gestiona en la sección Datos (`annual_capital_inicial` en localStorage).
+- **Rediseño UX de gráficas:** donut con leyenda legible, P&L por hora (franja horaria local), curva de equity con puntos coloreados por signo, export PDF/imagen, barras sin corte. Fix: las gráficas se adaptan al ancho con `minmax(0, …)`.
+
+---
+
+## FASE 18 — Indicadores NT8: routing por cuenta + SupabaseDailyLevels (16-18 Jun)
+
+- **Routing automático por nombre de cuenta** en `SupabaseAutoExport.cs`: cuentas `PA-*` → tabla `trades` + notificación a Telegram; cuentas de evaluación Apex → `apex_trades` **sin** notificar. Una sola instancia captura **varias cuentas** con selección (v3.0); el dropdown lista solo cuentas activas.
+- **Nuevo indicador `SupabaseDailyLevels.cs`:** sube automáticamente el OHLC de ayer (PDO/PDH/PDL/PDC) y la apertura, escribiendo en las columnas `precio_*_ayer` de `sesiones`. v2.0 calcula **RTH vs overnight** clasificando cada vela por su hora ET (ONH/ONL overnight). Migraciones `2026-06-17-sesiones-apertura-ayer.sql`, `2026-06-17-sesiones-max-min-ayer.sql`.
+- **Telegram:** el bot **ya no pide ni guarda** premercado/cierre/apertura — esos niveles los pone el indicador. Esto evita duplicación y errores manuales.
+
+---
+
+## FASE 19 — Coach IA: futuro continuo + niveles de referencia (15-17 Jun)
+
+- **Futuro continuo:** el Coach trata NQ/MNQ como un único futuro continuo (no distingue contratos 03-26/06-26 al analizar la serie).
+- **Niveles PDH/PDL en premercado** y **datos de referencia ordenados** (PDO/PDH/PDL/PDC/PDR) en el bloque de contexto del system prompt.
+- **Analizar únicamente la cuenta PA real** (`PA-APEX-232411-03`): el Coach no mezcla trades de evaluación/sim en su análisis.
+
+---
+
+## FASE 20 — Calendario rediseñado (15-18 Jun)
+
+- **Título hero central** + métricas compactas tipo **chips** arriba, en una sola fila; se quita el selector de período y la card de Experimentos del calendario.
+- **Equity del mes** y **P&L Neto Total** del calendario (totales sin decimales, con color por signo).
+- Ajustes de espaciado (título→métricas→leyenda) y se quita el mes redundante entre las flechas (ya sale en el título).
+- **Días FOMC:** los automáticos se ven igual que el FOMC manual; un día FOMC operado conserva el fondo FOMC con borde del color del resultado.
+
+---
+
+## FASE 21 — Disciplina / Reglas / Errores por 3 fases (Bloques 1-5, 19-21 Jun)
+
+Reestructuración para conectar **Disciplina, Reglas y Errores** bajo un eje común: las **3 fases del proceso**. Plan completo en `docs/plan-disciplina-fases.md`.
+
+**Eje — 3 fases:** Fase 1 Pre-sesión · Fase 2 Lectura del setup (la más débil) · Fase 3 Ejecución.
+**Mapeo del checklist (7 ítems):** F1 = `chk_cuenta_pa`, `chk_noticias`, `chk_zonas`; F2 = `chk_5velas`, `chk_estructura`, `chk_consecucion`; F3 = `chk_orden`.
+
+- **Bloque 1 — Alerta de riesgo proactiva:** si `puntos_retroceso × 2` (riesgo en $) supera `objetivos.stop_max_usd`, el formulario alerta **antes de guardar** y pregunta "¿la viste?". Campo `alerta_riesgo_vista` → `true` impulsividad (psicológico) / `false` falla analítica (proceso). El Coach distingue ambos casos. Migración `2026-06-19-sesiones-alerta-riesgo.sql`.
+- **Bloque 2 — Checklist por 3 fases:** formulario reorganizado en Fase 1/2/3; nuevo ítem `chk_cuenta_pa` (7º). Métrica "**Cumplimiento por fase**" en el modal de Disciplina (dónde está la fuga del proceso). Migración `2026-06-19-sesiones-chk-cuenta-pa.sql`.
+- **Bloque 3 — Modelo de error unificado:** columnas `fase` + `regla_vista` en `diagnostico_errores`. Parte A: selector de fase manual + badge de fase en la lista + "Errores por fase" en el modal. Parte B: el Coach IA asigna fase + regla_vista (formato de error pasa de 6 a 8 partes; parser retro-compatible). Migración `2026-06-19-errores-fase-regla.sql`.
+- **Bloque 4 — Métricas conectadas:** banner de **racha de disciplina** (días operados consecutivos con checklist 100%) en el modal de Disciplina; bloque "**Reglas: impulsividad vs análisis**" en el modal de Errores. Solo `metrics.js` + `db.js`.
+- **Bloque 5 — Registrar por fases (UX):** cada fase del checklist es columna vertebral con acento de color y **badge de progreso en vivo** (0/3 → 3/3, verde al completar).
+
+---
+
+## FASE 22 — Registrar: cards + modo lectura/editar (19-21 Jun)
+
+- **Formulario en secciones** (cards): cada bloque del Registrar en su propia tarjeta para un diseño más moderno; ítem "Cuenta PA" y campos overnight/rangos.
+- **Modo lectura por defecto:** al abrir una sesión existente (desde el calendario o la tabla de Trades) el formulario se abre **bloqueado** (envuelto en un `<fieldset>` deshabilitado, que cubre también los controles dinámicos). El botón del modal del calendario ahora dice **"Ver sesión"**.
+- **Nuevo botón "Editar sesión"** en el encabezado de la sección: desbloquea el formulario y muestra Guardar / Limpiar. Un día **sin** sesión abre directamente en modo edición para crear.
+
+---
+
+## Checklist — Por 3 fases del proceso (Fase 21)
+
+### Fase 1 — Pre-sesión (siempre visible)
 
 | Campo DB | Descripción |
 |---|---|
+| `chk_cuenta_pa` | Cuenta PA correcta/activa verificada |
 | `chk_noticias` | Calendario económico verificado (sin noticia roja) |
 | `chk_zonas` | Zonas vigentes verificadas |
 
-### Checklist Operativo (solo cuando sí se operó)
+### Fase 2 — Lectura del setup (solo cuando sí se operó)
+
+| Campo DB | Descripción |
+|---|---|
+| `chk_5velas` | Máx 5 velas en corrida (auto-invalida si `velas_corrida > 5`) |
+| `chk_consecucion` | Zona marcada con rompimiento + consecución + retroceso |
+| `chk_estructura` | Estructura IRI fluida |
+
+### Fase 3 — Ejecución (solo cuando sí se operó)
 
 | Campo DB | Descripción |
 |---|---|
 | `chk_orden` | Orden precolocada a tiempo |
-| `chk_5velas` | Máx 5 velas en corrida (auto-invalida si `velas_corrida > 5`) |
-| `chk_consecucion` | Zona marcada con rompimiento + consecución + retroceso |
-| `chk_estructura` | Estructura IRI fluida |
 
 ---
 
@@ -808,8 +959,8 @@ Captura el contexto técnico del premercado para enriquecer el análisis de la I
 
 ### ✅ Funcionando
 
-**Dashboard web (11 secciones):**
-- Calendario, Métricas, Trades, Registrar Sesión, Análisis, Galería/Imágenes, Resumen Anual, Historial, Coach IA, Estrategia, Datos/Catálogos
+**Dashboard web (secciones):**
+- Calendario + Métricas, Trades, Registrar Sesión (cards + modo lectura/editar), Análisis (unificado Mes/Trimestre/Anual), Experimentos (Laboratorio), Apex Tracker, Galería/Imágenes, Historial, Coach IA, Estrategia, Datos/Catálogos
 
 **Coach IA:**
 - Flujo en 3 etapas (Análisis Técnico → Chat opcional → Diagnóstico)
@@ -820,9 +971,19 @@ Captura el contexto técnico del premercado para enriquecer el análisis de la I
 - Restaura conversación guardada al cargar fechas pasadas
 
 **Métricas cuantitativas:**
-- P&L · Tasa de Acierto · Disciplina de Proceso · Tasa de Errores
-- Cumplimiento de Reglas · Días Limpios · Dejé de Ganar · Experimentos
-- Racha · Mejor/Peor día · Max Drawdown · Profit Factor · Avg Win/Loss
+- P&L · Tasa de Acierto · Disciplina de Proceso (7 ítems, **cumplimiento por fase**) · Tasa de Errores
+- Cumplimiento de Reglas · Días Limpios · Dejé de Ganar · costo $ de errores
+- **Racha de disciplina** · impulsividad vs falla analítica · errores por fase
+- Mejor/Peor día · Max Drawdown · Profit Factor · Avg Win/Loss
+
+**Apex Tracker (Fase 16):**
+- Cuentas de fondeo con parámetros (drawdown, target, safety net, piso congelado, estado)
+- Días derivados de auto-export NT8 (`apex_trades`) + registro manual (`apex_registros`)
+- PA real deriva de `trades`; plan dinámico (perfil + ritmo) sincronizado en BD
+
+**Indicadores NT8:**
+- `SupabaseAutoExport.cs` — routing por nombre de cuenta (PA→`trades`+Telegram, eval→`apex_trades`); multi-cuenta v3.0
+- `SupabaseDailyLevels.cs` — niveles diarios OHLC + overnight (RTH vs ON por hora ET) a `sesiones`
 
 **Experimentos (`diagnostico_experimentos` + `catalogo_experimentos`):**
 - ~16 condiciones bajo prueba: Zona naranja/blanca, Contra Resistencia/Soporte/Máx/Mín Premercado/Apertura/Histórico, 3ª Corrida, Reingreso, Mercado/Rompimiento Extendido, Target Largo, etc.
@@ -837,7 +998,9 @@ Captura el contexto técnico del premercado para enriquecer el análisis de la I
 ### ⚠️ Pendiente / A tener en cuenta
 
 - ✅ **P&L y comisiones (RESUELTO Jun 2026):** convención NETO unificada. Script v2.2 envía profit neto + comisión round-trip; los 7 trades live previos normalizados por SQL.
-- 🌅 **Premercado web — verificar guardado (pendiente):** el bot guarda premercado OK, pero falta confirmar que el Worker `/api/session` (no versionado) pase los campos nuevos al guardar desde la **web**. Registrar una sesión con premercado en el sitio real y verificar en BD.
+- 🗄️ **Migraciones por correr en Supabase (pendiente):** `2026-06-19-sesiones-chk-cuenta-pa.sql` y `2026-06-19-sesiones-alerta-riesgo.sql` (verificar también que ya se corrieron las de Apex, fase/regla y niveles de ayer). Tras cualquier `ALTER TABLE` ejecutar `NOTIFY pgrst, 'reload schema';`.
+- 🔌 **Worker web `/api/session` (pendiente):** confirmar que guarde los campos nuevos (`chk_cuenta_pa`, `alerta_riesgo_vista`) y los de premercado al registrar desde la **web** (el bot ya guarda OK).
+- 🤖 **Recomendaciones tipificadas en Coach IA (Fase 4B):** pendiente de implementar.
 - 🔒 **Seguridad RLS (pendiente):** las tablas tienen RLS deshabilitado ("UNRESTRICTED"). Es intencional para proyecto personal, pero la `anon key` viaja en el JS público de GitHub Pages → con RLS off da acceso total. Pendiente endurecer con RLS + políticas si se comparte la URL o crece el proyecto.
 - El bot de Telegram no genera análisis IA ni soporta imágenes.
 - `trade_number` y `etd` quedan NULL en trades auto-exportados desde NT8.
