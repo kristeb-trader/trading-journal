@@ -422,15 +422,35 @@ const Metrics = (() => {
           </div>
         </div>` : ''
 
+      // Días limpios (movido desde su antiguo modal) — al inicio
+      const dl = extras.diasLimpios
+      const diasLimpiosHtml = dl ? `
+        ${dl.racha > 0 ? `<p style="color:var(--accent);font-size:0.9rem;font-weight:600;margin-bottom:12px">🏆 Racha actual: ${dl.racha} día${dl.racha !== 1 ? 's' : ''} limpio${dl.racha !== 1 ? 's' : ''} consecutivo${dl.racha !== 1 ? 's' : ''}</p>` : ''}
+        <div class="disc-item" style="margin-bottom:14px">
+          <span class="disc-item-label">Días sin errores</span>
+          <div class="disc-bar-wrap">
+            <div class="disc-bar-fill" style="width:${dl.pct}%;background:rgba(29,158,117,0.5)"></div>
+          </div>
+          <span class="disc-count" style="color:var(--accent)">${dl.total}/${dl.totalSesiones} (${dl.pct}%)</span>
+        </div>
+        <p class="disc-section-title">Días con errores en el período</p>
+        ${dl.fechasConError.length > 0
+          ? [...dl.fechasConError].sort((a, b) => a.localeCompare(b)).map(d => {
+              const dow = DAYS[new Date(d + 'T12:00:00').getDay()]
+              return `<div class="disc-date-row"><span class="disc-date-dow">${dow}</span><span class="disc-date-val">${d}</span><span style="color:var(--red);font-size:0.78rem">con errores</span></div>`
+            }).join('')
+          : '<p style="color:var(--accent);font-size:0.85rem">¡Todos los días del período fueron limpios!</p>'}` : ''
+
       contentEl.innerHTML = `
         <div style="padding:16px 20px 20px">
-          ${impactoHtml}
-          ${recHtml}
-          ${behavHtml}
-          ${faseHtml}
-          <p class="disc-section-title">Errores por tipo y nombre (${total} registros) <span class="disc-hint">· toca un error para ver sus fechas</span></p>
+          ${diasLimpiosHtml}
+          <p class="disc-section-title" style="margin-top:18px">Errores por tipo y nombre (${total} registros) <span class="disc-hint">· toca un error para ver sus fechas</span></p>
           ${tipoBarsHtml}
           <div class="disc-origen-row">${origenHtml}</div>
+          ${faseHtml}
+          ${behavHtml}
+          ${recHtml}
+          ${impactoHtml}
         </div>`
     }
 
@@ -485,37 +505,6 @@ const Metrics = (() => {
     }
 
     renderRoot()
-    document.getElementById('disciplineModal').classList.remove('hidden')
-  }
-
-  // Modal "Días limpios"
-  function openDiasLimpiosModal(s) {
-    setModalTitle('ti-circle-check', 'Días limpios')
-    const barW = s.totalSesiones > 0 ? (s.total / s.totalSesiones * 100).toFixed(0) : 0
-    const rachaMsg = s.racha > 0
-      ? `<p style="color:var(--accent);font-size:0.9rem;font-weight:600;margin-bottom:12px">🏆 Racha actual: ${s.racha} día${s.racha !== 1 ? 's' : ''} limpio${s.racha !== 1 ? 's' : ''} consecutivo${s.racha !== 1 ? 's' : ''}</p>`
-      : `<p style="color:var(--text3);font-size:0.85rem;margin-bottom:12px">Sin racha activa — el último día registrado tuvo errores.</p>`
-
-    const daysHtml = s.fechasConError.length > 0
-      ? [...s.fechasConError].sort((a,b) => b.localeCompare(a)).map(d => {
-          const dow = DAYS[new Date(d + 'T12:00:00').getDay()]
-          return `<div class="disc-date-row"><span class="disc-date-dow">${dow}</span><span class="disc-date-val">${d}</span><span style="color:var(--red);font-size:0.78rem">con errores</span></div>`
-        }).join('')
-      : '<p style="color:var(--accent);font-size:0.85rem">¡Todos los días del período fueron limpios!</p>'
-
-    document.getElementById('disciplineModalContent').innerHTML = `
-      <div style="padding:16px 20px 20px">
-        ${rachaMsg}
-        <div class="disc-item" style="margin-bottom:14px">
-          <span class="disc-item-label">Días sin errores</span>
-          <div class="disc-bar-wrap">
-            <div class="disc-bar-fill" style="width:${barW}%;background:rgba(29,158,117,0.5)"></div>
-          </div>
-          <span class="disc-count" style="color:var(--accent)">${s.total}/${s.totalSesiones} (${s.pct}%)</span>
-        </div>
-        <p class="disc-section-title">Días con errores en el período</p>
-        ${daysHtml}
-      </div>`
     document.getElementById('disciplineModal').classList.remove('hidden')
   }
 
@@ -809,7 +798,6 @@ const Metrics = (() => {
       { label: 'Acierto', value: `${winRate}%`, icon: 'ti-target', color: parseFloat(winRate) >= 50 ? 'green' : 'red', sub: `${targets} targets / ${stops} stops` },
       { label: 'Disciplina', value: `${disciplinaProceso}%`, icon: 'ti-checkup-list', color: disciplinaProceso >= 80 ? 'green' : disciplinaProceso >= 50 ? 'warning' : 'red', sub: chkItemsTotal > 0 ? `${chkItemsOk}/${chkItemsTotal} ítems de checklist${trendDisc}` : 'Sin días operados', clickable: true, action: 'disc-detail' },
       { label: 'Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días${costoErrores > 0 ? ` · ≈ <span style="color:var(--red)">-$${costoErrores.toFixed(0)}</span>` : ''}${trendErr}` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
-      { label: 'Días limpios', value: rachaLimpia > 0 ? `${rachaLimpia} 🏆` : '0', icon: 'ti-circle-check', color: diasLimpiosStat.pct >= 70 ? 'green' : diasLimpiosStat.pct >= 40 ? 'warning' : 'red', sub: `${diasLimpiosStat.total}/${diasLimpiosStat.totalSesiones} días sin errores${trendLimpios}`, clickable: diasLimpiosStat.totalSesiones > 0, action: 'dias-limpios' },
       { label: 'Dejé de ganar', value: dejeGanarStat.targets > 0 ? `${dejeGanarStat.targets} ⚠️` : '0 ✅', icon: 'ti-mood-sad', color: dejeGanarStat.targets === 0 ? 'green' : dejeGanarStat.targets <= 2 ? 'warning' : 'red', sub: dejeGanarStat.total > 0 ? `${dejeGanarStat.targets}T · ${dejeGanarStat.stops}S dejados pasar` : 'Sin setups perdidos', clickable: dejeGanarStat.total > 0, action: 'deje-ganar' },
       {
         label: 'T · S · Sin',
@@ -837,10 +825,7 @@ const Metrics = (() => {
     })
     document.querySelector('[data-action="disc-errors"]')?.addEventListener('click', () => {
       openDisciplineModal(periodCasuisticas, trades, tipoMap, tipoCount, origenCount,
-        { impacto: impactoErrores, recurrentes: erroresRecurrentes })
-    })
-    document.querySelector('[data-action="dias-limpios"]')?.addEventListener('click', () => {
-      openDiasLimpiosModal(diasLimpiosStat)
+        { impacto: impactoErrores, recurrentes: erroresRecurrentes, diasLimpios: diasLimpiosStat })
     })
     document.querySelector('[data-action="deje-ganar"]')?.addEventListener('click', () => {
       openDejeGanarModal(dejeGanarStat)
