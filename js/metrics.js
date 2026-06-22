@@ -266,7 +266,7 @@ const Metrics = (() => {
       const factores = facs.map(f => ({
         key: f.key,
         label: f.label,
-        fails: dias.filter(s => !s[f.key]).map(s => s.sesion_date).sort((a, b) => b.localeCompare(a)),
+        fails: dias.filter(s => !s[f.key]).map(s => s.sesion_date).sort((a, b) => a.localeCompare(b)),
       }))
       return { fase, pct: total > 0 ? Math.round(ok / total * 100) : null, factores, ...FASES[fase] }
     }).filter(p => p.factores.length > 0)
