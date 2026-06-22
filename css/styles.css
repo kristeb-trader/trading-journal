@@ -425,7 +425,7 @@ small { font-size: 0.82em; }
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 14px;
 }
 .metric-card {
@@ -450,7 +450,7 @@ small { font-size: 0.82em; }
 .metric-sub { font-size: 0.75rem; color: var(--text3); margin-top: 4px; }
 
 /* Variante compacta (Calendario, arriba) — solo título + valor, tipo chips de Análisis */
-.metrics-grid-compact { grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 8px; margin-bottom: 44px; }
+.metrics-grid-compact { grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 8px; margin-bottom: 44px; }
 .metrics-grid-compact .metric-card { padding: 8px 12px; gap: 0; }
 .metrics-grid-compact .metric-icon { display: none; }
 .metrics-grid-compact .metric-label {

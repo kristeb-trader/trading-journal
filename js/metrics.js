@@ -897,7 +897,6 @@ const Metrics = (() => {
       { label: 'Acierto', value: `${winRate}%`, icon: 'ti-target', color: parseFloat(winRate) >= 50 ? 'green' : 'red', sub: `${targets} targets / ${stops} stops` },
       { label: 'Disciplina', value: `${disciplinaProceso}%`, icon: 'ti-checkup-list', color: disciplinaProceso >= 80 ? 'green' : disciplinaProceso >= 50 ? 'warning' : 'red', sub: chkItemsTotal > 0 ? `${chkItemsOk}/${chkItemsTotal} ítems de checklist${trendDisc}` : 'Sin días operados', clickable: true, action: 'disc-detail' },
       { label: 'Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días${costoErrores > 0 ? ` · ≈ <span style="color:var(--red)">-$${costoErrores.toFixed(0)}</span>` : ''}${trendErr}` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
-      { label: 'Reglas', value: cumplimientoPct != null ? `${cumplimientoPct}%` : '—', icon: 'ti-shield-check', color: cumplimientoPct == null ? 'neutral' : cumplimientoPct >= 90 ? 'green' : cumplimientoPct >= 70 ? 'warning' : 'red', sub: objStats.configurado ? `${objStats.diasOperados} días evaluados` : 'Configura objetivos en Ajustes', clickable: objStats.configurado, action: 'objetivos-detail' },
       { label: 'Días limpios', value: rachaLimpia > 0 ? `${rachaLimpia} 🏆` : '0', icon: 'ti-circle-check', color: diasLimpiosStat.pct >= 70 ? 'green' : diasLimpiosStat.pct >= 40 ? 'warning' : 'red', sub: `${diasLimpiosStat.total}/${diasLimpiosStat.totalSesiones} días sin errores${trendLimpios}`, clickable: diasLimpiosStat.totalSesiones > 0, action: 'dias-limpios' },
       { label: 'Dejé de ganar', value: dejeGanarStat.targets > 0 ? `${dejeGanarStat.targets} ⚠️` : '0 ✅', icon: 'ti-mood-sad', color: dejeGanarStat.targets === 0 ? 'green' : dejeGanarStat.targets <= 2 ? 'warning' : 'red', sub: dejeGanarStat.total > 0 ? `${dejeGanarStat.targets}T · ${dejeGanarStat.stops}S dejados pasar` : 'Sin setups perdidos', clickable: dejeGanarStat.total > 0, action: 'deje-ganar' },
       {
@@ -927,9 +926,6 @@ const Metrics = (() => {
     document.querySelector('[data-action="disc-errors"]')?.addEventListener('click', () => {
       openDisciplineModal(periodCasuisticas, trades, tipoMap, tipoCount, origenCount,
         { impacto: impactoErrores, recurrentes: erroresRecurrentes })
-    })
-    document.querySelector('[data-action="objetivos-detail"]')?.addEventListener('click', () => {
-      openObjetivosModal(objStats)
     })
     document.querySelector('[data-action="dias-limpios"]')?.addEventListener('click', () => {
       openDiasLimpiosModal(diasLimpiosStat)
