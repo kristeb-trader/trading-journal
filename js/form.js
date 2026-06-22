@@ -545,13 +545,6 @@ const SessionForm = (() => {
   }
 
   function setupCasuisticas() {
-    // Al elegir un error, auto-rellena su fase del catálogo (override manual permitido)
-    document.getElementById('casCasuistica').addEventListener('change', function() {
-      const fase = casCatalogoFase[this.value]
-      const faseSel = document.getElementById('casFase')
-      if (faseSel) faseSel.value = fase ? String(fase) : ''
-    })
-
     // Botones T / S
     document.querySelectorAll('#casResultadoGroup .btn-option').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -569,12 +562,12 @@ const SessionForm = (() => {
       if (!sesionDate) { Toast.show('Selecciona la fecha primero', 'warning'); return }
 
       try {
-        const fase = parseInt(document.getElementById('casFase').value) || null
+        // La fase es implícita: sale del catálogo del error
+        const fase = casCatalogoFase[casuistica] || null
         const saved = await DB.saveCasuistica(sesionDate, casuistica, casResultado, casCatalogoTipo[casuistica] || null, fase)
         casPendientes.push(saved)
         renderCasList()
         document.getElementById('casCasuistica').value = ''
-        document.getElementById('casFase').value = ''
         document.querySelectorAll('#casResultadoGroup .btn-option').forEach(b => b.classList.remove('active'))
         casResultado = null
       } catch (e) {
