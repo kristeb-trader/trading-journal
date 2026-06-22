@@ -2,6 +2,26 @@
 const { createClient } = supabase
 const supa = createClient(SUPABASE_URL, SUPABASE_KEY)
 
+// Checklist por defecto — usado como fallback si el catálogo aún no existe en
+// BD (pre-migración) o si la consulta falla. Las claves = columnas chk_* legado.
+const CHECKLIST_DEFAULT = [
+  { id: -1, clave: 'chk_cuenta_pa',   fase: 1, texto: 'Cuenta PA activa — verificada visualmente en la plataforma', orden: 1, activo: true },
+  { id: -2, clave: 'chk_noticias',    fase: 1, texto: 'Calendario económico verificado (sin noticia roja)',         orden: 2, activo: true },
+  { id: -3, clave: 'chk_zonas',       fase: 1, texto: 'Zonas vigentes verificadas',                                 orden: 3, activo: true },
+  { id: -4, clave: 'chk_5velas',      fase: 2, texto: 'Máx 5 velas en el impulso de la corrida',                    orden: 1, activo: true },
+  { id: -5, clave: 'chk_consecucion', fase: 2, texto: 'Zona marcada con rompimiento + consecución + retroceso',     orden: 2, activo: true },
+  { id: -6, clave: 'chk_estructura',  fase: 2, texto: 'Estructura de Impulso + Retroceso + Impulso, fluida',        orden: 3, activo: true },
+  { id: -7, clave: 'chk_orden',       fase: 3, texto: 'Orden precolocada a tiempo',                                 orden: 1, activo: true },
+]
+let _checklistCache = null  // catálogo cacheado tras la primera carga
+
+// Hidrata una sesión: expone checklist[clave] como propiedades s[clave] para que
+// el código que aún lee s.chk_zonas (calendario, charts, métricas) siga funcionando.
+function hydrateChecklist(s) {
+  if (s && s.checklist && typeof s.checklist === 'object') Object.assign(s, s.checklist)
+  return s
+}
+
 const DB = {
   // ── Trades ──────────────────────────────────────────────────────────────
 
@@ -60,7 +80,7 @@ const DB = {
       .select('*')
       .order('sesion_date', { ascending: false })
     if (error) throw error
-    return data
+    return (data || []).map(hydrateChecklist)
   },
 
   async getSesionByDate(date) {
@@ -70,10 +90,13 @@ const DB = {
       .eq('sesion_date', date)
       .maybeSingle()
     if (error) throw error
-    return data
+    return hydrateChecklist(data)
   },
 
   async upsertSesion(payload) {
+    // El checklist (JSONB) lo escribimos directo a Supabase: el Worker /api/session
+    // (no versionado) no conoce ese campo. El resto va por el Worker como siempre.
+    const { checklist, ...rest } = payload
     const secret = localStorage.getItem('dashboard_secret') || ''
     const res = await fetch('https://broad-hall-c53f.kristerock.workers.dev/api/session', {
       method: 'POST',
@@ -81,12 +104,69 @@ const DB = {
         'Content-Type': 'application/json',
         'X-Dashboard-Token': secret,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(rest),
     })
     if (!res.ok) {
       const text = await res.text()
       throw new Error(`Error ${res.status}: ${text}`)
     }
+    // Escritura directa del JSONB (tras crear/actualizar la fila por el Worker).
+    if (checklist && rest.sesion_date) {
+      const { error } = await supa.from('sesiones').update({ checklist }).eq('sesion_date', rest.sesion_date)
+      if (error) console.warn('No se pudo guardar el checklist (¿migración pendiente?):', error.message)
+    }
+  },
+
+  // ── Checklist de disciplina (catálogo dinámico) ───────────────────────────
+  async getChecklistItems({ force = false, soloActivos = false } = {}) {
+    if (_checklistCache && !force) {
+      return soloActivos ? _checklistCache.filter(i => i.activo !== false) : _checklistCache
+    }
+    const { data, error } = await supa
+      .from('checklist_items')
+      .select('*')
+      .order('fase', { ascending: true })
+      .order('orden', { ascending: true })
+    if (error || !data || !data.length) {
+      _checklistCache = CHECKLIST_DEFAULT
+    } else {
+      _checklistCache = data
+    }
+    return soloActivos ? _checklistCache.filter(i => i.activo !== false) : _checklistCache
+  },
+
+  // Claves activas (sincrónico, tras una carga previa). Fallback al default.
+  checklistClaves() {
+    return (_checklistCache || CHECKLIST_DEFAULT).filter(i => i.activo !== false).map(i => i.clave)
+  },
+
+  // Ítems activos cacheados (sincrónico). Fallback al default.
+  checklistItemsSync() {
+    return (_checklistCache || CHECKLIST_DEFAULT).filter(i => i.activo !== false)
+  },
+
+  async addChecklistItem({ fase, texto, orden = 0 }) {
+    const clave = 'chk_' + Date.now().toString(36)
+    const { data, error } = await supa
+      .from('checklist_items')
+      .insert({ clave, fase, texto, orden })
+      .select('*')
+      .single()
+    if (error) throw error
+    _checklistCache = null
+    return data
+  },
+
+  async updateChecklistItem(id, patch) {
+    const { error } = await supa.from('checklist_items').update(patch).eq('id', id)
+    if (error) throw error
+    _checklistCache = null
+  },
+
+  async deleteChecklistItem(id) {
+    const { error } = await supa.from('checklist_items').delete().eq('id', id)
+    if (error) throw error
+    _checklistCache = null
   },
 
   // ── Casuísticas ──────────────────────────────────────────────────────────

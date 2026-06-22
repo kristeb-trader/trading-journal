@@ -337,29 +337,29 @@ const Calendar = (() => {
     const monthSesiones = Object.values(sesionesCache)
       .filter(s => s.sesion_date?.startsWith(monthPrefix) && !s.no_opero)
 
-    // Disciplina mensual
+    // Disciplina mensual (claves dinámicas del catálogo)
+    const chkItems = DB.checklistItemsSync()
+    const claves   = chkItems.map(i => i.clave)
     let disciplineChip = ''
-    if (monthSesiones.length > 0) {
-      const avg = monthSesiones.reduce((sum, s) => {
-        return sum + [s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
-          .filter(Boolean).length / 6
-      }, 0) / monthSesiones.length
+    if (monthSesiones.length > 0 && claves.length > 0) {
+      const avg = monthSesiones.reduce((sum, s) =>
+        sum + claves.filter(k => s[k]).length / claves.length, 0) / monthSesiones.length
       const pct = Math.round(avg * 100)
       const cls = pct >= 80 ? 'chip-green' : pct >= 50 ? '' : 'chip-red'
       disciplineChip = `<span class="ms-chip ${cls}"><i class="ti ti-checkup-list"></i> ${pct}% Disciplina</span>`
     }
 
-    // Error más frecuente del mes
+    // Ítem del checklist más incumplido del mes
     let errorChip = ''
-    if (monthSesiones.length > 0) {
-      const keys   = ['chk_zonas','chk_orden','chk_5velas','chk_noticias','chk_consecucion','chk_estructura']
-      const labels = ['Zonas','Orden','5 Velas','Noticias','Consecución','Estructura']
+    if (monthSesiones.length > 0 && claves.length > 0) {
       const counts = {}
-      labels.forEach(l => counts[l] = 0)
-      monthSesiones.forEach(s => keys.forEach((k, i) => { if (!s[k]) counts[labels[i]]++ }))
+      chkItems.forEach(it => { counts[it.clave] = 0 })
+      monthSesiones.forEach(s => chkItems.forEach(it => { if (!s[it.clave]) counts[it.clave]++ }))
       const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
       if (top[1] > 0) {
-        errorChip = `<span class="ms-chip chip-warning"><i class="ti ti-alert-triangle"></i> ${top[0]} (${top[1]}x)</span>`
+        const lbl = chkItems.find(it => it.clave === top[0])?.texto || top[0]
+        const corto = lbl.length > 22 ? lbl.slice(0, 22).trim() + '…' : lbl
+        errorChip = `<span class="ms-chip chip-warning"><i class="ti ti-alert-triangle"></i> ${corto} (${top[1]}x)</span>`
       }
     }
 

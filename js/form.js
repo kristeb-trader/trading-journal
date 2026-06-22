@@ -20,23 +20,60 @@ const SessionForm = (() => {
     if (sec) sec.classList.toggle('view-mode', view)
   }
 
-  // Progreso en vivo del checklist por fase (Bloque 5)
-  const PHASE_CHECKS = {
-    1: ['chkCuentaPa', 'chkNoticias', 'chkZonas'],
-    2: ['chk5Velas', 'chkConsecucion', 'chkEstructura'],
-    3: ['chkOrden'],
+  // ── Checklist dinámico (catálogo en BD) ────────────────────────────────────
+  let checklistItems = []
+  let _checklistResolve
+  let checklistReady = new Promise(r => { _checklistResolve = r })
+
+  const FASE_META = {
+    1: { titulo: 'Fase 1 · Pre-sesión',       when: 'antes de que exista setup' },
+    2: { titulo: 'Fase 2 · Lectura del setup', when: 'análisis antes de entrar' },
+    3: { titulo: 'Fase 3 · Ejecución',         when: 'colocar y gestionar la orden' },
   }
-  function updatePhaseProgress() {
-    for (const [fase, ids] of Object.entries(PHASE_CHECKS)) {
-      const done = ids.filter(id => document.getElementById(id)?.checked).length
-      const el = document.getElementById('phaseProg' + fase)
-      if (el) { el.textContent = `${done}/${ids.length}`; el.classList.toggle('complete', done === ids.length) }
-    }
+
+  async function loadChecklist() {
+    try { checklistItems = await DB.getChecklistItems({ soloActivos: true }) }
+    catch { checklistItems = [] }
+    if (!checklistItems || !checklistItems.length) checklistItems = DB.checklistClaves().length ? checklistItems : []
+    renderChecklist()
+    _checklistResolve()
   }
-  function setupPhaseProgress() {
-    Object.values(PHASE_CHECKS).flat().forEach(id =>
-      document.getElementById(id)?.addEventListener('change', updatePhaseProgress))
+
+  function renderChecklist() {
+    const cont = document.getElementById('checklistContainer')
+    if (!cont) return
+    const byFase = { 1: [], 2: [], 3: [] }
+    checklistItems.forEach(i => (byFase[i.fase] || byFase[1]).push(i))
+    cont.innerHTML = [1, 2, 3].map(f => {
+      const items = byFase[f]
+      if (!items.length) return ''
+      // Fase 1 siempre visible; Fases 2/3 solo cuando se operó (op-only)
+      const opOnly = f !== 1 ? ' op-only' : ''
+      const checks = items.map(i => `
+        <label class="check-item">
+          <input type="checkbox" id="chk__${i.clave}" data-clave="${i.clave}" data-fase="${f}" name="${i.clave}">
+          <span class="check-box"></span>
+          <span>${i.texto}</span>
+        </label>`).join('')
+      return `
+        <div class="form-group phase-group phase-group-${f}${opOnly}">
+          <label class="phase-label phase-${f}">${FASE_META[f].titulo} <span class="phase-when">${FASE_META[f].when}</span> <span class="phase-progress" id="phaseProg${f}">0/${items.length}</span></label>
+          <div class="checklist">${checks}</div>
+        </div>`
+    }).join('')
+    cont.querySelectorAll('input[type="checkbox"]').forEach(c => c.addEventListener('change', updatePhaseProgress))
     updatePhaseProgress()
+  }
+
+  function updatePhaseProgress() {
+    [1, 2, 3].forEach(f => {
+      const inputs = [...document.querySelectorAll(`#checklistContainer input[data-fase="${f}"]`)]
+      const el = document.getElementById('phaseProg' + f)
+      if (!el) return
+      const done = inputs.filter(i => i.checked).length
+      el.textContent = `${done}/${inputs.length}`
+      el.classList.toggle('complete', inputs.length > 0 && done === inputs.length)
+    })
   }
 
   function setupBtnGroups() {
@@ -275,14 +312,17 @@ const SessionForm = (() => {
       const alertaShown = !document.getElementById('riesgoAlertGroup').classList.contains('hidden')
       const alertaVal = document.getElementById('alertaVistaVal').value
       payload.alerta_riesgo_vista = (alertaShown && alertaVal !== '') ? (alertaVal === 'true') : null
-      payload.chk_cuenta_pa = document.getElementById('chkCuentaPa').checked
-      payload.chk_zonas = document.getElementById('chkZonas').checked
-      payload.chk_orden = document.getElementById('chkOrden').checked
-      payload.chk_5velas = document.getElementById('chk5Velas').checked
-      payload.chk_noticias = document.getElementById('chkNoticias').checked
-      payload.chk_consecucion = document.getElementById('chkConsecucion').checked
-      payload.chk_estructura = document.getElementById('chkEstructura').checked
     }
+
+    // ── Checklist dinámico → JSONB { clave: bool } + dual-write de columnas chk_* estándar ──
+    const STANDARD_CLAVES = ['chk_cuenta_pa','chk_noticias','chk_zonas','chk_5velas','chk_consecucion','chk_estructura','chk_orden']
+    const checklist = {}
+    document.querySelectorAll('#checklistContainer input[type="checkbox"]').forEach(c => {
+      checklist[c.dataset.clave] = c.checked
+    })
+    payload.checklist = checklist
+    // Columnas chk_* solo para las claves estándar (compat bot/Telegram + pre-migración)
+    STANDARD_CLAVES.forEach(k => { payload[k] = !!checklist[k] })
 
     payload.analisis_trader = document.getElementById('analisisTrader').value || null
     payload.resumen_ia = document.getElementById('resumenIA').value || null
@@ -381,7 +421,7 @@ const SessionForm = (() => {
     }
   }
 
-  function prefill(sesion, date) {
+  async function prefill(sesion, date) {
     // Al navegar, prefill dispara Nav.go('register') → onShow(); este flag evita
     // que onShow recargue la sesión de hoy y pise lo que vamos a cargar aquí.
     suppressAutoLoad = true
@@ -426,14 +466,6 @@ const SessionForm = (() => {
       document.getElementById('contexto').value = sesion.contexto || ''
       document.getElementById('velasCorrida').value = sesion.velas_corrida || ''
       document.getElementById('setup').value = sesion.setup || ''
-      document.getElementById('chkCuentaPa').checked = sesion.chk_cuenta_pa || false
-      document.getElementById('chkZonas').checked = sesion.chk_zonas || false
-      document.getElementById('chkOrden').checked = sesion.chk_orden || false
-      document.getElementById('chk5Velas').checked = sesion.chk_5velas || false
-      document.getElementById('chkNoticias').checked = sesion.chk_noticias || false
-      document.getElementById('chkConsecucion').checked = sesion.chk_consecucion || false
-      document.getElementById('chkEstructura').checked = sesion.chk_estructura || false
-      updatePhaseProgress()
 
       if (sesion.num_corrida) {
         document.getElementById('numCorrida').value = sesion.num_corrida
@@ -481,6 +513,15 @@ const SessionForm = (() => {
       document.getElementById('imagePreview').classList.remove('hidden')
       document.getElementById('uploadArea').classList.add('hidden')
     }
+
+    // Restaurar el checklist (desde el JSONB sesion.checklist o las columnas chk_* hidratadas)
+    await checklistReady
+    document.querySelectorAll('#checklistContainer input[type="checkbox"]').forEach(c => {
+      const clave = c.dataset.clave
+      const val = (sesion.checklist && sesion.checklist[clave] != null) ? sesion.checklist[clave] : sesion[clave]
+      c.checked = !!val
+    })
+    updatePhaseProgress()
 
     setMode('view') // sesión existente: abrir en modo lectura
   }
@@ -575,7 +616,7 @@ const SessionForm = (() => {
     setupBtnGroups()
     setupNoOperoToggle()
     setupPremercado()
-    setupPhaseProgress()
+    loadChecklist()
     setupImageUpload()
     setupCasuisticas()
     setupExperimentos()
@@ -600,7 +641,8 @@ const SessionForm = (() => {
     // Auto-invalidar checklist de 5 velas si velas > 5
     document.getElementById('velasCorrida').addEventListener('input', () => {
       const velas = parseInt(document.getElementById('velasCorrida').value) || 0
-      const chk = document.getElementById('chk5Velas')
+      const chk = document.getElementById('chk__chk_5velas')
+      if (!chk) return
       const item = chk.closest('.check-item')
       if (velas > 5) {
         chk.checked = false

@@ -131,18 +131,10 @@ const Coach = (() => {
       ? `${tradesPA.length} trades (Targets: ${targetsHoy} | Stops: ${stopsHoy} | BEs: ${besHoy}) — P&L: ${fmtPnl(pnlHoy)}`
       : 'Sin trades registrados'
 
-    // Checklist
-    const chkLabels = [
-      ['chk_cuenta_pa',  'Cuenta PA activa verificada (visualmente)'],
-      ['chk_zonas',      'Zonas vigentes verificadas'],
-      ['chk_orden',      'Orden precolocada a tiempo'],
-      ['chk_5velas',     'Máx 5 velas en corrida'],
-      ['chk_noticias',   'Calendario económico verificado (sin noticia roja)'],
-      ['chk_consecucion','Zona con rompimiento + consecución'],
-      ['chk_estructura', 'Estructura IRI fluida'],
-    ]
+    // Checklist (catálogo dinámico, agrupado por fase)
+    const chkItems = DB.checklistItemsSync()
     const checklistStr = sesion
-      ? chkLabels.map(([k, l]) => `${sesion[k] ? '✓' : '✗'} ${l}`).join('\n  ')
+      ? chkItems.map(it => `${(sesion.checklist?.[it.clave] ?? sesion[it.clave]) ? '✓' : '✗'} [F${it.fase}] ${it.texto}`).join('\n  ')
       : 'Sin datos de checklist'
 
     // Casuísticas

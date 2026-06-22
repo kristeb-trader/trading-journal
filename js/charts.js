@@ -154,10 +154,12 @@ const Charts = (() => {
   // ── Cálculos ──────────────────────────────────────────────────────────────
   function calcDiscipline(sesiones, casByDate) {
     if (!sesiones.length) return null
+    const claves = DB.checklistClaves()
+    const denom  = claves.length + 1   // ítems del checklist + factor "sin errores"
     const sum = sesiones.reduce((acc, s) => {
       if (s.no_opero) return acc + (casByDate[s.sesion_date] ? 0 : 1)
-      const chk = [s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura].filter(Boolean).length
-      return acc + (chk + (casByDate[s.sesion_date] ? 0 : 1)) / 7
+      const chk = claves.filter(k => s[k]).length
+      return acc + (chk + (casByDate[s.sesion_date] ? 0 : 1)) / denom
     }, 0)
     return Math.round(sum / sesiones.length * 100)
   }

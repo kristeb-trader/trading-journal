@@ -67,8 +67,7 @@ const Metrics = (() => {
   function cleanSessions(activeSesiones, casByDate) {
     return activeSesiones.filter(s => {
       if (s.no_opero) return !casByDate[s.sesion_date]
-      return s.chk_zonas && s.chk_orden && s.chk_5velas && s.chk_noticias &&
-        s.chk_consecucion && s.chk_estructura && !casByDate[s.sesion_date]
+      return clavesActivas().every(k => s[k]) && !casByDate[s.sesion_date]
     }).length
   }
 
@@ -192,28 +191,21 @@ const Metrics = (() => {
     return `<span class="trend-chip ${good ? 'good' : 'bad'}">${up ? '▲' : '▼'} ${up ? '+' : '−'}${Math.abs(delta)} pts vs ${label}</span>`
   }
 
-  const CHECKLIST_KEYS = [
-    { key: 'chk_cuenta_pa',   label: 'Cuenta PA activa'     },
-    { key: 'chk_zonas',       label: 'Zonas vigentes'       },
-    { key: 'chk_orden',       label: 'Orden a tiempo'       },
-    { key: 'chk_5velas',      label: 'Máx 5 velas'          },
-    { key: 'chk_noticias',    label: 'Calendario verificado' },
-    { key: 'chk_consecucion', label: 'Rompimiento + Consecución' },
-    { key: 'chk_estructura',  label: 'Estructura IRI'       },
-  ]
-
   const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
 
-  const DISC_FACTORS = [
-    { key: 'chk_cuenta_pa',   label: 'Cuenta PA activa verificada',      fase: 1 },
-    { key: 'chk_noticias',    label: 'Calendario económico verificado',  fase: 1 },
-    { key: 'chk_zonas',       label: 'Zonas vigentes verificadas',       fase: 1 },
-    { key: 'chk_5velas',      label: 'Máx 5 velas en corrida',           fase: 2 },
-    { key: 'chk_consecucion', label: 'Zona con consecución',             fase: 2 },
-    { key: 'chk_estructura',  label: 'Estructura IRI fluida',            fase: 2 },
-    { key: 'chk_orden',       label: 'Orden precolocada a tiempo',       fase: 3 },
-    { key: '_noErrors',       label: 'Sin errores de tipificación'                },
-  ]
+  // Factores del checklist — se cargan dinámicamente del catálogo en init().
+  // Cada factor: { key: <clave>, label: <texto>, fase }. Fallback al default de DB.
+  let DISC_FACTORS = []
+  function buildDiscFactors(items) {
+    const src = (items && items.length) ? items : DB.checklistClaves().map(c => ({ clave: c, texto: c, fase: 1 }))
+    DISC_FACTORS = src
+      .filter(i => i.activo !== false)
+      .map(i => ({ key: i.clave, label: i.texto, fase: i.fase || 1 }))
+  }
+  // Claves activas del checklist (para conteos de disciplina)
+  function clavesActivas() {
+    return DISC_FACTORS.length ? DISC_FACTORS.map(f => f.key) : DB.checklistClaves()
+  }
 
   const FASES = {
     1: { label: 'Fase 1 · Pre-sesión',      color: 'var(--accent)' },
@@ -756,10 +748,10 @@ const Metrics = (() => {
 
     // ── Disciplina de Proceso: % de ítems de checklist cumplidos (días operados) ──
     const operatedSes  = activeSesiones.filter(s => !s.no_opero)
-    const chkItemsTotal = operatedSes.length * 7
+    const claves       = clavesActivas()
+    const chkItemsTotal = operatedSes.length * claves.length
     const chkItemsOk    = operatedSes.reduce((sum, s) =>
-      sum + [s.chk_cuenta_pa, s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
-        .filter(Boolean).length, 0)
+      sum + claves.filter(k => s[k]).length, 0)
     const disciplinaProceso = chkItemsTotal > 0 ? Math.round(chkItemsOk / chkItemsTotal * 100) : 0
 
     // ── Tasa de Errores: % de días registrados con al menos un error ──
@@ -891,10 +883,9 @@ const Metrics = (() => {
       const pSes  = allSesiones.filter(s => s.sesion_date >= prevRange.from && s.sesion_date <= prevRange.to)
       const pCas  = allCasuisticas.filter(c => c.sesion_date >= prevRange.from && c.sesion_date <= prevRange.to)
       const pOper = pSes.filter(s => !s.no_opero)
-      const pTot  = pOper.length * 7
+      const pTot  = pOper.length * claves.length
       const pOk   = pOper.reduce((sum, s) =>
-        sum + [s.chk_cuenta_pa, s.chk_zonas, s.chk_orden, s.chk_5velas, s.chk_noticias, s.chk_consecucion, s.chk_estructura]
-          .filter(Boolean).length, 0)
+        sum + claves.filter(k => s[k]).length, 0)
       const pDisc     = pTot > 0 ? Math.round(pOk / pTot * 100) : null
       const pDiasErr  = new Set(pCas.map(c => c.sesion_date)).size
       const pTasa     = pSes.length > 0 ? Math.round(pDiasErr / pSes.length * 100) : null
@@ -1014,9 +1005,12 @@ const Metrics = (() => {
   }
 
   async function init() {
-    ;[allTrades, allSesiones, allCasuisticas, allCatalogo, allObjetivos, allExpCatalogo, allExpRegistros] = await Promise.all([
-      DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getCatalogoCasuisticas(), DB.getObjetivos(), DB.getCatalogoExperimentos(), DB.getAllExperimentoRegistros()
+    let checklistItems
+    ;[allTrades, allSesiones, allCasuisticas, allCatalogo, allObjetivos, allExpCatalogo, allExpRegistros, checklistItems] = await Promise.all([
+      DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getCatalogoCasuisticas(), DB.getObjetivos(), DB.getCatalogoExperimentos(), DB.getAllExperimentoRegistros(),
+      DB.getChecklistItems({ soloActivos: true }).catch(() => null)
     ])
+    buildDiscFactors(checklistItems)
     render('month')
 
     document.getElementById('closeDisciplineModal').addEventListener('click', () => {
