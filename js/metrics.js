@@ -497,43 +497,6 @@ const Metrics = (() => {
     document.getElementById('disciplineModal').classList.remove('hidden')
   }
 
-  // Modal "Cumplimiento de Reglas" — desglose de objetivos
-  function openObjetivosModal(s) {
-    setModalTitle('ti-shield-check', 'Cumplimiento de Reglas')
-    const fmtCfg = (v, suffix = '') => v != null ? `${v}${suffix}` : '<span style="color:var(--text3)">sin definir</span>'
-    const row = (label, value, ok) => `
-      <div class="disc-item" style="align-items:center">
-        <span class="disc-item-label">${label}</span>
-        <span class="disc-count" style="${ok === true ? 'color:var(--accent)' : ok === false ? 'color:var(--red)' : ''}">${value}</span>
-      </div>`
-
-    const stopRow = s.stopMax != null
-      ? row(`Stops dentro del límite ($${s.stopMax})`, `${s.stopsTotal - s.stopsExcedidos}/${s.stopsTotal}`, s.stopsExcedidos === 0)
-      : ''
-    const tradesRow = s.maxTrades != null
-      ? row(`Días dentro del máx. de trades (${s.maxTrades})`, `${s.diasOperados - s.diasSobreoperados}/${s.diasOperados}`, s.diasSobreoperados === 0)
-      : ''
-    const limiteRow = s.limPerd != null
-      ? row(`Días sin romper límite de pérdida ($${s.limPerd})`, `${s.diasOperados - s.diasRompioLimite}/${s.diasOperados}`, s.diasRompioLimite === 0)
-      : ''
-    const objetivoRow = s.pnlObj != null
-      ? row(`Días que alcanzaron el objetivo ($${s.pnlObj})`, `${s.diasLogroObjetivo}/${s.diasOperados}`, null)
-      : ''
-
-    document.getElementById('disciplineModalContent').innerHTML = `
-      <div style="padding:16px 20px 20px">
-        <p class="disc-section-title">Cumplimiento global: <strong>${s.cumplimientoPct != null ? s.cumplimientoPct + '%' : '—'}</strong></p>
-        ${stopRow}${tradesRow}${limiteRow}
-        ${s.pnlObj != null ? `<p class="disc-section-title" style="margin-top:14px">Logro de objetivo (no es regla de disciplina)</p>${objetivoRow}` : ''}
-        <p style="color:var(--text3);font-size:0.78rem;margin-top:14px">
-          Configuración: stop máx ${fmtCfg(s.stopMax, '$')} · máx trades/día ${fmtCfg(s.maxTrades)} ·
-          objetivo ${fmtCfg(s.pnlObj, '$')} · límite pérdida ${fmtCfg(s.limPerd, '$')}.
-          Edítalos en Ajustes ⚙.
-        </p>
-      </div>`
-    document.getElementById('disciplineModal').classList.remove('hidden')
-  }
-
   // Modal "Días limpios"
   function openDiasLimpiosModal(s) {
     setModalTitle('ti-circle-check', 'Días limpios')
@@ -746,45 +709,6 @@ const Metrics = (() => {
       const o = c.origen || 'manual'
       origenCount[o] = (origenCount[o] || 0) + 1
     })
-
-    // ── Cumplimiento de reglas (objetivos) ──
-    const obj = allObjetivos || {}
-    const stopMax   = obj.stop_max_usd   != null ? parseFloat(obj.stop_max_usd)   : null
-    const maxTrades = obj.max_trades_dia != null ? parseInt(obj.max_trades_dia)   : null
-    const limPerd   = obj.limite_perdida_dia != null ? Math.abs(parseFloat(obj.limite_perdida_dia)) : null
-    const pnlObj    = obj.pnl_objetivo_dia   != null ? parseFloat(obj.pnl_objetivo_dia) : null
-
-    // Agregados por día operado (fechas con trades)
-    const pnlPorDia = {}, stopMaxPorDia = {}
-    Object.entries(tradesByDate).forEach(([d, ts]) => {
-      pnlPorDia[d] = ts.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
-      const stopsDia = ts.filter(t => t.resultado === 'stop').map(t => Math.abs(parseFloat(t.profit) || 0))
-      stopMaxPorDia[d] = stopsDia.length ? Math.max(...stopsDia) : 0
-    })
-    const fechasOperadas = Object.keys(tradesByDate)
-
-    let stopsExcedidos = 0, stopsTotal = 0
-    trades.forEach(t => {
-      if (t.resultado !== 'stop') return
-      stopsTotal++
-      if (stopMax != null && Math.abs(parseFloat(t.profit) || 0) > stopMax) stopsExcedidos++
-    })
-    let diasSobreoperados = 0, diasRompioLimite = 0, diasLogroObjetivo = 0
-    let checks = 0, passed = 0
-    fechasOperadas.forEach(d => {
-      const n = tradesByDate[d].length
-      if (maxTrades != null) { checks++; (n <= maxTrades) ? passed++ : diasSobreoperados++ }
-      if (stopMax != null)   { checks++; (stopMaxPorDia[d] <= stopMax) ? passed++ : null }
-      if (limPerd != null)   { checks++; (pnlPorDia[d] >= -limPerd) ? passed++ : diasRompioLimite++ }
-      if (pnlObj != null && pnlPorDia[d] >= pnlObj) diasLogroObjetivo++
-    })
-    const cumplimientoPct = checks > 0 ? Math.round(passed / checks * 100) : null
-    const objStats = {
-      configurado: stopMax != null || maxTrades != null || limPerd != null,
-      stopMax, maxTrades, limPerd, pnlObj,
-      stopsExcedidos, stopsTotal, diasSobreoperados, diasRompioLimite,
-      diasLogroObjetivo, diasOperados: fechasOperadas.length, cumplimientoPct,
-    }
 
     // ── Días limpios (sin errores en el período) ──────────────────────────
     const fechasConError = new Set(periodCasuisticas.map(c => c.sesion_date))
