@@ -302,7 +302,10 @@ async function saveSession(data, env) {
     noticias:              data.noticias              ?? null,
   };
 
-  const post = body => fetch(`${env.SUPABASE_URL}/rest/v1/sesiones`, {
+  // on_conflict=sesion_date → upsert resuelto por la restricción única de fecha
+  // (no por la PK id). Si el indicador SupabaseDailyLevels ya creó la fila del día,
+  // hace UPDATE de las columnas enviadas y conserva las de precio (que no se mandan).
+  const post = body => fetch(`${env.SUPABASE_URL}/rest/v1/sesiones?on_conflict=sesion_date`, {
     method: 'POST',
     headers: {
       apikey:          env.SUPABASE_KEY,
