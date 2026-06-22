@@ -14,6 +14,16 @@ const DataManager = (() => {
       TIPOS.map(t => `<option value="${t.val}" ${t.val === selected ? 'selected' : ''}>${t.label}</option>`).join('')
   }
 
+  const FASES = [
+    { val: '1', label: 'Fase 1 · Pre-sesión' },
+    { val: '2', label: 'Fase 2 · Lectura' },
+    { val: '3', label: 'Fase 3 · Ejecución' },
+  ]
+  function faseOptions(selected) {
+    return '<option value="">Fase…</option>' +
+      FASES.map(f => `<option value="${f.val}" ${String(selected) === f.val ? 'selected' : ''}>${f.label}</option>`).join('')
+  }
+
   function renderList(items, containerId) {
     const el = document.getElementById(containerId)
     if (!items.length) {
@@ -30,6 +40,9 @@ const DataManager = (() => {
         <span class="catalog-nombre">${item.nombre}</span>
         <select class="catalog-tipo-select tipo-select" data-id="${item.id}" title="Tipo de error">
           ${tipoOptions(item.tipo)}
+        </select>
+        <select class="catalog-tipo-select fase-select" data-id="${item.id}" title="Fase del proceso">
+          ${faseOptions(item.fase)}
         </select>
         <button class="btn-edit-catalog" data-id="${item.id}" data-nombre="${item.nombre}" title="Editar nombre">
           <i class="ti ti-pencil"></i>
@@ -48,6 +61,19 @@ const DataManager = (() => {
           Toast.show('Tipo guardado', 'success')
         } catch (e) {
           Toast.show('Error al actualizar el tipo', 'error')
+        }
+      })
+    })
+
+    // ── Fase del proceso ──────────────────────────────────────────────────────
+    el.querySelectorAll('.fase-select').forEach(sel => {
+      sel.addEventListener('change', async () => {
+        const id = parseInt(sel.dataset.id)
+        try {
+          await DB.updateCasuisticaFase(id, sel.value ? parseInt(sel.value) : null)
+          Toast.show('Fase guardada', 'success')
+        } catch (e) {
+          Toast.show('Error al actualizar la fase', 'error')
         }
       })
     })
@@ -365,12 +391,14 @@ const DataManager = (() => {
     document.getElementById('addCasuistica').addEventListener('click', async () => {
       const input = document.getElementById('newCasuistica')
       const tipoSel = document.getElementById('newCasuisticaTipo')
+      const faseSel = document.getElementById('newCasuisticaFase')
       const nombre = input.value.trim()
       if (!nombre) { Toast.show('Escribe el nombre del error', 'warning'); return }
       try {
-        await DB.addCatalogoCasuistica(nombre, tipoSel?.value || null)
+        await DB.addCatalogoCasuistica(nombre, tipoSel?.value || null, faseSel?.value ? parseInt(faseSel.value) : null)
         input.value = ''
         if (tipoSel) tipoSel.value = ''
+        if (faseSel) faseSel.value = ''
         await loadCasuisticas()
         Toast.show('Error agregado', 'success')
       } catch (e) {

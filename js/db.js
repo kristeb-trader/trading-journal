@@ -250,10 +250,14 @@ const DB = {
     return data
   },
 
-  async addCatalogoCasuistica(nombre, tipo = null) {
+  async addCatalogoCasuistica(nombre, tipo = null, fase = null) {
     const { data: all } = await supa.from('catalogo_errores').select('orden').order('orden', { ascending: false }).limit(1)
     const orden = (all?.[0]?.orden || 0) + 1
-    const { data, error } = await supa.from('catalogo_errores').insert({ nombre, tipo, orden }).select().single()
+    let { data, error } = await supa.from('catalogo_errores').insert({ nombre, tipo, fase, orden }).select().single()
+    // Reintento sin `fase` por si la columna aún no existe (pre-migración)
+    if (error && /fase/i.test(error.message || '')) {
+      ;({ data, error } = await supa.from('catalogo_errores').insert({ nombre, tipo, orden }).select().single())
+    }
     if (error) throw error
     return data
   },
@@ -270,6 +274,11 @@ const DB = {
 
   async updateCasuisticaTipo(id, tipo) {
     const { error } = await supa.from('catalogo_errores').update({ tipo: tipo || null }).eq('id', id)
+    if (error) throw error
+  },
+
+  async updateCasuisticaFase(id, fase) {
+    const { error } = await supa.from('catalogo_errores').update({ fase: fase || null }).eq('id', id)
     if (error) throw error
   },
 

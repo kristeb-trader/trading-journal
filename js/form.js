@@ -531,18 +531,27 @@ const SessionForm = (() => {
   let casPendientes = [] // { casuistica, resultado } — sin guardar aún
 
   let casCatalogoTipo = {}  // nombre → tipo (para denormalizar al registrar)
+  let casCatalogoFase = {}  // nombre → fase (auto-rellena el selector de fase)
 
   async function loadCasuisticasDropdown() {
     const items = await DB.getCatalogoCasuisticas()
     const select = document.getElementById('casCasuistica')
     const active = items.filter(i => i.activa)
     casCatalogoTipo = {}
-    items.forEach(i => { casCatalogoTipo[i.nombre] = i.tipo || null })
+    casCatalogoFase = {}
+    items.forEach(i => { casCatalogoTipo[i.nombre] = i.tipo || null; casCatalogoFase[i.nombre] = i.fase || null })
     select.innerHTML = '<option value="">Seleccionar situación...</option>' +
       active.map(i => `<option value="${i.nombre}">${i.nombre}</option>`).join('')
   }
 
   function setupCasuisticas() {
+    // Al elegir un error, auto-rellena su fase del catálogo (override manual permitido)
+    document.getElementById('casCasuistica').addEventListener('change', function() {
+      const fase = casCatalogoFase[this.value]
+      const faseSel = document.getElementById('casFase')
+      if (faseSel) faseSel.value = fase ? String(fase) : ''
+    })
+
     // Botones T / S
     document.querySelectorAll('#casResultadoGroup .btn-option').forEach(btn => {
       btn.addEventListener('click', () => {
