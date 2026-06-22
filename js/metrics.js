@@ -226,27 +226,48 @@ const Metrics = (() => {
     }
 
     const CHECKLIST_FACTORS = DISC_FACTORS.filter(f => f.key !== '_noErrors')
-    const checklistStats = CHECKLIST_FACTORS.map(f => {
-      const fails = operatedSesiones.filter(s => !s[f.key])
-      return { label: f.label, count: fails.length, pct: fails.length / operatedSesiones.length * 100 }
-    }).sort((a, b) => b.count - a.count)
 
-    // Cumplimiento por fase (% de ítems cumplidos en los días operados)
+    const fmtChip = d => {
+      const [, m, day] = d.split('-')
+      const dow = DAYS[new Date(d + 'T12:00:00').getDay()]
+      return `${dow} ${parseInt(day)}/${m}`
+    }
+
+    // Cumplimiento por fase: % de la fase + sus ítems con incumplimientos.
+    // Cada ítem con fallos es clickable y despliega los días con ese fallo.
     const phaseStats = [1, 2, 3].map(fase => {
       const facs = CHECKLIST_FACTORS.filter(f => f.fase === fase)
       const total = facs.length * operatedSesiones.length
       const ok = operatedSesiones.reduce((sum, s) => sum + facs.filter(f => s[f.key]).length, 0)
-      return { fase, pct: total > 0 ? Math.round(ok / total * 100) : null, ...FASES[fase] }
-    })
+      const factores = facs.map(f => ({
+        key: f.key,
+        label: f.label,
+        fails: operatedSesiones.filter(s => !s[f.key]).map(s => s.sesion_date).sort((a, b) => b.localeCompare(a)),
+      }))
+      return { fase, pct: total > 0 ? Math.round(ok / total * 100) : null, factores, ...FASES[fase] }
+    }).filter(p => p.factores.length > 0)
+
     const phaseHtml = phaseStats.map(p => {
       const cls = p.pct == null ? '' : p.pct >= 90 ? 'level-low' : p.pct >= 70 ? 'level-mid' : 'level-high'
-      return `
-        <div class="disc-item">
-          <span class="disc-item-label" style="color:${p.color}">${p.label}</span>
-          <div class="disc-bar-wrap">
-            <div class="disc-bar-fill ${cls}" style="width:${p.pct ?? 0}%"></div>
+      const factoresHtml = p.factores.map(fc => {
+        const n = fc.fails.length
+        const daysHtml = fc.fails.map(d =>
+          `<span class="disc-fail-day disc-factor-day" data-date="${d}">${fmtChip(d)}</span>`).join('')
+        return `
+          <div class="disc-factor-row ${n > 0 ? 'disc-clickable' : ''}" ${n > 0 ? `data-key="${fc.key}"` : ''}>
+            <span class="disc-factor-label">${fc.label}</span>
+            <span class="disc-factor-count ${n > 0 ? 'has-fail' : ''}">${n > 0 ? `${n} <i class="ti ti-chevron-right"></i>` : '✓'}</span>
           </div>
-          <span class="disc-count">${p.pct == null ? '—' : p.pct + '%'}</span>
+          ${n > 0 ? `<div class="disc-factor-days hidden" data-for="${fc.key}">${daysHtml}</div>` : ''}`
+      }).join('')
+      return `
+        <div class="disc-phase">
+          <div class="disc-item disc-phase-head">
+            <span class="disc-item-label" style="color:${p.color}">${p.label}</span>
+            <div class="disc-bar-wrap"><div class="disc-bar-fill ${cls}" style="width:${p.pct ?? 0}%"></div></div>
+            <span class="disc-count">${p.pct == null ? '—' : p.pct + '%'}</span>
+          </div>
+          <div class="disc-phase-factors">${factoresHtml}</div>
         </div>`
     }).join('')
 
@@ -260,57 +281,12 @@ const Metrics = (() => {
            <span class="disc-racha-txt">día${rachaDisc !== 1 ? 's' : ''} operado${rachaDisc !== 1 ? 's' : ''} con checklist <b>100%</b> seguido${rachaDisc !== 1 ? 's' : ''} 🎯</span></div>`
       : `<div class="disc-racha disc-racha-off"><span class="disc-racha-txt">Sin racha de checklist 100% — el último día operado tuvo algún ítem sin marcar.</span></div>`
 
-    const maxChk = checklistStats[0]?.count || 1
-
-    const chkBarsHtml = checklistStats.map(f => {
-      const cls = f.pct >= 50 ? 'level-high' : f.pct >= 25 ? 'level-mid' : 'level-low'
-      const barW = (f.count / maxChk * 100).toFixed(0)
-      return `
-        <div class="disc-item">
-          <span class="disc-item-label">${f.label}</span>
-          <div class="disc-bar-wrap">
-            ${f.count > 0
-              ? `<div class="disc-bar-fill ${cls}" style="width:${barW}%"></div>`
-              : `<div class="disc-bar-fill" style="width:100%;background:rgba(29,158,117,0.3)"></div>`}
-          </div>
-          <span class="disc-count" style="${f.count === 0 ? 'color:var(--accent)' : ''}">${f.count === 0 ? '✓' : f.count}</span>
-        </div>`
-    }).join('')
-
-    // Días con fallos de checklist (solo días operados)
-    const failedDays = operatedSesiones
-      .map(s => ({ date: s.sesion_date, chkFails: CHECKLIST_FACTORS.filter(f => !s[f.key]) }))
-      .filter(d => d.chkFails.length > 0)
-      .sort((a, b) => b.date.localeCompare(a.date))
-
-    const daysHtml = failedDays.length > 0
-      ? failedDays.map(d => {
-          const dow = DAYS[new Date(d.date + 'T12:00:00').getDay()]
-          const amberTag = t => `<span class="disc-fail-tag" style="background:rgba(186,117,23,0.18);color:var(--warning);border-color:rgba(186,117,23,0.3)">${t}</span>`
-          const chkTags = d.chkFails.map(f => amberTag(f.label)).join('')
-          return `
-            <div class="disc-fail-day" data-date="${d.date}">
-              <div class="disc-fail-day-header">
-                <span class="disc-date-dow">${dow}</span>
-                <span class="disc-date-val">${d.date}</span>
-                <span class="disc-fail-count">${d.chkFails.length} fallo${d.chkFails.length !== 1 ? 's' : ''}</span>
-              </div>
-              <div class="disc-fail-tags">${chkTags}</div>
-            </div>`
-        }).join('')
-      : '<p style="color:var(--accent);font-size:0.85rem;padding:8px 0">¡Checklist perfecto en el período! 🎯</p>'
-
     document.getElementById('disciplineModalContent').innerHTML = `
       <div style="padding:16px 20px 20px">
         ${rachaHtml}
         <p class="disc-section-title">Cumplimiento por fase del proceso</p>
+        <p class="disc-hint">Toca un ítem con incumplimientos para ver los días.</p>
         ${phaseHtml}
-        <p class="disc-section-title" style="margin-top:16px">Incumplimientos del checklist por factor</p>
-        ${chkBarsHtml}
-        <div class="disc-dates" style="margin-top:12px">
-          <p class="disc-section-title">Días con fallos de checklist</p>
-          ${daysHtml}
-        </div>
       </div>`
 
     document.getElementById('disciplineModal').classList.remove('hidden')
@@ -1025,17 +1001,26 @@ const Metrics = (() => {
       if (!dm.classList.contains('hidden')) dm.classList.add('hidden')
     })
 
-    // Días con fallos → abrir modal de detalle del día
+    // Clics dentro del modal de Disciplina:
+    //  - día → abre el detalle del día
+    //  - ítem con incumplimientos → despliega/oculta sus días
     document.getElementById('disciplineModalContent').addEventListener('click', async e => {
       const dayEl = e.target.closest('.disc-fail-day[data-date]')
-      if (!dayEl) return
-      const date = dayEl.dataset.date
-      document.getElementById('disciplineModal').classList.add('hidden')
-      const [trades, sesion] = await Promise.all([
-        DB.getTradesByDate(date),
-        DB.getSesionByDate(date),
-      ])
-      await Modal.openDay(date, trades, sesion)
+      if (dayEl) {
+        const date = dayEl.dataset.date
+        document.getElementById('disciplineModal').classList.add('hidden')
+        const [trades, sesion] = await Promise.all([
+          DB.getTradesByDate(date),
+          DB.getSesionByDate(date),
+        ])
+        await Modal.openDay(date, trades, sesion)
+        return
+      }
+      const row = e.target.closest('.disc-factor-row[data-key]')
+      if (row) {
+        const panel = document.querySelector(`.disc-factor-days[data-for="${row.dataset.key}"]`)
+        if (panel) { panel.classList.toggle('hidden'); row.classList.toggle('open') }
+      }
     })
   }
 
