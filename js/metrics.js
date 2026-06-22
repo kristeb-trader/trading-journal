@@ -207,6 +207,27 @@ const Metrics = (() => {
     return DISC_FACTORS.length ? DISC_FACTORS.map(f => f.key) : DB.checklistClaves()
   }
 
+  // ¿La sesión se "conectó" ese día? (operó, o no operó pero sí se conectó a analizar)
+  function seConecto(s) { return !s.no_opero || s.se_conecto !== false }
+
+  // ¿Aplica un factor a una sesión? Fase 1 (Pre-sesión) en todo día conectado;
+  // Fases 2/3 solo en días operados. (El 18 jun "sin entradas" suma su Fase 1.)
+  function factorAplica(f, s) {
+    if (!seConecto(s)) return false
+    return f.fase === 1 ? true : !s.no_opero
+  }
+
+  // Disciplina de un conjunto de sesiones: { total, ok, pct } sobre factores aplicables
+  function calcDisciplina(sesiones) {
+    let total = 0, ok = 0
+    sesiones.forEach(s => DISC_FACTORS.forEach(f => {
+      if (!factorAplica(f, s)) return
+      total++
+      if (s[f.key]) ok++
+    }))
+    return { total, ok, pct: total > 0 ? Math.round(ok / total * 100) : 0 }
+  }
+
   const FASES = {
     1: { label: 'Fase 1 · Pre-sesión',      color: 'var(--accent)' },
     2: { label: 'Fase 2 · Lectura del setup', color: 'var(--warning)' },
@@ -216,11 +237,12 @@ const Metrics = (() => {
   // Modal "Disciplina de Proceso" — solo adherencia al checklist
   function openDisciplineDetailModal(activeSesiones) {
     setModalTitle('ti-checkup-list', 'Análisis de Disciplina')
-    const operatedSesiones = activeSesiones.filter(s => !s.no_opero)
+    const operatedSesiones  = activeSesiones.filter(s => !s.no_opero)
+    const conectadoSesiones = activeSesiones.filter(seConecto)  // operó o se conectó a analizar
 
-    if (operatedSesiones.length === 0) {
+    if (conectadoSesiones.length === 0) {
       document.getElementById('disciplineModalContent').innerHTML =
-        '<p style="padding:20px;color:var(--text3)">Sin días operados en el período.</p>'
+        '<p style="padding:20px;color:var(--text3)">Sin días con actividad en el período.</p>'
       document.getElementById('disciplineModal').classList.remove('hidden')
       return
     }
@@ -237,12 +259,14 @@ const Metrics = (() => {
     // Cada ítem con fallos es clickable y despliega los días con ese fallo.
     const phaseStats = [1, 2, 3].map(fase => {
       const facs = CHECKLIST_FACTORS.filter(f => f.fase === fase)
-      const total = facs.length * operatedSesiones.length
-      const ok = operatedSesiones.reduce((sum, s) => sum + facs.filter(f => s[f.key]).length, 0)
+      // Fase 1 se evalúa en días conectados; Fases 2/3 solo en días operados
+      const dias = fase === 1 ? conectadoSesiones : operatedSesiones
+      const total = facs.length * dias.length
+      const ok = dias.reduce((sum, s) => sum + facs.filter(f => s[f.key]).length, 0)
       const factores = facs.map(f => ({
         key: f.key,
         label: f.label,
-        fails: operatedSesiones.filter(s => !s[f.key]).map(s => s.sesion_date).sort((a, b) => b.localeCompare(a)),
+        fails: dias.filter(s => !s[f.key]).map(s => s.sesion_date).sort((a, b) => b.localeCompare(a)),
       }))
       return { fase, pct: total > 0 ? Math.round(ok / total * 100) : null, factores, ...FASES[fase] }
     }).filter(p => p.factores.length > 0)
@@ -685,13 +709,13 @@ const Metrics = (() => {
     // Casuísticas filtradas por el mismo período
     const periodCasuisticas = filterCasuisticasByPeriod(allCasuisticas, period)
 
-    // ── Disciplina de Proceso: % de ítems de checklist cumplidos (días operados) ──
-    const operatedSes  = activeSesiones.filter(s => !s.no_opero)
-    const claves       = clavesActivas()
-    const chkItemsTotal = operatedSes.length * claves.length
-    const chkItemsOk    = operatedSes.reduce((sum, s) =>
-      sum + claves.filter(k => s[k]).length, 0)
-    const disciplinaProceso = chkItemsTotal > 0 ? Math.round(chkItemsOk / chkItemsTotal * 100) : 0
+    // ── Disciplina de Proceso: % de ítems de checklist cumplidos ──
+    // Fase 1 (Pre-sesión) cuenta en días conectados (operados o no); Fases 2/3
+    // solo en días operados. Así un "sin entradas" conectado suma su Fase 1.
+    const disc = calcDisciplina(activeSesiones)
+    const chkItemsTotal = disc.total
+    const chkItemsOk    = disc.ok
+    const disciplinaProceso = disc.pct
 
     // ── Tasa de Errores: % de días registrados con al menos un error ──
     const diasConError = new Set(periodCasuisticas.map(c => c.sesion_date)).size
@@ -782,11 +806,8 @@ const Metrics = (() => {
     if (prevRange) {
       const pSes  = allSesiones.filter(s => s.sesion_date >= prevRange.from && s.sesion_date <= prevRange.to)
       const pCas  = allCasuisticas.filter(c => c.sesion_date >= prevRange.from && c.sesion_date <= prevRange.to)
-      const pOper = pSes.filter(s => !s.no_opero)
-      const pTot  = pOper.length * claves.length
-      const pOk   = pOper.reduce((sum, s) =>
-        sum + claves.filter(k => s[k]).length, 0)
-      const pDisc     = pTot > 0 ? Math.round(pOk / pTot * 100) : null
+      const pDiscStat = calcDisciplina(pSes)
+      const pDisc     = pDiscStat.total > 0 ? pDiscStat.pct : null
       const pDiasErr  = new Set(pCas.map(c => c.sesion_date)).size
       const pTasa     = pSes.length > 0 ? Math.round(pDiasErr / pSes.length * 100) : null
       const pLimpios  = pSes.length > 0 ? Math.round((pSes.length - pDiasErr) / pSes.length * 100) : null
