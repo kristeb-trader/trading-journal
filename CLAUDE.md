@@ -92,6 +92,14 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
   `alerta_riesgo_vista`) y los de premercado correctamente
 - Recomendaciones tipificadas en Coach IA (Fase 4B) — pendiente de implementar
 - Estadísticas de 3 corridas, volumen en trades, tasa de ejecución de setups válidos
+- **Limpieza columnas `chk_*` de `sesiones`** (PENDIENTE, dejada para más adelante).
+  El checklist ya vive en `sesiones.checklist` (JSONB) + catálogo `checklist_items`;
+  las 7 columnas `chk_*` se conservan como espejo/respaldo. Para eliminarlas (orden
+  seguro): 1) `form.js` y `TelegramBot/worker.js` dejan de escribir `chk_*` (solo
+  `checklist`); 2) verificar `select count(*) from sesiones where checklist is null
+  or checklist='{}'::jsonb;` = 0; 3) `ALTER TABLE sesiones DROP COLUMN` de las 7.
+  La lectura (calendario/charts/metrics/coach) NO se toca: la hidratación en `db.js`
+  sigue exponiendo `s.chk_*` desde el JSONB.
 
 ## Para contexto adicional
 - Plan disciplina por fases: `docs/plan-disciplina-fases.md`
