@@ -1286,6 +1286,14 @@ body.modal-open { overflow: hidden; }
   padding: 4px 9px; margin: 0; font-size: 0.76rem; color: var(--text2);
 }
 
+/* Errores por tipo con nombres anidados (modal Análisis de Errores) */
+.disc-tipo-group { margin-bottom: 14px; }
+.disc-tipo-nombres {
+  display: flex; flex-direction: column; gap: 2px;
+  padding-left: 12px; margin: 6px 0 0 4px;
+  border-left: 2px solid var(--border);
+}
+
 /* Drill-down del modal de Errores */
 .disc-clickable { cursor: pointer; border-radius: 6px; padding: 4px 6px; margin: 0 -6px; transition: background 0.15s; }
 .disc-clickable:hover { background: rgba(255,255,255,0.05); }

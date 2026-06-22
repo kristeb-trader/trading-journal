@@ -364,13 +364,26 @@ const Metrics = (() => {
           🔁 <b>Recurrente:</b> ${rec.map(r => `${r.nombre} (${r.semanas} de las últimas 4 semanas)`).join(' · ')}
         </div>` : ''
 
-      // Por tipo (clickable)
+      // Por tipo, con los nombres de cada tipo anidados (clickable → fechas)
       const tipoEntries = Object.entries(tipoCount).sort((a, b) => b[1] - a[1])
       const maxTipo = tipoEntries[0]?.[1] || 1
       const tipoBarsHtml = tipoEntries.length > 0
         ? tipoEntries.map(([tipo, count]) => {
             const meta = TIPO_META[tipo] || TIPO_META.sintipo
-            return barRow(meta.label, count, maxTipo, meta.color, '', `data-tipo="${tipo}"`)
+            // Nombres dentro de este tipo
+            const cMap = {}
+            casuisticas.filter(c => getTipo(c) === tipo)
+              .forEach(c => { cMap[c.casuistica] = (cMap[c.casuistica] || 0) + 1 })
+            const names = Object.entries(cMap).map(([label, n]) => ({ label, n })).sort((a, b) => b.n - a.n)
+            const maxName = names[0]?.n || 1
+            const namesHtml = names.map(({ label, n }) =>
+              barRow(label, n, maxName, meta.color, '', `data-nombre="${encodeURIComponent(label)}" data-tipo="${tipo}"`)
+            ).join('')
+            return `
+              <div class="disc-tipo-group">
+                ${barRow(meta.label, count, maxTipo, meta.color, '', null)}
+                <div class="disc-tipo-nombres">${namesHtml}</div>
+              </div>`
           }).join('')
         : '<p style="color:var(--text3);font-size:0.85rem">Sin errores en el período</p>'
 
@@ -380,19 +393,6 @@ const Metrics = (() => {
         const n = origenCount[k] || 0
         return `<span class="disc-origen-chip">${lbl}: <b>${n}</b></span>`
       }).join('')
-
-      // Por nombre global (clickable → fechas)
-      const countMap = {}
-      casuisticas.forEach(c => { countMap[c.casuistica] = (countMap[c.casuistica] || 0) + 1 })
-      const counts = Object.entries(countMap).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count)
-      const maxCount = counts[0]?.count || 1
-      const barsHtml = counts.length > 0
-        ? counts.map(({ label, count }) => {
-            const pct = total > 0 ? (count / total * 100) : 0
-            const cls = pct >= 40 ? 'level-high' : pct >= 20 ? 'level-mid' : 'level-low'
-            return barRow(label, count, maxCount, '', cls, `data-nombre="${encodeURIComponent(label)}"`)
-          }).join('')
-        : '<p style="color:var(--text3);font-size:0.85rem">Sin errores registrados</p>'
 
       // Errores por fase del proceso (Bloque 3)
       const faseCount = { 1: 0, 2: 0, 3: 0, sin: 0 }
@@ -428,35 +428,9 @@ const Metrics = (() => {
           ${recHtml}
           ${behavHtml}
           ${faseHtml}
-          <p class="disc-section-title">Errores por tipo <span class="disc-hint">· toca para ver detalle</span></p>
+          <p class="disc-section-title">Errores por tipo y nombre (${total} registros) <span class="disc-hint">· toca un error para ver sus fechas</span></p>
           ${tipoBarsHtml}
           <div class="disc-origen-row">${origenHtml}</div>
-          <p class="disc-section-title" style="margin-top:14px">Errores por nombre (${total} registros)</p>
-          ${barsHtml}
-        </div>`
-    }
-
-    // ── Vista de un tipo: nombres de error dentro del tipo ────────────────
-    function renderPorTipo(tipo) {
-      const meta = TIPO_META[tipo] || TIPO_META.sintipo
-      setModalTitle('ti-alert-triangle', meta.label)
-      const items = casuisticas.filter(c => getTipo(c) === tipo)
-      const countMap = {}
-      items.forEach(c => { countMap[c.casuistica] = (countMap[c.casuistica] || 0) + 1 })
-      const counts = Object.entries(countMap).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count)
-      const maxCount = counts[0]?.count || 1
-      const barsHtml = counts.length > 0
-        ? counts.map(({ label, count }) =>
-            barRow(label, count, maxCount, meta.color, '', `data-nombre="${encodeURIComponent(label)}" data-tipo="${tipo}"`)
-          ).join('')
-        : '<p style="color:var(--text3);font-size:0.85rem">Sin errores de este tipo</p>'
-
-      contentEl.innerHTML = `
-        <div style="padding:16px 20px 20px">
-          <button class="disc-back" data-back="root"><i class="ti ti-arrow-left"></i> Volver</button>
-          <p class="disc-section-title" style="margin-top:10px">${meta.label} — ${items.length} ${items.length === 1 ? 'registro' : 'registros'}</p>
-          <p class="disc-hint" style="display:block;margin-bottom:6px">Toca un error para ver sus fechas</p>
-          ${barsHtml}
         </div>`
     }
 
@@ -467,9 +441,9 @@ const Metrics = (() => {
       if (tipo) items = items.filter(c => getTipo(c) === tipo)
       const dates = items
         .map(c => ({ date: c.sesion_date, resultado: c.resultado }))
-        .sort((a, b) => b.date.localeCompare(a.date))
+        .sort((a, b) => a.date.localeCompare(b.date))
 
-      const backTarget = tipo ? `tipo:${tipo}` : 'root'
+      const backTarget = 'root'
       const daysHtml = dates.map(d => {
         const dow = DAYS[new Date(d.date + 'T12:00:00').getDay()]
         const pnl = pnlByDate[d.date]
@@ -501,20 +475,13 @@ const Metrics = (() => {
     // Navegación interna (los clics en fechas los maneja el listener global)
     contentEl.onclick = e => {
       const backBtn = e.target.closest('.disc-back')
-      if (backBtn) {
-        const target = backBtn.dataset.back
-        if (target === 'root') renderRoot()
-        else if (target.startsWith('tipo:')) renderPorTipo(target.slice(5))
-        return
-      }
+      if (backBtn) { renderRoot(); return }
       if (e.target.closest('.disc-fail-day')) return  // → listener global (imagen)
       const nombreEl = e.target.closest('.disc-item[data-nombre]')
       if (nombreEl) {
         renderPorNombre(decodeURIComponent(nombreEl.dataset.nombre), nombreEl.dataset.tipo || null)
         return
       }
-      const tipoEl = e.target.closest('.disc-item[data-tipo]')
-      if (tipoEl) { renderPorTipo(tipoEl.dataset.tipo); return }
     }
 
     renderRoot()
