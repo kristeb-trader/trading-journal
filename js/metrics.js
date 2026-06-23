@@ -9,12 +9,13 @@ const Metrics = (() => {
   let allExpRegistros  = []
 
   // Taxonomía de errores (debe coincidir con el catálogo)
+  // Colores semánticos por tipo: color = punto/barra (sólido), text = etiqueta (claro)
   const TIPO_META = {
-    psicologico: { label: '🧠 Psicológico', color: 'rgba(226,75,74,0.55)'  },
-    analitico:   { label: '📐 Analítico',   color: 'rgba(63,138,255,0.55)' },
-    operativo:   { label: '⚙️ Operativo',   color: 'rgba(186,117,23,0.55)' },
-    marcado:     { label: '🗺️ Marcado',     color: 'rgba(124,108,243,0.55)'},
-    sintipo:     { label: '❔ Sin clasificar', color: 'rgba(150,150,150,0.4)' },
+    psicologico: { label: 'Psicológico',    color: '#7F77DD', text: '#afa9ec', icon: 'ti-brain'           },
+    analitico:   { label: 'Analítico',      color: '#378ADD', text: '#85b7eb', icon: 'ti-ruler-measure'   },
+    operativo:   { label: 'Operativo',      color: '#D85A30', text: '#f0997b', icon: 'ti-settings'        },
+    marcado:     { label: 'Marcado',        color: '#BA7517', text: '#ef9f27', icon: 'ti-map-2'           },
+    sintipo:     { label: 'Sin clasificar', color: '#888780', text: '#b4b2a9', icon: 'ti-help-circle'     },
   }
 
   // Fija el título del modal compartido (icono Tabler + texto)
@@ -342,110 +343,129 @@ const Metrics = (() => {
         ${data ? '<i class="ti ti-chevron-right disc-chevron"></i>' : ''}
       </div>`
 
-    // ── Vista raíz: tipo + origen + nombre ───────────────────────────────
+    // ── Vista raíz: rediseño dark ────────────────────────────────────────
     function renderRoot() {
       setModalTitle('ti-alert-triangle', 'Análisis de Errores')
+      const fmtChip = d => {
+        const [, , day] = d.split('-')
+        return `${DAYS[new Date(d + 'T12:00:00').getDay()].toLowerCase()} ${day}`
+      }
 
-      // Impacto en P&L (costo de errores)
-      const imp = extras.impacto
-      const impactoHtml = imp && (imp.diasError > 0 || imp.diasLimpios > 0) ? `
-        <div class="disc-impacto">
-          ${imp.costoErrores > 0 ? `<div class="disc-impacto-main">Tus errores te costaron ≈ <b>-$${imp.costoErrores.toFixed(0)}</b> en stops este período</div>` : ''}
-          <div class="disc-impacto-row">
-            <span>P&L medio día limpio: <b class="${(imp.avgPnlLimpio ?? 0) >= 0 ? 'res-t' : 'res-s'}">${imp.avgPnlLimpio != null ? fmt$(imp.avgPnlLimpio) : '—'}</b> (${imp.diasLimpios} ${imp.diasLimpios === 1 ? 'día' : 'días'})</span>
-            <span>P&L medio día con error: <b class="${(imp.avgPnlConErr ?? 0) >= 0 ? 'res-t' : 'res-s'}">${imp.avgPnlConErr != null ? fmt$(imp.avgPnlConErr) : '—'}</b> (${imp.diasError} ${imp.diasError === 1 ? 'día' : 'días'})</span>
+      // ── Días sin errores + días con errores (asc) ──
+      const dl = extras.diasLimpios
+      let cleanHtml = ''
+      if (dl) {
+        const chips = [...dl.fechasConError].sort((a, b) => a.localeCompare(b))
+          .map(d => `<span class="err-day-chip"><i class="ti ti-calendar-event"></i>${fmtChip(d)}</span>`).join('')
+        cleanHtml = `
+          <div class="err-clean-card">
+            ${dl.racha > 0 ? `<p class="err-racha"><i class="ti ti-flame"></i> Racha: ${dl.racha} día${dl.racha !== 1 ? 's' : ''} limpio${dl.racha !== 1 ? 's' : ''} seguido${dl.racha !== 1 ? 's' : ''}</p>` : ''}
+            <div class="err-clean-head">
+              <div><div class="err-clean-lbl">Días sin errores</div><div class="err-clean-sub">${dl.total} de ${dl.totalSesiones} días operados</div></div>
+              <div class="err-clean-pct">${dl.pct}%</div>
+            </div>
+            <div class="err-track"><div class="err-track-fill" style="width:${dl.pct}%;background:var(--accent)"></div></div>
           </div>
-        </div>` : ''
+          <p class="disc-section-title">Días con errores en el período</p>
+          <div class="err-day-chips">${chips || '<span style="color:var(--accent);font-size:0.82rem">¡Sin días con errores!</span>'}</div>`
+      }
 
-      // Errores recurrentes (≥3 de las últimas 4 semanas)
-      const rec = extras.recurrentes || []
-      const recHtml = rec.length ? `
-        <div class="disc-recurrente">
-          🔁 <b>Recurrente:</b> ${rec.map(r => `${r.nombre} (${r.semanas} de las últimas 4 semanas)`).join(' · ')}
-        </div>` : ''
-
-      // Por tipo, con los nombres de cada tipo anidados (clickable → fechas)
+      // ── Errores por tipo y nombre (tarjeta por tipo, nombres anidados) ──
       const tipoEntries = Object.entries(tipoCount).sort((a, b) => b[1] - a[1])
-      const maxTipo = tipoEntries[0]?.[1] || 1
-      const tipoBarsHtml = tipoEntries.length > 0
+      const tipoHtml = tipoEntries.length > 0
         ? tipoEntries.map(([tipo, count]) => {
             const meta = TIPO_META[tipo] || TIPO_META.sintipo
-            // Nombres dentro de este tipo
             const cMap = {}
-            casuisticas.filter(c => getTipo(c) === tipo)
-              .forEach(c => { cMap[c.casuistica] = (cMap[c.casuistica] || 0) + 1 })
+            casuisticas.filter(c => getTipo(c) === tipo).forEach(c => { cMap[c.casuistica] = (cMap[c.casuistica] || 0) + 1 })
             const names = Object.entries(cMap).map(([label, n]) => ({ label, n })).sort((a, b) => b.n - a.n)
             const maxName = names[0]?.n || 1
-            const namesHtml = names.map(({ label, n }) =>
-              barRow(label, n, maxName, meta.color, '', `data-nombre="${encodeURIComponent(label)}" data-tipo="${tipo}"`)
-            ).join('')
+            const rows = names.map(({ label, n }) => `
+              <div class="err-name-row" data-nombre="${encodeURIComponent(label)}" data-tipo="${tipo}">
+                <span class="err-name-lbl">${label}</span>
+                <div class="err-name-track"><div style="width:${Math.round(n / maxName * 100)}%;height:100%;background:${meta.color}"></div></div>
+                <span class="err-name-count">${n}</span>
+              </div>`).join('')
             return `
-              <div class="disc-tipo-group">
-                ${barRow(meta.label, count, maxTipo, meta.color, '', null)}
-                <div class="disc-tipo-nombres">${namesHtml}</div>
+              <div class="err-type-card">
+                <div class="err-type-head">
+                  <span class="err-type-dot" style="background:${meta.color}"></span>
+                  <span class="err-type-lbl" style="color:${meta.text}">${meta.label}</span>
+                  <span class="err-type-count">${count}</span>
+                </div>
+                ${rows}
               </div>`
           }).join('')
         : '<p style="color:var(--text3);font-size:0.85rem">Sin errores en el período</p>'
 
-      // Origen
+      // ── Origen ──
       const origenLabels = { manual: '✍️ Manual', ia: '🤖 IA', ambos: '🤝 Ambos' }
-      const origenHtml = Object.entries(origenLabels).map(([k, lbl]) => {
-        const n = origenCount[k] || 0
-        return `<span class="disc-origen-chip">${lbl}: <b>${n}</b></span>`
-      }).join('')
+      const origenHtml = Object.entries(origenLabels).map(([k, lbl]) =>
+        `<span class="disc-origen-chip">${lbl}: <b>${origenCount[k] || 0}</b></span>`).join('')
 
-      // Errores por fase del proceso (Bloque 3)
+      // ── Errores por fase del proceso (timeline) ──
       const faseCount = { 1: 0, 2: 0, 3: 0, sin: 0 }
       casuisticas.forEach(c => { const f = c.fase; (f === 1 || f === 2 || f === 3) ? faseCount[f]++ : faseCount.sin++ })
-      const conFase = faseCount[1] + faseCount[2] + faseCount[3]
-      const faseLbl = { 1: FASES[1].label, 2: FASES[2].label, 3: FASES[3].label, sin: 'Sin fase asignada' }
-      const maxFase = Math.max(1, faseCount[1], faseCount[2], faseCount[3], faseCount.sin)
-      const faseHtml = conFase > 0
-        ? `<p class="disc-section-title">Errores por fase del proceso</p>
-           ${['1', '2', '3', 'sin'].filter(k => faseCount[k] > 0)
-             .map(k => barRow(faseLbl[k], faseCount[k], maxFase, FASES[k]?.color || 'rgba(255,255,255,0.2)', '', null)).join('')}`
-        : ''
+      const faseShort = { 1: 'Pre-sesión', 2: 'Lectura', 3: 'Ejecución' }
+      const node = f => {
+        const col = FASES[f].color
+        return `<div class="err-fase-node">
+            <div class="err-fase-circle" style="border:1px solid ${col};color:${col}">${faseCount[f]}</div>
+            <div class="err-fase-name">${faseShort[f]}</div><div class="err-fase-sub">Fase ${f}</div>
+          </div>`
+      }
+      const faseHtml = `
+        <p class="disc-section-title">Errores por fase del proceso</p>
+        <div class="err-fase-timeline">${node(1)}<div class="err-fase-conn"></div>${node(2)}<div class="err-fase-conn"></div>${node(3)}</div>
+        ${faseCount.sin > 0 ? `<p style="color:var(--text3);font-size:0.76rem;margin:-14px 0 22px">+ ${faseCount.sin} sin fase asignada</p>` : ''}`
 
-      // Impulsividad vs falla analítica (Bloque 4) — usa regla_vista
+      // ── Impulsividad vs análisis ──
       const impulsiva = casuisticas.filter(c => c.regla_vista === true).length
       const analitica = casuisticas.filter(c => c.regla_vista === false).length
       const behavHtml = (impulsiva + analitica) > 0 ? `
         <p class="disc-section-title">Reglas: impulsividad vs análisis</p>
-        <div class="disc-behav">
-          <div class="disc-behav-item imp">
-            <div class="disc-behav-num">${impulsiva}</div>
-            <div class="disc-behav-lbl">Vio la regla y la violó<span>impulsividad · disciplina</span></div>
+        <div class="err-behav-grid">
+          <div class="err-behav-card" style="border-color:rgba(226,75,74,0.3)">
+            <div class="err-behav-top"><i class="ti ti-bolt" style="color:var(--red)"></i> Impulsividad</div>
+            <div class="err-behav-num">${impulsiva}</div>
+            <div class="err-behav-sub">Vio la regla y la violó · disciplina</div>
           </div>
-          <div class="disc-behav-item ana">
-            <div class="disc-behav-num">${analitica}</div>
-            <div class="disc-behav-lbl">No la vio a tiempo<span>falla analítica · habilidad</span></div>
+          <div class="err-behav-card" style="border-color:rgba(91,148,201,0.3)">
+            <div class="err-behav-top"><i class="ti ti-eye-off" style="color:#5b94c9"></i> Falla analítica</div>
+            <div class="err-behav-num">${analitica}</div>
+            <div class="err-behav-sub">No la vio a tiempo · habilidad</div>
           </div>
         </div>` : ''
 
-      // Días limpios (movido desde su antiguo modal) — al inicio
-      const dl = extras.diasLimpios
-      const diasLimpiosHtml = dl ? `
-        ${dl.racha > 0 ? `<p style="color:var(--accent);font-size:0.9rem;font-weight:600;margin-bottom:12px">🏆 Racha actual: ${dl.racha} día${dl.racha !== 1 ? 's' : ''} limpio${dl.racha !== 1 ? 's' : ''} consecutivo${dl.racha !== 1 ? 's' : ''}</p>` : ''}
-        <div class="disc-item" style="margin-bottom:14px">
-          <span class="disc-item-label">Días sin errores</span>
-          <div class="disc-bar-wrap">
-            <div class="disc-bar-fill" style="width:${dl.pct}%;background:rgba(29,158,117,0.5)"></div>
+      // ── Recurrentes ──
+      const rec = extras.recurrentes || []
+      const recHtml = rec.length ? `
+        <div class="disc-recurrente">🔁 <b>Recurrente:</b> ${rec.map(r => `${r.nombre} (${r.semanas}/4 sem)`).join(' · ')}</div>` : ''
+
+      // ── Impacto financiero (card destacada, al final) ──
+      const imp = extras.impacto
+      const badge = (lbl, val, pos) => `
+        <div class="err-impact-badge" style="background:${pos ? 'rgba(29,158,117,0.10)' : 'rgba(226,75,74,0.10)'};border:1px solid ${pos ? 'rgba(29,158,117,0.25)' : 'rgba(226,75,74,0.25)'}">
+          <div class="lbl">${lbl}</div>
+          <div class="val" style="color:${pos ? '#5dcaa5' : '#f09595'}">${val}</div>
+        </div>`
+      const impactoHtml = imp && (imp.diasError > 0 || imp.diasLimpios > 0) ? `
+        <div class="err-impact">
+          <div class="err-impact-head">
+            <i class="ti ti-currency-dollar" style="color:var(--red);font-size:1.1rem"></i>
+            <span style="font-size:0.82rem;color:var(--text2)">Tus errores te costaron en stops</span>
+            <span class="err-impact-num">${imp.costoErrores > 0 ? '−$' + imp.costoErrores.toFixed(0) : '—'}</span>
           </div>
-          <span class="disc-count" style="color:var(--accent)">${dl.total}/${dl.totalSesiones} (${dl.pct}%)</span>
-        </div>
-        <p class="disc-section-title">Días con errores en el período</p>
-        ${dl.fechasConError.length > 0
-          ? [...dl.fechasConError].sort((a, b) => a.localeCompare(b)).map(d => {
-              const dow = DAYS[new Date(d + 'T12:00:00').getDay()]
-              return `<div class="disc-date-row"><span class="disc-date-dow">${dow}</span><span class="disc-date-val">${d}</span><span style="color:var(--red);font-size:0.78rem">con errores</span></div>`
-            }).join('')
-          : '<p style="color:var(--accent);font-size:0.85rem">¡Todos los días del período fueron limpios!</p>'}` : ''
+          <div class="err-impact-grid">
+            ${badge('P&L medio · día limpio',    imp.avgPnlLimpio != null ? fmt$(imp.avgPnlLimpio) : '—', (imp.avgPnlLimpio ?? 0) >= 0)}
+            ${badge('P&L medio · día con error', imp.avgPnlConErr != null ? fmt$(imp.avgPnlConErr) : '—', (imp.avgPnlConErr ?? 0) >= 0)}
+          </div>
+        </div>` : ''
 
       contentEl.innerHTML = `
         <div style="padding:16px 20px 20px">
-          ${diasLimpiosHtml}
+          ${cleanHtml}
           <p class="disc-section-title" style="margin-top:18px">Errores por tipo y nombre (${total} registros) <span class="disc-hint">· toca un error para ver sus fechas</span></p>
-          ${tipoBarsHtml}
+          ${tipoHtml}
           <div class="disc-origen-row">${origenHtml}</div>
           ${faseHtml}
           ${behavHtml}
@@ -497,7 +517,7 @@ const Metrics = (() => {
       const backBtn = e.target.closest('.disc-back')
       if (backBtn) { renderRoot(); return }
       if (e.target.closest('.disc-fail-day')) return  // → listener global (imagen)
-      const nombreEl = e.target.closest('.disc-item[data-nombre]')
+      const nombreEl = e.target.closest('[data-nombre]')
       if (nombreEl) {
         renderPorNombre(decodeURIComponent(nombreEl.dataset.nombre), nombreEl.dataset.tipo || null)
         return
