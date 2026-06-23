@@ -266,9 +266,9 @@ const Apex = (() => {
         autoPorFecha[f].push(t)
       })
 
-      // Días manuales: por fecha
+      // Días manuales (tipo='dia'): por fecha, emparejados por número de cuenta
       const manualPorFecha = {}
-      registros.filter(r => r.cuenta_id === cta.id).forEach(r => { manualPorFecha[r.fecha] = r })
+      registros.filter(r => r.account === cta.numero_cuenta).forEach(r => { manualPorFecha[r.trade_date] = r })
 
       // Unión de fechas, orden cronológico
       const fechas = [...new Set([...Object.keys(autoPorFecha), ...Object.keys(manualPorFecha)])].sort()
@@ -288,7 +288,7 @@ const Apex = (() => {
           balanceAnt = bal
           return {
             id: man.id, cuenta_id: cta.id, fecha,
-            pnl_dia: parseFloat(man.pnl_dia), balance: bal, threshold: thr,
+            pnl_dia: parseFloat(man.profit), balance: bal, threshold: thr,
             contratos: man.contratos, nota: man.nota || '', _auto: false,
             trades: dayTrades,
           }
@@ -581,19 +581,42 @@ const Apex = (() => {
         : `Consistencia: <span style="color:var(--text3)">sin días ganadores aún</span>`,
     ]
 
-    // Historial (con espacio del día)
-    const histRows = [...s.regs].reverse().map(r => {
-      const esp = parseFloat(r.balance) - parseFloat(r.threshold)
-      const espC = esp <= 0 ? 'var(--red)' : esp < s.ddMax * 0.25 ? 'var(--red)' : esp < s.ddMax * 0.5 ? 'var(--warning)' : 'var(--accent)'
-      const pnl = parseFloat(r.pnl_dia)
+    // Historial UNIFICADO: una fila por trade (balance corriendo) o por día manual.
+    // Campos visibles: Fecha · Hora · Instrumento · Dirección · Qty · P&L · Balance · Piso · Espacio
+    const histItems = []
+    s.regs.forEach(day => {
+      const dayStart = day.balance - day.pnl_dia   // balance al iniciar el día
+      if (day.trades && day.trades.length) {
+        let run = dayStart
+        ;[...day.trades].sort((a, b) => (a.entry_time || '').localeCompare(b.entry_time || '')).forEach(t => {
+          run = Math.round((run + (parseFloat(t.profit) || 0)) * 100) / 100
+          histItems.push({
+            fecha: day.fecha, hora: (t.entry_time || '').slice(0, 5) || '—',
+            instr: (t.instrument || '').split(' ')[0] || '—', dir: t.market_pos || '—',
+            qty: t.qty ?? '—', pnl: parseFloat(t.profit) || 0,
+            balance: run, piso: day.threshold, espacio: run - day.threshold,
+          })
+        })
+      } else {
+        histItems.push({
+          fecha: day.fecha, hora: '—', instr: '—', dir: '—',
+          qty: day.contratos ?? '—', pnl: day.pnl_dia,
+          balance: day.balance, piso: day.threshold, espacio: day.balance - day.threshold,
+        })
+      }
+    })
+    const histRows = [...histItems].reverse().map(r => {
+      const espC = r.espacio <= 0 ? 'var(--red)' : r.espacio < s.ddMax * 0.25 ? 'var(--red)' : r.espacio < s.ddMax * 0.5 ? 'var(--warning)' : 'var(--accent)'
       return `<tr>
         <td>${r.fecha}</td>
-        <td style="color:${pnl > 0 ? 'var(--accent)' : pnl < 0 ? 'var(--red)' : 'var(--text3)'}">${fmt$(pnl, 2)}</td>
+        <td>${r.hora}</td>
+        <td>${r.instr}</td>
+        <td>${r.dir}</td>
+        <td>${r.qty}</td>
+        <td style="color:${r.pnl > 0 ? 'var(--accent)' : r.pnl < 0 ? 'var(--red)' : 'var(--text3)'}">${fmt$(r.pnl, 2)}</td>
         <td>${fmt$(r.balance, 2)}</td>
-        <td>${fmt$(r.threshold, 2)}</td>
-        <td style="color:${espC}">${fmt$(esp, 0)}</td>
-        <td>${r.contratos ?? '—'}</td>
-        <td class="ax-hist-nota">${r.nota || ''}</td>
+        <td>${fmt$(r.piso, 2)}</td>
+        <td style="color:${espC}">${fmt$(r.espacio, 0)}</td>
       </tr>`
     }).join('')
 
@@ -641,40 +664,15 @@ const Apex = (() => {
       const distChips = Object.entries(porInstr).map(([k, v]) =>
         `<span class="ax-instr-chip ${k === 'NQ' ? 'ax-instr-nq' : ''}">${k}: <b>${v.n}</b> · <b style="color:${v.pnl >= 0 ? 'var(--accent)' : 'var(--red)'}">${fmt$(v.pnl, 0)}</b></span>`).join('')
 
-      const tRows = [...ctaTrades].reverse().map(t => {
-        const p = parseFloat(t.profit) || 0
-        const base = (t.instrument || '?').split(' ')[0]
-        const resCls = t.resultado === 'target' ? 'res-t' : t.resultado === 'stop' ? 'res-s' : ''
-        const qtyExc = maxApex && (parseInt(t.qty) || 0) > maxApex
-        return `<tr class="${qtyExc ? 'ax-row-exc' : ''}">
-          <td>${t.trade_date}</td>
-          <td>${(t.entry_time || '').slice(0, 5)}</td>
-          <td><span class="ax-instr-tag ${base === 'NQ' ? 'ax-instr-nq' : ''}">${base}</span></td>
-          <td>${t.market_pos || ''}</td>
-          <td>${qtyExc ? `<b style="color:var(--red)">${t.qty} ⚠</b>` : (t.qty ?? '—')}</td>
-          <td style="color:${p > 0 ? 'var(--accent)' : p < 0 ? 'var(--red)' : 'var(--text3)'}">${fmt$(p, 2)}</td>
-          <td style="color:var(--red)">${t.mae != null ? fmt$(-Math.abs(t.mae), 0) : '—'}</td>
-          <td style="color:var(--accent)">${t.mfe != null ? fmt$(Math.abs(t.mfe), 0) : '—'}</td>
-          <td>${t.bars != null ? t.bars + ' min' : '—'}</td>
-          <td class="${resCls}">${t.resultado || ''}</td>
-        </tr>`
-      }).join('')
-
       tradingHtml = `
         <div class="ax-det-trades-card">
-          <div class="expd-matrix-title"><i class="ti ti-list-details"></i> Trading History <span class="expd-matrix-hint">${ctaTrades.length} trades auto-importados de NinjaTrader</span></div>
+          <div class="expd-matrix-title"><i class="ti ti-list-details"></i> Métricas de trades <span class="expd-matrix-hint">${ctaTrades.length} trades auto-importados de NinjaTrader</span></div>
           ${alertaNQ}
           ${alertaCtos}
           <div class="ax-det-tmetrics">
             ${chips.map(c => `<div class="expd-kpi"><div class="expd-kpi-label">${c.l}</div><div class="expd-kpi-value" style="color:${c.c};font-size:1.2rem">${c.v}</div></div>`).join('')}
           </div>
           <div class="ax-instr-row">${distChips}</div>
-          <div style="overflow-x:auto;margin-top:10px">
-            <table class="ax-hist-table">
-              <thead><tr><th>Fecha</th><th>Hora</th><th>Instr</th><th>Dir</th><th>Qty</th><th>P&L</th><th>MAE</th><th>MFE</th><th>Dur</th><th>Resultado</th></tr></thead>
-              <tbody>${tRows}</tbody>
-            </table>
-          </div>
         </div>`
     }
 
@@ -734,11 +732,11 @@ const Apex = (() => {
       ${tradingHtml}
 
       <div class="ax-det-hist-card">
-        <div class="expd-matrix-title"><i class="ti ti-history"></i> Historial diario</div>
+        <div class="expd-matrix-title"><i class="ti ti-history"></i> Historial</div>
         <div style="overflow-x:auto">
-          ${s.regs.length ? `
+          ${histItems.length ? `
             <table class="ax-hist-table">
-              <thead><tr><th>Fecha</th><th>P&L</th><th>Balance</th><th>Piso</th><th>Espacio</th><th>Ctos</th><th>Nota</th></tr></thead>
+              <thead><tr><th>Fecha</th><th>Hora</th><th>Instr</th><th>Dir</th><th>Qty</th><th>P&L</th><th>Balance</th><th>Piso</th><th>Espacio</th></tr></thead>
               <tbody>${histRows}</tbody>
             </table>` : '<p style="color:var(--text3);font-size:0.82rem;padding:8px 0">Sin registros aún</p>'}
         </div>
@@ -892,9 +890,11 @@ const Apex = (() => {
     if (!fecha) { Toast.show('Selecciona la fecha', 'warning'); return }
     if (isNaN(pnl)) { Toast.show('Ingresa el P&L del día', 'warning'); return }
     if (isNaN(balance) || isNaN(threshold)) { Toast.show('Balance y threshold son obligatorios', 'warning'); return }
+    const cta = cuentas.find(c => c.id === cuentaId)
+    if (!cta?.numero_cuenta) { Toast.show('La cuenta necesita número de cuenta para registrar días', 'warning'); return }
     try {
       await DB.saveApexRegistro({
-        cuenta_id: cuentaId, fecha, pnl_dia: pnl, balance, threshold,
+        account: cta.numero_cuenta, fecha, pnl_dia: pnl, balance, threshold,
         contratos: parseInt(document.getElementById('apexDiaContratos').value) || null,
         nota: document.getElementById('apexDiaNota').value.trim() || null,
       })
@@ -907,11 +907,25 @@ const Apex = (() => {
   // ── Carga e init ─────────────────────────────────────────────────────────
 
   async function loadData() {
-    ;[cuentas, registros, trades, mainTrades] = await Promise.all([
-      DB.getApexCuentas(), DB.getApexRegistros(),
-      DB.getApexTrades().catch(() => []),  // tabla puede no existir aún
-      DB.getTrades().catch(() => []),      // journal: días recientes de la PA
+    let apexRows, regsOld
+    ;[cuentas, apexRows, regsOld, mainTrades] = await Promise.all([
+      DB.getApexCuentas(),
+      DB.getApexTrades().catch(() => []),      // tabla única: filas tipo 'trade' y 'dia'
+      DB.getApexRegistros().catch(() => []),   // fallback pre-migración (tabla vieja)
+      DB.getTrades().catch(() => []),          // journal: días recientes de la PA
     ])
+    const dias = (apexRows || []).filter(r => r.tipo === 'dia')
+    trades     = (apexRows || []).filter(r => r.tipo !== 'dia')
+    if (dias.length) {
+      // Post-migración: días desde la tabla unificada
+      registros = dias
+    } else {
+      // Pre-migración: días desde apex_registros, mapeados a la forma unificada
+      const numById = {}; cuentas.forEach(c => { numById[c.id] = c.numero_cuenta })
+      registros = (regsOld || []).map(r => ({
+        ...r, trade_date: r.fecha, profit: r.pnl_dia, account: numById[r.cuenta_id],
+      }))
+    }
     buildSeries()
   }
 

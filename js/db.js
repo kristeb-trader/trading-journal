@@ -634,6 +634,8 @@ const DB = {
     return data
   },
 
+  // Lector de transición: días viejos en apex_registros (pre-unificación).
+  // Tras correr la migración y dropear la tabla, esto devuelve [] y se ignora.
   async getApexRegistros() {
     const { data, error } = await supa
       .from('apex_registros')
@@ -643,15 +645,20 @@ const DB = {
     return data
   },
 
-  async saveApexRegistro(payload) {
-    const { error } = await supa
-      .from('apex_registros')
-      .upsert(payload, { onConflict: 'cuenta_id,fecha' })
+  // Día manual: vive en apex_trades como tipo='dia' (account = número de cuenta).
+  // Idempotente por (account, fecha): borra el día previo y reinserta.
+  async saveApexRegistro({ account, fecha, pnl_dia, balance, threshold, contratos, nota }) {
+    if (!account) throw new Error('La cuenta necesita número de cuenta para registrar días')
+    await supa.from('apex_trades').delete().eq('account', account).eq('trade_date', fecha).eq('tipo', 'dia')
+    const { error } = await supa.from('apex_trades').insert({
+      account, trade_date: fecha, profit: pnl_dia, balance, threshold,
+      contratos: contratos ?? null, nota: nota ?? null, tipo: 'dia',
+    })
     if (error) throw error
   },
 
   async deleteApexRegistro(id) {
-    const { error } = await supa.from('apex_registros').delete().eq('id', id)
+    const { error } = await supa.from('apex_trades').delete().eq('id', id)
     if (error) throw error
   },
 
