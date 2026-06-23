@@ -19,6 +19,20 @@ const Apex = (() => {
     quemada:      { label: 'Quemada',          cls: 'ax-dead' },
   }
 
+  // Estado DERIVADO del balance (lo que se muestra). pa/aprobada/quemada son
+  // terminales y se respetan tal cual (manuales); el resto se calcula en vivo.
+  function estadoView(cta, s) {
+    if (['pa', 'aprobada', 'quemada'].includes(cta.estado)) return ESTADOS[cta.estado] || ESTADOS.evaluacion
+    const safety = cta.safety_net_balance != null ? parseFloat(cta.safety_net_balance) : null
+    const f2 = s.inicial + 0.25 * parseFloat(cta.profit_target)
+    if (s.espacio <= 0)                 return { label: 'En riesgo',         cls: 'ax-crit' }
+    if (s.balance >= s.targetBal)       return { label: 'Target alcanzado',  cls: 'ax-ok'   }
+    if (safety && s.balance >= safety)  return { label: 'Safety net',        cls: 'ax-safe' }
+    if (s.balance >= f2)                return { label: 'Acelerar',          cls: 'ax-rec'  }
+    if (s.balance >= s.inicial)         return { label: 'En marcha',         cls: 'ax-ev'   }
+    return { label: 'En recuperación', cls: 'ax-rec' }
+  }
+
   const fmt$ = (v, dec = 0) => {
     const n = parseFloat(v) || 0
     const s = Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec })
@@ -99,12 +113,60 @@ const Apex = (() => {
     const f2 = s.inicial + 0.25 * parseFloat(cta.profit_target)
     const f3 = cta.safety_net_balance != null ? parseFloat(cta.safety_net_balance) : s.targetBal
     let fase, faseLabel, faseDesc
-    if (s.balance >= f3)      { fase = 3; faseLabel = 'Cerrar seguro';    faseDesc = 'Piso congelado, mucho colchón fijo. Empuje final al target sin avaricia.' }
-    else if (s.balance >= f2) { fase = 2; faseLabel = 'Acelerar';         faseDesc = 'El piso ya sube contigo. Escala contratos con el colchón.' }
-    else                      { fase = 1; faseLabel = 'Construir colchón'; faseDesc = 'Cerca del piso. Tamaño mínimo, aléjate del suelo antes de empujar.' }
+    if (s.balance >= f3) {
+      fase = 3; faseLabel = 'Cerrar seguro'
+      faseDesc = `Piso congelado en ${fmt$(s.threshold)} y colchón de ${fmt$(colchon)}. Faltan ${fmt$(faltan)} para el target — empuje final con ${contratos} MNQ, sin avaricia.`
+    } else if (s.balance >= f2) {
+      fase = 2; faseLabel = 'Acelerar'
+      faseDesc = `El piso ya sube contigo (${fmt$(s.threshold)}). Con ${fmt$(colchon)} de colchón puedes operar ${contratos} MNQ y apuntar a +${fmt$(metaDia)}/día (${fmt$(faltan)} al target).`
+    } else {
+      fase = 1; faseLabel = 'Construir colchón'
+      faseDesc = `A ${fmt$(colchon)} del piso (${fmt$(s.threshold)}). Tamaño mínimo (${contratos} MNQ) hasta alejarte; sube a ${subirA} cuando llegues a ${fmt$(balSubir)}.`
+    }
 
     return { perfil, ritmo, colchon, stopRef, riesgoTrade, perdidaDia, contratos, maxApex,
       metaDia, diasRest, faltan, escalones, subirA, balSubir, balBajar, fase, faseLabel, faseDesc }
+  }
+
+  // Lectura reactiva del último día operado: compara lo que hiciste contra el plan
+  function planFeedback(cta, s, p) {
+    const trades = tradesDe(cta.id).filter(t => t.trade_date)
+    if (!trades.length) return ''
+    const lastDate = trades.map(t => t.trade_date).sort().slice(-1)[0]
+    const today = trades.filter(t => t.trade_date === lastDate)
+    if (!today.length) return ''
+
+    // Tamaño en MNQ-equivalente (1 NQ = 10 MNQ por el $/punto)
+    const mnqEq = t => { const base = (t.instrument || '').split(' ')[0]; const vp = base === 'NQ' ? 20 : 2; return (parseInt(t.qty) || 1) * (vp / 2) }
+    const maxSize    = Math.max(...today.map(mnqEq))
+    const maxAdverse = Math.max(0, ...today.map(t => Math.abs(parseFloat(t.mae) || 0)))
+    const pnlDia     = today.reduce((a, t) => a + (parseFloat(t.profit) || 0), 0)
+    const sizeTxt    = maxSize % 1 ? maxSize.toFixed(1) : maxSize
+
+    const rule = (txt, col, icon) => `<div class="ax-plan-rule" style="color:${col}"><i class="ti ${icon}"></i> ${txt}</div>`
+    const out = []
+
+    // Tamaño operado vs plan
+    if (maxSize > p.contratos + 0.01)
+      out.push(rule(`Hoy operaste hasta <b>${sizeTxt} MNQ-eq</b>, y el plan sugiere <b>${p.contratos}</b>. Estás sobre-dimensionado — baja el tamaño.`, 'var(--red)', 'ti-arrow-down-circle'))
+    else
+      out.push(rule(`Tamaño de hoy (máx <b>${sizeTxt} MNQ-eq</b>) dentro del plan (${p.contratos}).`, 'var(--accent)', 'ti-check'))
+
+    // Riesgo por trade (excursión adversa real vs riesgo/trade del plan)
+    if (p.riesgoTrade > 0 && maxAdverse > p.riesgoTrade * 1.25)
+      out.push(rule(`Un trade llegó a <b>−${fmt$(maxAdverse)}</b> en contra (tu riesgo/trade: ${fmt$(p.riesgoTrade)}). Ajusta stop o tamaño.`, 'var(--warning)', 'ti-alert-triangle'))
+
+    // Pérdida del día
+    if (p.perdidaDia > 0 && pnlDia < -p.perdidaDia)
+      out.push(rule(`El P&L de hoy (<b>${fmt$(pnlDia)}</b>) superó tu pérdida máx del día (${fmt$(p.perdidaDia)}). Para y revisa.`, 'var(--red)', 'ti-hand-stop'))
+
+    // Ritmo vs meta del día
+    if (p.metaDia > 0 && pnlDia >= p.metaDia)
+      out.push(rule(`Hoy hiciste <b>+${fmt$(pnlDia)}</b> ≥ tu meta (${fmt$(p.metaDia)}). Asegura: baja tamaño o cierra el día.`, 'var(--accent)', 'ti-flag'))
+    else if (pnlDia > 0)
+      out.push(rule(`Vas <b>+${fmt$(pnlDia)}</b> hoy; faltan ${fmt$(Math.max(0, p.metaDia - pnlDia))} para la meta del día.`, 'var(--text2)', 'ti-trending-up'))
+
+    return `<div class="ax-plan-feedback"><div class="ax-plan-esc-title">Lectura de hoy (${lastDate})</div>${out.join('')}</div>`
   }
 
   function planPanelHtml(cta, s, cfg) {
@@ -149,6 +211,7 @@ const Apex = (() => {
       <p class="ax-plan-desc">${p.faseDesc} <span style="color:var(--text3)">· stop ref ${fmt$(p.stopRef)}/MNQ · ${p.diasRest} días al ritmo ${p.ritmo.label.toLowerCase()}</span></p>
       ${kpis}
       <div class="ax-plan-rules">${reglas}</div>
+      ${noColchon ? '' : planFeedback(cta, s, p)}
       ${noColchon ? '' : `<div class="ax-plan-esc-wrap"><div class="ax-plan-esc-title">Escalones de contratos hacia ${fmt$(s.targetBal)}</div><div class="ax-plan-esc">${escHtml}</div></div>`}`
   }
 
@@ -368,7 +431,7 @@ const Apex = (() => {
 
     const cardHtml = cta => {
       const s = calc(cta)
-      const est = ESTADOS[cta.estado] || ESTADOS.evaluacion
+      const est = estadoView(cta, s)
       const espColor = s.espacio <= 0 ? 'var(--red)' : s.riesgo === 'alto' ? 'var(--red)' : s.riesgo === 'medio' ? 'var(--warning)' : 'var(--accent)'
       const bordeCls = !cta.activa ? '' : s.riesgo === 'critico' ? 'ax-borde-crit' : s.riesgo === 'alto' ? 'ax-borde-crit' : s.riesgo === 'medio' ? 'ax-borde-warn' : 'ax-borde-ok'
 
@@ -475,7 +538,7 @@ const Apex = (() => {
     detalleCuentaId = cuentaId
     const s = calc(cta)
     const planCfg = getPlanCfg(cta.id)
-    const est = ESTADOS[cta.estado] || ESTADOS.evaluacion
+    const est = estadoView(cta, s)
     const esPACuenta = ['pa', 'aprobada'].includes(cta.estado)
 
     // KPIs

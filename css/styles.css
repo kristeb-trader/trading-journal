@@ -1673,6 +1673,7 @@ body.modal-open { overflow: hidden; }
 .ax-plan-klabel { font-size: 0.7rem; color: var(--text3); }
 .ax-plan-kval { font-size: 1.15rem; font-weight: 600; }
 .ax-plan-rules { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.ax-plan-feedback { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; padding: 10px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; }
 .ax-plan-rule { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text2); }
 .ax-plan-rule b { color: var(--text); font-weight: 600; }
 .ax-plan-esc-title { font-size: 0.74rem; color: var(--text3); margin-bottom: 8px; }
