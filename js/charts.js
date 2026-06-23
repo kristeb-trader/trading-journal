@@ -340,12 +340,13 @@ const Charts = (() => {
       options: { ...baseOptions, cutout:'70%', scales:{}, layout:{ padding:6 },
         plugins: { ...baseOptions.plugins,
           legend:{ display:true, position:'bottom',
-            labels:{ color:'#E4E3DA', usePointStyle:true, pointStyle:'circle', padding:18, font:{ size:13 },
+            labels:{ color:'#F4F3EF', usePointStyle:true, pointStyle:'circle', padding:18, font:{ size:13 },
               generateLabels: chart => {
                 const ds = chart.data.datasets[0]
                 return chart.data.labels.map((l, i) => ({
                   text: `${l}  ·  ${ds.data[i]} (${tot ? Math.round(ds.data[i] / tot * 100) : 0}%)`,
-                  fillStyle: ds.backgroundColor[i], strokeStyle: 'transparent', pointStyle: 'circle', index: i,
+                  fillStyle: ds.backgroundColor[i], strokeStyle: 'transparent', pointStyle: 'circle',
+                  fontColor: '#F4F3EF', index: i,
                 }))
               } } },
           tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => {
