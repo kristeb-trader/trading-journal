@@ -712,14 +712,20 @@ const Metrics = (() => {
       fechasConError: [...fechasConError],
     }
 
-    // ── Dejé de ganar (errores con resultado=T en días no operados) ──────
-    const perdidas = periodCasuisticas.filter(c => c.resultado === 'T')
-    const ganadas  = periodCasuisticas.filter(c => c.resultado === 'S')
+    // ── Dejé de ganar (setups que NO tomaste: solo días no operados) ──────
+    // Restringido a días con no_opero o setup_valido_no_tomado; en días operados
+    // el T/S de un error mezcla conceptos (sí entraste), así que no cuentan aquí.
+    const noOperoDates = new Set(
+      activeSesiones.filter(s => s.no_opero || s.setup_valido_no_tomado).map(s => s.sesion_date)
+    )
+    const dgCas    = periodCasuisticas.filter(c => noOperoDates.has(c.sesion_date))
+    const perdidas = dgCas.filter(c => c.resultado === 'T')
+    const ganadas  = dgCas.filter(c => c.resultado === 'S')
     const dejeGanarStat = {
       total: perdidas.length + ganadas.length,
       targets: perdidas.length,
       stops: ganadas.length,
-      items: periodCasuisticas
+      items: dgCas
         .filter(c => c.resultado === 'T' || c.resultado === 'S')
         .sort((a, b) => b.sesion_date.localeCompare(a.sesion_date)),
     }
