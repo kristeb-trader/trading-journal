@@ -397,11 +397,6 @@ const Metrics = (() => {
           }).join('')
         : '<p style="color:var(--text3);font-size:0.85rem">Sin errores en el período</p>'
 
-      // ── Origen ──
-      const origenLabels = { manual: '✍️ Manual', ia: '🤖 IA', ambos: '🤝 Ambos' }
-      const origenHtml = Object.entries(origenLabels).map(([k, lbl]) =>
-        `<span class="disc-origen-chip">${lbl}: <b>${origenCount[k] || 0}</b></span>`).join('')
-
       // ── Errores por fase del proceso (timeline) ──
       const faseCount = { 1: 0, 2: 0, 3: 0, sin: 0 }
       casuisticas.forEach(c => { const f = c.fase; (f === 1 || f === 2 || f === 3) ? faseCount[f]++ : faseCount.sin++ })
@@ -466,7 +461,6 @@ const Metrics = (() => {
           ${cleanHtml}
           <p class="disc-section-title" style="margin-top:18px">Errores por tipo y nombre (${total} registros) <span class="disc-hint">· toca un error para ver sus fechas</span></p>
           ${tipoHtml}
-          <div class="disc-origen-row">${origenHtml}</div>
           ${faseHtml}
           ${behavHtml}
           ${recHtml}
