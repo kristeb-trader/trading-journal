@@ -9,7 +9,7 @@ Dashboard personal para registro y análisis de operativa diaria en NQ/MNQ Futur
 | Capa | Tecnología |
 |---|---|
 | Frontend | HTML + JS vanilla (sin frameworks) — GitHub Pages |
-| Base de datos | Supabase (PostgreSQL) — RLS deshabilitado (proyecto personal) |
+| Base de datos | Supabase (PostgreSQL) — **RLS activado** (web vía login `authenticated`; bot/worker/NT8 con `service_role`) |
 | Proxy IA | Cloudflare Worker `broad-hall-c53f.kristerock.workers.dev` |
 | Análisis IA | Claude API `claude-sonnet-4-6` |
 | Imágenes | Cloudinary (cloud: `dq4n7bjta`, preset: `trading-journal`) |
@@ -84,12 +84,16 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 - Nav mobile scrollable horizontal
 
 ### Pendientes
-- **🔒 Blindaje de seguridad (RLS + Auth) — EN CURSO** (2026-06-24). La BD tiene
-  RLS off y la `anon key` es pública (GitHub Pages gratis) → cualquiera con la URL
-  puede leer/editar/borrar todo. Plan completo y fases en `docs/plan-seguridad-rls.md`.
-  Estado: Fase 0 (backup con pg_dump) en curso; luego login (Supabase Auth) → RLS →
-  bot/Worker con `service_role` → indicadores NT8 vía Worker. **NO usar "Resolve
-  issue" de Supabase** (rompe todo). El usuario NO tiene backup aún.
+- **🔒 Blindaje de seguridad (RLS + Auth) — COMPLETADO** (2026-06-24). RLS activo
+  en todas las tablas; web vía login Supabase Auth (rol `authenticated`); bot,
+  Worker `/api/session` e indicadores NT8 con `service_role`. `anon` bloqueada y
+  verificada (anon key pública inservible). Plan y fases en `docs/plan-seguridad-rls.md`.
+  **NO usar "Resolve issue" de Supabase** (rompe las políticas). Tablas nuevas:
+  activar RLS + política `auth_all` (ver `docs/migrations/2026-06-24-fase2-activar-rls.sql`).
+  · **Pendiente operativo**: corregir el archivo local `Documentos\NinjaTrader 8\
+    supabase-service-key.txt` (pegar la `service_role`) y verificar export NT8 — el
+    código ya usa service_role pero no se pudo probar (sin más trades ese día). Si el
+    Output dice "⚠️ Falta la service_role key" → revisar nombre/ruta del .txt.
 - **Unificación tablas Apex — drop pendiente**: `apex_registros` + `apex_trades` ya
   se unificaron en `apex_trades` (filas `tipo='trade'`/`'dia'`). Falta ejecutar
   `drop table apex_registros;` (comentado en `docs/migrations/2026-06-23-apex-unificar-tablas.sql`)
