@@ -1,7 +1,10 @@
 # Plan — Blindaje de seguridad (RLS + Auth)
 
-> Estado: **EN CURSO** (iniciado 2026-06-24). Disparado por una alerta de
-> Supabase: "RLS Disabled in Public" en todas las tablas.
+> Estado: **COMPLETADO** (2026-06-24). RLS activo en todas las tablas; `anon`
+> bloqueada y verificada. Único pendiente operativo: corregir el archivo local
+> `supabase-service-key.txt` de los indicadores NT8 (export no verificado por no
+> poder operar más trades ese día; el código ya usa service_role).
+> Disparado por una alerta de Supabase: "RLS Disabled in Public" en todas las tablas.
 
 ## Problema
 - Las tablas tienen **RLS desactivado** y la **`anon key` viaja en el JS público**
@@ -50,13 +53,16 @@ autenticados. La `anon key` sola queda inservible.
         → `2026-06-24-grants-authenticated.sql`.
       · NO usar "Resolve issue" de Supabase: activa RLS sin políticas y rompe el
         acceso. Quedó RLS off de baseline (`2026-06-24-disable-rls-baseline.sql`).
-- [~] **Fase 2 — RLS en todas las tablas** (SQL LISTO 2026-06-24, pendiente correr).
-      Migración dinámica `2026-06-24-fase2-activar-rls.sql`: activa RLS + política
-      `auth_all` (`for all to authenticated using (true) with check (true)`) en
-      todas las tablas de `public`. `anon` sin políticas → bloqueada. `service_role`
-      (bot/worker/indicadores) la ignora. Rollback: `2026-06-24-fase2-rollback-rls.sql`.
-      Tras correrla: verificar web logueada, bot (`/sesion`), y export NT8 cuando
-      se corrija el archivo de la key.
+- [x] **Fase 2 — RLS en todas las tablas** (HECHO 2026-06-24). Migración dinámica
+      `2026-06-24-fase2-activar-rls.sql`: borra políticas viejas → activa RLS →
+      crea solo `auth_all` (`for all to authenticated using/with check true`) en
+      todas las tablas de `public`. Rollback: `2026-06-24-fase2-rollback-rls.sql`.
+      · Gotcha resuelto: la 1ª versión solo creaba `auth_all` sin borrar políticas
+        viejas permisivas de `anon` → con RLS on, anon SEGUÍA entrando. Se corrigió
+        borrando todas las políticas antes de crear la nueva.
+      · Verificado con la anon key pública: LEER trades/sesiones/apex_cuentas → `[]`;
+        INSERT → 401; DELETE → 204 sin efecto. anon key inservible. Web logueada y
+        bot siguen OK.
 - [x] **Fase 3 — Bot + Worker `/api/session`** (HECHO 2026-06-24). Verificado:
       `/sesion` + `/stats` en el bot y guardado de sesión en la web funcionan con
       `service_role`.
