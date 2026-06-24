@@ -307,14 +307,13 @@ const Calendar = (() => {
     const totalPnl = Object.values(tradesCache).flat()
       .reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
     const monthName = MONTHS_ES[currentMonth - 1]
-    for (let i = 0; i < 4; i++) html += `<div class="cal-cell empty-cell"></div>`
+    const totalTrades = Object.values(tradesCache).flat().length
+    const totalDias = Object.keys(tradesCache).length
     html += `
-      <div class="cal-cell cal-week-summary ${totalPnl >= 0 ? 'week-positive' : 'week-negative'}">
-        <div class="week-label" style="font-size:0.8rem;color:${totalPnl >= 0 ? 'var(--accent)' : 'var(--red)'};letter-spacing:0.04em">P&amp;L Neto</div>
-        <div class="week-trades" style="font-size:0.78rem;color:var(--text1);font-weight:600">${monthName} ${currentYear}</div>
-      </div>
-      <div class="cal-cell cal-week-summary cal-month-total ${totalPnl >= 0 ? 'week-positive' : 'week-negative'}">
-        <div class="week-pnl ${totalPnl >= 0 ? 'positive' : 'negative'} month-total-amount">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(0)}</div>
+      <div class="cal-month-total-widget ${totalPnl >= 0 ? 'positive' : 'negative'}">
+        <span class="cmt-label">Total ${monthName} ${currentYear}</span>
+        <span class="cmt-sub">${totalDias} día${totalDias !== 1 ? 's' : ''} · ${totalTrades} trade${totalTrades !== 1 ? 's' : ''}</span>
+        <span class="cmt-amount ${totalPnl >= 0 ? 'positive' : 'negative'}">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(0)}</span>
       </div>`
 
     grid.innerHTML = html
