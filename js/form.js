@@ -632,12 +632,26 @@ const SessionForm = (() => {
     document.getElementById('clearForm').addEventListener('click', clearForm)
     document.getElementById('editarSesionBtn')?.addEventListener('click', () => setMode('edit'))
 
-    // Cargar casuísticas y auto-calcular retroceso al cambiar fecha
+    // Navegar a una fecha: carga la sesión completa de ese día (o form limpio).
+    async function goToDate(date) {
+      if (!date) return
+      let sesion = null
+      try { sesion = await DB.getSesionByDate(date) } catch (_) {}
+      prefill(sesion, date)
+    }
+    // Mover ±1 día con las flechas (◀ atrás / ▶ adelante)
+    function shiftDate(delta) {
+      const cur = document.getElementById('sesionDate').value || new Date().toISOString().slice(0, 10)
+      const d = new Date(cur + 'T00:00:00')
+      d.setDate(d.getDate() + delta)
+      goToDate(d.toISOString().slice(0, 10))
+    }
+    document.getElementById('sesionDatePrev')?.addEventListener('click', () => shiftDate(-1))
+    document.getElementById('sesionDateNext')?.addEventListener('click', () => shiftDate(1))
+
+    // Cambiar la fecha con el selector carga ese día (igual que las flechas)
     document.getElementById('sesionDate').addEventListener('change', () => {
-      const date = document.getElementById('sesionDate').value
-      loadCasuisticasForDate(date)
-      updateRetroceso(date)
-      loadExperimentos(date)
+      goToDate(document.getElementById('sesionDate').value)
     })
 
     // Auto-invalidar checklist de 5 velas si velas > 5

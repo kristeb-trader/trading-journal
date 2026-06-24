@@ -227,16 +227,28 @@
 
         <div class="form-container">
           <form id="sessionForm" autocomplete="off">
+
+          <!-- Navegación de fecha: FUERA del fieldset para que las flechas y el
+               selector funcionen también en modo lectura (días ya guardados). -->
+          <div class="form-group session-date-nav">
+            <label for="sesionDate">Fecha de la sesión</label>
+            <div class="date-stepper">
+              <button type="button" class="btn-icon" id="sesionDatePrev" title="Día anterior">
+                <i class="ti ti-chevron-left"></i>
+              </button>
+              <input type="date" id="sesionDate" name="sesion_date" required>
+              <button type="button" class="btn-icon" id="sesionDateNext" title="Día siguiente">
+                <i class="ti ti-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
           <fieldset id="sessionFieldset">
 
-            <!-- Fecha + No operé -->
+            <!-- No operé -->
             <div class="form-row">
               <div class="form-group">
-                <label for="sesionDate">Fecha de la sesión</label>
-                <input type="date" id="sesionDate" name="sesion_date" required>
-              </div>
-              <div class="form-group" style="justify-content: flex-end; padding-top: 22px;">
-                <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; padding-top:4px;">
                   <label class="toggle-switch">
                     <input type="checkbox" id="noOpero" name="no_opero">
                     <span class="toggle-slider"></span>

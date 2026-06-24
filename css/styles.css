@@ -648,6 +648,15 @@ small { font-size: 0.82em; }
 .form-group label { font-size: 0.82rem; color: var(--text2); font-weight: 500; }
 .form-group.hidden { display: none; }
 
+/* Navegación de fecha en Registrar: input + flechas (estilo del calendario) */
+.session-date-nav { max-width: 360px; }
+.date-stepper { display: flex; align-items: center; gap: 8px; }
+.date-stepper input[type="date"] { flex: 1 1 auto; min-width: 0; }
+.date-stepper .btn-icon {
+  flex: 0 0 auto; width: 38px; height: 38px;
+  border: 1px solid var(--border);
+}
+
 input[type="text"], input[type="number"], input[type="date"],
 select, textarea {
   background: var(--bg3); border: 1px solid var(--border);
