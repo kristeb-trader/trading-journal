@@ -868,17 +868,20 @@ const Metrics = (() => {
     const dates = Object.keys(byDate).sort()
     let cum = 0
     const data = dates.map(d => { cum += byDate[d]; return parseFloat(cum.toFixed(2)) })
-    const last = data[data.length - 1] || 0
-    const grd = ctx.getContext('2d').createLinearGradient(0, 0, 0, 240)
-    grd.addColorStop(0, 'rgba(29,158,117,0.5)'); grd.addColorStop(1, 'rgba(29,158,117,0.02)')
+    const UP = '#1D9E75', DOWN = '#E24B4A'
     calEquityInst = new Chart(ctx, {
       type: 'line',
       data: { labels: dates.map(d => d.slice(5)), datasets: [{
         label: 'P&L Acumulado', data,
-        borderColor: last >= 0 ? '#1D9E75' : '#E24B4A',
-        backgroundColor: last >= 0 ? grd : 'rgba(226,75,74,0.18)',
+        borderColor: UP,
+        // Verde por encima de 0, rojo por debajo: relleno partido en y=0 y
+        // segmentos de línea coloreados según el signo del tramo.
+        fill: { target: { value: 0 }, above: 'rgba(29,158,117,0.18)', below: 'rgba(226,75,74,0.18)' },
+        segment: { borderColor: c => (c.p0.parsed.y < 0 || c.p1.parsed.y < 0) ? DOWN : UP },
         borderWidth: 3, pointRadius: dates.length > 25 ? 2 : 4, pointHoverRadius: 7,
-        pointBackgroundColor: last >= 0 ? '#1D9E75' : '#E24B4A', tension: 0.3, fill: true,
+        pointBackgroundColor: data.map(v => v < 0 ? DOWN : UP),
+        pointBorderColor: data.map(v => v < 0 ? DOWN : UP),
+        tension: 0.3,
       }]},
       options: {
         responsive: true, maintainAspectRatio: false,
