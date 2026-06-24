@@ -53,8 +53,22 @@ autenticados. La `anon key` sola queda inservible.
 - [ ] **Fase 2 — RLS en las ~18 tablas**: activar RLS + política
       `to authenticated using (true) with check (true)`. `anon` sin políticas
       (bloqueada). *(Se hace al final del cutover.)*
-- [ ] **Fase 3 — Bot + Worker `/api/session`**: escribir con `service_role`
-      (secreto del Worker), no con `anon`.
+- [~] **Fase 3 — Bot + Worker `/api/session`**: escribir con `service_role`
+      (secreto del Worker), no con `anon`. (EN CURSO 2026-06-24)
+      · Bot (`TelegramBot/worker.js`): código cambiado — usa `env.SUPABASE_SERVICE_ROLE`
+        en vez de `env.SUPABASE_KEY` (lecturas y escrituras). Falta deploy + crear
+        la secret en Cloudflare.
+      · Worker `/api/session` (no versionado): pendiente que el usuario apunte su
+        consulta a `service_role`.
+      · Pasos manuales del usuario:
+        1. Supabase → Settings → API → copiar `service_role` key.
+        2. Cloudflare → Worker bot → Settings → Variables → crear secret
+           `SUPABASE_SERVICE_ROLE` (encrypted) con esa key. Mantener `SUPABASE_KEY`
+           por ahora no hace daño; se puede borrar tras verificar.
+        3. Re-deploy del Worker bot.
+        4. Igual en el Worker `/api/session`: que use la `service_role`.
+        5. Verificar (con RLS aún off): `/sesion` y `/stats` en el bot + guardar
+           sesión desde la web.
 - [ ] **Fase 4 — Indicadores NT8**: enviar a través de un endpoint del Worker
       (con `service_role`) en vez de POST directo con `anon`. Requiere recompilar
       e importar los .cs.

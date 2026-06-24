@@ -3,10 +3,12 @@
  * Cloudflare Worker + KV para registro de sesiones diarias
  *
  * Variables de entorno requeridas (Cloudflare Dashboard → Worker → Settings → Variables):
- *   BOT_TOKEN       — Token del bot de @BotFather
- *   SUPABASE_URL    — https://jothoslozctflfrnysrx.supabase.co
- *   SUPABASE_KEY    — anon key de Supabase
- *   ALLOWED_CHAT_ID — Tu chat ID de Telegram (obtener con @userinfobot)
+ *   BOT_TOKEN             — Token del bot de @BotFather
+ *   SUPABASE_URL          — https://jothoslozctflfrnysrx.supabase.co
+ *   SUPABASE_SERVICE_ROLE — service_role key de Supabase (ignora RLS; secreto
+ *                           server-side, NUNCA en el JS público). Necesaria desde
+ *                           que RLS está activado (Fase 2 del plan de seguridad).
+ *   ALLOWED_CHAT_ID       — Tu chat ID de Telegram (obtener con @userinfobot)
  *
  * KV Namespace requerido:
  *   KV — binding "KV" en wrangler.toml
@@ -82,7 +84,7 @@ async function fetchChecklistItems(env) {
   try {
     const res = await fetch(
       `${env.SUPABASE_URL}/rest/v1/checklist_items?activo=eq.true&order=fase.asc,orden.asc&select=clave,fase,texto`,
-      { headers: { apikey: env.SUPABASE_KEY, Authorization: `Bearer ${env.SUPABASE_KEY}` } }
+      { headers: { apikey: env.SUPABASE_SERVICE_ROLE, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE}` } }
     );
     if (!res.ok) return CHECKLIST_FALLBACK;
     const data = await res.json();
@@ -176,7 +178,7 @@ async function fetchEmociones(env) {
   try {
     const res = await fetch(
       `${env.SUPABASE_URL}/rest/v1/catalogo_emociones?activa=eq.true&order=orden.asc&select=id,nombre,emoji`,
-      { headers: { apikey: env.SUPABASE_KEY, Authorization: `Bearer ${env.SUPABASE_KEY}` } }
+      { headers: { apikey: env.SUPABASE_SERVICE_ROLE, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE}` } }
     );
     if (!res.ok) return EMOCIONES_FALLBACK;
     const data = await res.json();
@@ -308,8 +310,8 @@ async function saveSession(data, env) {
   const post = body => fetch(`${env.SUPABASE_URL}/rest/v1/sesiones?on_conflict=sesion_date`, {
     method: 'POST',
     headers: {
-      apikey:          env.SUPABASE_KEY,
-      Authorization:   `Bearer ${env.SUPABASE_KEY}`,
+      apikey:          env.SUPABASE_SERVICE_ROLE,
+      Authorization:   `Bearer ${env.SUPABASE_SERVICE_ROLE}`,
       'Content-Type':  'application/json',
       Prefer:          'resolution=merge-duplicates',
     },
@@ -345,7 +347,7 @@ async function fetchMonthStats(env) {
 
     const res = await fetch(
       `${env.SUPABASE_URL}/rest/v1/trades?trade_date=gte.${from}&select=trade_date,profit,resultado`,
-      { headers: { apikey: env.SUPABASE_KEY, Authorization: `Bearer ${env.SUPABASE_KEY}` } }
+      { headers: { apikey: env.SUPABASE_SERVICE_ROLE, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE}` } }
     );
     if (!res.ok) return { error: `Supabase error ${res.status}` };
     const trades = await res.json();
