@@ -50,9 +50,13 @@ autenticados. La `anon key` sola queda inservible.
         → `2026-06-24-grants-authenticated.sql`.
       · NO usar "Resolve issue" de Supabase: activa RLS sin políticas y rompe el
         acceso. Quedó RLS off de baseline (`2026-06-24-disable-rls-baseline.sql`).
-- [ ] **Fase 2 — RLS en las ~18 tablas**: activar RLS + política
-      `to authenticated using (true) with check (true)`. `anon` sin políticas
-      (bloqueada). *(Se hace al final del cutover.)*
+- [~] **Fase 2 — RLS en todas las tablas** (SQL LISTO 2026-06-24, pendiente correr).
+      Migración dinámica `2026-06-24-fase2-activar-rls.sql`: activa RLS + política
+      `auth_all` (`for all to authenticated using (true) with check (true)`) en
+      todas las tablas de `public`. `anon` sin políticas → bloqueada. `service_role`
+      (bot/worker/indicadores) la ignora. Rollback: `2026-06-24-fase2-rollback-rls.sql`.
+      Tras correrla: verificar web logueada, bot (`/sesion`), y export NT8 cuando
+      se corrija el archivo de la key.
 - [x] **Fase 3 — Bot + Worker `/api/session`** (HECHO 2026-06-24). Verificado:
       `/sesion` + `/stats` en el bot y guardado de sesión en la web funcionan con
       `service_role`.
