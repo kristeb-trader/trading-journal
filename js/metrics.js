@@ -272,27 +272,39 @@ const Metrics = (() => {
       return { fase, pct: total > 0 ? Math.round(ok / total * 100) : null, factores, ...FASES[fase] }
     }).filter(p => p.factores.length > 0)
 
+    // Color brillante de cada fase para el rediseño (menta / ámbar / azul)
+    const DISP_COLOR = { 1: '#3FE0A6', 2: '#E0A33B', 3: '#6FA8DC' }
+
     const phaseHtml = phaseStats.map(p => {
-      const cls = p.pct == null ? '' : p.pct >= 90 ? 'level-low' : p.pct >= 70 ? 'level-mid' : 'level-high'
       const factoresHtml = p.factores.map(fc => {
-        const n = fc.fails.length
+        const n  = fc.fails.length
+        const ok = n === 0
         const daysHtml = fc.fails.map(d =>
-          `<span class="disc-fail-day disc-factor-day" data-date="${d}">${fmtChip(d)}</span>`).join('')
+          `<span class="disc-fail-day disc2-day" data-date="${d}">${fmtChip(d)}</span>`).join('')
+        const right = ok
+          ? `<span class="disc2-ok"><i class="ti ti-check"></i></span>`
+          : `<span class="disc2-warn">${n} <i class="ti ti-chevron-right"></i></span>`
         return `
-          <div class="disc-factor-row ${n > 0 ? 'disc-clickable' : ''}" ${n > 0 ? `data-key="${fc.key}"` : ''}>
-            <span class="disc-factor-label">${fc.label}</span>
-            <span class="disc-factor-count ${n > 0 ? 'has-fail' : ''}">${n > 0 ? `${n} <i class="ti ti-chevron-right"></i>` : '✓'}</span>
+          <div class="disc-factor-row disc2-row ${ok ? '' : 'disc-clickable'}" ${ok ? '' : `data-key="${fc.key}"`}>
+            <span class="disc2-left">
+              <span class="disc2-dot ${ok ? 'ok' : 'warn'}"></span>
+              <span class="disc-factor-label disc2-lab">${fc.label}</span>
+            </span>
+            ${right}
           </div>
-          ${n > 0 ? `<div class="disc-factor-days hidden" data-for="${fc.key}">${daysHtml}</div>` : ''}`
+          ${ok ? '' : `<div class="disc-factor-days disc2-days hidden" data-for="${fc.key}">${daysHtml}</div>`}`
       }).join('')
+      // Color de barra/% según el nivel de cumplimiento (verde menta alto, ámbar medio, rojo bajo)
+      const col  = p.pct == null ? '#3FE0A6' : p.pct >= 85 ? '#3FE0A6' : p.pct >= 60 ? '#E0A33B' : '#E24B4A'
+      const fill = col === '#3FE0A6' ? 'linear-gradient(90deg,#1D9E75,#3FE0A6)' : col
       return `
-        <div class="disc-phase">
-          <div class="disc-item disc-phase-head">
-            <span class="disc-item-label" style="color:${p.color}">${p.label}</span>
-            <div class="disc-bar-wrap"><div class="disc-bar-fill ${cls}" style="width:${p.pct ?? 0}%"></div></div>
-            <span class="disc-count">${p.pct == null ? '—' : p.pct + '%'}</span>
+        <div class="disc2-phase">
+          <div class="disc2-phead">
+            <span class="disc2-pname" style="color:${DISP_COLOR[p.fase] || p.color}">${p.label}</span>
+            <div class="disc2-ptrack"><div class="disc2-pfill" style="width:${p.pct ?? 0}%;background:${fill}"></div></div>
+            <span class="disc2-ppct" style="color:${col}">${p.pct == null ? '—' : p.pct + '%'}</span>
           </div>
-          <div class="disc-phase-factors">${factoresHtml}</div>
+          <div class="disc2-rows">${factoresHtml}</div>
         </div>`
     }).join('')
 
@@ -302,15 +314,23 @@ const Metrics = (() => {
     let rachaDisc = 0
     for (const s of opOrd) { if (CHECKLIST_FACTORS.every(f => s[f.key])) rachaDisc++; else break }
     const rachaHtml = rachaDisc > 0
-      ? `<div class="disc-racha"><span class="disc-racha-num">${rachaDisc}</span>
-           <span class="disc-racha-txt">día${rachaDisc !== 1 ? 's' : ''} operado${rachaDisc !== 1 ? 's' : ''} con checklist <b>100%</b> seguido${rachaDisc !== 1 ? 's' : ''} 🎯</span></div>`
-      : `<div class="disc-racha disc-racha-off"><span class="disc-racha-txt">Sin racha de checklist 100% — el último día operado tuvo algún ítem sin marcar.</span></div>`
+      ? `<div class="disc2-streak">
+           <span class="disc2-streak-badge"><i class="ti ti-target-arrow"></i></span>
+           <div class="disc2-streak-body">
+             <span class="disc2-streak-num">${rachaDisc}</span>
+             <span class="disc2-streak-lbl">día${rachaDisc !== 1 ? 's' : ''} operado${rachaDisc !== 1 ? 's' : ''} con checklist <b>100% seguido${rachaDisc !== 1 ? 's' : ''}</b></span>
+           </div>
+         </div>`
+      : `<div class="disc2-streak disc2-streak-off">
+           <span class="disc2-streak-badge off"><i class="ti ti-alert-triangle"></i></span>
+           <span class="disc2-streak-lbl">Sin racha de checklist 100% — el último día operado tuvo algún ítem sin marcar.</span>
+         </div>`
 
     document.getElementById('disciplineModalContent').innerHTML = `
-      <div style="padding:16px 20px 20px">
+      <div class="disc2">
         ${rachaHtml}
-        <p class="disc-section-title">Cumplimiento por fase del proceso</p>
-        <p class="disc-hint">Toca un ítem con incumplimientos para ver los días.</p>
+        <p class="disc2-sec-t">Cumplimiento por fase del proceso</p>
+        <p class="disc2-hint">Toca un ítem con incumplimientos para ver los días.</p>
         ${phaseHtml}
       </div>`
 
