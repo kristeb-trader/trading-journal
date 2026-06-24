@@ -53,8 +53,9 @@ autenticados. La `anon key` sola queda inservible.
 - [ ] **Fase 2 — RLS en las ~18 tablas**: activar RLS + política
       `to authenticated using (true) with check (true)`. `anon` sin políticas
       (bloqueada). *(Se hace al final del cutover.)*
-- [~] **Fase 3 — Bot + Worker `/api/session`**: escribir con `service_role`
-      (secreto del Worker), no con `anon`. (EN CURSO 2026-06-24)
+- [x] **Fase 3 — Bot + Worker `/api/session`** (HECHO 2026-06-24). Verificado:
+      `/sesion` + `/stats` en el bot y guardado de sesión en la web funcionan con
+      `service_role`.
       · Bot (`TelegramBot/worker.js`): código cambiado — usa `env.SUPABASE_SERVICE_ROLE`
         en vez de `env.SUPABASE_KEY` (lecturas y escrituras). Falta deploy + crear
         la secret en Cloudflare.
@@ -69,9 +70,20 @@ autenticados. La `anon key` sola queda inservible.
         4. Igual en el Worker `/api/session`: que use la `service_role`.
         5. Verificar (con RLS aún off): `/sesion` y `/stats` en el bot + guardar
            sesión desde la web.
-- [ ] **Fase 4 — Indicadores NT8**: enviar a través de un endpoint del Worker
-      (con `service_role`) en vez de POST directo con `anon`. Requiere recompilar
-      e importar los .cs.
+- [~] **Fase 4 — Indicadores NT8** (EN CURSO 2026-06-24). Decisión: en vez de un
+      Worker proxy, la `service_role` vive en un **archivo local** y los 3 `.cs` la
+      leen de ahí (regla del plan: service_role permitida en la máquina del usuario).
+      · Código cambiado en `SupabaseAutoExport.cs`, `SupabaseDailyLevels.cs` y
+        `ChecklistChaumer.cs`: se quitó la `anon key` hardcodeada; ahora leen
+        `Documentos\NinjaTrader 8\supabase-service-key.txt` (helper `ReadServiceKey`).
+        Los 2 indicadores avisan en el Output si el archivo falta/está vacío.
+      · Pasos manuales del usuario:
+        1. Crear `Documentos\NinjaTrader 8\supabase-service-key.txt` y pegar la
+           `service_role` key (una sola línea, sin comillas). Asegurar que esa
+           carpeta NO esté sincronizada a la nube.
+        2. NinjaTrader → recompilar (F5 en el editor NinjaScript).
+        3. Verificar (con RLS aún off): cerrar un trade → llega a `trades`/Telegram;
+           niveles del día suben a `sesiones`; panel checklist lee/escribe.
 
 ## Notas
 - Supabase free **sí** tiene Auth, RLS y `service_role`.

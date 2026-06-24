@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -106,8 +107,23 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private const string NOTIFY_SECRET = "tj-notify-2026";
 
-        private const string SUPABASE_KEY =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvdGhvc2xvemN0Zmxmcm55c3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzODQ1MTMsImV4cCI6MjA5Mzk2MDUxM30.8perbSMHaE2K73aRU2NjfrUsWgbwmm2lL2dA-e2CG18";
+        // La service_role key vive en un archivo local (fuera del repo):
+        //   Documentos\NinjaTrader 8\supabase-service-key.txt
+        // Necesaria con RLS activado (Fase 2 del plan de seguridad). Ver SupabaseKeyFile.
+        private string supabaseKey = string.Empty;
+
+        private static string ReadServiceKey()
+        {
+            try
+            {
+                string path = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "NinjaTrader 8", "supabase-service-key.txt");
+                if (File.Exists(path)) return File.ReadAllText(path).Trim();
+            }
+            catch { }
+            return string.Empty;
+        }
 
         // ── Estado de posición POR CUENTA ─────────────────────────────────────
         // Cada cuenta monitoreada lleva su propio trade abierto, para que operar
@@ -234,9 +250,15 @@ namespace NinjaTrader.NinjaScript.Indicators
             }
             else if (State == State.Configure)
             {
+                supabaseKey = ReadServiceKey();
+                if (string.IsNullOrEmpty(supabaseKey))
+                    Print("[SupabaseAutoExport] ⚠️ Falta la service_role key. Crea el archivo " +
+                          "Documentos\\NinjaTrader 8\\supabase-service-key.txt con la key. " +
+                          "Sin ella no se exportarán trades con RLS activado.");
+
                 httpClient = new HttpClient();
-                httpClient.DefaultRequestHeaders.Add("apikey",        SUPABASE_KEY);
-                httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + SUPABASE_KEY);
+                httpClient.DefaultRequestHeaders.Add("apikey",        supabaseKey);
+                httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + supabaseKey);
                 httpClient.DefaultRequestHeaders.Add("Prefer",        "return=minimal");
             }
             else if (State == State.DataLoaded)

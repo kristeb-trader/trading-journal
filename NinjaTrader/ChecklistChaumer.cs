@@ -97,11 +97,25 @@ namespace NinjaTrader.NinjaScript.AddOns
     // ── Ventana flotante con el checklist ────────────────────────────────────
     public class ChecklistChaumerWindow : NTWindow
     {
-        // ── Config Supabase (misma anon key/URL que los demás indicadores) ──
+        // ── Config Supabase ──
         private const string SUPABASE_URL =
             "https://jothoslozctflfrnysrx.supabase.co";
-        private const string SUPABASE_KEY =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvdGhvc2xvemN0Zmxmcm55c3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzODQ1MTMsImV4cCI6MjA5Mzk2MDUxM30.8perbSMHaE2K73aRU2NjfrUsWgbwmm2lL2dA-e2CG18";
+        // La service_role key vive en un archivo local (fuera del repo, misma carpeta
+        // que checklist-chaumer-config.json):
+        //   Documentos\NinjaTrader 8\supabase-service-key.txt
+        // Necesaria con RLS activado (Fase 2 del plan de seguridad).
+        private static string ReadServiceKey()
+        {
+            try
+            {
+                string path = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "NinjaTrader 8", "supabase-service-key.txt");
+                if (File.Exists(path)) return File.ReadAllText(path).Trim();
+            }
+            catch { }
+            return string.Empty;
+        }
 
         // Reset 30 min antes de la apertura RTH (09:30 ET) → 09:00 ET.
         private static readonly TimeSpan RESET_TIME_ET = new TimeSpan(9, 0, 0);
@@ -474,9 +488,10 @@ namespace NinjaTrader.NinjaScript.AddOns
         // ═══ Helpers ═════════════════════════════════════════════════════════
         private static HttpClient CreateHttp()
         {
+            var key = ReadServiceKey();
             var c = new HttpClient();
-            c.DefaultRequestHeaders.Add("apikey",        SUPABASE_KEY);
-            c.DefaultRequestHeaders.Add("Authorization", "Bearer " + SUPABASE_KEY);
+            c.DefaultRequestHeaders.Add("apikey",        key);
+            c.DefaultRequestHeaders.Add("Authorization", "Bearer " + key);
             c.Timeout = TimeSpan.FromSeconds(15);
             return c;
         }
