@@ -84,6 +84,18 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 - Nav mobile scrollable horizontal
 
 ### Pendientes
+- **🔒 Blindaje de seguridad (RLS + Auth) — EN CURSO** (2026-06-24). La BD tiene
+  RLS off y la `anon key` es pública (GitHub Pages gratis) → cualquiera con la URL
+  puede leer/editar/borrar todo. Plan completo y fases en `docs/plan-seguridad-rls.md`.
+  Estado: Fase 0 (backup con pg_dump) en curso; luego login (Supabase Auth) → RLS →
+  bot/Worker con `service_role` → indicadores NT8 vía Worker. **NO usar "Resolve
+  issue" de Supabase** (rompe todo). El usuario NO tiene backup aún.
+- **Unificación tablas Apex — drop pendiente**: `apex_registros` + `apex_trades` ya
+  se unificaron en `apex_trades` (filas `tipo='trade'`/`'dia'`). Falta ejecutar
+  `drop table apex_registros;` (comentado en `docs/migrations/2026-06-23-apex-unificar-tablas.sql`)
+  tras confirmar que todo cuadra. El código tiene fallback mientras tanto.
+- **AddOn NT8 `ChecklistChaumer`** — entregado y compila; el usuario lo prueba en
+  vivo con la operativa (panel flotante de checklist sincronizado con `sesiones.checklist`).
 - **Reestructuración Disciplina/Reglas/Errores por fases** — COMPLETA (Bloques 1-5,
   2026-06-19). Ver `docs/plan-disciplina-fases.md`.
 - **Migraciones por correr** (Supabase SQL): `2026-06-19-sesiones-chk-cuenta-pa.sql`,
@@ -102,6 +114,7 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
   sigue exponiendo `s.chk_*` desde el JSONB.
 
 ## Para contexto adicional
+- Plan de seguridad (RLS + Auth): `docs/plan-seguridad-rls.md` ← EN CURSO
 - Plan disciplina por fases: `docs/plan-disciplina-fases.md`
 - Historial completo de fases: `docs/historial-proyecto.md`
 - Esquema BD detallado: `memory/db-schema.md`
