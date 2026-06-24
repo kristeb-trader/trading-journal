@@ -43,8 +43,13 @@ autenticados. La `anon key` sola queda inservible.
       (host `aws-1-sa-east-1`, user `postgres.jothoslozctflfrnysrx`, puerto 5432,
       `PGPASSWORD`). Archivo ~22 MB en `Documentos\backup_trading_journal_2026-06-24.sql`.
       Pendiente del usuario: guardar copia fuera del PC + configurar backup periódico.
-- [ ] **Fase 1 — Login web** (Supabase Auth, un solo usuario). Pantalla de
-      inicio de sesión; el cliente `supabase-js` usa la sesión (JWT) para todo.
+- [x] **Fase 1 — Login web** (HECHO 2026-06-24). Supabase Auth, un solo usuario
+      (signup público desactivado). Gate en `app.js` + pantalla de login + botón
+      cerrar sesión. Aprendizajes:
+      · Hubo que dar grants al rol `authenticated` (antes solo tenía `anon`)
+        → `2026-06-24-grants-authenticated.sql`.
+      · NO usar "Resolve issue" de Supabase: activa RLS sin políticas y rompe el
+        acceso. Quedó RLS off de baseline (`2026-06-24-disable-rls-baseline.sql`).
 - [ ] **Fase 2 — RLS en las ~18 tablas**: activar RLS + política
       `to authenticated using (true) with check (true)`. `anon` sin políticas
       (bloqueada). *(Se hace al final del cutover.)*
