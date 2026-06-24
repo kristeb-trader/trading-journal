@@ -31,6 +31,18 @@
 </head>
 <body>
 
+  <!-- ── Login gate ───────────────────────────────────────────────────── -->
+  <div class="login-gate hidden" id="loginGate">
+    <form class="login-card" id="loginForm">
+      <div class="login-logo"><i class="ti ti-chart-candlestick"></i> NQ Journal</div>
+      <p class="login-sub">Inicia sesión para continuar</p>
+      <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" required>
+      <input type="password" id="loginPassword" placeholder="Contraseña" autocomplete="current-password" required>
+      <button type="submit" class="btn-primary" id="loginBtn">Entrar</button>
+      <div class="login-error hidden" id="loginError"></div>
+    </form>
+  </div>
+
   <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -90,6 +102,9 @@
         <i class="ti ti-building-bank"></i>
         <span>Cuenta Fondeo</span>
       </div>
+      <button class="logout-btn" id="logoutBtn" title="Cerrar sesión">
+        <i class="ti ti-logout"></i> <span>Cerrar sesión</span>
+      </button>
     </div>
   </nav>
 

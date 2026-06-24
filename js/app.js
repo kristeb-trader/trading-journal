@@ -377,7 +377,37 @@ const Nav = {
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────
 
+// Pantalla de login: se muestra si no hay sesión. Al entrar, recarga la app.
+function showLoginGate() {
+  const gate = document.getElementById('loginGate')
+  const form = document.getElementById('loginForm')
+  const err  = document.getElementById('loginError')
+  const btn  = document.getElementById('loginBtn')
+  gate.classList.remove('hidden')
+  form.addEventListener('submit', async e => {
+    e.preventDefault()
+    err.classList.add('hidden')
+    btn.disabled = true; btn.textContent = 'Entrando…'
+    try {
+      await DB.signIn(document.getElementById('loginEmail').value.trim(), document.getElementById('loginPassword').value)
+      location.reload()
+    } catch (_) {
+      err.textContent = 'Email o contraseña incorrectos.'
+      err.classList.remove('hidden')
+      btn.disabled = false; btn.textContent = 'Entrar'
+    }
+  })
+}
+
 async function boot() {
+  // ── Gate de autenticación: sin sesión → solo login, no arranca la app ──
+  let session = null
+  try { session = await DB.getSession() } catch (_) {}
+  if (!session) { showLoginGate(); return }
+  document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+    await DB.signOut(); location.reload()
+  })
+
   // Check Supabase connectivity
   try {
     const { error } = await supa.from('trades').select('trade_number').limit(1)
@@ -482,6 +512,9 @@ async function boot() {
 
   // Navigation
   Nav.init()
+
+  // Precargar el catálogo del checklist (claves dinámicas para calendario/charts/métricas)
+  await DB.getChecklistItems().catch(() => {})
 
   // Start on calendar
   Nav.go('calendar')

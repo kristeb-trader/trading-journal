@@ -680,4 +680,17 @@ const DB = {
     return data
   },
 
+  // ── Autenticación (Supabase Auth) ──────────────────────────────────────────
+  async getSession() {
+    const { data } = await supa.auth.getSession()
+    return data.session
+  },
+  async signIn(email, password) {
+    const { error } = await supa.auth.signInWithPassword({ email, password })
+    if (error) throw error
+  },
+  async signOut() {
+    await supa.auth.signOut()
+  },
+
 }
