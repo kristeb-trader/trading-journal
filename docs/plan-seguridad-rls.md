@@ -39,9 +39,10 @@ autenticados. La `anon key` sola queda inservible.
   `ChecklistChaumer.cs`): POST directo a Supabase REST con la `anon key`.
 
 ## Fases
-- [ ] **Fase 0 — Backup** (en curso). Vía `pg_dump` con la cadena *Session pooler*
-      (IPv4, puerto 5432). El usuario va a instalar el cliente PostgreSQL 17.
-      Comando: `pg_dump "<session-pooler-uri>" --no-owner --no-privileges -F p -f backup.sql`.
+- [x] **Fase 0 — Backup** (HECHO 2026-06-24). `pg_dump` 18 vía Session pooler
+      (host `aws-1-sa-east-1`, user `postgres.jothoslozctflfrnysrx`, puerto 5432,
+      `PGPASSWORD`). Archivo ~22 MB en `Documentos\backup_trading_journal_2026-06-24.sql`.
+      Pendiente del usuario: guardar copia fuera del PC + configurar backup periódico.
 - [ ] **Fase 1 — Login web** (Supabase Auth, un solo usuario). Pantalla de
       inicio de sesión; el cliente `supabase-js` usa la sesión (JWT) para todo.
 - [ ] **Fase 2 — RLS en las ~18 tablas**: activar RLS + política
