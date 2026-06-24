@@ -60,7 +60,8 @@ namespace NinjaTrader.NinjaScript.Indicators
                 string path = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                     "NinjaTrader 8", "supabase-service-key.txt");
-                if (File.Exists(path)) return File.ReadAllText(path).Trim();
+                if (File.Exists(path))
+                    return File.ReadAllText(path).Trim().TrimStart('﻿').Trim();
             }
             catch { }
             return string.Empty;

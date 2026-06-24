@@ -119,7 +119,8 @@ namespace NinjaTrader.NinjaScript.Indicators
                 string path = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                     "NinjaTrader 8", "supabase-service-key.txt");
-                if (File.Exists(path)) return File.ReadAllText(path).Trim();
+                if (File.Exists(path))
+                    return File.ReadAllText(path).Trim().TrimStart('﻿').Trim();
             }
             catch { }
             return string.Empty;
@@ -255,6 +256,10 @@ namespace NinjaTrader.NinjaScript.Indicators
                     Print("[SupabaseAutoExport] ⚠️ Falta la service_role key. Crea el archivo " +
                           "Documentos\\NinjaTrader 8\\supabase-service-key.txt con la key. " +
                           "Sin ella no se exportarán trades con RLS activado.");
+                else
+                    Print("[SupabaseAutoExport] service_role cargada (" + supabaseKey.Length +
+                          " chars, termina en ..." +
+                          supabaseKey.Substring(Math.Max(0, supabaseKey.Length - 4)) + ").");
 
                 httpClient = new HttpClient();
                 httpClient.DefaultRequestHeaders.Add("apikey",        supabaseKey);
@@ -582,9 +587,16 @@ namespace NinjaTrader.NinjaScript.Indicators
 
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 string endpoint = EsCuentaEval(account) ? APEX_ENDPOINT : SUPABASE_ENDPOINT;
-                await client.PostAsync(endpoint, content);
+                var resp = await client.PostAsync(endpoint, content);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    string body = "";
+                    try { body = await resp.Content.ReadAsStringAsync(); } catch { }
+                    Print("[SupabaseAutoExport] ⚠️ Supabase rechazó el trade (HTTP " +
+                          (int)resp.StatusCode + "): " + body);
+                }
             }
-            catch { }
+            catch (Exception ex) { Print("[SupabaseAutoExport] ⚠️ Error al enviar trade: " + ex.Message); }
         }
 
         private async Task SendNotificationAsync(
