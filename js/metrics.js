@@ -850,12 +850,14 @@ const Metrics = (() => {
 
     document.getElementById('metricsGrid').innerHTML = cards.map(c => `
       <div class="metric-card${c.clickable ? ' clickable' : ''}" ${c.action ? `data-action="${c.action}"` : ''}>
-        <div class="metric-top">
-          <span class="metric-dot color-${c.color}"></span>
-          <span class="metric-label">${c.label}</span>
-          ${c.clickable ? '<i class="ti ti-chevron-right metric-ch"></i>' : ''}
+        <div class="metric-icon color-${c.color}">
+          <i class="ti ${c.icon}"></i>
         </div>
-        <div class="metric-value color-${c.color}">${c.value}</div>
+        <div class="metric-body">
+          <div class="metric-label">${c.label} ${c.clickable ? '<i class="ti ti-chevron-right" style="font-size:0.75rem;opacity:0.5"></i>' : ''}</div>
+          <div class="metric-value color-${c.color}">${c.value}</div>
+          ${c.sub ? `<div class="metric-sub">${c.sub}</div>` : ''}
+        </div>
       </div>`).join('')
 
     document.querySelector('[data-action="disc-detail"]')?.addEventListener('click', () => {
@@ -887,15 +889,8 @@ const Metrics = (() => {
     let cum = 0
     const data = dates.map(d => { cum += byDate[d]; return parseFloat(cum.toFixed(2)) })
     const UP = '#1D9E75', DOWN = '#E24B4A'
-    // Glow sutil bajo la línea (estética premium)
-    const eqGlow = {
-      id: 'eqGlow',
-      beforeDatasetsDraw(ch) { ch.ctx.save(); ch.ctx.shadowColor = 'rgba(29,158,117,0.45)'; ch.ctx.shadowBlur = 10 },
-      afterDatasetsDraw(ch) { ch.ctx.restore() },
-    }
     calEquityInst = new Chart(ctx, {
       type: 'line',
-      plugins: [eqGlow],
       data: { labels: dates.map(d => d.slice(5)), datasets: [{
         label: 'P&L Acumulado', data,
         borderColor: UP,
@@ -914,14 +909,8 @@ const Metrics = (() => {
           tooltip: { backgroundColor:'#2a2a28', titleColor:'#F4F3EF', bodyColor:'#9B9B8E',
             callbacks: { label: c => ` P&L acumulado: ${c.raw>=0?'+':''}$${c.raw}` } } },
         scales: {
-          x: {
-            ticks: { color:'#7d7d74', maxRotation:0, autoSkip:true, maxTicksLimit:8, font:{ size:11 } },
-            grid: { display:false }, border: { display:false },
-          },
-          y: {
-            ticks: { color:'#7d7d74', callback:v=>`$${v}`, font:{ size:11 } },
-            grid: { color:'rgba(255,255,255,0.05)' }, border: { display:false },
-          },
+          x: { ticks:{ color:'#9B9B8E', maxRotation:45 }, grid:{ color:'rgba(255,255,255,0.06)' } },
+          y: { ticks:{ color:'#9B9B8E', callback:v=>`$${v}` }, grid:{ color:'rgba(255,255,255,0.06)' } },
         },
       },
     })

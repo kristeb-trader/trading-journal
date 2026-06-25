@@ -306,20 +306,20 @@ small { font-size: 0.82em; }
 }
 
 .cal-cell {
-  background: rgba(255,255,255,0.018);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 12px;
-  padding: 8px 9px;
-  min-height: 82px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  min-height: 80px;
   display: flex; flex-direction: column;
   gap: 4px;
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition: border-color var(--transition), transform var(--transition);
   position: relative;
 }
-.cal-cell[data-date] { cursor: pointer; }
 .cal-cell[data-date]:hover {
-  border-color: rgba(255,255,255,0.28);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.12), 0 4px 16px rgba(0,0,0,0.35);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
 }
 
 .cal-cell.empty-cell { background: transparent; border-color: transparent; }
@@ -344,29 +344,23 @@ small { font-size: 0.82em; }
 .cal-cell.day-fomc.fomc-res-other  { border-color: rgba(255,255,255,0.3) !important; }
 
 .cal-status-badge {
-  font-size: 0.6rem; font-weight: 600; letter-spacing: 0.02em;
-  display: inline-flex; align-items: center; gap: 4px; margin-top: auto;
-  align-self: flex-start; padding: 2px 8px; border-radius: 999px;
-  background: rgba(255,255,255,0.05);
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.03em;
+  display: flex; align-items: center; gap: 3px; margin-top: auto;
 }
-.cal-status-badge i { font-size: 0.66rem; }
-.cal-status-badge.badge-noopero  { color: var(--text2); background: rgba(255,255,255,0.05); }
-.cal-status-badge.badge-be       { color: var(--text2); background: rgba(255,255,255,0.05); }
-.cal-status-badge.badge-sinsetup { color: #A5A8F5; background: rgba(99,102,241,0.16); }
-.cal-status-badge.badge-festivo  { color: #7FB0EC; background: rgba(56,131,246,0.16); }
-.cal-status-badge.badge-fomc     { color: #D9A867; background: rgba(194,137,72,0.18); }
+.cal-status-badge i { font-size: 0.65rem; }
+.badge-noopero  { color: var(--text3); }
+.badge-sinsetup { color: rgba(139,142,255,0.9); }
+.badge-festivo  { color: rgba(96,165,250,0.9); }
+.badge-fomc     { color: rgba(214,157,92,0.95); }
 
-/* Icono error — micro-badge ámbar (superior derecha), aspecto clickable */
+/* Icono error — superior derecha */
 .cal-icon-error {
-  position: absolute; top: 6px; right: 7px;
-  width: 18px; height: 18px; border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(194,137,72,0.20); border: 1px solid rgba(194,137,72,0.55);
-  color: #D9A867; cursor: pointer;
-  transition: background var(--transition);
+  position: absolute; top: 5px; right: 6px;
+  font-size: 0.7rem; line-height: 1;
+  color: var(--red);
+  opacity: 0.85;
 }
-.cal-icon-error:hover { background: rgba(194,137,72,0.34); }
-.cal-icon-error i { font-size: 0.72rem; }
+.cal-icon-error i { font-size: 0.7rem; }
 
 /* Icono dirección — inferior derecha */
 .cal-icon-dir {
@@ -391,13 +385,13 @@ small { font-size: 0.82em; }
   border-radius: 4px;
 }
 .cal-week-summary {
-  background: #191a1f; border: 1px solid rgba(120,140,190,0.16);
-  border-radius: 12px; padding: 7px 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 6px 8px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 3px; cursor: default;
 }
-.cal-week-summary.week-positive { background: rgba(29,158,117,0.10); border-color: rgba(29,158,117,0.32); }
-.cal-week-summary.week-negative { background: rgba(226,75,74,0.10); border-color: rgba(226,75,74,0.32); }
+.cal-week-summary.week-positive { background: rgba(29,158,117,0.08); border-color: rgba(29,158,117,0.35); }
+.cal-week-summary.week-negative { background: rgba(226,75,74,0.08); border-color: rgba(226,75,74,0.35); }
 .cal-week-summary.week-empty { opacity: 0.45; }
 .week-label { font-size: 0.62rem; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
 .week-pnl { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.03em; }
@@ -489,29 +483,17 @@ small { font-size: 0.82em; }
 .metric-value.color-warning { color: var(--warning); }
 .metric-sub { font-size: 0.75rem; color: var(--text3); margin-top: 4px; }
 
-/* Variante compacta (Calendario, arriba) — una sola fila de 6: punto + título + valor */
-.metrics-grid.metrics-grid-compact { grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 40px; }
-.metrics-grid-compact .metric-card {
-  flex-direction: column; align-items: stretch; gap: 8px; padding: 11px 13px;
-  background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.07);
-  border-radius: 12px; min-width: 0;
-}
+/* Variante compacta (Calendario, arriba) — solo título + valor, tipo chips de Análisis */
+.metrics-grid-compact { grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 8px; margin-bottom: 44px; }
+.metrics-grid-compact .metric-card { padding: 8px 12px; gap: 0; }
 .metrics-grid-compact .metric-icon { display: none; }
-.metric-top { display: flex; align-items: center; gap: 7px; min-width: 0; }
-.metric-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; background: var(--text3); }
-.metric-dot.color-green   { background: var(--accent);  }
-.metric-dot.color-red     { background: var(--red);     }
-.metric-dot.color-warning { background: var(--warning); }
-.metric-dot.color-neutral { background: var(--text3);   }
 .metrics-grid-compact .metric-label {
-  font-size: 0.7rem; font-weight: 500; letter-spacing: 0.2px; color: var(--text2);
-  margin-bottom: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: none;
+  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em;
+  font-weight: 600; color: var(--text2); margin-bottom: 3px;
 }
-.metric-ch { margin-left: auto; color: var(--text3); font-size: 0.8rem; opacity: 0.55; flex: 0 0 auto; }
-.metrics-grid-compact .metric-value { font-size: 1.2rem; font-weight: 700; }
-.metrics-grid-compact .metric-card.clickable:hover { border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.04); }
-@media (max-width: 900px) { .metrics-grid.metrics-grid-compact { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 560px) { .metrics-grid.metrics-grid-compact { grid-template-columns: repeat(2, 1fr); } }
+.metrics-grid-compact .metric-value { font-size: 1.05rem; }
+.metrics-grid-compact .metric-sub { display: none; }
+@media (max-width: 768px) { .metrics-grid-compact { grid-template-columns: repeat(2, 1fr); } }
 
 /* ── Trades Table ────────────────────────────────────────────────────── */
 .table-controls { display: flex; gap: 8px; }
@@ -1502,6 +1484,16 @@ body.modal-open { overflow: hidden; }
   background: var(--bg3); border-radius: 8px;
   padding: 10px 12px; margin-bottom: 12px;
 }
+
+/* Racha de disciplina (Bloque 4) */
+.disc-racha {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--accent-dim); border: 1px solid rgba(29,158,117,0.3);
+  border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;
+}
+.disc-racha-num { font-size: 1.9rem; font-weight: 700; color: var(--accent); line-height: 1; }
+.disc-racha-txt { font-size: 0.85rem; color: var(--text2); }
+.disc-racha-off { background: var(--bg3); border-color: var(--border); }
 
 /* Impulsividad vs falla analítica (Bloque 4) */
 .disc-behav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
