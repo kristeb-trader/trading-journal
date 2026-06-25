@@ -429,23 +429,19 @@ small { font-size: 0.82em; }
 .ms-pnl.positive { color: var(--accent); }
 .ms-pnl.negative { color: var(--red); }
 
-/* Widget total mensual — ancho completo al pie del grid */
-.cal-month-total-widget {
-  grid-column: 1 / -1; margin-top: 4px;
-  display: flex; align-items: center; gap: 14px;
-  border-radius: 13px; padding: 13px 18px;
-  background: linear-gradient(135deg, rgba(29,158,117,0.15), rgba(29,158,117,0.03));
-  border: 1px solid rgba(29,158,117,0.32);
+/* Celda total mensual en columna Semana */
+.cal-month-total { border-width: 2px !important; }
+.cal-totalpnl-icon {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  background: rgba(29,158,117,0.18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; color: var(--accent);
+  margin-bottom: 2px;
 }
-.cal-month-total-widget.negative {
-  background: linear-gradient(135deg, rgba(226,75,74,0.13), rgba(226,75,74,0.03));
-  border-color: rgba(226,75,74,0.32);
-}
-.cmt-label { font-size: 0.85rem; color: var(--text); font-weight: 600; }
-.cmt-sub { font-size: 0.78rem; color: var(--text3); }
-.cmt-amount { margin-left: auto; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
-.cmt-amount.positive { color: var(--accent); }
-.cmt-amount.negative { color: var(--red); }
+.cal-totalpnl-icon.negative { background: rgba(226,75,74,0.15); color: var(--red); }
+.month-total-amount { font-size: 1.1rem !important; font-weight: 800 !important; }
+.month-total-amount.positive { color: #138a5e !important; }
+.month-total-amount.negative { color: var(--red) !important; }
 
 /* ── Metrics ─────────────────────────────────────────────────────────── */
 .period-selector { display: flex; gap: 4px; }
