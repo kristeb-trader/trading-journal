@@ -225,8 +225,6 @@ const Calendar = (() => {
         const pnlHtml = pnl !== null
           ? `<div class="cal-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(0)}</div>`
           : ''
-        const tradeCount = trades.length > 0
-          ? `<div class="cal-count">${trades.length} trade${trades.length !== 1 ? 's' : ''}</div>` : ''
         const clickable = !isFuture ? `data-date="${dateStr}" style="cursor:pointer"` : ''
 
         let statusBadge = ''
@@ -275,7 +273,6 @@ const Calendar = (() => {
             <div class="cal-day-num">${parseInt(dateStr.slice(8))}</div>
             ${errorIcon}
             ${pnlHtml}
-            ${tradeCount}
             ${statusBadge}
             ${dirIcon}
           </div>`
@@ -303,18 +300,21 @@ const Calendar = (() => {
       }
     }
 
-    // Total mensual — fila extra al final del grid (4 vacías + descriptiva + número)
+    // Total mensual — widget de ancho completo al pie del grid
     const totalPnl = Object.values(tradesCache).flat()
       .reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
     const monthName = MONTHS_ES[currentMonth - 1]
-    for (let i = 0; i < 4; i++) html += `<div class="cal-cell empty-cell"></div>`
+    // Trade real = target o stop, excluyendo B.E. (no cuenta días sin entradas)
+    const esTradeReal = t => !isBreakEven(t.profit) && (t.resultado === 'target' || t.resultado === 'stop')
+    const totalTrades = Object.values(tradesCache).flat().filter(esTradeReal).length
+    // Días operados = días con al menos un trade real (excluye festivos, días sin
+    // conexión, días sin entradas y días solo-B.E.)
+    const diasOperados = Object.values(tradesCache).filter(ts => ts.some(esTradeReal)).length
     html += `
-      <div class="cal-cell cal-week-summary ${totalPnl >= 0 ? 'week-positive' : 'week-negative'}">
-        <div class="week-label" style="font-size:0.8rem;color:${totalPnl >= 0 ? 'var(--accent)' : 'var(--red)'};letter-spacing:0.04em">P&amp;L Neto</div>
-        <div class="week-trades" style="font-size:0.78rem;color:var(--text1);font-weight:600">${monthName} ${currentYear}</div>
-      </div>
-      <div class="cal-cell cal-week-summary cal-month-total ${totalPnl >= 0 ? 'week-positive' : 'week-negative'}">
-        <div class="week-pnl ${totalPnl >= 0 ? 'positive' : 'negative'} month-total-amount">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(0)}</div>
+      <div class="cal-month-total-widget ${totalPnl >= 0 ? 'positive' : 'negative'}">
+        <span class="cmt-label">TOTAL ${monthName.toUpperCase()} ${currentYear}</span>
+        <span class="cmt-sub">${diasOperados} día${diasOperados !== 1 ? 's' : ''} · ${totalTrades} trade${totalTrades !== 1 ? 's' : ''}</span>
+        <span class="cmt-amount ${totalPnl >= 0 ? 'positive' : 'negative'}">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(0)}</span>
       </div>`
 
     grid.innerHTML = html
