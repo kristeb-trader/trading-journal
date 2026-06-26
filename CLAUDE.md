@@ -90,10 +90,12 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
   verificada (anon key pública inservible). Plan y fases en `docs/plan-seguridad-rls.md`.
   **NO usar "Resolve issue" de Supabase** (rompe las políticas). Tablas nuevas:
   activar RLS + política `auth_all` (ver `docs/migrations/2026-06-24-fase2-activar-rls.sql`).
-  · **Pendiente operativo**: corregir el archivo local `Documentos\NinjaTrader 8\
-    supabase-service-key.txt` (pegar la `service_role`) y verificar export NT8 — el
-    código ya usa service_role pero no se pudo probar (sin más trades ese día). Si el
-    Output dice "⚠️ Falta la service_role key" → revisar nombre/ruta del .txt.
+  · **Export NT8 verificado (2026-06-25)**: trade de Sim101 → `apex_trades` con RLS
+    activo. Requirió grants de `service_role` (faltaban en `apex_trades` → HTTP 403/
+    42501); arreglado con `docs/migrations/2026-06-25-grants-service-role.sql` (CRUD
+    a service_role en todas las tablas + default privileges). En éxito el indicador
+    NO imprime nada en el Output (solo si falla). Routing: cuentas sin prefijo `PA-`
+    (ej. Sim101) → `apex_trades` sin Telegram; `PA-*` → `trades` + Telegram.
 - **Unificación tablas Apex — drop pendiente**: `apex_registros` + `apex_trades` ya
   se unificaron en `apex_trades` (filas `tipo='trade'`/`'dia'`). Falta ejecutar
   `drop table apex_registros;` (comentado en `docs/migrations/2026-06-23-apex-unificar-tablas.sql`)

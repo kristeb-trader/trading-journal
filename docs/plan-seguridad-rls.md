@@ -80,9 +80,17 @@ autenticados. La `anon key` sola queda inservible.
         4. Igual en el Worker `/api/session`: que use la `service_role`.
         5. Verificar (con RLS aún off): `/sesion` y `/stats` en el bot + guardar
            sesión desde la web.
-- [~] **Fase 4 — Indicadores NT8** (EN CURSO 2026-06-24). Decisión: en vez de un
+- [x] **Fase 4 — Indicadores NT8** (HECHO 2026-06-25). Verificado: trade de Sim101
+      exportado y guardado en `apex_trades` con RLS activo. Decisión: en vez de un
       Worker proxy, la `service_role` vive en un **archivo local** y los 3 `.cs` la
       leen de ahí (regla del plan: service_role permitida en la máquina del usuario).
+      · **Gotcha resuelto (2026-06-25)**: el primer trade dio HTTP 403 / 42501
+        "permission denied for table apex_trades". `service_role` ignora RLS pero
+        necesita GRANTS de tabla, que le faltaban en `apex_trades`. Arreglado con
+        `2026-06-25-grants-service-role.sql` (CRUD a service_role en todas las tablas
+        + default privileges). Tras eso, el export entra silencioso (solo imprime
+        en Output si falla). Ojo routing: cuentas sin prefijo `PA-` (ej. Sim101) van
+        a `apex_trades` sin Telegram; solo las `PA-*` van a `trades` + Telegram.
       · Código cambiado en `SupabaseAutoExport.cs`, `SupabaseDailyLevels.cs` y
         `ChecklistChaumer.cs`: se quitó la `anon key` hardcodeada; ahora leen
         `Documentos\NinjaTrader 8\supabase-service-key.txt` (helper `ReadServiceKey`).
