@@ -8,11 +8,15 @@ id = "3dd631773a6041c1a97a8e9a8f861067"
 
 # Variables de entorno (persisten en cada `wrangler deploy`).
 # Las "Variables" del dashboard NO sobreviven a wrangler deploy; por eso van aquí.
-# BOT_TOKEN se mantiene como Secret (no se versiona): se setea con
-#   npx wrangler secret put BOT_TOKEN
+#
+# SECRETS (no se versionan; se setean con `npx wrangler secret put <NOMBRE>` y
+# SÍ sobreviven a los deploys):
+#   - BOT_TOKEN              → token del bot de @BotFather
+#   - SUPABASE_SERVICE_ROLE  → service_role key de Supabase (ignora RLS). NUNCA
+#                              ponerla aquí en [vars]: este .toml está en git.
+#                              Copiar de Supabase → Settings → API → service_role.
 [vars]
 SUPABASE_URL    = "https://jothoslozctflfrnysrx.supabase.co"
-SUPABASE_KEY    = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvdGhvc2xvemN0Zmxmcm55c3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzODQ1MTMsImV4cCI6MjA5Mzk2MDUxM30.8perbSMHaE2K73aRU2NjfrUsWgbwmm2lL2dA-e2CG18"
 ALLOWED_CHAT_ID = "372127764"
 NOTIFY_SECRET   = "tj-notify-2026"
 TIMEZONE        = "America/Bogota"
