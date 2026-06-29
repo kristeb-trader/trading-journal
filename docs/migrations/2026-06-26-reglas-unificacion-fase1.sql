@@ -85,20 +85,33 @@ select 'fil_' || id, titulo, contenido, 'filosofia', 'blanda', 'ambas', false, '
 from estrategia_chaumer
 on conflict (codigo) do nothing;
 
--- 6. Marcar reglas DURAS (no negociables) de partida. Ajustables luego en la UI.
-update reglas set tipo='dura' where codigo in ('chk_5velas', 'chk_noticias', 'chk_zonas');
+-- 6. Marcar reglas DURAS (no negociables) según criterio del trader. Los 7 ítems
+--    del checklist son duros; ajustables luego en la UI.
+update reglas set tipo='dura'
+where codigo in ('chk_cuenta_pa','chk_noticias','chk_zonas','chk_5velas','chk_consecucion','chk_estructura','chk_orden');
+
+-- 6b. Reestructurar la regla de "5 velas": mide SOBREEXTENSIÓN, no el conteo exacto.
+update reglas set
+  titulo = 'Corrida no sobreextendida (referencia ~5 velas)',
+  enunciado = 'No se mide el número exacto de velas, sino que la corrida del impulso NO esté sobreextendida. ~5 velas es el promedio de una corrida operable. Una corrida de MÁS de 5 velas sigue siendo VÁLIDA si NO está sobreextendida, cumpliendo las 3: (1) las últimas 2-3 velas desaceleran (notoriamente más pequeñas que las del impulso inicial); (2) el recorrido total no supera el rango promedio de las corridas recientes del día; (3) el precio no choca con una zona vigente / nivel clave antes del target. Inversamente, 3-4 velas largas, volátiles y sobreextendidas NO cumplen. El principio (nunca operar sobreextendido) es no negociable; el conteo de velas es solo una guía.'
+where codigo = 'chk_5velas';
 
 -- 7. Reglas de riesgo transversales que no eran un check explícito.
 insert into reglas (codigo, titulo, enunciado, capa, tipo, direccion, es_checklist, estado, orden, activa) values
-  ('stop_max_120', 'Stop máximo 60 pts / $120',
-   'El stop por trade nunca supera 60 puntos / $120. Si el stop en dólares lo supera, la entrada es INVÁLIDA por bueno que se vea el resto del setup.',
+  ('stop_max_puntos', 'Stop máximo en PUNTOS (parametrizable)',
+   'El stop se mide en PUNTOS, no en dólares. Con varios contratos el riesgo en dólares escala, pero lo que define la validez es el stop en puntos. Límite por defecto: 80 puntos (parametrizable en objetivos.stop_max_puntos; ajustable, p. ej. en mercado volátil). Si el stop supera el límite en puntos, la entrada es INVÁLIDA, sin importar cuántos contratos. Ej.: 70 pts × 3 contratos ($420) CUMPLE (<=80 pts); 50 pts × 4 contratos CUMPLE; 85 pts × 1 contrato NO cumple.',
    'riesgo', 'dura', 'ambas', false, 'vigente', 1, true),
   ('no_fomc', 'No operar en día FOMC',
-   'No se opera en días de reunión FOMC.', 'riesgo', 'dura', 'ambas', false, 'vigente', 2, true)
+   'Preferencia: no operar en días de reunión FOMC. Regla blanda, a criterio del trader.', 'riesgo', 'blanda', 'ambas', false, 'vigente', 2, true)
 on conflict (codigo) do nothing;
 
 -- 8. Trazabilidad: enlazar errores con la regla rota (FASE 1 solo añade la columna).
 alter table diagnostico_errores add column if not exists regla_codigo text;
+
+-- 8b. Umbral de stop en PUNTOS, parametrizable por el trader (default 80).
+--     Reemplaza la medición en dólares (objetivos.stop_max_usd queda como histórico).
+alter table objetivos add column if not exists stop_max_puntos numeric default 80;
+update objetivos set stop_max_puntos = 80 where stop_max_puntos is null;
 
 notify pgrst, 'reload schema';
 

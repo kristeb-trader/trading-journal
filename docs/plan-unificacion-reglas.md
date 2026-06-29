@@ -66,6 +66,23 @@ created_at / updated_at
 error queda ligado a la regla exacta rota. El Coach devuelve el `codigo`. Si la
 regla es `dura`, el veredicto es INVÁLIDO por definición.
 
+## Decisiones del trader (2026-06-26) — clasificación dura/blanda
+- **DURAS (no negociables):** los 7 ítems del checklist (`chk_cuenta_pa`,
+  `chk_noticias`, `chk_zonas`, `chk_5velas`, `chk_consecucion`, `chk_estructura`,
+  `chk_orden`) + `stop_max_puntos`.
+- **BLANDAS:** `no_fomc` (preferencia, a criterio), reglas de setup (entrada/stop/
+  gestión…) y filosofía.
+- **Regla "5 velas" reestructurada** → `chk_5velas` mide **sobreextensión**, no el
+  conteo exacto. ~5 velas es promedio; una corrida de más velas vale si NO está
+  sobreextendida (3 condiciones); 3-4 velas largas/volátiles/sobreextendidas no
+  cumplen. Principio no negociable; el conteo es guía.
+- **Stop en PUNTOS, no en dólares** → `stop_max_puntos`. Default **80 puntos**,
+  **parametrizable** en `objetivos.stop_max_puntos` (editable cuando el trader
+  quiera). Con varios contratos el $ escala pero la validez la define el stop en
+  puntos. `objetivos.stop_max_usd` queda como histórico.
+- **Pendiente Fase 2 (código):** la alerta de riesgo del formulario (hoy en $,
+  `stop_max_usd=120`) debe pasar a **puntos** (≥ `stop_max_puntos` dispara alerta).
+
 ## Fases
 - [ ] **Fase 1 — BD aditiva (no rompe nada)**: crear `reglas`, migrar datos de
       las 3 tablas vivas, marcar reglas duras, añadir `regla_codigo` a
