@@ -67,7 +67,7 @@ const SETUPS = [
   'Reingreso Bajista',
 ];
 
-// Checklist por fases — se lee del catálogo `checklist_items` (BD). Fallback
+// Checklist por fases — se lee del rulebook `reglas` (es_checklist=true). Fallback
 // local si la consulta falla o el catálogo aún no existe (pre-migración).
 // Si actualizas el catálogo en la web, esto se refleja solo aquí (sin re-deploy).
 const CHECKLIST_FALLBACK = [

@@ -342,45 +342,8 @@ const DB = {
     if (error) throw error
   },
 
-  // ── Estrategia Chaumer ───────────────────────────────────────────────────
-
-  async getEstrategiaSecciones() {
-    const { data, error } = await supa
-      .from('estrategia_chaumer')
-      .select('*')
-      .eq('activa', true)
-      .order('orden', { ascending: true })
-    if (error) throw error
-    return data
-  },
-
-  async updateEstrategiaSeccion(id, contenido) {
-    const { error } = await supa
-      .from('estrategia_chaumer')
-      .update({ contenido, updated_at: new Date().toISOString() })
-      .eq('id', id)
-    if (error) throw error
-  },
-
-  // ── Reglas por Setup ─────────────────────────────────────────────────────
-
-  async getSetupReglas() {
-    const { data, error } = await supa
-      .from('setup_reglas')
-      .select('*')
-      .order('orden', { ascending: true })
-    if (error) throw error
-    return data
-  },
-
-  async saveSetupRegla(payload) {
-    const { error } = await supa
-      .from('setup_reglas')
-      .upsert({ ...payload, updated_at: new Date().toISOString() }, { onConflict: 'setup,direccion' })
-    if (error) throw error
-  },
-
   // ── Rulebook canónico (reglas) ───────────────────────────────────────────
+  // (Reemplaza a estrategia_chaumer y setup_reglas, retiradas en Fase 4.)
   async getReglas({ capa = null, soloActivas = false } = {}) {
     let q = supa.from('reglas').select('*')
     if (capa) q = q.eq('capa', capa)

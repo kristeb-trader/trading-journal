@@ -96,8 +96,15 @@ regla es `dura`, el veredicto es INVÁLIDO por definición.
 - [ ] **Fase 3 — Prompt del Coach**: reconstruir el system prompt con reglas
       estructuradas (bloque DURAS, reglas del setup del día, filosofía) y pedir el
       `codigo` de la regla rota en el diagnóstico.
-- [ ] **Fase 4 — Retiro**: tras verificar todo, archivar `setup_reglas`,
-      `estrategia_chaumer`, `checklist_items` y `reglas_legacy_backup`.
+- [~] **Fase 4 — Retiro** (EN CURSO 2026-06-26). Código: quitadas las funciones
+      muertas de `db.js` (getEstrategiaSecciones/updateEstrategiaSeccion/
+      getSetupReglas/saveSetupRegla); el indicador NT8 `ChecklistChaumer` ahora lee
+      de `reglas` (es_checklist) — requiere recompilar en NT8. SQL no destructivo
+      `2026-06-26-reglas-fase4-archivar.sql` renombra `estrategia_chaumer` y
+      `setup_reglas` a `*_archivada`. `checklist_items` se archiva DESPUÉS de
+      recompilar el ChecklistChaumer (línea gated en el SQL). `reglas_legacy_backup`
+      ya estaba apartada. Drop definitivo de las `*_archivada`: más adelante, cuando
+      haya plena confianza.
 
 ## Notas de seguridad (RLS activo)
 La nueva tabla necesita: `enable row level security` + política `auth_all` (para

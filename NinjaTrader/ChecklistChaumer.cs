@@ -6,7 +6,7 @@
 //
 //  - Ventana flotante independiente (NTWindow): mover, redimensionar, always-on-top.
 //  - Persiste posición/tamaño/topmost en archivo local.
-//  - Ítems traídos de la tabla checklist_items (no hardcodeados), agrupados por fase.
+//  - Ítems traídos del rulebook `reglas` (es_checklist=true), agrupados por fase.
 //  - Botón GO: se habilita solo con el 100% marcado; al pulsarlo sella la hora en BD.
 //  - Reset automático a las 09:00 ET (30 min antes de la apertura RTH; DST automático).
 //  - Lectura por polling (~5 s) + escritura inmediata al marcar. Tolerante a offline.
@@ -344,7 +344,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         {
             try
             {
-                string url = SUPABASE_URL + "/rest/v1/checklist_items?activo=eq.true&order=fase.asc,orden.asc&select=clave,fase,texto,orden";
+                string url = SUPABASE_URL + "/rest/v1/reglas?es_checklist=eq.true&activa=eq.true&order=fase.asc,orden.asc&select=clave:codigo,fase,texto:titulo,orden";
                 string json = await http.GetStringAsync(url).ConfigureAwait(false);
                 var arr = JArray.Parse(json);
 
