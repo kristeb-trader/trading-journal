@@ -12,7 +12,7 @@ const Coach = (() => {
   let chatHistory       = []   // conversación del día en memoria
   let systemPromptCache = null // se construye una vez por sesión abierta
   let diagnosticoActual = {}   // secciones parseadas del último análisis
-  let estrategiaCache   = null // se recarga 1x por init
+  let reglasCache       = null // rulebook canónico; se recarga al limpiar caché
   let emocionesCache    = []   // catálogo de emociones
   let coachDate         = null // fecha activa en el coach
   let pendingDate       = null // fecha solicitada desde Historial, se carga al entrar al Coach
@@ -83,9 +83,8 @@ const Coach = (() => {
   // ── Construcción del System Prompt ────────────────────────────────────
 
   async function buildSystemPrompt(date) {
-    const [estrategia, reglasSetup, historial, patrones, sesion, trades, casuisticas, emociones, catalogoErrores] = await Promise.all([
-      cargarEstrategia(),
-      cargarReglasSetup(),
+    const [reglas, historial, patrones, sesion, trades, casuisticas, emociones, catalogoErrores] = await Promise.all([
+      cargarReglas(),
       cargarHistorialCompacto(),
       detectarPatrones(),
       DB.getSesionByDate(date),
@@ -94,6 +93,10 @@ const Coach = (() => {
       DB.getCatalogoEmociones(),
       DB.getCatalogoCasuisticas()
     ])
+    // Bloques derivados del rulebook canónico `reglas`
+    const estrategia  = fmtFilosofia(reglas)
+    const reglasSetup = fmtReglasSetup(reglas)
+    const reglasDuras = fmtReglasDuras(reglas)
 
     // El Coach analiza ÚNICAMENTE la cuenta PA real (PA-APEX-232411-03).
     // Las cuentas de evaluación y simulación no se analizan.
@@ -212,6 +215,14 @@ Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
     return `Eres un analista experto en la estrategia de trading de Chaumer (trader_sociologist), especializado en futuros MNQ/NQ en gráfico de 1 minuto con NinjaTrader. Tu rol es analizar la sesión diaria, validar setups según las reglas exactas de la estrategia, y acumular aprendizaje sesión a sesión para dar recomendaciones cada vez más precisas.
 
 Responde SIEMPRE en español. Sé estricto y directo — si el trader cometió errores, señálalos sin suavizarlos. No des falsas motivaciones cuando los datos muestran mal desempeño. Si algo no está claro, pregunta antes de dar veredicto. Nunca recomendar entrar si algún filtro falla. Veredictos: VÁLIDO o INVÁLIDO, con la razón exacta.
+
+---
+
+## ⛔ REGLAS NO NEGOCIABLES (DURAS) — violar una = entrada INVÁLIDA
+
+${reglasDuras}
+
+Estas reglas NO admiten excepción. Si la sesión viola cualquiera, el VEREDICTO final es INVÁLIDO por más bueno que se vea el resto del setup, y debes nombrar la regla rota por su \`codigo\`. Las demás reglas (blandas) son guías sujetas a criterio.
 
 ---
 
@@ -337,43 +348,48 @@ ${catalogoStr}
 
   // ── Carga de datos ─────────────────────────────────────────────────────
 
-  async function cargarEstrategia() {
-    if (estrategiaCache) return estrategiaCache
-    const secciones = await DB.getEstrategiaSecciones()
-    estrategiaCache = secciones.map(s => `### ${s.titulo}\n${s.contenido}`).join('\n\n')
-    return estrategiaCache
+  // Carga el rulebook canónico (reglas activas) una vez por sesión de coaching.
+  async function cargarReglas() {
+    if (reglasCache) return reglasCache
+    reglasCache = await DB.getReglas({ soloActivas: true }).catch(() => [])
+    return reglasCache
   }
 
-  async function cargarReglasSetup() {
-    let filas = []
-    try { filas = await DB.getSetupReglas() } catch (_) { return 'Sin reglas de setup documentadas aún.' }
-    if (!filas.length) return 'El trader aún NO ha documentado reglas para ningún setup.'
+  // Bloque de filosofía/estrategia (capa 'filosofia')
+  function fmtFilosofia(reglas) {
+    const fil = reglas.filter(r => r.capa === 'filosofia')
+    return fil.length
+      ? fil.map(r => `### ${r.titulo}\n${r.enunciado || ''}`).join('\n\n')
+      : 'Sin estrategia documentada aún.'
+  }
 
-    const setupNombre = {
-      iri_apertura: 'IRI en Apertura',
-      iri_continuacion: 'IRI en Continuación',
-      reingreso: 'Reingreso',
-    }
+  // Bloque de reglas por setup (capa 'setup'), reagrupando los campos por setup×dirección
+  function fmtReglasSetup(reglas) {
+    const setup = reglas.filter(r => r.capa === 'setup')
+    if (!setup.length) return 'El trader aún NO ha documentado reglas para ningún setup.'
+    const setupNombre = { iri_apertura: 'IRI en Apertura', iri_continuacion: 'IRI en Continuación', reingreso: 'Reingreso' }
     const dirNombre = { ambas: 'Común', alcista: 'Alcista', bajista: 'Bajista' }
-    const campos = [
-      ['activacion', 'Activación/Contexto'],
-      ['secuencia', 'Secuencia/Estructura'],
-      ['entrada', 'Entrada'],
-      ['stop', 'Stop'],
-      ['gestion', 'Gestión/Target'],
-      ['invalidacion', 'Invalidación/Filtros'],
-      ['notas', 'Notas'],
-    ]
-
-    return filas.map(f => {
-      const cuerpo = campos
-        .filter(([k]) => (f[k] || '').trim())
-        .map(([k, label]) => `  - ${label}: ${f[k].trim()}`)
-        .join('\n')
+    const campoLabel = { activacion: 'Activación/Contexto', secuencia: 'Secuencia/Estructura', entrada: 'Entrada', stop: 'Stop', gestion: 'Gestión/Target', invalidacion: 'Invalidación/Filtros', notas: 'Notas' }
+    const orden = Object.keys(campoLabel)
+    const groups = {}
+    setup.forEach(r => {
+      const k = `${r.setup}__${r.direccion}`
+      if (!groups[k]) groups[k] = { setup: r.setup, dir: r.direccion, campos: {} }
+      if (r.campo) groups[k].campos[r.campo] = r.enunciado
+    })
+    return Object.values(groups).map(g => {
+      const cuerpo = orden.filter(c => (g.campos[c] || '').trim())
+        .map(c => `  - ${campoLabel[c]}: ${g.campos[c].trim()}`).join('\n')
       if (!cuerpo) return null
-      const titulo = `${setupNombre[f.setup] || f.setup} (${dirNombre[f.direccion] || f.direccion})`
-      return `### ${titulo}\n${cuerpo}`
+      return `### ${setupNombre[g.setup] || g.setup} (${dirNombre[g.dir] || g.dir})\n${cuerpo}`
     }).filter(Boolean).join('\n\n') || 'El trader aún NO ha documentado reglas con contenido para ningún setup.'
+  }
+
+  // Bloque de reglas DURAS (no negociables): tipo='dura' de cualquier capa
+  function fmtReglasDuras(reglas) {
+    const duras = reglas.filter(r => r.tipo === 'dura')
+    if (!duras.length) return '  (Sin reglas duras definidas.)'
+    return duras.map(r => `  - [${r.capa}] \`${r.codigo}\`: ${r.enunciado || r.titulo}`).join('\n')
   }
 
   async function cargarHistorialCompacto() {
@@ -1467,9 +1483,9 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstic
     pendingDate = null
   }
 
-  // Invalida la caché de estrategia para que el próximo análisis use lo recién editado
+  // Invalida la caché del rulebook para que el próximo análisis use lo recién editado
   function clearCache() {
-    estrategiaCache = null
+    reglasCache = null
   }
 
   // Abre el Coach IA con una fecha específica cargada (desde el modal del día)
