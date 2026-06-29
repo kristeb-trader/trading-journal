@@ -266,24 +266,26 @@ const SessionForm = (() => {
     }
     let pts = null
     if (trades.length > 0) {
+      // Retroceso en PUNTOS puros (independiente de # de contratos): se divide el
+      // P&L neto entre $2/punto y entre el total de contratos del día.
       const netPnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
-      pts = Math.abs(netPnl / 2)
+      const totalQty = trades.reduce((s, t) => s + (parseInt(t.qty) || 1), 0)
+      pts = Math.abs(netPnl) / (2 * Math.max(totalQty, 1))
       display.textContent = `${pts.toFixed(2)} pts`
       hidden.value = pts.toFixed(2)
     }
     evalRiesgo(pts)
   }
 
-  // Bloque 1: alerta proactiva si el retroceso (en $) supera el stop máximo.
+  // Bloque 1: alerta proactiva si el retroceso (en PUNTOS) supera el stop máximo.
   function evalRiesgo(pts) {
     const group = document.getElementById('riesgoAlertGroup')
     if (!group) return
-    const stopMax = objetivos && objetivos.stop_max_usd != null ? parseFloat(objetivos.stop_max_usd) : null
-    const riesgo = pts != null ? pts * 2 : null   // MNQ: $2/punto
-    if (stopMax != null && riesgo != null && riesgo > stopMax) {
+    const stopMaxPts = objetivos && objetivos.stop_max_puntos != null ? parseFloat(objetivos.stop_max_puntos) : 80
+    if (pts != null && stopMaxPts != null && pts > stopMaxPts) {
       group.classList.remove('hidden')
       const txt = document.getElementById('riesgoAlertText')
-      if (txt) txt.innerHTML = `El retroceso fue <b>${pts.toFixed(2)} pts (≈ $${riesgo.toFixed(0)})</b> y supera tu límite de <b>$${stopMax.toFixed(0)}</b>.`
+      if (txt) txt.innerHTML = `El retroceso fue <b>${pts.toFixed(1)} pts</b> y supera tu límite de <b>${stopMaxPts.toFixed(0)} pts</b>.`
     } else {
       group.classList.add('hidden')
     }
