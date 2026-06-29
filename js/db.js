@@ -118,13 +118,17 @@ const DB = {
   },
 
   // ── Checklist de disciplina (catálogo dinámico) ───────────────────────────
+  // El checklist es la capa 'proceso' del rulebook canónico `reglas` (es_checklist=true).
+  // Se devuelven con alias (codigo→clave, titulo→texto, activa→activo) para conservar
+  // la forma que esperan el formulario, métricas y caché.
   async getChecklistItems({ force = false, soloActivos = false } = {}) {
     if (_checklistCache && !force) {
       return soloActivos ? _checklistCache.filter(i => i.activo !== false) : _checklistCache
     }
     const { data, error } = await supa
-      .from('checklist_items')
-      .select('*')
+      .from('reglas')
+      .select('id, clave:codigo, fase, texto:titulo, orden, activo:activa, peso')
+      .eq('es_checklist', true)
       .order('fase', { ascending: true })
       .order('orden', { ascending: true })
     if (error || !data || !data.length) {
@@ -146,25 +150,31 @@ const DB = {
   },
 
   async addChecklistItem({ fase, texto, orden = 0 }) {
-    const clave = 'chk_' + Date.now().toString(36)
+    const codigo = 'chk_' + Date.now().toString(36)
     const { data, error } = await supa
-      .from('checklist_items')
-      .insert({ clave, fase, texto, orden })
-      .select('*')
+      .from('reglas')
+      .insert({ codigo, titulo: texto, enunciado: texto, capa: 'proceso', tipo: 'blanda', fase, es_checklist: true, orden, activa: true })
+      .select('id, clave:codigo, fase, texto:titulo, orden, activo:activa')
       .single()
     if (error) throw error
     _checklistCache = null
     return data
   },
 
+  // patch del editor: { activo } | { fase } | { texto }. Se traduce a columnas de `reglas`.
   async updateChecklistItem(id, patch) {
-    const { error } = await supa.from('checklist_items').update(patch).eq('id', id)
+    const map = { updated_at: new Date().toISOString() }
+    if ('texto' in patch) map.titulo = patch.texto
+    if ('activo' in patch) map.activa = patch.activo
+    if ('fase' in patch) map.fase = patch.fase
+    if ('orden' in patch) map.orden = patch.orden
+    const { error } = await supa.from('reglas').update(map).eq('id', id)
     if (error) throw error
     _checklistCache = null
   },
 
   async deleteChecklistItem(id) {
-    const { error } = await supa.from('checklist_items').delete().eq('id', id)
+    const { error } = await supa.from('reglas').delete().eq('id', id)
     if (error) throw error
     _checklistCache = null
   },

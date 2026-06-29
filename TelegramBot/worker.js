@@ -83,7 +83,7 @@ const CHECKLIST_FALLBACK = [
 async function fetchChecklistItems(env) {
   try {
     const res = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/checklist_items?activo=eq.true&order=fase.asc,orden.asc&select=clave,fase,texto`,
+      `${env.SUPABASE_URL}/rest/v1/reglas?es_checklist=eq.true&activa=eq.true&order=fase.asc,orden.asc&select=clave:codigo,fase,texto:titulo`,
       { headers: { apikey: env.SUPABASE_SERVICE_ROLE, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE}` } }
     );
     if (!res.ok) return CHECKLIST_FALLBACK;
