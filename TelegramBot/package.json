@@ -1,0 +1,9 @@
+{
+  "name": "trading-journal-bot",
+  "private": true,
+  "description": "Bot de Telegram (Cloudflare Worker) del Trading Journal",
+  "scripts": {
+    "deploy": "npx --yes wrangler deploy",
+    "logs": "npx --yes wrangler tail"
+  }
+}
