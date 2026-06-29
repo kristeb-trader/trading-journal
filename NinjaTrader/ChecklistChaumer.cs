@@ -68,6 +68,12 @@ namespace NinjaTrader.NinjaScript.AddOns
             };
             menuItem.Click += OnMenuItemClick;
             existingNewMenu.Items.Add(menuItem);
+
+            // Auto-abrir el panel al iniciar NinjaTrader (cuando carga el Control
+            // Center). Se difiere a baja prioridad para que la UI termine de cargar
+            // primero. El panel reaparece en la última posición/tamaño guardados.
+            cc.Dispatcher.BeginInvoke(new Action(OpenChecklistWindow),
+                System.Windows.Threading.DispatcherPriority.Background);
         }
 
         protected override void OnWindowDestroyed(Window window)
@@ -81,9 +87,11 @@ namespace NinjaTrader.NinjaScript.AddOns
             }
         }
 
-        private void OnMenuItemClick(object sender, RoutedEventArgs e)
+        private void OnMenuItemClick(object sender, RoutedEventArgs e) => OpenChecklistWindow();
+
+        // Abre el panel (o lo trae al frente si ya está abierto). Una sola instancia.
+        private void OpenChecklistWindow()
         {
-            // Una sola instancia: si ya está abierta, traerla al frente
             if (openWindow != null)
             {
                 try { openWindow.Activate(); return; } catch { openWindow = null; }
