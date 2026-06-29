@@ -1,0 +1,25 @@
+name: Deploy Telegram Bot
+
+# Auto-despliega el bot de Telegram cuando se sube un cambio a TelegramBot/.
+# También se puede lanzar a mano desde la pestaña Actions ("Run workflow").
+# Requiere el secret de repo CLOUDFLARE_API_TOKEN (token con permiso
+# "Edit Cloudflare Workers"). Los secrets del Worker (BOT_TOKEN,
+# SUPABASE_SERVICE_ROLE) ya viven en Cloudflare y sobreviven a los deploys.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'TelegramBot/**'
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy con Wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: TelegramBot
