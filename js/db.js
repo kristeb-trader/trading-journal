@@ -380,6 +380,38 @@ const DB = {
     if (error) throw error
   },
 
+  // ── Rulebook canónico (reglas) ───────────────────────────────────────────
+  async getReglas({ capa = null, soloActivas = false } = {}) {
+    let q = supa.from('reglas').select('*')
+    if (capa) q = q.eq('capa', capa)
+    if (soloActivas) q = q.eq('activa', true)
+    const { data, error } = await q
+      .order('capa', { ascending: true })
+      .order('orden', { ascending: true })
+    if (error) throw error
+    return data
+  },
+
+  async addRegla(payload) {
+    const { data, error } = await supa.from('reglas').insert(payload).select('*').single()
+    if (error) throw error
+    _checklistCache = null
+    return data
+  },
+
+  async updateRegla(id, patch) {
+    const { error } = await supa.from('reglas')
+      .update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id)
+    if (error) throw error
+    _checklistCache = null
+  },
+
+  async deleteRegla(id) {
+    const { error } = await supa.from('reglas').delete().eq('id', id)
+    if (error) throw error
+    _checklistCache = null
+  },
+
   // ── Diagnósticos Diarios ─────────────────────────────────────────────────
 
   async getDiagnosticoByDate(date) {

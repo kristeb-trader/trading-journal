@@ -2818,7 +2818,67 @@ body.modal-open { overflow: hidden; }
   gap: 8px;
 }
 
-/* ── Estrategia: bloques y reglas por setup ──────────────────────────────── */
+/* ── Estrategia: Rulebook canónico (editor por capas) ────────────────────── */
+.rb-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.rb-pill {
+  font-size: 0.78rem; font-weight: 500; color: var(--text2);
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px; padding: 6px 13px; cursor: pointer; transition: all var(--transition);
+}
+.rb-pill:hover { border-color: rgba(255,255,255,0.18); }
+.rb-pill.on { color: var(--text); background: rgba(29,158,117,0.16); border-color: rgba(29,158,117,0.45); }
+.rb-pill .n { opacity: 0.6; margin-left: 3px; }
+.rb-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 16px; font-size: 0.72rem; color: var(--text3); }
+.rb-f {
+  padding: 4px 9px; border-radius: 6px; cursor: pointer;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+}
+.rb-f:hover { border-color: rgba(255,255,255,0.16); }
+.rb-f.on { color: var(--text); border-color: rgba(255,255,255,0.22); }
+.rb-sep { opacity: 0.4; margin: 0 2px; }
+
+.rb-list { display: flex; flex-direction: column; gap: 10px; }
+.rb-card {
+  background: rgba(255,255,255,0.022); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 13px; padding: 13px 15px;
+}
+.rb-card.dura { border-left: 3px solid var(--red); border-radius: 0 13px 13px 0; }
+.rb-card.inactiva { opacity: 0.5; }
+.rb-crow { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.rb-bdg { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; }
+.b-capa { background: rgba(255,255,255,0.06); color: var(--text2); }
+.b-f1 { background: rgba(29,158,117,0.16); color: #3FE0A6; }
+.b-f2 { background: rgba(224,163,59,0.16); color: #E0A33B; }
+.b-f3 { background: rgba(91,148,201,0.18); color: #8FBDE8; }
+.rb-chip {
+  margin-left: auto; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;
+  padding: 3px 9px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+}
+.c-dura { background: rgba(226,75,74,0.16); color: #F2706F; border: 1px solid rgba(226,75,74,0.4); }
+.c-blanda { background: rgba(255,255,255,0.05); color: var(--text2); border: 1px solid rgba(255,255,255,0.1); }
+.rb-ttl { font-size: 0.92rem; font-weight: 600; margin: 0 0 3px; color: var(--text); }
+.rb-enu {
+  font-size: 0.8rem; color: var(--text2); line-height: 1.5; margin: 0 0 10px;
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+}
+.rb-foot { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.rb-tog { display: inline-flex; align-items: center; gap: 7px; font-size: 0.74rem; color: var(--text2); cursor: default; }
+.rb-sw { width: 30px; height: 17px; border-radius: 999px; background: rgba(255,255,255,0.12); position: relative; flex: 0 0 auto; cursor: pointer; transition: background var(--transition); }
+.rb-sw.on { background: rgba(29,158,117,0.55); }
+.rb-sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; transition: left var(--transition); }
+.rb-sw.on::after { left: 15px; }
+.rb-edit { margin-left: auto; color: var(--text3); font-size: 1rem; cursor: pointer; }
+.rb-edit:hover { color: var(--accent); }
+.rb-param { display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; color: var(--text2); }
+.rb-param input { width: 56px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 3px 7px; font-size: 0.78rem; text-align: right; }
+.rb-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px 10px; }
+.rb-ettl { font-size: 0.92rem; font-weight: 600; margin-bottom: 8px; }
+.rb-eenu { font-size: 0.82rem; line-height: 1.5; resize: vertical; }
+.rb-eactions { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.rb-del { color: var(--red); margin-left: auto; }
+.rb-empty { color: var(--text3); font-size: 0.85rem; padding: 24px 4px; text-align: center; }
+
+/* ── Estrategia: bloques y reglas por setup (legacy) ──────────────────────── */
 .estrat-block { margin-bottom: 28px; }
 .estrat-block-header { margin-bottom: 14px; }
 .estrat-block-header h3 {
