@@ -1,7 +1,8 @@
 # Plan — Unificación del Rulebook (reglas canónicas)
 
-> Estado: **EN CURSO** (iniciado 2026-06-26). Variante A aprobada (rulebook
-> atómico + narrativa delgada). Plan completo por fases, con aprobación en cada una.
+> Estado: **COMPLETADO** (2026-06-26). Variante A (rulebook atómico + narrativa
+> delgada). Las 4 fases ejecutadas y verificadas. Tablas viejas archivadas como
+> `*_archivada` (drop definitivo más adelante).
 
 ## Objetivo
 Unificar `setup_reglas`, `checklist_items` y las reglas atómicas de
@@ -96,7 +97,7 @@ regla es `dura`, el veredicto es INVÁLIDO por definición.
 - [ ] **Fase 3 — Prompt del Coach**: reconstruir el system prompt con reglas
       estructuradas (bloque DURAS, reglas del setup del día, filosofía) y pedir el
       `codigo` de la regla rota en el diagnóstico.
-- [~] **Fase 4 — Retiro** (EN CURSO 2026-06-26). Código: quitadas las funciones
+- [x] **Fase 4 — Retiro** (HECHO 2026-06-26). Código: quitadas las funciones
       muertas de `db.js` (getEstrategiaSecciones/updateEstrategiaSeccion/
       getSetupReglas/saveSetupRegla); el indicador NT8 `ChecklistChaumer` ahora lee
       de `reglas` (es_checklist) — requiere recompilar en NT8. SQL no destructivo
