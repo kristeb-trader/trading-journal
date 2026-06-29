@@ -84,9 +84,11 @@ regla es `dura`, el veredicto es INVÁLIDO por definición.
   `stop_max_usd=120`) debe pasar a **puntos** (≥ `stop_max_puntos` dispara alerta).
 
 ## Fases
-- [ ] **Fase 1 — BD aditiva (no rompe nada)**: crear `reglas`, migrar datos de
-      las 3 tablas vivas, marcar reglas duras, añadir `regla_codigo` a
-      `diagnostico_errores`. Las tablas viejas se conservan intactas.
+- [x] **Fase 1 — BD aditiva (no rompe nada)** (HECHO 2026-06-26). `reglas` creada
+      y verificada: 9 filosofía, 8 proceso (7 duras + `chk_contexto` blanda),
+      2 riesgo (`stop_max_puntos` dura, `no_fomc` blanda), setup `reingreso`
+      explotado. `objetivos.stop_max_puntos`=80. `diagnostico_errores.regla_codigo`
+      añadida. Tablas viejas intactas.
       → `docs/migrations/2026-06-26-reglas-unificacion-fase1.sql`
 - [ ] **Fase 2 — Código web**: `db.js` (queries → `reglas`), sección Estrategia
       (editor unificado por capa/setup/fase), `form.js` (checklist lee de `reglas`),
