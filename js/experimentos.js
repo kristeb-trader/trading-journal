@@ -30,8 +30,8 @@ const Experimentos = (() => {
     // Tasa base: % target de los trades (sin break-even) del mismo período
     const tradesP = from ? allTrades.filter(t => (t.trade_date || '') >= from) : allTrades
     const nonBE = tradesP.filter(t => Math.abs(parseFloat(t.profit) || 0) > 6)
-    const baseT = nonBE.filter(t => t.resultado === 'target').length
-    const baseS = nonBE.filter(t => t.resultado === 'stop').length
+    const baseT = nonBE.filter(isWinTrade).length
+    const baseS = nonBE.filter(isLossTrade).length
     const base = (baseT + baseS) > 0 ? Math.round(baseT / (baseT + baseS) * 100) : null
 
     const stats = catalogo.map(exp => {

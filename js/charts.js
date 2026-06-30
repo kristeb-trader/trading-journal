@@ -167,8 +167,8 @@ const Charts = (() => {
   function statsOf(trades) {
     const nonBE   = trades.filter(t => !BE(t))
     const beCount = trades.length - nonBE.length
-    const targets = nonBE.filter(t => t.resultado === 'target').length
-    const stops   = nonBE.filter(t => t.resultado === 'stop').length
+    const targets = nonBE.filter(isWinTrade).length
+    const stops   = nonBE.filter(isLossTrade).length
     const pnl     = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
     const grossWin  = nonBE.filter(t => parseFloat(t.profit) > 0).reduce((s, t) => s + parseFloat(t.profit), 0)
     const grossLoss = Math.abs(nonBE.filter(t => parseFloat(t.profit) < 0).reduce((s, t) => s + parseFloat(t.profit), 0))
@@ -328,8 +328,8 @@ const Charts = (() => {
   // ── Distribución de resultados ──────────────────────────────────────────
   function renderResults(trades) {
     destroy('results')
-    const targets = trades.filter(t => !BE(t) && t.resultado==='target').length
-    const stops   = trades.filter(t => !BE(t) && t.resultado==='stop').length
+    const targets = trades.filter(isWinTrade).length
+    const stops   = trades.filter(isLossTrade).length
     const tot = targets + stops
     const winRate = tot ? Math.round(targets / tot * 100) : 0
     instances.results = new Chart(document.getElementById('resultsChart'), {

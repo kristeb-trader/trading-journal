@@ -127,8 +127,8 @@ const Coach = (() => {
 
     // Trades de hoy (solo cuenta PA real)
     const pnlHoy      = tradesPA.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
-    const targetsHoy  = tradesPA.filter(t => t.resultado === 'target').length
-    const stopsHoy    = tradesPA.filter(t => t.resultado === 'stop').length
+    const targetsHoy  = tradesPA.filter(isWinTrade).length
+    const stopsHoy    = tradesPA.filter(isLossTrade).length
     const besHoy      = tradesPA.filter(t => t.resultado === 'be').length
     const tradesStr   = tradesPA.length > 0
       ? `${tradesPA.length} trades (Targets: ${targetsHoy} | Stops: ${stopsHoy} | BEs: ${besHoy}) — P&L: ${fmtPnl(pnlHoy)}`

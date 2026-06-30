@@ -369,8 +369,8 @@ const Metrics = (() => {
     const totalTrades = trades.length
     const isBreakEven = t => Math.abs(parseFloat(t.profit) || 0) <= 6
     const nonBETrades = trades.filter(t => !isBreakEven(t))
-    const targets = nonBETrades.filter(t => t.resultado === 'target').length
-    const stops   = nonBETrades.filter(t => t.resultado === 'stop').length
+    const targets = nonBETrades.filter(isWinTrade).length
+    const stops   = nonBETrades.filter(isLossTrade).length
     const winRate = nonBETrades.length > 0 ? (targets / nonBETrades.length * 100).toFixed(1) : 0
     const netPnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
     const streak = calcStreak(trades)

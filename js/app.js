@@ -198,8 +198,8 @@ const Modal = {
   // Pestaña 2 — Operativa (trades + campos + checklist)
   _renderOperativa({ trades, sesion }) {
     const pnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
-    const targets = trades.filter(t => t.resultado === 'target').length
-    const stops = trades.filter(t => t.resultado === 'stop').length
+    const targets = trades.filter(isWinTrade).length
+    const stops = trades.filter(isLossTrade).length
 
     let tradesHtml
     if (sesion?.no_opero && !trades.length) {

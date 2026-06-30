@@ -31,8 +31,8 @@ const Gallery = (() => {
   function dayResult(date) {
     const trades = tradesByDate[date] || []
     if (!trades.length) return 'empty'
-    const targets = trades.filter(t => t.resultado === 'target').length
-    const stops   = trades.filter(t => t.resultado === 'stop').length
+    const targets = trades.filter(isWinTrade).length
+    const stops   = trades.filter(isLossTrade).length
     if (targets > 0 && stops === 0) return 'target'
     if (stops > 0 && targets === 0) return 'stop'
     if (targets > 0 && stops > 0)   return 'mixed'

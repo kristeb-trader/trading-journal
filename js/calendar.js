@@ -108,8 +108,8 @@ const Calendar = (() => {
     }
     const nonBE = trades.filter(t => !isBreakEven(t.profit))
     if (nonBE.length === 0) return 'be'  // todos los trades del día son B.E.
-    const targets = nonBE.filter(t => t.resultado === 'target').length
-    const stops   = nonBE.filter(t => t.resultado === 'stop').length
+    const targets = nonBE.filter(isWinTrade).length
+    const stops   = nonBE.filter(isLossTrade).length
     if (targets > 0 && stops === 0) return 'target'
     if (stops > 0 && targets === 0) return 'stop'
     if (targets > 0 && stops > 0)   return 'mixed'
@@ -325,7 +325,7 @@ const Calendar = (() => {
       .reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
     const monthName = MONTHS_ES[currentMonth - 1]
     // Trade real = target o stop, excluyendo B.E. (no cuenta días sin entradas)
-    const esTradeReal = t => !isBreakEven(t.profit) && (t.resultado === 'target' || t.resultado === 'stop')
+    const esTradeReal = t => tradeOutcome(t) !== null
     const totalTrades = Object.values(tradesCache).flat().filter(esTradeReal).length
     // Días con actividad = días operados ∪ días conectados/analizados (incluye los
     // "sin entradas"; omite solo los días sin operar y sin conexión).
@@ -348,8 +348,8 @@ const Calendar = (() => {
     const tradingDays = diasConActividad()
     const totalPnl = allTrades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
     const nonBETrades = allTrades.filter(t => !isBreakEven(t.profit))
-    const targets = nonBETrades.filter(t => t.resultado === 'target').length
-    const stops   = nonBETrades.filter(t => t.resultado === 'stop').length
+    const targets = nonBETrades.filter(isWinTrade).length
+    const stops   = nonBETrades.filter(isLossTrade).length
     const winRate = nonBETrades.length > 0 ? (targets / nonBETrades.length * 100).toFixed(0) : 0
 
     // Sesiones del mes actual (solo días operados)

@@ -22,6 +22,22 @@ function hydrateChecklist(s) {
   return s
 }
 
+// Clasificación del resultado efectivo de un trade (para tasa de acierto y conteos):
+//  - break-even (|profit| ≤ 6) → null (no cuenta como acierto ni stop)
+//  - resultado 'target'/'stop' explícito manda
+//  - cualquier otro (p. ej. 'close'/sin clasificar) se infiere por el signo del P&L:
+//    positivo → 'win', negativo → 'loss'
+// Mantiene la tasa de acierto coherente con el color del día en el calendario.
+function tradeOutcome(t) {
+  const p = parseFloat(t.profit) || 0
+  if (Math.abs(p) <= 6) return null
+  if (t.resultado === 'target') return 'win'
+  if (t.resultado === 'stop') return 'loss'
+  return p > 0 ? 'win' : 'loss'
+}
+const isWinTrade = t => tradeOutcome(t) === 'win'
+const isLossTrade = t => tradeOutcome(t) === 'loss'
+
 const DB = {
   // ── Trades ──────────────────────────────────────────────────────────────
 

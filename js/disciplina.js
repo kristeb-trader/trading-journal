@@ -185,8 +185,8 @@ const Disciplina = (() => {
     const nonBE = dateTrades.filter(t => !isBE(t.profit))
     if (!dateTrades.length) return { t: '—', cls: 'noop' }
     if (!nonBE.length) return { t: 'B.E.', cls: 'noop' }
-    const tg = nonBE.filter(t => t.resultado === 'target').length
-    const sl = nonBE.filter(t => t.resultado === 'stop').length
+    const tg = nonBE.filter(isWinTrade).length
+    const sl = nonBE.filter(isLossTrade).length
     if (tg > 0 && sl === 0) return { t: 'TG', cls: 'tg' }
     if (sl > 0 && tg === 0) return { t: 'SL', cls: 'sl' }
     if (tg > 0 && sl > 0) return { t: 'Mixto', cls: 'mix' }
