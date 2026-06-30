@@ -1,6 +1,7 @@
 # Trading Journal NQ Futures — CLAUDE.md
 
-> Contexto automático para Claude Code. Para historial detallado de fases ver `docs/historial-proyecto.md`.
+> Contexto automático para Claude Code. Historial completo de fases (y hitos ya
+> completados) en `docs/historial-proyecto.md`.
 
 ## Proyecto
 Dashboard personal para registro y análisis de operativa diaria en NQ/MNQ Futures (1 min), siguiendo la **Metodología Chaumer**. Arquitectura 100% serverless, ~$0.40/mes.
@@ -30,14 +31,14 @@ Dashboard personal para registro y análisis de operativa diaria en NQ/MNQ Futur
 ```
 js/app.js        — Boot, navegación SPA, Modal.openDay (modal del calendario)
 js/calendar.js   — Calendario mensual, filtro de cuenta, openDayModal
-js/coach.js      — Coach IA: flujo 3 etapas, chat, diagnóstico, guardar. Lee de `reglas` (cargarReglas + fmtFilosofia/fmtReglasSetup/fmtReglasDuras). Análisis Etapa 1 con render en tarjetas (renderContexto/Desarrollo/Validacion)
+js/coach.js      — Coach IA: flujo 3 etapas, chat, diagnóstico, guardar. Lee de `reglas`
 js/metrics.js    — KPIs y métricas generales (cards del calendario)
-js/charts.js     — Sección Análisis unificada: filtros Mes/Trimestre/Anual adaptativos
+js/charts.js     — Sección Análisis unificada: filtros Mes/Trimestre/Anual
 js/form.js       — Formulario de sesión diaria + experimentos
 js/db.js         — Capa de datos Supabase (todas las queries)
 js/experimentos.js — Laboratorio de Experimentos: veredictos + matriz cronológica
 js/apex.js       — Apex Tracker: cuentas de fondeo, vista detalle, auto-carga NT8
-js/estrategia.js — Sección Estrategia = editor del rulebook `reglas` por capas (filtros, dura/blanda, es_checklist, stop param)
+js/estrategia.js — Editor del rulebook `reglas` por capas
 css/styles.css   — Dark mode completo + responsive mobile
 TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 ```
@@ -50,26 +51,24 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 | `diagnosticos_diarios` | Análisis IA: 3 secciones técnicas + 4 diagnóstico + chat |
 | `diagnostico_errores` | Errores detectados (manual + IA) con recomendaciones |
 | `diagnostico_experimentos` | Condiciones en prueba (T/S) por sesión |
-| `catalogo_errores` | Maestro de nombres de errores con tipo |
-| `catalogo_emociones` | Emociones con emoji |
-| `catalogo_experimentos` | Experimentos activos/inactivos |
-| **`reglas`** | **Rulebook canónico unificado** (1 fila = 1 regla). Capas: filosofia/proceso/riesgo; `setup` (iri/reingreso) como etiqueta en proceso Fase 2; `tipo` dura/blanda; `es_checklist`+`fase` → checklist diario. Reemplaza a las 3 de abajo |
-| ~~`setup_reglas`~~ | ARCHIVADA → `setup_reglas_archivada` (Fase 4 unificación) |
-| ~~`estrategia_chaumer`~~ | ARCHIVADA → `estrategia_chaumer_archivada` (Fase 4) |
-| `checklist_items` | (pendiente archivar: tras recompilar el indicador NT8 ChecklistChaumer) — ya nadie la lee salvo el panel NT8 viejo |
-| `objetivos` | Stop máx, trades/día, P&L objetivo, límite pérdida |
+| `catalogo_errores` / `catalogo_emociones` / `catalogo_experimentos` | Maestros |
+| **`reglas`** | **Rulebook canónico unificado** (1 fila = 1 regla). Capas filosofia/proceso/riesgo; `setup` (iri/reingreso) etiqueta en proceso Fase 2; `tipo` dura/blanda; `es_checklist`+`fase` → checklist diario. Ver [[rulebook-modelo]] |
+| `objetivos` | Stop máx (`stop_max_puntos`, default 80), trades/día, P&L objetivo, límite pérdida |
 | `fomc_dates` | Fechas FOMC 2025-2026 |
 | `apex_cuentas` | Cuentas de fondeo Apex: parámetros (DD, target, safety net) y estado |
-| `apex_registros` | Registro diario manual por cuenta Apex (P&L, balance, threshold) |
-| `apex_trades` | Trades individuales auto-exportados de NT8 (cuentas de evaluación) |
+| `apex_trades` | Trades + días auto-exportados de NT8 (`tipo='trade'`/`'dia'`) |
+
+> Tablas archivadas (no usar): `setup_reglas_archivada`, `estrategia_chaumer_archivada`.
+> `checklist_items` pendiente de archivar tras recompilar el NT8 ChecklistChaumer.
+> Esquema detallado en `memory/db-schema.md`.
 
 ## Coach IA — flujo
 1. **Análisis Técnico** → 1ª llamada IA → 3 secciones (Contexto / Desarrollo / Validación)
-2. **Chat** (opcional) → si la IA genera el diagnóstico estructurado en el chat, se auto-aplica al Step 3
+2. **Chat** (opcional) → si la IA genera el diagnóstico estructurado, se auto-aplica al Step 3
 3. **Diagnóstico Final** → 2ª llamada IA → 4 secciones (Veredicto / Errores / Aprendizaje / Resumen)
 
 ## Convención P&L
-`profit` = **NETO** (comisión round-trip ya descontada). `commission` = round-trip total. Convención unificada Jun 2026.
+`profit` = **NETO** (comisión round-trip ya descontada). `commission` = round-trip total. Unificada Jun 2026.
 
 ## Flujo de trabajo (obligatorio)
 1. Analizar → presentar diagnóstico → **esperar aprobación** → implementar
@@ -79,70 +78,29 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 5. Cambios en BD → entregar SQL en `docs/migrations/` y avisar al usuario que lo corra
 
 ## Estado actual (Jun 2026)
-### Funcionando
-- Secciones: Calendario+Métricas, Trades, Registrar, Análisis (unificado: Mes/Trimestre/Anual), Experimentos, Apex Tracker, Galería, Historial, Coach IA, Estrategia, Datos
-- Coach IA 3 etapas + auto-detección diagnóstico en chat
-- Filtro de cuenta: carga PA-APEX por defecto, persiste en localStorage
-- Nav mobile scrollable horizontal
+Funcionando: todas las secciones (Calendario+Métricas, Trades, Registrar, Análisis,
+Experimentos, Apex Tracker, Galería, Historial, Coach IA, Estrategia, Datos), Coach IA
+3 etapas, filtro de cuenta persistente, nav mobile.
 
-### Pendientes
-- **📕 Unificación del Rulebook — COMPLETADO** (2026-06-26). 4 tablas (`setup_reglas`,
-  `estrategia_chaumer`, `checklist_items` + la muerta `reglas`) unificadas en la tabla
-  canónica **`reglas`**. Plan/modelo: `docs/plan-unificacion-reglas.md`. Migraciones:
-  `2026-06-26-reglas-unificacion-fase1.sql`, `...-fase4-archivar.sql`, `...-modelo-final.sql`.
-  Modelo: 3 capas (filosofia/proceso/riesgo); `setup` (iri/reingreso) etiqueta en proceso
-  Fase 2; `tipo` dura/blanda; checklist = `es_checklist`+`fase`. Stop en PUNTOS
-  (`objetivos.stop_max_puntos`, default 80, parametrizable). Reglas DURAS clave: stop≤80,
-  R:R 1:1 (nunca mover stop/target), target sin zonas en contra. Estrategia de los IRI/
-  Reingreso definida en `reglas` (ver [[rulebook-modelo]]). **Pendientes menores:** el
-  trader debe afinar/reorganizar la **Filosofía** en el editor; archivar `checklist_items`
-  tras recompilar el NT8 ChecklistChaumer; opcional poblar `diagnostico_errores.regla_codigo`;
-  drop definitivo de las `*_archivada` más adelante.
-- **🤖 Coach IA — análisis rediseñado** (2026-06-26). Las 3 secciones (Contexto/Desarrollo/
-  Validación) ahora se renderizan en tarjetas (chip de sesgo, línea de tiempo, checklist de
-  setup) y el prompt es breve, no vuelca datos crudos y tiene bloque "NO ADIVINES precios"
-  (línea verde=PDH, roja=PDL, zonas naranjas y precios de trades son exactos; preguntar si falta).
-  Falta probar en vivo el formato real de la IA.
-- **⚙️ Bot Telegram — auto-deploy activo** (2026-06-26): GitHub Action despliega el bot en
-  cada push a `TelegramBot/**` (secret repo `CLOUDFLARE_API_TOKEN`). Ver [[deploy-bot]].
-- **🔒 Blindaje de seguridad (RLS + Auth) — COMPLETADO** (2026-06-24). RLS activo
-  en todas las tablas; web vía login Supabase Auth (rol `authenticated`); bot,
-  Worker `/api/session` e indicadores NT8 con `service_role`. `anon` bloqueada y
-  verificada (anon key pública inservible). Plan y fases en `docs/plan-seguridad-rls.md`.
-  **NO usar "Resolve issue" de Supabase** (rompe las políticas). Tablas nuevas:
-  activar RLS + política `auth_all` (ver `docs/migrations/2026-06-24-fase2-activar-rls.sql`).
-  · **Export NT8 verificado (2026-06-25)**: trade de Sim101 → `apex_trades` con RLS
-    activo. Requirió grants de `service_role` (faltaban en `apex_trades` → HTTP 403/
-    42501); arreglado con `docs/migrations/2026-06-25-grants-service-role.sql` (CRUD
-    a service_role en todas las tablas + default privileges). En éxito el indicador
-    NO imprime nada en el Output (solo si falla). Routing: cuentas sin prefijo `PA-`
-    (ej. Sim101) → `apex_trades` sin Telegram; `PA-*` → `trades` + Telegram.
-- **Unificación tablas Apex — drop pendiente**: `apex_registros` + `apex_trades` ya
-  se unificaron en `apex_trades` (filas `tipo='trade'`/`'dia'`). Falta ejecutar
-  `drop table apex_registros;` (comentado en `docs/migrations/2026-06-23-apex-unificar-tablas.sql`)
-  tras confirmar que todo cuadra. El código tiene fallback mientras tanto.
-- **AddOn NT8 `ChecklistChaumer`** — entregado y compila; el usuario lo prueba en
-  vivo con la operativa (panel flotante de checklist sincronizado con `sesiones.checklist`).
-- **Reestructuración Disciplina/Reglas/Errores por fases** — COMPLETA (Bloques 1-5,
-  2026-06-19). Ver `docs/plan-disciplina-fases.md`.
+### Pendientes abiertos
 - **Migraciones por correr** (Supabase SQL): `2026-06-19-sesiones-chk-cuenta-pa.sql`,
   `2026-06-19-sesiones-alerta-riesgo.sql`.
 - Verificar que Worker web `/api/session` guarde los campos nuevos (`chk_cuenta_pa`,
-  `alerta_riesgo_vista`) y los de premercado correctamente
-- Recomendaciones tipificadas en Coach IA (Fase 4B) — pendiente de implementar
-- Estadísticas de 3 corridas, volumen en trades, tasa de ejecución de setups válidos
-- **Limpieza columnas `chk_*` de `sesiones`** (PENDIENTE, dejada para más adelante).
-  El checklist ya vive en `sesiones.checklist` (JSONB) + catálogo `checklist_items`;
-  las 7 columnas `chk_*` se conservan como espejo/respaldo. Para eliminarlas (orden
-  seguro): 1) `form.js` y `TelegramBot/worker.js` dejan de escribir `chk_*` (solo
-  `checklist`); 2) verificar `select count(*) from sesiones where checklist is null
-  or checklist='{}'::jsonb;` = 0; 3) `ALTER TABLE sesiones DROP COLUMN` de las 7.
-  La lectura (calendario/charts/metrics/coach) NO se toca: la hidratación en `db.js`
-  sigue exponiendo `s.chk_*` desde el JSONB.
+  `alerta_riesgo_vista`) y los de premercado.
+- **Apex — drop pendiente:** ejecutar `drop table apex_registros;` (comentado en
+  `docs/migrations/2026-06-23-apex-unificar-tablas.sql`) tras confirmar que cuadra.
+  El código tiene fallback mientras tanto.
+- Coach IA: probar en vivo el formato real de las 3 tarjetas.
+- AddOn NT8 `ChecklistChaumer`: el usuario lo prueba en vivo (panel flotante sincronizado
+  con `sesiones.checklist`). Tras validar, archivar `checklist_items`.
+- Recomendaciones tipificadas en Coach IA (Fase 4B) — por implementar.
+- Estadísticas de 3 corridas, volumen en trades, tasa de ejecución de setups válidos.
+- **Limpieza columnas `chk_*` de `sesiones`** (más adelante). El checklist ya vive en
+  `sesiones.checklist` (JSONB). Orden seguro: 1) `form.js` y `worker.js` dejan de escribir
+  `chk_*`; 2) verificar `checklist` no nulo en todas las filas; 3) `DROP COLUMN` las 7.
+  La lectura no se toca (la hidratación en `db.js` expone `s.chk_*` desde el JSONB).
 
 ## Para contexto adicional
-- Plan de seguridad (RLS + Auth): `docs/plan-seguridad-rls.md` ← EN CURSO
-- Plan disciplina por fases: `docs/plan-disciplina-fases.md`
-- Historial completo de fases: `docs/historial-proyecto.md`
-- Esquema BD detallado: `memory/db-schema.md`
-- Perfil del usuario: `memory/user-profile.md`
+- Historial completo + hitos cerrados: `docs/historial-proyecto.md`
+- Esquema BD detallado: `memory/db-schema.md` · Perfil del usuario: `memory/user-profile.md`
+- Planes: `docs/plan-seguridad-rls.md`, `docs/plan-disciplina-fases.md`, `docs/plan-unificacion-reglas.md`

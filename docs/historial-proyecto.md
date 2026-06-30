@@ -1015,6 +1015,36 @@ Reestructuración para conectar **Disciplina, Reglas y Errores** bajo un eje com
 
 ---
 
+## Checkpoint Jun 2026 — hitos completados (movidos desde CLAUDE.md)
+
+> Estos ítems estaban en la sección "Pendientes" de CLAUDE.md pero ya están COMPLETADOS.
+> Se conservan aquí como registro; el detalle vive en los planes/migraciones citados.
+
+- **📕 Unificación del Rulebook — COMPLETADO (2026-06-26).** 4 tablas (`setup_reglas`,
+  `estrategia_chaumer`, `checklist_items` + la muerta `reglas`) unificadas en la canónica
+  **`reglas`**. Plan: `docs/plan-unificacion-reglas.md`. Migraciones:
+  `2026-06-26-reglas-unificacion-fase1.sql`, `...-fase4-archivar.sql`, `...-modelo-final.sql`.
+  Modelo: 3 capas (filosofia/proceso/riesgo); `setup` (iri/reingreso) etiqueta en proceso
+  Fase 2; `tipo` dura/blanda; checklist = `es_checklist`+`fase`. Stop en PUNTOS
+  (`objetivos.stop_max_puntos`, default 80). Reglas DURAS: stop≤80, R:R 1:1 (nunca mover
+  stop/target), target sin zonas en contra.
+- **🤖 Coach IA — análisis rediseñado (2026-06-26).** Las 3 secciones (Contexto/Desarrollo/
+  Validación) se renderizan en tarjetas (chip de sesgo, línea de tiempo, checklist de setup);
+  prompt breve, sin volcar datos crudos, con bloque "NO ADIVINES precios".
+- **⚙️ Bot Telegram — auto-deploy activo (2026-06-26):** GitHub Action despliega el bot en
+  cada push a `TelegramBot/**` (secret `CLOUDFLARE_API_TOKEN`).
+- **🔒 Blindaje de seguridad (RLS + Auth) — COMPLETADO (2026-06-24).** RLS activo en todas
+  las tablas; web vía login Supabase Auth (`authenticated`); bot, Worker `/api/session` e
+  indicadores NT8 con `service_role`. `anon` bloqueada. Plan: `docs/plan-seguridad-rls.md`.
+  **NO usar "Resolve issue" de Supabase** (rompe las políticas). Tablas nuevas: activar RLS
+  + política `auth_all`. Export NT8 verificado (2026-06-25); grants service_role en
+  `docs/migrations/2026-06-25-grants-service-role.sql`. Routing: cuentas sin prefijo `PA-`
+  → `apex_trades` sin Telegram; `PA-*` → `trades` + Telegram.
+- **Reestructuración Disciplina/Reglas/Errores por fases — COMPLETA (Bloques 1-5,
+  2026-06-19).** Ver `docs/plan-disciplina-fases.md`.
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo
