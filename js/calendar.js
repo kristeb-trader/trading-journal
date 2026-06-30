@@ -113,12 +113,33 @@ const Calendar = (() => {
     if (targets > 0 && stops === 0) return 'target'
     if (stops > 0 && targets === 0) return 'stop'
     if (targets > 0 && stops > 0)   return 'mixed'
+    // Sin clasificación por `resultado`: colorear por el signo del P&L neto del día
+    // (evita que un día claramente ganador/perdedor salga gris como 'other').
+    const net = nonBE.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
+    if (net > 6)  return 'target'
+    if (net < -6) return 'stop'
     return 'other'
   }
 
   function dayPnl(trades) {
     if (!trades || trades.length === 0) return null
     return trades.reduce((sum, t) => sum + (parseFloat(t.profit) || 0), 0)
+  }
+
+  // ¿La sesión cuenta como día con actividad? Operó, o no operó pero sí se conectó
+  // a analizar (se_conecto). Se omiten solo los días sin operar y sin conexión.
+  function seConecto(s) { return !s.no_opero || s.se_conecto !== false }
+
+  // Días con actividad del mes actual = días operados ∪ días conectados/analizados
+  // (incluye "sin entradas" conectado; excluye festivos/FOMC sin conexión).
+  function diasConActividad() {
+    const monthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`
+    const set = new Set()
+    Object.keys(tradesCache).forEach(d => { if (tradesCache[d]?.length) set.add(d) })
+    Object.values(sesionesCache).forEach(s => {
+      if (s.sesion_date?.startsWith(monthPrefix) && seConecto(s)) set.add(s.sesion_date)
+    })
+    return set.size
   }
 
   async function load() {
@@ -213,11 +234,10 @@ const Calendar = (() => {
         let result = isFuture ? null : dayResult(trades, sesion, dateStr)
         // Día FOMC automático (en fomc_dates) sin operar: mismo look que el FOMC manual
         if (!isFuture && isFomc && !sesion?.no_opero && trades.length === 0) result = 'fomc'
-        // Día FOMC en el que SÍ se operó: fondo FOMC + borde según el resultado
-        const fomcTraded = !isFuture && isFomc && !sesion?.no_opero && trades.length > 0
+        // Día FOMC en el que SÍ se operó: color normal según el resultado (la marca
+        // FOMC se conserva solo en la leyenda/badge, no en el color de la celda).
         let cellClass = 'cal-cell'
         if (isFuture) cellClass += ' future'
-        else if (fomcTraded) cellClass += ` day-fomc fomc-res-${result}`
         else cellClass += ` day-${result}`
         if (isToday) cellClass += ' today'
 
@@ -307,13 +327,13 @@ const Calendar = (() => {
     // Trade real = target o stop, excluyendo B.E. (no cuenta días sin entradas)
     const esTradeReal = t => !isBreakEven(t.profit) && (t.resultado === 'target' || t.resultado === 'stop')
     const totalTrades = Object.values(tradesCache).flat().filter(esTradeReal).length
-    // Días operados = días con al menos un trade real (excluye festivos, días sin
-    // conexión, días sin entradas y días solo-B.E.)
-    const diasOperados = Object.values(tradesCache).filter(ts => ts.some(esTradeReal)).length
+    // Días con actividad = días operados ∪ días conectados/analizados (incluye los
+    // "sin entradas"; omite solo los días sin operar y sin conexión).
+    const diasActividad = diasConActividad()
     html += `
       <div class="cal-month-total-widget ${totalPnl >= 0 ? 'positive' : 'negative'}">
         <span class="cmt-label">TOTAL ${monthName.toUpperCase()} ${currentYear}</span>
-        <span class="cmt-sub">${diasOperados} día${diasOperados !== 1 ? 's' : ''} · ${totalTrades} trade${totalTrades !== 1 ? 's' : ''}</span>
+        <span class="cmt-sub">${diasActividad} día${diasActividad !== 1 ? 's' : ''} · ${totalTrades} trade${totalTrades !== 1 ? 's' : ''}</span>
         <span class="cmt-amount ${totalPnl >= 0 ? 'positive' : 'negative'}">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(0)}</span>
       </div>`
 
@@ -325,7 +345,7 @@ const Calendar = (() => {
 
   function renderMonthlySummary() {
     const allTrades = Object.values(tradesCache).flat()
-    const tradingDays = Object.keys(tradesCache).length
+    const tradingDays = diasConActividad()
     const totalPnl = allTrades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
     const nonBETrades = allTrades.filter(t => !isBreakEven(t.profit))
     const targets = nonBETrades.filter(t => t.resultado === 'target').length

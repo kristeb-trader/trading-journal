@@ -334,14 +334,9 @@ small { font-size: 0.82em; }
 .cal-cell.day-sin-setup{ background: rgba(99,102,241,0.08);  border-color: rgba(99,102,241,0.3); }
 .cal-cell.day-other    { background: rgba(255,255,255,0.04); }
 .cal-cell.day-festivo  { background: rgba(56,131,246,0.09);  border-color: rgba(56,131,246,0.28); }
+/* Día FOMC sin operar: color natural ámbar. Si se operó, la celda usa el color
+   del resultado y la marca FOMC queda solo en el badge. */
 .cal-cell.day-fomc     { background: rgba(194,137,72,0.12);  border-color: rgba(194,137,72,0.35); }
-
-/* Día FOMC en el que SÍ se operó: fondo FOMC, borde según el resultado */
-.cal-cell.day-fomc.fomc-res-target { border-color: rgba(29,158,117,0.7) !important; }
-.cal-cell.day-fomc.fomc-res-stop   { border-color: rgba(226,75,74,0.7)  !important; }
-.cal-cell.day-fomc.fomc-res-mixed  { border-color: rgba(186,117,23,0.7) !important; }
-.cal-cell.day-fomc.fomc-res-be     { border-color: rgba(255,255,255,0.3) !important; }
-.cal-cell.day-fomc.fomc-res-other  { border-color: rgba(255,255,255,0.3) !important; }
 
 .cal-status-badge {
   font-size: 0.6rem; font-weight: 700; letter-spacing: 0.03em;
