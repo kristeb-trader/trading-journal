@@ -1,7 +1,8 @@
 // Estrategia — Rulebook canónico (reglas) por capas: filosofía/setup/proceso/riesgo
 const Estrategia = (() => {
-  const CAPAS = ['filosofia', 'setup', 'proceso', 'riesgo']
-  const CAPA_LABEL = { filosofia: 'Filosofía', setup: 'Setup', proceso: 'Proceso', riesgo: 'Riesgo' }
+  const CAPAS = ['filosofia', 'proceso', 'riesgo']
+  const CAPA_LABEL = { filosofia: 'Filosofía', proceso: 'Proceso', riesgo: 'Riesgo' }
+  const SETUP_LABEL = { iri: 'IRI', reingreso: 'Reingreso' }
   const FASE_CLS = { 1: 'b-f1', 2: 'b-f2', 3: 'b-f3' }
 
   let reglas = []
@@ -66,10 +67,7 @@ const Estrategia = (() => {
   function metaBadges(r) {
     let b = `<span class="rb-bdg b-capa">${CAPA_LABEL[r.capa] || r.capa}</span>`
     if (r.capa === 'proceso' && r.fase) b += `<span class="rb-bdg ${FASE_CLS[r.fase]}">Fase ${r.fase}</span>`
-    if (r.capa === 'setup') {
-      const meta = [r.setup, r.campo].filter(Boolean).join(' · ')
-      if (meta) b += `<span class="rb-bdg b-capa">${esc(meta)}</span>`
-    }
+    if (r.setup) b += `<span class="rb-bdg b-setup">${SETUP_LABEL[r.setup] || esc(r.setup)}</span>`
     return b
   }
 

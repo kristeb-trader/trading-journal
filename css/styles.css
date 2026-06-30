@@ -2850,6 +2850,7 @@ body.modal-open { overflow: hidden; }
 .b-f1 { background: rgba(29,158,117,0.16); color: #3FE0A6; }
 .b-f2 { background: rgba(224,163,59,0.16); color: #E0A33B; }
 .b-f3 { background: rgba(91,148,201,0.18); color: #8FBDE8; }
+.b-setup { background: rgba(127,119,221,0.18); color: #afa9ec; }
 .rb-chip {
   margin-left: auto; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;
   padding: 3px 9px; border-radius: 999px; cursor: pointer; white-space: nowrap;
