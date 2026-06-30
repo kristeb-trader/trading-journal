@@ -192,82 +192,6 @@ const DataManager = (() => {
     renderList(items, 'catalogoCasuisticasList')
   }
 
-  // ── Checklist de disciplina ─────────────────────────────────────────────────
-
-  function renderChecklistItems(items) {
-    const el = document.getElementById('checklistItemsList')
-    if (!el) return
-    if (!items.length) {
-      el.innerHTML = '<p class="catalog-empty">Sin ítems registrados</p>'
-      return
-    }
-    el.innerHTML = items.map(it => `
-      <div class="catalog-item ${!it.activo ? 'catalog-item-inactive' : ''}" data-id="${it.id}">
-        <label class="catalog-toggle" title="${it.activo ? 'Activo' : 'Inactivo'}">
-          <input type="checkbox" class="tog-chk" data-id="${it.id}" ${it.activo ? 'checked' : ''}>
-          <span class="toggle-track"></span>
-        </label>
-        <select class="catalog-tipo-select chk-fase" data-id="${it.id}" title="Fase del proceso">
-          <option value="1" ${it.fase == 1 ? 'selected' : ''}>Fase 1</option>
-          <option value="2" ${it.fase == 2 ? 'selected' : ''}>Fase 2</option>
-          <option value="3" ${it.fase == 3 ? 'selected' : ''}>Fase 3</option>
-        </select>
-        <span class="catalog-nombre">${it.texto}</span>
-        <button class="btn-edit-catalog" data-id="${it.id}" data-texto="${it.texto}" title="Editar texto">
-          <i class="ti ti-pencil"></i>
-        </button>
-        <button class="btn-del-catalog" data-id="${it.id}" title="Eliminar">
-          <i class="ti ti-trash"></i>
-        </button>
-      </div>`).join('')
-
-    el.querySelectorAll('.tog-chk').forEach(chk => {
-      chk.addEventListener('change', async () => {
-        try {
-          await DB.updateChecklistItem(parseInt(chk.dataset.id), { activo: chk.checked })
-          chk.closest('.catalog-item').classList.toggle('catalog-item-inactive', !chk.checked)
-        } catch { Toast.show('Error al actualizar', 'error'); chk.checked = !chk.checked }
-      })
-    })
-
-    el.querySelectorAll('.chk-fase').forEach(sel => {
-      sel.addEventListener('change', async () => {
-        try {
-          await DB.updateChecklistItem(parseInt(sel.dataset.id), { fase: parseInt(sel.value) })
-          Toast.show('Fase actualizada', 'success')
-        } catch { Toast.show('Error al actualizar', 'error') }
-      })
-    })
-
-    el.querySelectorAll('.btn-edit-catalog').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const nuevo = prompt('Editar texto del ítem:', btn.dataset.texto)
-        if (nuevo === null || !nuevo.trim()) return
-        try {
-          await DB.updateChecklistItem(parseInt(btn.dataset.id), { texto: nuevo.trim() })
-          btn.dataset.texto = nuevo.trim()
-          btn.closest('.catalog-item').querySelector('.catalog-nombre').textContent = nuevo.trim()
-          Toast.show('Ítem actualizado', 'success')
-        } catch { Toast.show('Error al actualizar', 'error') }
-      })
-    })
-
-    el.querySelectorAll('.btn-del-catalog').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!confirm('¿Eliminar este ítem del checklist? Las sesiones históricas conservan su respuesta.')) return
-        try {
-          await DB.deleteChecklistItem(parseInt(btn.dataset.id))
-          btn.closest('.catalog-item').remove()
-        } catch { Toast.show('Error al eliminar', 'error') }
-      })
-    })
-  }
-
-  async function loadChecklistItems() {
-    const items = await DB.getChecklistItems({ force: true })
-    renderChecklistItems(items)
-  }
-
   // ── Emociones ─────────────────────────────────────────────────────────────
 
   function renderEmocionesList(items) {
@@ -359,22 +283,10 @@ const DataManager = (() => {
   }
 
   async function init() {
-    await Promise.all([loadCasuisticas(), loadEmociones(), loadRecomendaciones(), loadChecklistItems()])
+    await Promise.all([loadCasuisticas(), loadEmociones(), loadRecomendaciones()])
 
-    // ── Checklist de disciplina ──
-    document.getElementById('addChecklistItem')?.addEventListener('click', async () => {
-      const texto = document.getElementById('newChecklistTexto').value.trim()
-      const fase  = parseInt(document.getElementById('newChecklistFase').value) || 1
-      if (!texto) { Toast.show('Escribe el texto del ítem', 'warning'); return }
-      try {
-        await DB.addChecklistItem({ fase, texto, orden: 99 })
-        document.getElementById('newChecklistTexto').value = ''
-        await loadChecklistItems()
-        Toast.show('Ítem agregado', 'success')
-      } catch (e) {
-        Toast.show('Error al agregar: ' + e.message, 'error')
-      }
-    })
+    // El checklist de disciplina se gestiona ahora desde Reglas y Estrategia
+    // (rulebook `reglas`, capa proceso con es_checklist). Ya no se edita aquí.
 
     // ── Capital inicial (para rentabilidad % en Análisis) ──
     const capInput = document.getElementById('dataCapitalInicial')

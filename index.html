@@ -607,24 +607,6 @@
             <div id="catalogoCasuisticasList" class="catalog-list"></div>
           </div>
 
-          <!-- Checklist de disciplina -->
-          <div class="catalog-card">
-            <div class="catalog-header">
-              <h3><i class="ti ti-checklist" style="color:var(--accent)"></i> Checklist de disciplina</h3>
-              <span class="catalog-sub">Ítems del checklist por fase del proceso (Registrar + métricas)</span>
-            </div>
-            <div class="catalog-add">
-              <select id="newChecklistFase" class="catalog-tipo-select" title="Fase del proceso">
-                <option value="1">Fase 1 · Pre-sesión</option>
-                <option value="2">Fase 2 · Lectura del setup</option>
-                <option value="3">Fase 3 · Ejecución</option>
-              </select>
-              <input type="text" id="newChecklistTexto" placeholder="Nuevo ítem del checklist..." maxlength="120">
-              <button class="btn-primary" id="addChecklistItem"><i class="ti ti-plus"></i> Agregar</button>
-            </div>
-            <div id="checklistItemsList" class="catalog-list"></div>
-          </div>
-
           <!-- Emociones -->
           <div class="catalog-card">
             <div class="catalog-header">
@@ -677,16 +659,20 @@
 
       <!-- ═══ ESTRATEGIA ══════════════════════════════════════════════════════ -->
       <section class="section" id="section-estrategia">
-        <div class="section-header">
-          <h2><i class="ti ti-book-2"></i> Estrategia · Rulebook</h2>
+        <div class="rb-hero">
+          <h2 class="analysis-hero-title">Reglas y Estrategia</h2>
+        </div>
+
+        <!-- Pestañas por capa (Filosofía · Proceso · Riesgo) -->
+        <div class="rb-tabs" id="rbCapaPills"></div>
+
+        <!-- Sub-filtros (fases dentro de Proceso, DURAS) + acción -->
+        <div class="rb-toolbar">
+          <div class="rb-filters" id="rbFilters"></div>
           <button type="button" class="btn-primary btn-sm" id="reglaNuevaBtn">
             <i class="ti ti-plus"></i> Nueva regla
           </button>
         </div>
-
-        <!-- Filtros por capa y por fase/estado -->
-        <div class="rb-pills" id="rbCapaPills"></div>
-        <div class="rb-filters" id="rbFilters"></div>
 
         <!-- Lista de reglas (rulebook unificado) -->
         <div id="reglasList" class="rb-list">
