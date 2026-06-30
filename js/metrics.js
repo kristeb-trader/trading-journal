@@ -241,323 +241,6 @@ const Metrics = (() => {
     return { total, ok, pct: total > 0 ? Math.round(ok / total * 100) : 0 }
   }
 
-  const FASES = {
-    1: { label: 'Fase 1 · Pre-sesión',      color: 'var(--accent)' },
-    2: { label: 'Fase 2 · Lectura del setup', color: 'var(--warning)' },
-    3: { label: 'Fase 3 · Ejecución',       color: '#5b94c9' },
-  }
-
-  // Modal "Disciplina de Proceso" — solo adherencia al checklist
-  function openDisciplineDetailModal(activeSesiones) {
-    setModalTitle('ti-checkup-list', 'Análisis de Disciplina')
-    const operatedSesiones  = activeSesiones.filter(s => !s.no_opero)
-    const conectadoSesiones = activeSesiones.filter(seConecto)  // operó o se conectó a analizar
-
-    if (conectadoSesiones.length === 0) {
-      document.getElementById('disciplineModalContent').innerHTML =
-        '<p style="padding:20px;color:var(--text3)">Sin días con actividad en el período.</p>'
-      document.getElementById('disciplineModal').classList.remove('hidden')
-      return
-    }
-
-    const CHECKLIST_FACTORS = DISC_FACTORS.filter(f => f.key !== '_noErrors')
-
-    const fmtChip = d => {
-      const [, m, day] = d.split('-')
-      const dow = DAYS[new Date(d + 'T12:00:00').getDay()]
-      return `${dow} ${parseInt(day)}/${m}`
-    }
-
-    // Cumplimiento por fase: % de la fase + sus ítems con incumplimientos.
-    // Cada ítem con fallos es clickable y despliega los días con ese fallo.
-    const phaseStats = [1, 2, 3].map(fase => {
-      const facs = CHECKLIST_FACTORS.filter(f => f.fase === fase)
-      const baseDias = fase === 1 ? conectadoSesiones : operatedSesiones
-      // Cada factor se evalúa SOLO en los días donde aplica (incluye filtro por setup)
-      const factores = facs.map(f => {
-        const dias = baseDias.filter(s => factorAplica(f, s))
-        return {
-          key: f.key,
-          label: f.label,
-          fails: dias.filter(s => !s[f.key]).map(s => s.sesion_date).sort((a, b) => a.localeCompare(b)),
-          _aplica: dias.length,
-        }
-      })
-      const total = factores.reduce((sum, fc) => sum + fc._aplica, 0)
-      const ok = factores.reduce((sum, fc) => sum + (fc._aplica - fc.fails.length), 0)
-      return { fase, pct: total > 0 ? Math.round(ok / total * 100) : null, factores, ...FASES[fase] }
-    }).filter(p => p.factores.length > 0)
-
-    // Color brillante de cada fase para el rediseño (menta / ámbar / azul)
-    const DISP_COLOR = { 1: '#3FE0A6', 2: '#E0A33B', 3: '#6FA8DC' }
-
-    const phaseHtml = phaseStats.map(p => {
-      const factoresHtml = p.factores.map(fc => {
-        const n  = fc.fails.length
-        const ok = n === 0
-        const daysHtml = fc.fails.map(d =>
-          `<span class="disc-fail-day disc2-day" data-date="${d}">${fmtChip(d)}</span>`).join('')
-        const right = ok
-          ? `<span class="disc2-ok"><i class="ti ti-check"></i></span>`
-          : `<span class="disc2-warn">${n} <i class="ti ti-chevron-right"></i></span>`
-        return `
-          <div class="disc-factor-row disc2-row ${ok ? '' : 'disc-clickable'}" ${ok ? '' : `data-key="${fc.key}"`}>
-            <span class="disc2-left">
-              <span class="disc2-dot ${ok ? 'ok' : 'warn'}"></span>
-              <span class="disc-factor-label disc2-lab">${fc.label}</span>
-            </span>
-            ${right}
-          </div>
-          ${ok ? '' : `<div class="disc-factor-days disc2-days hidden" data-for="${fc.key}">${daysHtml}</div>`}`
-      }).join('')
-      // Color de barra/% según el nivel de cumplimiento (verde menta alto, ámbar medio, rojo bajo)
-      const col  = p.pct == null ? '#3FE0A6' : p.pct >= 85 ? '#3FE0A6' : p.pct >= 60 ? '#E0A33B' : '#E24B4A'
-      const fill = col === '#3FE0A6' ? 'linear-gradient(90deg,#1D9E75,#3FE0A6)' : col
-      return `
-        <div class="disc2-phase">
-          <div class="disc2-phead">
-            <span class="disc2-pname" style="color:${DISP_COLOR[p.fase] || p.color}">${p.label}</span>
-            <div class="disc2-ptrack"><div class="disc2-pfill" style="width:${p.pct ?? 0}%;background:${fill}"></div></div>
-            <span class="disc2-ppct" style="color:${col}">${p.pct == null ? '—' : p.pct + '%'}</span>
-          </div>
-          <div class="disc2-rows">${factoresHtml}</div>
-        </div>`
-    }).join('')
-
-    // Racha de disciplina (Bloque 4): días operados consecutivos (desde el más
-    // reciente) con el checklist 100% completo.
-    const opOrd = [...operatedSesiones].sort((a, b) => b.sesion_date.localeCompare(a.sesion_date))
-    let rachaDisc = 0
-    for (const s of opOrd) { if (CHECKLIST_FACTORS.every(f => s[f.key])) rachaDisc++; else break }
-    const rachaHtml = rachaDisc > 0
-      ? `<div class="disc2-streak">
-           <span class="disc2-streak-badge"><i class="ti ti-target-arrow"></i></span>
-           <div class="disc2-streak-body">
-             <span class="disc2-streak-num">${rachaDisc}</span>
-             <span class="disc2-streak-lbl">día${rachaDisc !== 1 ? 's' : ''} operado${rachaDisc !== 1 ? 's' : ''} con checklist <b>100% seguido${rachaDisc !== 1 ? 's' : ''}</b></span>
-           </div>
-         </div>`
-      : `<div class="disc2-streak disc2-streak-off">
-           <span class="disc2-streak-badge off"><i class="ti ti-alert-triangle"></i></span>
-           <span class="disc2-streak-lbl">Sin racha de checklist 100% — el último día operado tuvo algún ítem sin marcar.</span>
-         </div>`
-
-    document.getElementById('disciplineModalContent').innerHTML = `
-      <div class="disc2">
-        ${rachaHtml}
-        <p class="disc2-sec-t">Cumplimiento por fase del proceso</p>
-        <p class="disc2-hint">Toca un ítem con incumplimientos para ver los días.</p>
-        ${phaseHtml}
-      </div>`
-
-    document.getElementById('disciplineModal').classList.remove('hidden')
-  }
-
-  // Modal "Tasa de Errores" — desglose por tipo/origen/nombre con drill-down
-  // Navegación: raíz → errores de un tipo → fechas de un error → imagen del día
-  function openDisciplineModal(casuisticas, trades, tipoMap = {}, tipoCount = {}, origenCount = {}, extras = {}) {
-    const total    = casuisticas.length
-    const contentEl = document.getElementById('disciplineModalContent')
-    const getTipo  = c => c.tipo || tipoMap[c.casuistica] || 'sintipo'
-
-    // P&L por fecha (para mostrar el costo del día en el drill-down)
-    const pnlByDate = {}
-    ;(trades || []).forEach(t => {
-      if (!t.trade_date) return
-      pnlByDate[t.trade_date] = (pnlByDate[t.trade_date] || 0) + (parseFloat(t.profit) || 0)
-    })
-    const fmt$ = v => `${v < 0 ? '-' : '+'}$${Math.abs(v).toFixed(0)}`
-
-    // Barra reutilizable
-    const barRow = (label, count, max, color, cls, data) => `
-      <div class="disc-item ${data ? 'disc-clickable' : ''}" ${data || ''}>
-        <span class="disc-item-label">${label}</span>
-        <div class="disc-bar-wrap">
-          <div class="disc-bar-fill ${cls || ''}" style="width:${(count / max * 100).toFixed(0)}%${color ? `;background:${color}` : ''}"></div>
-        </div>
-        <span class="disc-count">${count}</span>
-        ${data ? '<i class="ti ti-chevron-right disc-chevron"></i>' : ''}
-      </div>`
-
-    // ── Vista raíz: rediseño dark ────────────────────────────────────────
-    function renderRoot() {
-      setModalTitle('ti-alert-triangle', 'Análisis de Errores')
-      const fmtChip = d => {
-        const [, , day] = d.split('-')
-        return `${DAYS[new Date(d + 'T12:00:00').getDay()].toLowerCase()} ${day}`
-      }
-
-      // ── Días sin errores + días con errores (asc) ──
-      const dl = extras.diasLimpios
-      let cleanHtml = ''
-      if (dl) {
-        const chips = [...dl.fechasConError].sort((a, b) => a.localeCompare(b))
-          .map(d => `<span class="err-day-chip"><i class="ti ti-calendar-event"></i>${fmtChip(d)}</span>`).join('')
-        cleanHtml = `
-          <div class="err-clean-card">
-            ${dl.racha > 0 ? `<p class="err-racha"><i class="ti ti-flame"></i> Racha: ${dl.racha} día${dl.racha !== 1 ? 's' : ''} limpio${dl.racha !== 1 ? 's' : ''} seguido${dl.racha !== 1 ? 's' : ''}</p>` : ''}
-            <div class="err-clean-head">
-              <div><div class="err-clean-lbl">Días sin errores</div><div class="err-clean-sub">${dl.total} de ${dl.totalSesiones} días operados</div></div>
-              <div class="err-clean-pct">${dl.pct}%</div>
-            </div>
-            <div class="err-track"><div class="err-track-fill" style="width:${dl.pct}%;background:var(--accent)"></div></div>
-          </div>
-          <p class="disc-section-title">Días con errores en el período</p>
-          <div class="err-day-chips">${chips || '<span style="color:var(--accent);font-size:0.82rem">¡Sin días con errores!</span>'}</div>`
-      }
-
-      // ── Errores por tipo y nombre (tarjeta por tipo, nombres anidados) ──
-      const tipoEntries = Object.entries(tipoCount).sort((a, b) => b[1] - a[1])
-      const tipoHtml = tipoEntries.length > 0
-        ? tipoEntries.map(([tipo, count]) => {
-            const meta = TIPO_META[tipo] || TIPO_META.sintipo
-            const cMap = {}
-            casuisticas.filter(c => getTipo(c) === tipo).forEach(c => { cMap[c.casuistica] = (cMap[c.casuistica] || 0) + 1 })
-            const names = Object.entries(cMap).map(([label, n]) => ({ label, n })).sort((a, b) => b.n - a.n)
-            const maxName = names[0]?.n || 1
-            const rows = names.map(({ label, n }) => `
-              <div class="err-name-row" data-nombre="${encodeURIComponent(label)}" data-tipo="${tipo}">
-                <span class="err-name-lbl">${label}</span>
-                <div class="err-name-track"><div style="width:${Math.round(n / maxName * 100)}%;height:100%;background:${meta.color}"></div></div>
-                <span class="err-name-count">${n}</span>
-              </div>`).join('')
-            return `
-              <div class="err-type-card">
-                <div class="err-type-head">
-                  <span class="err-type-dot" style="background:${meta.color}"></span>
-                  <span class="err-type-lbl" style="color:${meta.text}">${meta.label}</span>
-                  <span class="err-type-count">${count}</span>
-                </div>
-                ${rows}
-              </div>`
-          }).join('')
-        : '<p style="color:var(--text3);font-size:0.85rem">Sin errores en el período</p>'
-
-      // ── Errores por fase del proceso (timeline) ──
-      const faseCount = { 1: 0, 2: 0, 3: 0, sin: 0 }
-      casuisticas.forEach(c => { const f = c.fase; (f === 1 || f === 2 || f === 3) ? faseCount[f]++ : faseCount.sin++ })
-      const faseShort = { 1: 'Pre-sesión', 2: 'Lectura', 3: 'Ejecución' }
-      const node = f => {
-        const col = FASES[f].color
-        return `<div class="err-fase-node">
-            <div class="err-fase-circle" style="border:1px solid ${col};color:${col}">${faseCount[f]}</div>
-            <div class="err-fase-name">${faseShort[f]}</div><div class="err-fase-sub">Fase ${f}</div>
-          </div>`
-      }
-      const faseHtml = `
-        <p class="disc-section-title">Errores por fase del proceso</p>
-        <div class="err-fase-timeline">${node(1)}<div class="err-fase-conn"></div>${node(2)}<div class="err-fase-conn"></div>${node(3)}</div>
-        ${faseCount.sin > 0 ? `<p style="color:var(--text3);font-size:0.76rem;margin:-14px 0 22px">+ ${faseCount.sin} sin fase asignada</p>` : ''}`
-
-      // ── Impulsividad vs análisis ──
-      const impulsiva = casuisticas.filter(c => c.regla_vista === true).length
-      const analitica = casuisticas.filter(c => c.regla_vista === false).length
-      const behavHtml = (impulsiva + analitica) > 0 ? `
-        <p class="disc-section-title">Reglas: impulsividad vs análisis</p>
-        <div class="err-behav-grid">
-          <div class="err-behav-card" style="border-color:rgba(226,75,74,0.3)">
-            <div class="err-behav-top"><i class="ti ti-bolt" style="color:var(--red)"></i> Impulsividad</div>
-            <div class="err-behav-num">${impulsiva}</div>
-            <div class="err-behav-sub">Vio la regla y la violó · disciplina</div>
-          </div>
-          <div class="err-behav-card" style="border-color:rgba(91,148,201,0.3)">
-            <div class="err-behav-top"><i class="ti ti-eye-off" style="color:#5b94c9"></i> Falla analítica</div>
-            <div class="err-behav-num">${analitica}</div>
-            <div class="err-behav-sub">No la vio a tiempo · habilidad</div>
-          </div>
-        </div>` : ''
-
-      // ── Recurrentes ──
-      const rec = extras.recurrentes || []
-      const recHtml = rec.length ? `
-        <div class="disc-recurrente">🔁 <b>Recurrente:</b> ${rec.map(r => `${r.nombre} (${r.semanas}/4 sem)`).join(' · ')}</div>` : ''
-
-      // ── Impacto financiero (card destacada, al final) ──
-      const imp = extras.impacto
-      const badge = (lbl, val, pos) => `
-        <div class="err-impact-badge" style="background:${pos ? 'rgba(29,158,117,0.10)' : 'rgba(226,75,74,0.10)'};border:1px solid ${pos ? 'rgba(29,158,117,0.25)' : 'rgba(226,75,74,0.25)'}">
-          <div class="lbl">${lbl}</div>
-          <div class="val" style="color:${pos ? '#5dcaa5' : '#f09595'}">${val}</div>
-        </div>`
-      const impactoHtml = imp && (imp.diasError > 0 || imp.diasLimpios > 0) ? `
-        <div class="err-impact">
-          <div class="err-impact-head">
-            <i class="ti ti-currency-dollar" style="color:var(--red);font-size:1.1rem"></i>
-            <span style="font-size:0.82rem;color:var(--text2)">Tus errores te costaron en stops</span>
-            <span class="err-impact-num">${imp.costoErrores > 0 ? '−$' + imp.costoErrores.toFixed(0) : '—'}</span>
-          </div>
-          <div class="err-impact-grid">
-            ${badge('P&L medio · día limpio',    imp.avgPnlLimpio != null ? fmt$(imp.avgPnlLimpio) : '—', (imp.avgPnlLimpio ?? 0) >= 0)}
-            ${badge('P&L medio · día con error', imp.avgPnlConErr != null ? fmt$(imp.avgPnlConErr) : '—', (imp.avgPnlConErr ?? 0) >= 0)}
-          </div>
-        </div>` : ''
-
-      contentEl.innerHTML = `
-        <div style="padding:16px 20px 20px">
-          ${cleanHtml}
-          <p class="disc-section-title" style="margin-top:18px">Errores por tipo y nombre (${total} registros) <span class="disc-hint">· toca un error para ver sus fechas</span></p>
-          ${tipoHtml}
-          ${faseHtml}
-          ${behavHtml}
-          ${recHtml}
-          ${impactoHtml}
-        </div>`
-    }
-
-    // ── Vista de un error: fechas (clickable → imagen del día) ────────────
-    function renderPorNombre(nombre, tipo) {
-      setModalTitle('ti-alert-triangle', nombre)
-      let items = casuisticas.filter(c => c.casuistica === nombre)
-      if (tipo) items = items.filter(c => getTipo(c) === tipo)
-      const dates = items
-        .map(c => ({ date: c.sesion_date, resultado: c.resultado }))
-        .sort((a, b) => a.date.localeCompare(b.date))
-
-      const backTarget = 'root'
-      const daysHtml = dates.map(d => {
-        const dow = DAYS[new Date(d.date + 'T12:00:00').getDay()]
-        const pnl = pnlByDate[d.date]
-        const pnlHtml = pnl != null
-          ? `<span class="disc-date-pnl ${pnl > 0 ? 'pos' : pnl < 0 ? 'neg' : 'neutral'}" style="font-size:0.78rem;margin-left:auto">${fmt$(pnl)}</span>` : ''
-        const res = (d.resultado === 'T' || d.resultado === 'S')
-          ? `<span class="disc-fail-count" style="${pnl != null ? 'margin-left:8px' : ''}"><b class="${d.resultado === 'T' ? 'res-t' : 'res-s'}">${d.resultado}</b></span>` : ''
-        return `
-          <div class="disc-fail-day" data-date="${d.date}">
-            <div class="disc-fail-day-header">
-              <span class="disc-date-dow">${dow}</span>
-              <span class="disc-date-val">${d.date}</span>
-              ${pnlHtml}
-              ${res}
-              <i class="ti ti-photo disc-chevron" style="margin-left:${(res || pnlHtml) ? '6px' : 'auto'}"></i>
-            </div>
-          </div>`
-      }).join('')
-
-      contentEl.innerHTML = `
-        <div style="padding:16px 20px 20px">
-          <button class="disc-back" data-back="${backTarget}"><i class="ti ti-arrow-left"></i> Volver</button>
-          <p class="disc-section-title" style="margin-top:10px">${nombre} — ${dates.length} ${dates.length === 1 ? 'día' : 'días'}</p>
-          <p class="disc-hint" style="display:block;margin-bottom:6px">Toca una fecha para ver la imagen del día</p>
-          ${daysHtml}
-        </div>`
-    }
-
-    // Navegación interna (los clics en fechas los maneja el listener global)
-    contentEl.onclick = e => {
-      const backBtn = e.target.closest('.disc-back')
-      if (backBtn) { renderRoot(); return }
-      if (e.target.closest('.disc-fail-day')) return  // → listener global (imagen)
-      const nombreEl = e.target.closest('[data-nombre]')
-      if (nombreEl) {
-        renderPorNombre(decodeURIComponent(nombreEl.dataset.nombre), nombreEl.dataset.tipo || null)
-        return
-      }
-    }
-
-    renderRoot()
-    document.getElementById('disciplineModal').classList.remove('hidden')
-  }
-
   // Modal "Dejé de ganar"
   function openDejeGanarModal(s) {
     setModalTitle('ti-mood-sad', 'Dejé de ganar')
@@ -876,12 +559,12 @@ const Metrics = (() => {
         </div>
       </div>`).join('')
 
+    // Disciplina y Errores ahora abren el Dashboard de Disciplina (sección propia)
     document.querySelector('[data-action="disc-detail"]')?.addEventListener('click', () => {
-      openDisciplineDetailModal(activeSesiones)
+      if (typeof Nav !== 'undefined') Nav.go('disciplina')
     })
     document.querySelector('[data-action="disc-errors"]')?.addEventListener('click', () => {
-      openDisciplineModal(periodCasuisticas, trades, tipoMap, tipoCount, origenCount,
-        { impacto: impactoErrores, recurrentes: erroresRecurrentes, diasLimpios: diasLimpiosStat })
+      if (typeof Nav !== 'undefined') Nav.go('disciplina')
     })
     document.querySelector('[data-action="deje-ganar"]')?.addEventListener('click', () => {
       openDejeGanarModal(dejeGanarStat)
@@ -953,26 +636,18 @@ const Metrics = (() => {
       if (!dm.classList.contains('hidden')) dm.classList.add('hidden')
     })
 
-    // Clics dentro del modal de Disciplina:
-    //  - día → abre el detalle del día
-    //  - ítem con incumplimientos → despliega/oculta sus días
+    // Clic en una fecha dentro de un modal de disciplina (p. ej. "Dejé de ganar")
+    // → abre el detalle del día.
     document.getElementById('disciplineModalContent').addEventListener('click', async e => {
       const dayEl = e.target.closest('.disc-fail-day[data-date]')
-      if (dayEl) {
-        const date = dayEl.dataset.date
-        document.getElementById('disciplineModal').classList.add('hidden')
-        const [trades, sesion] = await Promise.all([
-          DB.getTradesByDate(date),
-          DB.getSesionByDate(date),
-        ])
-        await Modal.openDay(date, trades, sesion)
-        return
-      }
-      const row = e.target.closest('.disc-factor-row[data-key]')
-      if (row) {
-        const panel = document.querySelector(`.disc-factor-days[data-for="${row.dataset.key}"]`)
-        if (panel) { panel.classList.toggle('hidden'); row.classList.toggle('open') }
-      }
+      if (!dayEl) return
+      const date = dayEl.dataset.date
+      document.getElementById('disciplineModal').classList.add('hidden')
+      const [trades, sesion] = await Promise.all([
+        DB.getTradesByDate(date),
+        DB.getSesionByDate(date),
+      ])
+      await Modal.openDay(date, trades, sesion)
     })
   }
 

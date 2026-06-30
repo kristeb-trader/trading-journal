@@ -315,6 +315,7 @@ const Nav = {
     coach: 'Coach IA',
     register: 'Registrar Sesión',
     analysis: 'Análisis',
+    disciplina: 'Disciplina',
     experimentos: 'Experimentos',
     apex: 'Apex Tracker',
     historial: 'Historial',
@@ -341,6 +342,7 @@ const Nav = {
         if (sectionId === 'register') { SessionForm.init(); SessionForm.onShow() }
         if (sectionId === 'gallery') await Gallery.init()
         if (sectionId === 'analysis') await Charts.init()
+        if (sectionId === 'disciplina') await Disciplina.init()
         if (sectionId === 'experimentos') await Experimentos.init()
         if (sectionId === 'apex') await Apex.init()
         if (sectionId === 'coach') await Coach.init()
@@ -360,6 +362,8 @@ const Nav = {
       Apex.reload()
     } else if (sectionId === 'analysis') {
       Charts.refresh()
+    } else if (sectionId === 'disciplina') {
+      Disciplina.reload()
     } else if (sectionId === 'register') {
       SessionForm.onShow()
     }
