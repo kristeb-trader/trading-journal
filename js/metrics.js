@@ -235,6 +235,7 @@ const Metrics = (() => {
     let total = 0, ok = 0
     sesiones.forEach(s => DISC_FACTORS.forEach(f => {
       if (!factorAplica(f, s)) return
+      if (s[f.key] === undefined) return  // sin registrar (regla nueva) → N/A, no penaliza
       total++
       if (s[f.key]) ok++
     }))

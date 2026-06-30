@@ -361,20 +361,25 @@ const Calendar = (() => {
     const chkItems = DB.checklistItemsSync()
     const claves   = chkItems.map(i => i.clave)
     let disciplineChip = ''
-    if (monthSesiones.length > 0 && claves.length > 0) {
-      const avg = monthSesiones.reduce((sum, s) =>
-        sum + claves.filter(k => s[k]).length / claves.length, 0) / monthSesiones.length
+    // Solo cuentan los ítems con valor registrado en la sesión (los no registrados
+    // —p. ej. reglas nuevas en días previos— no penalizan la disciplina).
+    const evaluables = monthSesiones.filter(s => claves.some(k => s[k] !== undefined))
+    if (evaluables.length > 0 && claves.length > 0) {
+      const avg = evaluables.reduce((sum, s) => {
+        const reg = claves.filter(k => s[k] !== undefined)
+        return sum + (reg.length ? reg.filter(k => s[k]).length / reg.length : 0)
+      }, 0) / evaluables.length
       const pct = Math.round(avg * 100)
       const cls = pct >= 80 ? 'chip-green' : pct >= 50 ? '' : 'chip-red'
       disciplineChip = `<span class="ms-chip ${cls}"><i class="ti ti-checkup-list"></i> ${pct}% Disciplina</span>`
     }
 
-    // Ítem del checklist más incumplido del mes
+    // Ítem del checklist más incumplido del mes (solo cuenta lo registrado en false)
     let errorChip = ''
     if (monthSesiones.length > 0 && claves.length > 0) {
       const counts = {}
       chkItems.forEach(it => { counts[it.clave] = 0 })
-      monthSesiones.forEach(s => chkItems.forEach(it => { if (!s[it.clave]) counts[it.clave]++ }))
+      monthSesiones.forEach(s => chkItems.forEach(it => { if (s[it.clave] !== undefined && !s[it.clave]) counts[it.clave]++ }))
       const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
       if (top[1] > 0) {
         const lbl = chkItems.find(it => it.clave === top[0])?.texto || top[0]

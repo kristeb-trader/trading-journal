@@ -82,22 +82,29 @@ const Disciplina = (() => {
     const trByDate = {}
     trd.forEach(t => { (trByDate[t.trade_date] = trByDate[t.trade_date] || []).push(t) })
 
-    // Disciplina total
+    // Disciplina total — solo cuentan los ítems con valor registrado en la sesión
+    // (un ítem sin registrar, p. ej. una regla nueva en días previos, es N/A).
     let dTotal = 0, dOk = 0
     ses.forEach(s => DISC_FACTORS.forEach(f => {
       if (!factorAplica(f, s)) return
+      if (s[f.key] === undefined) return
       dTotal++; if (s[f.key]) dOk++
     }))
     const disciplinaPct = dTotal > 0 ? Math.round(dOk / dTotal * 100) : null
 
-    // Cumplimiento por fase (con ítems y días fallidos)
+    // Cumplimiento por fase (con ítems, días fallidos y cobertura de datos)
     const phases = [1, 2, 3].map(fase => {
       const facs = DISC_FACTORS.filter(f => f.fase === fase)
       const baseDias = fase === 1 ? conectadas : operadas
       const factores = facs.map(f => {
-        const dias = baseDias.filter(s => factorAplica(f, s))
-        const fails = dias.filter(s => !s[f.key]).map(s => s.sesion_date).sort()
-        return { key: f.key, label: f.label, aplica: dias.length, ok: dias.length - fails.length, fails }
+        const aplicables = baseDias.filter(s => factorAplica(f, s))
+        const registradas = aplicables.filter(s => s[f.key] !== undefined)
+        const fails = registradas.filter(s => !s[f.key]).map(s => s.sesion_date).sort()
+        return {
+          key: f.key, label: f.label,
+          aplica: registradas.length, ok: registradas.length - fails.length, fails,
+          cobertura: registradas.length, aplicablesTotal: aplicables.length,
+        }
       })
       const total = factores.reduce((a, fc) => a + fc.aplica, 0)
       const ok = factores.reduce((a, fc) => a + fc.ok, 0)
@@ -113,8 +120,8 @@ const Disciplina = (() => {
     const opOrd = [...operadas].sort((a, b) => b.sesion_date.localeCompare(a.sesion_date))
     let racha = 0
     for (const s of opOrd) {
-      const aplican = DISC_FACTORS.filter(f => factorAplica(f, s))
-      if (aplican.length && aplican.every(f => s[f.key])) racha++
+      const registrados = DISC_FACTORS.filter(f => factorAplica(f, s) && s[f.key] !== undefined)
+      if (registrados.length && registrados.every(f => s[f.key])) racha++
       else break
     }
 
@@ -152,10 +159,11 @@ const Disciplina = (() => {
 
     // Historial de racha (últimas 12 sesiones operadas)
     const hist = [...operadas].sort((a, b) => a.sesion_date.localeCompare(b.sesion_date)).slice(-12).map(s => {
-      const aplican = DISC_FACTORS.filter(f => factorAplica(f, s))
-      const fails = aplican.filter(f => !s[f.key]).length
+      const registrados = DISC_FACTORS.filter(f => factorAplica(f, s) && s[f.key] !== undefined)
+      const fails = registrados.filter(f => !s[f.key]).length
       const tieneError = (casByDate[s.sesion_date] || []).length > 0
-      if (aplican.length && fails === 0 && !tieneError) return 'full'
+      if (!registrados.length) return 'empty'
+      if (fails === 0 && !tieneError) return 'full'
       if (tieneError || fails > 1) return 'broken'
       return 'partial'
     })
@@ -246,12 +254,18 @@ const Disciplina = (() => {
     const phaseHtml = d.phases.map(p => {
       const col = p.pct == null ? p.color : p.pct >= 85 ? '#3FE0A6' : p.pct >= 60 ? '#E0A33B' : '#E24B4A'
       const rows = p.factores.map(fc => {
-        const ok = fc.fails.length === 0
+        const noData = fc.cobertura === 0
+        const ok = !noData && fc.fails.length === 0
+        const dotCls = noData ? 'na' : ok ? 'ok' : 'fail'
+        const cov = (!noData && fc.aplicablesTotal > fc.cobertura)
+          ? `<span class="dd-cov" title="Sesiones con dato registrado / sesiones aplicables">datos ${fc.cobertura}/${fc.aplicablesTotal}</span>`
+          : ''
+        const rate = noData ? `<span class="dd-nodata">sin datos</span>` : `${fc.ok}/${fc.aplica}`
         return `
           <div class="dd-check-row">
-            <span class="dd-dot ${ok ? 'ok' : 'fail'}"></span>
-            <span class="dd-check-label">${esc(fc.label)}</span>
-            <span class="dd-check-rate">${fc.ok}/${fc.aplica}</span>
+            <span class="dd-dot ${dotCls}"></span>
+            <span class="dd-check-label">${esc(fc.label)}${cov ? ' ' + cov : ''}</span>
+            <span class="dd-check-rate">${rate}</span>
           </div>`
       }).join('')
       return `
