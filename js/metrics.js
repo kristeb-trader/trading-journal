@@ -201,7 +201,15 @@ const Metrics = (() => {
     const src = (items && items.length) ? items : DB.checklistClaves().map(c => ({ clave: c, texto: c, fase: 1 }))
     DISC_FACTORS = src
       .filter(i => i.activo !== false)
-      .map(i => ({ key: i.clave, label: i.texto, fase: i.fase || 1 }))
+      .map(i => ({ key: i.clave, label: i.texto, fase: i.fase || 1, setup: i.setup || null }))
+  }
+
+  // Familia de setup de una sesión (para reglas etiquetadas por setup): iri | reingreso | null
+  function setupFamilyOf(s) {
+    const v = (s.setup || '').toLowerCase()
+    if (v.startsWith('iri')) return 'iri'
+    if (v.startsWith('reingreso')) return 'reingreso'
+    return null
   }
   // Claves activas del checklist (para conteos de disciplina)
   function clavesActivas() {
@@ -215,7 +223,11 @@ const Metrics = (() => {
   // Fases 2/3 solo en días operados. (El 18 jun "sin entradas" suma su Fase 1.)
   function factorAplica(f, s) {
     if (!seConecto(s)) return false
-    return f.fase === 1 ? true : !s.no_opero
+    const base = f.fase === 1 ? true : !s.no_opero
+    if (!base) return false
+    // Reglas etiquetadas por setup: solo aplican si ese día se operó ese setup
+    if (f.setup) return setupFamilyOf(s) === f.setup
+    return true
   }
 
   // Disciplina de un conjunto de sesiones: { total, ok, pct } sobre factores aplicables
@@ -260,15 +272,19 @@ const Metrics = (() => {
     // Cada ítem con fallos es clickable y despliega los días con ese fallo.
     const phaseStats = [1, 2, 3].map(fase => {
       const facs = CHECKLIST_FACTORS.filter(f => f.fase === fase)
-      // Fase 1 se evalúa en días conectados; Fases 2/3 solo en días operados
-      const dias = fase === 1 ? conectadoSesiones : operatedSesiones
-      const total = facs.length * dias.length
-      const ok = dias.reduce((sum, s) => sum + facs.filter(f => s[f.key]).length, 0)
-      const factores = facs.map(f => ({
-        key: f.key,
-        label: f.label,
-        fails: dias.filter(s => !s[f.key]).map(s => s.sesion_date).sort((a, b) => a.localeCompare(b)),
-      }))
+      const baseDias = fase === 1 ? conectadoSesiones : operatedSesiones
+      // Cada factor se evalúa SOLO en los días donde aplica (incluye filtro por setup)
+      const factores = facs.map(f => {
+        const dias = baseDias.filter(s => factorAplica(f, s))
+        return {
+          key: f.key,
+          label: f.label,
+          fails: dias.filter(s => !s[f.key]).map(s => s.sesion_date).sort((a, b) => a.localeCompare(b)),
+          _aplica: dias.length,
+        }
+      })
+      const total = factores.reduce((sum, fc) => sum + fc._aplica, 0)
+      const ok = factores.reduce((sum, fc) => sum + (fc._aplica - fc.fails.length), 0)
       return { fase, pct: total > 0 ? Math.round(ok / total * 100) : null, factores, ...FASES[fase] }
     }).filter(p => p.factores.length > 0)
 

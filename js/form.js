@@ -39,11 +39,25 @@ const SessionForm = (() => {
     _checklistResolve()
   }
 
+  // Familia de setup del día (para filtrar el checklist): iri | reingreso | null
+  function setupFamily() {
+    const v = (document.getElementById('setup')?.value || '').toLowerCase()
+    if (v.startsWith('iri')) return 'iri'
+    if (v.startsWith('reingreso')) return 'reingreso'
+    return null
+  }
+
   function renderChecklist() {
     const cont = document.getElementById('checklistContainer')
     if (!cont) return
+    // Preservar marcas actuales (al re-renderizar tras cambiar el setup)
+    const prev = {}
+    cont.querySelectorAll('input[type="checkbox"]').forEach(c => { prev[c.dataset.clave] = c.checked })
+    // Filtrar por el setup del día: ítems universales + los del setup elegido
+    const fam = setupFamily()
+    const visibles = checklistItems.filter(i => !i.setup || !fam || i.setup === fam)
     const byFase = { 1: [], 2: [], 3: [] }
-    checklistItems.forEach(i => (byFase[i.fase] || byFase[1]).push(i))
+    visibles.forEach(i => (byFase[i.fase] || byFase[1]).push(i))
     cont.innerHTML = [1, 2, 3].map(f => {
       const items = byFase[f]
       if (!items.length) return ''
@@ -51,7 +65,7 @@ const SessionForm = (() => {
       const opOnly = f !== 1 ? ' op-only' : ''
       const checks = items.map(i => `
         <label class="check-item">
-          <input type="checkbox" id="chk__${i.clave}" data-clave="${i.clave}" data-fase="${f}" name="${i.clave}">
+          <input type="checkbox" id="chk__${i.clave}" data-clave="${i.clave}" data-fase="${f}" name="${i.clave}"${prev[i.clave] ? ' checked' : ''}>
           <span class="check-box"></span>
           <span>${i.texto}</span>
         </label>`).join('')
@@ -655,6 +669,9 @@ const SessionForm = (() => {
     document.getElementById('sesionDate').addEventListener('change', () => {
       goToDate(document.getElementById('sesionDate').value)
     })
+
+    // Cambiar el setup del día re-filtra el checklist (IRI / Reingreso / universales)
+    document.getElementById('setup')?.addEventListener('change', renderChecklist)
 
     // Auto-invalidar checklist de 5 velas si velas > 5
     document.getElementById('velasCorrida').addEventListener('input', () => {

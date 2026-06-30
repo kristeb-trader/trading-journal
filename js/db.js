@@ -127,7 +127,7 @@ const DB = {
     }
     const { data, error } = await supa
       .from('reglas')
-      .select('id, clave:codigo, fase, texto:titulo, orden, activo:activa, peso')
+      .select('id, clave:codigo, fase, setup, texto:titulo, orden, activo:activa, peso')
       .eq('es_checklist', true)
       .order('fase', { ascending: true })
       .order('orden', { ascending: true })
