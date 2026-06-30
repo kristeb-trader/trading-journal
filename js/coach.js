@@ -252,6 +252,17 @@ ${historial}
 
 ---
 
+## PRECISIÓN DE PRECIOS — NO ADIVINES (MUY IMPORTANTE)
+
+Tienes los valores EXACTOS; NUNCA los aproximes "a ojo" del gráfico ni digas "un valor aproximado en una zona / en la línea verde o roja":
+- La LÍNEA VERDE del gráfico = PDH (máximo de ayer). Su valor exacto está en los datos de referencia.
+- La LÍNEA ROJA = PDL (mínimo de ayer). Su valor exacto está en los datos.
+- Las ZONAS NARANJAS (soportes/resistencias) tienen valores exactos registrados (soportes_naranja / resistencias_naranja).
+- Los precios de ENTRADA y SALIDA de cada trade son exactos (vienen de la tabla de trades, no del gráfico).
+Usa siempre esos valores exactos. Si necesitas un dato que NO está registrado en el contexto, PREGÚNTALO en lugar de suponerlo o inventarlo.
+
+---
+
 ## CÓMO LEER EL CONTEXTO DE PREMERCADO (MUY IMPORTANTE)
 
 NQ/MNQ es un FUTURO que cotiza casi 23 h continuas (domingo 6pm – viernes 5pm ET, con un corte de mantenimiento de ~1 h). NO es una acción: entre el cierre de la sesión americana de ayer y la apertura de hoy el precio se mueve de forma CONTINUA durante las sesiones asiática y de Londres.
@@ -297,17 +308,24 @@ ${expStr}
 El análisis se realiza en un flujo guiado de tres etapas. Tú produces dos entregables estructurados; entre ellos hay una sesión de chat libre.
 
 ### ETAPA 1 — ANÁLISIS TÉCNICO (primer entregable)
-Cuando recibas la instrucción de análisis técnico (o la imagen del gráfico), produce EXACTAMENTE estas 3 secciones:
+Cuando recibas la instrucción de análisis técnico (o la imagen del gráfico), produce EXACTAMENTE estas 3 secciones. Sé BREVE y usa lenguaje claro (el lector es el trader, no un robot). Los datos de referencia (PDO/PDH/PDL/PDC/PDR, deriva overnight, etc.) son para TU análisis: NO los vuelques ni hagas tablas con ellos en el output.
 
 **1. 🌍 CONTEXTO**
-Empieza SIEMPRE con un bloque "Datos de referencia" mostrando, en este orden exacto y solo los que existan: PDO, PDH, PDL, Cierre RTH (PDC) y PDR (rango de ayer en puntos). Debajo, "Contexto adicional": deriva overnight, soporte(s) naranja y resistencia(s) naranja. Luego haz la lectura: tendencia del día anterior, relación de apertura (dentro/fuera del rango de ayer y overnight), niveles clave, dirección probable y noticias relevantes.
+Máximo 3 líneas, una por etiqueta, con este formato exacto "Etiqueta: valor":
+Sesgo: <Alcista|Bajista|Mixto> | <razón en pocas palabras>
+Vigilar: <el/los nivel(es) clave que importan hoy y por qué, en lenguaje claro>
+Noticias: <noticia relevante del día, o "Sin noticias">
+NO incluyas "Datos de referencia" ni "Contexto adicional" en esta sección.
 
 **2. 📈 DESARROLLO DE SESIÓN**
-[Descripción cronológica: corridas, retrocesos, rompimientos, consecuciones identificadas]
+3 a 5 viñetas cortas (una idea cada una), empezando cada línea con "- ": cronología de corridas, retrocesos, rompimientos y consecuciones.
 
 **3. ✅ VALIDACIÓN DE SETUPS**
-[Para cada setup potencial: ✅ o ❌ en cada filtro, stop en puntos y dólares, obstáculos en target]
-IMPORTANTE: En esta etapa NO des el veredicto final (VÁLIDA/INVÁLIDA). Solo analiza filtro por filtro. El veredicto lo emitirás en el diagnóstico final.
+Por cada setup potencial, en este formato compacto (sin párrafos largos):
+### <Nombre del setup>
+✅ <filtro cumplido>  (o)  ❌ <filtro no cumplido>   — una línea por filtro, breve
+Stop: <X> pts | Target: <Y> pts
+IMPORTANTE: En esta etapa NO des el veredicto final (VÁLIDA/INVÁLIDA). Solo filtro por filtro. El veredicto va en el diagnóstico final.
 
 ### ETAPA 2 — SESIÓN DE COACHING (chat libre)
 Después del análisis técnico, el trader conversa contigo. Responde sus preguntas con rigor, profundiza en setups, errores y dudas. Mantén memoria de todo lo discutido.
@@ -619,6 +637,67 @@ ${catalogoStr}
       .replace(/\n/g, '<br>')
   }
 
+  // Inline markdown (negritas/itálicas), sin saltos de línea
+  function inlineMd(t) {
+    return (t || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')
+  }
+
+  // CONTEXTO → filas "Etiqueta: valor" (Sesgo como chip de color)
+  function renderContexto(text) {
+    const rows = (text || '').split('\n').map(l => l.trim()).filter(Boolean)
+    if (!rows.length) return '<p class="cz-empty">—</p>'
+    return rows.map(line => {
+      const m = line.replace(/^[-•*]\s*/, '').match(/^\*{0,2}([^:*]{2,30}?)\*{0,2}\s*:\s*(.+)$/)
+      if (!m) return `<div class="cz-row"><span class="cz-val">${inlineMd(line)}</span></div>`
+      const lbl = m[1].trim(), val = m[2].trim()
+      let valHtml = inlineMd(val)
+      if (/sesgo|bias/i.test(lbl)) {
+        const bias = (val.match(/alcista|bajista|mixto|lateral|rotacional|neutral/i) || [''])[0]
+        if (bias) {
+          const up = /alcista/i.test(bias), down = /bajista/i.test(bias)
+          const cls = up ? 'c-up' : down ? 'c-down' : 'c-warn'
+          const sym = up ? '▲' : down ? '▼' : '↔'
+          const rest = val.replace(bias, '').replace(/^[\s|·,–-]+/, '')
+          valHtml = `<span class="cz-chip ${cls}">${sym} ${bias.charAt(0).toUpperCase() + bias.slice(1).toLowerCase()}</span>${rest ? ' ' + inlineMd(rest) : ''}`
+        }
+      }
+      return `<div class="cz-row"><span class="cz-lbl">${lbl}</span><span class="cz-val">${valHtml}</span></div>`
+    }).join('')
+  }
+
+  // DESARROLLO → línea de tiempo
+  function renderDesarrollo(text) {
+    const items = (text || '').split('\n').map(l => l.trim().replace(/^[-•*]\s*/, '')).filter(Boolean)
+    if (!items.length) return '<p class="cz-empty">—</p>'
+    return `<div class="cz-tl">${items.map(i => `<div class="cz-ti">${inlineMd(i)}</div>`).join('')}</div>`
+  }
+
+  // VALIDACIÓN → tarjeta por setup con checklist + stop/target
+  function renderValidacion(text) {
+    if (!text || !text.trim()) return '<p class="cz-empty">—</p>'
+    const setups = []
+    let cur = null
+    text.split('\n').forEach(raw => {
+      const line = raw.trim()
+      if (!line) return
+      const fm = line.match(/^(✅|✓|☑|❌|✕|✗|🚫)\s*(.+)$/)
+      const sm = line.match(/stop\s*:?\s*([^|·]+)[|·]\s*target[^:]*:?\s*(.+)/i)
+      const hm = (!fm && !sm) ? (line.match(/^#{1,3}\s*(.+?)\s*#*$/) || line.match(/^\*\*(.+?)\*\*\s*:?\s*$/)) : null
+      if (hm) { cur = { nombre: hm[1].replace(/[*:#]/g, '').trim(), filtros: [], st: null, notas: '' }; setups.push(cur); return }
+      if (fm && cur) { cur.filtros.push({ ok: /✅|✓|☑/.test(fm[1]), txt: fm[2].trim() }); return }
+      if (sm && cur) { cur.st = { stop: sm[1].trim(), target: sm[2].trim() }; return }
+      if (cur) cur.notas += (cur.notas ? ' ' : '') + line
+    })
+    if (!setups.length) return mdAnalisis(text)
+    return setups.map(s => `
+      <div class="cz-setup">
+        <div class="cz-setup-h"><span class="cz-nm">${s.nombre}</span></div>
+        ${s.filtros.map(f => `<div class="cz-f"><span class="cz-ic ${f.ok ? 'ok' : 'no'}">${f.ok ? '✓' : '✕'}</span><span>${inlineMd(f.txt)}</span></div>`).join('')}
+        ${s.st ? `<div class="cz-st"><span class="cz-b">Stop: <b>${s.st.stop}</b></span><span class="cz-b">Target: <b>${s.st.target}</b></span></div>` : ''}
+        ${s.notas ? `<div class="cz-note">${inlineMd(s.notas)}</div>` : ''}
+      </div>`).join('')
+  }
+
   // Etapa 1 — render del análisis técnico (3 secciones)
   function renderAnalisisTecnico(secciones) {
     const container = document.getElementById('coachAnalisisContent')
@@ -626,15 +705,15 @@ ${catalogoStr}
     container.innerHTML = `
       <div class="coach-section" id="cs-contexto">
         <div class="coach-section-header"><span class="cs-icon">🌍</span><span>CONTEXTO</span></div>
-        <div class="coach-section-body">${mdAnalisis(secciones.contexto)}</div>
+        <div class="coach-section-body cz">${renderContexto(secciones.contexto)}</div>
       </div>
       <div class="coach-section" id="cs-desarrollo">
         <div class="coach-section-header"><span class="cs-icon">📈</span><span>DESARROLLO DE SESIÓN</span></div>
-        <div class="coach-section-body">${mdAnalisis(secciones.desarrollo)}</div>
+        <div class="coach-section-body cz">${renderDesarrollo(secciones.desarrollo)}</div>
       </div>
       <div class="coach-section" id="cs-validacion">
         <div class="coach-section-header"><span class="cs-icon">✅</span><span>VALIDACIÓN DE SETUPS</span></div>
-        <div class="coach-section-body">${mdAnalisis(secciones.validacion)}</div>
+        <div class="coach-section-body cz">${renderValidacion(secciones.validacion)}</div>
       </div>
     `
   }
@@ -725,13 +804,13 @@ ${catalogoStr}
     ocultarGuardar()
 
     try {
-      const instruccionFormato = `Realiza el ANÁLISIS TÉCNICO (Etapa 1) en exactamente 3 secciones. USA OBLIGATORIAMENTE estos encabezados con este formato exacto:
+      const instruccionFormato = `Realiza el ANÁLISIS TÉCNICO (Etapa 1) en exactamente 3 secciones, BREVES y claras. Encabezados EXACTOS:
 
-**1. 🌍 CONTEXTO**
-**2. 📈 DESARROLLO DE SESIÓN**
-**3. ✅ VALIDACIÓN DE SETUPS**
+**1. 🌍 CONTEXTO** → 3 líneas "Etiqueta: valor": Sesgo / Vigilar / Noticias. SIN datos crudos (no PDO/PDH/PDL ni "contexto adicional").
+**2. 📈 DESARROLLO DE SESIÓN** → 3-5 viñetas cortas empezando con "- ".
+**3. ✅ VALIDACIÓN DE SETUPS** → por setup: "### Nombre", luego filtros "✅/❌ ..." (uno por línea), y "Stop: X pts | Target: Y pts".
 
-NO des el veredicto final (VÁLIDA/INVÁLIDA) — eso se hará en el diagnóstico. Si faltan datos, complétalo igual indicando la falta.`
+NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivines precios: usa los valores exactos (línea verde = PDH, línea roja = PDL, zonas naranjas, precios de los trades); si falta un dato, pregúntalo.`
 
       let userContent
       if (imagenBase64) {

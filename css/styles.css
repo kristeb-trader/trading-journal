@@ -2554,6 +2554,35 @@ body.modal-open { overflow: hidden; }
 .coach-alert-critical { color: var(--red); }
 .coach-alert-warn     { color: var(--warning); }
 
+/* ── Análisis del Coach (rediseño en tarjetas) ───────────────────────────── */
+.coach-section-body.cz { white-space: normal; line-height: 1.5; }
+.cz-empty { color: var(--text3); margin: 0; }
+.cz-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 7px; font-size: 0.86rem; }
+.cz-row:last-child { margin-bottom: 0; }
+.cz-lbl { font-size: 0.66rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text3); min-width: 72px; padding-top: 2px; flex: 0 0 auto; }
+.cz-val { color: var(--text); flex: 1; line-height: 1.5; }
+.cz-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 0.74rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; }
+.cz-chip.c-up   { background: rgba(29,158,117,0.16); color: #3FE0A6; border: 1px solid rgba(29,158,117,0.4); }
+.cz-chip.c-down { background: rgba(226,75,74,0.16); color: #F2706F; border: 1px solid rgba(226,75,74,0.4); }
+.cz-chip.c-warn { background: rgba(224,163,59,0.16); color: #E0A33B; border: 1px solid rgba(224,163,59,0.4); }
+.cz-tl { position: relative; margin-left: 4px; padding-left: 18px; }
+.cz-tl::before { content: ''; position: absolute; left: 3px; top: 5px; bottom: 5px; width: 2px; background: rgba(255,255,255,0.1); }
+.cz-ti { position: relative; margin-bottom: 9px; font-size: 0.85rem; color: var(--text); line-height: 1.45; }
+.cz-ti:last-child { margin-bottom: 0; }
+.cz-ti::before { content: ''; position: absolute; left: -18px; top: 5px; width: 8px; height: 8px; border-radius: 50%; background: #5b94c9; box-shadow: 0 0 0 3px var(--card); }
+.cz-setup { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 11px; padding: 11px 13px; margin-bottom: 10px; }
+.cz-setup:last-child { margin-bottom: 0; }
+.cz-setup-h { margin-bottom: 8px; }
+.cz-nm { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+.cz-f { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; padding: 3px 0; color: var(--text); }
+.cz-ic { width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; flex: 0 0 auto; }
+.cz-ic.ok { background: rgba(29,158,117,0.16); color: #3FE0A6; }
+.cz-ic.no { background: rgba(226,75,74,0.16); color: #F2706F; }
+.cz-st { display: flex; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
+.cz-st .cz-b { font-size: 0.74rem; color: var(--text2); background: rgba(255,255,255,0.05); border-radius: 7px; padding: 4px 10px; }
+.cz-st .cz-b b { color: var(--text); font-weight: 600; }
+.cz-note { font-size: 0.74rem; color: var(--text3); margin-top: 8px; font-style: italic; }
+
 /* ── Chat ────────────────────────────────────────────────────────────────── */
 .coach-chat-wrap {
   background: var(--card);
