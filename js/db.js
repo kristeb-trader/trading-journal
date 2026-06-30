@@ -38,6 +38,40 @@ function tradeOutcome(t) {
 const isWinTrade = t => tradeOutcome(t) === 'win'
 const isLossTrade = t => tradeOutcome(t) === 'loss'
 
+// ── Disciplina: cálculo canónico (compartido por calendario, análisis y dashboard) ──
+// Definición única: % de adherencia al checklist, consciente de fase, sin penalizar
+// los ítems no registrados (p. ej. reglas nuevas en sesiones previas).
+function _discSeConecto(s) { return !s.no_opero || s.se_conecto !== false }
+function _discSetupFamily(s) {
+  const v = (s.setup || '').toLowerCase()
+  if (v.startsWith('iri')) return 'iri'
+  if (v.startsWith('reingreso')) return 'reingreso'
+  return null
+}
+// ¿El factor (ítem del checklist) aplica y debe contarse para esta sesión?
+//  Fase 1 en días conectados; Fases 2/3 solo en días operados; reglas por setup solo si aplica.
+function discFactorAplica(f, s) {
+  if (!_discSeConecto(s)) return false
+  const base = (f.fase || 1) === 1 ? true : !s.no_opero
+  if (!base) return false
+  if (f.setup) return _discSetupFamily(s) === f.setup
+  return true
+}
+// % de disciplina sobre un conjunto de sesiones. Solo cuenta ítems aplicables CON
+// valor registrado. Devuelve { total, ok, pct } (pct null si no hay datos).
+function calcDisciplinaStats(sesiones, items) {
+  const factores = (items || DB.checklistItemsSync())
+    .filter(i => i.activo !== false)
+    .map(i => ({ key: i.clave, fase: i.fase || 1, setup: i.setup || null }))
+  let total = 0, ok = 0
+  ;(sesiones || []).forEach(s => factores.forEach(f => {
+    if (!discFactorAplica(f, s)) return
+    if (s[f.key] === undefined) return
+    total++; if (s[f.key]) ok++
+  }))
+  return { total, ok, pct: total > 0 ? Math.round(ok / total * 100) : null }
+}
+
 const DB = {
   // ── Trades ──────────────────────────────────────────────────────────────
 

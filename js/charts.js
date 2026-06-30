@@ -20,7 +20,7 @@ const Charts = (() => {
     kpiTrades:  { title: 'Total Trades', text: 'Operaciones del período (los B.E. se muestran aparte).' },
     kpiRent:    { title: 'Rentabilidad', text: 'P&L del período sobre el capital inicial configurado.' },
     kpiEfec:    { title: 'Efectividad', text: 'Tasa de acierto pura: Targets ÷ (Targets + Stops).' },
-    kpiDisc:    { title: 'Disciplina Total', text: 'Promedio de disciplina (checklist de 6 ítems + ausencia de errores, modelo de 7 factores).' },
+    kpiDisc:    { title: 'Disciplina Total', text: 'Adherencia al checklist por fase (% de ítems cumplidos). No penaliza reglas sin registrar. Mismo cálculo que el calendario y el dashboard.' },
     kpiCons:    { title: 'Consistencia', text: 'Sub-períodos positivos: en Mes cuenta semanas, en Trimestre/Año cuenta meses.' },
     kpiPf:      { title: 'Profit Factor', text: 'Ganancia bruta ÷ pérdida bruta. >1.5 sólido, >1 rentable, <1 negativo.' },
     equity:     { title: 'Curva de Equity', text: 'P&L acumulado a lo largo del período (por día en Mes/Trimestre, por mes en Anual). La banda roja es el drawdown desde el pico.' },
@@ -152,16 +152,11 @@ const Charts = (() => {
   }
 
   // ── Cálculos ──────────────────────────────────────────────────────────────
-  function calcDiscipline(sesiones, casByDate) {
-    if (!sesiones.length) return null
-    const claves = DB.checklistClaves()
-    const denom  = claves.length + 1   // ítems del checklist + factor "sin errores"
-    const sum = sesiones.reduce((acc, s) => {
-      if (s.no_opero) return acc + (casByDate[s.sesion_date] ? 0 : 1)
-      const chk = claves.filter(k => s[k]).length
-      return acc + (chk + (casByDate[s.sesion_date] ? 0 : 1)) / denom
-    }, 0)
-    return Math.round(sum / sesiones.length * 100)
+  // Disciplina canónica (misma que calendario y dashboard): adherencia al checklist,
+  // consciente de fase y sin penalizar ítems no registrados. casByDate ya no se usa.
+  function calcDiscipline(sesiones) {
+    if (!sesiones || !sesiones.length) return null
+    return calcDisciplinaStats(sesiones).pct
   }
 
   function statsOf(trades) {

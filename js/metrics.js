@@ -232,14 +232,10 @@ const Metrics = (() => {
 
   // Disciplina de un conjunto de sesiones: { total, ok, pct } sobre factores aplicables
   function calcDisciplina(sesiones) {
-    let total = 0, ok = 0
-    sesiones.forEach(s => DISC_FACTORS.forEach(f => {
-      if (!factorAplica(f, s)) return
-      if (s[f.key] === undefined) return  // sin registrar (regla nueva) → N/A, no penaliza
-      total++
-      if (s[f.key]) ok++
-    }))
-    return { total, ok, pct: total > 0 ? Math.round(ok / total * 100) : 0 }
+    // Delegado al cálculo canónico global (db.js) para que el número coincida en
+    // calendario, análisis y dashboard.
+    const r = calcDisciplinaStats(sesiones)
+    return { total: r.total, ok: r.ok, pct: r.pct ?? 0 }
   }
 
   // Modal "Dejé de ganar"
