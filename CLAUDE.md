@@ -30,14 +30,14 @@ Dashboard personal para registro y análisis de operativa diaria en NQ/MNQ Futur
 ```
 js/app.js        — Boot, navegación SPA, Modal.openDay (modal del calendario)
 js/calendar.js   — Calendario mensual, filtro de cuenta, openDayModal
-js/coach.js      — Coach IA: flujo 3 etapas, chat, diagnóstico, guardar
+js/coach.js      — Coach IA: flujo 3 etapas, chat, diagnóstico, guardar. Lee de `reglas` (cargarReglas + fmtFilosofia/fmtReglasSetup/fmtReglasDuras). Análisis Etapa 1 con render en tarjetas (renderContexto/Desarrollo/Validacion)
 js/metrics.js    — KPIs y métricas generales (cards del calendario)
 js/charts.js     — Sección Análisis unificada: filtros Mes/Trimestre/Anual adaptativos
 js/form.js       — Formulario de sesión diaria + experimentos
 js/db.js         — Capa de datos Supabase (todas las queries)
 js/experimentos.js — Laboratorio de Experimentos: veredictos + matriz cronológica
 js/apex.js       — Apex Tracker: cuentas de fondeo, vista detalle, auto-carga NT8
-js/estrategia.js — Sección Estrategia: reglas por setup + Chaumer
+js/estrategia.js — Sección Estrategia = editor del rulebook `reglas` por capas (filtros, dura/blanda, es_checklist, stop param)
 css/styles.css   — Dark mode completo + responsive mobile
 TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 ```
@@ -53,8 +53,10 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 | `catalogo_errores` | Maestro de nombres de errores con tipo |
 | `catalogo_emociones` | Emociones con emoji |
 | `catalogo_experimentos` | Experimentos activos/inactivos |
-| `setup_reglas` | Reglas documentadas por setup × dirección |
-| `estrategia_chaumer` | Secciones editables de la estrategia |
+| **`reglas`** | **Rulebook canónico unificado** (1 fila = 1 regla). Capas: filosofia/proceso/riesgo; `setup` (iri/reingreso) como etiqueta en proceso Fase 2; `tipo` dura/blanda; `es_checklist`+`fase` → checklist diario. Reemplaza a las 3 de abajo |
+| ~~`setup_reglas`~~ | ARCHIVADA → `setup_reglas_archivada` (Fase 4 unificación) |
+| ~~`estrategia_chaumer`~~ | ARCHIVADA → `estrategia_chaumer_archivada` (Fase 4) |
+| `checklist_items` | (pendiente archivar: tras recompilar el indicador NT8 ChecklistChaumer) — ya nadie la lee salvo el panel NT8 viejo |
 | `objetivos` | Stop máx, trades/día, P&L objetivo, límite pérdida |
 | `fomc_dates` | Fechas FOMC 2025-2026 |
 | `apex_cuentas` | Cuentas de fondeo Apex: parámetros (DD, target, safety net) y estado |
@@ -84,6 +86,25 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 - Nav mobile scrollable horizontal
 
 ### Pendientes
+- **📕 Unificación del Rulebook — COMPLETADO** (2026-06-26). 4 tablas (`setup_reglas`,
+  `estrategia_chaumer`, `checklist_items` + la muerta `reglas`) unificadas en la tabla
+  canónica **`reglas`**. Plan/modelo: `docs/plan-unificacion-reglas.md`. Migraciones:
+  `2026-06-26-reglas-unificacion-fase1.sql`, `...-fase4-archivar.sql`, `...-modelo-final.sql`.
+  Modelo: 3 capas (filosofia/proceso/riesgo); `setup` (iri/reingreso) etiqueta en proceso
+  Fase 2; `tipo` dura/blanda; checklist = `es_checklist`+`fase`. Stop en PUNTOS
+  (`objetivos.stop_max_puntos`, default 80, parametrizable). Reglas DURAS clave: stop≤80,
+  R:R 1:1 (nunca mover stop/target), target sin zonas en contra. Estrategia de los IRI/
+  Reingreso definida en `reglas` (ver [[rulebook-modelo]]). **Pendientes menores:** el
+  trader debe afinar/reorganizar la **Filosofía** en el editor; archivar `checklist_items`
+  tras recompilar el NT8 ChecklistChaumer; opcional poblar `diagnostico_errores.regla_codigo`;
+  drop definitivo de las `*_archivada` más adelante.
+- **🤖 Coach IA — análisis rediseñado** (2026-06-26). Las 3 secciones (Contexto/Desarrollo/
+  Validación) ahora se renderizan en tarjetas (chip de sesgo, línea de tiempo, checklist de
+  setup) y el prompt es breve, no vuelca datos crudos y tiene bloque "NO ADIVINES precios"
+  (línea verde=PDH, roja=PDL, zonas naranjas y precios de trades son exactos; preguntar si falta).
+  Falta probar en vivo el formato real de la IA.
+- **⚙️ Bot Telegram — auto-deploy activo** (2026-06-26): GitHub Action despliega el bot en
+  cada push a `TelegramBot/**` (secret repo `CLOUDFLARE_API_TOKEN`). Ver [[deploy-bot]].
 - **🔒 Blindaje de seguridad (RLS + Auth) — COMPLETADO** (2026-06-24). RLS activo
   en todas las tablas; web vía login Supabase Auth (rol `authenticated`); bot,
   Worker `/api/session` e indicadores NT8 con `service_role`. `anon` bloqueada y
