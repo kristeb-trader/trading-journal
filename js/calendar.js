@@ -396,7 +396,7 @@ const Calendar = (() => {
             <i class="ti ti-target"></i> ${winRate}% Win Rate
           </span>
           <span class="ms-chip">
-            <i class="ti ti-list-numbers"></i> ${allTrades.length} trades · ${tradingDays} días
+            <i class="ti ti-list-numbers"></i> ${nonBETrades.length} trades · ${tradingDays} días
           </span>
           <span class="ms-chip">
             <i class="ti ti-arrows-split-2"></i>

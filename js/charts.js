@@ -17,7 +17,7 @@ const Charts = (() => {
   const HELP_TEXTS = {
     kpiPnl:     { title: 'P&L Neto', text: 'Suma de ganancias y pérdidas del período (incluye Break Even ±$6).' },
     kpiWin:     { title: 'Win Rate', text: 'Trades Target sobre el total de trades sin Break Even.' },
-    kpiTrades:  { title: 'Total Trades', text: 'Operaciones del período (los B.E. se muestran aparte).' },
+    kpiTrades:  { title: 'Total Trades', text: 'Trades reales del período (sin break-even). Mismo criterio que el calendario.' },
     kpiRent:    { title: 'Rentabilidad', text: 'P&L del período sobre el capital inicial configurado.' },
     kpiEfec:    { title: 'Efectividad', text: 'Tasa de acierto pura: Targets ÷ (Targets + Stops).' },
     kpiDisc:    { title: 'Disciplina Total', text: 'Adherencia al checklist por fase (% de ítems cumplidos). No penaliza reglas sin registrar. Mismo cálculo que el calendario y el dashboard.' },
@@ -211,7 +211,7 @@ const Charts = (() => {
         ${chip('Disciplina', disc!=null?`${disc}%`:'—', disc==null?'kpi-neutral':disc>=80?'kpi-green':disc>=55?'kpi-neutral':'kpi-red', 'kpiDisc')}
         ${chip('Consistencia', activeSub?`${posSub}/${activeSub} · ${consPct}%`:'—', consPct>=60?'kpi-green':consPct>=40?'kpi-neutral':'kpi-red', 'kpiCons')}
         ${chip('Profit Factor', pfStr, pfCls, 'kpiPf')}
-        ${chip('Total Trades', `${s.total}`, 'kpi-neutral', 'kpiTrades')}
+        ${chip('Total Trades', `${s.nonBE}`, 'kpi-neutral', 'kpiTrades')}
       </div>`
   }
 
