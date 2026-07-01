@@ -99,6 +99,12 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private int lastSentDate = -1;   // yyyymmdd ya enviado
 
+        // Niveles del último RTH detectado, listos para enviar al entrar a realtime.
+        private bool   hasPending = false;
+        private int    pendDateInt;
+        private string pendFecha;
+        private double pPdo, pPdh, pPdl, pPdc, pOpen, pOnh, pOnl;
+
         protected override void OnStateChange()
         {
             if (State == State.SetDefaults)
@@ -184,12 +190,15 @@ namespace NinjaTrader.NinjaScript.Indicators
                             "[DailyLevels] {0:yyyy-MM-dd}  PDO={1} PDH={2} PDL={3} PDC={4}  RTHopen={5}  ONH={6} ONL={7}",
                             rthDate, pO, pH, pL, pC, rthO, onH, onL));
 
-                    if (pValid && State == State.Realtime && dateInt != lastSentDate)
+                    // Guardar los niveles del RTH recién abierto como "pendiente de enviar".
+                    // El envío real se hace al entrar a tiempo real (ver flush abajo),
+                    // porque esta apertura suele detectarse durante la carga histórica.
+                    if (pValid)
                     {
-                        lastSentDate = dateInt;
-                        string fecha = rthDate.ToString("yyyy-MM-dd");
-                        double oH = onH, oL = onL, dpo = pO, dph = pH, dpl = pL, dpc = pC, dopen = rthO;
-                        Task.Run(() => SendLevelsAsync(fecha, dpo, dph, dpl, dpc, dopen, oH, oL));
+                        hasPending  = true;
+                        pendDateInt = dateInt;
+                        pendFecha   = rthDate.ToString("yyyy-MM-dd");
+                        pPdo = pO; pPdh = pH; pPdl = pL; pPdc = pC; pOpen = rthO; pOnh = onH; pOnl = onL;
                     }
 
                     // El overnight recién terminó → reset para el próximo.
@@ -209,6 +218,18 @@ namespace NinjaTrader.NinjaScript.Indicators
                 rthActive = false;
                 if (double.IsNaN(onH)) { onH = High[0]; onL = Low[0]; }
                 else { if (High[0] > onH) onH = High[0]; if (Low[0] < onL) onL = Low[0]; }
+            }
+
+            // ── Flush: enviar los niveles pendientes en cuanto estemos en tiempo real ──
+            // (La apertura del RTH del día suele detectarse durante la carga histórica,
+            //  cuando aún no se debe/puede enviar; aquí se envía una sola vez por día.)
+            if (State == State.Realtime && hasPending && pendDateInt != lastSentDate)
+            {
+                lastSentDate = pendDateInt;
+                if (Diagnostico) Print("[DailyLevels] Enviando niveles de " + pendFecha + " a Supabase…");
+                string f = pendFecha;
+                double a = pPdo, b = pPdh, c = pPdl, d = pPdc, o = pOpen, oh = pOnh, ol = pOnl;
+                Task.Run(() => SendLevelsAsync(f, a, b, c, d, o, oh, ol));
             }
         }
 
@@ -243,9 +264,29 @@ namespace NinjaTrader.NinjaScript.Indicators
                     SESIONES_ENDPOINT + "?on_conflict=sesion_date");
                 req.Headers.Add("Prefer", "resolution=merge-duplicates,return=minimal");
                 req.Content = new StringContent(json, Encoding.UTF8, "application/json");
-                await client.SendAsync(req);
+                var res = await client.SendAsync(req);
+
+                if (Diagnostico)
+                {
+                    if (res.IsSuccessStatusCode)
+                        NinjaTrader.Code.Output.Process(
+                            "[DailyLevels] ✅ Niveles de " + fecha + " guardados (HTTP " + (int)res.StatusCode + ")",
+                            NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                    else
+                    {
+                        string bodyResp = res.Content != null ? await res.Content.ReadAsStringAsync() : "";
+                        NinjaTrader.Code.Output.Process(
+                            "[DailyLevels] 🔴 Error al guardar " + fecha + ": HTTP " + (int)res.StatusCode + " " + bodyResp,
+                            NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                    }
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                NinjaTrader.Code.Output.Process(
+                    "[DailyLevels] 🔴 Excepción al enviar " + fecha + ": " + ex.Message,
+                    NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+            }
         }
     }
 }
