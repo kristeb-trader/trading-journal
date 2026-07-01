@@ -614,23 +614,34 @@ small { font-size: 0.82em; }
 .form-section-title.hidden { display: none; }
 .form-subtitle { font-size: 0.82rem; color: var(--text2); font-weight: 600; margin: 14px 0 8px; }
 
-/* Etiquetas de fase del checklist (Fase 1/2/3) */
-.phase-label { font-size: 0.82rem; font-weight: 600; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.phase-label .phase-when { font-size: 0.7rem; font-weight: 400; color: var(--text3); }
-.phase-label.phase-1 { color: var(--accent); }
-.phase-label.phase-2 { color: var(--warning); }
-.phase-label.phase-3 { color: #5b94c9; }
+/* Checklist por fases — tarjetas modernas (Fase 1/2/3) */
+.phase-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-top: 3px solid var(--border); border-radius: 12px;
+  padding: 14px 16px; margin-bottom: 14px;
+}
+.phase-card-1 { border-top-color: var(--accent); }
+.phase-card-2 { border-top-color: var(--warning); }
+.phase-card-3 { border-top-color: #5b94c9; }
+.phase-card-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.phase-card-icon {
+  width: 38px; height: 38px; flex: 0 0 auto; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
+}
+.phase-card-1 .phase-card-icon { background: rgba(29,158,117,0.16); color: var(--accent); }
+.phase-card-2 .phase-card-icon { background: rgba(186,117,23,0.18); color: var(--warning); }
+.phase-card-3 .phase-card-icon { background: rgba(91,148,201,0.18); color: #8FBDE8; }
+.phase-card-titles { flex: 1; min-width: 0; }
+.phase-card-title { font-size: 1.05rem; font-weight: 700; line-height: 1.2; }
+.phase-card-1 .phase-card-title { color: #3FE0A6; }
+.phase-card-2 .phase-card-title { color: #E0A33B; }
+.phase-card-3 .phase-card-title { color: #8FBDE8; }
+.phase-card-when { font-size: 0.74rem; color: var(--text3); margin-top: 3px; }
 .phase-progress {
-  font-size: 0.7rem; font-weight: 700; color: var(--text3);
-  background: var(--bg3); border-radius: 10px; padding: 1px 8px; margin-left: auto;
+  font-size: 0.72rem; font-weight: 700; color: var(--text3);
+  background: var(--bg3); border-radius: 999px; padding: 3px 10px; margin-left: auto; flex: 0 0 auto;
 }
 .phase-progress.complete { background: var(--accent-dim); color: var(--accent); }
-
-/* Fases como columna vertebral: acento de color a la izquierda */
-.phase-group { border-left: 3px solid var(--border); padding-left: 14px; }
-.phase-group-1 { border-left-color: var(--accent); }
-.phase-group-2 { border-left-color: var(--warning); }
-.phase-group-3 { border-left-color: #5b94c9; }
 
 /* Alerta de riesgo (retroceso > stop máximo) */
 .riesgo-alert {

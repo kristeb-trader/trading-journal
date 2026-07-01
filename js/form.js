@@ -26,9 +26,9 @@ const SessionForm = (() => {
   let checklistReady = new Promise(r => { _checklistResolve = r })
 
   const FASE_META = {
-    1: { titulo: 'Fase 1 · Pre-sesión',       when: 'antes de que exista setup' },
-    2: { titulo: 'Fase 2 · Lectura del setup', when: 'análisis antes de entrar' },
-    3: { titulo: 'Fase 3 · Ejecución',         when: 'colocar y gestionar la orden' },
+    1: { titulo: 'Fase 1 · Pre-sesión',        when: 'antes de que exista setup',      icon: 'ti-sunrise' },
+    2: { titulo: 'Fase 2 · Lectura del setup', when: 'análisis antes de entrar',        icon: 'ti-eye' },
+    3: { titulo: 'Fase 3 · Ejecución',         when: 'colocar y gestionar la orden',    icon: 'ti-target' },
   }
 
   async function loadChecklist() {
@@ -70,12 +70,22 @@ const SessionForm = (() => {
           <span>${i.texto}</span>
         </label>`).join('')
       return `
-        <div class="form-group phase-group phase-group-${f}${opOnly}">
-          <label class="phase-label phase-${f}">${FASE_META[f].titulo} <span class="phase-when">${FASE_META[f].when}</span> <span class="phase-progress" id="phaseProg${f}">0/${items.length}</span></label>
+        <div class="phase-card phase-card-${f}${opOnly}">
+          <div class="phase-card-head">
+            <span class="phase-card-icon"><i class="ti ${FASE_META[f].icon}"></i></span>
+            <div class="phase-card-titles">
+              <div class="phase-card-title">${FASE_META[f].titulo}</div>
+              <div class="phase-card-when">${FASE_META[f].when}</div>
+            </div>
+            <span class="phase-progress" id="phaseProg${f}">0/${items.length}</span>
+          </div>
           <div class="checklist">${checks}</div>
         </div>`
     }).join('')
     cont.querySelectorAll('input[type="checkbox"]').forEach(c => c.addEventListener('change', updatePhaseProgress))
+    // Fases 2/3 solo aplican cuando se operó: ocultarlas si "No operé Hoy" está activo
+    if (document.getElementById('noOpero')?.checked)
+      cont.querySelectorAll('.op-only').forEach(el => el.classList.add('hidden'))
     updatePhaseProgress()
   }
 
