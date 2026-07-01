@@ -3221,3 +3221,12 @@ body.modal-open { overflow: hidden; }
 }
 .modal-trade-row.trade-en-ventana { box-shadow: inset 3px 0 0 var(--red); }
 .trade-ventana-flag { font-size: 0.9rem; }
+
+/* ── Dashboard de Disciplina: controles del hero (nav de mes) ─────────────── */
+.dd-hero-controls { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.dd-monthnav { display: flex; gap: 6px; }
+.dd-monthnav.hidden { display: none; }
+@media (max-width: 900px) {
+  .dd-hero-controls { align-items: stretch; width: 100%; }
+  .dd-monthnav { justify-content: flex-end; }
+}

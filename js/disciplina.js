@@ -46,14 +46,23 @@ const Disciplina = (() => {
       .map(i => ({ key: i.clave, label: i.texto, fase: i.fase || 1, setup: i.setup || null }))
   }
 
-  // ── Período (Mes / Trimestre / Todo) ──────────────────────────────────────
-  function calMonthYear() {
-    const m = (typeof Calendar !== 'undefined' && Calendar.getMonth) ? Calendar.getMonth() : new Date().getMonth() + 1
-    const y = (typeof Calendar !== 'undefined' && Calendar.getYear) ? Calendar.getYear() : new Date().getFullYear()
-    return { m, y }
+  // ── Período (Mes / Trimestre / Todo) + navegación de mes ──────────────────
+  let navY = null, navM = null   // mes/año que muestra el dashboard
+  function ensureNav() {
+    if (navM != null) return
+    navM = (typeof Calendar !== 'undefined' && Calendar.getMonth) ? Calendar.getMonth() : new Date().getMonth() + 1
+    navY = (typeof Calendar !== 'undefined' && Calendar.getYear) ? Calendar.getYear() : new Date().getFullYear()
+  }
+  function navMonth(delta) {
+    ensureNav()
+    navM += delta
+    if (navM > 12) { navM = 1; navY++ }
+    if (navM < 1) { navM = 12; navY-- }
+    updateMonthNav(); refreshTitle(); render()
   }
   function range() {
-    const { m, y } = calMonthYear()
+    ensureNav()
+    const m = navM, y = navY
     if (period === 'all') return { from: '0000-00-00', to: '9999-99-99', label: 'Todo el histórico' }
     if (period === 'quarter') {
       const qStart = Math.floor((m - 1) / 3) * 3 + 1
@@ -330,19 +339,6 @@ const Disciplina = (() => {
         </div>`
     }).join('') : '<p class="dd-soft">Sin causas registradas.</p>'
 
-    // ── Registro de sesiones ──
-    const logHtml = d.log.map(row => {
-      const dow = DOW[new Date(row.date + 'T12:00:00').getDay()]
-      return `
-        <tr data-date="${row.date}">
-          <td class="dd-td-date">${dow} ${fmtDateShort(row.date)}</td>
-          <td><span class="dd-res ${row.tag.cls}">${row.tag.t}</span></td>
-          <td>${row.faseTxt}</td>
-          <td class="dd-td-detail">${row.detalle}</td>
-          <td>${row.tipoTxt === '—' ? '—' : row.tipoTxt.split(', ').map(tp => `<span class="dd-type-txt">${tp}</span>`).join(' ')}</td>
-        </tr>`
-    }).join('')
-
     cont.innerHTML = `
       <div class="dd-strip">${stripHtml}</div>
 
@@ -354,26 +350,7 @@ const Disciplina = (() => {
       <div class="dd-error-grid">
         <div class="dd-panel"><div class="dd-panel-title">Distribución por tipo (${d.totalConectadas} sesiones)</div>${barsHtml}</div>
         <div class="dd-panel"><div class="dd-panel-title">Causa raíz más frecuente</div><div class="dd-cause-list">${causaHtml}</div></div>
-      </div>
-
-      <div class="dd-sec-head"><span class="dd-sec-num">03</span><span class="dd-sec-title">Registro de sesiones</span><div class="dd-sec-line"></div></div>
-      <div class="dd-panel dd-panel-table">
-        <table class="dd-log">
-          <thead><tr><th>Fecha</th><th>Resultado</th><th>Fase</th><th>Detalle</th><th>Tipo</th></tr></thead>
-          <tbody>${logHtml}</tbody>
-        </table>
       </div>`
-
-    cont.querySelectorAll('.dd-log tr[data-date]').forEach(tr => {
-      tr.addEventListener('click', () => openDay(tr.dataset.date))
-    })
-  }
-
-  async function openDay(date) {
-    try {
-      const [t, s] = await Promise.all([DB.getTradesByDate(date), DB.getSesionByDate(date)])
-      if (typeof Modal !== 'undefined' && Modal.openDay) await Modal.openDay(date, t, s)
-    } catch (e) { Toast.show('No se pudo abrir el día: ' + e.message, 'error') }
   }
 
   function renderPeriodPills() {
@@ -381,6 +358,12 @@ const Disciplina = (() => {
     if (!el) return
     const opt = (k, l) => `<button class="dd-period ${period === k ? 'on' : ''}" data-period="${k}">${l}</button>`
     el.innerHTML = opt('month', 'Mes') + opt('quarter', 'Trimestre') + opt('all', 'Todo')
+  }
+
+  // Los botones de mes solo aplican en Mes/Trimestre (no en "Todo").
+  function updateMonthNav() {
+    const el = document.getElementById('disciplinaMonthNav')
+    if (el) el.classList.toggle('hidden', period === 'all')
   }
 
   function refreshTitle() {
@@ -405,15 +388,17 @@ const Disciplina = (() => {
       if (cont) cont.innerHTML = `<p class="coach-error">Error al cargar disciplina: ${esc(e.message)}</p>`
       return
     }
-    renderPeriodPills(); refreshTitle(); render()
+    renderPeriodPills(); updateMonthNav(); refreshTitle(); render()
   }
 
   function wire() {
     document.getElementById('disciplinaPeriod')?.addEventListener('click', e => {
       const b = e.target.closest('[data-period]'); if (!b) return
       period = b.dataset.period
-      renderPeriodPills(); refreshTitle(); render()
+      renderPeriodPills(); updateMonthNav(); refreshTitle(); render()
     })
+    document.getElementById('disciplinaPrev')?.addEventListener('click', () => navMonth(-1))
+    document.getElementById('disciplinaNext')?.addEventListener('click', () => navMonth(1))
   }
 
   async function init() {
