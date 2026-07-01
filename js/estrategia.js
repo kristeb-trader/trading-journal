@@ -1,15 +1,17 @@
 // Estrategia — Rulebook canónico (reglas) por capas: filosofía/proceso/riesgo
 const Estrategia = (() => {
   const CAPAS = ['filosofia', 'proceso', 'riesgo']
-  const CAPA_LABEL = { filosofia: 'Filosofía', proceso: 'Proceso', riesgo: 'Riesgo' }
+  const CAPA_LABEL = { filosofia: 'Filosofía', proceso: 'Reglas', riesgo: 'Riesgo' }
   const CAPA_ICON = { filosofia: 'ti-bulb', proceso: 'ti-list-check', riesgo: 'ti-shield' }
   const SETUP_LABEL = { iri: 'IRI', reingreso: 'Reingreso' }
   const FASE_CLS = { 1: 'b-f1', 2: 'b-f2', 3: 'b-f3' }
   const FASE_TITLE = { 1: 'Fase 1 · Pre-sesión', 2: 'Fase 2 · Lectura del setup', 3: 'Fase 3 · Ejecución' }
+  // Subgrupos por setup dentro de Fase 2 (IRI / Reingreso / General)
+  const SETUP_GROUPS = [{ key: 'iri', label: 'IRI' }, { key: 'reingreso', label: 'Reingreso' }, { key: null, label: 'General' }]
 
   let reglas = []
   let objetivos = null
-  let filtro = { capa: 'proceso', soloDuras: false }
+  let filtro = { capa: 'proceso', fase: null }
   let editId = null
   let wired = false
 
@@ -37,11 +39,6 @@ const Estrategia = (() => {
       .sort((a, b) => (a.orden || 0) - (b.orden || 0))
   }
 
-  // Aplica el filtro visual (Solo DURAS) sobre una lista ya ordenada.
-  function visibles(list) {
-    return filtro.soloDuras ? list.filter(r => r.tipo === 'dura') : list
-  }
-
   function render() { renderTabs(); renderFilters(); renderList() }
 
   function renderTabs() {
@@ -55,8 +52,11 @@ const Estrategia = (() => {
 
   function renderFilters() {
     const el = document.getElementById('rbFilters'); if (!el) return
-    el.innerHTML = `<span class="rb-f ${filtro.soloDuras ? 'on' : ''}" data-tog="duras">
-      <i class="ti ti-flame"></i> Solo DURAS</span>`
+    // Filtro por fase: solo en la pestaña de Reglas (proceso)
+    if (filtro.capa !== 'proceso') { el.innerHTML = ''; return }
+    const f = (active, val, label) => `<span class="rb-f ${active ? 'on' : ''}" data-fase="${val}">${label}</span>`
+    el.innerHTML = f(filtro.fase == null, 'all', 'Todas las fases') +
+      [1, 2, 3].map(n => f(filtro.fase === n, n, `Fase ${n}`)).join('')
   }
 
   function metaBadges(r) {
@@ -66,38 +66,12 @@ const Estrategia = (() => {
     return b
   }
 
-  // Ventana de bloqueo ±5 min a partir de 'HH:MM'.
-  function ventanaBloqueo(hhmm) {
-    const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || ''); if (!m) return null
-    const base = (+m[1]) * 60 + (+m[2])
-    const fmt = t => { const x = ((t % 1440) + 1440) % 1440; return String((x / 60) | 0).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0') }
-    return `${fmt(base - 5)} → ${fmt(base + 5)}`
-  }
-
-  function horaNoticiaHtml(r) {
-    const h = r.hora_noticia || ''
-    const win = ventanaBloqueo(h)
-    const txt = win
-      ? `<span class="rb-noticia-win">No operar ${win}</span>`
-      : `<span class="rb-noticia-win muted">Ingresa la hora de la noticia roja del día</span>`
-    return `
-      <div class="rb-noticia">
-        <i class="ti ti-clock-exclamation"></i>
-        <span class="rb-noticia-lbl">Hora noticia roja</span>
-        <input type="time" class="rb-noticia-input" data-id="${r.id}" value="${esc(h)}">
-        ${txt}
-      </div>`
-  }
-
   function cardHtml(r) {
     if (editId === r.id) return editHtml(r)
     const dura = r.tipo === 'dura'
     const tipoTxt = dura ? 'DURA' : (r.tipo === 'experimental' ? 'EXPERIM.' : 'BLANDA')
     const chip = `<span class="rb-chip ${dura ? 'c-dura' : 'c-blanda'}" data-act="tipo" data-id="${r.id}" title="Cambiar dura/blanda">${tipoTxt}</span>`
     const sw = (on, act, label) => `<span class="rb-tog"><span class="rb-sw ${on ? 'on' : ''}" data-act="${act}" data-id="${r.id}"></span> ${label}</span>`
-
-    let extra = ''
-    if (r.codigo === 'chk_noticias') extra += horaNoticiaHtml(r)
 
     let foot = ''
     if (r.capa === 'proceso') foot += sw(r.es_checklist, 'chk', 'En checklist')
@@ -115,7 +89,6 @@ const Estrategia = (() => {
         <div class="rb-crow">${metaBadges(r)}${chip}</div>
         <p class="rb-ttl">${esc(r.titulo)}</p>
         ${r.enunciado && r.enunciado !== r.titulo ? `<p class="rb-enu">${esc(r.enunciado)}</p>` : ''}
-        ${extra}
         <div class="rb-foot">${foot}</div>
       </div>`
   }
@@ -134,31 +107,42 @@ const Estrategia = (() => {
       </div>`
   }
 
+  // Fase 2: separar en subgrupos por setup (IRI / Reingreso / General)
+  function faseHtml(f) {
+    const list = capaReglas('proceso', f)
+    if (!list.length) return `<p class="rb-empty-sm">Sin reglas en esta fase.</p>`
+    if (f !== 2) return list.map(cardHtml).join('')
+    let html = ''
+    for (const g of SETUP_GROUPS) {
+      const sub = list.filter(r => (r.setup || null) === g.key)
+      if (!sub.length) continue
+      html += `<div class="rb-setup-head">${g.label}</div>` + sub.map(cardHtml).join('')
+    }
+    return html
+  }
+
   function renderList() {
     const cont = document.getElementById('reglasList'); if (!cont) return
     const capa = filtro.capa
 
     if (capa === 'proceso') {
+      const fases = filtro.fase ? [filtro.fase] : [1, 2, 3]
       let html = ''
-      for (const f of [1, 2, 3]) {
-        const list = visibles(capaReglas('proceso', f))
-        html += `<div class="rb-fase-head">${FASE_TITLE[f]}</div>`
-        html += list.length
-          ? list.map(cardHtml).join('')
-          : `<p class="rb-empty-sm">Sin reglas en esta fase.</p>`
+      for (const f of fases) {
+        html += `<div class="rb-fase-head">${FASE_TITLE[f]}</div>` + faseHtml(f)
       }
-      const sinFase = visibles(capaReglas('proceso', null))
-      if (sinFase.length) {
-        html += `<div class="rb-fase-head">Sin fase asignada</div>` + sinFase.map(cardHtml).join('')
+      if (!filtro.fase) {
+        const sinFase = capaReglas('proceso', null)
+        if (sinFase.length) html += `<div class="rb-fase-head">Sin fase asignada</div>` + sinFase.map(cardHtml).join('')
       }
       cont.innerHTML = html
       return
     }
 
-    const list = visibles(capaReglas(capa))
+    const list = capaReglas(capa)
     cont.innerHTML = list.length
       ? list.map(cardHtml).join('')
-      : `<p class="rb-empty">No hay reglas en esta capa${filtro.soloDuras ? ' con el filtro DURAS' : ''}.</p>`
+      : `<p class="rb-empty">No hay reglas en esta capa.</p>`
   }
 
   function find(id) { return reglas.find(r => r.id === id) }
@@ -172,9 +156,12 @@ const Estrategia = (() => {
     } catch (e) { Toast.show('Error al guardar: ' + e.message, 'error'); return false }
   }
 
-  // Grupo de reordenamiento: misma capa (y misma fase si es proceso).
+  // Grupo de reordenamiento: misma capa, misma fase (y mismo setup en Fase 2).
   function grupoDe(r) {
-    return capaReglas(r.capa, r.capa === 'proceso' ? (r.fase || null) : undefined)
+    if (r.capa !== 'proceso') return capaReglas(r.capa)
+    const fase = r.fase || null
+    const g = capaReglas('proceso', fase)
+    return fase === 2 ? g.filter(x => (x.setup || null) === (r.setup || null)) : g
   }
 
   async function mover(id, dir) {
@@ -201,7 +188,7 @@ const Estrategia = (() => {
       titulo: 'Nueva regla', enunciado: '', capa, tipo: 'blanda',
       direccion: 'ambas', es_checklist: capa === 'proceso',
       activa: true, estado: 'vigente',
-      fase: capa === 'proceso' ? 1 : null, orden,
+      fase: capa === 'proceso' ? (filtro.fase || 1) : null, orden,
     }
     try {
       const r = await DB.addRegla(payload)
@@ -213,11 +200,12 @@ const Estrategia = (() => {
   function wire() {
     document.getElementById('rbCapaPills')?.addEventListener('click', e => {
       const p = e.target.closest('[data-capa]'); if (!p) return
-      filtro.capa = p.dataset.capa; editId = null; render()
+      filtro.capa = p.dataset.capa; filtro.fase = null; editId = null; render()
     })
     document.getElementById('rbFilters')?.addEventListener('click', e => {
-      const tg = e.target.closest('[data-tog]')
-      if (tg) { filtro.soloDuras = !filtro.soloDuras; renderFilters(); renderList() }
+      const fa = e.target.closest('[data-fase]'); if (!fa) return
+      filtro.fase = fa.dataset.fase === 'all' ? null : parseInt(fa.dataset.fase)
+      renderFilters(); renderList()
     })
     document.getElementById('reglaNuevaBtn')?.addEventListener('click', nuevaRegla)
 
@@ -259,12 +247,6 @@ const Estrategia = (() => {
           if (typeof Coach !== 'undefined' && Coach.clearCache) Coach.clearCache()
           Toast.show(`Límite de stop: ${val} pts`, 'success')
         } catch (e) { Toast.show('Error al guardar el límite: ' + e.message, 'error') }
-        return
-      }
-      const hora = e.target.closest('.rb-noticia-input')
-      if (hora) {
-        const id = parseInt(hora.dataset.id)
-        if (await patch(id, { hora_noticia: hora.value || null })) renderList()
       }
     })
   }

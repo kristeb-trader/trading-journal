@@ -202,7 +202,22 @@ const SessionForm = (() => {
     ;['precioMaxAyer','precioMinAyer','precioMaxPre','precioMinPre'].forEach(id =>
       document.getElementById(id)?.addEventListener('input', updatePremktPuntos))
     document.getElementById('seConecto')?.addEventListener('change', updatePremercadoVisibility)
+    document.getElementById('horaNoticiaRoja')?.addEventListener('input', actualizarVentanaNoticia)
+    actualizarVentanaNoticia()
     updatePremercadoVisibility()
+  }
+
+  // Ventana de bloqueo ±5 min de la noticia roja (no operar en ese rango).
+  function actualizarVentanaNoticia() {
+    const el = document.getElementById('horaNoticiaRojaWin')
+    const inp = document.getElementById('horaNoticiaRoja')
+    if (!el || !inp) return
+    const m = /^(\d{1,2}):(\d{2})$/.exec(inp.value || '')
+    if (!m) { el.textContent = 'Sin noticia roja'; el.classList.remove('on'); return }
+    const base = (+m[1]) * 60 + (+m[2])
+    const fmt = t => { const x = ((t % 1440) + 1440) % 1440; return String((x / 60) | 0).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0') }
+    el.textContent = `No operar ${fmt(base - 5)} → ${fmt(base + 5)}`
+    el.classList.add('on')
   }
 
   function setupImageUpload() {
@@ -359,6 +374,7 @@ const SessionForm = (() => {
       payload.soportes_naranja     = soportesNaranja ? soportesNaranja.getValues() : []
       payload.resistencias_naranja = resistenciasNaranja ? resistenciasNaranja.getValues() : []
       payload.noticias             = document.getElementById('noticias').value.trim() || null
+      payload.hora_noticia_roja    = document.getElementById('horaNoticiaRoja').value || null
     } else {
       payload.precio_apertura_ayer = null
       payload.precio_max_ayer    = null
@@ -370,6 +386,7 @@ const SessionForm = (() => {
       payload.soportes_naranja     = []
       payload.resistencias_naranja = []
       payload.noticias           = null
+      payload.hora_noticia_roja  = null
     }
 
     // Setup válido no tomado (aplica cuando no_opero = true)
@@ -473,6 +490,8 @@ const SessionForm = (() => {
     document.getElementById('precioMaxPre').value     = sesion.precio_max_pre ?? ''
     document.getElementById('precioMinPre').value     = sesion.precio_min_pre ?? ''
     document.getElementById('noticias').value         = sesion.noticias || ''
+    const horaNR = document.getElementById('horaNoticiaRoja')
+    if (horaNR) { horaNR.value = sesion.hora_noticia_roja || ''; actualizarVentanaNoticia() }
     soportesNaranja?.setValues(sesion.soportes_naranja || [])
     resistenciasNaranja?.setValues(sesion.resistencias_naranja || [])
     updatePremktPuntos()
