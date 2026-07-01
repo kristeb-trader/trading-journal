@@ -162,17 +162,21 @@ const Disciplina = (() => {
       const registrados = DISC_FACTORS.filter(f => factorAplica(f, s) && s[f.key] !== undefined)
       const fails = registrados.filter(f => !s[f.key]).length
       const tieneError = (casByDate[s.sesion_date] || []).length > 0
+      const enVentana = tradesEnVentanaNoticia(trByDate[s.sesion_date] || [], s).length > 0
       if (!registrados.length) return 'empty'
-      if (fails === 0 && !tieneError) return 'full'
-      if (tieneError || fails > 1) return 'broken'
+      if (fails === 0 && !tieneError && !enVentana) return 'full'
+      if (tieneError || enVentana || fails > 1) return 'broken'
       return 'partial'
     })
+
+    // Verificación automática: días que operaron dentro de la ventana de noticia roja
+    const violacionesNoticia = log.filter(r => r.enVentana).length
 
     return {
       r, totalConectadas: conectadas.length, totalOperadas: operadas.length,
       disciplinaPct, dOk, dTotal, phases, faseDebil, racha, hist,
       tipoCount, erroresTotal: cas.length, erroresPsico, causaRaiz,
-      diasLimpios, diasLimpiosPct, log,
+      diasLimpios, diasLimpiosPct, log, violacionesNoticia,
     }
   }
 
@@ -206,7 +210,12 @@ const Disciplina = (() => {
     } else {
       detalle = '<span class="dd-ok-pill">✓ Sesión limpia · sin errores</span>'
     }
-    return { date: s.sesion_date, tag, faseTxt, detalle, tipoTxt, dCas }
+    // Verificación automática: ¿operó dentro de la ventana de la noticia roja?
+    const enVentana = tradesEnVentanaNoticia(dTrades, s)
+    if (enVentana.length) {
+      detalle += ` <span class="dd-noticia-pill" title="Entró en la ventana ±5 min de la noticia roja">🚫 Operó en ventana de noticia</span>`
+    }
+    return { date: s.sesion_date, tag, faseTxt, detalle, tipoTxt, dCas, enVentana: enVentana.length }
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -242,6 +251,7 @@ const Disciplina = (() => {
       { label: 'Fase más débil', value: d.faseDebil ? `${d.faseDebil.pct}%` : '—', sub: d.faseDebil ? d.faseDebil.label.replace('—','·') : 'sin datos', cls: d.faseDebil ? statValueClass(d.faseDebil.pct) : '' },
       { label: 'Errores', value: `${d.erroresTotal}`, sub: `${d.erroresPsico} psicológicos · ${d.totalConectadas} sesiones`, cls: d.erroresTotal === 0 ? 'pos' : d.erroresPsico > 0 ? 'neg' : '' },
       { label: 'Días limpios', value: d.diasLimpiosPct == null ? '—' : `${d.diasLimpiosPct}%`, sub: `${d.diasLimpios}/${d.totalConectadas} sin errores`, cls: statValueClass(d.diasLimpiosPct) },
+      { label: 'En ventana noticia', value: `${d.violacionesNoticia}`, sub: 'días operando en ±5 min', cls: d.violacionesNoticia === 0 ? 'pos' : 'neg' },
     ]
     const stripHtml = stats.map(s => `
       <div class="dd-stat">

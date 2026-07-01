@@ -38,6 +38,28 @@ function tradeOutcome(t) {
 const isWinTrade = t => tradeOutcome(t) === 'win'
 const isLossTrade = t => tradeOutcome(t) === 'loss'
 
+// ── Ventana de bloqueo por noticia roja (±5 min) ──────────────────────────
+// Minutos del día de una hora 'HH:MM' o 'HH:MM:SS' (ET). null si inválida.
+function _minsOfTime(s) {
+  const m = /^(\d{1,2}):(\d{2})/.exec(s || '')
+  return m ? (+m[1]) * 60 + (+m[2]) : null
+}
+// ¿La hora de entrada de un trade cae en la ventana ±margen de la noticia?
+// entry y hora en el mismo reloj (ET). Soporta varias horas separadas por coma.
+function enVentanaNoticia(entryTime, horaNoticia, margen = 5) {
+  const e = _minsOfTime(entryTime)
+  if (e == null || !horaNoticia) return false
+  return String(horaNoticia).split(',').some(h => {
+    const n = _minsOfTime(h.trim())
+    return n != null && Math.abs(e - n) <= margen
+  })
+}
+// Trades de un día que cayeron dentro de la ventana de la noticia roja de la sesión.
+function tradesEnVentanaNoticia(trades, sesion, margen = 5) {
+  if (!sesion || !sesion.hora_noticia_roja || !trades) return []
+  return trades.filter(t => enVentanaNoticia(t.entry_time, sesion.hora_noticia_roja, margen))
+}
+
 // ── Disciplina: cálculo canónico (compartido por calendario, análisis y dashboard) ──
 // Definición única: % de adherencia al checklist, consciente de fase, sin penalizar
 // los ítems no registrados (p. ej. reglas nuevas en sesiones previas).

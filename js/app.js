@@ -201,6 +201,13 @@ const Modal = {
     const targets = trades.filter(isWinTrade).length
     const stops = trades.filter(isLossTrade).length
 
+    // Verificación automática: trades dentro de la ventana ±5 min de la noticia roja
+    const enVentana = tradesEnVentanaNoticia(trades, sesion)
+    const enVentanaSet = new Set(enVentana.map(t => t.id))
+    const noticiaWarn = enVentana.length
+      ? `<div class="modal-noticia-warn"><i class="ti ti-alert-triangle"></i> Operaste dentro de la ventana de la noticia roja (${sesion.hora_noticia_roja} ±5 min): ${enVentana.length} trade${enVentana.length !== 1 ? 's' : ''}.</div>`
+      : ''
+
     let tradesHtml
     if (sesion?.no_opero && !trades.length) {
       tradesHtml = `<div class="modal-no-trade"><i class="ti ti-coffee"></i><p>Sin operación este día</p><p class="text-dim">${sesion.motivo_no_opero || ''}</p></div>`
@@ -216,7 +223,8 @@ const Modal = {
         </div>
         <div class="modal-trades-list">
           ${trades.map(t => `
-            <div class="modal-trade-row">
+            <div class="modal-trade-row${enVentanaSet.has(t.id) ? ' trade-en-ventana' : ''}">
+              ${enVentanaSet.has(t.id) ? '<span class="trade-ventana-flag" title="Entró en la ventana de la noticia roja">🚫</span>' : ''}
               <span class="badge ${Math.abs(parseFloat(t.profit)||0) <= 6 ? 'badge-be' : t.resultado === 'target' ? 'badge-target' : t.resultado === 'stop' ? 'badge-stop' : 'badge-other'}">${Math.abs(parseFloat(t.profit)||0) <= 6 ? 'B.E.' : (t.resultado || '—')}</span>
               <span>${t.market_pos === 'Long' ? '▲' : '▼'} ${t.market_pos}</span>
               <span>${t.qty} cont.</span>
@@ -251,7 +259,7 @@ const Modal = {
            </div>`).join('')}</div>`
       : ''
 
-    return tradesHtml + camposHtml + chkHtml
+    return noticiaWarn + tradesHtml + camposHtml + chkHtml
   },
 
   // Pestaña 3 — Gráfica (imagen + errores con detalle)

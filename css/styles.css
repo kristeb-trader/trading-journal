@@ -3083,7 +3083,7 @@ body.modal-open { overflow: hidden; }
 
 /* Stat strip */
 .dd-strip {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px;
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px;
   background: var(--border); border: 1px solid var(--border); border-radius: 10px;
   overflow: hidden; margin-bottom: 30px;
 }
@@ -3195,3 +3195,18 @@ body.modal-open { overflow: hidden; }
 }
 .noticia-roja-win { font-size: 0.85rem; color: var(--text3); }
 .noticia-roja-win.on { color: #E87C7B; font-weight: 600; }
+
+/* ── Verificación automática: operar dentro de la ventana de noticia roja ── */
+.dd-noticia-pill {
+  display: inline-block; font-size: 0.72rem; font-weight: 600;
+  color: #E87C7B; background: rgba(226,75,74,0.14);
+  padding: 2px 8px; border-radius: 6px; margin-left: 6px;
+}
+.modal-noticia-warn {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  font-size: 0.85rem; font-weight: 600; color: #E87C7B;
+  background: rgba(226,75,74,0.10); border: 1px solid rgba(226,75,74,0.3);
+  border-radius: 10px; padding: 10px 13px;
+}
+.modal-trade-row.trade-en-ventana { box-shadow: inset 3px 0 0 var(--red); }
+.trade-ventana-flag { font-size: 0.9rem; }
