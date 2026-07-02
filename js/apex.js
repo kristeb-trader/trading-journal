@@ -3,7 +3,7 @@
 // historial diario, registro de días y gestión de cuentas.
 const Apex = (() => {
   let cuentas   = []
-  let registros = []   // apex_registros manuales, orden fecha asc
+  let registros = []   // días manuales: apex_trades tipo='dia', orden fecha asc
   let trades    = []   // apex_trades (auto-export NT8 de cuentas de evaluación)
   let mainTrades = []  // tabla `trades` (journal): de aquí derivan los días de la PA
   let seriesPorCuenta = {}  // cuentaId → serie de días combinada (manual + derivada)
@@ -238,8 +238,8 @@ const Apex = (() => {
     return tradesPorCuenta[cuentaId] || []
   }
 
-  // Construye, por cuenta, la serie de días combinando los registros manuales
-  // (apex_registros) con los derivados de los trades auto-exportados (apex_trades).
+  // Construye, por cuenta, la serie de días combinando los días manuales
+  // (apex_trades tipo='dia') con los derivados de los trades auto-exportados.
   // Recalcula balance y threshold trailing (HWM desde MFE) sobre la serie unificada.
   function buildSeries() {
     seriesPorCuenta = {}
@@ -907,25 +907,14 @@ const Apex = (() => {
   // ── Carga e init ─────────────────────────────────────────────────────────
 
   async function loadData() {
-    let apexRows, regsOld
-    ;[cuentas, apexRows, regsOld, mainTrades] = await Promise.all([
+    let apexRows
+    ;[cuentas, apexRows, mainTrades] = await Promise.all([
       DB.getApexCuentas(),
       DB.getApexTrades().catch(() => []),      // tabla única: filas tipo 'trade' y 'dia'
-      DB.getApexRegistros().catch(() => []),   // fallback pre-migración (tabla vieja)
       DB.getTrades().catch(() => []),          // journal: días recientes de la PA
     ])
-    const dias = (apexRows || []).filter(r => r.tipo === 'dia')
-    trades     = (apexRows || []).filter(r => r.tipo !== 'dia')
-    if (dias.length) {
-      // Post-migración: días desde la tabla unificada
-      registros = dias
-    } else {
-      // Pre-migración: días desde apex_registros, mapeados a la forma unificada
-      const numById = {}; cuentas.forEach(c => { numById[c.id] = c.numero_cuenta })
-      registros = (regsOld || []).map(r => ({
-        ...r, trade_date: r.fecha, profit: r.pnl_dia, account: numById[r.cuenta_id],
-      }))
-    }
+    trades    = (apexRows || []).filter(r => r.tipo !== 'dia')
+    registros = (apexRows || []).filter(r => r.tipo === 'dia')   // días manuales (unificados)
     buildSeries()
   }
 

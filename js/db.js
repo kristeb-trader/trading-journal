@@ -711,17 +711,6 @@ const DB = {
     return data
   },
 
-  // Lector de transición: días viejos en apex_registros (pre-unificación).
-  // Tras correr la migración y dropear la tabla, esto devuelve [] y se ignora.
-  async getApexRegistros() {
-    const { data, error } = await supa
-      .from('apex_registros')
-      .select('*')
-      .order('fecha', { ascending: true })
-    if (error) throw error
-    return data
-  },
-
   // Día manual: vive en apex_trades como tipo='dia' (account = número de cuenta).
   // Idempotente por (account, fecha): borra el día previo y reinserta.
   async saveApexRegistro({ account, fecha, pnl_dia, balance, threshold, contratos, nota }) {
