@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 21 Junio 2026 (Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
+**Última actualización:** 2 Julio 2026 (ver *Checkpoint Jul 2026* al final: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `C:\Users\Asus\Claro drive\Trading Journal`
@@ -998,8 +998,8 @@ Reestructuración para conectar **Disciplina, Reglas y Errores** bajo un eje com
 ### ⚠️ Pendiente / A tener en cuenta
 
 - ✅ **P&L y comisiones (RESUELTO Jun 2026):** convención NETO unificada. Script v2.2 envía profit neto + comisión round-trip; los 7 trades live previos normalizados por SQL.
-- 🗄️ **Migraciones por correr en Supabase (pendiente):** `2026-06-19-sesiones-chk-cuenta-pa.sql` y `2026-06-19-sesiones-alerta-riesgo.sql` (verificar también que ya se corrieron las de Apex, fase/regla y niveles de ayer). Tras cualquier `ALTER TABLE` ejecutar `NOTIFY pgrst, 'reload schema';`.
-- 🔌 **Worker web `/api/session` (pendiente):** confirmar que guarde los campos nuevos (`chk_cuenta_pa`, `alerta_riesgo_vista`) y los de premercado al registrar desde la **web** (el bot ya guarda OK).
+- ✅ **Migraciones 2026-06-19 (RESUELTO Jul 2026):** `2026-06-19-sesiones-chk-cuenta-pa.sql` y `2026-06-19-sesiones-alerta-riesgo.sql` ya corridas. Tras cualquier `ALTER TABLE` ejecutar `NOTIFY pgrst, 'reload schema';`.
+- ✅ **Worker web `/api/session` (RESUELTO Jul 2026):** guarda OK los campos nuevos (`chk_cuenta_pa`, `alerta_riesgo_vista`, premercado y `hora_noticia_roja`) al registrar desde la web.
 - 🤖 **Recomendaciones tipificadas en Coach IA (Fase 4B):** pendiente de implementar.
 - 🔒 **Seguridad RLS (pendiente):** las tablas tienen RLS deshabilitado ("UNRESTRICTED"). Es intencional para proyecto personal, pero la `anon key` viaja en el JS público de GitHub Pages → con RLS off da acceso total. Pendiente endurecer con RLS + políticas si se comparte la URL o crece el proyecto.
 - El bot de Telegram no genera análisis IA ni soporta imágenes.
@@ -1042,6 +1042,46 @@ Reestructuración para conectar **Disciplina, Reglas y Errores** bajo un eje com
   → `apex_trades` sin Telegram; `PA-*` → `trades` + Telegram.
 - **Reestructuración Disciplina/Reglas/Errores por fases — COMPLETA (Bloques 1-5,
   2026-06-19).** Ver `docs/plan-disciplina-fases.md`.
+
+---
+
+## Checkpoint Jul 2026 — disciplina, métricas coherentes y ventana de noticia roja
+
+- **📊 Coherencia de métricas (COMPLETADO).** Clasificador global `tradeOutcome`
+  (`db.js`): un trade no-BE sin `resultado` target/stop (p. ej. cerrado `close`) se
+  clasifica por el **signo del P&L** → coherente con el color del día. Aplicado en
+  acierto/target/stop de todas las vistas. El conteo de "trades" es no-BE (reales) e
+  idéntico en calendario y análisis.
+- **📅 Calendario (COMPLETADO).** Color del día por P&L cuando no hay `resultado`;
+  día FOMC **operado** toma el color del resultado (la marca FOMC queda solo en el
+  badge), FOMC sin operar mantiene el ámbar; "días con actividad" = operados ∪
+  conectados/analizados. Eliminado el código muerto `renderMonthlySummary`.
+- **🎯 Disciplina unificada (COMPLETADO).** Cálculo canónico único
+  (`calcDisciplinaStats` en `db.js`) usado por calendario, análisis y dashboard →
+  mismo % en las tres. Consciente de fase y **no penaliza ítems sin registrar**
+  (reglas nuevas en días previos = N/A). Cobertura por ítem en el dashboard.
+- **🖥️ Dashboard de Disciplina (COMPLETADO).** Sección propia + ítem de nav
+  "Disciplina"; estructura tipo semáforo por fase, racha, errores por tipo/causa raíz;
+  selector de período (Mes/Trimestre/Todo) + navegación de mes. Las tarjetas
+  "Disciplina" y "Errores" del calendario abren el dashboard (se retiraron los modales).
+- **🚫 Ventana de noticia roja (COMPLETADO).** La hora se registra **por día** en
+  `sesiones.hora_noticia_roja` (Registrar sesión web + AddOn NT `ChecklistChaumer`, que
+  muestra alerta en vivo "NO OPERAR" ±5 min, bloquea GO y auto-marca `chk_noticias`).
+  **Verificación automática** en la web: cruza la hora con `entry_time` de los trades
+  para detectar si se operó en la ventana (modal del día + stat en el dashboard). Regla
+  movida a Fase 1; columna vieja `reglas.hora_noticia` eliminada.
+- **📕 Reglas y Estrategia (COMPLETADO).** Rediseño con pestañas por capa; "Proceso"
+  renombrada a **"Reglas"** con filtro por fase; Fase 2 separada en subgrupos
+  **IRI / Reingreso**; reordenamiento por flechas; `stop_max_puntos` movido a Fase 2.
+- **📝 Registrar sesión (COMPLETADO).** Checklist por fases en **tarjetas** con títulos
+  grandes; Fase 2/3 se ocultan cuando "No operé Hoy" (aplican solo si hubo operación).
+- **🖧 NinjaTrader (COMPLETADO).** `SupabaseDailyLevels` corregido: el envío estaba
+  atado a `State==Realtime` en una transición que ocurre en histórico → ahora guarda el
+  nivel pendiente y lo envía al entrar a tiempo real, con logging del resultado.
+- **🎨 UX.** Scrollbars más gruesas y visibles en toda la app.
+- Migraciones: `2026-06-30-reglas-hora-noticia.sql`,
+  `2026-07-01-reglas-mover-fase-hora-sesion.sql`,
+  `2026-07-02-drop-reglas-hora-noticia.sql`, + carga manual de un trade de Apex 13.
 
 ---
 
