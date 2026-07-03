@@ -11,6 +11,8 @@
 drop table if exists estrategia_chaumer_archivada;
 drop table if exists setup_reglas_archivada;
 drop table if exists reglas_legacy_backup;
+-- checklist_items pudo haberse renombrado a checklist_items_archivada; cubrimos ambos.
 drop table if exists checklist_items;
+drop table if exists checklist_items_archivada;
 
 notify pgrst, 'reload schema';
