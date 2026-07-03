@@ -58,8 +58,8 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 | `apex_cuentas` | Cuentas de fondeo Apex: parámetros (DD, target, safety net) y estado |
 | `apex_trades` | Trades + días auto-exportados de NT8 (`tipo='trade'`/`'dia'`) |
 
-> Tablas archivadas (no usar): `setup_reglas_archivada`, `estrategia_chaumer_archivada`.
-> `checklist_items` pendiente de archivar tras recompilar el NT8 ChecklistChaumer.
+> Tablas viejas del rulebook (`setup_reglas_archivada`, `estrategia_chaumer_archivada`,
+> `reglas_legacy_backup`, `checklist_items`) eliminadas Jul 2026 — todo vive en `reglas`.
 > Esquema detallado en `memory/db-schema.md`.
 
 ## Coach IA — flujo
@@ -91,9 +91,9 @@ Experimentos, Apex Tracker, Galería, Historial, Coach IA, Estrategia, Datos), C
   `docs/migrations/2026-06-23-apex-unificar-tablas.sql`) tras confirmar que cuadra.
   El código tiene fallback mientras tanto.
 - Coach IA: probar en vivo el formato real de las 3 tarjetas.
-- AddOn NT8 `ChecklistChaumer`: el usuario lo prueba en vivo (panel flotante sincronizado
-  con `sesiones.checklist`). Tras validar, archivar `checklist_items`.
-- Recomendaciones tipificadas en Coach IA (Fase 4B) — por implementar.
+- Recomendaciones tipificadas en Coach IA (Fase 4B): implementado salvo inyectar el
+  catálogo de recomendaciones en el prompt del Coach (para que reutilice nombres y no
+  duplique). Pendiente ese último paso.
 - Estadísticas de 3 corridas, volumen en trades, tasa de ejecución de setups válidos.
 - **Limpieza columnas `chk_*` de `sesiones`** (más adelante). El checklist ya vive en
   `sesiones.checklist` (JSONB). Orden seguro: 1) `form.js` y `worker.js` dejan de escribir
