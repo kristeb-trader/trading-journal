@@ -50,6 +50,13 @@ function parseNumList(text) {
   return t.split(/[,;]+/).map(s => parseFloat(s.trim().replace(',', '.'))).filter(n => !isNaN(n));
 }
 
+// Escapa < > & para insertar texto (títulos de reglas, notas del usuario) en
+// mensajes con parse_mode 'HTML'. Sin esto, un título con esos caracteres hace
+// que Telegram rechace el mensaje (400) y el flujo se queda pegado.
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+}
+
 const CONTEXTOS = [
   { label: '📈 Alcista fuerte', value: 'Alcista fuerte' },
   { label: '↗ Alcista',         value: 'Alcista'        },
@@ -103,11 +110,17 @@ const PREMKT_PROMPTS = {
 
 // ── Helpers de Telegram API ─────────────────────────────────────────────────
 async function tg(token, method, body) {
-  await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+  const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
+  if (!res.ok) {
+    let desc = '';
+    try { desc = (await res.clone().json()).description || ''; } catch {}
+    console.error(`[tg] ${method} falló ${res.status}: ${desc}`);
+  }
+  return res;
 }
 
 const sendMessage = (token, chatId, text, replyMarkup) =>
@@ -138,14 +151,16 @@ const delState  = (kv, id) => kv.delete(`s:${id}`);
 // ── Checklist helpers ───────────────────────────────────────────────────────
 function checklistText(data, items = CHECKLIST_FALLBACK) {
   const lines = items.map(
-    ({ clave, texto }) => `${data[clave] ? '✅' : '❌'} ${texto}`
+    ({ clave, texto }) => `${data[clave] ? '✅' : '❌'} ${escHtml(texto || clave)}`
   ).join('\n');
   return `<b>📋 Checklist de disciplina</b>\n\n${lines}`;
 }
 
 function checklistKeyboard(data, items = CHECKLIST_FALLBACK) {
+  // El texto de los botones NO se parsea como HTML (no se escapa), pero sí se
+  // recorta y se protege contra vacío para no romper el inline_keyboard.
   const rows = items.map(({ clave, texto }) => [{
-    text: `${data[clave] ? '✅' : '❌'} ${texto}`,
+    text: `${data[clave] ? '✅' : '❌'} ${(texto || clave || '—')}`.slice(0, 90),
     callback_data: `tog_${clave}`,
   }]);
   rows.push([{ text: '💾 Confirmar checklist', callback_data: 'chk_ok' }]);
@@ -224,7 +239,7 @@ function premktResumen(d) {
   const lines = [];
   if (d.soportes_naranja && d.soportes_naranja.length)         lines.push(`🟠 Soportes: ${d.soportes_naranja.join(', ')}`);
   if (d.resistencias_naranja && d.resistencias_naranja.length) lines.push(`🟠 Resist: ${d.resistencias_naranja.join(', ')}`);
-  if (d.noticias) lines.push(`📰 ${d.noticias}`);
+  if (d.noticias) lines.push(`📰 ${escHtml(d.noticias)}`);
   return lines.length ? `🌅 <b>Premercado:</b>\n${lines.map(l => '  ' + l).join('\n')}\n\n` : '';
 }
 
@@ -239,14 +254,14 @@ function buildResumen(data) {
       `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
       `🔌 Me conecté a analizar (sin setup válido)\n\n` +
       premkt +
-      `✍️ <b>Análisis del día:</b>\n${data.analisis_trader || '—'}`
+      `✍️ <b>Análisis del día:</b>\n${escHtml(data.analisis_trader || '—')}`
     );
   }
 
   const chkItems = data._chk || CHECKLIST_FALLBACK;
   const score = scoreChecklist(data, chkItems);
   const chkLines = chkItems
-    .map(({ clave, texto }) => `  ${data[clave] ? '✅' : '❌'} ${texto}`)
+    .map(({ clave, texto }) => `  ${data[clave] ? '✅' : '❌'} ${escHtml(texto || clave)}`)
     .join('\n');
 
   const stars = data.nivel_confianza ? '★'.repeat(data.nivel_confianza) + '☆'.repeat(5 - data.nivel_confianza) : null;
@@ -262,7 +277,7 @@ function buildResumen(data) {
     `⚠️ <b>Zonas en contra:</b> ${data.zonas_contra ? 'Sí' : 'No'}\n` +
     `📐 <b>Setup:</b> ${data.setup}\n\n` +
     `📋 <b>Checklist (${score}/${chkItems.length}):</b>\n${chkLines}\n\n` +
-    `✍️ <b>Análisis del día:</b>\n${data.analisis_trader || '—'}`
+    `✍️ <b>Análisis del día:</b>\n${escHtml(data.analisis_trader || '—')}`
   );
 }
 
