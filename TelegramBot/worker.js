@@ -31,7 +31,6 @@ const STEPS = {
   VELAS:        'velas',
   ZONAS_CONTRA: 'zonas_contra',
   SETUP:        'setup',
-  CHECKLIST:    'checklist',
   REFLEXION:    'reflexion',
 };
 
@@ -74,30 +73,8 @@ const SETUPS = [
   'Reingreso Bajista',
 ];
 
-// Checklist por fases — se lee del rulebook `reglas` (es_checklist=true). Fallback
-// local si la consulta falla o el catálogo aún no existe (pre-migración).
-// Si actualizas el catálogo en la web, esto se refleja solo aquí (sin re-deploy).
-const CHECKLIST_FALLBACK = [
-  { clave: 'chk_cuenta_pa',   fase: 1, texto: 'Cuenta PA activa verificada'              },
-  { clave: 'chk_noticias',    fase: 1, texto: 'Sin noticia roja activa'                  },
-  { clave: 'chk_zonas',       fase: 1, texto: 'Zonas vigentes verificadas'               },
-  { clave: 'chk_5velas',      fase: 2, texto: 'Máx 5 velas en corrida'                   },
-  { clave: 'chk_consecucion', fase: 2, texto: 'Zona con rompimiento + consecución'       },
-  { clave: 'chk_estructura',  fase: 2, texto: 'Estructura Impulso-Retroceso-Impulso'     },
-  { clave: 'chk_orden',       fase: 3, texto: 'Orden precolocada a tiempo'               },
-];
-
-async function fetchChecklistItems(env) {
-  try {
-    const res = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/reglas?es_checklist=eq.true&activa=eq.true&order=fase.asc,orden.asc&select=clave:codigo,fase,texto:titulo`,
-      { headers: { apikey: env.SUPABASE_SERVICE_ROLE, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE}` } }
-    );
-    if (!res.ok) return CHECKLIST_FALLBACK;
-    const data = await res.json();
-    return Array.isArray(data) && data.length ? data : CHECKLIST_FALLBACK;
-  } catch { return CHECKLIST_FALLBACK; }
-}
+// (El checklist ya no se llena en el bot; lo maneja el Add-On ChecklistChaumer de
+// NinjaTrader, que escribe directo en sesiones.checklist.)
 
 // Prompts del flujo de premercado (todos opcionales: /skip para omitir)
 const PREMKT_PROMPTS = {
@@ -147,29 +124,6 @@ const answerCbq = (token, id) =>
 const getState  = (kv, id) => kv.get(`s:${id}`, 'json');
 const saveState = (kv, id, state) => kv.put(`s:${id}`, JSON.stringify(state), { expirationTtl: 3600 });
 const delState  = (kv, id) => kv.delete(`s:${id}`);
-
-// ── Checklist helpers ───────────────────────────────────────────────────────
-function checklistText(data, items = CHECKLIST_FALLBACK) {
-  const lines = items.map(
-    ({ clave, texto }) => `${data[clave] ? '✅' : '❌'} ${escHtml(texto || clave)}`
-  ).join('\n');
-  return `<b>📋 Checklist de disciplina</b>\n\n${lines}`;
-}
-
-function checklistKeyboard(data, items = CHECKLIST_FALLBACK) {
-  // El texto de los botones NO se parsea como HTML (no se escapa), pero sí se
-  // recorta y se protege contra vacío para no romper el inline_keyboard.
-  const rows = items.map(({ clave, texto }) => [{
-    text: `${data[clave] ? '✅' : '❌'} ${(texto || clave || '—')}`.slice(0, 90),
-    callback_data: `tog_${clave}`,
-  }]);
-  rows.push([{ text: '💾 Confirmar checklist', callback_data: 'chk_ok' }]);
-  return { inline_keyboard: rows };
-}
-
-function scoreChecklist(data, items = CHECKLIST_FALLBACK) {
-  return items.filter(({ clave }) => data[clave]).length;
-}
 
 // ── Emociones ───────────────────────────────────────────────────────────────
 // Fallback local con los IDs REALES del catálogo (catalogo_emociones).
@@ -258,12 +212,6 @@ function buildResumen(data) {
     );
   }
 
-  const chkItems = data._chk || CHECKLIST_FALLBACK;
-  const score = scoreChecklist(data, chkItems);
-  const chkLines = chkItems
-    .map(({ clave, texto }) => `  ${data[clave] ? '✅' : '❌'} ${escHtml(texto || clave)}`)
-    .join('\n');
-
   const stars = data.nivel_confianza ? '★'.repeat(data.nivel_confianza) + '☆'.repeat(5 - data.nivel_confianza) : null;
 
   return (
@@ -276,18 +224,15 @@ function buildResumen(data) {
     `🕯️ <b>Velas:</b> ${data.velas_corrida}\n` +
     `⚠️ <b>Zonas en contra:</b> ${data.zonas_contra ? 'Sí' : 'No'}\n` +
     `📐 <b>Setup:</b> ${data.setup}\n\n` +
-    `📋 <b>Checklist (${score}/${chkItems.length}):</b>\n${chkLines}\n\n` +
     `✍️ <b>Análisis del día:</b>\n${escHtml(data.analisis_trader || '—')}`
   );
 }
 
 // ── Supabase upsert de sesión ────────────────────────────────────────────────
 async function saveSession(data, env) {
-  // Checklist dinámico → JSONB { clave: bool } (keyed por la clave del catálogo)
-  const chkItems = data._chk || CHECKLIST_FALLBACK;
-  const checklist = {};
-  chkItems.forEach(({ clave }) => { checklist[clave] = data[clave] ?? false; });
-
+  // El checklist NO lo maneja el bot: lo escribe el Add-On ChecklistChaumer de
+  // NinjaTrader en `sesiones.checklist`. Como el upsert es merge-duplicates, al no
+  // enviar `checklist` ni las columnas `chk_*` se conservan las que ya escribió el Add-On.
   const payload = {
     sesion_date:       data.sesion_date,
     no_opero:          data.no_opero         ?? false,
@@ -298,14 +243,6 @@ async function saveSession(data, env) {
     puntos_retroceso:  data.puntos_retroceso  ?? null,
     zonas_contra:      data.zonas_contra      ?? false,
     setup:             data.setup             ?? null,
-    checklist,
-    chk_cuenta_pa:     data.chk_cuenta_pa     ?? false,
-    chk_zonas:         data.chk_zonas         ?? false,
-    chk_orden:         data.chk_orden         ?? false,
-    chk_5velas:        data.chk_5velas        ?? false,
-    chk_noticias:      data.chk_noticias      ?? false,
-    chk_consecucion:   data.chk_consecucion   ?? false,
-    chk_estructura:        data.chk_estructura        ?? false,
     analisis_trader:       data.analisis_trader       ?? null,
     estado_emocional_id:   data.estado_emocional_id   ?? null,
     nivel_confianza:       data.nivel_confianza        ?? null,
@@ -334,17 +271,9 @@ async function saveSession(data, env) {
   });
 
   try {
-    let res = await post(payload);
+    const res = await post(payload);
     if (res.ok) return { ok: true };
-    // Reintento sin `checklist` por si la columna aún no existe (pre-migración)
     const body = await res.text();
-    if (/checklist/i.test(body)) {
-      const { checklist, ...rest } = payload;
-      res = await post(rest);
-      if (res.ok) return { ok: true };
-      const body2 = await res.text();
-      return { ok: false, status: res.status, error: (body2 || '').slice(0, 300) };
-    }
     return { ok: false, status: res.status, error: (body || '').slice(0, 300) };
   } catch (e) {
     return { ok: false, status: 0, error: String((e && e.message) || e) };
@@ -476,41 +405,18 @@ async function handleCallback(cbq, env) {
     return;
   }
 
-  // ── Toggle de checklist ───────────────────────────────────────────────────
-  if (action.startsWith('tog_')) {
-    const key = action.slice(4);
-    state.data[key] = !state.data[key];
-    await saveState(env.KV, chatId, state);
-    const items = state.data._chk || CHECKLIST_FALLBACK;
-    await editMessage(token, chatId, msgId, checklistText(state.data, items), checklistKeyboard(state.data, items));
-    return;
-  }
-
-  // ── Confirmar checklist ───────────────────────────────────────────────────
-  if (action === 'chk_ok') {
-    state.step = STEPS.REFLEXION;
-    await saveState(env.KV, chatId, state);
-    const items = state.data._chk || CHECKLIST_FALLBACK;
-    const score = scoreChecklist(state.data, items);
-    await sendMessage(token, chatId,
-      `✅ Checklist guardado — Score: <b>${score}/${items.length}</b>\n\n` +
-      `✍️ <b>Análisis del día</b>\n\nEscribe tu análisis y reflexión de la sesión:`
-    );
-    return;
-  }
-
-  // ── Setup seleccionado ────────────────────────────────────────────────────
+  // ── Setup seleccionado → directo al análisis ──────────────────────────────
+  // El checklist ya NO se llena en el bot (lo maneja el Add-On ChecklistChaumer
+  // de NinjaTrader, que escribe en sesiones.checklist).
   if (action.startsWith('setup_')) {
     const idx = parseInt(action.slice(6));
     state.data.setup = SETUPS[idx];
-    state.step = STEPS.CHECKLIST;
-    const items = await fetchChecklistItems(env);
-    state.data._chk = items;   // se conserva en el estado para toggles/score/guardado
-    items.forEach(({ clave }) => {
-      if (state.data[clave] === undefined) state.data[clave] = false;
-    });
+    state.step = STEPS.REFLEXION;
     await saveState(env.KV, chatId, state);
-    await editMessage(token, chatId, msgId, checklistText(state.data, items), checklistKeyboard(state.data, items));
+    await editMessage(token, chatId, msgId,
+      `📐 Setup: <b>${escHtml(state.data.setup)}</b>\n\n` +
+      `✍️ <b>Análisis del día</b>\n\nEscribe tu análisis y reflexión de la sesión:`
+    );
     return;
   }
 
