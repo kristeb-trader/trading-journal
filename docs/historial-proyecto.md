@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 2 Julio 2026 (ver *Checkpoint Jul 2026* al final: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
+**Última actualización:** 7 Julio 2026 (ver *Checkpoint Jul 2026* al final: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `E:\Proyectos\Trading Journal` (migrado desde `C:\Users\Asus\Claro drive\Trading Journal` el 6 jul 2026)
@@ -1082,6 +1082,15 @@ Reestructuración para conectar **Disciplina, Reglas y Errores** bajo un eje com
 - Migraciones: `2026-06-30-reglas-hora-noticia.sql`,
   `2026-07-01-reglas-mover-fase-hora-sesion.sql`,
   `2026-07-02-drop-reglas-hora-noticia.sql`, + carga manual de un trade de Apex 13.
+- **🖧 AddOn `ChecklistChaumer` — checklist por setup (7 Jul).** Selector **IRI |
+  Reingreso** (persistido en el config local) que filtra la Fase 2: ítems comunes +
+  los del setup elegido (Fase 1 y 3 comunes, incl. reglas de riesgo). Cada fase en
+  **tarjeta** con barra de acento de color y badge de progreso `n/m`. El GO exige el
+  100% de los ítems *visibles*; cambiar de setup no borra marcas (estado en
+  `Item.Checked`, se escriben todas las claves al JSONB). Migración
+  `2026-07-07-checklist-setup-orden.sql`: `chk_contexto` pasa a común (aplica a ambos
+  setups), orden canónico del checklist (AddOn = web) y título de consecución
+  "= entrada".
 
 ---
 

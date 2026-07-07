@@ -5,9 +5,11 @@
 //  sincronizado con Supabase (mismo sesiones.checklist que el Trading Journal web).
 //
 //  - Ventana flotante independiente (NTWindow): mover, redimensionar, always-on-top.
-//  - Persiste posición/tamaño/topmost en archivo local.
-//  - Ítems traídos del rulebook `reglas` (es_checklist=true), agrupados por fase.
-//  - Botón GO: se habilita solo con el 100% marcado; al pulsarlo sella la hora en BD.
+//  - Persiste posición/tamaño/topmost/setup en archivo local.
+//  - Ítems traídos del rulebook `reglas` (es_checklist=true), agrupados por fase
+//    en tarjetas. Selector IRI | Reingreso: Fase 2 muestra los ítems comunes +
+//    los del setup elegido (mismas claves JSONB; cambiar de setup no borra marcas).
+//  - Botón GO: se habilita con el 100% de los ítems VISIBLES; al pulsarlo sella la hora en BD.
 //  - Reset automático a las 09:00 ET (30 min antes de la apertura RTH; DST automático).
 //  - Lectura por polling (~5 s) + escritura inmediata al marcar. Tolerante a offline.
 //
@@ -153,8 +155,11 @@ namespace NinjaTrader.NinjaScript.AddOns
         private static readonly HttpClient http = CreateHttp();
 
         // Estado
-        private class Item { public string Clave; public int Fase; public string Texto; public CheckBox Box; }
+        // Checked vive en el Item (no solo en el CheckBox): los ítems del setup
+        // no visible conservan su marca aunque su Box no esté renderizado.
+        private class Item { public string Clave; public int Fase; public string Setup; public string Texto; public bool Checked; public CheckBox Box; }
         private readonly List<Item> items = new List<Item>();
+        private string selectedSetup = "iri";       // iri | reingreso (persistido en config local)
         private string currentDate;                 // sesion_date en uso (fecha ET)
         private DateTime lastLocalChangeUtc = DateTime.MinValue;
         private DateTime lastHoraChangeUtc = DateTime.MinValue;
@@ -166,6 +171,8 @@ namespace NinjaTrader.NinjaScript.AddOns
 
         // UI refs
         private StackPanel sectionsPanel;
+        private Button setupIriBtn, setupReiBtn;
+        private readonly Dictionary<int, TextBlock> faseBadges = new Dictionary<int, TextBlock>();
         private Button goButton;
         private Border statusBanner;
         private TextBlock statusText;
@@ -182,7 +189,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         public ChecklistChaumerWindow()
         {
             Caption = "Checklist Chaumer";
-            Width = 340; Height = 560;
+            Width = 340; Height = 620;
             currentDate = TradingDateEt();
 
             Content = BuildUi();
@@ -199,6 +206,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // header
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // status
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // noticia roja
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // selector de setup
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // checklist
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // GO
 
@@ -267,11 +275,24 @@ namespace NinjaTrader.NinjaScript.AddOns
             Grid.SetRow(noticiaCard, 2);
             root.Children.Add(noticiaCard);
 
+            // Selector de setup (IRI | Reingreso) — filtra la Fase 2
+            var setupGrid = new Grid { Margin = new Thickness(12, 0, 12, 8) };
+            setupGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            setupGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            setupIriBtn = MakeSetupButton("IRI", "iri", new Thickness(0, 0, 3, 0));
+            setupReiBtn = MakeSetupButton("REINGRESO", "reingreso", new Thickness(3, 0, 0, 0));
+            Grid.SetColumn(setupIriBtn, 0);
+            Grid.SetColumn(setupReiBtn, 1);
+            setupGrid.Children.Add(setupIriBtn);
+            setupGrid.Children.Add(setupReiBtn);
+            Grid.SetRow(setupGrid, 3);
+            root.Children.Add(setupGrid);
+
             // Checklist (scroll)
             sectionsPanel = new StackPanel { Margin = new Thickness(12, 0, 12, 8) };
             var scroll = new ScrollViewer {
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = sectionsPanel };
-            Grid.SetRow(scroll, 3);
+            Grid.SetRow(scroll, 4);
             root.Children.Add(scroll);
 
             // GO
@@ -282,47 +303,130 @@ namespace NinjaTrader.NinjaScript.AddOns
                 IsEnabled = false, Cursor = System.Windows.Input.Cursors.Hand
             };
             goButton.Click += OnGoClick;
-            Grid.SetRow(goButton, 4);
+            Grid.SetRow(goButton, 5);
             root.Children.Add(goButton);
 
+            StyleSetupButtons();
             return root;
         }
+
+        private Button MakeSetupButton(string label, string key, Thickness margin)
+        {
+            var btn = new Button {
+                Content = label, Height = 30, Margin = margin, FontSize = 12,
+                FontWeight = FontWeights.Bold, Cursor = System.Windows.Input.Cursors.Hand,
+                Background = CARD, Foreground = TEXT2, BorderBrush = BORDER, BorderThickness = new Thickness(1)
+            };
+            btn.Click += (s, e) => SelectSetup(key);
+            return btn;
+        }
+
+        private void SelectSetup(string key)
+        {
+            if (selectedSetup == key) return;
+            selectedSetup = key;
+            StyleSetupButtons();
+            RenderSections();       // re-render con el filtro nuevo (las marcas viven en Item.Checked)
+            UpdateGoButton();
+            SaveWindowConfig();
+        }
+
+        private void StyleSetupButtons()
+        {
+            if (setupIriBtn == null || setupReiBtn == null) return;
+            bool iri = selectedSetup != "reingreso";
+            setupIriBtn.Background  = iri ? ACCENT : CARD;
+            setupIriBtn.Foreground  = iri ? Brushes.White : TEXT2;
+            setupIriBtn.BorderBrush = iri ? ACCENT : BORDER;
+            setupReiBtn.Background  = iri ? CARD : ACCENT;
+            setupReiBtn.Foreground  = iri ? TEXT2 : Brushes.White;
+            setupReiBtn.BorderBrush = iri ? BORDER : ACCENT;
+        }
+
+        // Ítem visible: común (sin setup) o del setup seleccionado
+        private bool IsVisible(Item i) => string.IsNullOrEmpty(i.Setup) || i.Setup == selectedSetup;
 
         private void RenderSections()
         {
             sectionsPanel.Children.Clear();
+            faseBadges.Clear();
+            foreach (var it in items) it.Box = null;   // los no visibles quedan sin Box (estado en Item.Checked)
+
             foreach (int fase in new[] { 1, 2, 3 })
             {
-                var ofFase = items.Where(i => i.Fase == fase).ToList();
+                var ofFase = items.Where(i => i.Fase == fase && IsVisible(i)).ToList();
                 if (ofFase.Count == 0) continue;
 
-                // Header de fase
-                sectionsPanel.Children.Add(new Border {
-                    Margin = new Thickness(0, 8, 0, 6),
-                    Child = new TextBlock {
-                        Text = FASE_LABEL.ContainsKey(fase) ? FASE_LABEL[fase] : ("Fase " + fase),
-                        Foreground = FaseColor(fase), FontSize = 12, FontWeight = FontWeights.Bold }
-                });
+                var faseStack = new StackPanel();
+
+                // Header de fase: título + badge de progreso (n/m)
+                var head = new Grid();
+                head.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                var lbl = new TextBlock {
+                    Text = FASE_LABEL.ContainsKey(fase) ? FASE_LABEL[fase] : ("Fase " + fase),
+                    Foreground = FaseColor(fase), FontSize = 12, FontWeight = FontWeights.Bold };
+                Grid.SetColumn(lbl, 0);
+                head.Children.Add(lbl);
+                var badge = new TextBlock { Foreground = TEXT2, FontSize = 11, FontWeight = FontWeights.Bold };
+                Grid.SetColumn(badge, 1);
+                head.Children.Add(badge);
+                faseBadges[fase] = badge;
+                faseStack.Children.Add(head);
+                faseStack.Children.Add(new Border { Height = 1, Background = BORDER, Margin = new Thickness(0, 6, 0, 3) });
 
                 foreach (var it in ofFase)
                 {
                     var cb = new CheckBox {
                         Content = new TextBlock { Text = it.Texto, TextWrapping = TextWrapping.Wrap, Foreground = TEXT, FontSize = 12 },
-                        Margin = new Thickness(2, 4, 2, 4), Foreground = TEXT, IsChecked = false,
+                        Margin = new Thickness(2, 4, 2, 4), Foreground = TEXT, IsChecked = it.Checked,
                         Cursor = System.Windows.Input.Cursors.Hand, VerticalContentAlignment = VerticalAlignment.Center
                     };
                     it.Box = cb;
                     cb.Checked   += OnCheckChanged;
                     cb.Unchecked += OnCheckChanged;
-                    sectionsPanel.Children.Add(cb);
+                    faseStack.Children.Add(cb);
                 }
+
+                // Tarjeta de la fase: barra de acento a la izquierda + contenido
+                var inner = new Grid();
+                inner.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3) });
+                inner.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                var accentBar = new Border { Background = FaseColor(fase), CornerRadius = new CornerRadius(2) };
+                Grid.SetColumn(accentBar, 0);
+                inner.Children.Add(accentBar);
+                faseStack.Margin = new Thickness(9, 0, 0, 0);
+                Grid.SetColumn(faseStack, 1);
+                inner.Children.Add(faseStack);
+
+                sectionsPanel.Children.Add(new Border {
+                    Background = CARD, BorderBrush = BORDER, BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(8), Padding = new Thickness(10, 8, 10, 8),
+                    Margin = new Thickness(0, 0, 0, 8), Child = inner
+                });
+            }
+            UpdateFaseBadges();
+        }
+
+        private void UpdateFaseBadges()
+        {
+            foreach (var kv in faseBadges)
+            {
+                var ofFase = items.Where(i => i.Fase == kv.Key && IsVisible(i)).ToList();
+                int done = ofFase.Count(i => i.Checked);
+                kv.Value.Text = done + "/" + ofFase.Count;
+                kv.Value.Foreground = (ofFase.Count > 0 && done == ofFase.Count) ? ACCENT : TEXT2;
             }
         }
 
         // ═══ Eventos ══════════════════════════════════════════════════════════
         private void OnCheckChanged(object sender, RoutedEventArgs e)
         {
-            if (applyingRemote) return;        // cambio venido del poll, no re-escribir
+            // Sincronizar Item.Checked SIEMPRE (también cuando el cambio viene del poll)
+            var it = items.FirstOrDefault(x => x.Box == sender);
+            if (it != null) it.Checked = ((CheckBox)sender).IsChecked == true;
+
+            if (applyingRemote) { UpdateFaseBadges(); return; }   // cambio venido del poll, no re-escribir
             lastLocalChangeUtc = DateTime.UtcNow;
             UpdateGoButton();
             _ = SaveStateAsync();              // escritura inmediata (fire-and-forget)
@@ -337,10 +441,16 @@ namespace NinjaTrader.NinjaScript.AddOns
         }
 
         // ═══ Lógica de estado ════════════════════════════════════════════════
-        private bool AllChecked() => items.Count > 0 && items.All(i => i.Box != null && i.Box.IsChecked == true);
+        // El GO exige el 100% de los ítems VISIBLES (Fase 1 + Fase 2 del setup elegido + Fase 3)
+        private bool AllChecked()
+        {
+            var vis = items.Where(IsVisible).ToList();
+            return vis.Count > 0 && vis.All(i => i.Checked);
+        }
 
         private void UpdateGoButton()
         {
+            UpdateFaseBadges();
             if (inNoticiaWindow)
             {
                 goButton.IsEnabled   = false;
@@ -362,8 +472,9 @@ namespace NinjaTrader.NinjaScript.AddOns
             else
             {
                 goButton.IsEnabled  = false;
-                int done = items.Count(i => i.Box != null && i.Box.IsChecked == true);
-                goButton.Content    = $"GO — faltan {items.Count - done} de {items.Count}";
+                var vis = items.Where(IsVisible).ToList();
+                int done = vis.Count(i => i.Checked);
+                goButton.Content    = $"GO — faltan {vis.Count - done} de {vis.Count}";
                 goButton.Background  = Brush("#2A2A26");
                 goButton.Foreground  = TEXT2;
                 goButton.BorderBrush = BORDER;
@@ -467,10 +578,11 @@ namespace NinjaTrader.NinjaScript.AddOns
         private void AutoMarkNoticia(bool respetado)
         {
             var it = items.FirstOrDefault(x => x.Clave == "chk_noticias");
-            if (it == null || it.Box == null) return;
-            if ((it.Box.IsChecked == true) == respetado) return;   // ya está en el estado deseado
+            if (it == null) return;
+            if (it.Checked == respetado) return;   // ya está en el estado deseado
             applyingRemote = true;
-            it.Box.IsChecked = respetado;
+            it.Checked = respetado;
+            if (it.Box != null) it.Box.IsChecked = respetado;
             applyingRemote = false;
             _ = SaveStateAsync();
         }
@@ -480,7 +592,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         {
             try
             {
-                string url = SUPABASE_URL + "/rest/v1/reglas?es_checklist=eq.true&activa=eq.true&order=fase.asc,orden.asc&select=clave:codigo,fase,texto:titulo,orden";
+                string url = SUPABASE_URL + "/rest/v1/reglas?es_checklist=eq.true&activa=eq.true&order=fase.asc,orden.asc&select=clave:codigo,fase,setup,texto:titulo,orden";
                 string json = await http.GetStringAsync(url).ConfigureAwait(false);
                 var arr = JArray.Parse(json);
 
@@ -491,6 +603,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                         items.Add(new Item {
                             Clave = (string)t["clave"],
                             Fase  = t["fase"] != null && t["fase"].Type != JTokenType.Null ? (int)t["fase"] : 1,
+                            Setup = t["setup"] != null && t["setup"].Type != JTokenType.Null ? (string)t["setup"] : null,
                             Texto = (string)t["texto"]
                         });
                     RenderSections();
@@ -532,9 +645,9 @@ namespace NinjaTrader.NinjaScript.AddOns
                     applyingRemote = true;
                     foreach (var it in items)
                     {
-                        if (it.Box == null) continue;
                         bool val = checklist != null && checklist[it.Clave] != null && (bool)checklist[it.Clave];
-                        if (it.Box.IsChecked != val) it.Box.IsChecked = val;
+                        it.Checked = val;
+                        if (it.Box != null && it.Box.IsChecked != val) it.Box.IsChecked = val;
                     }
                     // Hora de la noticia (no pisar si el usuario la está editando)
                     if ((DateTime.UtcNow - lastHoraChangeUtc).TotalSeconds >= 3)
@@ -562,8 +675,9 @@ namespace NinjaTrader.NinjaScript.AddOns
         {
             try
             {
+                // Se escriben TODAS las claves (ambos setups): cambiar de vista no borra marcas
                 var checklist = new JObject();
-                foreach (var it in items) checklist[it.Clave] = (it.Box != null && it.Box.IsChecked == true);
+                foreach (var it in items) checklist[it.Clave] = it.Checked;
                 var body = new JObject { ["sesion_date"] = currentDate, ["checklist"] = checklist };
                 await UpsertSesionAsync(body).ConfigureAwait(false);
                 await Dispatcher.InvokeAsync(() => SetStatus("🟢 Sincronizado", ACCENT));
@@ -580,7 +694,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             try
             {
                 var checklist = new JObject();
-                foreach (var it in items) checklist[it.Clave] = (it.Box != null && it.Box.IsChecked == true);
+                foreach (var it in items) checklist[it.Clave] = it.Checked;
                 var body = new JObject {
                     ["sesion_date"]     = currentDate,
                     ["checklist"]       = checklist,
@@ -630,7 +744,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                 currentDate = etToday;
                 goConfirmed = false;
                 applyingRemote = true;
-                foreach (var it in items) if (it.Box != null) it.Box.IsChecked = false;
+                foreach (var it in items) { it.Checked = false; if (it.Box != null) it.Box.IsChecked = false; }
                 if (horaBox != null) horaBox.Text = "";   // nueva sesión: limpiar la hora del día
                 applyingRemote = false;
                 dateText.Text = currentDate;
@@ -676,7 +790,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             {
                 var cfg = new JObject {
                     ["left"] = Left, ["top"] = Top, ["width"] = Width, ["height"] = Height,
-                    ["topmost"] = Topmost
+                    ["topmost"] = Topmost, ["setup"] = selectedSetup
                 };
                 File.WriteAllText(ConfigPath, cfg.ToString());
             }
@@ -694,6 +808,11 @@ namespace NinjaTrader.NinjaScript.AddOns
                 if (cfg["left"]   != null) Left   = (double)cfg["left"];
                 if (cfg["top"]    != null) Top    = (double)cfg["top"];
                 if (cfg["topmost"] != null && (bool)cfg["topmost"]) { Topmost = true; pinButton.IsChecked = true; }
+                if (cfg["setup"] != null && cfg["setup"].Type != JTokenType.Null)
+                {
+                    string s = (string)cfg["setup"];
+                    if (s == "iri" || s == "reingreso") { selectedSetup = s; StyleSetupButtons(); }
+                }
             }
             catch (Exception ex) { NinjaTrader.Code.Output.Process("ChecklistChaumer RestoreConfig: " + ex.Message, PrintTo.OutputTab1); }
         }
