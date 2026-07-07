@@ -3,7 +3,7 @@
 **Última actualización:** 2 Julio 2026 (ver *Checkpoint Jul 2026* al final: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
-**Working directory local:** `C:\Users\Asus\Claro drive\Trading Journal`
+**Working directory local:** `E:\Proyectos\Trading Journal` (migrado desde `C:\Users\Asus\Claro drive\Trading Journal` el 6 jul 2026)
 **URL producción:** `https://kristeb-trader.github.io/trading-journal`
 
 ---
@@ -1089,7 +1089,7 @@ Reestructuración para conectar **Disciplina, Reglas y Errores** bajo un eje com
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo
 2. El código fuente está en GitHub: `https://github.com/kristeb-trader/trading-journal`
-3. Working directory local: `C:\Users\Asus\Claro drive\Trading Journal`
+3. Working directory local: `E:\Proyectos\Trading Journal`
 4. Para cambios en la BD: SQL Editor de Supabase → `https://jothoslozctflfrnysrx.supabase.co`
 5. **Regla operativa:** cada cambio en cualquier archivo debe hacerse **commit y push inmediatamente**
 6. **Flujo de trabajo con IA:** analizar → presentar diagnóstico → esperar aprobación → implementar → commit
