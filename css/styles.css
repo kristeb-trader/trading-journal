@@ -2595,6 +2595,55 @@ body.modal-open { overflow: hidden; }
 .cz-st .cz-b b { color: var(--text); font-weight: 600; }
 .cz-note { font-size: 0.74rem; color: var(--text3); margin-top: 8px; font-style: italic; }
 
+/* ── Bloques de datos colapsables (premercado / checklist / operativa) ────── */
+.cz-data { border-top: 1px dashed var(--border); margin: 4px 16px 0; }
+.cz-data > summary {
+  display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none;
+  padding: 10px 0; font-size: 0.78rem; font-weight: 600; color: var(--text2);
+  user-select: none; transition: color 0.15s;
+}
+.cz-data > summary:hover { color: var(--accent); }
+.cz-data > summary::-webkit-details-marker { display: none; }
+.cz-dsum-ic { font-size: 0.95rem; }
+.cz-caret {
+  margin-left: auto; width: 7px; height: 7px; border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform 0.2s; opacity: 0.6;
+}
+.cz-data[open] > summary .cz-caret { transform: rotate(-135deg); }
+.cz-data-body { padding: 4px 0 14px; animation: czFade 0.2s ease; }
+@keyframes czFade { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.cz-dgroup { margin-bottom: 12px; }
+.cz-dgroup:last-child { margin-bottom: 0; }
+.cz-dgt { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent); margin-bottom: 6px; }
+.cz-drow { display: flex; align-items: baseline; gap: 10px; padding: 3px 0; font-size: 0.82rem; }
+.cz-dl { flex: 0 0 42%; max-width: 180px; color: var(--text3); }
+.cz-dv { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+.cz-zwrap { display: flex; flex-wrap: wrap; gap: 5px; }
+.cz-chip-o {
+  display: inline-flex; font-size: 0.74rem; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+  background: rgba(186,117,23,0.15); color: #E0A33B; border: 1px solid rgba(186,117,23,0.4);
+  font-variant-numeric: tabular-nums;
+}
+.cz-chk { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 0.82rem; color: var(--text); }
+.cz-cic { width: 16px; height: 16px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; flex: 0 0 auto; }
+.cz-chk.ok .cz-cic { background: rgba(29,158,117,0.16); color: #3FE0A6; }
+.cz-chk.no .cz-cic { background: rgba(226,75,74,0.16); color: #F2706F; }
+.cz-chk.no { color: var(--text3); }
+.cz-optable-wrap { overflow-x: auto; }
+.cz-optable { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.cz-optable th {
+  text-align: left; font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text3); padding: 5px 10px 5px 0; border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.cz-optable td { padding: 7px 10px 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cz-optable tr:last-child td { border-bottom: none; }
+.cz-optable .pos { color: var(--accent); }
+.cz-optable .neg { color: var(--red); }
+.cz-rb { font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+.cz-rb.r-t { background: rgba(29,158,117,0.16); color: #3FE0A6; }
+.cz-rb.r-s { background: rgba(226,75,74,0.16); color: #F2706F; }
+.cz-rb.r-o { background: rgba(255,255,255,0.07); color: var(--text2); }
+
 /* ── Chat ────────────────────────────────────────────────────────────────── */
 .coach-chat-wrap {
   background: var(--card);

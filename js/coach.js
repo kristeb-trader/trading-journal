@@ -15,6 +15,8 @@ const Coach = (() => {
   let reglasCache       = null // rulebook canónico; se recarga al limpiar caché
   let emocionesCache    = []   // catálogo de emociones
   let coachDate         = null // fecha activa en el coach
+  let sesionActual      = null // sesión del día cargada (para los bloques de datos del análisis)
+  let tradesActual      = []   // trades PA del día (para el bloque de operativa)
   let pendingDate       = null // fecha solicitada desde Historial, se carga al entrar al Coach
   let imagenBase64      = null // chart subido (si existe)
   let diagnosticoGuardado = false
@@ -102,6 +104,10 @@ const Coach = (() => {
     // Las cuentas de evaluación y simulación no se analizan.
     const tradesPA = (trades || []).filter(t => (t.account || '') === CUENTA_ANALISIS)
 
+    // Guardar para los bloques de datos (premercado/checklist/operativa) del análisis
+    sesionActual = sesion || null
+    tradesActual = tradesPA
+
     // Catálogo de errores (vocabulario controlado para evitar duplicados)
     const tipoNombre = { psicologico: 'Psicológico', analitico: 'Analítico', operativo: 'Operativo', marcado: 'Marcado' }
     const catalogoStr = (catalogoErrores || [])
@@ -125,13 +131,32 @@ const Coach = (() => {
       ? `${sesion.nivel_confianza}/5`
       : 'No indicado'
 
-    // Trades de hoy (solo cuenta PA real)
+    // Trades de hoy (solo cuenta PA real). Se incluye el DETALLE por-trade
+    // (hora, dirección, entrada→salida, puntos, resultado, P&L) para que el Coach
+    // calcule stop/target en puntos y valide target_sin_zonas sin tener que preguntar.
     const pnlHoy      = tradesPA.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
     const targetsHoy  = tradesPA.filter(isWinTrade).length
     const stopsHoy    = tradesPA.filter(isLossTrade).length
     const besHoy      = tradesPA.filter(t => t.resultado === 'be').length
-    const tradesStr   = tradesPA.length > 0
-      ? `${tradesPA.length} trades (Targets: ${targetsHoy} | Stops: ${stopsHoy} | BEs: ${besHoy}) — P&L: ${fmtPnl(pnlHoy)}`
+    const resLabelTrade = t => {
+      if (t.resultado === 'target') return 'TARGET'
+      if (t.resultado === 'stop')   return 'STOP'
+      if (t.resultado === 'be')     return 'BE'
+      return isWinTrade(t) ? 'ganador' : isLossTrade(t) ? 'perdedor' : 'otro'
+    }
+    const fmtTradeLine = t => {
+      const dir = /short|sell/i.test(t.market_pos || '') ? 'SHORT' : 'LONG'
+      const e = parseFloat(t.entry_price), x = parseFloat(t.exit_price)
+      const hasPx = isFinite(e) && isFinite(x)
+      const pts = hasPx ? (dir === 'SHORT' ? e - x : x - e) : null
+      const ptsStr = pts != null ? `${pts >= 0 ? '+' : ''}${pts.toFixed(2)} pts` : 'sin precio'
+      const hora = [t.entry_time, t.exit_time].filter(Boolean).join(' → ') || 'sin hora'
+      const px = hasPx ? `${e} → ${x}` : 'precio no registrado'
+      const q = t.qty ? ` · ${t.qty} contrato(s)` : ''
+      return `  - ${hora} · ${dir} · ${px} (${ptsStr}) · ${resLabelTrade(t)} · ${fmtPnl(parseFloat(t.profit) || 0)}${q}`
+    }
+    const tradesStr = tradesPA.length > 0
+      ? `${tradesPA.length} trade(s) — Targets: ${targetsHoy} | Stops: ${stopsHoy} | BEs: ${besHoy} — P&L total: ${fmtPnl(pnlHoy)}\n${tradesPA.map(fmtTradeLine).join('\n')}`
       : 'Sin trades registrados'
 
     // Checklist (catálogo dinámico, agrupado por fase)
@@ -698,18 +723,115 @@ ${catalogoStr}
       </div>`).join('')
   }
 
-  // Etapa 1 — render del análisis técnico (3 secciones)
+  // ── Bloques de datos (colapsables) del análisis técnico ──────────────────
+  const _n = v => (v == null || v === '' || isNaN(parseFloat(v))) ? null : parseFloat(v)
+  const _drow = (lbl, val) => val == null ? '' : `<div class="cz-drow"><span class="cz-dl">${lbl}</span><span class="cz-dv">${val}</span></div>`
+  function _setupFam(s) {
+    const v = (s?.setup || '').toLowerCase()
+    if (v.startsWith('iri')) return 'iri'
+    if (v.startsWith('reingreso')) return 'reingreso'
+    return null
+  }
+
+  // Datos de premercado + zonas naranjas (de la sesión del día)
+  function renderPremercadoData(s) {
+    if (!s) return '<p class="cz-empty">Sin datos de premercado registrados.</p>'
+    const pdo=_n(s.precio_apertura_ayer), pdh=_n(s.precio_max_ayer), pdl=_n(s.precio_min_ayer), pdc=_n(s.precio_cierre_ayer)
+    const aHoy=_n(s.precio_apertura), onh=_n(s.precio_max_pre), onl=_n(s.precio_min_pre)
+    const ref = [
+      _drow('PDO · apertura ayer', pdo), _drow('PDH · máximo ayer', pdh),
+      _drow('PDL · mínimo ayer', pdl), _drow('PDC · cierre ayer', pdc),
+      (pdh!=null&&pdl!=null) ? _drow('PDR · rango ayer', (pdh-pdl).toFixed(2)+' pts') : '',
+    ].join('')
+    const on = [
+      _drow('Apertura hoy', aHoy),
+      (aHoy!=null&&pdc!=null) ? _drow('Deriva overnight', ((aHoy-pdc>=0?'+':'')+(aHoy-pdc).toFixed(2))+' pts') : '',
+      _drow('ONH · máx premercado', onh), _drow('ONL · mín premercado', onl),
+      (onh!=null&&onl!=null) ? _drow('Rango overnight', (onh-onl).toFixed(2)+' pts') : '',
+    ].join('')
+    const sop = Array.isArray(s.soportes_naranja) ? s.soportes_naranja.filter(x=>x!=null&&x!=='') : []
+    const res = Array.isArray(s.resistencias_naranja) ? s.resistencias_naranja.filter(x=>x!=null&&x!=='') : []
+    const chips = arr => arr.length ? arr.map(v=>`<span class="cz-chip-o">${v}</span>`).join('') : '<span class="cz-dv">—</span>'
+    const noticiaVal = [s.noticias, s.hora_noticia_roja ? `· roja ${s.hora_noticia_roja}` : ''].filter(Boolean).join(' ')
+    return `
+      <div class="cz-dgroup"><div class="cz-dgt">Referencia (OHLC de ayer)</div>${ref || '<p class="cz-empty">—</p>'}</div>
+      <div class="cz-dgroup"><div class="cz-dgt">Overnight / apertura</div>${on || '<p class="cz-empty">—</p>'}</div>
+      <div class="cz-dgroup"><div class="cz-dgt">Zonas naranjas</div>
+        <div class="cz-drow"><span class="cz-dl">Soportes</span><span class="cz-zwrap">${chips(sop)}</span></div>
+        <div class="cz-drow"><span class="cz-dl">Resistencias</span><span class="cz-zwrap">${chips(res)}</span></div>
+      </div>
+      ${noticiaVal ? `<div class="cz-dgroup"><div class="cz-dgt">Noticias</div>${_drow('Del día', noticiaVal)}</div>` : ''}
+    `
+  }
+
+  // Checklist del día (✓/✗ por fase), filtrado por el setup del día
+  function renderChecklistData(s) {
+    const items = DB.checklistItemsSync()
+    if (!s || !items.length) return '<p class="cz-empty">Sin checklist.</p>'
+    const fam = _setupFam(s)
+    const vis = items.filter(i => !i.setup || !fam || i.setup === fam)
+    const FASES = { 1:'Fase 1 · Pre-sesión', 2:'Fase 2 · Lectura del setup', 3:'Fase 3 · Ejecución' }
+    let html = ''
+    ;[1,2,3].forEach(f => {
+      const ofF = vis.filter(i => (i.fase||1) === f)
+      if (!ofF.length) return
+      html += `<div class="cz-dgroup"><div class="cz-dgt">${FASES[f]}</div>` +
+        ofF.map(i => {
+          const ok = !!(s.checklist?.[i.clave] ?? s[i.clave])
+          return `<div class="cz-chk ${ok?'ok':'no'}"><span class="cz-cic">${ok?'✓':'✗'}</span><span>${i.texto}</span></div>`
+        }).join('') + `</div>`
+    })
+    return html || '<p class="cz-empty">Sin ítems aplicables.</p>'
+  }
+
+  // Operativa del día (tabla de trades PA)
+  function renderOperativaData(trades) {
+    if (!trades || !trades.length) return '<p class="cz-empty">Sin trades registrados en la cuenta PA.</p>'
+    const rows = trades.map(t => {
+      const dir = /short|sell/i.test(t.market_pos||'') ? 'SHORT' : 'LONG'
+      const e=_n(t.entry_price), x=_n(t.exit_price)
+      const pts = (e!=null&&x!=null) ? (dir==='SHORT'?e-x:x-e) : null
+      const res = t.resultado==='target'?'TARGET':t.resultado==='stop'?'STOP':t.resultado==='be'?'BE':'—'
+      const rescls = t.resultado==='target'?'r-t':t.resultado==='stop'?'r-s':'r-o'
+      const pnl = parseFloat(t.profit)||0
+      return `<tr>
+        <td>${[t.entry_time,t.exit_time].filter(Boolean).join(' → ')||'—'}</td>
+        <td>${dir}</td>
+        <td>${e!=null?e:'?'} → ${x!=null?x:'?'}</td>
+        <td class="${pts!=null&&pts<0?'neg':'pos'}">${pts!=null?(pts>=0?'+':'')+pts.toFixed(2):'—'}</td>
+        <td><span class="cz-rb ${rescls}">${res}</span></td>
+        <td class="${pnl<0?'neg':'pos'}">${fmtPnl(pnl)}</td>
+      </tr>`
+    }).join('')
+    return `<div class="cz-optable-wrap"><table class="cz-optable"><thead><tr>
+      <th>Hora</th><th>Dir</th><th>Entrada → Salida</th><th>Puntos</th><th>Resultado</th><th>P&amp;L</th>
+    </tr></thead><tbody>${rows}</tbody></table></div>`
+  }
+
+  // Etapa 1 — render del análisis técnico (3 secciones + bloques de datos colapsables)
   function renderAnalisisTecnico(secciones) {
     const container = document.getElementById('coachAnalisisContent')
     if (!container) return
+    const s = sesionActual
     container.innerHTML = `
       <div class="coach-section" id="cs-contexto">
         <div class="coach-section-header"><span class="cs-icon">🌍</span><span>CONTEXTO</span></div>
         <div class="coach-section-body cz">${renderContexto(secciones.contexto)}</div>
+        <details class="cz-data">
+          <summary><span class="cz-dsum-ic">🌅</span> Datos de premercado y checklist<span class="cz-caret"></span></summary>
+          <div class="cz-data-body">
+            ${renderPremercadoData(s)}
+            <div class="cz-dgroup"><div class="cz-dgt">Checklist del día</div>${renderChecklistData(s)}</div>
+          </div>
+        </details>
       </div>
       <div class="coach-section" id="cs-desarrollo">
         <div class="coach-section-header"><span class="cs-icon">📈</span><span>DESARROLLO DE SESIÓN</span></div>
         <div class="coach-section-body cz">${renderDesarrollo(secciones.desarrollo)}</div>
+        <details class="cz-data">
+          <summary><span class="cz-dsum-ic">📊</span> Datos de la operativa<span class="cz-caret"></span></summary>
+          <div class="cz-data-body">${renderOperativaData(tradesActual)}</div>
+        </details>
       </div>
       <div class="coach-section" id="cs-validacion">
         <div class="coach-section-header"><span class="cs-icon">✅</span><span>VALIDACIÓN DE SETUPS</span></div>
@@ -1251,7 +1373,16 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
   }
 
   // Renderiza un diagnóstico guardado en las dos zonas y desbloquea las 3 etapas
-  function mostrarDiagnosticoGuardado(diag) {
+  async function mostrarDiagnosticoGuardado(diag, date) {
+    // Cargar los datos del día (premercado/checklist/operativa) para los bloques desplegables
+    try {
+      const [ses, trs] = await Promise.all([
+        DB.getSesionByDate(date || diag.sesion_date),
+        DB.getTradesByDate(date || diag.sesion_date),
+      ])
+      sesionActual = ses || null
+      tradesActual = (trs || []).filter(t => (t.account || '') === CUENTA_ANALISIS)
+    } catch { sesionActual = null; tradesActual = [] }
     // Filas nuevas: veredicto en columna propia. Filas viejas: concatenado en sec_validacion.
     const legacy = splitValidacion(diag.sec_validacion)
     const veredicto  = diag.sec_veredicto || legacy.veredicto
@@ -1475,7 +1606,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     // Si ya existe diagnóstico para esa fecha, mostrarlo directamente
     const diag = await DB.getDiagnosticoByDate(date)
     if (diag?.sec_contexto) {
-      mostrarDiagnosticoGuardado(diag)
+      await mostrarDiagnosticoGuardado(diag, date)
 
       // Restaurar conversación guardada en el chat
       if (diag.chat_messages?.length) {
