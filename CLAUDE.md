@@ -83,22 +83,22 @@ Experimentos, Apex Tracker, Galería, Historial, Coach IA, Estrategia, Datos), C
 3 etapas, filtro de cuenta persistente, nav mobile.
 
 ### Pendientes abiertos
-- **Migraciones por correr** (Supabase SQL): `2026-06-19-sesiones-chk-cuenta-pa.sql`,
-  `2026-06-19-sesiones-alerta-riesgo.sql`.
-- Verificar que Worker web `/api/session` guarde los campos nuevos (`chk_cuenta_pa`,
-  `alerta_riesgo_vista`) y los de premercado.
-- **Apex — drop pendiente:** ejecutar `drop table apex_registros;` (comentado en
-  `docs/migrations/2026-06-23-apex-unificar-tablas.sql`) tras confirmar que cuadra.
-  El código tiene fallback mientras tanto.
 - Coach IA: probar en vivo el formato real de las 3 tarjetas.
 - Recomendaciones tipificadas en Coach IA (Fase 4B): implementado salvo inyectar el
   catálogo de recomendaciones en el prompt del Coach (para que reutilice nombres y no
   duplique). Pendiente ese último paso.
 - Estadísticas de 3 corridas, volumen en trades, tasa de ejecución de setups válidos.
-- **Limpieza columnas `chk_*` de `sesiones`** (más adelante). El checklist ya vive en
-  `sesiones.checklist` (JSONB). Orden seguro: 1) `form.js` y `worker.js` dejan de escribir
-  `chk_*`; 2) verificar `checklist` no nulo en todas las filas; 3) `DROP COLUMN` las 7.
-  La lectura no se toca (la hidratación en `db.js` expone `s.chk_*` desde el JSONB).
+- **Limpieza columnas `chk_*` de `sesiones` (en curso, Jul 2026).** El checklist vive
+  solo en `sesiones.checklist` (JSONB); verificado que replica las 7 columnas en las 107
+  filas sin pérdida. Dual-write ya removido de `form.js` (el bot no las escribía). Falta:
+  desplegar, confirmar que el Worker web `/api/session` guarda sin `chk_*`, y correr
+  `docs/migrations/2026-07-08-drop-columnas-chk.sql`. La lectura no cambia (hidratación
+  del JSONB en `db.js`).
+
+> **BD limpia (validado Jul 2026):** no quedan tablas legacy por borrar. `apex_registros`
+> y todas las archivadas (`*_archivada`, `reglas_legacy_backup`, `checklist_items`,
+> `sesion_casuisticas`, `experimento_registros`, `catalogo_casuisticas`, `errores_sesion`)
+> ya no existen. Vivas: `sesiones`, `trades`, `apex_trades`, `apex_cuentas`, `reglas`, etc.
 
 ## Para contexto adicional
 - Historial completo + hitos cerrados: `docs/historial-proyecto.md`

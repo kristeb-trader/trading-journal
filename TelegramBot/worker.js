@@ -576,7 +576,6 @@ async function handleText(msg, env) {
         return;
       }
       state.data.velas_corrida = n;
-      if (n > 5) state.data.chk_5velas = false;
       state.step = STEPS.ZONAS_CONTRA;
       await saveState(env.KV, chatId, state);
       await sendMessage(token, chatId,

@@ -355,15 +355,14 @@ const SessionForm = (() => {
       payload.alerta_riesgo_vista = (alertaShown && alertaVal !== '') ? (alertaVal === 'true') : null
     }
 
-    // ── Checklist dinámico → JSONB { clave: bool } + dual-write de columnas chk_* estándar ──
-    const STANDARD_CLAVES = ['chk_cuenta_pa','chk_noticias','chk_zonas','chk_5velas','chk_consecucion','chk_estructura','chk_orden']
+    // ── Checklist dinámico → JSONB { clave: bool } ──
+    // El checklist vive solo en sesiones.checklist (JSONB). La lectura se hidrata
+    // desde ahí (hydrateChecklist en db.js). Las columnas chk_* quedaron obsoletas.
     const checklist = {}
     document.querySelectorAll('#checklistContainer input[type="checkbox"]').forEach(c => {
       checklist[c.dataset.clave] = c.checked
     })
     payload.checklist = checklist
-    // Columnas chk_* solo para las claves estándar (compat bot/Telegram + pre-migración)
-    STANDARD_CLAVES.forEach(k => { payload[k] = !!checklist[k] })
 
     payload.analisis_trader = document.getElementById('analisisTrader').value || null
     payload.resumen_ia = document.getElementById('resumenIA').value || null
