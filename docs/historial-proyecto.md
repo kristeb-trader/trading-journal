@@ -1094,6 +1094,38 @@ Reestructuración para conectar **Disciplina, Reglas y Errores** bajo un eje com
 
 ---
 
+## Checkpoint Jul 2026 (2) — checklist normalizado en `sesion_checklist`
+
+Rediseño del modelo de datos del checklist: de un JSONB por sesión a una tabla
+relacional. Motivado por preferencia del usuario (BD 100% normalizada, sin JSON).
+
+- **`reglas` → `catalogo_reglas`.** El catálogo único de reglas (por capas/fases;
+  `es_checklist=true` = checklist) se renombra por coherencia con los demás
+  `catalogo_*`. 8 queries en `db.js`, el AddOn y coach/estrategia actualizados.
+- **Nueva tabla `sesion_checklist`** (1 fila = sesión × regla de checklist). FK a
+  `sesiones(sesion_date)` (CASCADE) y a `catalogo_reglas(codigo)`. Reemplaza al JSONB
+  `sesiones.checklist` y a las columnas `chk_*` (que se dropean aparte).
+- **Triggers "todo true por defecto"** (no dañar disciplina): sesión nueva materializa
+  las reglas de checklist en `true`; regla nueva se backfillea en todas las sesiones en
+  `true`. La migración pobló las 108 sesiones × 15 reglas = 1620 filas (valor del JSONB,
+  o `true` si faltaba).
+- **`db.js` absorbe el cambio:** `hydrateChecklist` reconstruye `s.checklist = {codigo:
+  bool}` en memoria desde el embedding `sesion_checklist(regla_codigo,cumplido)`, así
+  metrics/calendar/charts/coach/disciplina **no cambian**. `upsertSesion` persiste el
+  checklist como filas (upsert por `sesion_date+regla_codigo`).
+- **Soft-delete de reglas:** `deleteRegla`/`deleteChecklistItem` pasan a `activa=false`
+  (hay historial en `sesion_checklist`, no se borra físico). `estrategia.js` carga solo
+  activas.
+- **AddOn `ChecklistChaumer`:** lee por embedding y escribe filas en `sesion_checklist`
+  (asegura la fila de `sesiones` antes, por la FK). `checklist_go_at`/`hora_noticia_roja`
+  siguen en `sesiones`.
+- **UI:** "Checklist" → **"Checklist Reglas"** en Registrar.
+- Verificado contra la BD real (service_role): triggers, upsert, embedding y CASCADE.
+- Migraciones: `2026-07-08-normalizar-checklist-catalogo-reglas.sql` (constructiva) +
+  `2026-07-08-drop-sesiones-checklist-jsonb.sql` (drop del modelo viejo, tras verificar).
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo

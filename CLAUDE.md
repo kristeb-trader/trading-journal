@@ -31,14 +31,14 @@ Dashboard personal para registro y análisis de operativa diaria en NQ/MNQ Futur
 ```
 js/app.js        — Boot, navegación SPA, Modal.openDay (modal del calendario)
 js/calendar.js   — Calendario mensual, filtro de cuenta, openDayModal
-js/coach.js      — Coach IA: flujo 3 etapas, chat, diagnóstico, guardar. Lee de `reglas`
+js/coach.js      — Coach IA: flujo 3 etapas, chat, diagnóstico, guardar. Lee de `catalogo_reglas`
 js/metrics.js    — KPIs y métricas generales (cards del calendario)
 js/charts.js     — Sección Análisis unificada: filtros Mes/Trimestre/Anual
 js/form.js       — Formulario de sesión diaria + experimentos
 js/db.js         — Capa de datos Supabase (todas las queries)
 js/experimentos.js — Laboratorio de Experimentos: veredictos + matriz cronológica
 js/apex.js       — Apex Tracker: cuentas de fondeo, vista detalle, auto-carga NT8
-js/estrategia.js — Editor del rulebook `reglas` por capas
+js/estrategia.js — Editor del rulebook `catalogo_reglas` por capas
 css/styles.css   — Dark mode completo + responsive mobile
 TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 ```
@@ -47,19 +47,20 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 | Tabla | Propósito |
 |---|---|
 | `trades` | Trades con `profit` NETO, `commission` round-trip |
-| `sesiones` | Registro diario: emoción, checklist, premercado, setup |
+| `sesiones` | Registro diario: emoción, premercado, setup (el checklist ya NO vive aquí) |
+| **`sesion_checklist`** | **Checklist diario normalizado** (1 fila = sesión × regla). FK a `sesiones(sesion_date)` y `catalogo_reglas(codigo)`; `cumplido` bool. Reemplaza al JSONB `sesiones.checklist` y a las columnas `chk_*`. Triggers: sesión nueva y regla nueva → materializan en `true` (no dañar disciplina). `db.js` reconstruye `s.checklist` en memoria al leer |
 | `diagnosticos_diarios` | Análisis IA: 3 secciones técnicas + 4 diagnóstico + chat |
 | `diagnostico_errores` | Errores detectados (manual + IA) con recomendaciones |
 | `diagnostico_experimentos` | Condiciones en prueba (T/S) por sesión |
 | `catalogo_errores` / `catalogo_emociones` / `catalogo_experimentos` | Maestros |
-| **`reglas`** | **Rulebook canónico unificado** (1 fila = 1 regla). Capas filosofia/proceso/riesgo; `setup` (iri/reingreso) etiqueta en proceso Fase 2; `tipo` dura/blanda; `es_checklist`+`fase` → checklist diario. Ver [[rulebook-modelo]] |
+| **`catalogo_reglas`** | **Rulebook canónico unificado** (1 fila = 1 regla; antes `reglas`, renombrada Jul 2026). Capas filosofia/proceso/riesgo; `setup` (iri/reingreso) etiqueta en proceso Fase 2; `tipo` dura/blanda; `es_checklist`+`fase` → checklist diario (`sesion_checklist`). Ver [[rulebook-modelo]] |
 | `objetivos` | Stop máx (`stop_max_puntos`, default 80), trades/día, P&L objetivo, límite pérdida |
 | `fomc_dates` | Fechas FOMC 2025-2026 |
 | `apex_cuentas` | Cuentas de fondeo Apex: parámetros (DD, target, safety net) y estado |
 | `apex_trades` | Trades + días auto-exportados de NT8 (`tipo='trade'`/`'dia'`) |
 
 > Tablas viejas del rulebook (`setup_reglas_archivada`, `estrategia_chaumer_archivada`,
-> `reglas_legacy_backup`, `checklist_items`) eliminadas Jul 2026 — todo vive en `reglas`.
+> `reglas_legacy_backup`, `checklist_items`) eliminadas Jul 2026 — todo vive en `catalogo_reglas`.
 > Esquema detallado en `memory/db-schema.md`.
 
 ## Coach IA — flujo
@@ -88,17 +89,18 @@ Experimentos, Apex Tracker, Galería, Historial, Coach IA, Estrategia, Datos), C
   catálogo de recomendaciones en el prompt del Coach (para que reutilice nombres y no
   duplique). Pendiente ese último paso.
 - Estadísticas de 3 corridas, volumen en trades, tasa de ejecución de setups válidos.
-- **Limpieza columnas `chk_*` de `sesiones` (en curso, Jul 2026).** El checklist vive
-  solo en `sesiones.checklist` (JSONB); verificado que replica las 7 columnas en las 107
-  filas sin pérdida. Dual-write ya removido de `form.js` (el bot no las escribía). Falta:
-  desplegar, confirmar que el Worker web `/api/session` guarda sin `chk_*`, y correr
-  `docs/migrations/2026-07-08-drop-columnas-chk.sql`. La lectura no cambia (hidratación
-  del JSONB en `db.js`).
+- **Checklist normalizado en `sesion_checklist` (en curso, Jul 2026).** Migrado el
+  checklist del JSONB a una tabla relacional; `reglas` renombrada a `catalogo_reglas`.
+  Fases A (SQL), B (web) y C (AddOn NT) implementadas y verificadas contra la BD real.
+  **Falta que el usuario:** (1) corra `2026-07-08-normalizar-checklist-catalogo-reglas.sql`;
+  (2) verifique el guardado real en producción (web + AddOn recompilado); (3) corra el
+  drop del modelo viejo `2026-07-08-drop-sesiones-checklist-jsonb.sql`. Ver [[rulebook-modelo]].
 
 > **BD limpia (validado Jul 2026):** no quedan tablas legacy por borrar. `apex_registros`
 > y todas las archivadas (`*_archivada`, `reglas_legacy_backup`, `checklist_items`,
 > `sesion_casuisticas`, `experimento_registros`, `catalogo_casuisticas`, `errores_sesion`)
-> ya no existen. Vivas: `sesiones`, `trades`, `apex_trades`, `apex_cuentas`, `reglas`, etc.
+> ya no existen. Vivas: `sesiones`, `sesion_checklist`, `trades`, `apex_trades`,
+> `apex_cuentas`, `catalogo_reglas`, etc.
 
 ## Para contexto adicional
 - Historial completo + hitos cerrados: `docs/historial-proyecto.md`
