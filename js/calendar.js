@@ -7,8 +7,10 @@ const Calendar = (() => {
   let casuisticasCache = {} // date → true (has errors)
   let allTradesRaw = []     // sin filtrar por cuenta
   let allAccountsList = []  // lista completa de cuentas (cargada una sola vez)
-  let cmeHolidays   = {}        // date → { name, emoji } para festivos CME
-  let fomcDates     = new Set() // fechas ISO de reuniones FOMC del mes actual
+  let cmeHolidays     = {}        // date → { name, emoji } festivos (de catalogo_fechas)
+  let fomcDates       = new Set() // fechas ISO de días FOMC del año
+  let vacacionesDates = {}        // date → { name, emoji } vacaciones
+  let otrasDates      = {}        // date → { name, emoji } otras fechas especiales
 
   const ACCOUNT_STORAGE_KEY = 'calendarAccount'
 
@@ -104,6 +106,7 @@ const Calendar = (() => {
     }
     if (!trades || trades.length === 0) {
       if (dateStr in cmeHolidays) return 'festivo'
+      if (dateStr in vacacionesDates) return 'vacaciones'
       return 'empty'
     }
     const nonBE = trades.filter(t => !isBreakEven(t.profit))
@@ -143,18 +146,21 @@ const Calendar = (() => {
   }
 
   async function load() {
-    const [trades, sesiones, casuisticas, fomcList] = await Promise.all([
+    const [trades, sesiones, casuisticas, fechasEsp] = await Promise.all([
       DB.getTradesByMonth(currentYear, currentMonth),
       DB.getSesiones(),
       DB.getCasuisticasByMonth(currentYear, currentMonth),
-      DB.getFomcDates(currentYear, currentMonth).catch(() => []),
+      DB.getFechasEspeciales(currentYear).catch(() => []),
     ])
 
-    // Festivos CME calculados para el año actual
-    cmeHolidays = calcCMEHolidays(currentYear)
-
-    // FOMC del mes actual
-    fomcDates = new Set(fomcList)
+    // Fechas especiales del año, clasificadas por tipo (de catalogo_fechas)
+    cmeHolidays = {}; vacacionesDates = {}; otrasDates = {}; fomcDates = new Set()
+    fechasEsp.forEach(f => {
+      if (f.tipo === 'fomc')            fomcDates.add(f.fecha)
+      else if (f.tipo === 'festivo')    cmeHolidays[f.fecha]     = { name: f.nombre || 'Festivo',    emoji: f.emoji || '🏦' }
+      else if (f.tipo === 'vacaciones') vacacionesDates[f.fecha] = { name: f.nombre || 'Vacaciones', emoji: f.emoji || '🏖️' }
+      else                              otrasDates[f.fecha]      = { name: f.nombre || 'Especial',   emoji: f.emoji || '⭐' }
+    })
 
     casuisticasCache = {}
     casuisticas.forEach(c => { casuisticasCache[c.sesion_date] = true })
@@ -264,10 +270,16 @@ const Calendar = (() => {
           } else if (trades.length > 0 && trades.every(t => isBreakEven(t.profit))) {
             statusBadge = `<div class="cal-status-badge badge-be"><i class="ti ti-scale"></i> B.E.</div>`
           } else if (isHoliday && !trades.length) {
-            // Festivo automático (sin sesión registrada)
+            // Festivo (sin sesión registrada)
             statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> Festivo</div>`
+          } else if ((dateStr in vacacionesDates) && !trades.length) {
+            const v = vacacionesDates[dateStr]
+            statusBadge = `<div class="cal-status-badge badge-vacaciones">${v.emoji || '🏖️'} ${v.name || 'Vacaciones'}</div>`
+          } else if ((dateStr in otrasDates) && !trades.length) {
+            const o = otrasDates[dateStr]
+            statusBadge = `<div class="cal-status-badge badge-especial">${o.emoji || '⭐'} ${o.name || 'Especial'}</div>`
           }
-          // FOMC (en fomc_dates): badge aunque se haya operado, para no perder la marca
+          // FOMC (en catalogo_fechas): badge aunque se haya operado, para no perder la marca
           if (!statusBadge && isFomc) {
             statusBadge = `<div class="cal-status-badge badge-fomc"><i class="ti ti-chart-candle"></i> FOMC</div>`
           }
@@ -360,17 +372,17 @@ const Calendar = (() => {
   }
 
   async function openDayModal(dateStr) {
-    // Festivo CME → modal especial con nombre y emoji del feriado
-    const holiday = cmeHolidays[dateStr]
-    if (holiday) {
-      openHolidayModal(dateStr, holiday.name, holiday.emoji)
-      return
-    }
-
     const [trades, sesion] = await Promise.all([
       DB.getTradesByDate(dateStr),
       DB.getSesionByDate(dateStr),
     ])
+
+    // Fecha especial (festivo / vacaciones / otra) sin operar → modal informativo.
+    // Si ese día se operó, cae al modal normal para ver los trades.
+    if (!trades.length) {
+      const esp = cmeHolidays[dateStr] || vacacionesDates[dateStr] || otrasDates[dateStr]
+      if (esp) { openHolidayModal(dateStr, esp.name, esp.emoji); return }
+    }
 
     // Festivo registrado manualmente → también modal especial
     if (sesion?.no_opero && sesion?.motivo_no_opero === 'Festivo') {
@@ -432,5 +444,5 @@ const Calendar = (() => {
     await load()
   }
 
-  return { init, load, getYear: () => currentYear, getMonth: () => currentMonth }
+  return { init, load, getYear: () => currentYear, getMonth: () => currentMonth, calcCMEHolidays }
 })()

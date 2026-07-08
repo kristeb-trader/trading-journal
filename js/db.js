@@ -326,19 +326,31 @@ const DB = {
     return data
   },
 
-  // ── FOMC Dates ───────────────────────────────────────────────────────────
+  // ── Fechas especiales (catalogo_fechas: fomc | festivo | vacaciones | otro) ─
 
-  async getFomcDates(year, month) {
-    const from = `${year}-${String(month).padStart(2, '0')}-01`
-    const lastDay = new Date(year, month, 0).getDate()
-    const to = `${year}-${String(month).padStart(2, '0')}-${lastDay}`
-    const { data, error } = await supa
-      .from('fomc_dates')
-      .select('date')
-      .gte('date', from)
-      .lte('date', to)
+  // Todas las fechas activas de un año (para el calendario y la sección Fechas).
+  async getFechasEspeciales(year = null) {
+    let q = supa.from('catalogo_fechas').select('*').eq('activa', true)
+    if (year) q = q.gte('fecha', `${year}-01-01`).lte('fecha', `${year}-12-31`)
+    const { data, error } = await q.order('fecha', { ascending: true })
     if (error) throw error
-    return data.map(r => r.date)
+    return data || []
+  },
+
+  async addFechaEspecial(payload) {
+    const { data, error } = await supa.from('catalogo_fechas').insert(payload).select().single()
+    if (error) throw error
+    return data
+  },
+
+  async updateFechaEspecial(id, patch) {
+    const { error } = await supa.from('catalogo_fechas').update(patch).eq('id', id)
+    if (error) throw error
+  },
+
+  async deleteFechaEspecial(id) {
+    const { error } = await supa.from('catalogo_fechas').delete().eq('id', id)
+    if (error) throw error
   },
 
   // ── Catálogo Casuísticas ─────────────────────────────────────────────────

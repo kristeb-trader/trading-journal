@@ -321,7 +321,7 @@ const Nav = {
     trades: 'Trades',
     gallery: 'Imágenes',
     coach: 'Coach IA',
-    register: 'Registrar Sesión',
+    register: 'Sesión',
     analysis: 'Análisis',
     disciplina: 'Disciplina',
     experimentos: 'Experimentos',
@@ -329,6 +329,7 @@ const Nav = {
     historial: 'Historial',
     estrategia: 'Estrategia',
     data: 'Datos',
+    fechas: 'Fechas Especiales',
   },
   initialized: new Set(),
 
@@ -357,6 +358,7 @@ const Nav = {
         if (sectionId === 'estrategia') await Estrategia.init()
         if (sectionId === 'historial') await Coach.renderHistorial()
         if (sectionId === 'data') await DataManager.init()
+        if (sectionId === 'fechas') await Fechas.init()
       } catch (err) {
         Toast.show('Error cargando sección: ' + err.message, 'error')
       }
@@ -374,6 +376,8 @@ const Nav = {
       Disciplina.reload()
     } else if (sectionId === 'register') {
       SessionForm.onShow()
+    } else if (sectionId === 'fechas') {
+      Fechas.reload()
     }
   },
 

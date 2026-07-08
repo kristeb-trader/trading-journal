@@ -52,33 +52,33 @@
       </div>
     </div>
     <ul class="nav-menu">
-      <li class="nav-item active" data-section="calendar" title="Calendario">
-        <i class="ti ti-calendar-month"></i>
-        <span>Calendario</span>
-      </li>
-      <li class="nav-item" data-section="gallery" title="Imágenes">
-        <i class="ti ti-photo"></i>
-        <span>Imágenes</span>
-      </li>
-      <li class="nav-item" data-section="trades" title="Trades">
-        <i class="ti ti-list-details"></i>
-        <span>Trades</span>
+      <li class="nav-item" data-section="disciplina" title="Disciplina">
+        <i class="ti ti-checkup-list"></i>
+        <span>Disciplina</span>
       </li>
       <li class="nav-item" data-section="analysis" title="Análisis">
         <i class="ti ti-chart-line"></i>
         <span>Análisis</span>
       </li>
-      <li class="nav-item" data-section="disciplina" title="Disciplina">
-        <i class="ti ti-checkup-list"></i>
-        <span>Disciplina</span>
+      <li class="nav-item active" data-section="calendar" title="Calendario">
+        <i class="ti ti-calendar-month"></i>
+        <span>Calendario</span>
+      </li>
+      <li class="nav-item" data-section="apex" title="Apex Tracker">
+        <i class="ti ti-trophy"></i>
+        <span>Apex</span>
       </li>
       <li class="nav-item" data-section="experimentos" title="Experimentos">
         <i class="ti ti-flask"></i>
         <span>Experimentos</span>
       </li>
-      <li class="nav-item" data-section="apex" title="Apex Tracker">
-        <i class="ti ti-trophy"></i>
-        <span>Apex</span>
+      <li class="nav-item" data-section="trades" title="Trades">
+        <i class="ti ti-list-details"></i>
+        <span>Trades</span>
+      </li>
+      <li class="nav-item" data-section="register" title="Sesión">
+        <i class="ti ti-square-rounded-plus"></i>
+        <span>Sesión</span>
       </li>
       <li class="nav-item" data-section="historial" title="Historial">
         <i class="ti ti-history"></i>
@@ -88,9 +88,9 @@
         <i class="ti ti-robot"></i>
         <span>Coach IA</span>
       </li>
-      <li class="nav-item" data-section="register" title="Registrar sesión">
-        <i class="ti ti-square-rounded-plus"></i>
-        <span>Registrar</span>
+      <li class="nav-item" data-section="gallery" title="Imágenes">
+        <i class="ti ti-photo"></i>
+        <span>Imágenes</span>
       </li>
       <li class="nav-item" data-section="estrategia" title="Estrategia">
         <i class="ti ti-book-2"></i>
@@ -99,6 +99,10 @@
       <li class="nav-item" data-section="data" title="Datos">
         <i class="ti ti-database"></i>
         <span>Datos</span>
+      </li>
+      <li class="nav-item" data-section="fechas" title="Fechas Especiales">
+        <i class="ti ti-calendar-star"></i>
+        <span>Fechas Especiales</span>
       </li>
     </ul>
     <div class="sidebar-footer">
@@ -1029,6 +1033,49 @@
         <div id="apexDetalle" class="hidden"></div>
       </section>
 
+      <!-- ═══ FECHAS ESPECIALES ═══════════════════════════════════════════ -->
+      <section class="section" id="section-fechas">
+        <div class="section-header">
+          <h2>Fechas Especiales</h2>
+          <div class="fechas-toolbar">
+            <select id="fechasYear" class="filter-select"></select>
+            <button class="btn-secondary btn-sm" id="fechasGenFestivos" title="Generar los festivos CME del año seleccionado"><i class="ti ti-wand"></i> Generar festivos</button>
+            <button class="btn-primary btn-sm" id="fechasNueva"><i class="ti ti-plus"></i> Nueva fecha</button>
+          </div>
+        </div>
+        <div id="fechasContent"></div>
+      </section>
+
+      <!-- Modal: nueva/editar fecha especial -->
+      <div class="modal-overlay hidden" id="fechaModal">
+        <div class="modal" style="max-width:420px">
+          <div class="modal-header">
+            <h3 id="fechaModalTitle"><i class="ti ti-calendar-star"></i> Nueva fecha</h3>
+            <button class="btn-icon" id="closeFechaModal"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="modal-content" style="padding:16px 20px 20px">
+            <input type="hidden" id="fechaId">
+            <div class="form-row">
+              <div class="form-group"><label>Fecha</label><input type="date" id="fechaInput"></div>
+              <div class="form-group"><label>Tipo</label>
+                <select id="fechaTipo">
+                  <option value="fomc">FOMC</option>
+                  <option value="festivo">Festivo</option>
+                  <option value="vacaciones">Vacaciones</option>
+                  <option value="otro">Otra</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Nombre</label><input type="text" id="fechaNombre" placeholder="Ej. Navidad"></div>
+              <div class="form-group"><label>Emoji</label><input type="text" id="fechaEmoji" placeholder="🎄" maxlength="4"></div>
+            </div>
+            <div class="form-group"><label>Notas</label><input type="text" id="fechaNotas" placeholder="Opcional"></div>
+            <button class="btn-primary" id="fechaGuardar" style="width:100%;margin-top:6px"><i class="ti ti-device-floppy"></i> Guardar</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Modal: crear/editar cuenta Apex -->
       <div class="modal-overlay hidden" id="apexCuentaModal">
         <div class="modal" style="max-width:480px">
@@ -1270,6 +1317,7 @@
   <script src="js/estrategia.js"></script>
   <script src="js/disciplina.js"></script>
   <script src="js/coach.js"></script>
+  <script src="js/fechas.js"></script>
   <script src="js/app.js"></script>
 
   <!-- Registro del Service Worker (PWA) -->
