@@ -20,7 +20,7 @@ const Estrategia = (() => {
   async function load() {
     const cont = document.getElementById('reglasList')
     try {
-      const [r, o] = await Promise.all([DB.getReglas(), DB.getObjetivos().catch(() => null)])
+      const [r, o] = await Promise.all([DB.getReglas({ soloActivas: true }), DB.getObjetivos().catch(() => null)])
       reglas = r || []
       objetivos = o
     } catch (e) {

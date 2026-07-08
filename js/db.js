@@ -15,10 +15,19 @@ const CHECKLIST_DEFAULT = [
 ]
 let _checklistCache = null  // catálogo cacheado tras la primera carga
 
-// Hidrata una sesión: expone checklist[clave] como propiedades s[clave] para que
-// el código que aún lee s.chk_zonas (calendario, charts, métricas) siga funcionando.
+// Hidrata una sesión: reconstruye s.checklist = { codigo: bool } desde las filas
+// de sesion_checklist (modelo relacional) y expone s[codigo] para que el código
+// que lee s.chk_zonas (calendario, charts, métricas) siga funcionando sin cambios.
+// Fallback: si aún viniera el JSONB viejo (columna sin dropear), también se usa.
 function hydrateChecklist(s) {
-  if (s && s.checklist && typeof s.checklist === 'object') Object.assign(s, s.checklist)
+  if (!s) return s
+  if (Array.isArray(s.sesion_checklist)) {
+    const chk = {}
+    for (const row of s.sesion_checklist) chk[row.regla_codigo] = row.cumplido
+    s.checklist = chk
+    delete s.sesion_checklist
+  }
+  if (s.checklist && typeof s.checklist === 'object') Object.assign(s, s.checklist)
   return s
 }
 
@@ -149,7 +158,7 @@ const DB = {
   async getSesiones() {
     const { data, error } = await supa
       .from('sesiones')
-      .select('*')
+      .select('*, sesion_checklist(regla_codigo, cumplido)')
       .order('sesion_date', { ascending: false })
     if (error) throw error
     return (data || []).map(hydrateChecklist)
@@ -158,7 +167,7 @@ const DB = {
   async getSesionByDate(date) {
     const { data, error } = await supa
       .from('sesiones')
-      .select('*')
+      .select('*, sesion_checklist(regla_codigo, cumplido)')
       .eq('sesion_date', date)
       .maybeSingle()
     if (error) throw error
@@ -166,8 +175,8 @@ const DB = {
   },
 
   async upsertSesion(payload) {
-    // El checklist (JSONB) lo escribimos directo a Supabase: el Worker /api/session
-    // (no versionado) no conoce ese campo. El resto va por el Worker como siempre.
+    // El checklist se persiste en sesion_checklist (relacional). El resto de la
+    // sesión va por el Worker /api/session (no versionado), que no conoce el checklist.
     const { checklist, ...rest } = payload
     const secret = localStorage.getItem('dashboard_secret') || ''
     const res = await fetch('https://broad-hall-c53f.kristerock.workers.dev/api/session', {
@@ -182,10 +191,19 @@ const DB = {
       const text = await res.text()
       throw new Error(`Error ${res.status}: ${text}`)
     }
-    // Escritura directa del JSONB (tras crear/actualizar la fila por el Worker).
+    // Checklist → filas en sesion_checklist (tras crear/actualizar la fila por el
+    // Worker; el trigger ya materializó las reglas en true, aquí se actualizan las
+    // que el trader marcó distinto). Upsert por (sesion_date, regla_codigo).
     if (checklist && rest.sesion_date) {
-      const { error } = await supa.from('sesiones').update({ checklist }).eq('sesion_date', rest.sesion_date)
-      if (error) console.warn('No se pudo guardar el checklist (¿migración pendiente?):', error.message)
+      const now = new Date().toISOString()
+      const rows = Object.entries(checklist).map(([regla_codigo, cumplido]) => ({
+        sesion_date: rest.sesion_date, regla_codigo, cumplido: !!cumplido, updated_at: now,
+      }))
+      if (rows.length) {
+        const { error } = await supa.from('sesion_checklist')
+          .upsert(rows, { onConflict: 'sesion_date,regla_codigo' })
+        if (error) console.warn('No se pudo guardar el checklist:', error.message)
+      }
     }
   },
 
@@ -198,7 +216,7 @@ const DB = {
       return soloActivos ? _checklistCache.filter(i => i.activo !== false) : _checklistCache
     }
     const { data, error } = await supa
-      .from('reglas')
+      .from('catalogo_reglas')
       .select('id, clave:codigo, fase, setup, texto:titulo, orden, activo:activa, peso')
       .eq('es_checklist', true)
       .order('fase', { ascending: true })
@@ -224,7 +242,7 @@ const DB = {
   async addChecklistItem({ fase, texto, orden = 0 }) {
     const codigo = 'chk_' + Date.now().toString(36)
     const { data, error } = await supa
-      .from('reglas')
+      .from('catalogo_reglas')
       .insert({ codigo, titulo: texto, enunciado: texto, capa: 'proceso', tipo: 'blanda', fase, es_checklist: true, orden, activa: true })
       .select('id, clave:codigo, fase, texto:titulo, orden, activo:activa')
       .single()
@@ -240,13 +258,15 @@ const DB = {
     if ('activo' in patch) map.activa = patch.activo
     if ('fase' in patch) map.fase = patch.fase
     if ('orden' in patch) map.orden = patch.orden
-    const { error } = await supa.from('reglas').update(map).eq('id', id)
+    const { error } = await supa.from('catalogo_reglas').update(map).eq('id', id)
     if (error) throw error
     _checklistCache = null
   },
 
   async deleteChecklistItem(id) {
-    const { error } = await supa.from('reglas').delete().eq('id', id)
+    // Soft-delete: la regla tiene historial en sesion_checklist (FK). Se desactiva
+    // en vez de borrar; el cliente la filtra por activa y la disciplina se preserva.
+    const { error } = await supa.from('catalogo_reglas').update({ activa: false }).eq('id', id)
     if (error) throw error
     _checklistCache = null
   },
@@ -417,7 +437,7 @@ const DB = {
   // ── Rulebook canónico (reglas) ───────────────────────────────────────────
   // (Reemplaza a estrategia_chaumer y setup_reglas, retiradas en Fase 4.)
   async getReglas({ capa = null, soloActivas = false } = {}) {
-    let q = supa.from('reglas').select('*')
+    let q = supa.from('catalogo_reglas').select('*')
     if (capa) q = q.eq('capa', capa)
     if (soloActivas) q = q.eq('activa', true)
     const { data, error } = await q
@@ -428,21 +448,23 @@ const DB = {
   },
 
   async addRegla(payload) {
-    const { data, error } = await supa.from('reglas').insert(payload).select('*').single()
+    const { data, error } = await supa.from('catalogo_reglas').insert(payload).select('*').single()
     if (error) throw error
     _checklistCache = null
     return data
   },
 
   async updateRegla(id, patch) {
-    const { error } = await supa.from('reglas')
+    const { error } = await supa.from('catalogo_reglas')
       .update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id)
     if (error) throw error
     _checklistCache = null
   },
 
   async deleteRegla(id) {
-    const { error } = await supa.from('reglas').delete().eq('id', id)
+    // Soft-delete: si es regla de checklist tiene historial en sesion_checklist (FK).
+    // Se desactiva en vez de borrar para no romper la integridad ni la disciplina.
+    const { error } = await supa.from('catalogo_reglas').update({ activa: false }).eq('id', id)
     if (error) throw error
     _checklistCache = null
   },

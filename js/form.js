@@ -355,9 +355,10 @@ const SessionForm = (() => {
       payload.alerta_riesgo_vista = (alertaShown && alertaVal !== '') ? (alertaVal === 'true') : null
     }
 
-    // ── Checklist dinámico → JSONB { clave: bool } ──
-    // El checklist vive solo en sesiones.checklist (JSONB). La lectura se hidrata
-    // desde ahí (hydrateChecklist en db.js). Las columnas chk_* quedaron obsoletas.
+    // ── Checklist dinámico → { clave: bool } ──
+    // Se arma el objeto de los checkboxes; DB.upsertSesion lo persiste como filas
+    // en sesion_checklist (modelo relacional). La lectura se hidrata desde ahí
+    // (hydrateChecklist en db.js reconstruye sesion.checklist en memoria).
     const checklist = {}
     document.querySelectorAll('#checklistContainer input[type="checkbox"]').forEach(c => {
       checklist[c.dataset.clave] = c.checked
