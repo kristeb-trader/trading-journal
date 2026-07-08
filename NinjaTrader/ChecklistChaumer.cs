@@ -2,11 +2,11 @@
 //  ChecklistChaumer — AddOn de NinjaTrader 8
 //
 //  Panel flotante con el checklist de disciplina (metodología Chaumer, NQ/MNQ)
-//  sincronizado con Supabase (mismo sesiones.checklist que el Trading Journal web).
+//  sincronizado con Supabase (misma tabla sesion_checklist que el Trading Journal web).
 //
 //  - Ventana flotante independiente (NTWindow): mover, redimensionar, always-on-top.
 //  - Persiste posición/tamaño/topmost/setup en archivo local.
-//  - Ítems traídos del rulebook `reglas` (es_checklist=true), agrupados por fase
+//  - Ítems traídos del catálogo `catalogo_reglas` (es_checklist=true), agrupados por fase
 //    en tarjetas. Selector IRI | Reingreso: Fase 2 muestra los ítems comunes +
 //    los del setup elegido (mismas claves JSONB; cambiar de setup no borra marcas).
 //  - Botón GO: se habilita con el 100% de los ítems VISIBLES; al pulsarlo sella la hora en BD.
@@ -592,7 +592,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         {
             try
             {
-                string url = SUPABASE_URL + "/rest/v1/reglas?es_checklist=eq.true&activa=eq.true&order=fase.asc,orden.asc&select=clave:codigo,fase,setup,texto:titulo,orden";
+                string url = SUPABASE_URL + "/rest/v1/catalogo_reglas?es_checklist=eq.true&activa=eq.true&order=fase.asc,orden.asc&select=clave:codigo,fase,setup,texto:titulo,orden";
                 string json = await http.GetStringAsync(url).ConfigureAwait(false);
                 var arr = JArray.Parse(json);
 
@@ -621,7 +621,8 @@ namespace NinjaTrader.NinjaScript.AddOns
         {
             try
             {
-                string url = SUPABASE_URL + "/rest/v1/sesiones?sesion_date=eq." + currentDate + "&select=checklist,checklist_go_at,hora_noticia_roja";
+                // El checklist vive en sesion_checklist (relacional); se trae anidado.
+                string url = SUPABASE_URL + "/rest/v1/sesiones?sesion_date=eq." + currentDate + "&select=checklist_go_at,hora_noticia_roja,sesion_checklist(regla_codigo,cumplido)";
                 string json = await http.GetStringAsync(url).ConfigureAwait(false);
                 var arr = JArray.Parse(json);
 
@@ -630,7 +631,14 @@ namespace NinjaTrader.NinjaScript.AddOns
                 string horaRemota = null;
                 if (arr.Count > 0)
                 {
-                    checklist = arr[0]["checklist"] as JObject;
+                    // Reconstruye { codigo: bool } desde las filas anidadas de sesion_checklist
+                    var scArr = arr[0]["sesion_checklist"] as JArray;
+                    if (scArr != null)
+                    {
+                        checklist = new JObject();
+                        foreach (var row in scArr)
+                            checklist[(string)row["regla_codigo"]] = (bool)row["cumplido"];
+                    }
                     var goAt = arr[0]["checklist_go_at"];
                     hasGo = goAt != null && goAt.Type != JTokenType.Null;
                     var hn = arr[0]["hora_noticia_roja"];
@@ -675,11 +683,11 @@ namespace NinjaTrader.NinjaScript.AddOns
         {
             try
             {
-                // Se escriben TODAS las claves (ambos setups): cambiar de vista no borra marcas
-                var checklist = new JObject();
-                foreach (var it in items) checklist[it.Clave] = it.Checked;
-                var body = new JObject { ["sesion_date"] = currentDate, ["checklist"] = checklist };
-                await UpsertSesionAsync(body).ConfigureAwait(false);
+                // 1) Asegura la fila de sesiones (FK de sesion_checklist; el trigger
+                //    materializa las reglas en true si la fila es nueva).
+                await UpsertSesionAsync(new JObject { ["sesion_date"] = currentDate }).ConfigureAwait(false);
+                // 2) Escribe TODAS las claves (ambos setups): cambiar de vista no borra marcas.
+                await UpsertChecklistAsync().ConfigureAwait(false);
                 await Dispatcher.InvokeAsync(() => SetStatus("🟢 Sincronizado", ACCENT));
             }
             catch (Exception ex)
@@ -693,14 +701,12 @@ namespace NinjaTrader.NinjaScript.AddOns
         {
             try
             {
-                var checklist = new JObject();
-                foreach (var it in items) checklist[it.Clave] = it.Checked;
-                var body = new JObject {
+                // Sella la hora del GO en sesiones (asegura también la fila) + persiste el checklist.
+                await UpsertSesionAsync(new JObject {
                     ["sesion_date"]     = currentDate,
-                    ["checklist"]       = checklist,
                     ["checklist_go_at"] = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)
-                };
-                await UpsertSesionAsync(body).ConfigureAwait(false);
+                }).ConfigureAwait(false);
+                await UpsertChecklistAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -715,6 +721,27 @@ namespace NinjaTrader.NinjaScript.AddOns
                 SUPABASE_URL + "/rest/v1/sesiones?on_conflict=sesion_date");
             req.Headers.Add("Prefer", "resolution=merge-duplicates");
             req.Content = new StringContent(body.ToString(), Encoding.UTF8, "application/json");
+            var res = await http.SendAsync(req).ConfigureAwait(false);
+            if (!res.IsSuccessStatusCode)
+                throw new Exception("HTTP " + (int)res.StatusCode + ": " + await res.Content.ReadAsStringAsync().ConfigureAwait(false));
+        }
+
+        // Upsert del checklist como filas en sesion_checklist (1 por regla).
+        private async Task UpsertChecklistAsync()
+        {
+            var rows = new JArray();
+            string now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+            foreach (var it in items)
+                rows.Add(new JObject {
+                    ["sesion_date"]  = currentDate,
+                    ["regla_codigo"] = it.Clave,
+                    ["cumplido"]     = it.Checked,
+                    ["updated_at"]   = now
+                });
+            var req = new HttpRequestMessage(HttpMethod.Post,
+                SUPABASE_URL + "/rest/v1/sesion_checklist?on_conflict=sesion_date,regla_codigo");
+            req.Headers.Add("Prefer", "resolution=merge-duplicates");
+            req.Content = new StringContent(rows.ToString(), Encoding.UTF8, "application/json");
             var res = await http.SendAsync(req).ConfigureAwait(false);
             if (!res.IsSuccessStatusCode)
                 throw new Exception("HTTP " + (int)res.StatusCode + ": " + await res.Content.ReadAsStringAsync().ConfigureAwait(false));
