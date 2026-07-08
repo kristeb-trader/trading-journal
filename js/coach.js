@@ -518,18 +518,35 @@ ${catalogoStr}
 
   // ── Parsear secciones del análisis ────────────────────────────────────
 
-  // Etapa 1 — Análisis técnico (3 secciones)
+  // Etapa 1 — Análisis técnico (3 secciones). Parser robusto al formato del
+  // encabezado: acepta '## 1. 🌍 CONTEXTO' o '**1. 🌍 CONTEXTO**', con o sin
+  // emoji, con o sin número — separa por la PALABRA CLAVE del título.
   function parsearTecnico(texto) {
     const secciones = { contexto: '', desarrollo: '', validacion: '' }
-    const patrones = [
-      { key: 'contexto',   re: /\*\*1[.\s]*🌍\s*CONTEXTO\*\*([\s\S]*?)(?=\*\*2[.\s]*📈|\*\*2[.\s]*DESARROLLO|$)/i },
-      { key: 'desarrollo', re: /\*\*2[.\s]*📈\s*DESARROLLO[^*]*\*\*([\s\S]*?)(?=\*\*3[.\s]*✅|\*\*3[.\s]*VALIDACIÓN|$)/i },
-      { key: 'validacion', re: /\*\*3[.\s]*✅\s*VALIDACIÓN[^*]*\*\*([\s\S]*?)$/i },
-    ]
-    patrones.forEach(({ key, re }) => {
-      const match = texto.match(re)
-      if (match) secciones[key] = match[1].trim()
+    if (!texto) return secciones
+    // ¿La línea es un encabezado de sección? (empieza con #, * o dígito+punto)
+    const headerKey = (raw) => {
+      const l = raw.trim()
+      if (!/^(#{1,4}\s|\*{1,2}|\d\s*[.\)])/.test(l)) return null
+      if (/CONTEXTO/i.test(l))        return 'contexto'
+      if (/DESARROLLO/i.test(l))      return 'desarrollo'
+      if (/VALIDACI[ÓO]N/i.test(l))   return 'validacion'
+      return null
+    }
+    const buf = { contexto: [], desarrollo: [], validacion: [] }
+    let cur = null
+    texto.split('\n').forEach(line => {
+      const k = headerKey(line)
+      if (k) { cur = k; return }                       // el header no entra al cuerpo
+      if (/^\s*[-*_]{3,}\s*$/.test(line)) return       // salta separadores '---'
+      if (cur) buf[cur].push(line)
     })
+    secciones.contexto   = buf.contexto.join('\n').trim()
+    secciones.desarrollo = buf.desarrollo.join('\n').trim()
+    secciones.validacion = buf.validacion.join('\n').trim()
+    // Fallback: si no se pudo separar nada, todo va a contexto (como antes)
+    if (!secciones.contexto && !secciones.desarrollo && !secciones.validacion)
+      secciones.contexto = texto.trim()
     return secciones
   }
 
