@@ -39,6 +39,7 @@ js/db.js         — Capa de datos Supabase (todas las queries)
 js/experimentos.js — Laboratorio de Experimentos: veredictos + matriz cronológica
 js/apex.js       — Apex Tracker: cuentas de fondeo, vista detalle, auto-carga NT8
 js/estrategia.js — Editor del rulebook `catalogo_reglas` por capas
+js/fechas.js     — Sección Fechas Especiales: CRUD de `catalogo_fechas` (fomc/festivo/vacaciones/otro) por año
 css/styles.css   — Dark mode completo + responsive mobile
 TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 ```
@@ -55,7 +56,8 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 | `catalogo_errores` / `catalogo_emociones` / `catalogo_experimentos` | Maestros |
 | **`catalogo_reglas`** | **Rulebook canónico unificado** (1 fila = 1 regla; antes `reglas`, renombrada Jul 2026). Capas filosofia/proceso/riesgo; `setup` (iri/reingreso) etiqueta en proceso Fase 2; `tipo` dura/blanda; `es_checklist`+`fase` → checklist diario (`sesion_checklist`). Ver [[rulebook-modelo]] |
 | `objetivos` | Stop máx (`stop_max_puntos`, default 80), trades/día, P&L objetivo, límite pérdida |
-| `fomc_dates` | Fechas FOMC 2025-2026 |
+| **`catalogo_fechas`** | **Días especiales del calendario** (`tipo`: fomc/festivo/vacaciones/otro; fecha, nombre, emoji, notas). Se gestiona en la sección "Fechas Especiales". El calendario lee de aquí. Reemplaza a `fomc_dates` y al cálculo de festivos en código |
+| `fomc_dates` | ⚠️ Obsoleta (migrada a `catalogo_fechas`); pendiente de drop |
 | `apex_cuentas` | Cuentas de fondeo Apex: parámetros (DD, target, safety net) y estado |
 | `apex_trades` | Trades + días auto-exportados de NT8 (`tipo='trade'`/`'dia'`) |
 

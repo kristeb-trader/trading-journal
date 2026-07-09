@@ -1126,6 +1126,36 @@ relacional. Motivado por preferencia del usuario (BD 100% normalizada, sin JSON)
 
 ---
 
+## Checkpoint Jul 2026 (3) — Fechas especiales (`catalogo_fechas`) + reorden del menú
+
+- **Nueva tabla `catalogo_fechas`** (`tipo`: fomc/festivo/vacaciones/otro; fecha, nombre,
+  emoji, notas, activa). Unifica y reemplaza a `fomc_dates` (migrada) y al cálculo de
+  festivos que vivía en el código. Se cargaron los festivos CME 2025-2027. RLS + grants
+  como el resto. `fomc_dates` queda **obsoleta** (pendiente de drop).
+- **Sección nueva "Fechas Especiales"** (`js/fechas.js`): selector de año, lista agrupada
+  por tipo, alta/edición/borrado y botón "Generar festivos" del año (reusa
+  `Calendar.calcCMEHolidays`, sin duplicar).
+- **`calendar.js`** lee FOMC y festivos de `catalogo_fechas` (año completo); pinta
+  vacaciones (verde) y otras fechas con su badge; el modal del día muestra el nombre del
+  evento. Un día FOMC operado conserva el color del resultado + badge FOMC.
+- **Menú reordenado:** Disciplina · Análisis · Calendario · Apex · Experimentos · Trades ·
+  Sesión · Historial · Coach IA · Imágenes · Estrategia · Datos · Fechas Especiales.
+  "Registrar" renombrado a **"Sesión"**.
+- Migración: `2026-07-08-catalogo-fechas.sql`.
+
+---
+
+## Checkpoint Jul 2026 (2b) — Coach IA: datos operativos + análisis desplegable
+
+- **Coach ya no pide precios que están en la BD:** el prompt incluye el detalle por-trade
+  (hora, dirección, entrada→salida, puntos, resultado, P&L), no solo el agregado.
+- **Análisis Técnico rediseñado:** 3 secciones (Contexto/Desarrollo/Validación) con bloques
+  de datos colapsables (`<details>`, cerrados por defecto): premercado+checklist en
+  Contexto, tabla de operativa en Desarrollo. Parser de secciones robusto al formato del
+  encabezado (`##` o `**`, con/sin emoji) — antes todo caía en Contexto.
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo
