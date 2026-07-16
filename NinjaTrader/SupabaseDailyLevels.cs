@@ -72,14 +72,16 @@ namespace NinjaTrader.NinjaScript.Indicators
             return string.Empty;
         }
 
-        // Ventana RTH en hora de Nueva York (ET). Configurable por si se quiere
-        // otra definición (p. ej. 930–1615). Formato HHmm.
+        // Ventana RTH en hora de NUEVA YORK (ET) — NO en hora local/Colombia.
+        // El RTH del CME es 9:30–16:00 ET → usar 930 y 1600. (En verano eso es
+        // 8:30–15:00 Colombia; en invierno 9:30–16:00. El código ya ajusta el DST,
+        // por eso el valor SIEMPRE va en ET.) Formato HHmm.
         [NinjaScriptProperty]
-        [Display(Name = "RTH abre (ET, HHmm)", Order = 1, GroupName = "Niveles")]
+        [Display(Name = "RTH abre — hora NEW YORK/ET (usar 930)", Order = 1, GroupName = "Niveles")]
         public int RthOpenHHmm { get; set; }
 
         [NinjaScriptProperty]
-        [Display(Name = "RTH cierra (ET, HHmm)", Order = 2, GroupName = "Niveles")]
+        [Display(Name = "RTH cierra — hora NEW YORK/ET (usar 1600)", Order = 2, GroupName = "Niveles")]
         public int RthCloseHHmm { get; set; }
 
         [NinjaScriptProperty]
