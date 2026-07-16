@@ -13,7 +13,12 @@ using NinjaTrader.NinjaScript;
 #endregion
 
 /*
- * SupabaseDailyLevels — Indicador NinjaTrader 8 (v2.0 — 2026-06-18)
+ * SupabaseDailyLevels — Indicador NinjaTrader 8 (v2.1 — 2026-07-16)
+ *
+ * v2.1: fix de zona horaria. Los Time[] de las velas vienen en la zona GLOBAL de
+ *   NinjaTrader (Tools>Options>General), aquí Colombia (UTC-5), no en la del
+ *   template del CME (Central). Antes se convertía desde la del template → +1h en
+ *   verano → el RTH abría 1 hora antes (7:30 en vez de 8:30 hora Colombia).
  *
  * Calcula automáticamente los niveles de referencia del día y los sube a la
  * sesión de hoy en Supabase, para no escribirlos a mano:
@@ -135,8 +140,13 @@ namespace NinjaTrader.NinjaScript.Indicators
             else if (State == State.DataLoaded)
             {
                 try { etTz = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"); } catch { etTz = null; }
-                // Zona horaria en la que vienen los Time[] de las velas.
-                try { srcTz = Bars.TradingHours.TimeZoneInfo; } catch { srcTz = null; }
+                // Zona en la que vienen los Time[] de las velas = la GLOBAL de NinjaTrader
+                // (Tools > Options > General > Time zone), que está en Colombia (UTC-5), NO
+                // la del template del CME. Usar la del template (Central) metía +1h en verano
+                // al convertir a ET y hacía que el RTH se detectara 1 hora antes (la vela de
+                // las 7:30 Colombia en vez de las 8:30). Fijar Colombia arregla el DST.
+                try { srcTz = TimeZoneInfo.FindSystemTimeZoneById("SA Pacific Standard Time"); } // Bogotá/Lima (UTC-5)
+                catch { srcTz = null; }
             }
             else if (State == State.Terminated)
             {
