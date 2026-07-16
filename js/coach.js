@@ -232,9 +232,32 @@ Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
     if (resN.length) otros.push(`Resistencia(s) naranja: ${resN.join(', ')}`)
     if (sesion?.noticias) otros.push(`Noticias: ${sesion.noticias}`)
 
+    // Relación de apertura CALCULADA por el código (el modelo NO debe recalcularla,
+    // solo interpretarla): evita errores de aritmética al comparar la apertura con
+    // los niveles (p. ej. decir "abrió sobre el ONH" cuando abrió por debajo).
+    const relacion = []
+    const nAp = parseFloat(aHoy)
+    const onh = parseFloat(sesion?.precio_max_pre), onl = parseFloat(sesion?.precio_min_pre)
+    const pdh = parseFloat(sesion?.precio_max_ayer), pdl = parseFloat(sesion?.precio_min_ayer)
+    if (isFinite(nAp) && isFinite(onh) && isFinite(onl)) {
+      let rel
+      if (nAp > onh)      rel = `POR ENCIMA del ONH (+${(nAp - onh).toFixed(2)} pts sobre ${onh}) → apertura extendida al alza`
+      else if (nAp < onl) rel = `POR DEBAJO del ONL (${(nAp - onl).toFixed(2)} pts bajo ${onl}) → apertura extendida a la baja`
+      else                rel = `DENTRO del rango overnight (${onl}–${onh}: a ${(onh - nAp).toFixed(2)} pts del ONH y +${(nAp - onl).toFixed(2)} del ONL) → apertura rotacional`
+      relacion.push(`Apertura vs rango overnight (ONH/ONL): ${rel}`)
+    }
+    if (isFinite(nAp) && isFinite(pdh) && isFinite(pdl)) {
+      let rel
+      if (nAp > pdh)      rel = `POR ENCIMA del PDH (+${(nAp - pdh).toFixed(2)} pts sobre ${pdh})`
+      else if (nAp < pdl) rel = `POR DEBAJO del PDL (${(nAp - pdl).toFixed(2)} pts bajo ${pdl})`
+      else                rel = `DENTRO del rango de ayer (${pdl}–${pdh})`
+      relacion.push(`Apertura vs rango de ayer (PDH/PDL): ${rel}`)
+    }
+
     const fmtGrupo = arr => arr.length ? arr.map(l => `  - ${l}`).join('\n') : '  - No registrado'
     const premktStr = (ref.length || otros.length)
-      ? `Datos de referencia:\n${fmtGrupo(ref)}\n\nContexto adicional:\n${fmtGrupo(otros)}`
+      ? `Datos de referencia:\n${fmtGrupo(ref)}\n\nContexto adicional:\n${fmtGrupo(otros)}` +
+        (relacion.length ? `\n\nRelación de apertura (YA CALCULADA — úsala TAL CUAL, no la recalcules ni la contradigas):\n${fmtGrupo(relacion)}` : '')
       : '  No registrado'
 
     return `Eres un analista experto en la estrategia de trading de Chaumer (trader_sociologist), especializado en futuros MNQ/NQ en gráfico de 1 minuto con NinjaTrader. Tu rol es analizar la sesión diaria, validar setups según las reglas exactas de la estrategia, y acumular aprendizaje sesión a sesión para dar recomendaciones cada vez más precisas.
@@ -295,7 +318,7 @@ NQ/MNQ es un FUTURO que cotiza casi 23 h continuas (domingo 6pm – viernes 5pm 
 Por lo tanto:
 - La diferencia entre "Cierre RTH de ayer" y "Apertura de hoy" NO es un gap tradeable: es la DERIVA OVERNIGHT (Asia + Londres). NO la reportes como "gap" salvo que sea (a) un gap de fin de semana (cierre del viernes → apertura del domingo) o (b) un salto grande y discontinuo por noticia. Nunca abras un análisis con "hay un gap entre el cierre de ayer y la apertura": eso es ruido.
 - Si comentas esa diferencia, hazlo SIEMPRE con magnitud y contexto: tamaño en puntos y en relación al rango overnight (ONH/ONL) y al rango de ayer (PDH/PDL).
-- RELACIÓN DE APERTURA (lo accionable): ¿la apertura de hoy queda por encima, por debajo o DENTRO del rango de ayer (PDH/PDL) y del rango overnight? Abrir fuera del rango → sesgo tendencial / continuación. Abrir dentro → sesgo rotacional y mayor probabilidad de buscar el cierre de ayer (gap-fill).
+- RELACIÓN DE APERTURA (lo accionable): la línea "Relación de apertura (YA CALCULADA)" del contexto te dice si la apertura quedó por encima, por debajo o DENTRO del rango overnight (ONH/ONL) y del rango de ayer (PDH/PDL). **Úsala tal cual — NO la recalcules comparando los precios a ojo.** Abrir fuera del rango → sesgo tendencial / continuación. Abrir dentro → sesgo rotacional y mayor probabilidad de buscar el cierre de ayer (gap-fill).
 - Usa PDH/PDL (máx/mín de ayer) y ONH/ONL (máx/mín premercado) como NIVELES DE REFERENCIA: son los imanes y las zonas de reacción más probables en la sesión US. Relaciónalos con las líneas naranjas marcadas por el trader.
 
 ---
