@@ -388,9 +388,47 @@ const Metrics = (() => {
     })
     const beDaysCount = Object.values(tradesByDate)
       .filter(dayTrades => dayTrades.every(t => isBreakEven(t))).length
-    const noOperoCount = sesiones.filter(s => s.no_opero).length + beDaysCount
     // "Sin setup" days count: trader was present pero no hubo setup válido
     const activeSesiones = sesiones
+
+    // ── Desglose T · S · Sin · No · F (días, no trades) ──────────────────────
+    // Clasificación por DÍA con la misma prioridad que el calendario (calendar.js
+    // dayResult): la sesión no_opero manda sobre el trade, para no duplicar un día
+    // que tenga ambos (dato inconsistente, ej. trade + "Sin setup" el mismo día).
+    // Solo cuenta días "con actividad" (trade, o sesión conectada) — coherente con
+    // el total del widget del calendario — así T+S+Sin+No+F siempre cuadra.
+    const sesionesByDate = {}
+    sesiones.forEach(s => { sesionesByDate[s.sesion_date] = s })
+    const seConectoDia = s => !s.no_opero || s.se_conecto !== false
+    const diasConActividadSet = new Set([
+      ...Object.keys(tradesByDate),
+      ...sesiones.filter(seConectoDia).map(s => s.sesion_date),
+    ])
+    const breakdown = { T: 0, S: 0, Sin: 0, No: 0, F: 0 }
+    diasConActividadSet.forEach(fecha => {
+      const s = sesionesByDate[fecha]
+      const dTrades = tradesByDate[fecha] || []
+      if (s?.no_opero) {
+        const m = s.motivo_no_opero
+        if (m === 'FOMC' || m === 'Festivo')                                breakdown.F++
+        else if (m === 'Sin setup' || m === 'Setup válido no tomado')       breakdown.Sin++
+        else                                                                breakdown.No++
+        return
+      }
+      const nonBE = dTrades.filter(t => !isBreakEven(t))
+      if (!nonBE.length) { breakdown.No++; return }   // solo B.E. ese día
+      const tg = nonBE.filter(isWinTrade).length
+      const sl = nonBE.filter(isLossTrade).length
+      if (tg > 0 && sl === 0) breakdown.T++
+      else if (sl > 0 && tg === 0) breakdown.S++
+      else {
+        const net = nonBE.reduce((a, t) => a + (parseFloat(t.profit) || 0), 0)
+        if (net > 6) breakdown.T++
+        else if (net < -6) breakdown.S++
+        else breakdown.No++
+      }
+    })
+    const diasActividadTotal = diasConActividadSet.size
 
     // Casuísticas filtradas por el mismo período
     const periodCasuisticas = filterCasuisticasByPeriod(allCasuisticas, period)
@@ -536,11 +574,11 @@ const Metrics = (() => {
       { label: 'Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días${costoErrores > 0 ? ` · ≈ <span style="color:var(--red)">-$${costoErrores.toFixed(0)}</span>` : ''}${trendErr}` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
       { label: 'Dejé de ganar', value: dejeGanarStat.targets > 0 ? `${dejeGanarStat.targets} ⚠️` : '0 ✅', icon: 'ti-mood-sad', color: dejeGanarStat.targets === 0 ? 'green' : dejeGanarStat.targets <= 2 ? 'warning' : 'red', sub: dejeGanarStat.total > 0 ? `${dejeGanarStat.targets}T · ${dejeGanarStat.stops}S dejados pasar` : 'Sin setups perdidos', clickable: dejeGanarStat.total > 0, action: 'deje-ganar' },
       {
-        label: 'T · S · Sin',
-        value: `<span style="color:var(--accent)">${targets}</span> · <span style="color:var(--red)">${stops}</span> · ${noOperoCount}`,
+        label: 'T · S · Sin · No · F',
+        value: `<span style="color:var(--accent)">${breakdown.T}</span> · <span style="color:var(--red)">${breakdown.S}</span> · <span style="color:#8b8eff">${breakdown.Sin}</span> · <span style="color:var(--text3)">${breakdown.No}</span> · <span style="color:#60a5fa">${breakdown.F}</span>`,
         icon: 'ti-chart-bar',
         color: 'neutral',
-        sub: `Ratio T/S: ${stops > 0 ? (targets / stops).toFixed(2) : targets > 0 ? '∞' : '—'}`,
+        sub: `${diasActividadTotal} día${diasActividadTotal !== 1 ? 's' : ''} · Ratio T/S: ${breakdown.S > 0 ? (breakdown.T / breakdown.S).toFixed(2) : breakdown.T > 0 ? '∞' : '—'}`,
       },
     ]
 
