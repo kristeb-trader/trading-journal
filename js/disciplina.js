@@ -186,6 +186,7 @@ const Disciplina = (() => {
       disciplinaPct, dOk, dTotal, phases, faseDebil, racha, hist,
       tipoCount, erroresTotal: cas.length, erroresPsico, causaRaiz,
       diasLimpios, diasLimpiosPct, log, violacionesNoticia,
+      cas,   // ocurrencias del período (para los modales de detalle por día)
     }
   }
 
@@ -324,7 +325,7 @@ const Disciplina = (() => {
       const n = d.tipoCount[t] || 0
       const info = TIPO[t]
       return `
-        <div class="dd-bar-row">
+        <div class="dd-bar-row dd-clickable" data-err-tipo="${t}" title="Ver los días con errores de este tipo">
           <div class="dd-bar-top"><span>${info.emoji} ${info.label}</span><b>${n}</b></div>
           <div class="dd-bar-track"><div class="dd-bar-fill ${info.cls}" style="width:${Math.round(n / maxTipo * 100)}%"></div></div>
         </div>`
@@ -333,7 +334,7 @@ const Disciplina = (() => {
     const causaHtml = d.causaRaiz.length ? d.causaRaiz.map(c => {
       const info = TIPO[c.tipo] || { label: '—', cls: 'op' }
       return `
-        <div class="dd-cause-row">
+        <div class="dd-cause-row dd-clickable" data-err-causa="${esc(c.n)}" title="Ver los días con este error">
           <span class="dd-cause-name"><span class="dd-tag ${info.cls}">${info.label.slice(0,5)}</span>${esc(c.n)}</span>
           <span class="dd-cause-count">${c.count}</span>
         </div>`
@@ -351,6 +352,58 @@ const Disciplina = (() => {
         <div class="dd-panel"><div class="dd-panel-title">Distribución por tipo (${d.totalConectadas} sesiones)</div>${barsHtml}</div>
         <div class="dd-panel"><div class="dd-panel-title">Causa raíz más frecuente</div><div class="dd-cause-list">${causaHtml}</div></div>
       </div>`
+
+    // Clic en un tipo o una causa → modal con los días de esos errores
+    lastData = d
+    cont.querySelectorAll('[data-err-tipo]').forEach(el =>
+      el.addEventListener('click', () => openErrorsModal({ tipo: el.dataset.errTipo })))
+    cont.querySelectorAll('[data-err-causa]').forEach(el =>
+      el.addEventListener('click', () => openErrorsModal({ causa: el.dataset.errCausa })))
+  }
+
+  // ── Modal: días con errores (por tipo o por causa/nombre) ────────────────
+  let lastData = null
+  function openErrorsModal(filtro) {
+    if (!lastData) return
+    const nombreDe = c => c.casuistica || c.descripcion || 'Error'
+    const lista = lastData.cas.filter(c => filtro.tipo
+      ? (c.tipo || 'sintipo') === filtro.tipo
+      : nombreDe(c) === filtro.causa)
+
+    const info = filtro.tipo ? TIPO[filtro.tipo] : null
+    const titulo = filtro.tipo
+      ? `Errores ${info ? info.label.toLowerCase() + 's' : 'sin tipo'}`
+      : filtro.causa
+
+    // Agrupar por fecha (más reciente primero)
+    const porDia = {}
+    lista.forEach(c => { (porDia[c.sesion_date] = porDia[c.sesion_date] || []).push(c) })
+    const fechas = Object.keys(porDia).sort((a, b) => b.localeCompare(a))
+
+    const rows = fechas.map(fecha => {
+      const dow = DOW[new Date(fecha + 'T00:00:00').getDay()]
+      const tags = porDia[fecha].map(c => {
+        const ti = TIPO[c.tipo] || { emoji: '❔' }
+        return `<span class="disc-fail-tag">${ti.emoji} ${esc(nombreDe(c))}</span>`
+      }).join('')
+      return `
+        <div class="disc-fail-day" data-date="${fecha}" style="cursor:pointer" title="Ver el detalle del día">
+          <div class="disc-fail-day-header">
+            <span class="disc-date-dow">${dow}</span>
+            <span class="disc-date-val">${fecha}</span>
+          </div>
+          <div class="disc-fail-tags">${tags}</div>
+        </div>`
+    }).join('') || '<p style="color:var(--text3);padding:8px 0">Sin ocurrencias en el período.</p>'
+
+    const h = document.getElementById('disciplineModalTitle')
+    if (h) h.innerHTML = `<i class="ti ti-alert-triangle"></i> ${info ? info.emoji + ' ' : ''}${esc(titulo)}`
+    document.getElementById('disciplineModalContent').innerHTML = `
+      <div style="padding:16px 20px 20px">
+        <p class="disc-section-title">${lista.length} ocurrencia${lista.length !== 1 ? 's' : ''} en ${fechas.length} día${fechas.length !== 1 ? 's' : ''} — ${esc(lastData.r.label)}</p>
+        ${rows}
+      </div>`
+    document.getElementById('disciplineModal').classList.remove('hidden')
   }
 
   function renderPeriodPills() {
