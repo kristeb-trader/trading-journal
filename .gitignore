@@ -2,3 +2,9 @@
 *.local.json
 .DS_Store
 Thumbs.db
+
+# Material de trabajo personal (PDFs, CSV/XLSX, exportes) — no es código
+Otros/
+
+# Caché local de wrangler (se regenera solo)
+.wrangler/
