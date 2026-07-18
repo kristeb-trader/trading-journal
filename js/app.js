@@ -39,13 +39,17 @@ const Modal = {
     }
     document.getElementById('modalDateTitle').textContent = fmtDate(dateStr)
 
-    // Datos extra: diagnóstico del Coach + errores + emociones
-    const [diag, casuisticas, emociones] = await Promise.all([
+    // Datos extra: diagnóstico del Coach + errores + emociones + checklist dinámico
+    // (catalogo_reglas) + total de trades del día SIN filtro de cuenta (para avisar
+    // cuando el filtro está ocultando trades).
+    const [diag, casuisticas, emociones, chkItems, allDayTrades] = await Promise.all([
       dateStr ? DB.getDiagnosticoByDate(dateStr) : null,
       dateStr ? DB.getCasuisticasByDate(dateStr) : [],
       DB.getCatalogoEmociones().catch(() => []),
+      DB.getChecklistItems({ soloActivos: true }).catch(() => []),
+      dateStr ? DB.getTradesByDate(dateStr).catch(() => []) : [],
     ])
-    const ctx = { dateStr, trades, sesion, diag, casuisticas, emociones }
+    const ctx = { dateStr, trades, sesion, diag, casuisticas, emociones, chkItems, allDayTrades }
 
     document.getElementById('modalResumen').innerHTML   = this._renderResumen(ctx)
     document.getElementById('modalOperativa').innerHTML = this._renderOperativa(ctx)
@@ -108,8 +112,26 @@ const Modal = {
       : { label: 'STOP', cls: 'mst-red', icon: '🔴' }
   },
 
-  // Pestaña 1 — Resumen visual (de un vistazo)
-  _renderResumen({ trades, sesion, diag, casuisticas, emociones }) {
+  // Checklist aplicable al día (mismo criterio que discFactorAplica en db.js):
+  // Fase 1 en días conectados; Fases 2/3 solo si operó; ítems por setup solo si
+  // el setup del día es de esa familia. Solo ítems con valor registrado.
+  _checklistDia(chkItems, sesion) {
+    if (!sesion) return []
+    const conectado = !sesion.no_opero || sesion.se_conecto !== false
+    if (!conectado) return []
+    const v = (sesion.setup || '').toLowerCase()
+    const fam = v.startsWith('iri') ? 'iri' : v.startsWith('reingreso') ? 'reingreso' : null
+    return (chkItems || []).filter(i => {
+      if ((i.fase || 1) !== 1 && sesion.no_opero) return false
+      if (i.setup && i.setup !== fam) return false
+      const val = sesion.checklist?.[i.clave] ?? sesion[i.clave]
+      if (val === undefined) return false
+      return true
+    }).map(i => ({ ...i, ok: !!(sesion.checklist?.[i.clave] ?? sesion[i.clave]) }))
+  },
+
+  // Pestaña 1 — Resumen: el día en 5 segundos (hero + proceso + errores + siguiente paso)
+  _renderResumen({ trades, sesion, diag, casuisticas, emociones, chkItems }) {
     if (!sesion && !diag && !trades.length) {
       return '<div class="modal-no-trade"><i class="ti ti-calendar-off"></i><p>Sin registro para este día</p></div>'
     }
@@ -120,83 +142,83 @@ const Modal = {
     const emoFin = emociones.find(e => e.id === diag?.estado_emocional_fin_id)
     const conf = sesion?.nivel_confianza
 
-    const chips = []
-    if (trades.length) chips.push(`<span class="mr-pnl ${pnl >= 0 ? 'pos' : 'neg'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</span>`)
-    if (emoIni) chips.push(`<span class="mr-emo">${emoIni.emoji} ${emoIni.nombre}${emoFin ? ` <i class="ti ti-arrow-narrow-right"></i> ${emoFin.emoji} ${emoFin.nombre}` : ''}</span>`)
-    if (conf) chips.push(`<span class="mr-stars" title="Confianza ${conf}/5">${'★'.repeat(conf)}${'☆'.repeat(5 - conf)}</span>`)
-    const franja = `
-      <div class="mr-status ${st.cls}">
-        <span class="mr-badge">${st.icon} ${st.label}</span>
-        <div class="mr-meta">${chips.join('')}</div>
+    // ── Hero: P&L grande (o el estado del día) + badge + setup ──
+    const heroMain = trades.length
+      ? `<div class="md2-pnl ${pnl >= 0 ? 'pos' : 'neg'}">${pnl >= 0 ? '+' : '−'}$${Math.abs(pnl).toFixed(2)}</div>`
+      : `<div class="md2-pnl none">${st.icon}</div>`
+    const setupChip = sesion?.setup ? `<span class="md2-setup">${sesion.setup}</span>` : ''
+    const meta = []
+    if (trades.length) meta.push(`${trades.length} trade${trades.length !== 1 ? 's' : ''}`)
+    if (emoIni) meta.push(`${emoIni.emoji}${emoFin ? ` → ${emoFin.emoji}` : ''} ${emoIni.nombre}${emoFin ? ` → ${emoFin.nombre}` : ''}`)
+    if (conf) meta.push(`<span class="md2-stars" title="Confianza ${conf}/5">${'★'.repeat(conf)}${'☆'.repeat(5 - conf)}</span>`)
+    const hero = `
+      <div class="md2-hero ${st.cls}">
+        <div class="md2-hero-l">
+          ${heroMain}
+          ${meta.length ? `<div class="md2-meta">${meta.join('<span class="md2-dot">·</span>')}</div>` : ''}
+        </div>
+        <div class="md2-hero-r">
+          <span class="md2-badge ${st.cls}">${st.icon} ${st.label}</span>
+          ${setupChip}
+        </div>
       </div>`
 
     const setupObs = sesion?.setup_valido_no_tomado && sesion.setup_observado
       ? `<div class="mr-setupobs"><i class="ti ti-eye"></i> Setup observado: <b>${sesion.setup_observado}</b>${sesion.motivo_no_entrada ? ` · no entré por <b>${sesion.motivo_no_entrada}</b>` : ''}</div>`
       : ''
 
-    const resumen = this._stripBT(diag?.sec_resumen_compacto)
-    const banner = resumen ? `<div class="mr-veredicto"><i class="ti ti-quote"></i><p>${resumen}</p></div>` : ''
+    // ── Proceso: UNA barra con el checklist real del día; solo se listan los ✗ ──
+    const items = this._checklistDia(chkItems, sesion)
+    let procesoHtml = ''
+    if (items.length) {
+      const ok = items.filter(i => i.ok).length
+      const pct = Math.round(ok / items.length * 100)
+      const cls = pct === 100 ? 'ok' : pct >= 70 ? 'warn' : 'bad'
+      const fails = items.filter(i => !i.ok)
+      const failsHtml = fails.slice(0, 4).map(i => `<div class="md2-fail">✗ ${i.texto}</div>`).join('')
+        + (fails.length > 4 ? `<div class="md2-fail more">+${fails.length - 4} más</div>` : '')
+      procesoHtml = `
+        <div class="md2-block">
+          <div class="md2-block-head"><span class="md2-block-title">Proceso</span><span class="md2-proc-n ${cls}">${ok}/${items.length} · ${pct}%</span></div>
+          <div class="md2-proc-track"><div class="md2-proc-fill ${cls}" style="width:${pct}%"></div></div>
+          ${failsHtml}
+        </div>`
+    }
 
-    const CHK = [
-      ['chk_zonas','Zonas'], ['chk_orden','Orden'], ['chk_5velas','5 velas'],
-      ['chk_noticias','Calendario'], ['chk_consecucion','Consecución'], ['chk_estructura','Estructura IRI'],
-    ]
-    const opero = sesion && !sesion.no_opero
-    const passed = opero ? CHK.filter(([k]) => sesion[k]) : []
-    const failed = opero ? CHK.filter(([k]) => !sesion[k]) : []
+    // ── Errores: chips solo si hay (el detalle vive en la pestaña Gráfica) ──
+    const errHtml = casuisticas.length ? `
+      <div class="md2-block">
+        <div class="md2-block-head"><span class="md2-block-title">⚠️ Errores</span><span class="md2-proc-n bad">${casuisticas.length}</span></div>
+        <div class="md2-errs">${casuisticas.map(c => {
+          const emo = this._TIPO_EMO[c.tipo] || '•'
+          const res = (c.resultado === 'T' || c.resultado === 'S') ? ` <b class="${c.resultado === 'T' ? 'res-t' : 'res-s'}">${c.resultado}</b>` : ''
+          return `<span class="mr-chip err">${emo} ${c.casuistica}${res}</span>`
+        }).join('')}</div>
+      </div>`
+      : (sesion || diag ? '<div class="md2-clean">✅ Día sin errores registrados</div>' : '')
 
-    const bien = []
-    if (opero) bien.push(`<span class="mr-chip ok">Checklist ${passed.length}/6</span>`)
-    passed.forEach(([, l]) => bien.push(`<span class="mr-chip ok">✓ ${l}</span>`))
-    if (!casuisticas.length && (opero || diag)) bien.push('<span class="mr-chip ok">✓ Sin errores</span>')
-    const bienHtml = bien.length ? bien.join('') : '<span class="mr-empty">—</span>'
-
-    const mal = []
-    failed.forEach(([, l]) => mal.push(`<span class="mr-chip warn">✗ ${l}</span>`))
-    casuisticas.forEach(c => {
-      const emo = this._TIPO_EMO[c.tipo] || '•'
-      const res = (c.resultado === 'T' || c.resultado === 'S') ? ` <b class="${c.resultado === 'T' ? 'res-t' : 'res-s'}">${c.resultado}</b>` : ''
-      mal.push(`<span class="mr-chip err">${emo} ${c.casuistica}${res}</span>`)
-    })
-    const malHtml = mal.length ? mal.join('') : '<span class="mr-empty">Nada que destacar</span>'
-
-    const recs = []
-    casuisticas.forEach(c => {
-      const nombre = c.recomendacion?.nombre
-      if (c.recomendacion_ia) recs.push(`<li>${nombre ? `<b>${nombre}:</b> ` : ''}${c.recomendacion_ia}</li>`)
-      if (c.recomendacion_manual) recs.push(`<li><span class="rec-manual">✍️ ${c.recomendacion_manual}</span></li>`)
-    })
-    const recHtml = recs.length
-      ? `<ul class="mr-recs">${recs.join('')}</ul>`
-      : (diag?.sec_aprendizaje ? `<p class="mr-aprend">${this._truncate(this._mdStrip(diag.sec_aprendizaje), 260)}</p>` : '<p class="mr-empty">—</p>')
+    // ── Siguiente paso: UNA recomendación (IA > manual > aprendizaje) ──
+    let rec = null
+    for (const c of casuisticas) {
+      if (c.recomendacion_ia) { rec = { txt: c.recomendacion_ia, tag: c.recomendacion?.nombre } ; break }
+      if (c.recomendacion_manual && !rec) rec = { txt: c.recomendacion_manual, tag: '✍️ Nota propia' }
+    }
+    if (!rec && diag?.sec_aprendizaje) rec = { txt: this._truncate(this._mdStrip(diag.sec_aprendizaje), 200), tag: 'Aprendizaje' }
+    const recHtml = rec ? `
+      <div class="md2-block md2-next">
+        <div class="md2-block-head"><span class="md2-block-title">💡 Siguiente paso</span>${rec.tag ? `<span class="md2-rec-tag">${rec.tag}</span>` : ''}</div>
+        <p class="md2-rec-txt">${rec.txt}</p>
+      </div>` : ''
 
     const verBtn = diag
       ? `<div class="mr-actions"><button class="btn-primary btn-sm" id="modalVerCompleto"><i class="ti ti-file-search"></i> Ver diagnóstico completo</button></div>`
       : ''
 
-    return `
-      ${franja}
-      ${setupObs}
-      ${banner}
-      <div class="mr-cols">
-        <div class="mr-col mr-bien">
-          <div class="mr-col-title">✅ Bien</div>
-          <div class="mr-chips">${bienHtml}</div>
-        </div>
-        <div class="mr-col mr-mal">
-          <div class="mr-col-title">⚠️ A mejorar</div>
-          <div class="mr-chips">${malHtml}</div>
-        </div>
-      </div>
-      <div class="mr-prox">
-        <div class="mr-col-title">💡 Para la próxima</div>
-        ${recHtml}
-      </div>
-      ${verBtn}`
+    return hero + setupObs + procesoHtml + errHtml + recHtml + verBtn
   },
 
-  // Pestaña 2 — Operativa (trades + campos + checklist)
-  _renderOperativa({ trades, sesion }) {
+  // Pestaña 2 — Operativa (tabla de trades estilo Coach + campos + checklist por fases)
+  _renderOperativa({ trades, sesion, chkItems, allDayTrades }) {
     const pnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
     const targets = trades.filter(isWinTrade).length
     const stops = trades.filter(isLossTrade).length
@@ -209,11 +231,39 @@ const Modal = {
       : ''
 
     let tradesHtml
-    if (sesion?.no_opero && !trades.length) {
-      tradesHtml = `<div class="modal-no-trade"><i class="ti ti-coffee"></i><p>Sin operación este día</p><p class="text-dim">${sesion.motivo_no_opero || ''}</p></div>`
-    } else if (!trades.length) {
-      tradesHtml = '<div class="modal-no-trade"><i class="ti ti-chart-off"></i><p>Sin trades registrados</p></div>'
+    if (!trades.length) {
+      // Estados vacíos inteligentes: distinguir filtro de cuenta / sin export / no operó
+      const ocultos = (allDayTrades || []).length
+      if (ocultos > 0) {
+        tradesHtml = `<div class="modal-no-trade"><i class="ti ti-filter"></i><p>Hay ${ocultos} trade${ocultos !== 1 ? 's' : ''} de otras cuentas este día</p><p class="text-dim">Cambia el filtro de cuenta del calendario para verlos</p></div>`
+      } else if (sesion?.no_opero) {
+        tradesHtml = `<div class="modal-no-trade"><i class="ti ti-coffee"></i><p>Sin operación este día</p><p class="text-dim">${sesion.motivo_no_opero || ''}</p></div>`
+      } else if (sesion) {
+        tradesHtml = `<div class="modal-no-trade"><i class="ti ti-plug-x"></i><p>Sesión operada, pero sin trades exportados</p><p class="text-dim">Revisa que el indicador de NinjaTrader haya exportado el trade</p></div>`
+      } else {
+        tradesHtml = '<div class="modal-no-trade"><i class="ti ti-chart-off"></i><p>Sin trades registrados</p></div>'
+      }
     } else {
+      // Tabla estilo Coach: hora · dirección · entrada→salida · puntos · resultado · P&L
+      const rows = trades.map(t => {
+        const dir = /short|sell/i.test(t.market_pos || '') ? 'SHORT' : 'LONG'
+        const e = parseFloat(t.entry_price), x = parseFloat(t.exit_price)
+        const hasPx = isFinite(e) && isFinite(x)
+        const pts = hasPx ? (dir === 'SHORT' ? e - x : x - e) : null
+        const be = Math.abs(parseFloat(t.profit) || 0) <= 6
+        const res = be ? 'B.E.' : t.resultado === 'target' ? 'TARGET' : t.resultado === 'stop' ? 'STOP' : (parseFloat(t.profit) > 0 ? 'TARGET' : 'STOP')
+        const rescls = be ? 'r-o' : res === 'TARGET' ? 'r-t' : 'r-s'
+        const p = parseFloat(t.profit) || 0
+        const flag = enVentanaSet.has(t.id) ? '<span title="Entró en la ventana de la noticia roja">🚫 </span>' : ''
+        return `<tr${enVentanaSet.has(t.id) ? ' class="trade-en-ventana"' : ''}>
+          <td>${flag}${[t.entry_time, t.exit_time].filter(Boolean).map(h => (h || '').slice(0, 5)).join(' → ') || '—'}</td>
+          <td>${dir === 'LONG' ? '▲' : '▼'} ${dir}</td>
+          <td>${hasPx ? `${e} → ${x}` : '—'}</td>
+          <td class="${pts != null && pts < 0 ? 'neg' : 'pos'}">${pts != null ? (pts >= 0 ? '+' : '') + pts.toFixed(2) : '—'}</td>
+          <td><span class="cz-rb ${rescls}">${res}</span></td>
+          <td class="${p < 0 ? 'neg' : 'pos'}">${p >= 0 ? '+' : '−'}$${Math.abs(p).toFixed(2)}</td>
+        </tr>`
+      }).join('')
       tradesHtml = `
         <div class="modal-summary-bar">
           <div class="ms-stat"><span>${trades.length}</span><small>Trades</small></div>
@@ -221,43 +271,43 @@ const Modal = {
           <div class="ms-stat red"><span>${stops}</span><small>Stops</small></div>
           <div class="ms-stat ${pnl >= 0 ? 'green' : 'red'}"><span>${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</span><small>P&L</small></div>
         </div>
-        <div class="modal-trades-list">
-          ${trades.map(t => `
-            <div class="modal-trade-row${enVentanaSet.has(t.id) ? ' trade-en-ventana' : ''}">
-              ${enVentanaSet.has(t.id) ? '<span class="trade-ventana-flag" title="Entró en la ventana de la noticia roja">🚫</span>' : ''}
-              <span class="badge ${Math.abs(parseFloat(t.profit)||0) <= 6 ? 'badge-be' : t.resultado === 'target' ? 'badge-target' : t.resultado === 'stop' ? 'badge-stop' : 'badge-other'}">${Math.abs(parseFloat(t.profit)||0) <= 6 ? 'B.E.' : (t.resultado || '—')}</span>
-              <span>${t.market_pos === 'Long' ? '▲' : '▼'} ${t.market_pos}</span>
-              <span>${t.qty} cont.</span>
-              <span class="${parseFloat(t.profit) >= 0 ? 'text-green' : 'text-red'} fw-bold">${parseFloat(t.profit) >= 0 ? '+' : ''}$${parseFloat(t.profit).toFixed(2)}</span>
-              ${t.mae != null ? `<span class="text-dim">MAE ${t.mae} · MFE ${t.mfe}</span>` : ''}
-            </div>`).join('')}
-        </div>`
+        <div class="cz-optable-wrap"><table class="cz-optable"><thead><tr>
+          <th>Hora</th><th>Dir</th><th>Entrada → Salida</th><th>Puntos</th><th>Resultado</th><th>P&amp;L</th>
+        </tr></thead><tbody>${rows}</tbody></table></div>`
     }
 
     const campos = []
     if (sesion?.contexto) campos.push(['Contexto', sesion.contexto])
     if (sesion?.num_corrida) campos.push(['Corrida', `${sesion.num_corrida}ª`])
     if (sesion?.velas_corrida) campos.push(['Velas', sesion.velas_corrida])
-    // Retroceso = |P&L de la cuenta seleccionada / 2| (derivado de los trades ya filtrados)
-    if (trades.length) campos.push(['Retroceso', `${Math.abs(pnl / 2).toFixed(2)} pts`])
-    else if (sesion?.puntos_retroceso) campos.push(['Retroceso', `${sesion.puntos_retroceso} pts`])
+    // Retroceso: primero el registrado en la sesión (dato del trader); el derivado
+    // |P&L/2| solo como fallback (no cuadra cuando qty ≠ 2 contratos MNQ).
+    if (sesion?.puntos_retroceso) campos.push(['Retroceso', `${sesion.puntos_retroceso} pts`])
+    else if (trades.length) campos.push(['Retroceso', `≈${Math.abs(pnl / 2).toFixed(2)} pts`])
     if (sesion?.setup) campos.push(['Setup', sesion.setup])
+    if (sesion?.hora_noticia_roja) campos.push(['Noticia roja', sesion.hora_noticia_roja.slice(0, 5)])
     const camposHtml = campos.length
       ? `<div class="modal-fields">${campos.map(([l, v]) => `<div class="mf-item"><label>${l}</label><span>${v}</span></div>`).join('')}</div>`
       : ''
 
-    const CHK = [
-      ['chk_zonas','Zonas vigentes'], ['chk_orden','Orden a tiempo'], ['chk_5velas','Máx 5 velas'],
-      ['chk_noticias','Calendario verificado'], ['chk_consecucion','Rompimiento + consecución'], ['chk_estructura','Estructura IRI'],
-    ]
-    const score = sesion ? CHK.filter(([k]) => sesion[k]).length : 0
-    const chkHtml = sesion && !sesion.no_opero
-      ? `<div class="modal-section-title" style="margin-top:14px"><i class="ti ti-checklist"></i> Checklist (${score}/6)</div>
-         <div class="modal-checklist">${CHK.map(([k, l]) => `
-           <div class="modal-check-item ${sesion[k] ? 'check-ok' : 'check-fail'}">
-             <i class="ti ${sesion[k] ? 'ti-circle-check' : 'ti-circle-x'}"></i><span>${l}</span>
-           </div>`).join('')}</div>`
-      : ''
+    // Checklist por fases (dinámico desde catalogo_reglas; solo ítems aplicables al día)
+    const items = this._checklistDia(chkItems, sesion)
+    let chkHtml = ''
+    if (items.length) {
+      const FASES = { 1: 'Fase 1 · Pre-sesión', 2: 'Fase 2 · Lectura del setup', 3: 'Fase 3 · Ejecución' }
+      const ok = items.filter(i => i.ok).length
+      let groups = ''
+      ;[1, 2, 3].forEach(f => {
+        const ofF = items.filter(i => (i.fase || 1) === f)
+        if (!ofF.length) return
+        groups += `<div class="cz-dgroup"><div class="cz-dgt">${FASES[f]}</div>` +
+          ofF.map(i => `<div class="cz-chk ${i.ok ? 'ok' : 'no'}"><span class="cz-cic">${i.ok ? '✓' : '✗'}</span><span>${i.texto}</span></div>`).join('') +
+          `</div>`
+      })
+      chkHtml = `
+        <div class="modal-section-title" style="margin-top:16px"><i class="ti ti-checklist"></i> Checklist Reglas (${ok}/${items.length})</div>
+        ${groups}`
+    }
 
     return noticiaWarn + tradesHtml + camposHtml + chkHtml
   },
@@ -277,11 +327,13 @@ const Modal = {
               ? `<span class="${c.resultado === 'T' ? 'cas-badge-t' : 'cas-badge-s'}">${c.resultado}</span>` : ''
             const origenTag = c.origen && c.origen !== 'manual'
               ? `<span class="cas-origen" title="${c.origen}">${c.origen === 'ia' ? '🤖' : '🤝'}</span>` : ''
+            // Recomendación SIEMPRE visible (antes estaba oculta tras el chevron);
+            // solo la descripción larga del error queda colapsable.
             const recHtml = (c.recomendacion_ia || c.recomendacion_manual)
               ? `<div class="modal-rec-wrap">💡 <strong>${c.recomendacion?.nombre || 'Recomendación'}</strong>${c.recomendacion_ia ? `<br><span class="modal-rec-ia">${c.recomendacion_ia}</span>` : ''}${c.recomendacion_manual ? `<br><span class="modal-rec-manual">✍️ ${c.recomendacion_manual}</span>` : ''}</div>` : ''
-            const hasDet = c.descripcion || recHtml
+            const hasDet = !!c.descripcion
             const detalle = hasDet
-              ? `<div class="modal-cas-detalle hidden" id="modal-cas-det-${i}">${c.descripcion || ''}${recHtml}</div>` : ''
+              ? `<div class="modal-cas-detalle hidden" id="modal-cas-det-${i}">${c.descripcion}</div>` : ''
             return `
               <div class="modal-cas-item">
                 <div class="modal-cas-row modal-cas-row-error ${hasDet ? 'has-detail' : ''}" ${hasDet ? `data-det="${i}"` : ''}>
@@ -289,6 +341,7 @@ const Modal = {
                   <span class="modal-cas-right">${origenTag}${res}${hasDet ? '<i class="ti ti-chevron-down cas-chevron"></i>' : ''}</span>
                 </div>
                 ${detalle}
+                ${recHtml}
               </div>`
           }).join('')
         : '<p class="modal-empty-sub">✅ Sin errores registrados</p>'}`

@@ -1156,6 +1156,25 @@ relacional. Motivado por preferencia del usuario (BD 100% normalizada, sin JSON)
 
 ---
 
+## Checkpoint Jul 2026 (4) — Modal del día rediseñado (Resumen + Operativa)
+
+- **Resumen "el día en 5 segundos":** hero con P&L grande + badge resultado + chip del
+  setup + metadatos (trades, emociones, confianza) en una línea; bloque **Proceso** con
+  UNA barra del checklist real del día (dinámico desde `catalogo_reglas`, solo ítems
+  aplicables por fase/setup — reemplaza el "X/6" hardcodeado que mentía) listando solo
+  los ✗; errores como chips; **UNA** recomendación ("Siguiente paso"). Se eliminó el
+  muro de chips Bien/A-mejorar.
+- **Operativa:** tabla de trades estilo Coach (hora · dir · entrada→salida · puntos ·
+  resultado · P&L, con 🚫 si entró en ventana de noticia); checklist por fases (F1/F2/F3,
+  dinámico, solo aplicables); Retroceso prefiere el dato registrado en la sesión (el
+  derivado |P&L/2| queda de fallback con "≈"). **Estados vacíos inteligentes:** distingue
+  filtro de cuenta ocultando trades ("Hay N trades de otras cuentas") vs sesión operada
+  sin export de NT8 vs no operó.
+- **Gráfica:** las recomendaciones de cada error ahora son visibles directamente (antes
+  ocultas tras el chevron); la descripción larga sigue colapsable.
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo

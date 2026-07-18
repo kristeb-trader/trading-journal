@@ -1058,6 +1058,60 @@ body.modal-open { overflow: hidden; }
 
 .mr-actions { display: flex; justify-content: center; margin-top: 4px; }
 
+/* ── Modal del día v2 — Resumen rediseñado ("el día en 5 segundos") ───────── */
+.md2-hero {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  background: var(--bg3); border: 1px solid var(--border); border-left: 4px solid var(--text3);
+  border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.md2-hero.mst-green  { border-left-color: var(--accent); background: linear-gradient(135deg, rgba(29,158,117,0.12), var(--bg3) 60%); }
+.md2-hero.mst-red    { border-left-color: var(--red);    background: linear-gradient(135deg, rgba(226,75,74,0.12), var(--bg3) 60%); }
+.md2-hero.mst-violet { border-left-color: #7c6cf3;       background: linear-gradient(135deg, rgba(124,108,243,0.14), var(--bg3) 60%); }
+.md2-pnl { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.md2-pnl.pos  { color: #3FE0A6; }
+.md2-pnl.neg  { color: #F2706F; }
+.md2-pnl.none { font-size: 1.7rem; }
+.md2-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 6px; font-size: 0.82rem; color: var(--text2); }
+.md2-dot { color: var(--text3); }
+.md2-stars { color: #E0A33B; letter-spacing: 1px; }
+.md2-hero-r { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
+.md2-badge {
+  font-size: 0.8rem; font-weight: 700; letter-spacing: 0.03em;
+  padding: 5px 13px; border-radius: 999px; background: rgba(255,255,255,0.06); color: var(--text);
+  border: 1px solid var(--border); white-space: nowrap;
+}
+.md2-badge.mst-green  { background: rgba(29,158,117,0.16); color: #3FE0A6; border-color: rgba(29,158,117,0.4); }
+.md2-badge.mst-red    { background: rgba(226,75,74,0.16);  color: #F2706F; border-color: rgba(226,75,74,0.4); }
+.md2-badge.mst-violet { background: rgba(124,108,243,0.16); color: #a99cf7; border-color: rgba(124,108,243,0.4); }
+.md2-setup { font-size: 0.72rem; font-weight: 600; color: var(--text3); background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 7px; padding: 2px 9px; }
+
+.md2-block { background: var(--bg3); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.md2-block-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.md2-block-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); }
+.md2-proc-n { font-size: 0.82rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.md2-proc-n.ok   { color: #3FE0A6; }
+.md2-proc-n.warn { color: #E0A33B; }
+.md2-proc-n.bad  { color: #F2706F; }
+.md2-proc-track { height: 7px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden; }
+.md2-proc-fill { height: 100%; border-radius: 999px; transition: width 0.3s; }
+.md2-proc-fill.ok   { background: linear-gradient(90deg, #1D9E75, #3FE0A6); }
+.md2-proc-fill.warn { background: linear-gradient(90deg, #BA7517, #E0A33B); }
+.md2-proc-fill.bad  { background: linear-gradient(90deg, #C2403F, #F2706F); }
+.md2-fail { font-size: 0.82rem; color: #F2706F; margin-top: 7px; }
+.md2-fail.more { color: var(--text3); }
+.md2-errs { display: flex; flex-wrap: wrap; gap: 6px; }
+.md2-clean {
+  font-size: 0.84rem; color: #3FE0A6; background: rgba(29,158,117,0.08);
+  border: 1px dashed rgba(29,158,117,0.3); border-radius: 10px; padding: 10px 14px; margin-bottom: 12px;
+}
+.md2-next { border-left: 3px solid var(--accent); }
+.md2-rec-tag { font-size: 0.7rem; font-weight: 600; color: var(--accent); background: rgba(29,158,117,0.1); border-radius: 6px; padding: 2px 8px; }
+.md2-rec-txt { margin: 0; font-size: 0.88rem; line-height: 1.55; color: var(--text); }
+@media (max-width: 560px) {
+  .md2-hero { flex-direction: column; align-items: flex-start; }
+  .md2-hero-r { flex-direction: row; align-items: center; }
+}
+
 /* Campos clave (pestaña Operativa) */
 .modal-fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; }
 .mf-item { display: flex; flex-direction: column; gap: 2px; background: var(--bg3); border-radius: 8px; padding: 8px 12px; }
@@ -3282,6 +3336,8 @@ body.modal-open { overflow: hidden; }
   border-radius: 10px; padding: 10px 13px;
 }
 .modal-trade-row.trade-en-ventana { box-shadow: inset 3px 0 0 var(--red); }
+tr.trade-en-ventana td { background: rgba(226,75,74,0.06); }
+tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .trade-ventana-flag { font-size: 0.9rem; }
 
 /* ── Dashboard de Disciplina: controles del hero (nav de mes) ─────────────── */
