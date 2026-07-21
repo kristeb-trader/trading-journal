@@ -5,8 +5,9 @@ const Coach = (() => {
   const MODEL      = 'claude-sonnet-4-6'
   const MAX_TOKENS = 3000
 
-  // El Coach IA solo analiza la cuenta PA real. Las demás (evaluación, sim) se ignoran.
-  const CUENTA_ANALISIS = 'PA-APEX-232411-03'
+  // El Coach IA solo analiza la CUENTA PRINCIPAL configurada (Datos → Cuenta
+  // principal, guardada en objetivos.cuenta_principal). Las demás se ignoran.
+  const cuentaAnalisis = () => DB.cuentaPrincipal()
 
   // ── Estado interno ─────────────────────────────────────────────────────
   let chatHistory       = []   // conversación del día en memoria
@@ -93,16 +94,18 @@ const Coach = (() => {
       DB.getTradesByDate(date),
       DB.getCasuisticasByDate(date),
       DB.getCatalogoEmociones(),
-      DB.getCatalogoCasuisticas()
+      DB.getCatalogoCasuisticas(),
+      DB.fetchCuentaPrincipal(),   // asegura el cache de la cuenta principal
     ])
     // Bloques derivados del rulebook canónico `reglas`
     const estrategia  = fmtFilosofia(reglas)
     const reglasSetup = fmtReglasSetup(reglas)
     const reglasDuras = fmtReglasDuras(reglas)
 
-    // El Coach analiza ÚNICAMENTE la cuenta PA real (PA-APEX-232411-03).
-    // Las cuentas de evaluación y simulación no se analizan.
-    const tradesPA = (trades || []).filter(t => (t.account || '') === CUENTA_ANALISIS)
+    // El Coach analiza ÚNICAMENTE la cuenta principal configurada.
+    // Las demás cuentas (evaluación, simulación) no se analizan.
+    const cuentaPrin = cuentaAnalisis()
+    const tradesPA = (trades || []).filter(t => (t.account || '') === cuentaPrin)
 
     // Guardar para los bloques de datos (premercado/checklist/operativa) del análisis
     sesionActual = sesion || null
@@ -1421,7 +1424,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
         DB.getTradesByDate(date || diag.sesion_date),
       ])
       sesionActual = ses || null
-      tradesActual = (trs || []).filter(t => (t.account || '') === CUENTA_ANALISIS)
+      tradesActual = (trs || []).filter(t => (t.account || '') === cuentaAnalisis())
     } catch { sesionActual = null; tradesActual = [] }
     // Filas nuevas: veredicto en columna propia. Filas viejas: concatenado en sec_validacion.
     const legacy = splitValidacion(diag.sec_validacion)

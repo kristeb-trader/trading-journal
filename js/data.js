@@ -282,6 +282,33 @@ const DataManager = (() => {
     renderEmocionesList(data)
   }
 
+  async function initCuentaPrincipal() {
+    const esc = s => (s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+    const sel = document.getElementById('dataCuentaPrincipal')
+    const hint = document.getElementById('cuentaPrincipalHint')
+    if (!sel) return
+    let actual = 'PA-APEX-232411-03'
+    let cuentas = []
+    try {
+      const [obj, conocidas] = await Promise.all([DB.getObjetivos(), DB.getCuentasConocidas()])
+      actual = obj?.cuenta_principal || actual
+      cuentas = conocidas || []
+    } catch (_) {}
+    // La cuenta principal actual debe estar en la lista aunque aún no tenga trades
+    if (actual && !cuentas.includes(actual)) cuentas.unshift(actual)
+    sel.innerHTML = cuentas.map(c => `<option value="${esc(c)}"${c === actual ? ' selected' : ''}>${esc(c)}</option>`).join('')
+    const setHint = c => { if (hint) hint.textContent = `El journal (calendario, análisis, Coach IA) usa "${c}" como cuenta principal.` }
+    setHint(actual)
+    sel.addEventListener('change', async () => {
+      const nueva = sel.value
+      try {
+        await DB.saveObjetivos({ cuenta_principal: nueva })
+        setHint(nueva)
+        Toast.show('Cuenta principal actualizada', 'success')
+      } catch (e) { Toast.show('Error al guardar: ' + e.message, 'error') }
+    })
+  }
+
   async function init() {
     await Promise.all([loadCasuisticas(), loadEmociones(), loadRecomendaciones()])
 
@@ -298,6 +325,9 @@ const DataManager = (() => {
         Toast.show('Capital inicial guardado', 'success')
       })
     }
+
+    // ── Cuenta principal (la que el journal usa para P&L, análisis y Coach) ──
+    await initCuentaPrincipal()
 
     // ── Casuísticas ──
     document.getElementById('addCasuistica').addEventListener('click', async () => {

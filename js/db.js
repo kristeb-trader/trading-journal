@@ -14,6 +14,7 @@ const CHECKLIST_DEFAULT = [
   { id: -7, clave: 'chk_orden',       fase: 3, texto: 'Orden precolocada a tiempo',                                 orden: 1, activo: true },
 ]
 let _checklistCache = null  // catálogo cacheado tras la primera carga
+let _cuentaPrincipalCache = 'PA-APEX-232411-03'  // fallback histórico hasta leer objetivos
 
 // Hidrata una sesión: reconstruye s.checklist = { codigo: bool } desde las filas
 // de sesion_checklist (modelo relacional) y expone s[codigo] para que el código
@@ -714,7 +715,16 @@ const DB = {
       .eq('id', 1)
       .maybeSingle()
     if (error) throw error
+    if (data) _cuentaPrincipalCache = data.cuenta_principal || _cuentaPrincipalCache
     return data
+  },
+
+  // Cuenta principal del journal (P&L, análisis, Coach). Cacheada tras la 1ª
+  // lectura de objetivos; fallback a la PA histórica si aún no se ha configurado.
+  cuentaPrincipal() { return _cuentaPrincipalCache },
+  async fetchCuentaPrincipal() {
+    try { const o = await this.getObjetivos(); return o?.cuenta_principal || _cuentaPrincipalCache }
+    catch { return _cuentaPrincipalCache }
   },
 
   async saveObjetivos(payload) {
@@ -722,6 +732,19 @@ const DB = {
       .from('objetivos')
       .upsert({ id: 1, ...payload, updated_at: new Date().toISOString() }, { onConflict: 'id' })
     if (error) throw error
+    if ('cuenta_principal' in payload && payload.cuenta_principal) _cuentaPrincipalCache = payload.cuenta_principal
+  },
+
+  // Nombres de cuenta conocidos (de trades + apex_cuentas) para selectores.
+  async getCuentasConocidas() {
+    const [t, a] = await Promise.all([
+      supa.from('trades').select('account'),
+      supa.from('apex_cuentas').select('numero_cuenta'),
+    ])
+    const set = new Set()
+    ;(t.data || []).forEach(r => r.account && set.add(r.account))
+    ;(a.data || []).forEach(r => r.numero_cuenta && set.add(r.numero_cuenta))
+    return [...set].sort()
   },
 
   // ── Apex Tracker ─────────────────────────────────────────────────────────

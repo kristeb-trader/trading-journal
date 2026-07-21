@@ -585,15 +585,29 @@
           <h2 class="analysis-hero-title">Gestión de Datos</h2>
         </div>
 
-        <!-- Capital inicial (para la rentabilidad % en Análisis) -->
-        <div class="catalog-card" style="margin-bottom:16px;max-width:420px">
-          <div class="catalog-header">
-            <h3><i class="ti ti-coin" style="color:var(--accent)"></i> Capital inicial</h3>
-            <span class="catalog-sub">Base para el cálculo de rentabilidad % en Análisis</span>
+        <div class="data-top-cards">
+          <!-- Cuenta principal (la que se lleva en el journal: calendario, análisis, Coach) -->
+          <div class="catalog-card">
+            <div class="catalog-header">
+              <h3><i class="ti ti-star" style="color:var(--accent)"></i> Cuenta principal</h3>
+              <span class="catalog-sub">La que el journal usa para P&amp;L, análisis y Coach IA</span>
+            </div>
+            <div style="margin-top:8px">
+              <select id="dataCuentaPrincipal" class="filter-select" style="width:100%"></select>
+              <p class="catalog-sub" id="cuentaPrincipalHint" style="margin-top:8px"></p>
+            </div>
           </div>
-          <div class="annual-capital-input" style="margin-top:6px">
-            <span>$</span>
-            <input type="number" id="dataCapitalInicial" placeholder="5000" min="0" step="100">
+
+          <!-- Capital inicial (para la rentabilidad % en Análisis) -->
+          <div class="catalog-card">
+            <div class="catalog-header">
+              <h3><i class="ti ti-coin" style="color:var(--accent)"></i> Capital inicial</h3>
+              <span class="catalog-sub">Base para el cálculo de rentabilidad % en Análisis</span>
+            </div>
+            <div class="annual-capital-input" style="margin-top:6px">
+              <span>$</span>
+              <input type="number" id="dataCapitalInicial" placeholder="5000" min="0" step="100">
+            </div>
           </div>
         </div>
 
