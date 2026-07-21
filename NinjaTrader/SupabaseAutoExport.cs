@@ -32,8 +32,9 @@ using NinjaTrader.NinjaScript.Indicators;
  *     instrumento si se opera más de uno).
  *
  * Routing automático por nombre de cuenta:
- *   - Cuenta PA real (nombre empieza con "PA-"): trades → tabla `trades`
- *     + notificación Telegram. La app deriva sus días recientes desde `trades`.
+ *   - Cuenta PA real (prefijo "PA-") y la CUENTA PRINCIPAL configurada (Datos →
+ *     Cuenta principal, leída de objetivos.cuenta_principal al iniciar): trades →
+ *     tabla `trades` + notificación Telegram. La app deriva sus días desde `trades`.
  *   - Cualquier otra cuenta (evaluación): trades → tabla `apex_trades`, SIN
  *     Telegram. La app deriva días/balance/threshold desde estos trades.
  *
@@ -102,6 +103,11 @@ namespace NinjaTrader.NinjaScript.Indicators
         private const string APEX_ENDPOINT =
             "https://jothoslozctflfrnysrx.supabase.co/rest/v1/apex_trades";
 
+        // Config global: la cuenta principal del journal (se elige en Datos → Cuenta
+        // principal). Sus trades van a `trades` aunque no tenga prefijo "PA-".
+        private const string OBJETIVOS_ENDPOINT =
+            "https://jothoslozctflfrnysrx.supabase.co/rest/v1/objetivos?id=eq.1&select=cuenta_principal";
+
         private const string NOTIFY_ENDPOINT =
             "https://trading-journal-bot.kristerock.workers.dev/notify";
 
@@ -111,6 +117,10 @@ namespace NinjaTrader.NinjaScript.Indicators
         //   Documentos\NinjaTrader 8\supabase-service-key.txt
         // Necesaria con RLS activado (Fase 2 del plan de seguridad). Ver SupabaseKeyFile.
         private string supabaseKey = string.Empty;
+
+        // Nombre de la cuenta principal (leído de objetivos al iniciar). Su trade va
+        // a `trades` + Telegram aunque no empiece con "PA-".
+        private volatile string cuentaPrincipal = string.Empty;
 
         private static string ReadServiceKey()
         {
@@ -209,10 +219,42 @@ namespace NinjaTrader.NinjaScript.Indicators
                  Description = "Opcional. Dejar en blanco si no se usa.")]
         public string Cuenta6 { get; set; }
 
-        // Routing automático por nombre: la cuenta PA real empieza con "PA-" y va
-        // al journal (trades) + Telegram; el resto a apex_trades sin notificar.
-        private static bool EsCuentaEval(string account) =>
-            !(account != null && account.StartsWith("PA-", StringComparison.OrdinalIgnoreCase));
+        // Routing automático por nombre: van al journal (trades) + Telegram la cuenta
+        // PA real (prefijo "PA-") y la CUENTA PRINCIPAL configurada; el resto va a
+        // apex_trades sin notificar.
+        private bool EsCuentaEval(string account)
+        {
+            if (account == null) return true;
+            if (account.StartsWith("PA-", StringComparison.OrdinalIgnoreCase)) return false;
+            if (!string.IsNullOrEmpty(cuentaPrincipal) &&
+                string.Equals(account, cuentaPrincipal, StringComparison.OrdinalIgnoreCase)) return false;
+            return true;
+        }
+
+        // Lee objetivos.cuenta_principal de Supabase para saber qué cuenta (sin
+        // prefijo PA-) debe enrutarse al journal (trades). Se llama una vez al iniciar.
+        private async Task LoadCuentaPrincipalAsync()
+        {
+            try
+            {
+                HttpClient client = httpClient;
+                if (client == null) return;
+                string resp = await client.GetStringAsync(OBJETIVOS_ENDPOINT);
+                var m = System.Text.RegularExpressions.Regex.Match(
+                    resp ?? "", "\"cuenta_principal\"\\s*:\\s*\"([^\"]+)\"");
+                if (m.Success)
+                {
+                    cuentaPrincipal = m.Groups[1].Value;
+                    Print("[SupabaseAutoExport] Cuenta principal (→ trades + Telegram): " + cuentaPrincipal);
+                }
+                else
+                    Print("[SupabaseAutoExport] Sin cuenta principal configurada; solo las PA-* van a trades.");
+            }
+            catch (Exception ex)
+            {
+                Print("[SupabaseAutoExport] No se pudo leer la cuenta principal: " + ex.Message);
+            }
+        }
 
         // Cuentas elegidas en los slots (no vacías)
         private IEnumerable<string> CuentasSeleccionadas()
@@ -265,6 +307,10 @@ namespace NinjaTrader.NinjaScript.Indicators
                 httpClient.DefaultRequestHeaders.Add("apikey",        supabaseKey);
                 httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + supabaseKey);
                 httpClient.DefaultRequestHeaders.Add("Prefer",        "return=minimal");
+
+                // Leer la cuenta principal de la BD (fire-and-forget): así, si se cambia
+                // en Datos, el routing se actualiza al reiniciar NT sin recompilar.
+                Task.Run(() => LoadCuentaPrincipalAsync());
             }
             else if (State == State.DataLoaded)
             {
