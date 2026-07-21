@@ -1175,6 +1175,26 @@ relacional. Motivado por preferencia del usuario (BD 100% normalizada, sin JSON)
 
 ---
 
+## Checkpoint Jul 2026 (5) — Cuenta principal configurable
+
+Motivación: el usuario quemó la PA `PA-APEX-232411-03` y compró una evaluación nueva
+`APEX-232411-14`, que quiere llevar como cuenta principal del journal.
+
+- **Fase A — configurable:** `objetivos.cuenta_principal` (BD, sincroniza dispositivos);
+  selector "Cuenta principal" en Datos; el Coach analiza esa cuenta en vez del hardcode
+  `PA-APEX-232411-03`; `db.js` cachea la principal (`cuentaPrincipal`/`fetchCuentaPrincipal`,
+  fallback histórico). El filtro del calendario la usa como default.
+- **Fase B — routing NT8:** `SupabaseAutoExport` enruta a `trades`+Telegram las cuentas
+  `PA-*` **y** la cuenta principal (aunque sea evaluación sin prefijo). Lee
+  `objetivos.cuenta_principal` de la BD al iniciar (fire-and-forget), así al cambiarla en
+  Datos el routing se actualiza sin recompilar. Requiere recompilar el indicador **una vez**.
+- **Fase C — Apex Tracker:** sin cambios de código. `apex.js` ya deriva los trades de cada
+  cuenta de `[...apex_trades, ...trades]` por `numero_cuenta`, y `esPACuenta` depende del
+  `estado` (no del nombre). El usuario solo agrega la `-14` como cuenta de evaluación.
+- Migración: `2026-07-21-objetivos-cuenta-principal.sql` (aplicada vía MCP).
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo

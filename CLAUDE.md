@@ -15,7 +15,7 @@ Dashboard personal para registro y análisis de operativa diaria en NQ/MNQ Futur
 | Análisis IA | Claude API `claude-sonnet-4-6` |
 | Imágenes | Cloudinary (cloud: `dq4n7bjta`, preset: `trading-journal`) |
 | Bot | Telegram → Cloudflare Worker #2 + KV |
-| Exportación | Indicador C# en NinjaTrader 8 (`NinjaTrader/SupabaseAutoExport.cs`) — routing: PA→`trades`+Telegram, eval Apex→`apex_trades` sin notificar |
+| Exportación | Indicador C# en NinjaTrader 8 (`NinjaTrader/SupabaseAutoExport.cs`) — routing: PA-* **y la cuenta principal** (`objetivos.cuenta_principal`) →`trades`+Telegram, resto (eval Apex)→`apex_trades` sin notificar |
 
 ## URLs clave
 - **Producción:** `https://kristeb-trader.github.io/trading-journal`
@@ -55,7 +55,7 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 | `diagnostico_experimentos` | Condiciones en prueba (T/S) por sesión |
 | `catalogo_errores` / `catalogo_emociones` / `catalogo_experimentos` | Maestros |
 | **`catalogo_reglas`** | **Rulebook canónico unificado** (1 fila = 1 regla; antes `reglas`, renombrada Jul 2026). Capas filosofia/proceso/riesgo; `setup` (iri/reingreso) etiqueta en proceso Fase 2; `tipo` dura/blanda; `es_checklist`+`fase` → checklist diario (`sesion_checklist`). Ver [[rulebook-modelo]] |
-| `objetivos` | Stop máx (`stop_max_puntos`, default 80), trades/día, P&L objetivo, límite pérdida |
+| `objetivos` | Config global (single row): Stop máx (`stop_max_puntos`, default 80), trades/día, P&L objetivo, límite pérdida, y **`cuenta_principal`** (la cuenta que el journal usa para P&L/análisis/Coach; se elige en Datos) |
 | **`catalogo_fechas`** | **Días especiales del calendario** (`tipo`: fomc/festivo/vacaciones/otro; fecha, nombre, emoji, notas). Se gestiona en la sección "Fechas Especiales". El calendario lee de aquí. Reemplaza a `fomc_dates` y al cálculo de festivos en código |
 | `fomc_dates` | ⚠️ Obsoleta (migrada a `catalogo_fechas`); pendiente de drop |
 | `apex_cuentas` | Cuentas de fondeo Apex: parámetros (DD, target, safety net) y estado |
