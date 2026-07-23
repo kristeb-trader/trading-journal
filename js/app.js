@@ -38,6 +38,8 @@ const Modal = {
       return `${dow} ${parseInt(day)} ${months[parseInt(m)-1]} ${y}`
     }
     document.getElementById('modalDateTitle').textContent = fmtDate(dateStr)
+    const headStats = document.getElementById('modalHeadStats')
+    if (headStats) headStats.innerHTML = this._headStats(trades, sesion)
 
     // Datos extra: diagnóstico del Coach + errores + emociones + checklist dinámico
     // (catalogo_reglas) + total de trades del día SIN filtro de cuenta (para avisar
@@ -110,6 +112,44 @@ const Modal = {
     return pnl >= 0
       ? { label: 'TARGET', cls: 'mst-green', icon: '🟢' }
       : { label: 'STOP', cls: 'mst-red', icon: '🔴' }
+  },
+
+  // Puntos del día: mismo cálculo que la tabla de Operativa (SHORT = e−x).
+  _puntosDia(trades) {
+    let pts = null
+    for (const t of trades) {
+      const e = parseFloat(t.entry_price), x = parseFloat(t.exit_price)
+      if (!isFinite(e) || !isFinite(x)) continue
+      const short = /short|sell/i.test(t.market_pos || '')
+      pts = (pts || 0) + (short ? e - x : x - e)
+    }
+    return pts
+  },
+
+  // Cabecera del modal: Puntos · Resultado · P&L a la derecha de la fecha
+  _headStats(trades, sesion) {
+    trades = trades || []
+    if (!trades.length && !sesion) return ''
+    const st = this._dayState(trades, sesion)
+    const badgeCls = st.cls === 'mst-green' ? 'r-t' : st.cls === 'mst-red' ? 'r-s' : 'r-o'
+    const cells = []
+    if (trades.length) {
+      const pts = this._puntosDia(trades)
+      if (pts != null) cells.push(`<div class="mh-stat"><label>Puntos</label><span class="mh-val ${pts < 0 ? 'neg' : 'pos'}">${pts >= 0 ? '+' : ''}${pts.toFixed(2)}</span></div>`)
+    }
+    const CORTO = {
+      'Setup válido — no entré': 'NO ENTRÉ',
+      'Sin entradas válidas': 'SIN ENTRADAS',
+      'No operé': 'NO OPERÉ',
+      'Sin trades': 'SIN TRADES',
+      'Break Even': 'B.E.',
+    }
+    cells.push(`<div class="mh-stat"><label>Resultado</label><span class="cz-rb ${badgeCls}" title="${st.label}">${CORTO[st.label] || st.label}</span></div>`)
+    if (trades.length) {
+      const pnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
+      cells.push(`<div class="mh-stat"><label>P&amp;L</label><span class="mh-val ${pnl < 0 ? 'neg' : 'pos'}">${pnl >= 0 ? '+' : '−'}$${Math.abs(pnl).toFixed(2)}</span></div>`)
+    }
+    return cells.join('')
   },
 
   // Checklist aplicable al día (mismo criterio que discFactorAplica en db.js):
