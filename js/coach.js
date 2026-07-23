@@ -9,6 +9,30 @@ const Coach = (() => {
   // principal, guardada en objetivos.cuenta_principal). Las demás se ignoran.
   const cuentaAnalisis = () => DB.cuentaPrincipal()
 
+  // Las horas de los trades vienen de NinjaTrader en hora COLOMBIA (UTC-5, la zona
+  // configurada en NT). El análisis razona en hora de Nueva York (RTH 9:30-16:00 ET),
+  // así que se convierten antes de mandarlas al prompt — si no, el Coach cree que un
+  // trade de las 08:36 Colombia (= 09:36 ET, en RTH) fue "premercado".
+  function horaEt(hhmmss, fechaISO) {
+    if (!hhmmss) return null
+    const hhmm = String(hhmmss).slice(0, 5)
+    if (!fechaISO) return hhmm
+    const d = new Date(`${fechaISO}T${String(hhmmss).slice(0, 8)}-05:00`)  // Colombia = UTC-5 fijo
+    if (isNaN(d)) return hhmm
+    try {
+      return d.toLocaleTimeString('en-GB', {
+        timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false,
+      })
+    } catch (_) { return hhmm }
+  }
+  // "09:36 → 09:38 ET (08:36 → 08:38 hora Colombia)"
+  function fmtHoraTrade(entry, exit, fechaISO) {
+    if (!entry && !exit) return 'sin hora'
+    const et  = [horaEt(entry, fechaISO), horaEt(exit, fechaISO)].filter(Boolean).join(' → ')
+    const col = [entry, exit].filter(Boolean).map(h => String(h).slice(0, 5)).join(' → ')
+    return `${et} ET (${col} hora Colombia)`
+  }
+
   // ── Estado interno ─────────────────────────────────────────────────────
   let chatHistory       = []   // conversación del día en memoria
   let systemPromptCache = null // se construye una vez por sesión abierta
@@ -153,7 +177,7 @@ const Coach = (() => {
       const hasPx = isFinite(e) && isFinite(x)
       const pts = hasPx ? (dir === 'SHORT' ? e - x : x - e) : null
       const ptsStr = pts != null ? `${pts >= 0 ? '+' : ''}${pts.toFixed(2)} pts` : 'sin precio'
-      const hora = [t.entry_time, t.exit_time].filter(Boolean).join(' → ') || 'sin hora'
+      const hora = fmtHoraTrade(t.entry_time, t.exit_time, t.trade_date || date)
       const px = hasPx ? `${e} → ${x}` : 'precio no registrado'
       const q = t.qty ? ` · ${t.qty} contrato(s)` : ''
       return `  - ${hora} · ${dir} · ${px} (${ptsStr}) · ${resLabelTrade(t)} · ${fmtPnl(parseFloat(t.profit) || 0)}${q}`
@@ -273,7 +297,7 @@ Responde SIEMPRE en español. Sé estricto y directo — si el trader cometió e
 
 ${reglasDuras}
 
-Estas reglas NO admiten excepción. Si la sesión viola cualquiera, el VEREDICTO final es INVÁLIDO por más bueno que se vea el resto del setup, y debes nombrar la regla rota por su \`codigo\`. Las demás reglas (blandas) son guías sujetas a criterio.
+Estas reglas NO admiten excepción. Si la sesión viola cualquiera, el VEREDICTO final es INVÁLIDO por más bueno que se vea el resto del setup, y debes nombrar la regla rota por su **TÍTULO descriptivo** (p. ej. "R:R siempre 1:1", "Stop máximo de 80 puntos"). NUNCA muestres el código interno (\`rr_1a1\`, \`chk_orden\`…): es solo referencia, el trader no lo entiende. Las demás reglas (blandas) son guías sujetas a criterio.
 
 ---
 
@@ -311,6 +335,15 @@ Tienes los valores EXACTOS; NUNCA los aproximes "a ojo" del gráfico ni digas "u
 - Las ZONAS NARANJAS (soportes/resistencias) tienen valores exactos registrados (soportes_naranja / resistencias_naranja).
 - Los precios de ENTRADA y SALIDA de cada trade son exactos (vienen de la tabla de trades, no del gráfico).
 Usa siempre esos valores exactos. Si necesitas un dato que NO está registrado en el contexto, PREGÚNTALO en lugar de suponerlo o inventarlo.
+
+---
+
+## HORAS Y SESIÓN (MUY IMPORTANTE)
+
+Las horas de los trades vienen YA CONVERTIDAS a hora de Nueva York (ET), con la hora local del trader (Colombia, UTC-5) entre paréntesis solo como referencia. **Razona SIEMPRE con la hora ET.**
+- **RTH (sesión americana) = 09:30–16:00 ET.** Un trade a las 09:36 ET está DENTRO del RTH (es la apertura), NO en premercado.
+- Premercado = antes de las 09:30 ET. Solo llama "premercado" a un trade si su hora ET es anterior a 09:30.
+- En verano (EDT) Colombia va 1 h detrás de ET (08:36 Colombia = 09:36 ET); en invierno (EST) coinciden. Nunca uses la hora de Colombia para decidir si fue premercado o RTH.
 
 ---
 
@@ -454,11 +487,19 @@ ${catalogoStr}
     }).filter(Boolean).join('\n\n') || 'El trader aún NO ha documentado reglas con contenido para ningún setup.'
   }
 
-  // Bloque de reglas DURAS (no negociables): tipo='dura' de cualquier capa
+  // Bloque de reglas DURAS (no negociables): tipo='dura' de cualquier capa.
+  // Se antepone el TÍTULO descriptivo (es lo que debe mostrar la IA al usuario);
+  // el `codigo` queda al final solo como referencia interna. Se incluye la fase
+  // para que la validación pueda agruparse por fase del proceso.
   function fmtReglasDuras(reglas) {
     const duras = reglas.filter(r => r.tipo === 'dura')
     if (!duras.length) return '  (Sin reglas duras definidas.)'
-    return duras.map(r => `  - [${r.capa}] \`${r.codigo}\`: ${r.enunciado || r.titulo}`).join('\n')
+    return duras.map(r => {
+      const fase = r.fase ? `F${r.fase}` : '—'
+      const titulo = r.titulo || r.codigo
+      const det = r.enunciado && r.enunciado !== r.titulo ? `: ${r.enunciado}` : ''
+      return `  - [${fase} · ${r.capa}] **${titulo}**${det} (cod: ${r.codigo})`
+    }).join('\n')
   }
 
   async function cargarHistorialCompacto() {
@@ -741,29 +782,69 @@ ${catalogoStr}
   }
 
   // VALIDACIÓN → tarjeta por setup con checklist + stop/target
+  // Limpia códigos internos que la IA pueda colar igual (`rr_1a1` → R:R siempre 1:1)
+  function _limpiaCodigos(txt) {
+    return (txt || '').replace(/`([a-z0-9_]{3,30})`/gi, (m, cod) => {
+      const r = (reglasCache || []).find(x => x.codigo === cod)
+      return r ? (r.titulo || cod.replace(/_/g, ' ')) : cod.replace(/_/g, ' ')
+    })
+  }
+
+  // VALIDACIÓN → tarjeta por setup, con los filtros AGRUPADOS POR FASE
   function renderValidacion(text) {
     if (!text || !text.trim()) return '<p class="cz-empty">—</p>'
+    const FASE_META = {
+      1: { label: 'Fase 1 · Pre-sesión',        cls: 'f1' },
+      2: { label: 'Fase 2 · Lectura del setup', cls: 'f2' },
+      3: { label: 'Fase 3 · Ejecución',         cls: 'f3' },
+    }
     const setups = []
-    let cur = null
+    let cur = null, curFase = null
     text.split('\n').forEach(raw => {
       const line = raw.trim()
       if (!line) return
       const fm = line.match(/^(✅|✓|☑|❌|✕|✗|🚫)\s*(.+)$/)
       const sm = line.match(/stop\s*:?\s*([^|·]+)[|·]\s*target[^:]*:?\s*(.+)/i)
-      const hm = (!fm && !sm) ? (line.match(/^#{1,3}\s*(.+?)\s*#*$/) || line.match(/^\*\*(.+?)\*\*\s*:?\s*$/)) : null
-      if (hm) { cur = { nombre: hm[1].replace(/[*:#]/g, '').trim(), filtros: [], st: null, notas: '' }; setups.push(cur); return }
-      if (fm && cur) { cur.filtros.push({ ok: /✅|✓|☑/.test(fm[1]), txt: fm[2].trim() }); return }
+      // Subtítulo de fase: "**Fase 2 · Lectura del setup**" (o "Fase 2:", "### Fase 2")
+      const fase = (!fm && !sm) ? line.match(/^[#*\s]*fase\s*([123])\b/i) : null
+      const hm = (!fm && !sm && !fase)
+        ? (line.match(/^#{1,3}\s*(.+?)\s*#*$/) || line.match(/^\*\*(.+?)\*\*\s*:?\s*$/)) : null
+      if (fase && cur) { curFase = parseInt(fase[1]); return }
+      if (hm) {
+        cur = { nombre: hm[1].replace(/[*:#]/g, '').trim(), grupos: {}, sinFase: [], st: null, notas: '' }
+        setups.push(cur); curFase = null; return
+      }
+      if (fm && cur) {
+        const item = { ok: /✅|✓|☑/.test(fm[1]), txt: fm[2].trim() }
+        if (curFase) (cur.grupos[curFase] = cur.grupos[curFase] || []).push(item)
+        else cur.sinFase.push(item)
+        return
+      }
       if (sm && cur) { cur.st = { stop: sm[1].trim(), target: sm[2].trim() }; return }
       if (cur) cur.notas += (cur.notas ? ' ' : '') + line
     })
-    if (!setups.length) return mdAnalisis(text)
-    return setups.map(s => `
-      <div class="cz-setup">
-        <div class="cz-setup-h"><span class="cz-nm">${s.nombre}</span></div>
-        ${s.filtros.map(f => `<div class="cz-f"><span class="cz-ic ${f.ok ? 'ok' : 'no'}">${f.ok ? '✓' : '✕'}</span><span>${inlineMd(f.txt)}</span></div>`).join('')}
-        ${s.st ? `<div class="cz-st"><span class="cz-b">Stop: <b>${s.st.stop}</b></span><span class="cz-b">Target: <b>${s.st.target}</b></span></div>` : ''}
-        ${s.notas ? `<div class="cz-note">${inlineMd(s.notas)}</div>` : ''}
-      </div>`).join('')
+    if (!setups.length) return mdAnalisis(_limpiaCodigos(text))
+
+    const fItem = f => `<div class="cz-f"><span class="cz-ic ${f.ok ? 'ok' : 'no'}">${f.ok ? '✓' : '✕'}</span><span>${inlineMd(_limpiaCodigos(f.txt))}</span></div>`
+    return setups.map(s => {
+      const conFase = [1, 2, 3].filter(f => (s.grupos[f] || []).length).map(f => {
+        const items = s.grupos[f]
+        const ok = items.filter(i => i.ok).length
+        return `
+          <div class="cz-fase ${FASE_META[f].cls}">
+            <div class="cz-fase-h"><span class="cz-fase-t">${FASE_META[f].label}</span><span class="cz-fase-n">${ok}/${items.length}</span></div>
+            ${items.map(fItem).join('')}
+          </div>`
+      }).join('')
+      return `
+        <div class="cz-setup">
+          <div class="cz-setup-h"><span class="cz-nm">${_limpiaCodigos(s.nombre)}</span></div>
+          ${conFase}
+          ${s.sinFase.length ? `<div class="cz-fase sinf">${s.sinFase.map(fItem).join('')}</div>` : ''}
+          ${s.st ? `<div class="cz-st"><span class="cz-b">Stop: <b>${s.st.stop}</b></span><span class="cz-b">Target: <b>${s.st.target}</b></span></div>` : ''}
+          ${s.notas ? `<div class="cz-note">${inlineMd(_limpiaCodigos(s.notas))}</div>` : ''}
+        </div>`
+    }).join('')
   }
 
   // ── Bloques de datos (colapsables) del análisis técnico ──────────────────
@@ -973,7 +1054,11 @@ ${catalogoStr}
 
 **1. 🌍 CONTEXTO** → 3 líneas "Etiqueta: valor": Sesgo / Vigilar / Noticias. SIN datos crudos (no PDO/PDH/PDL ni "contexto adicional").
 **2. 📈 DESARROLLO DE SESIÓN** → 3-5 viñetas cortas empezando con "- ".
-**3. ✅ VALIDACIÓN DE SETUPS** → por setup: "### Nombre", luego filtros "✅/❌ ..." (uno por línea), y "Stop: X pts | Target: Y pts".
+**3. ✅ VALIDACIÓN DE SETUPS** → por setup: "### Nombre del setup". Dentro, AGRUPA los filtros POR FASE del proceso con estos subtítulos exactos (omite la fase que no tenga ítems):
+"**Fase 1 · Pre-sesión**", "**Fase 2 · Lectura del setup**", "**Fase 3 · Ejecución**"
+Bajo cada fase, un filtro por línea: "✅/❌ Título descriptivo de la regla — explicación breve".
+Al final del setup: "Stop: X pts | Target: Y pts".
+USA SIEMPRE el título descriptivo de la regla, NUNCA el código interno (nada de \`rr_1a1\` ni \`chk_orden\`).
 
 NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivines precios: usa los valores exactos (línea verde = PDH, línea roja = PDL, zonas naranjas, precios de los trades); si falta un dato, pregúntalo.`
 

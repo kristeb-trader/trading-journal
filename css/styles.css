@@ -2657,6 +2657,22 @@ body.modal-open { overflow: hidden; }
 .cz-ic { width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; flex: 0 0 auto; }
 .cz-ic.ok { background: rgba(29,158,117,0.16); color: #3FE0A6; }
 .cz-ic.no { background: rgba(226,75,74,0.16); color: #F2706F; }
+/* Validación de setups: filtros agrupados por fase del proceso */
+.cz-fase {
+  border-left: 3px solid var(--border); border-radius: 0 8px 8px 0;
+  padding: 8px 0 8px 11px; margin: 10px 0 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0.03), transparent 65%);
+}
+.cz-fase.f1 { border-left-color: #3FE0A6; }
+.cz-fase.f2 { border-left-color: #E0A33B; }
+.cz-fase.f3 { border-left-color: #6FA8DC; }
+.cz-fase.sinf { border-left-style: dashed; background: none; }
+.cz-fase-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 5px; }
+.cz-fase-t { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); }
+.cz-fase.f1 .cz-fase-t { color: #3FE0A6; }
+.cz-fase.f2 .cz-fase-t { color: #E0A33B; }
+.cz-fase.f3 .cz-fase-t { color: #6FA8DC; }
+.cz-fase-n { font-size: 0.72rem; font-weight: 700; color: var(--text3); font-variant-numeric: tabular-nums; }
 .cz-st { display: flex; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
 .cz-st .cz-b { font-size: 0.74rem; color: var(--text2); background: rgba(255,255,255,0.05); border-radius: 7px; padding: 4px 10px; }
 .cz-st .cz-b b { color: var(--text); font-weight: 600; }
