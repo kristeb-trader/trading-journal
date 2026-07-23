@@ -80,29 +80,36 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 4. Conventional commits en español: `feat/fix/docs(scope): descripción`
 5. Cambios en BD → entregar SQL en `docs/migrations/` y avisar al usuario que lo corra
 
-## Estado actual (Jun 2026)
-Funcionando: todas las secciones (Calendario+Métricas, Trades, Registrar, Análisis,
-Experimentos, Apex Tracker, Galería, Historial, Coach IA, Estrategia, Datos), Coach IA
-3 etapas, filtro de cuenta persistente, nav mobile.
+## Estado actual (Jul 2026)
+Funcionando: todas las secciones — Disciplina, Análisis, Calendario+Métricas, Apex,
+Experimentos, Trades, Sesión (antes "Registrar"), Historial, Coach IA, Imágenes,
+Estrategia, Datos, **Fechas Especiales** (ese es el orden del menú). Coach IA 3 etapas,
+checklist normalizado, cuenta principal configurable, filtro de cuenta persistente.
+
+> ⏰ **REGLA DE ORO — zona horaria (ya causó 2 bugs).** NinjaTrader está en hora de
+> **Colombia (UTC-5)**: todo lo que exporta (velas y `entry_time`/`exit_time`) viene en
+> hora Colombia, NO en ET. Colombia no tiene DST y NY sí → en verano 09:30 ET = **08:30
+> Colombia**; en invierno coinciden. Al tocar horas: convertir a ET antes de razonar
+> sobre RTH/premercado. Los parámetros RTH del indicador van en **ET (930/1600)**.
 
 ### Pendientes abiertos
-- Coach IA: probar en vivo el formato real de las 3 tarjetas.
+- **Verificar en vivo el Coach IA** tras los últimos cambios (validación por fases,
+  títulos de regla descriptivos, horas en ET): generar un análisis y confirmar.
 - Recomendaciones tipificadas en Coach IA (Fase 4B): implementado salvo inyectar el
-  catálogo de recomendaciones en el prompt del Coach (para que reutilice nombres y no
-  duplique). Pendiente ese último paso.
+  catálogo de recomendaciones en el prompt (para que reutilice nombres y no duplique).
 - Estadísticas de 3 corridas, volumen en trades, tasa de ejecución de setups válidos.
-- **Checklist normalizado en `sesion_checklist` (en curso, Jul 2026).** Migrado el
-  checklist del JSONB a una tabla relacional; `reglas` renombrada a `catalogo_reglas`.
-  Fases A (SQL), B (web) y C (AddOn NT) implementadas y verificadas contra la BD real.
-  **Falta que el usuario:** (1) corra `2026-07-08-normalizar-checklist-catalogo-reglas.sql`;
-  (2) verifique el guardado real en producción (web + AddOn recompilado); (3) corra el
-  drop del modelo viejo `2026-07-08-drop-sesiones-checklist-jsonb.sql`. Ver [[rulebook-modelo]].
+- "Dejé de ganar": ampliar para capturar más casos (miedo, reingreso no tomado…).
+- Rendimiento general del Journal (el modal del día cargaba lento).
+- Cuenta nueva `APEX-232411-14` (evaluación): ya es la principal y el routing la manda
+  a `trades`. Falta ver el primer trade real fluyendo end-to-end.
 
-> **BD limpia (validado Jul 2026):** no quedan tablas legacy por borrar. `apex_registros`
-> y todas las archivadas (`*_archivada`, `reglas_legacy_backup`, `checklist_items`,
-> `sesion_casuisticas`, `experimento_registros`, `catalogo_casuisticas`, `errores_sesion`)
-> ya no existen. Vivas: `sesiones`, `sesion_checklist`, `trades`, `apex_trades`,
-> `apex_cuentas`, `catalogo_reglas`, etc.
+> **BD limpia (verificado Jul 2026 contra la BD real):** no quedan tablas ni columnas
+> legacy. Eliminadas: `apex_registros`, `fomc_dates`, las `*_archivada`,
+> `reglas_legacy_backup`, `checklist_items`, `sesion_casuisticas`,
+> `experimento_registros`, `catalogo_casuisticas`, `errores_sesion`, y de `sesiones`
+> el JSONB `checklist` + las 7 columnas `chk_*` (el checklist vive 100% en
+> `sesion_checklist`). Vivas: `sesiones`, `sesion_checklist`, `trades`, `apex_trades`,
+> `apex_cuentas`, `catalogo_reglas`, `catalogo_fechas`, `objetivos`, etc.
 
 ## Para contexto adicional
 - Historial completo + hitos cerrados: `docs/historial-proyecto.md`
