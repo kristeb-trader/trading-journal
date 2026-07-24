@@ -204,13 +204,9 @@ const Metrics = (() => {
       .map(i => ({ key: i.clave, label: i.texto, fase: i.fase || 1, setup: i.setup || null }))
   }
 
-  // Familia de setup de una sesión (para reglas etiquetadas por setup): iri | reingreso | null
-  function setupFamilyOf(s) {
-    const v = (s.setup || '').toLowerCase()
-    if (v.startsWith('iri')) return 'iri'
-    if (v.startsWith('reingreso')) return 'reingreso'
-    return null
-  }
+  // Familia de setup de una sesión (iri | reingreso | null) — la resuelve el
+  // catálogo de setups en db.js (fuente única).
+  const setupFamilyOf = s => DB.setupFamily(s)
   // Claves activas del checklist (para conteos de disciplina)
   function clavesActivas() {
     return DISC_FACTORS.length ? DISC_FACTORS.map(f => f.key) : DB.checklistClaves()

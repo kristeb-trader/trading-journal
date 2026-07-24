@@ -16,6 +16,42 @@ const CHECKLIST_DEFAULT = [
 let _checklistCache = null  // catálogo cacheado tras la primera carga
 let _cuentaPrincipalCache = 'PA-APEX-232411-03'  // fallback histórico hasta leer objetivos
 
+// ── Setups paramétricos (catalogo_setups + catalogo_setup_variantes) ────────
+// La FAMILIA del setup ('iri'|'reingreso'|…) es la que agrupa las reglas de
+// Fase 2. Antes se deducía con startsWith('iri') repetido en 5 archivos; ahora
+// sale del catálogo, así un setup nuevo solo requiere insertar filas en BD.
+let _setupsCache = null     // [{ codigo, nombre, descripcion, orden, activo }]
+let _variantesCache = null  // [{ codigo, setup_codigo, nombre, subtipo, direccion }]
+
+// Fallback por prefijo: solo se usa si el catálogo aún no cargó (arranque en
+// frío o sin conexión). Mantiene el comportamiento histórico.
+function _setupFamilyFallback(texto) {
+  const v = (texto || '').toLowerCase()
+  if (v.startsWith('iri')) return 'iri'
+  if (v.startsWith('reingreso')) return 'reingreso'
+  return null
+}
+
+// Familia del setup de una sesión. Prioriza el FK `setup_codigo`; si no está
+// (sesión vieja o escritura de un cliente que aún no lo manda), resuelve por el
+// nombre del catálogo, y como último recurso usa el prefijo.
+function setupFamilyOf(sesion) {
+  if (!sesion) return null
+  const vs = _variantesCache
+  if (vs && vs.length) {
+    if (sesion.setup_codigo) {
+      const v = vs.find(x => x.codigo === sesion.setup_codigo)
+      if (v) return v.setup_codigo
+    }
+    const txt = (sesion.setup || '').trim().toLowerCase()
+    if (txt) {
+      const v = vs.find(x => (x.nombre || '').trim().toLowerCase() === txt)
+      if (v) return v.setup_codigo
+    }
+  }
+  return _setupFamilyFallback(sesion.setup)
+}
+
 // Hidrata una sesión: reconstruye s.checklist = { codigo: bool } desde las filas
 // de sesion_checklist (modelo relacional) y expone s[codigo] para que el código
 // que lee s.chk_zonas (calendario, charts, métricas) siga funcionando sin cambios.
@@ -74,12 +110,7 @@ function tradesEnVentanaNoticia(trades, sesion, margen = 5) {
 // Definición única: % de adherencia al checklist, consciente de fase, sin penalizar
 // los ítems no registrados (p. ej. reglas nuevas en sesiones previas).
 function _discSeConecto(s) { return !s.no_opero || s.se_conecto !== false }
-function _discSetupFamily(s) {
-  const v = (s.setup || '').toLowerCase()
-  if (v.startsWith('iri')) return 'iri'
-  if (v.startsWith('reingreso')) return 'reingreso'
-  return null
-}
+const _discSetupFamily = setupFamilyOf  // fuente única: catálogo de setups
 // ¿El factor (ítem del checklist) aplica y debe contarse para esta sesión?
 //  Fase 1 en días conectados; Fases 2/3 solo en días operados; reglas por setup solo si aplica.
 function discFactorAplica(f, s) {
@@ -228,6 +259,55 @@ const DB = {
       _checklistCache = data
     }
     return soloActivos ? _checklistCache.filter(i => i.activo !== false) : _checklistCache
+  },
+
+  // ── Setups paramétricos ──────────────────────────────────────────────────
+  // Familias (iri, reingreso, …). Cachea; `force` recarga tras editar el catálogo.
+  async getSetups({ force = false, soloActivos = true } = {}) {
+    if (!_setupsCache || force) {
+      const { data, error } = await supa
+        .from('catalogo_setups')
+        .select('codigo, nombre, descripcion, orden, activo')
+        .order('orden', { ascending: true })
+      _setupsCache = (error || !data) ? [] : data
+    }
+    return soloActivos ? _setupsCache.filter(s => s.activo !== false) : _setupsCache
+  },
+
+  // Variantes operativas (IRI Apertura Alcista, …). `setup` filtra por familia.
+  async getSetupVariantes({ force = false, soloActivos = true, setup = null } = {}) {
+    if (!_variantesCache || force) {
+      const { data, error } = await supa
+        .from('catalogo_setup_variantes')
+        .select('codigo, setup_codigo, nombre, subtipo, direccion, orden, activo')
+        .order('orden', { ascending: true })
+      _variantesCache = (error || !data) ? [] : data
+    }
+    let out = soloActivos ? _variantesCache.filter(v => v.activo !== false) : _variantesCache
+    if (setup) out = out.filter(v => v.setup_codigo === setup)
+    return out
+  },
+
+  // Versiones sincrónicas (tras una carga previa; [] si aún no cargó).
+  setupsSync() { return (_setupsCache || []).filter(s => s.activo !== false) },
+  setupVariantesSync() { return (_variantesCache || []).filter(v => v.activo !== false) },
+
+  // Familia ('iri'|'reingreso'|null) del setup de una sesión. Fuente única.
+  setupFamily(sesion) { return setupFamilyOf(sesion) },
+
+  // Etiqueta visible de una familia ('iri' → 'IRI'). Cae al propio código.
+  setupLabel(codigo) {
+    const s = (_setupsCache || []).find(x => x.codigo === codigo)
+    return s ? s.nombre : (codigo || '')
+  },
+
+  // Precarga de catálogos que otros módulos consultan de forma sincrónica.
+  async preloadCatalogos() {
+    await Promise.all([
+      this.getSetups().catch(() => {}),
+      this.getSetupVariantes().catch(() => {}),
+      this.getChecklistItems().catch(() => {}),
+    ])
   },
 
   // Claves activas (sincrónico, tras una carga previa). Fallback al default.

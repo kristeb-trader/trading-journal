@@ -3,11 +3,13 @@ const Estrategia = (() => {
   const CAPAS = ['filosofia', 'proceso', 'riesgo']
   const CAPA_LABEL = { filosofia: 'Filosofía', proceso: 'Reglas', riesgo: 'Riesgo' }
   const CAPA_ICON = { filosofia: 'ti-bulb', proceso: 'ti-list-check', riesgo: 'ti-shield' }
-  const SETUP_LABEL = { iri: 'IRI', reingreso: 'Reingreso' }
   const FASE_CLS = { 1: 'b-f1', 2: 'b-f2', 3: 'b-f3' }
   const FASE_TITLE = { 1: 'Fase 1 · Pre-sesión', 2: 'Fase 2 · Lectura del setup', 3: 'Fase 3 · Ejecución' }
-  // Subgrupos por setup dentro de Fase 2 (IRI / Reingreso / General)
-  const SETUP_GROUPS = [{ key: 'iri', label: 'IRI' }, { key: 'reingreso', label: 'Reingreso' }, { key: null, label: 'General' }]
+  // Etiqueta de familia y subgrupos de Fase 2: salen del catálogo de setups,
+  // así un setup nuevo aparece aquí sin tocar código ('General' = reglas comunes).
+  const setupLabel = codigo => DB.setupLabel(codigo)
+  const setupGroups = () =>
+    DB.setupsSync().map(s => ({ key: s.codigo, label: s.nombre })).concat([{ key: null, label: 'General' }])
 
   let reglas = []
   let objetivos = null
@@ -62,7 +64,7 @@ const Estrategia = (() => {
   function metaBadges(r) {
     let b = `<span class="rb-bdg b-capa">${CAPA_LABEL[r.capa] || r.capa}</span>`
     if (r.capa === 'proceso' && r.fase) b += `<span class="rb-bdg ${FASE_CLS[r.fase]}">Fase ${r.fase}</span>`
-    if (r.setup) b += `<span class="rb-bdg b-setup">${SETUP_LABEL[r.setup] || esc(r.setup)}</span>`
+    if (r.setup) b += `<span class="rb-bdg b-setup">${esc(setupLabel(r.setup))}</span>`
     return b
   }
 
@@ -113,11 +115,16 @@ const Estrategia = (() => {
     if (!list.length) return `<p class="rb-empty-sm">Sin reglas en esta fase.</p>`
     if (f !== 2) return list.map(cardHtml).join('')
     let html = ''
-    for (const g of SETUP_GROUPS) {
+    const grupos = setupGroups()
+    for (const g of grupos) {
       const sub = list.filter(r => (r.setup || null) === g.key)
       if (!sub.length) continue
-      html += `<div class="rb-setup-head">${g.label}</div>` + sub.map(cardHtml).join('')
+      html += `<div class="rb-setup-head">${esc(g.label)}</div>` + sub.map(cardHtml).join('')
     }
+    // Defensivo: reglas con un setup que no está en el catálogo no deben perderse
+    const conocidos = grupos.map(g => g.key)
+    const resto = list.filter(r => !conocidos.includes(r.setup || null))
+    if (resto.length) html += `<div class="rb-setup-head">Otros</div>` + resto.map(cardHtml).join('')
     return html
   }
 

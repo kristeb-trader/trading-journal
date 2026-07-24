@@ -39,12 +39,40 @@ const SessionForm = (() => {
     _checklistResolve()
   }
 
-  // Familia de setup del día (para filtrar el checklist): iri | reingreso | null
+  // ── Setups paramétricos (catalogo_setups + catalogo_setup_variantes) ───────
+  let _setupsResolve
+  let setupsReady = new Promise(r => { _setupsResolve = r })
+
+  // Puebla los dos selectores de setup desde el catálogo, agrupados por familia.
+  // Un setup nuevo en BD aparece aquí solo, sin tocar código.
+  async function loadSetups() {
+    try {
+      const [familias, variantes] = await Promise.all([DB.getSetups(), DB.getSetupVariantes()])
+      const opts = familias.map(f => {
+        const vs = variantes.filter(v => v.setup_codigo === f.codigo)
+        if (!vs.length) return ''
+        const items = vs.map(v => `<option value="${v.nombre}" data-codigo="${v.codigo}">${v.nombre}</option>`).join('')
+        return `<optgroup label="${f.nombre}">${items}</optgroup>`
+      }).join('')
+      // Variantes sin familia válida (defensivo): no deben quedar ocultas
+      const huerfanas = variantes
+        .filter(v => !familias.some(f => f.codigo === v.setup_codigo))
+        .map(v => `<option value="${v.nombre}" data-codigo="${v.codigo}">${v.nombre}</option>`).join('')
+      const html = '<option value="">Seleccionar setup...</option>' + opts + huerfanas
+      ;['setup', 'setupObservado'].forEach(id => {
+        const sel = document.getElementById(id)
+        if (!sel) return
+        const prev = sel.value
+        sel.innerHTML = html
+        if (prev) sel.value = prev   // conservar la selección al recargar
+      })
+    } catch (_) { /* sin conexión: quedan las opciones que hubiera */ }
+    _setupsResolve()
+  }
+
+  // Familia del setup elegido en el formulario (para filtrar el checklist).
   function setupFamily() {
-    const v = (document.getElementById('setup')?.value || '').toLowerCase()
-    if (v.startsWith('iri')) return 'iri'
-    if (v.startsWith('reingreso')) return 'reingreso'
-    return null
+    return DB.setupFamily({ setup: document.getElementById('setup')?.value || null })
   }
 
   function renderChecklist() {
@@ -531,6 +559,10 @@ const SessionForm = (() => {
     updatePremktPuntos()
     updatePremercadoVisibility()
 
+    // Los <option> de setup se pueblan desde el catálogo: hay que esperarlos
+    // antes de asignar `setup` o `setupObservado` (si no, el value se descarta).
+    await setupsReady
+
     if (!sesion.no_opero) {
       document.getElementById('contexto').value = sesion.contexto || ''
       document.getElementById('velasCorrida').value = sesion.velas_corrida || ''
@@ -688,6 +720,7 @@ const SessionForm = (() => {
     setupCollapsibles()
     setupNoOperoToggle()
     setupPremercado()
+    loadSetups()
     loadChecklist()
     setupImageUpload()
     setupCasuisticas()

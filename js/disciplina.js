@@ -26,12 +26,8 @@ const Disciplina = (() => {
 
   // ── Helpers de disciplina (alineados con metrics.js) ──────────────────────
   const seConecto = s => !s.no_opero || s.se_conecto !== false
-  function setupFamilyOf(s) {
-    const v = (s.setup || '').toLowerCase()
-    if (v.startsWith('iri')) return 'iri'
-    if (v.startsWith('reingreso')) return 'reingreso'
-    return null
-  }
+  // Familia del setup: la resuelve el catálogo de setups en db.js (fuente única).
+  const setupFamilyOf = s => DB.setupFamily(s)
   // Fase 1 aplica en todo día conectado; Fases 2/3 solo en días operados.
   function factorAplica(f, s) {
     if (!seConecto(s)) return false

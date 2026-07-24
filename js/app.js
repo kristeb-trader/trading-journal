@@ -159,8 +159,7 @@ const Modal = {
     if (!sesion) return []
     const conectado = !sesion.no_opero || sesion.se_conecto !== false
     if (!conectado) return []
-    const v = (sesion.setup || '').toLowerCase()
-    const fam = v.startsWith('iri') ? 'iri' : v.startsWith('reingreso') ? 'reingreso' : null
+    const fam = DB.setupFamily(sesion)
     return (chkItems || []).filter(i => {
       if ((i.fase || 1) !== 1 && sesion.no_opero) return false
       if (i.setup && i.setup !== fam) return false
@@ -529,6 +528,11 @@ async function boot() {
     console.error('Supabase error:', err)
     Toast.show('Sin conexión a Supabase: ' + (err.message || err), 'error')
   }
+
+  // Catálogos que varios módulos consultan de forma sincrónica (setups + checklist).
+  // Se precargan una vez para que la familia del setup salga del catálogo y no
+  // del fallback por prefijo.
+  await DB.preloadCatalogos()
 
   // Settings modal
   const openSettings = document.getElementById('openSettings')
