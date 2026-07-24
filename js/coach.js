@@ -121,10 +121,15 @@ const Coach = (() => {
       DB.getCatalogoCasuisticas(),
       DB.fetchCuentaPrincipal(),   // asegura el cache de la cuenta principal
     ])
+    // Familia del setup operado ese día (iri | reingreso | null). Si no se operó
+    // pero se identificó un setup válido que no se tomó, se usa ese.
+    const familiaDia = DB.setupFamily(sesion) ||
+      DB.setupFamily({ setup: sesion?.setup_observado || null })
+
     // Bloques derivados del rulebook canónico `reglas`
     const estrategia  = fmtFilosofia(reglas)
-    const reglasSetup = fmtReglasSetup(reglas)
-    const reglasDuras = fmtReglasDuras(reglas)
+    const reglasSetup = fmtReglasSetup(reglas, familiaDia, sesion)
+    const reglasDuras = fmtReglasDuras(reglas, familiaDia)
 
     // El Coach analiza ÚNICAMENTE la cuenta principal configurada.
     // Las demás cuentas (evaluación, simulación) no se analizan.
@@ -186,8 +191,10 @@ const Coach = (() => {
       ? `${tradesPA.length} trade(s) — Targets: ${targetsHoy} | Stops: ${stopsHoy} | BEs: ${besHoy} — P&L total: ${fmtPnl(pnlHoy)}\n${tradesPA.map(fmtTradeLine).join('\n')}`
       : 'Sin trades registrados'
 
-    // Checklist (catálogo dinámico, agrupado por fase)
-    const chkItems = DB.checklistItemsSync()
+    // Checklist (catálogo dinámico, agrupado por fase). Solo los ítems APLICABLES
+    // al setup del día: si no se filtra, en un día de Reingreso se le mandaban al
+    // Coach las reglas de IRI y las reportaba como incumplidas.
+    const chkItems = DB.checklistItemsSync().filter(it => reglaAplica(it, familiaDia))
     const checklistStr = sesion
       ? chkItems.map(it => `${(sesion.checklist?.[it.clave] ?? sesion[it.clave]) ? '✓' : '✗'} [F${it.fase}] ${it.texto}`).join('\n  ')
       : 'Sin datos de checklist'
@@ -307,11 +314,11 @@ ${estrategia}
 
 ---
 
-## REGLAS DE SETUPS DOCUMENTADAS POR EL TRADER
+## REGLAS DEL SETUP DEL DÍA
 
 ${reglasSetup}
 
-Valida cada entrada contra estas reglas. Si un setup NO tiene reglas documentadas, adviértelo explícitamente: no se debe operar en real un setup sin reglas escritas y testeadas en simulación.
+Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes. Las reglas de setup son EXCLUYENTES entre sí: evalúa únicamente las de la familia del setup operado. Nunca reportes como incumplida una regla de otro setup — no aplica.
 
 ---
 
@@ -465,41 +472,55 @@ ${catalogoStr}
       : 'Sin estrategia documentada aún.'
   }
 
-  // Bloque de reglas por setup (capa 'setup'), reagrupando los campos por setup×dirección
-  function fmtReglasSetup(reglas) {
-    const setup = reglas.filter(r => r.capa === 'setup')
-    if (!setup.length) return 'El trader aún NO ha documentado reglas para ningún setup.'
-    const setupNombre = { iri_apertura: 'IRI en Apertura', iri_continuacion: 'IRI en Continuación', reingreso: 'Reingreso' }
-    const dirNombre = { ambas: 'Común', alcista: 'Alcista', bajista: 'Bajista' }
-    const campoLabel = { activacion: 'Activación/Contexto', secuencia: 'Secuencia/Estructura', entrada: 'Entrada', stop: 'Stop', gestion: 'Gestión/Target', invalidacion: 'Invalidación/Filtros', notas: 'Notas' }
-    const orden = Object.keys(campoLabel)
-    const groups = {}
-    setup.forEach(r => {
-      const k = `${r.setup}__${r.direccion}`
-      if (!groups[k]) groups[k] = { setup: r.setup, dir: r.direccion, campos: {} }
-      if (r.campo) groups[k].campos[r.campo] = r.enunciado
-    })
-    return Object.values(groups).map(g => {
-      const cuerpo = orden.filter(c => (g.campos[c] || '').trim())
-        .map(c => `  - ${campoLabel[c]}: ${g.campos[c].trim()}`).join('\n')
-      if (!cuerpo) return null
-      return `### ${setupNombre[g.setup] || g.setup} (${dirNombre[g.dir] || g.dir})\n${cuerpo}`
-    }).filter(Boolean).join('\n\n') || 'El trader aún NO ha documentado reglas con contenido para ningún setup.'
+  // Una regla aplica al día si es común (sin setup) o es de la familia operada.
+  function reglaAplica(r, familia) { return !r.setup || r.setup === familia }
+
+  function fmtReglaLinea(r) {
+    const fase = r.fase ? `F${r.fase}` : '—'
+    const titulo = r.titulo || r.codigo
+    const det = r.enunciado && r.enunciado !== r.titulo ? `: ${r.enunciado}` : ''
+    return `  - [${fase} · ${r.capa}] **${titulo}**${det} (cod: ${r.codigo})`
+  }
+
+  // Bloque de reglas del SETUP DEL DÍA.
+  // Antes leía la capa 'setup', que dejó de existir al unificarse el rulebook:
+  // devolvía siempre "el trader NO ha documentado reglas", lo que llevaba al
+  // Coach a regañar por no tener reglas escritas que sí existen.
+  function fmtReglasSetup(reglas, familia, sesion) {
+    const porSetup = reglas.filter(r => r.setup)
+    const familias = [...new Set(porSetup.map(r => r.setup))]
+    if (!familias.length) return 'El trader aún NO ha documentado reglas específicas por setup.'
+
+    const nombreVisible = sesion?.setup || sesion?.setup_observado || null
+    if (!familia) {
+      return `No hay un setup identificado para este día, así que NO evalúes reglas específicas de setup.\n` +
+             `Setups con reglas documentadas: ${familias.map(f => DB.setupLabel(f)).join(', ')}.`
+    }
+
+    const propias = porSetup.filter(r => r.setup === familia)
+      .sort((a, b) => (a.fase || 0) - (b.fase || 0) || (a.orden || 0) - (b.orden || 0))
+    const otras = familias.filter(f => f !== familia).map(f => DB.setupLabel(f))
+
+    let out = `Setup del día: **${nombreVisible || DB.setupLabel(familia)}** → familia **${DB.setupLabel(familia)}**.\n\n`
+    out += propias.length
+      ? `Reglas propias de este setup (las ÚNICAS específicas de setup que debes evaluar hoy):\n${propias.map(fmtReglaLinea).join('\n')}`
+      : `Este setup NO tiene reglas propias documentadas: adviértelo (no se debe operar en real un setup sin reglas escritas y testeadas).`
+    if (otras.length) {
+      out += `\n\nNO evalúes las reglas de ${otras.join(' ni ')}: no aplican a un día de ${DB.setupLabel(familia)}.`
+    }
+    return out
   }
 
   // Bloque de reglas DURAS (no negociables): tipo='dura' de cualquier capa.
   // Se antepone el TÍTULO descriptivo (es lo que debe mostrar la IA al usuario);
   // el `codigo` queda al final solo como referencia interna. Se incluye la fase
   // para que la validación pueda agruparse por fase del proceso.
-  function fmtReglasDuras(reglas) {
-    const duras = reglas.filter(r => r.tipo === 'dura')
+  // Se excluyen las reglas de OTROS setups: en un día de Reingreso el Coach
+  // llegaba a reportar como incumplidas las reglas de IRI (y al revés).
+  function fmtReglasDuras(reglas, familia) {
+    const duras = reglas.filter(r => r.tipo === 'dura' && reglaAplica(r, familia))
     if (!duras.length) return '  (Sin reglas duras definidas.)'
-    return duras.map(r => {
-      const fase = r.fase ? `F${r.fase}` : '—'
-      const titulo = r.titulo || r.codigo
-      const det = r.enunciado && r.enunciado !== r.titulo ? `: ${r.enunciado}` : ''
-      return `  - [${fase} · ${r.capa}] **${titulo}**${det} (cod: ${r.codigo})`
-    }).join('\n')
+    return duras.map(fmtReglaLinea).join('\n')
   }
 
   async function cargarHistorialCompacto() {
