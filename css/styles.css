@@ -703,6 +703,22 @@ textarea { resize: vertical; min-height: 80px; }
 .form-card.hidden { display: none; }
 .form-card > .form-section-title:first-child,
 #premercadoSection > .form-section-title:first-child { margin-top: 0; }
+
+/* ── Cards colapsables (Premercado, Checklist, Operativa, Post-Operativa) ──── */
+/* El título hace de cabecera clickable con flecha; al colapsar se oculta todo
+   el cuerpo de la card menos el título. La card Imagen NO es colapsable. */
+.collapsible > .form-section-title {
+  cursor: pointer; user-select: none; margin-bottom: 16px;
+  transition: margin-bottom var(--transition), padding-bottom var(--transition),
+              border-color var(--transition);
+}
+.collapsible > .form-section-title .collapse-chevron {
+  margin-left: auto; font-size: 1.15rem; color: var(--text3); flex: 0 0 auto;
+}
+.collapsible.collapsed > .form-section-title {
+  margin-bottom: 0; padding-bottom: 0; border-bottom-color: transparent;
+}
+.collapsible.collapsed > *:not(.form-section-title) { display: none; }
 .form-card > .form-group:last-child,
 .form-card > *:last-child { margin-bottom: 0; }
 #premercadoSection > label:first-child { font-size: 0.95rem; font-weight: 600; color: var(--text); }

@@ -100,6 +100,30 @@ const SessionForm = (() => {
     })
   }
 
+  // Cards colapsables: el título hace de cabecera clickable con flecha.
+  // Arrancan colapsadas (vista compacta). La card Imagen no lleva .collapsible.
+  function setupCollapsibles() {
+    document.querySelectorAll('#section-register .collapsible').forEach(card => {
+      const title = card.querySelector(':scope > .form-section-title')
+      if (!title || title.dataset.collapsibleReady) return
+      title.dataset.collapsibleReady = '1'
+      const chev = document.createElement('i')
+      chev.className = 'ti collapse-chevron'
+      title.appendChild(chev)
+      // El glifo indica el estado: ▼ colapsado (clic para abrir), ▲ abierto.
+      // Se intercambia el icono en vez de rotarlo con CSS transform, que es
+      // frágil sobre los <i> de icono-fuente de Tabler.
+      const syncChevron = () => {
+        const collapsed = card.classList.contains('collapsed')
+        chev.classList.toggle('ti-chevron-down', collapsed)
+        chev.classList.toggle('ti-chevron-up', !collapsed)
+      }
+      card.classList.add('collapsed')
+      syncChevron()
+      title.addEventListener('click', () => { card.classList.toggle('collapsed'); syncChevron() })
+    })
+  }
+
   function setupBtnGroups() {
     document.querySelectorAll('.btn-group').forEach(group => {
       group.querySelectorAll('.btn-option').forEach(btn => {
@@ -661,6 +685,7 @@ const SessionForm = (() => {
     DB.getObjetivos().then(o => { objetivos = o; updateRetroceso(document.getElementById('sesionDate').value) }).catch(() => {})
     updateRetroceso(document.getElementById('sesionDate').value)
     setupBtnGroups()
+    setupCollapsibles()
     setupNoOperoToggle()
     setupPremercado()
     loadChecklist()
