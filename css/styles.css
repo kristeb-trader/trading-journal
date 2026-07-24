@@ -665,6 +665,51 @@ small { font-size: 0.82em; }
 }
 .phase-hint i { color: var(--warning); font-size: 1rem; flex-shrink: 0; }
 
+/* ── Datos → Setups operativos (familias + variantes) ─────────────────────── */
+.catalog-card-wide { grid-column: 1 / -1; }
+.setups-list { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+.setup-fam {
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; background: var(--bg2);
+}
+.setup-fam.off { opacity: 0.55; }
+.setup-fam-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.setup-fam-nom {
+  flex: 1 1 auto; min-width: 0; font-weight: 600; font-size: 0.95rem;
+  background: transparent; border: 1px solid transparent; border-radius: 6px;
+  padding: 4px 8px; color: var(--text);
+}
+.setup-fam-nom:hover { border-color: var(--border); }
+.setup-fam-nom:focus { border-color: var(--accent); background: var(--bg3); }
+.setup-fam-cod {
+  font-size: 0.7rem; color: var(--text3); background: var(--bg3);
+  border-radius: 4px; padding: 2px 7px; flex: 0 0 auto;
+}
+.setup-vars { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.setup-var {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 0.82rem;
+}
+.setup-var.off { opacity: 0.5; text-decoration: line-through; }
+.setup-var-tog {
+  background: none; border: none; cursor: pointer; color: var(--text3);
+  display: flex; align-items: center; padding: 2px; border-radius: 4px;
+}
+.setup-var-tog:hover { color: var(--accent); background: var(--accent-dim); }
+.setup-var-add { display: flex; gap: 8px; align-items: center; }
+.setup-var-add input { flex: 1 1 auto; min-width: 0; }
+.setup-var-add select { flex: 0 0 auto; width: auto; }
+
+/* Selectores de Fase / Setup en el editor de reglas */
+.rb-efields { display: flex; gap: 12px; margin: 10px 0 4px; flex-wrap: wrap; }
+.rb-efields label {
+  display: flex; flex-direction: column; gap: 4px; flex: 1 1 180px;
+  font-size: 0.74rem; color: var(--text2); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.02em;
+}
+.rb-efields select { width: 100%; }
+
 /* Alerta de riesgo (retroceso > stop máximo) */
 .riesgo-alert {
   display: flex; align-items: flex-start; gap: 10px;

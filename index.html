@@ -603,6 +603,21 @@
 
         <div class="data-catalogs">
 
+          <!-- Setups operativos: familias (IRI, Reingreso…) y sus variantes.
+               Lo que se cree aquí aparece solo en Registrar Sesión, en las
+               reglas de Fase 2, en el Coach, en Telegram y en el AddOn NT8. -->
+          <div class="catalog-card catalog-card-wide">
+            <div class="catalog-header">
+              <h3><i class="ti ti-chart-dots-3" style="color:var(--accent)"></i> Setups operativos</h3>
+              <span class="catalog-sub">Familias y sus variantes. Las reglas de Fase 2 se asignan a una familia desde Estrategia.</span>
+            </div>
+            <div class="catalog-add">
+              <input type="text" id="newSetupFamilia" placeholder="Nueva familia (ej: Ruptura)..." maxlength="40">
+              <button class="btn-primary" id="addSetupFamilia"><i class="ti ti-plus"></i> Agregar familia</button>
+            </div>
+            <div id="setupsList" class="setups-list"></div>
+          </div>
+
           <!-- Errores -->
           <div class="catalog-card">
             <div class="catalog-header">

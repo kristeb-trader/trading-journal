@@ -309,8 +309,107 @@ const DataManager = (() => {
     })
   }
 
+  // ── Setups operativos (familias + variantes) ──────────────────────────────
+  // El `codigo` no se edita: lo referencian catalogo_reglas.setup y
+  // sesiones.setup_codigo. Renombrar cambia solo la etiqueta visible.
+  function renderSetups(familias, variantes) {
+    const cont = document.getElementById('setupsList')
+    if (!cont) return
+    const esc = s => (s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+    if (!familias.length) { cont.innerHTML = '<p class="catalog-sub">Sin setups. Agrega una familia para empezar.</p>'; return }
+
+    cont.innerHTML = familias.map(f => {
+      const vs = variantes.filter(v => v.setup_codigo === f.codigo)
+      const chips = vs.length ? vs.map(v => `
+        <div class="setup-var ${v.activo === false ? 'off' : ''}">
+          <span class="setup-var-nom">${esc(v.nombre)}</span>
+          <button class="setup-var-tog" data-act="var-toggle" data-codigo="${esc(v.codigo)}" data-activo="${v.activo !== false}"
+                  title="${v.activo !== false ? 'Desactivar' : 'Activar'}">
+            <i class="ti ${v.activo !== false ? 'ti-eye' : 'ti-eye-off'}"></i>
+          </button>
+        </div>`).join('') : '<p class="catalog-sub">Sin variantes todavía.</p>'
+      return `
+        <div class="setup-fam ${f.activo === false ? 'off' : ''}">
+          <div class="setup-fam-head">
+            <input class="setup-fam-nom" value="${esc(f.nombre)}" data-codigo="${esc(f.codigo)}" maxlength="40" title="Renombrar (el código interno no cambia)">
+            <code class="setup-fam-cod">${esc(f.codigo)}</code>
+            <button class="setup-var-tog" data-act="fam-toggle" data-codigo="${esc(f.codigo)}" data-activo="${f.activo !== false}"
+                    title="${f.activo !== false ? 'Desactivar familia' : 'Activar familia'}">
+              <i class="ti ${f.activo !== false ? 'ti-eye' : 'ti-eye-off'}"></i>
+            </button>
+          </div>
+          <div class="setup-vars">${chips}</div>
+          <div class="setup-var-add">
+            <input type="text" class="setup-newvar" data-familia="${esc(f.codigo)}" placeholder="Nueva variante (ej: ${esc(f.nombre)} Alcista)..." maxlength="60">
+            <select class="setup-newdir" data-familia="${esc(f.codigo)}" title="Dirección">
+              <option value="alcista">Alcista</option>
+              <option value="bajista">Bajista</option>
+              <option value="ambas">Ambas</option>
+            </select>
+            <button class="btn-sm btn-secondary" data-act="var-add" data-familia="${esc(f.codigo)}"><i class="ti ti-plus"></i></button>
+          </div>
+        </div>`
+    }).join('')
+  }
+
+  async function loadSetups() {
+    const [familias, variantes] = await Promise.all([
+      DB.getSetups({ force: true, soloActivos: false }),
+      DB.getSetupVariantes({ force: true, soloActivos: false }),
+    ])
+    renderSetups(familias, variantes)
+  }
+
+  function wireSetups() {
+    document.getElementById('addSetupFamilia')?.addEventListener('click', async () => {
+      const inp = document.getElementById('newSetupFamilia')
+      const nombre = inp.value.trim()
+      if (!nombre) { Toast.show('Escribe el nombre de la familia', 'warning'); return }
+      try {
+        await DB.addSetup({ nombre })
+        inp.value = ''
+        await loadSetups()
+        Toast.show('Familia de setup agregada', 'success')
+      } catch (e) { Toast.show('Error al agregar: ' + e.message, 'error') }
+    })
+
+    const cont = document.getElementById('setupsList')
+    cont?.addEventListener('click', async e => {
+      const btn = e.target.closest('[data-act]'); if (!btn) return
+      const act = btn.dataset.act
+      try {
+        if (act === 'fam-toggle') {
+          await DB.updateSetup(btn.dataset.codigo, { activo: btn.dataset.activo !== 'true' })
+        } else if (act === 'var-toggle') {
+          await DB.updateSetupVariante(btn.dataset.codigo, { activo: btn.dataset.activo !== 'true' })
+        } else if (act === 'var-add') {
+          const fam = btn.dataset.familia
+          const inp = cont.querySelector(`.setup-newvar[data-familia="${fam}"]`)
+          const dir = cont.querySelector(`.setup-newdir[data-familia="${fam}"]`)
+          const nombre = inp.value.trim()
+          if (!nombre) { Toast.show('Escribe el nombre de la variante', 'warning'); return }
+          await DB.addSetupVariante({ setup_codigo: fam, nombre, direccion: dir?.value || 'ambas' })
+        } else return
+        await loadSetups()
+        Toast.show('Setups actualizados', 'success')
+      } catch (err) { Toast.show('Error: ' + err.message, 'error') }
+    })
+
+    // Renombrar familia (solo la etiqueta; el código interno se conserva)
+    cont?.addEventListener('change', async e => {
+      const inp = e.target.closest('.setup-fam-nom'); if (!inp) return
+      const nombre = inp.value.trim()
+      if (!nombre) { Toast.show('El nombre no puede ir vacío', 'warning'); await loadSetups(); return }
+      try {
+        await DB.updateSetup(inp.dataset.codigo, { nombre })
+        Toast.show('Familia renombrada', 'success')
+      } catch (err) { Toast.show('Error al renombrar: ' + err.message, 'error'); await loadSetups() }
+    })
+  }
+
   async function init() {
-    await Promise.all([loadCasuisticas(), loadEmociones(), loadRecomendaciones()])
+    await Promise.all([loadCasuisticas(), loadEmociones(), loadRecomendaciones(), loadSetups()])
+    wireSetups()
 
     // El checklist de disciplina se gestiona ahora desde Reglas y Estrategia
     // (rulebook `reglas`, capa proceso con es_checklist). Ya no se edita aquí.

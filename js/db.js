@@ -301,6 +301,55 @@ const DB = {
     return s ? s.nombre : (codigo || '')
   },
 
+  // ── Alta/edición de setups (pantalla Datos → Setups) ─────────────────────
+  // El `codigo` es la clave estable (lo referencian catalogo_reglas.setup y
+  // sesiones.setup_codigo), así que se deriva del nombre UNA vez y no se toca
+  // al renombrar: cambiar el nombre no debe romper el histórico.
+  _slug(txt) {
+    return (txt || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '')
+      .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40) || 'setup'
+  },
+
+  async addSetup({ nombre, descripcion = null }) {
+    const base = this._slug(nombre)
+    const existentes = (await this.getSetups({ force: true, soloActivos: false })).map(s => s.codigo)
+    let codigo = base, i = 2
+    while (existentes.includes(codigo)) codigo = `${base}_${i++}`
+    const orden = existentes.length + 1
+    const { data, error } = await supa.from('catalogo_setups')
+      .insert({ codigo, nombre, descripcion, orden, activo: true }).select('*').single()
+    if (error) throw error
+    _setupsCache = null
+    return data
+  },
+
+  async updateSetup(codigo, patch) {
+    const { error } = await supa.from('catalogo_setups').update(patch).eq('codigo', codigo)
+    if (error) throw error
+    _setupsCache = null
+  },
+
+  async addSetupVariante({ setup_codigo, nombre, direccion = 'ambas', subtipo = null }) {
+    const base = this._slug(nombre)
+    const todas = await this.getSetupVariantes({ force: true, soloActivos: false })
+    const existentes = todas.map(v => v.codigo)
+    let codigo = base, i = 2
+    while (existentes.includes(codigo)) codigo = `${base}_${i++}`
+    const orden = todas.length + 1
+    const { data, error } = await supa.from('catalogo_setup_variantes')
+      .insert({ codigo, setup_codigo, nombre, direccion, subtipo, orden, activo: true })
+      .select('*').single()
+    if (error) throw error
+    _variantesCache = null
+    return data
+  },
+
+  async updateSetupVariante(codigo, patch) {
+    const { error } = await supa.from('catalogo_setup_variantes').update(patch).eq('codigo', codigo)
+    if (error) throw error
+    _variantesCache = null
+  },
+
   // Precarga de catálogos que otros módulos consultan de forma sincrónica.
   async preloadCatalogos() {
     await Promise.all([

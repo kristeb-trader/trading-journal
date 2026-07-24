@@ -96,11 +96,22 @@ const Estrategia = (() => {
   }
 
   function editHtml(r) {
+    // Fase y Setup son editables: sin esto, una regla nueva quedaba siempre
+    // común y había que ir a SQL para hacerla propia de IRI o Reingreso.
+    const faseOpts = [['', 'Sin fase'], [1, 'Fase 1 · Pre-sesión'], [2, 'Fase 2 · Lectura del setup'], [3, 'Fase 3 · Ejecución']]
+      .map(([v, l]) => `<option value="${v}"${String(r.fase || '') === String(v) ? ' selected' : ''}>${l}</option>`).join('')
+    const setupOpts = [`<option value=""${!r.setup ? ' selected' : ''}>Común (todos los setups)</option>`]
+      .concat(DB.setupsSync().map(s =>
+        `<option value="${esc(s.codigo)}"${r.setup === s.codigo ? ' selected' : ''}>Solo ${esc(s.nombre)}</option>`)).join('')
     return `
       <div class="rb-card editing">
         <div class="rb-crow">${metaBadges(r)}</div>
         <input class="rb-input rb-ettl" data-id="${r.id}" value="${esc(r.titulo)}" placeholder="Título de la regla">
         <textarea class="rb-input rb-eenu" data-id="${r.id}" rows="4" placeholder="Enunciado: qué dice la regla y por qué">${esc(r.enunciado)}</textarea>
+        <div class="rb-efields">
+          <label>Fase<select class="rb-input rb-efase" data-id="${r.id}">${faseOpts}</select></label>
+          <label>Aplica a<select class="rb-input rb-esetup" data-id="${r.id}">${setupOpts}</select></label>
+        </div>
         <div class="rb-eactions">
           <button class="btn-sm btn-primary" data-act="save" data-id="${r.id}"><i class="ti ti-device-floppy"></i> Guardar</button>
           <button class="btn-sm btn-ghost" data-act="cancel" data-id="${r.id}">Cancelar</button>
@@ -230,8 +241,15 @@ const Estrategia = (() => {
       else if (act === 'save') {
         const ttl = cont.querySelector(`.rb-ettl[data-id="${id}"]`).value.trim()
         const enu = cont.querySelector(`.rb-eenu[data-id="${id}"]`).value.trim()
+        const faseV = cont.querySelector(`.rb-efase[data-id="${id}"]`)?.value
+        const setupV = cont.querySelector(`.rb-esetup[data-id="${id}"]`)?.value
         if (!ttl) { Toast.show('El título no puede ir vacío', 'warning'); return }
-        if (await patch(id, { titulo: ttl, enunciado: enu })) { editId = null; renderList(); Toast.show('Regla guardada', 'success') }
+        const cambios = { titulo: ttl, enunciado: enu }
+        if (faseV !== undefined)  cambios.fase  = faseV === '' ? null : parseInt(faseV)
+        if (setupV !== undefined) cambios.setup = setupV === '' ? null : setupV
+        if (await patch(id, cambios)) {
+          editId = null; render(); Toast.show('Regla guardada', 'success')
+        }
       }
       else if (act === 'del') {
         if (!confirm('¿Eliminar esta regla? No se puede deshacer.')) return

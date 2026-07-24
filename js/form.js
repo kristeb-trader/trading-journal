@@ -948,6 +948,10 @@ const SessionForm = (() => {
   // escribió el indicador SupabaseDailyLevels. Si no existe, deja el form limpio.
   async function onShow() {
     if (suppressAutoLoad) { suppressAutoLoad = false; return }
+    // Recargar catálogos: si se editaron reglas en Estrategia o setups en Datos,
+    // sus cachés quedaron invalidadas y el formulario debe reflejarlo sin
+    // obligar a recargar la página.
+    await Promise.all([loadSetups(), loadChecklist()])
     const today = new Date().toISOString().slice(0, 10)
     let sesion = null
     try { sesion = await DB.getSesionByDate(today) } catch (_) { return }
