@@ -81,9 +81,12 @@ const SessionForm = (() => {
     // Preservar marcas actuales (al re-renderizar tras cambiar el setup)
     const prev = {}
     cont.querySelectorAll('input[type="checkbox"]').forEach(c => { prev[c.dataset.clave] = c.checked })
-    // Filtrar por el setup del día: ítems universales + los del setup elegido
+    // Filtrar por el setup del día: ítems universales + los del setup elegido.
+    // Sin setup elegido solo se muestran los universales: las reglas de un setup
+    // no se pueden validar si aún no se sabe cuál se operó (antes se mostraban
+    // las de TODOS los setups mezcladas).
     const fam = setupFamily()
-    const visibles = checklistItems.filter(i => !i.setup || !fam || i.setup === fam)
+    const visibles = checklistItems.filter(i => !i.setup || i.setup === fam)
     const byFase = { 1: [], 2: [], 3: [] }
     visibles.forEach(i => (byFase[i.fase] || byFase[1]).push(i))
     cont.innerHTML = [1, 2, 3].map(f => {
@@ -97,16 +100,22 @@ const SessionForm = (() => {
           <span class="check-box"></span>
           <span>${i.texto}</span>
         </label>`).join('')
+      // Fase 2 sin setup elegido: avisar que faltan las reglas propias del setup
+      const aviso = (f === 2 && !fam)
+        ? `<div class="phase-hint"><i class="ti ti-info-circle"></i> Elige el <b>SetUp</b> en Operativa para ver sus reglas propias.</div>`
+        : ''
+      const badge = (f === 2 && fam) ? `<span class="phase-setup-badge">${DB.setupLabel(fam)}</span>` : ''
       return `
         <div class="phase-card phase-card-${f}${opOnly}">
           <div class="phase-card-head">
             <span class="phase-card-icon"><i class="ti ${FASE_META[f].icon}"></i></span>
             <div class="phase-card-titles">
-              <div class="phase-card-title">${FASE_META[f].titulo}</div>
+              <div class="phase-card-title">${FASE_META[f].titulo}${badge}</div>
               <div class="phase-card-when">${FASE_META[f].when}</div>
             </div>
             <span class="phase-progress" id="phaseProg${f}">0/${items.length}</span>
           </div>
+          ${aviso}
           <div class="checklist">${checks}</div>
         </div>`
     }).join('')
@@ -466,6 +475,7 @@ const SessionForm = (() => {
 
   function clearForm() {
     document.getElementById('sessionForm').reset()
+    renderChecklist()   // el reset vacía el setup: el checklist debe re-filtrarse
     updatePhaseProgress()
     document.querySelectorAll('.btn-option').forEach(b => b.classList.remove('active'))
     document.getElementById('motivoGroup').classList.add('hidden')
@@ -561,12 +571,18 @@ const SessionForm = (() => {
 
     // Los <option> de setup se pueblan desde el catálogo: hay que esperarlos
     // antes de asignar `setup` o `setupObservado` (si no, el value se descarta).
+    // El checklist también, porque se re-filtra según el setup que se cargue.
     await setupsReady
+    await checklistReady
 
     if (!sesion.no_opero) {
       document.getElementById('contexto').value = sesion.contexto || ''
       document.getElementById('velasCorrida').value = sesion.velas_corrida || ''
       document.getElementById('setup').value = sesion.setup || ''
+      // Asignar .value por código NO dispara 'change', así que el checklist se
+      // quedaba con el filtro del render inicial (sin setup = todas las reglas
+      // mezcladas). Hay que re-renderizar a mano.
+      renderChecklist()
 
       if (sesion.num_corrida) {
         document.getElementById('numCorrida').value = sesion.num_corrida
