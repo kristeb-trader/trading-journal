@@ -617,18 +617,44 @@ ${catalogoStr}
     return secciones
   }
 
+  // Encabezados del diagnóstico final. Detecta cada uno por su PALABRA CLAVE,
+  // venga como venga: "**🎯 VEREDICTO**", "## VEREDICTO DE SETUP", "VEREDICTO:"
+  // o suelto. Antes exigía negrita+emoji exactos y por eso el diagnóstico del
+  // chat (formato más laxo) no se auto-aplicaba y se generaba dos veces.
+  const _DIAG_DEFS = [
+    { key: 'veredicto',   kw: 'VEREDICTO' },
+    { key: 'errores',     kw: 'ERRORES' },
+    { key: 'aprendizaje', kw: 'APRENDIZAJE' },
+    { key: 'resumen',     kw: 'RESUMEN' },
+  ]
+
+  // Devuelve las líneas del texto y el índice de línea de cada encabezado hallado
+  function _detectarEncabezadosDiag(texto) {
+    const lines = (texto || '').split('\n')
+    const found = {}
+    lines.forEach((raw, i) => {
+      // Normaliza: quita #, *, `, >, emojis y espacios → deja solo el título
+      const norm = raw.replace(/[#*`>]/g, '').replace(/[🎯⚠️🎓📋]/g, '').trim().toUpperCase()
+      for (const { key, kw } of _DIAG_DEFS) {
+        if (found[key] != null) continue
+        // Es encabezado si empieza por la palabra clave y la línea es corta
+        // (un título, no prosa que casualmente mencione la palabra)
+        if (norm.startsWith(kw) && norm.length <= kw.length + 24) found[key] = i
+      }
+    })
+    return { lines, found }
+  }
+
   // Etapa 3 — Diagnóstico final (4 secciones)
   function parsearDiagnostico(texto) {
     const secciones = { veredicto: '', errores: '', aprendizaje: '', resumen: '' }
-    const patrones = [
-      { key: 'veredicto',  re: /\*\*🎯\s*VEREDICTO[^*]*\*\*([\s\S]*?)(?=\*\*⚠️|\*\*ERRORES|$)/i },
-      { key: 'errores',    re: /\*\*⚠️\s*ERRORES[^*]*\*\*([\s\S]*?)(?=\*\*🎓|\*\*APRENDIZAJE|$)/i },
-      { key: 'aprendizaje',re: /\*\*🎓\s*APRENDIZAJE[^*]*\*\*([\s\S]*?)(?=\*\*📋|\*\*RESUMEN|$)/i },
-      { key: 'resumen',    re: /\*\*📋\s*RESUMEN[^*]*\*\*([\s\S]*?)$/i },
-    ]
-    patrones.forEach(({ key, re }) => {
-      const match = texto.match(re)
-      if (match) secciones[key] = match[1].trim()
+    const { lines, found } = _detectarEncabezadosDiag(texto)
+    // Ordena los encabezados hallados por su posición y corta el cuerpo entre uno y el siguiente
+    const orden = _DIAG_DEFS.filter(d => found[d.key] != null).sort((a, b) => found[a.key] - found[b.key])
+    orden.forEach((d, idx) => {
+      const start = found[d.key] + 1
+      const end = idx + 1 < orden.length ? found[orden[idx + 1].key] : lines.length
+      secciones[d.key] = lines.slice(start, end).join('\n').trim()
     })
     // La IA suele envolver el resumen en backticks (```code```); los quitamos
     secciones.resumen = limpiarResumen(secciones.resumen)
@@ -675,15 +701,28 @@ ${catalogoStr}
     return out
   }
 
-  // Detecta si una respuesta del chat contiene el diagnóstico estructurado completo
+  // Detecta si una respuesta del chat contiene el diagnóstico estructurado
+  // completo (al menos 3 de los 4 encabezados), tolerante al formato.
   function esDiagnosticoEnChat(texto) {
-    const secciones = [
-      /\*\*🎯\s*VEREDICTO/i,
-      /\*\*⚠️\s*ERRORES/i,
-      /\*\*🎓\s*APRENDIZAJE/i,
-      /\*\*📋\s*RESUMEN/i,
-    ]
-    return secciones.filter(re => re.test(texto)).length >= 3
+    const { found } = _detectarEncabezadosDiag(texto)
+    return Object.keys(found).length >= 3
+  }
+
+  // Capa 2: detecta si el mensaje del trader pide claramente el diagnóstico
+  // final, para enrutarlo por la vía fiable (la del botón) en vez de una ronda
+  // de chat que la IA respondería con formato laxo. Conservador: exige mención
+  // al diagnóstico + verbo de generar/finalizar, y descarta negaciones y
+  // preguntas meta ("¿cuál es la diferencia de generar el diagnóstico?").
+  function pideDiagnosticoFinal(texto) {
+    const t = (texto || '').toLowerCase()
+    if (!/diagn[oó]stico/.test(t)) return false
+    // Preguntas meta sobre el diagnóstico → dejar que responda el chat
+    if (/\b(diferencia|c[oó]mo\s+funciona|qu[eé]\s+es|por\s+qu[eé]|para\s+qu[eé])\b/.test(t)) return false
+    // Negaciones: "no generes el diagnóstico todavía", "aún no el diagnóstico"
+    if (/\b(no|nunca|sin|a[uú]n\s+no|todav[ií]a\s+no)\b[^.?!]*diagn/.test(t)) return false
+    if (/diagn[oó]stico[^.?!]*\b(no|a[uú]n\s+no|todav[ií]a\s+no)\b/.test(t)) return false
+    // Verbo de generar/finalizar, "final", o una confirmación breve (sí/dale/ok)
+    return /\b(gener|dame|haz|hazlo|produce|emite|saca|crea|final|finaliza|cierra|adelante|procede|proceder|dale|ok|s[ií])\b/.test(t)
   }
 
   // Cuando la IA genera el diagnóstico dentro del chat, lo aplica en el Step 3
@@ -850,12 +889,6 @@ ${catalogoStr}
   // ── Bloques de datos (colapsables) del análisis técnico ──────────────────
   const _n = v => (v == null || v === '' || isNaN(parseFloat(v))) ? null : parseFloat(v)
   const _drow = (lbl, val) => val == null ? '' : `<div class="cz-drow"><span class="cz-dl">${lbl}</span><span class="cz-dv">${val}</span></div>`
-  function _setupFam(s) {
-    const v = (s?.setup || '').toLowerCase()
-    if (v.startsWith('iri')) return 'iri'
-    if (v.startsWith('reingreso')) return 'reingreso'
-    return null
-  }
 
   // Datos de premercado + zonas naranjas (de la sesión del día)
   function renderPremercadoData(s) {
@@ -886,26 +919,6 @@ ${catalogoStr}
       </div>
       ${noticiaVal ? `<div class="cz-dgroup"><div class="cz-dgt">Noticias</div>${_drow('Del día', noticiaVal)}</div>` : ''}
     `
-  }
-
-  // Checklist del día (✓/✗ por fase), filtrado por el setup del día
-  function renderChecklistData(s) {
-    const items = DB.checklistItemsSync()
-    if (!s || !items.length) return '<p class="cz-empty">Sin checklist.</p>'
-    const fam = _setupFam(s)
-    const vis = items.filter(i => !i.setup || !fam || i.setup === fam)
-    const FASES = { 1:'Fase 1 · Pre-sesión', 2:'Fase 2 · Lectura del setup', 3:'Fase 3 · Ejecución' }
-    let html = ''
-    ;[1,2,3].forEach(f => {
-      const ofF = vis.filter(i => (i.fase||1) === f)
-      if (!ofF.length) return
-      html += `<div class="cz-dgroup"><div class="cz-dgt">${FASES[f]}</div>` +
-        ofF.map(i => {
-          const ok = !!(s.checklist?.[i.clave] ?? s[i.clave])
-          return `<div class="cz-chk ${ok?'ok':'no'}"><span class="cz-cic">${ok?'✓':'✗'}</span><span>${i.texto}</span></div>`
-        }).join('') + `</div>`
-    })
-    return html || '<p class="cz-empty">Sin ítems aplicables.</p>'
   }
 
   // Operativa del día (tabla de trades PA)
@@ -942,10 +955,9 @@ ${catalogoStr}
         <div class="coach-section-header"><span class="cs-icon">🌍</span><span>CONTEXTO</span></div>
         <div class="coach-section-body cz">${renderContexto(secciones.contexto)}</div>
         <details class="cz-data">
-          <summary><span class="cz-dsum-ic">🌅</span> Datos de premercado y checklist<span class="cz-caret"></span></summary>
+          <summary><span class="cz-dsum-ic">🌅</span> Datos de premercado<span class="cz-caret"></span></summary>
           <div class="cz-data-body">
             ${renderPremercadoData(s)}
-            <div class="cz-dgroup"><div class="cz-dgt">Checklist del día</div>${renderChecklistData(s)}</div>
           </div>
         </details>
       </div>
@@ -1311,6 +1323,17 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
 
     input.value = ''
     renderMensaje('user', texto)
+
+    // Capa 2: si el trader pide claramente el diagnóstico final, no gastamos una
+    // ronda de chat: lo generamos por la vía fiable (la del botón) para que caiga
+    // directo en Veredicto/Errores/Aprendizaje/Resumen, sin doble generación.
+    if (analisisHecho && !diagnosticoHecho && pideDiagnosticoFinal(texto)) {
+      renderMensaje('assistant', '📋 Generando el **diagnóstico final** abajo 👇')
+      await generarDiagnostico()
+      input?.focus()
+      return
+    }
+
     renderTyping(true)
 
     const sendBtn = document.getElementById('coachSendBtn')
@@ -1319,12 +1342,15 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     try {
       const respuesta = await llamarClaude(texto, false)
       renderTyping(false)
-      renderMensaje('assistant', respuesta)
 
-      // Si la IA generó el diagnóstico estructurado en el chat, aplicarlo
-      // en el Step 3 automáticamente (sin segunda llamada a la API).
+      // Si la IA igualmente coló el diagnóstico estructurado en el chat, no lo
+      // volcamos como muro de texto: nota corta + auto-aplicar en el Step 3
+      // (sin segunda llamada a la API).
       if (esDiagnosticoEnChat(respuesta)) {
+        renderMensaje('assistant', '📋 Diagnóstico final generado — lo apliqué en las ventanas de abajo 👇')
         await procesarDiagnosticoDesdeChat(respuesta)
+      } else {
+        renderMensaje('assistant', respuesta)
       }
     } catch (err) {
       renderTyping(false)
