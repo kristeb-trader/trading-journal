@@ -30,6 +30,9 @@ Dashboard personal para registro y análisis de operativa diaria en NQ/MNQ Futur
 ## Archivos clave
 ```
 js/app.js        — Boot, navegación SPA, Modal.openDay (modal del calendario)
+js/account-filter.js — Filtro de cuentas compartido (multi-selección con checkboxes).
+                   Nombre COMPLETO de la cuenta; default = `objetivos.cuenta_principal`.
+                   Lo usan Análisis, Calendario, Trades y Métricas (hereda el del Calendario)
 js/calendar.js   — Calendario mensual, filtro de cuenta, openDayModal
 js/coach.js      — Coach IA: flujo 3 etapas, chat, diagnóstico, guardar. Lee de `catalogo_reglas`
 js/metrics.js    — KPIs y métricas generales (cards del calendario)

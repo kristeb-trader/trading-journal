@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 24 Julio 2026 (ver *Checkpoint Jul 2026 (7)* al final: **setups paramétricos** — `catalogo_setups` + `catalogo_setup_variantes`, reglas por setup, administración desde el Journal, Telegram y NT8 dinámicos). Checkpoints previos: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
+**Última actualización:** 24 Julio 2026 (ver *Checkpoint Jul 2026 (8)* al final: **filtro de cuentas multi-selección** — nombres completos, default por cuenta principal, combinar PA + evaluación). Previo — *Checkpoint Jul 2026 (7)*: **setups paramétricos** — `catalogo_setups` + `catalogo_setup_variantes`, reglas por setup, administración desde el Journal, Telegram y NT8 dinámicos). Checkpoints previos: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `E:\Proyectos\Trading Journal` (migrado desde `C:\Users\Asus\Claro drive\Trading Journal` el 6 jul 2026)
@@ -1291,6 +1291,56 @@ re-renderizan; sin setup elegido se muestran solo las comunes + aviso.
 > **Pendiente (decisión de Kris):** el trigger `fn_backfill_regla_checklist` marcó las
 > 3 reglas nuevas como cumplidas (`true`) en las 120 sesiones históricas — diseño "no
 > dañar disciplina". Si se prefiere que salgan como *N/A*, hay que ajustarlo.
+
+---
+
+## Checkpoint Jul 2026 (8) — Filtro de cuentas multi-selección (24 jul)
+
+Motivación: la cuenta principal actual (`APEX-232411-14`) **no aparecía** en el
+selector de cuentas de Análisis.
+
+**Causa raíz.** Las 4 copias de `abbreviateAccount()` (charts, calendar, metrics,
+table) recortaban el nombre a los **2 primeros segmentos**:
+
+| Cuenta real | Lo que mostraba el filtro |
+|---|---|
+| `APEX-232411-14` | `APEX-232411` |
+| `PA-APEX-232411-03` | `PA-APEX` |
+
+La cuenta en uso estaba en la lista pero irreconocible, y una futura `-15` habría
+caído en la **misma opción** que la `-14`, sumándose en silencio. La abreviación
+además rompía la preferencia de cuenta principal que `calendar.js` ya intentaba
+aplicar: comparaba `DB.cuentaPrincipal()` (nombre completo) contra una lista de
+nombres abreviados → nunca casaba y caía al hardcode `PA-APEX` (la PA quemada).
+
+- **Componente nuevo `js/account-filter.js`.** Dropdown con checkboxes que permite
+  **combinar varias cuentas** (p. ej. la PA + la evaluación actual). Reemplaza los
+  3 `<select>` y las 4 copias de `abbreviateAccount()`. Selección: `null` = todas ·
+  array = subconjunto. API: `create` / `setAccounts` / `selected` / `matches` /
+  `filter` / `slug` / `label`.
+- **Nombre completo** como valor y como etiqueta, con badge `principal`.
+- **Default = `objetivos.cuenta_principal`.** Hay que pedirla explícitamente
+  (`fetchCuentaPrincipal`, memoizada y compartida por las 3 instancias):
+  `Calendar.init()` corre **antes** que cualquier otro `getObjetivos()`, así que el
+  cache de `db.js` todavía tendría el fallback histórico.
+- **Migración transparente** del valor abreviado ya guardado (`annualAccount`,
+  `calendarAccount`) → se expande a las cuentas completas que ese prefijo
+  representaba. Claves nuevas: `analysisAccounts`, `calendarAccounts`,
+  `tradesAccounts` (Trades ahora también persiste su selección).
+- **Aplicado en Análisis, Calendario, Trades y Métricas** (Métricas hereda el filtro
+  del Calendario). `create()` es idempotente porque `TradesTable.reload()` reusa
+  `init()`.
+- Verificado en preview: 16/16 pruebas del componente + 18/18 de integración (KPIs
+  de Análisis y Métricas y filas de Trades recalculando al combinar cuentas).
+
+> ⚠️ **Al combinar cuentas los KPIs se SUMAN.** "Rentabilidad %" divide por un único
+> capital inicial configurado en Datos, así que ese KPI concreto queda distorsionado
+> al mezclar dos bases de capital distintas. El resto (P&L, Win Rate, Efectividad,
+> Profit Factor, equity) sí es correcto combinado.
+
+> **Nota:** Análisis sigue leyendo **solo la tabla `trades`**. Las cuentas de
+> evaluación viejas (`-11`, `-12`, `-13`) viven en `apex_trades` y se consultan en
+> Apex Tracker (decisión explícita de Kris, 24 jul).
 
 ---
 
