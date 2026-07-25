@@ -62,7 +62,6 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 | **`catalogo_setup_variantes`** | **Variantes operativas** (`iri_continuacion_alcista` → "IRI Continuación Alcista"): `setup_codigo` (FK a la familia), `subtipo`, `direccion`. Alimenta los dropdowns de la web, el teclado del bot y el AddOn NT8 |
 | `objetivos` | Config global (single row): Stop máx (`stop_max_puntos`, default 80), trades/día, P&L objetivo, límite pérdida, y **`cuenta_principal`** (la cuenta que el journal usa para P&L/análisis/Coach; se elige en Datos) |
 | **`catalogo_fechas`** | **Días especiales del calendario** (`tipo`: fomc/festivo/vacaciones/otro; fecha, nombre, emoji, notas). Se gestiona en la sección "Fechas Especiales". El calendario lee de aquí. Reemplaza a `fomc_dates` y al cálculo de festivos en código |
-| `fomc_dates` | ⚠️ Obsoleta (migrada a `catalogo_fechas`); pendiente de drop |
 | `apex_cuentas` | Cuentas de fondeo Apex: parámetros (DD, target, safety net) y estado |
 | `apex_trades` | Trades + días auto-exportados de NT8 (`tipo='trade'`/`'dia'`) |
 
@@ -105,17 +104,21 @@ checklist normalizado, cuenta principal configurable, filtro de cuenta persisten
 - Estadísticas de 3 corridas, volumen en trades, tasa de ejecución de setups válidos.
 - "Dejé de ganar": ampliar para capturar más casos (miedo, reingreso no tomado…).
 - Rendimiento general del Journal (el modal del día cargaba lento).
-- Decisión pendiente: otras **6 reglas** (`rei_zona`, `chk_contexto`, `chk_no_mover`,
-  `rr_1a1`, `stop_max_puntos`, `target_sin_zonas`) tienen su primer `false` el 2026-06-01
-  → nacieron con el rulebook de junio y sus filas de feb–may también son relleno en `true`
-  (288 ítems). Limpiarlas bajaría la disciplina global de 81.5% a **75.1%**.
+
+> 🚫 **Decidido y CERRADO (24 jul) — no volver a proponerlo.** Otras 6 reglas
+> (`rei_zona`, `chk_contexto`, `chk_no_mover`, `rr_1a1`, `stop_max_puntos`,
+> `target_sin_zonas`) nacieron con el rulebook de junio, así que sus filas de **feb–may
+> son relleno en `true`** (288 ítems). Kris decidió **dejarlas como están**: limpiarlas
+> bajaría la disciplina global de 81.5% a 75.1% y rompería la comparabilidad con el
+> histórico que ya viene mirando. La disciplina de feb–may está inflada **por diseño
+> aceptado**; leerla con esa salvedad.
 
 > ✅ **Cerrado (24 jul):** `ChecklistChaumer` recompilado en NT8 → los botones de setup
 > salen de `catalogo_setups` (Fase D cerrada). Y la cuenta principal `APEX-232411-14` ya
 > tiene trades reales en `trades` (22-24 jul) → el routing de `SupabaseAutoExport` hacia
 > la cuenta principal está verificado end-to-end.
 
-> **BD limpia (verificado Jul 2026 contra la BD real):** no quedan tablas ni columnas
+> **BD limpia (re-verificado 24 jul 2026 contra la BD real — 17 tablas vivas):** no quedan tablas ni columnas
 > legacy. Eliminadas: `apex_registros`, `fomc_dates`, las `*_archivada`,
 > `reglas_legacy_backup`, `checklist_items`, `sesion_casuisticas`,
 > `experimento_registros`, `catalogo_casuisticas`, `errores_sesion`, y de `sesiones`
