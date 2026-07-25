@@ -52,7 +52,7 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 |---|---|
 | `trades` | Trades con `profit` NETO, `commission` round-trip |
 | `sesiones` | Registro diario: emoción, premercado, setup (el checklist ya NO vive aquí). `setup` (texto) + **`setup_codigo`** (FK a `catalogo_setup_variantes`); el trigger `fn_sync_setup_codigo` los mantiene sincronizados escriba quien escriba (web, bot, Worker o NT8) |
-| **`sesion_checklist`** | **Checklist diario normalizado** (1 fila = sesión × regla). FK a `sesiones(sesion_date)` y `catalogo_reglas(codigo)`; `cumplido` bool. Reemplaza al JSONB `sesiones.checklist` y a las columnas `chk_*`. Triggers: sesión nueva y regla nueva → materializan en `true` (no dañar disciplina). `db.js` reconstruye `s.checklist` en memoria al leer |
+| **`sesion_checklist`** | **Checklist diario normalizado** (1 fila = sesión × regla). FK a `sesiones(sesion_date)` y `catalogo_reglas(codigo)`; `cumplido` bool. Reemplaza al JSONB `sesiones.checklist` y a las columnas `chk_*`. Triggers: sesión nueva → materializa en `true`; **regla nueva → solo de hoy en adelante** (Jul 2026: antes rellenaba TODO el historial en `true` e inflaba la disciplina). **Sin fila = N/A**: `calcDisciplinaStats` ignora los ítems no registrados. `db.js` reconstruye `s.checklist` en memoria al leer |
 | `diagnosticos_diarios` | Análisis IA: 3 secciones técnicas + 4 diagnóstico + chat |
 | `diagnostico_errores` | Errores detectados (manual + IA) con recomendaciones |
 | `diagnostico_experimentos` | Condiciones en prueba (T/S) por sesión |
@@ -105,9 +105,10 @@ checklist normalizado, cuenta principal configurable, filtro de cuenta persisten
 - Estadísticas de 3 corridas, volumen en trades, tasa de ejecución de setups válidos.
 - "Dejé de ganar": ampliar para capturar más casos (miedo, reingreso no tomado…).
 - Rendimiento general del Journal (el modal del día cargaba lento).
-- Decisión pendiente: el trigger `fn_backfill_regla_checklist` marcó las 3 reglas nuevas
-  de Reingreso como cumplidas (`true`) en las 120 sesiones históricas. Si se prefiere que
-  salgan como *N/A* (para no inflar la disciplina histórica), hay que ajustarlo.
+- Decisión pendiente: otras **6 reglas** (`rei_zona`, `chk_contexto`, `chk_no_mover`,
+  `rr_1a1`, `stop_max_puntos`, `target_sin_zonas`) tienen su primer `false` el 2026-06-01
+  → nacieron con el rulebook de junio y sus filas de feb–may también son relleno en `true`
+  (288 ítems). Limpiarlas bajaría la disciplina global de 81.5% a **75.1%**.
 
 > ✅ **Cerrado (24 jul):** `ChecklistChaumer` recompilado en NT8 → los botones de setup
 > salen de `catalogo_setups` (Fase D cerrada). Y la cuenta principal `APEX-232411-14` ya
