@@ -159,7 +159,16 @@ namespace NinjaTrader.NinjaScript.AddOns
         // no visible conservan su marca aunque su Box no esté renderizado.
         private class Item { public string Clave; public int Fase; public string Setup; public string Texto; public bool Checked; public CheckBox Box; }
         private readonly List<Item> items = new List<Item>();
-        private string selectedSetup = "iri";       // iri | reingreso (persistido en config local)
+
+        // Familias de setup: se leen de catalogo_setups, así un setup nuevo sale
+        // solo (antes eran dos botones fijos IRI/REINGRESO en el código).
+        private class SetupDef { public string Codigo; public string Nombre; }
+        private readonly List<SetupDef> setups = new List<SetupDef>();
+        private static readonly List<SetupDef> SETUPS_FALLBACK = new List<SetupDef> {
+            new SetupDef { Codigo = "iri",       Nombre = "IRI" },
+            new SetupDef { Codigo = "reingreso", Nombre = "REINGRESO" },
+        };
+        private string selectedSetup = "iri";       // código de la familia (persistido en config local)
         private string currentDate;                 // sesion_date en uso (fecha ET)
         private DateTime lastLocalChangeUtc = DateTime.MinValue;
         private DateTime lastHoraChangeUtc = DateTime.MinValue;
@@ -171,7 +180,9 @@ namespace NinjaTrader.NinjaScript.AddOns
 
         // UI refs
         private StackPanel sectionsPanel;
-        private Button setupIriBtn, setupReiBtn;
+        private Grid setupGrid;                                  // contenedor de los botones de setup
+        private readonly Dictionary<string, Button> setupBtns    // código → botón
+            = new Dictionary<string, Button>();
         private readonly Dictionary<int, TextBlock> faseBadges = new Dictionary<int, TextBlock>();
         private Button goButton;
         private Border statusBanner;
@@ -275,18 +286,13 @@ namespace NinjaTrader.NinjaScript.AddOns
             Grid.SetRow(noticiaCard, 2);
             root.Children.Add(noticiaCard);
 
-            // Selector de setup (IRI | Reingreso) — filtra la Fase 2
-            var setupGrid = new Grid { Margin = new Thickness(12, 0, 12, 8) };
-            setupGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            setupGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            setupIriBtn = MakeSetupButton("IRI", "iri", new Thickness(0, 0, 3, 0));
-            setupReiBtn = MakeSetupButton("REINGRESO", "reingreso", new Thickness(3, 0, 0, 0));
-            Grid.SetColumn(setupIriBtn, 0);
-            Grid.SetColumn(setupReiBtn, 1);
-            setupGrid.Children.Add(setupIriBtn);
-            setupGrid.Children.Add(setupReiBtn);
+            // Selector de setup — filtra la Fase 2. Los botones se construyen en
+            // BuildSetupButtons() desde catalogo_setups (uno por familia).
+            setupGrid = new Grid { Margin = new Thickness(12, 0, 12, 8) };
             Grid.SetRow(setupGrid, 3);
             root.Children.Add(setupGrid);
+            if (setups.Count == 0) setups.AddRange(SETUPS_FALLBACK);
+            BuildSetupButtons();
 
             // Checklist (scroll)
             sectionsPanel = new StackPanel { Margin = new Thickness(12, 0, 12, 8) };
@@ -308,6 +314,34 @@ namespace NinjaTrader.NinjaScript.AddOns
 
             StyleSetupButtons();
             return root;
+        }
+
+        // Un botón por familia, en columnas iguales. Se rehace cuando llega el
+        // catálogo de BD (puede haber más de dos setups).
+        private void BuildSetupButtons()
+        {
+            if (setupGrid == null) return;
+            setupGrid.Children.Clear();
+            setupGrid.ColumnDefinitions.Clear();
+            setupBtns.Clear();
+
+            for (int i = 0; i < setups.Count; i++)
+            {
+                setupGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                var s = setups[i];
+                var margin = new Thickness(i == 0 ? 0 : 3, 0, i == setups.Count - 1 ? 0 : 3, 0);
+                var btn = MakeSetupButton(s.Nombre.ToUpperInvariant(), s.Codigo, margin);
+                Grid.SetColumn(btn, i);
+                setupGrid.Children.Add(btn);
+                setupBtns[s.Codigo] = btn;
+            }
+
+            // Si el setup persistido ya no existe (familia borrada o renombrada),
+            // caer al primero para no quedar sin selección válida.
+            if (setups.Count > 0 && !setupBtns.ContainsKey(selectedSetup))
+                selectedSetup = setups[0].Codigo;
+
+            StyleSetupButtons();
         }
 
         private Button MakeSetupButton(string label, string key, Thickness margin)
@@ -333,14 +367,13 @@ namespace NinjaTrader.NinjaScript.AddOns
 
         private void StyleSetupButtons()
         {
-            if (setupIriBtn == null || setupReiBtn == null) return;
-            bool iri = selectedSetup != "reingreso";
-            setupIriBtn.Background  = iri ? ACCENT : CARD;
-            setupIriBtn.Foreground  = iri ? Brushes.White : TEXT2;
-            setupIriBtn.BorderBrush = iri ? ACCENT : BORDER;
-            setupReiBtn.Background  = iri ? CARD : ACCENT;
-            setupReiBtn.Foreground  = iri ? TEXT2 : Brushes.White;
-            setupReiBtn.BorderBrush = iri ? BORDER : ACCENT;
+            foreach (var kv in setupBtns)
+            {
+                bool on = kv.Key == selectedSetup;
+                kv.Value.Background  = on ? ACCENT : CARD;
+                kv.Value.Foreground  = on ? Brushes.White : TEXT2;
+                kv.Value.BorderBrush = on ? ACCENT : BORDER;
+            }
         }
 
         // Ítem visible: común (sin setup) o del setup seleccionado
@@ -588,8 +621,34 @@ namespace NinjaTrader.NinjaScript.AddOns
         }
 
         // ═══ Red (Supabase REST) ═════════════════════════════════════════════
+        // Familias de setup (catalogo_setups). Si falla, se conserva lo que haya
+        // (fallback IRI/REINGRESO) para no dejar la ventana sin selector.
+        private async Task LoadSetupsAsync()
+        {
+            try
+            {
+                string url = SUPABASE_URL + "/rest/v1/catalogo_setups?activo=eq.true&order=orden.asc&select=codigo,nombre";
+                string json = await http.GetStringAsync(url).ConfigureAwait(false);
+                var arr = JArray.Parse(json);
+                if (arr.Count == 0) return;
+
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    setups.Clear();
+                    foreach (var t in arr)
+                        setups.Add(new SetupDef { Codigo = (string)t["codigo"], Nombre = (string)t["nombre"] });
+                    BuildSetupButtons();
+                });
+            }
+            catch (Exception ex)
+            {
+                NinjaTrader.Code.Output.Process("ChecklistChaumer LoadSetups: " + ex.Message, PrintTo.OutputTab1);
+            }
+        }
+
         private async Task LoadCatalogAsync()
         {
+            await LoadSetupsAsync().ConfigureAwait(false);   // el filtro de Fase 2 depende de las familias
             try
             {
                 string url = SUPABASE_URL + "/rest/v1/catalogo_reglas?es_checklist=eq.true&activa=eq.true&order=fase.asc,orden.asc&select=clave:codigo,fase,setup,texto:titulo,orden";
@@ -837,8 +896,11 @@ namespace NinjaTrader.NinjaScript.AddOns
                 if (cfg["topmost"] != null && (bool)cfg["topmost"]) { Topmost = true; pinButton.IsChecked = true; }
                 if (cfg["setup"] != null && cfg["setup"].Type != JTokenType.Null)
                 {
+                    // Se acepta cualquier código: la lista de familias es dinámica.
+                    // Si al llegar el catálogo ese código ya no existe,
+                    // BuildSetupButtons() cae al primero disponible.
                     string s = (string)cfg["setup"];
-                    if (s == "iri" || s == "reingreso") { selectedSetup = s; StyleSetupButtons(); }
+                    if (!string.IsNullOrWhiteSpace(s)) { selectedSetup = s; StyleSetupButtons(); }
                 }
             }
             catch (Exception ex) { NinjaTrader.Code.Output.Process("ChecklistChaumer RestoreConfig: " + ex.Message, PrintTo.OutputTab1); }

@@ -64,13 +64,15 @@ const CONTEXTOS = [
   { label: '📉 Bajista fuerte', value: 'Bajista fuerte' },
 ];
 
-const SETUPS = [
-  'IRI Apertura Alcista',
-  'IRI Apertura Bajista',
-  'IRI Continuación Alcista',
-  'IRI Continuación Bajista',
-  'Reingreso Alcista',
-  'Reingreso Bajista',
+// Fallback si no se puede leer `catalogo_setup_variantes` (sin red / error).
+// La lista viva está en BD: los setups nuevos aparecen aquí sin tocar el bot.
+const SETUPS_FALLBACK = [
+  { codigo: 'iri_apertura_alcista',     nombre: 'IRI Apertura Alcista' },
+  { codigo: 'iri_apertura_bajista',     nombre: 'IRI Apertura Bajista' },
+  { codigo: 'iri_continuacion_alcista', nombre: 'IRI Continuación Alcista' },
+  { codigo: 'iri_continuacion_bajista', nombre: 'IRI Continuación Bajista' },
+  { codigo: 'reingreso_alcista',        nombre: 'Reingreso Alcista' },
+  { codigo: 'reingreso_bajista',        nombre: 'Reingreso Bajista' },
 ];
 
 // (El checklist ya no se llena en el bot; lo maneja el Add-On ChecklistChaumer de
@@ -178,11 +180,26 @@ const CONFIANZA_KEYBOARD = { inline_keyboard: [[
 ]]};
 
 // ── Setup keyboard ──────────────────────────────────────────────────────────
-function setupKeyboard() {
+// Las variantes se leen de BD (activas, en orden). El callback lleva el CÓDIGO,
+// no el índice: si la lista cambia entre que se muestra el teclado y se pulsa,
+// un índice apuntaría al setup equivocado.
+async function fetchSetups(env) {
+  try {
+    const res = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/catalogo_setup_variantes?activo=eq.true&order=orden.asc&select=codigo,nombre`,
+      { headers: { apikey: env.SUPABASE_SERVICE_ROLE, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE}` } }
+    );
+    if (!res.ok) return SETUPS_FALLBACK;
+    const data = await res.json();
+    return Array.isArray(data) && data.length ? data : SETUPS_FALLBACK;
+  } catch { return SETUPS_FALLBACK; }
+}
+
+function setupKeyboard(setups) {
   const rows = [];
-  for (let i = 0; i < SETUPS.length; i += 2) {
-    const row = [{ text: SETUPS[i], callback_data: `setup_${i}` }];
-    if (SETUPS[i + 1]) row.push({ text: SETUPS[i + 1], callback_data: `setup_${i + 1}` });
+  for (let i = 0; i < setups.length; i += 2) {
+    const row = [{ text: setups[i].nombre, callback_data: `setup_${setups[i].codigo}` }];
+    if (setups[i + 1]) row.push({ text: setups[i + 1].nombre, callback_data: `setup_${setups[i + 1].codigo}` });
     rows.push(row);
   }
   return { inline_keyboard: rows };
@@ -243,6 +260,7 @@ async function saveSession(data, env) {
     puntos_retroceso:  data.puntos_retroceso  ?? null,
     zonas_contra:      data.zonas_contra      ?? false,
     setup:             data.setup             ?? null,
+    setup_codigo:      data.setup_codigo      ?? null,
     analisis_trader:       data.analisis_trader       ?? null,
     estado_emocional_id:   data.estado_emocional_id   ?? null,
     nivel_confianza:       data.nivel_confianza        ?? null,
@@ -409,8 +427,13 @@ async function handleCallback(cbq, env) {
   // El checklist ya NO se llena en el bot (lo maneja el Add-On ChecklistChaumer
   // de NinjaTrader, que escribe en sesiones.checklist).
   if (action.startsWith('setup_')) {
-    const idx = parseInt(action.slice(6));
-    state.data.setup = SETUPS[idx];
+    const codigo = action.slice(6);
+    const setups = await fetchSetups(env);
+    const elegido = setups.find(s => s.codigo === codigo);
+    // Se guarda el CÓDIGO: el trigger fn_sync_setup_codigo rellena el nombre en
+    // `sesiones.setup`, así el bot no depende de que los textos coincidan.
+    state.data.setup_codigo = codigo;
+    state.data.setup = elegido ? elegido.nombre : null;
     state.step = STEPS.REFLEXION;
     await saveState(env.KV, chatId, state);
     await editMessage(token, chatId, msgId,
@@ -501,7 +524,7 @@ async function handleCallback(cbq, env) {
         await saveState(env.KV, chatId, state);
         await editMessage(token, chatId, msgId,
           '📐 <b>Setup</b>\n\n¿Qué setup operaste?',
-          setupKeyboard()
+          setupKeyboard(await fetchSetups(env))
         );
       }
   }
