@@ -340,22 +340,14 @@ const Metrics = (() => {
     document.getElementById('disciplineModal').classList.remove('hidden')
   }
 
-  function abbreviateAccount(account) {
-    if (!account) return '—'
-    const parts = account.split('-')
-    return parts.length > 2 ? parts.slice(0, 2).join('-') : account
-  }
-
   const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
   function render(period = 'all') {
     const heroEl = document.getElementById('calHeroTitle')
     if (heroEl) heroEl.textContent = `Estadísticas — ${MESES[calMonth() - 1]} ${calYear()}`
 
-    const accountVal = document.getElementById('accountFilterCalendar')?.value || 'all'
-    const accountFiltered = accountVal === 'all'
-      ? allTrades
-      : allTrades.filter(t => abbreviateAccount(t.account) === accountVal)
+    // Comparte la selección de cuentas del Calendario (mismo filtro)
+    const accountFiltered = AccountFilter.filter('calendar', allTrades)
     const { trades, sesiones } = filterByPeriod(accountFiltered, allSesiones, period)
 
     const totalTrades = trades.length

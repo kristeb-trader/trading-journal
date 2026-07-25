@@ -68,12 +68,6 @@ const Charts = (() => {
   const p2 = n => String(n).padStart(2, '0')
   function destroy(id) { if (instances[id]) { instances[id].destroy(); delete instances[id] } }
 
-  function abbreviateAccount(a) {
-    if (!a) return '—'
-    const parts = a.split('-')
-    return parts.length > 2 ? parts.slice(0, 2).join('-') : a
-  }
-
   function getWeekKey(dateStr) {
     const d = new Date(dateStr + 'T12:00:00')
     const day = d.getDay() || 7
@@ -437,8 +431,7 @@ const Charts = (() => {
   function render() {
     renderPicker()
 
-    const accountVal = document.getElementById('accountFilterAnalysis')?.value || 'all'
-    const filtered = accountVal === 'all' ? allTrades : allTrades.filter(t => abbreviateAccount(t.account) === accountVal)
+    const filtered = AccountFilter.filter('analysis', allTrades)
     const { from, to } = periodRange()
     const trades   = filtered.filter(t => (t.trade_date || '') >= from && (t.trade_date || '') <= to)
     const sesiones = allSesiones.filter(s => s.sesion_date >= from && s.sesion_date <= to)
@@ -454,21 +447,16 @@ const Charts = (() => {
     renderTabla(trades, sesiones, casByDate, subs)
   }
 
-  function buildAccountFilter() {
-    const accounts = {}
-    allTrades.forEach(t => { if (t.account) accounts[abbreviateAccount(t.account)] = true })
-    const sel = document.getElementById('accountFilterAnalysis')
-    sel.innerHTML = '<option value="all">Todas las cuentas</option>' +
-      Object.keys(accounts).sort().map(a => `<option value="${a}">${a}</option>`).join('')
-    const paApex = Object.keys(accounts).find(a => a.startsWith('PA-APEX'))
-    const saved = localStorage.getItem('annualAccount')
-    if (saved && accounts[saved]) sel.value = saved
-    else if (paApex) sel.value = paApex
-  }
-
   async function init() {
     ;[allTrades, allSesiones, allCas] = await Promise.all([DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas()])
-    buildAccountFilter()
+
+    AccountFilter.create('analysis', {
+      mountId: 'accountFilterAnalysis',
+      storageKey: 'analysisAccounts',
+      legacyKey: 'annualAccount',
+      onChange: () => render(),
+    })
+    await AccountFilter.setAccounts('analysis', allTrades.map(t => t.account))
     render()
 
     document.querySelectorAll('#analysisPeriodSel .period-btn').forEach(btn => {
@@ -482,11 +470,6 @@ const Charts = (() => {
 
     document.getElementById('analysisPrevPeriod').addEventListener('click', () => { shift(-1); render() })
     document.getElementById('analysisNextPeriod').addEventListener('click', () => { shift(1);  render() })
-
-    document.getElementById('accountFilterAnalysis').addEventListener('change', e => {
-      localStorage.setItem('annualAccount', e.target.value)
-      render()
-    })
 
     document.getElementById('analysisExportPdf')?.addEventListener('click', () => exportAnalysis('pdf'))
     document.getElementById('analysisExportImg')?.addEventListener('click', () => exportAnalysis('img'))
@@ -528,7 +511,7 @@ const Charts = (() => {
   async function exportAnalysis(fmt) {
     const area = document.getElementById('analysisExportArea')
     if (!area || typeof html2canvas === 'undefined') { Toast.show('No se pudo cargar la herramienta de exportación', 'error'); return }
-    const acct = document.getElementById('accountFilterAnalysis')?.value || 'cuenta'
+    const acct = AccountFilter.slug('analysis')
     const name = `analisis_${periodLabel().replace(/\s+/g, '-')}_${acct}`
     try {
       Toast.show('Generando exportación…', 'info')

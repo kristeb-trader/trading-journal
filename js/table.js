@@ -13,12 +13,6 @@ const TradesTable = (() => {
     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
   const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
 
-  function abbreviateAccount(account) {
-    if (!account) return '—'
-    const parts = account.split('-')
-    return parts.length > 2 ? parts.slice(0, 2).join('-') : account
-  }
-
   function dayOfWeek(dateStr) {
     if (!dateStr) return '—'
     return DAYS[new Date(dateStr + 'T12:00:00').getDay()]
@@ -89,25 +83,12 @@ const TradesTable = (() => {
   }
 
   function buildAccountFilter() {
-    const accounts = {}
-    allTrades.forEach(t => {
-      if (!t.account) return
-      const abbr = abbreviateAccount(t.account)
-      accounts[abbr] = true
-    })
-    const sel = document.getElementById('accountFilterTrades')
-    const prev = sel.value
-    sel.innerHTML = '<option value="all">Todas las cuentas</option>' +
-      Object.keys(accounts).sort().map(a => `<option value="${a}">${a}</option>`).join('')
-    const paApex = Object.keys(accounts).find(a => a.startsWith('PA-APEX'))
-    if (prev && prev !== 'all') sel.value = prev
-    else if (paApex) sel.value = paApex
+    return AccountFilter.setAccounts('trades', allTrades.map(t => t.account))
   }
 
   function applyFilter() {
     const search    = document.getElementById('tradeSearch').value.toLowerCase()
     const filterVal = document.getElementById('tradeFilter').value
-    const accountVal = document.getElementById('accountFilterTrades').value
 
     filtered = allRows.filter(row => {
       if (row.type === 'session') {
@@ -120,7 +101,7 @@ const TradesTable = (() => {
       }
       if (filterVal === 'sin_setup') return false
       const t = row.data
-      const matchAccount = accountVal === 'all' || abbreviateAccount(t.account) === accountVal
+      const matchAccount = AccountFilter.matches('trades', t.account)
       const matchFilter = filterVal === 'all' || t.resultado === filterVal
       const matchSearch = !search || [t.instrument, t.market_pos, t.exit_name, t.trade_date]
         .some(v => v?.toLowerCase().includes(search))
@@ -240,13 +221,17 @@ const TradesTable = (() => {
     ;[allTrades, allSesiones, allCasuisticas] = await Promise.all([DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas()])
     buildRows()
     buildCasByDate()
-    buildAccountFilter()
+
+    AccountFilter.create('trades', {
+      mountId: 'accountFilterTrades',
+      storageKey: 'tradesAccounts',
+      onChange: applyFilter,
+    })
+    await buildAccountFilter()
     applyFilter()
 
-    buildAccountFilter()
     document.getElementById('tradeSearch').addEventListener('input', applyFilter)
     document.getElementById('tradeFilter').addEventListener('change', applyFilter)
-    document.getElementById('accountFilterTrades').addEventListener('change', applyFilter)
   }
 
   return { init, reload: init }

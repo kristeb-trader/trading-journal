@@ -141,9 +141,7 @@
       <!-- ═══ 1. CALENDARIO ═══════════════════════════════════════════════ -->
       <section class="section active" id="section-calendar">
         <div class="calendar-header">
-          <select class="filter-select filter-select-sm" id="accountFilterCalendar">
-            <option value="all">Todas las cuentas</option>
-          </select>
+          <div class="acct-filter-sm" id="accountFilterCalendar"></div>
           <h2 class="analysis-hero-title" id="calHeroTitle">Estadísticas</h2>
           <div class="calendar-nav">
             <button class="btn-icon" id="prevMonth" title="Mes anterior">
@@ -190,9 +188,7 @@
         <div class="section-header">
           <div class="table-controls">
             <input type="text" class="search-input" id="tradeSearch" placeholder="Buscar...">
-            <select class="filter-select" id="accountFilterTrades">
-              <option value="all">Todas las cuentas</option>
-            </select>
+            <div class="acct-filter-sm" id="accountFilterTrades"></div>
             <select class="filter-select" id="tradeFilter">
               <option value="all">Todos</option>
               <option value="target">Target</option>
@@ -932,9 +928,7 @@
             </button>
           </div>
           <div class="analysis-right">
-            <select id="accountFilterAnalysis" class="filter-select filter-select-sm">
-              <option value="all">Todas las cuentas</option>
-            </select>
+            <div class="acct-filter-sm" id="accountFilterAnalysis"></div>
             <button class="btn-secondary btn-sm" id="analysisExportPdf" title="Exportar a PDF"><i class="ti ti-file-type-pdf"></i> PDF</button>
             <button class="btn-secondary btn-sm" id="analysisExportImg" title="Exportar como imagen"><i class="ti ti-photo-down"></i> Imagen</button>
           </div>
@@ -1333,6 +1327,7 @@
   <!-- ── Scripts (orden importante) ────────────────────────────────── -->
   <script src="js/config.js"></script>
   <script src="js/db.js"></script>
+  <script src="js/account-filter.js"></script>
   <script src="js/calendar.js"></script>
   <script src="js/metrics.js"></script>
   <script src="js/table.js"></script>

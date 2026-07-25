@@ -6,41 +6,12 @@ const Calendar = (() => {
   let sesionesCache = {}    // date → sesion
   let casuisticasCache = {} // date → true (has errors)
   let allTradesRaw = []     // sin filtrar por cuenta
-  let allAccountsList = []  // lista completa de cuentas (cargada una sola vez)
   let cmeHolidays     = {}        // date → { name, emoji } festivos (de catalogo_fechas)
   let fomcDates       = new Set() // fechas ISO de días FOMC del año
   let vacacionesDates = {}        // date → { name, emoji } vacaciones
   let otrasDates      = {}        // date → { name, emoji } otras fechas especiales
 
-  const ACCOUNT_STORAGE_KEY = 'calendarAccount'
-
-  function abbreviateAccount(account) {
-    if (!account) return '—'
-    const parts = account.split('-')
-    return parts.length > 2 ? parts.slice(0, 2).join('-') : account
-  }
-
-  // Reconstruye el dropdown conservando la selección actual (o restaurando desde localStorage)
-  function buildAccountFilterCalendar() {
-    const sel = document.getElementById('accountFilterCalendar')
-    const prev = sel.value
-
-    sel.innerHTML = '<option value="all">Todas las cuentas</option>' +
-      allAccountsList.map(a => `<option value="${a}">${a}</option>`).join('')
-
-    // Prioridad: 1) preferencia guardada  2) selección anterior (cuenta real)
-    //            3) cuenta principal configurada  4) PA-APEX  5) 'all'
-    // Nota: prev='all' es el default del browser sin nada guardado — no se usa como fallback.
-    const saved     = localStorage.getItem(ACCOUNT_STORAGE_KEY)
-    const principal = (typeof DB !== 'undefined' && DB.cuentaPrincipal) ? DB.cuentaPrincipal() : null
-    const preferida = (principal && allAccountsList.includes(principal))
-      ? principal
-      : allAccountsList.find(a => a.startsWith('PA-APEX'))
-
-    if (saved === 'all' || (saved && allAccountsList.includes(saved))) sel.value = saved
-    else if (prev && prev !== 'all' && allAccountsList.includes(prev)) sel.value = prev
-    else if (preferida)                                                sel.value = preferida
-  }
+  const ACCOUNT_STORAGE_KEY = 'calendarAccounts'
 
   // ── Festivos CME (calculados algorítmicamente) ────────────────────────────
   function calcCMEHolidays(year) {
@@ -169,12 +140,7 @@ const Calendar = (() => {
     casuisticas.forEach(c => { casuisticasCache[c.sesion_date] = true })
 
     allTradesRaw = trades
-    buildAccountFilterCalendar()
-
-    const accountVal = document.getElementById('accountFilterCalendar').value
-    const filteredTrades = accountVal === 'all'
-      ? trades
-      : trades.filter(t => abbreviateAccount(t.account) === accountVal)
+    const filteredTrades = AccountFilter.filter('calendar', trades)
 
     tradesCache = {}
     filteredTrades.forEach(t => {
@@ -393,13 +359,8 @@ const Calendar = (() => {
       return
     }
 
-    // Filtrar por la cuenta seleccionada (igual que el calendario)
-    const accountVal = document.getElementById('accountFilterCalendar')?.value || 'all'
-    const tradesCuenta = accountVal === 'all'
-      ? trades
-      : trades.filter(t => abbreviateAccount(t.account) === accountVal)
-
-    Modal.openDay(dateStr, tradesCuenta, sesion)
+    // Filtrar por la(s) cuenta(s) seleccionada(s) (igual que el calendario)
+    Modal.openDay(dateStr, AccountFilter.filter('calendar', trades), sesion)
   }
 
   function navigate(delta) {
@@ -426,23 +387,20 @@ const Calendar = (() => {
 
     document.getElementById('prevMonth').addEventListener('click', () => navigate(-1))
     document.getElementById('nextMonth').addEventListener('click', () => navigate(1))
-    document.getElementById('accountFilterCalendar').addEventListener('change', () => {
-      // Persistir la selección para que sobreviva navegación y recargas
-      const val = document.getElementById('accountFilterCalendar').value
-      localStorage.setItem(ACCOUNT_STORAGE_KEY, val)
-      load()
-      if (typeof Metrics !== 'undefined') Metrics.rerender()
+    // El componente persiste la selección; aquí solo se recarga la vista.
+    AccountFilter.create('calendar', {
+      mountId: 'accountFilterCalendar',
+      storageKey: ACCOUNT_STORAGE_KEY,
+      legacyKey: 'calendarAccount',
+      onChange: () => {
+        load()
+        if (typeof Metrics !== 'undefined') Metrics.rerender()
+      },
     })
 
     // Cargar la lista completa de cuentas una sola vez (independiente del mes)
     const allTrades = await DB.getTrades()
-    const accountsMap = {}
-    allTrades.forEach(t => {
-      if (!t.account) return
-      const abbr = abbreviateAccount(t.account)
-      accountsMap[abbr] = true
-    })
-    allAccountsList = Object.keys(accountsMap).sort()
+    await AccountFilter.setAccounts('calendar', allTrades.map(t => t.account))
 
     await load()
   }
