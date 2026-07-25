@@ -105,8 +105,14 @@ checklist normalizado, cuenta principal configurable, filtro de cuenta persisten
 - Estadísticas de 3 corridas, volumen en trades, tasa de ejecución de setups válidos.
 - "Dejé de ganar": ampliar para capturar más casos (miedo, reingreso no tomado…).
 - Rendimiento general del Journal (el modal del día cargaba lento).
-- Cuenta nueva `APEX-232411-14` (evaluación): ya es la principal y el routing la manda
-  a `trades`. Falta ver el primer trade real fluyendo end-to-end.
+- Decisión pendiente: el trigger `fn_backfill_regla_checklist` marcó las 3 reglas nuevas
+  de Reingreso como cumplidas (`true`) en las 120 sesiones históricas. Si se prefiere que
+  salgan como *N/A* (para no inflar la disciplina histórica), hay que ajustarlo.
+
+> ✅ **Cerrado (24 jul):** `ChecklistChaumer` recompilado en NT8 → los botones de setup
+> salen de `catalogo_setups` (Fase D cerrada). Y la cuenta principal `APEX-232411-14` ya
+> tiene trades reales en `trades` (22-24 jul) → el routing de `SupabaseAutoExport` hacia
+> la cuenta principal está verificado end-to-end.
 
 > **BD limpia (verificado Jul 2026 contra la BD real):** no quedan tablas ni columnas
 > legacy. Eliminadas: `apex_registros`, `fomc_dates`, las `*_archivada`,

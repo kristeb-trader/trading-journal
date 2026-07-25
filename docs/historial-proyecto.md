@@ -1188,6 +1188,8 @@ Motivación: el usuario quemó la PA `PA-APEX-232411-03` y compró una evaluaci�
   `PA-*` **y** la cuenta principal (aunque sea evaluación sin prefijo). Lee
   `objetivos.cuenta_principal` de la BD al iniciar (fire-and-forget), así al cambiarla en
   Datos el routing se actualiza sin recompilar. Requiere recompilar el indicador **una vez**.
+  ✅ **Verificado end-to-end el 24 jul:** `APEX-232411-14` tiene 3 trades reales en
+  `trades` (22-24 jul, +$888.82 netos) exportados por NT8.
 - **Fase C — Apex Tracker:** sin cambios de código. `apex.js` ya deriva los trades de cada
   cuenta de `[...apex_trades, ...trades]` por `numero_cuenta`, y `esPACuenta` depende del
   `estado` (no del nombre). El usuario solo agrega la `-14` como cuenta de evaluación.
@@ -1280,7 +1282,8 @@ familia del setup de ese día.** Lo respetan formulario, métricas, disciplina y
   lleva el **código, no el índice** (la lista puede cambiar entre mostrar el teclado y
   pulsarlo); envía `setup_codigo`. El AddOn construye **un botón por familia** desde
   `catalogo_setups` y cae al primero si el setup persistido ya no existe.
-  ⚠️ **Requiere recompilar `ChecklistChaumer` en NT8 una vez.**
+  ✅ **`ChecklistChaumer` recompilado y verificado en NT8 el 24 jul** (2 botones —
+  IRI y Reingreso — y la Fase 2 intercambia sus 4 ítems al cambiar de setup).
 
 **Bug corregido en Registrar (mismo día):** al abrir una sesión guardada, Fase 2
 mostraba las reglas de IRI y Reingreso mezcladas. `renderChecklist()` corre en
