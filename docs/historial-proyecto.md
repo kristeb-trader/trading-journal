@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 7 Julio 2026 (ver *Checkpoint Jul 2026* al final: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
+**Última actualización:** 24 Julio 2026 (ver *Checkpoint Jul 2026 (7)* al final: **setups paramétricos** — `catalogo_setups` + `catalogo_setup_variantes`, reglas por setup, administración desde el Journal, Telegram y NT8 dinámicos). Checkpoints previos: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `E:\Proyectos\Trading Journal` (migrado desde `C:\Users\Asus\Claro drive\Trading Journal` el 6 jul 2026)
@@ -1232,6 +1232,65 @@ adelante (09:30 ET = **08:30 Colombia**); en invierno coinciden.
 - **Calendario:** el chip pasa a **T · S · Sin · No · F** calculado POR DÍA (misma
   prioridad que el color del calendario) → su suma cuadra con el total de días del
   mes. Antes duplicaba días con trade + sesión `no_opero` y contaba días sin conexión.
+
+---
+
+## Checkpoint Jul 2026 (7) — Setups paramétricos (Fases A-E, 24 jul)
+
+Motivación: los setups eran texto libre hardcodeado en 6 sitios y la *familia*
+(IRI / Reingreso) se deducía con `startsWith('iri')` repetido en 5 archivos JS.
+Crear un setup nuevo obligaba a editar código y recompilar el indicador.
+
+**Modelo nuevo**
+```
+catalogo_setups           familia: iri, reingreso, …
+   └── catalogo_setup_variantes   las 6 variantes (nombre, subtipo, direccion)
+            └── sesiones.setup_codigo (FK)   ← qué setup se operó ese día
+catalogo_reglas.setup → apunta a la FAMILIA, o NULL = común a todos los setups
+```
+Regla de oro: **una regla aplica a un día si su `setup` es NULL o coincide con la
+familia del setup de ese día.** Lo respetan formulario, métricas, disciplina y Coach.
+
+- **Fase A — BD.** Tablas nuevas + `sesiones.setup_codigo` con backfill de las 120
+  sesiones (las 2 legacy "IRI Alcista" → IRI Continuación Alcista). Mapa de reglas
+  aprobado: `chk_contexto` pasa a exclusiva de IRI; `stop_max_puntos` baja de Fase 2
+  a **Fase 3**; 3 reglas nuevas de Reingreso (consecución fallida, vela de reingreso,
+  vela de consecución); `rei_entrada` archivada (soft-delete); `chk_mqzpxeub` →
+  `chk_no_mover`. Se conservan en checklist `target_sin_zonas` y `rr_1a1`.
+  Migración `2026-07-24-catalogo-setups.sql`.
+- **Fase B — Web.** Dropdowns desde el catálogo (agrupados por familia) y
+  `DB.setupFamily()` como fuente única (FK → nombre → prefijo como fallback);
+  se eliminan los 5 `startsWith('iri')`. **Trigger `fn_sync_setup_codigo`** mantiene
+  `setup` y `setup_codigo` sincronizados escriba quien escriba — necesario porque el
+  Worker `/api/session` **no está versionado** y no se le puede añadir la columna.
+  ⚠️ El trigger DEBE comparar contra `OLD`: una primera versión hacía ganar siempre
+  al código y revertía en silencio el cambio de setup que mandan Worker y bot.
+  Migración `2026-07-24-sesiones-sync-setup-codigo.sql`.
+- **Fase C — Coach IA.** El prompt mandaba el checklist completo y TODAS las reglas
+  duras: en un día de Reingreso evaluaba las de IRI. Ahora filtra por la familia del
+  día. Además `fmtReglasSetup` leía la capa `'setup'`, **eliminada al unificar el
+  rulebook en junio**, así que siempre respondía "el trader NO ha documentado reglas
+  para ningún setup" y el Coach regañaba por reglas que sí existen.
+- **Fase E — Administración desde el Journal.** Estrategia: el editor de regla trae
+  selectores de **Fase** y **Aplica a** (Común / familias). Datos: tarjeta **Setups
+  operativos** para crear familias y variantes, renombrar y activar/desactivar. El
+  `codigo` no cambia al renombrar (lo referencian `catalogo_reglas.setup` y
+  `sesiones.setup_codigo`). `onShow` recarga catálogos para ver los cambios sin F5.
+- **Fase D — Telegram + NT8.** El bot lee las variantes de BD y su `callback_data`
+  lleva el **código, no el índice** (la lista puede cambiar entre mostrar el teclado y
+  pulsarlo); envía `setup_codigo`. El AddOn construye **un botón por familia** desde
+  `catalogo_setups` y cae al primero si el setup persistido ya no existe.
+  ⚠️ **Requiere recompilar `ChecklistChaumer` en NT8 una vez.**
+
+**Bug corregido en Registrar (mismo día):** al abrir una sesión guardada, Fase 2
+mostraba las reglas de IRI y Reingreso mezcladas. `renderChecklist()` corre en
+`init()` con el `<select>` vacío, y asignar `.value` por código **no dispara
+`change`**, así que nunca se re-filtraba. `prefill()` y `clearForm()` ahora
+re-renderizan; sin setup elegido se muestran solo las comunes + aviso.
+
+> **Pendiente (decisión de Kris):** el trigger `fn_backfill_regla_checklist` marcó las
+> 3 reglas nuevas como cumplidas (`true`) en las 120 sesiones históricas — diseño "no
+> dañar disciplina". Si se prefiere que salgan como *N/A*, hay que ajustarlo.
 
 ---
 

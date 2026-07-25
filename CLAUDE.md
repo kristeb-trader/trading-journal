@@ -48,13 +48,15 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 | Tabla | Propósito |
 |---|---|
 | `trades` | Trades con `profit` NETO, `commission` round-trip |
-| `sesiones` | Registro diario: emoción, premercado, setup (el checklist ya NO vive aquí) |
+| `sesiones` | Registro diario: emoción, premercado, setup (el checklist ya NO vive aquí). `setup` (texto) + **`setup_codigo`** (FK a `catalogo_setup_variantes`); el trigger `fn_sync_setup_codigo` los mantiene sincronizados escriba quien escriba (web, bot, Worker o NT8) |
 | **`sesion_checklist`** | **Checklist diario normalizado** (1 fila = sesión × regla). FK a `sesiones(sesion_date)` y `catalogo_reglas(codigo)`; `cumplido` bool. Reemplaza al JSONB `sesiones.checklist` y a las columnas `chk_*`. Triggers: sesión nueva y regla nueva → materializan en `true` (no dañar disciplina). `db.js` reconstruye `s.checklist` en memoria al leer |
 | `diagnosticos_diarios` | Análisis IA: 3 secciones técnicas + 4 diagnóstico + chat |
 | `diagnostico_errores` | Errores detectados (manual + IA) con recomendaciones |
 | `diagnostico_experimentos` | Condiciones en prueba (T/S) por sesión |
 | `catalogo_errores` / `catalogo_emociones` / `catalogo_experimentos` | Maestros |
-| **`catalogo_reglas`** | **Rulebook canónico unificado** (1 fila = 1 regla; antes `reglas`, renombrada Jul 2026). Capas filosofia/proceso/riesgo; `setup` (iri/reingreso) etiqueta en proceso Fase 2; `tipo` dura/blanda; `es_checklist`+`fase` → checklist diario (`sesion_checklist`). Ver [[rulebook-modelo]] |
+| **`catalogo_reglas`** | **Rulebook canónico unificado** (1 fila = 1 regla; antes `reglas`, renombrada Jul 2026). Capas filosofia/proceso/riesgo; `tipo` dura/blanda; `es_checklist`+`fase` → checklist diario (`sesion_checklist`). **`setup`** apunta a `catalogo_setups.codigo` (o NULL = común): una regla aplica a un día si es NULL o coincide con la familia del setup de ese día. Ver [[rulebook-modelo]] |
+| **`catalogo_setups`** | **Familias de setup** (`iri`, `reingreso`, …). Es lo que agrupa las reglas de Fase 2. Se gestiona en Datos → "Setups operativos" |
+| **`catalogo_setup_variantes`** | **Variantes operativas** (`iri_continuacion_alcista` → "IRI Continuación Alcista"): `setup_codigo` (FK a la familia), `subtipo`, `direccion`. Alimenta los dropdowns de la web, el teclado del bot y el AddOn NT8 |
 | `objetivos` | Config global (single row): Stop máx (`stop_max_puntos`, default 80), trades/día, P&L objetivo, límite pérdida, y **`cuenta_principal`** (la cuenta que el journal usa para P&L/análisis/Coach; se elige en Datos) |
 | **`catalogo_fechas`** | **Días especiales del calendario** (`tipo`: fomc/festivo/vacaciones/otro; fecha, nombre, emoji, notas). Se gestiona en la sección "Fechas Especiales". El calendario lee de aquí. Reemplaza a `fomc_dates` y al cálculo de festivos en código |
 | `fomc_dates` | ⚠️ Obsoleta (migrada a `catalogo_fechas`); pendiente de drop |
