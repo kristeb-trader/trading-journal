@@ -1,7 +1,7 @@
 # Plan — Rediseño del checklist y de la métrica de disciplina
 
-> **Estado: IMPLEMENTADO (3 de agosto de 2026).** Las 5 fases están aplicadas.
-> Queda **recompilar `ChecklistChaumer` en NinjaTrader** para que la Fase 4 surta efecto.
+> **Estado: COMPLETADO (3 de agosto de 2026).** Las 5 fases aplicadas y el AddOn
+> recompilado en NinjaTrader: el rediseño está activo end-to-end.
 >
 > Este documento conserva el diagnóstico y las decisiones. Para saber **cómo funciona
 > hoy** el cálculo, ver `docs/Disciplina.md`.
@@ -11,8 +11,12 @@
 > | 1 · Base de datos | ✅ | `753d51b` |
 > | 2 · Cálculo (`db.js`) | ✅ | `2427888` |
 > | 3 · Web | ✅ | `06e42bd` |
-> | 4 · AddOn NT8 | ✅ código · ⏳ **falta recompilar** | `ec2af13` |
-> | 5 · Coach y docs | ✅ | `e183416` + este |
+> | 4 · AddOn NT8 | ✅ **recompilado 3 ago** | `ec2af13` |
+> | 5 · Coach y docs | ✅ | `e183416` · `b3712f1` |
+>
+> **Pendiente de validación en vivo (sesión del 4 ago):** estrenar el checklist con el
+> GO de 8 ítems, registrar noticias rojas desde el AddOn y generar un análisis del Coach
+> para confirmar el bloque "VERIFICADO POR DATOS" y el vínculo error → regla.
 >
 > **Resultado medido:** la disciplina global **subió de 81% a 83%**, no bajó como se
 > preveía. Al evaluar solo cuando hay algo que cumplir desaparecen tanto los aprobados

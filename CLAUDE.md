@@ -131,12 +131,12 @@ checklist normalizado, cuenta principal configurable, filtro de cuenta persisten
 > sobre RTH/premercado. Los parámetros RTH del indicador van en **ET (930/1600)**.
 
 ### Pendientes abiertos
-- 🔴 **Recompilar `ChecklistChaumer` en NT8** (Fase 4 del rediseño, 3 ago): GO con solo
-  las 8 reglas que lo bloquean + lista de noticias rojas. Sin recompilar, el AddOn sigue
-  exigiendo el checklist entero.
-- **Verificar en vivo el Coach IA** tras los últimos cambios (validación por fases,
-  títulos de regla descriptivos, horas en ET, la 9ª parte `reglaCodigo` **y el bloque
-  "VERIFICADO POR DATOS"** del checklist): generar un análisis y confirmar.
+- 🔴 **Verificar en vivo el Coach IA** (previsto para la sesión del 4 ago): validación por
+  fases, títulos de regla descriptivos, horas en ET, la 9ª parte `reglaCodigo` **y el
+  bloque "VERIFICADO POR DATOS"** del checklist. Generar un análisis y confirmar.
+- **Estrenar el checklist rediseñado en vivo** (4 ago): comprobar que el GO se habilita
+  con 8 ítems, que las noticias rojas se registran desde el AddOn y que las 3 reglas
+  automáticas resuelven bien al cierre del día.
 - Recomendaciones tipificadas en Coach IA (Fase 4B): implementado salvo inyectar el
   catálogo de recomendaciones en el prompt (para que reutilice nombres y no duplique).
 - Modal del día: un ítem tumbado por un error se ve igual que uno nunca marcado.
@@ -164,6 +164,12 @@ checklist normalizado, cuenta principal configurable, filtro de cuenta persisten
 > ✅ **Cerrado (3 ago):** `ChecklistChaumer` recompilado de nuevo con la **guarda de fin
 > de semana** (`EsFinDeSemana()` en `UpsertSesionAsync`/`UpsertChecklistAsync`) → abrir
 > NT8 un sábado ya no deja filas fantasma en `sesiones`.
+
+> ✅ **Cerrado (3 ago, 2ª recompilación):** `ChecklistChaumer` con el **rediseño del
+> checklist** — el GO exige solo las 8 reglas que lo bloquean (antes las 13), los ítems
+> automáticos se muestran con ⚙ y sin casilla, y las **noticias rojas son una lista**
+> (varias por día, con nombre, alerta de la próxima ventana y bloqueo del GO dentro de
+> ella). Las 5 fases del rediseño quedan activas end-to-end.
 
 > ⚠️ **Efecto lateral asumido (3 ago):** la **tasa de errores** y los **días limpios**
 > tienen ahora un denominador menor (salieron los días sin conexión), así que sus

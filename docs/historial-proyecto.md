@@ -1527,8 +1527,10 @@ cumplidos / 1 fallo donde antes se leía una casilla siempre en `true`.
   consecución, Contra Soporte (2) → target sin zonas, IRIs Poco Claros (2) → estructura,
   Entré en Sim (1) → cuenta PA, Target Largo (1) → stop máximo.
 
-> ⚠️ **Pendiente: recompilar `ChecklistChaumer` en NT8.** Hasta entonces el AddOn sigue
-> exigiendo el checklist entero para dar GO.
+> ✅ **`ChecklistChaumer` recompilado el 3 ago** → el rediseño queda activo end-to-end:
+> web, cálculo, AddOn y Coach. Pendiente solo estrenarlo en la sesión en vivo del 4 ago
+> (GO con 8 ítems, noticias desde el AddOn, y un análisis del Coach para confirmar el
+> bloque "VERIFICADO POR DATOS" y el vínculo error → regla).
 
 > ⚠️ **Error propio a no repetir:** al analizar el MAE lo normalicé con $2/punto para
 > todos los trades, pero 4 son de **NQ ($20/punto)**. Eso infló esos MAE ×10 y me llevó a
