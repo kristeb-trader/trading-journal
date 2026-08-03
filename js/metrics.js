@@ -126,7 +126,11 @@ const Metrics = (() => {
     return new Date().getFullYear()
   }
 
+  // Filtra al período pedido. Sábados y domingos quedan SIEMPRE fuera: el mercado no
+  // se opera en fin de semana y pueden colarse filas creadas por el AddOn de NT8.
   function filterByPeriod(trades, sesiones, period) {
+    trades   = (trades   || []).filter(t => esDiaHabil(t.trade_date))
+    sesiones = (sesiones || []).filter(s => esDiaHabil(s.sesion_date))
     if (period === 'all') return { trades, sesiones }
     if (period === 'month') {
       const y = calYear(), m = calMonth()
@@ -204,9 +208,6 @@ const Metrics = (() => {
       .map(i => ({ key: i.clave, label: i.texto, fase: i.fase || 1, setup: i.setup || null }))
   }
 
-  // Familia de setup de una sesión (iri | reingreso | null) — la resuelve el
-  // catálogo de setups en db.js (fuente única).
-  const setupFamilyOf = s => DB.setupFamily(s)
   // Claves activas del checklist (para conteos de disciplina)
   function clavesActivas() {
     return DISC_FACTORS.length ? DISC_FACTORS.map(f => f.key) : DB.checklistClaves()
@@ -215,22 +216,12 @@ const Metrics = (() => {
   // ¿La sesión se "conectó" ese día? (operó, o no operó pero sí se conectó a analizar)
   function seConecto(s) { return !s.no_opero || s.se_conecto !== false }
 
-  // ¿Aplica un factor a una sesión? Fase 1 (Pre-sesión) en todo día conectado;
-  // Fases 2/3 solo en días operados. (El 18 jun "sin entradas" suma su Fase 1.)
-  function factorAplica(f, s) {
-    if (!seConecto(s)) return false
-    const base = f.fase === 1 ? true : !s.no_opero
-    if (!base) return false
-    // Reglas etiquetadas por setup: solo aplican si ese día se operó ese setup
-    if (f.setup) return setupFamilyOf(s) === f.setup
-    return true
-  }
-
-  // Disciplina de un conjunto de sesiones: { total, ok, pct } sobre factores aplicables
-  function calcDisciplina(sesiones) {
-    // Delegado al cálculo canónico global (db.js) para que el número coincida en
-    // calendario, análisis y dashboard.
-    const r = calcDisciplinaStats(sesiones)
+  // Disciplina de un conjunto de sesiones: { total, ok, pct } sobre factores aplicables.
+  // Delegado al cálculo canónico global (db.js) para que el número coincida en
+  // calendario, análisis y dashboard. `conTrades` (Set de fechas con trades) evita
+  // evaluar Fases 2/3 en días conectados donde no hubo operativa.
+  function calcDisciplina(sesiones, conTrades) {
+    const r = calcDisciplinaStats(sesiones, null, conTrades)
     return { total: r.total, ok: r.ok, pct: r.pct ?? 0 }
   }
 
@@ -376,8 +367,10 @@ const Metrics = (() => {
     })
     const beDaysCount = Object.values(tradesByDate)
       .filter(dayTrades => dayTrades.every(t => isBreakEven(t))).length
-    // "Sin setup" days count: trader was present pero no hubo setup válido
-    const activeSesiones = sesiones
+    // Sesiones que cuentan para estadísticas: solo los días en que el trader se
+    // conectó (operó, o no operó pero sí se conectó a analizar). Un día sin conexión
+    // no entra en disciplina, tasa de errores, días limpios ni "dejé de ganar".
+    const activeSesiones = sesiones.filter(seConecto)
 
     // ── Desglose T · S · Sin · No · F (días, no trades) ──────────────────────
     // Clasificación por DÍA con la misma prioridad que el calendario (calendar.js
@@ -387,10 +380,9 @@ const Metrics = (() => {
     // el total del widget del calendario — así T+S+Sin+No+F siempre cuadra.
     const sesionesByDate = {}
     sesiones.forEach(s => { sesionesByDate[s.sesion_date] = s })
-    const seConectoDia = s => !s.no_opero || s.se_conecto !== false
     const diasConActividadSet = new Set([
       ...Object.keys(tradesByDate),
-      ...sesiones.filter(seConectoDia).map(s => s.sesion_date),
+      ...activeSesiones.map(s => s.sesion_date),
     ])
     const breakdown = { T: 0, S: 0, Sin: 0, No: 0, F: 0 }
     diasConActividadSet.forEach(fecha => {
@@ -422,9 +414,10 @@ const Metrics = (() => {
     const periodCasuisticas = filterCasuisticasByPeriod(allCasuisticas, period)
 
     // ── Disciplina de Proceso: % de ítems de checklist cumplidos ──
-    // Fase 1 (Pre-sesión) cuenta en días conectados (operados o no); Fases 2/3
-    // solo en días operados. Así un "sin entradas" conectado suma su Fase 1.
-    const disc = calcDisciplina(activeSesiones)
+    // Fase 1 (Pre-sesión) cuenta en días conectados (operados o no); Fases 2/3 solo
+    // si hubo operativa real ese día (trades o setup declarado). Así un día en que
+    // se hizo la pre-sesión y no se llegó a operar suma su Fase 1 y nada más.
+    const disc = calcDisciplina(activeSesiones, fechasConTrades(trades))
     const chkItemsTotal = disc.total
     const chkItemsOk    = disc.ok
     const disciplinaProceso = disc.pct

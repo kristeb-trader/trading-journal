@@ -148,9 +148,10 @@ const Charts = (() => {
   // ── Cálculos ──────────────────────────────────────────────────────────────
   // Disciplina canónica (misma que calendario y dashboard): adherencia al checklist,
   // consciente de fase y sin penalizar ítems no registrados. casByDate ya no se usa.
-  function calcDiscipline(sesiones) {
+  function calcDiscipline(sesiones, trades) {
     if (!sesiones || !sesiones.length) return null
-    return calcDisciplinaStats(sesiones).pct
+    // `fechasConTrades` evita evaluar Fases 2/3 en días conectados sin operativa.
+    return calcDisciplinaStats(sesiones, null, fechasConTrades(trades)).pct
   }
 
   function statsOf(trades) {
@@ -172,7 +173,7 @@ const Charts = (() => {
   // ── KPIs ──────────────────────────────────────────────────────────────────
   function renderKpis(trades, sesiones, casByDate, subs) {
     const s = statsOf(trades)
-    const disc = calcDiscipline(sesiones, casByDate)
+    const disc = calcDiscipline(sesiones, trades)
 
     // Consistencia: sub-períodos positivos
     let posSub = 0, activeSub = 0
@@ -378,7 +379,7 @@ const Charts = (() => {
       const ss = sesiones.filter(s => s.sesion_date >= sp.from && s.sesion_date <= sp.to)
       const st = statsOf(tt)
       cum += st.pnl
-      const disc = calcDiscipline(ss, casByDate)
+      const disc = calcDiscipline(ss, tt)
       const hasData = tt.length > 0 || ss.filter(s => !s.no_opero).length > 0
       if (!hasData) {
         return `<tr class="annual-row-empty"><td class="annual-month-name">${sp.label}</td><td colspan="7" class="annual-empty-cell">— sin actividad —</td></tr>`
@@ -405,7 +406,7 @@ const Charts = (() => {
     }).join('')
 
     const tot = statsOf(trades)
-    const totDisc = calcDiscipline(sesiones, casByDate)
+    const totDisc = calcDiscipline(sesiones, trades)
     const totRent = capital > 0 ? `${(tot.pnl / capital * 100).toFixed(2)}%` : '—'
     const totEfec = tot.efec != null ? `${tot.efec.toFixed(1)}%` : '—'
 
@@ -433,9 +434,10 @@ const Charts = (() => {
 
     const filtered = AccountFilter.filter('analysis', allTrades)
     const { from, to } = periodRange()
-    const trades   = filtered.filter(t => (t.trade_date || '') >= from && (t.trade_date || '') <= to)
-    const sesiones = allSesiones.filter(s => s.sesion_date >= from && s.sesion_date <= to)
-    const cas      = allCas.filter(c => c.sesion_date >= from && c.sesion_date <= to)
+    // Sábados y domingos quedan fuera de toda estadística (no se opera en fin de semana)
+    const trades   = filtered.filter(t => (t.trade_date || '') >= from && (t.trade_date || '') <= to && esDiaHabil(t.trade_date))
+    const sesiones = allSesiones.filter(s => s.sesion_date >= from && s.sesion_date <= to && esDiaHabil(s.sesion_date))
+    const cas      = allCas.filter(c => c.sesion_date >= from && c.sesion_date <= to && esDiaHabil(c.sesion_date))
     const casByDate = {}; cas.forEach(c => { casByDate[c.sesion_date] = true })
     const subs = subPeriods()
 

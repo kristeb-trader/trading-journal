@@ -773,9 +773,22 @@ namespace NinjaTrader.NinjaScript.AddOns
             }
         }
 
+        // Sábados y domingos no hay sesión de trading: el AddOn no escribe NADA en BD.
+        // Sin esta guarda, abrir NinjaTrader un fin de semana dejaba una fila fantasma
+        // en `sesiones` (con `no_opero=false`, el default) que el journal contaba como
+        // día operado y hundía la disciplina del mes.
+        private bool EsFinDeSemana()
+        {
+            DateTime d;
+            if (!DateTime.TryParseExact(currentDate, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                                        DateTimeStyles.None, out d)) return false;
+            return d.DayOfWeek == DayOfWeek.Saturday || d.DayOfWeek == DayOfWeek.Sunday;
+        }
+
         // Upsert por sesion_date (no pisa otras columnas como los niveles de precio)
         private async Task UpsertSesionAsync(JObject body)
         {
+            if (EsFinDeSemana()) return;
             var req = new HttpRequestMessage(HttpMethod.Post,
                 SUPABASE_URL + "/rest/v1/sesiones?on_conflict=sesion_date");
             req.Headers.Add("Prefer", "resolution=merge-duplicates");
@@ -788,6 +801,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         // Upsert del checklist como filas en sesion_checklist (1 por regla).
         private async Task UpsertChecklistAsync()
         {
+            if (EsFinDeSemana()) return;
             var rows = new JArray();
             string now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
             foreach (var it in items)
@@ -837,9 +851,8 @@ namespace NinjaTrader.NinjaScript.AddOns
                 UpdateNoticiaAlert();
                 UpdateGoButton();
 
-                // Reflejar el reset en BD solo en días hábiles (evita filas de fin de semana)
-                if (etNow.DayOfWeek != DayOfWeek.Saturday && etNow.DayOfWeek != DayOfWeek.Sunday)
-                    _ = SaveStateAsync();
+                // Reflejar el reset en BD (los upserts ya se auto-bloquean en fin de semana)
+                if (!EsFinDeSemana()) _ = SaveStateAsync();
             }
         }
 

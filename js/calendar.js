@@ -109,12 +109,13 @@ const Calendar = (() => {
 
   // Días con actividad del mes actual = días operados ∪ días conectados/analizados
   // (incluye "sin entradas" conectado; excluye festivos/FOMC sin conexión).
+  // (Sábados y domingos nunca cuentan: no se opera en fin de semana.)
   function diasConActividad() {
     const monthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`
     const set = new Set()
-    Object.keys(tradesCache).forEach(d => { if (tradesCache[d]?.length) set.add(d) })
+    Object.keys(tradesCache).forEach(d => { if (tradesCache[d]?.length && esDiaHabil(d)) set.add(d) })
     Object.values(sesionesCache).forEach(s => {
-      if (s.sesion_date?.startsWith(monthPrefix) && seConecto(s)) set.add(s.sesion_date)
+      if (s.sesion_date?.startsWith(monthPrefix) && seConecto(s) && esDiaHabil(s.sesion_date)) set.add(s.sesion_date)
     })
     return set.size
   }

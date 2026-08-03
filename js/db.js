@@ -106,29 +106,59 @@ function tradesEnVentanaNoticia(trades, sesion, margen = 5) {
   return trades.filter(t => enVentanaNoticia(t.entry_time, sesion.hora_noticia_roja, margen))
 }
 
+// ── Día hábil: sábados y domingos NUNCA cuentan para estadísticas ────────────
+// El mercado no se opera en fin de semana. El calendario solo pinta Lun–Vie, pero
+// pueden existir filas de `sesiones` de sábado/domingo: el AddOn de NT8 crea la fila
+// al abrir la plataforma (la necesita por la FK de `sesion_checklist`). Sin este
+// filtro, esas sesiones fantasma entraban en disciplina y en "días con actividad".
+function esDiaHabil(fecha) {
+  if (!fecha) return false
+  const dow = new Date(`${String(fecha).slice(0, 10)}T12:00:00`).getDay()
+  return dow >= 1 && dow <= 5
+}
+// Set de fechas que tuvieron al menos un trade — señal de operativa real.
+function fechasConTrades(trades) {
+  return new Set((trades || []).map(t => t.trade_date || t.entry_time?.slice(0, 10)).filter(Boolean))
+}
+
 // ── Disciplina: cálculo canónico (compartido por calendario, análisis y dashboard) ──
 // Definición única: % de adherencia al checklist, consciente de fase, sin penalizar
 // los ítems no registrados (p. ej. reglas nuevas en sesiones previas).
 function _discSeConecto(s) { return !s.no_opero || s.se_conecto !== false }
 const _discSetupFamily = setupFamilyOf  // fuente única: catálogo de setups
+// ¿Ese día hubo operativa real (llegó a la lectura del setup y la ejecución)?
+// `no_opero = false` NO basta: es el default de la columna, así que una sesión creada
+// por el AddOn al abrir NT8 nace "operada" aunque no se haya dado GO. Se exige señal
+// real: trades ese día, o un setup declarado.
+// Sin el Set de fechas con trades no se puede afirmar lo contrario, así que se
+// mantiene el criterio histórico (`!no_opero`) en vez de alterar el pasado en silencio.
+function sesionOpero(s, conTrades) {
+  if (!s || s.no_opero) return false
+  if (!conTrades) return true
+  return conTrades.has(s.sesion_date) || !!(s.setup_codigo || s.setup)
+}
 // ¿El factor (ítem del checklist) aplica y debe contarse para esta sesión?
-//  Fase 1 en días conectados; Fases 2/3 solo en días operados; reglas por setup solo si aplica.
-function discFactorAplica(f, s) {
+//  Solo días hábiles conectados. Fase 1 en todo día conectado; Fases 2/3 solo si
+//  hubo operativa real; reglas por setup solo si coincide la familia.
+function discFactorAplica(f, s, conTrades) {
+  if (!esDiaHabil(s.sesion_date)) return false
   if (!_discSeConecto(s)) return false
-  const base = (f.fase || 1) === 1 ? true : !s.no_opero
+  const base = (f.fase || 1) === 1 ? true : sesionOpero(s, conTrades)
   if (!base) return false
   if (f.setup) return _discSetupFamily(s) === f.setup
   return true
 }
 // % de disciplina sobre un conjunto de sesiones. Solo cuenta ítems aplicables CON
 // valor registrado. Devuelve { total, ok, pct } (pct null si no hay datos).
-function calcDisciplinaStats(sesiones, items) {
+// `conTrades`: Set de fechas con trades (ver `fechasConTrades`) — pásalo siempre que
+// se tengan los trades del período, para no evaluar Fases 2/3 en días sin operativa.
+function calcDisciplinaStats(sesiones, items, conTrades) {
   const factores = (items || DB.checklistItemsSync())
     .filter(i => i.activo !== false)
     .map(i => ({ key: i.clave, fase: i.fase || 1, setup: i.setup || null }))
   let total = 0, ok = 0
   ;(sesiones || []).forEach(s => factores.forEach(f => {
-    if (!discFactorAplica(f, s)) return
+    if (!discFactorAplica(f, s, conTrades)) return
     if (s[f.key] === undefined) return
     total++; if (s[f.key]) ok++
   }))

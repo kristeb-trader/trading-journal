@@ -153,15 +153,18 @@ const Modal = {
   },
 
   // Checklist aplicable al día (mismo criterio que discFactorAplica en db.js):
-  // Fase 1 en días conectados; Fases 2/3 solo si operó; ítems por setup solo si
-  // el setup del día es de esa familia. Solo ítems con valor registrado.
-  _checklistDia(chkItems, sesion) {
-    if (!sesion) return []
+  // Fase 1 en días hábiles conectados; Fases 2/3 solo si hubo operativa real (trades
+  // ese día o setup declarado — `no_opero=false` es el default de la columna y no
+  // prueba nada); ítems por setup solo si el setup del día es de esa familia. Solo
+  // ítems con valor registrado.
+  _checklistDia(chkItems, sesion, trades) {
+    if (!sesion || !esDiaHabil(sesion.sesion_date)) return []
     const conectado = !sesion.no_opero || sesion.se_conecto !== false
     if (!conectado) return []
+    const opero = sesionOpero(sesion, fechasConTrades(trades))
     const fam = DB.setupFamily(sesion)
     return (chkItems || []).filter(i => {
-      if ((i.fase || 1) !== 1 && sesion.no_opero) return false
+      if ((i.fase || 1) !== 1 && !opero) return false
       if (i.setup && i.setup !== fam) return false
       const val = sesion.checklist?.[i.clave] ?? sesion[i.clave]
       if (val === undefined) return false
@@ -207,7 +210,7 @@ const Modal = {
       : ''
 
     // ── Proceso: UNA barra con el checklist real del día; solo se listan los ✗ ──
-    const items = this._checklistDia(chkItems, sesion)
+    const items = this._checklistDia(chkItems, sesion, trades)
     let procesoHtml = ''
     if (items.length) {
       const ok = items.filter(i => i.ok).length
@@ -330,7 +333,7 @@ const Modal = {
       : ''
 
     // Checklist por fases (dinámico desde catalogo_reglas; solo ítems aplicables al día)
-    const items = this._checklistDia(chkItems, sesion)
+    const items = this._checklistDia(chkItems, sesion, trades)
     let chkHtml = ''
     if (items.length) {
       const FASES = { 1: 'Fase 1 · Pre-sesión', 2: 'Fase 2 · Lectura del setup', 3: 'Fase 3 · Ejecución' }

@@ -24,18 +24,12 @@ const Disciplina = (() => {
     marcado:     { label: 'Marcado',     cls: 'mark',     emoji: '🎯' },
   }
 
-  // ── Helpers de disciplina (alineados con metrics.js) ──────────────────────
+  // ── Helpers de disciplina ─────────────────────────────────────────────────
+  // El criterio vive en db.js (fuente única compartida con calendario y análisis).
+  // `conTrades` se recalcula en cada compute() con los trades del rango.
   const seConecto = s => !s.no_opero || s.se_conecto !== false
-  // Familia del setup: la resuelve el catálogo de setups en db.js (fuente única).
-  const setupFamilyOf = s => DB.setupFamily(s)
-  // Fase 1 aplica en todo día conectado; Fases 2/3 solo en días operados.
-  function factorAplica(f, s) {
-    if (!seConecto(s)) return false
-    const base = f.fase === 1 ? true : !s.no_opero
-    if (!base) return false
-    if (f.setup) return setupFamilyOf(s) === f.setup
-    return true
-  }
+  let conTrades = null
+  const factorAplica = (f, s) => discFactorAplica(f, s, conTrades)
   function buildFactors(items) {
     const src = (items && items.length) ? items : DB.checklistClaves().map(c => ({ clave: c, texto: c, fase: 1 }))
     DISC_FACTORS = src.filter(i => i.activo !== false)
@@ -76,12 +70,17 @@ const Disciplina = (() => {
   // ── Cálculo ───────────────────────────────────────────────────────────────
   function compute() {
     const r = range()
-    const ses = sesiones.filter(s => s.sesion_date && inR(s.sesion_date, r))
-    const cas = casuisticas.filter(c => c.sesion_date && inR(c.sesion_date, r))
-    const trd = trades.filter(t => t.trade_date && inR(t.trade_date, r))
+    // Sábados y domingos quedan fuera de toda estadística (no se opera en fin de
+    // semana; pueden existir filas creadas por el AddOn de NT8).
+    const ses = sesiones.filter(s => s.sesion_date && inR(s.sesion_date, r) && esDiaHabil(s.sesion_date))
+    const cas = casuisticas.filter(c => c.sesion_date && inR(c.sesion_date, r) && esDiaHabil(c.sesion_date))
+    const trd = trades.filter(t => t.trade_date && inR(t.trade_date, r) && esDiaHabil(t.trade_date))
 
+    conTrades = fechasConTrades(trd)   // lo usa factorAplica → discFactorAplica
     const conectadas = ses.filter(seConecto)
-    const operadas   = ses.filter(s => !s.no_opero)
+    // "Operadas" = con operativa real (trades o setup declarado). `no_opero=false` no
+    // basta: es el default de la columna y una sesión creada al abrir NT8 nace así.
+    const operadas   = ses.filter(s => sesionOpero(s, conTrades))
 
     // Trades por fecha
     const trByDate = {}
