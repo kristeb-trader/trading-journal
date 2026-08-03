@@ -343,7 +343,15 @@ const Modal = {
     if (sesion?.puntos_retroceso) campos.push(['Retroceso', `${sesion.puntos_retroceso} pts`])
     else if (trades.length) campos.push(['Retroceso', `≈${Math.abs(pnl / 2).toFixed(2)} pts`])
     if (sesion?.setup) campos.push(['Setup', sesion.setup])
-    if (sesion?.hora_noticia_roja) campos.push(['Noticia roja', sesion.hora_noticia_roja.slice(0, 5)])
+    // Noticias rojas del día: todas, con su ventana de ±5 min. La columna de texto
+    // la mantiene sincronizada un trigger desde `sesion_noticias`.
+    const horasNR = String(sesion?.hora_noticia_roja || '').split(',').map(h => h.trim()).filter(Boolean)
+    if (horasNR.length) {
+      campos.push([
+        horasNR.length > 1 ? `Noticias rojas (${horasNR.length})` : 'Noticia roja',
+        horasNR.map(h => h.slice(0, 5)).join(' · '),
+      ])
+    }
     const camposHtml = campos.length
       ? `<div class="modal-fields">${campos.map(([l, v]) => `<div class="mf-item"><label>${l}</label><span>${v}</span></div>`).join('')}</div>`
       : ''

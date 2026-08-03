@@ -337,11 +337,14 @@
               <label style="margin-top:12px;display:block">📰 Noticias del día</label>
               <textarea id="noticias" rows="2" placeholder="9:00am → ISM Services PMI"></textarea>
 
-              <label style="margin-top:12px;display:block">🚫 Hora de la noticia roja (opcional)</label>
-              <div class="noticia-roja-row">
-                <input type="time" id="horaNoticiaRoja">
-                <span class="noticia-roja-win" id="horaNoticiaRojaWin">Sin noticia roja</span>
-              </div>
+              <!-- Noticias ROJAS: varias por día, cada una con su ventana de ±5 min.
+                   Se guardan en `sesion_noticias`; un trigger sincroniza el texto
+                   de `sesiones.hora_noticia_roja` para el Worker no versionado. -->
+              <label style="margin-top:12px;display:block">🚫 Noticias rojas <span class="lbl-hint">— no se opera ±5 min alrededor de cada una</span></label>
+              <div id="noticiasRojasList" class="nr-list"></div>
+              <button type="button" class="btn-add-nr" id="addNoticiaRoja">
+                <i class="ti ti-plus"></i> Añadir noticia roja
+              </button>
             </div>
 
             <!-- ═══ 2. Checklist Reglas ═══ -->

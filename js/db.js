@@ -384,6 +384,38 @@ const DB = {
         if (error) console.warn('No se pudo guardar el checklist:', error.message)
       }
     }
+    // Noticias rojas → sesion_noticias (después del Worker: hay FK a sesiones).
+    if (payload.noticiasRojas !== undefined && rest.sesion_date) {
+      await DB.saveNoticias(rest.sesion_date, payload.noticiasRojas)
+    }
+  },
+
+  // ── Noticias rojas del día (sesion_noticias) ──────────────────────────────
+  // Varias por día, cada una con su ventana de ±5 min sobre la ENTRADA del trade.
+  // Un trigger mantiene sincronizado `sesiones.hora_noticia_roja` (texto) para el
+  // Worker y el AddOn, que aún escriben esa columna.
+  async getNoticiasByDate(date) {
+    if (!date) return []
+    const { data, error } = await supa
+      .from('sesion_noticias')
+      .select('id, hora, nombre')
+      .eq('sesion_date', date)
+      .order('hora', { ascending: true })
+    if (error) throw error
+    return (data || []).map(n => ({ ...n, hora: String(n.hora).slice(0, 5) }))
+  },
+
+  // Reemplaza el set completo del día (más simple y sin huérfanos que un diff).
+  async saveNoticias(sesionDate, noticias) {
+    if (!sesionDate) return
+    const rows = (noticias || [])
+      .filter(n => n && /^\d{1,2}:\d{2}/.test(String(n.hora || '')))
+      .map(n => ({ sesion_date: sesionDate, hora: String(n.hora).slice(0, 5), nombre: (n.nombre || '').trim() || null }))
+    const { error: delErr } = await supa.from('sesion_noticias').delete().eq('sesion_date', sesionDate)
+    if (delErr) { console.warn('No se pudieron limpiar las noticias:', delErr.message); return }
+    if (!rows.length) return
+    const { error } = await supa.from('sesion_noticias').insert(rows)
+    if (error) console.warn('No se pudieron guardar las noticias:', error.message)
   },
 
   // ── Checklist de disciplina (catálogo dinámico) ───────────────────────────

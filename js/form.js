@@ -89,17 +89,40 @@ const SessionForm = (() => {
     const visibles = checklistItems.filter(i => !i.setup || i.setup === fam)
     const byFase = { 1: [], 2: [], 3: [] }
     visibles.forEach(i => (byFase[i.fase] || byFase[1]).push(i))
+    // El GO se marca UNA sola vez en todo el checklist (cae dentro de la Fase 2):
+    // a partir de ahí, lo que queda solo se puede confirmar con el trade ya hecho.
+    let goPuesto = false
     cont.innerHTML = [1, 2, 3].map(f => {
       const items = byFase[f]
       if (!items.length) return ''
       // Fase 1 siempre visible; Fases 2/3 solo cuando se operó (op-only)
       const opOnly = f !== 1 ? ' op-only' : ''
-      const checks = items.map(i => `
+      // Separador del GO: hay ítems que se marcan ANTES de entrar y otros que solo
+      // se pueden confirmar DESPUÉS. Marcar los segundos antes de tiempo obligaba
+      // a mentir o a perder el trade.
+      const checks = items.map(i => {
+        let sep = ''
+        if (!goPuesto && i.bloquea_go === false) {
+          goPuesto = true
+          sep = `<div class="go-sep"><span><i class="ti ti-player-play"></i> GO</span><small>lo de abajo se marca después de entrar</small></div>`
+        }
+        // Ítems verificados por dato: no se marcan, los resuelve el sistema con los
+        // trades del día. Se muestran para que se vea que existen y qué vigilan.
+        if ((i.evidencia || 'declarada') === 'auto') {
+          return `${sep}
+        <div class="check-item check-auto" title="${(i.enunciado || '').replace(/"/g, '&quot;')}">
+          <span class="check-auto-icon"><i class="ti ti-settings-automation"></i></span>
+          <span>${i.texto}</span>
+          <span class="check-auto-tag">automático</span>
+        </div>`
+        }
+        return `${sep}
         <label class="check-item">
           <input type="checkbox" id="chk__${i.clave}" data-clave="${i.clave}" data-fase="${f}" name="${i.clave}"${prev[i.clave] ? ' checked' : ''}>
           <span class="check-box"></span>
           <span>${i.texto}</span>
-        </label>`).join('')
+        </label>`
+      }).join('')
       // Fase 2 sin setup elegido: avisar que faltan las reglas propias del setup
       const aviso = (f === 2 && !fam)
         ? `<div class="phase-hint"><i class="ti ti-info-circle"></i> Elige el <b>SetUp</b> en Operativa para ver sus reglas propias.</div>`
@@ -113,7 +136,7 @@ const SessionForm = (() => {
               <div class="phase-card-title">${FASE_META[f].titulo}${badge}</div>
               <div class="phase-card-when">${FASE_META[f].when}</div>
             </div>
-            <span class="phase-progress" id="phaseProg${f}">0/${items.length}</span>
+            <span class="phase-progress" id="phaseProg${f}">0/${items.filter(i => (i.evidencia || 'declarada') !== 'auto').length}</span>
           </div>
           ${aviso}
           <div class="checklist">${checks}</div>
@@ -273,22 +296,77 @@ const SessionForm = (() => {
     ;['precioMaxAyer','precioMinAyer','precioMaxPre','precioMinPre'].forEach(id =>
       document.getElementById(id)?.addEventListener('input', updatePremktPuntos))
     document.getElementById('seConecto')?.addEventListener('change', updatePremercadoVisibility)
-    document.getElementById('horaNoticiaRoja')?.addEventListener('input', actualizarVentanaNoticia)
-    actualizarVentanaNoticia()
+    document.getElementById('addNoticiaRoja')?.addEventListener('click', addNoticiaRoja)
+    renderNoticiasRojas([])
     updatePremercadoVisibility()
   }
 
-  // Ventana de bloqueo ±5 min de la noticia roja (no operar en ese rango).
-  function actualizarVentanaNoticia() {
-    const el = document.getElementById('horaNoticiaRojaWin')
-    const inp = document.getElementById('horaNoticiaRoja')
-    if (!el || !inp) return
-    const m = /^(\d{1,2}):(\d{2})$/.exec(inp.value || '')
-    if (!m) { el.textContent = 'Sin noticia roja'; el.classList.remove('on'); return }
+  // ── Noticias rojas del día (varias) ───────────────────────────────────────
+  // Cada una define una ventana de ±5 min en la que NO se abre posición. Estar ya
+  // dentro cuando sale la noticia es válido: la regla es sobre la entrada.
+  const MARGEN_NOTICIA = 5
+
+  function ventanaTexto(hhmm) {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || '')
+    if (!m) return ''
     const base = (+m[1]) * 60 + (+m[2])
     const fmt = t => { const x = ((t % 1440) + 1440) % 1440; return String((x / 60) | 0).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0') }
-    el.textContent = `No operar ${fmt(base - 5)} → ${fmt(base + 5)}`
-    el.classList.add('on')
+    return `No operar ${fmt(base - MARGEN_NOTICIA)} → ${fmt(base + MARGEN_NOTICIA)}`
+  }
+
+  function filaNoticiaHtml(n = {}) {
+    const hora = n.hora || ''
+    const nombre = (n.nombre || '').replace(/"/g, '&quot;')
+    return `
+      <div class="nr-row">
+        <input type="time" class="nr-hora" value="${hora}">
+        <input type="text" class="nr-nombre" placeholder="Nombre de la noticia (ISM, NFP…)" value="${nombre}">
+        <span class="nr-win${hora ? ' on' : ''}">${ventanaTexto(hora)}</span>
+        <button type="button" class="nr-del" title="Quitar"><i class="ti ti-x"></i></button>
+      </div>`
+  }
+
+  function renderNoticiasRojas(lista) {
+    const cont = document.getElementById('noticiasRojasList')
+    if (!cont) return
+    const rows = (lista || [])
+    cont.innerHTML = rows.length
+      ? rows.map(filaNoticiaHtml).join('')
+      : '<div class="nr-empty">Sin noticias rojas registradas</div>'
+    wireNoticiasRojas()
+  }
+
+  function wireNoticiasRojas() {
+    const cont = document.getElementById('noticiasRojasList')
+    if (!cont) return
+    cont.querySelectorAll('.nr-row').forEach(row => {
+      const hora = row.querySelector('.nr-hora')
+      const win  = row.querySelector('.nr-win')
+      hora?.addEventListener('input', () => {
+        win.textContent = ventanaTexto(hora.value)
+        win.classList.toggle('on', !!hora.value)
+      })
+      row.querySelector('.nr-del')?.addEventListener('click', () => {
+        row.remove()
+        if (!cont.querySelector('.nr-row')) renderNoticiasRojas([])
+      })
+    })
+  }
+
+  function addNoticiaRoja() {
+    const cont = document.getElementById('noticiasRojasList')
+    if (!cont) return
+    cont.querySelector('.nr-empty')?.remove()
+    cont.insertAdjacentHTML('beforeend', filaNoticiaHtml())
+    wireNoticiasRojas()
+    cont.querySelector('.nr-row:last-child .nr-hora')?.focus()
+  }
+
+  // Lee las filas para guardar en `sesion_noticias`
+  function getNoticiasRojas() {
+    return [...document.querySelectorAll('#noticiasRojasList .nr-row')]
+      .map(r => ({ hora: r.querySelector('.nr-hora')?.value || '', nombre: r.querySelector('.nr-nombre')?.value || '' }))
+      .filter(n => n.hora)
   }
 
   function setupImageUpload() {
@@ -445,7 +523,8 @@ const SessionForm = (() => {
       payload.soportes_naranja     = soportesNaranja ? soportesNaranja.getValues() : []
       payload.resistencias_naranja = resistenciasNaranja ? resistenciasNaranja.getValues() : []
       payload.noticias             = document.getElementById('noticias').value.trim() || null
-      payload.hora_noticia_roja    = document.getElementById('horaNoticiaRoja').value || null
+      // Las noticias van a sesion_noticias; un trigger sincroniza hora_noticia_roja
+      payload.noticiasRojas        = getNoticiasRojas()
     } else {
       payload.precio_apertura_ayer = null
       payload.precio_max_ayer    = null
@@ -457,7 +536,7 @@ const SessionForm = (() => {
       payload.soportes_naranja     = []
       payload.resistencias_naranja = []
       payload.noticias           = null
-      payload.hora_noticia_roja  = null
+      payload.noticiasRojas      = []
     }
 
     // Setup válido no tomado (aplica cuando no_opero = true)
@@ -562,8 +641,13 @@ const SessionForm = (() => {
     document.getElementById('precioMaxPre').value     = sesion.precio_max_pre ?? ''
     document.getElementById('precioMinPre').value     = sesion.precio_min_pre ?? ''
     document.getElementById('noticias').value         = sesion.noticias || ''
-    const horaNR = document.getElementById('horaNoticiaRoja')
-    if (horaNR) { horaNR.value = sesion.hora_noticia_roja || ''; actualizarVentanaNoticia() }
+    // Noticias rojas: se leen de sesion_noticias (con su nombre). Si la consulta
+    // falla, se cae al texto sincronizado de la sesión para no perder las horas.
+    DB.getNoticiasByDate(sesion.sesion_date)
+      .then(ns => renderNoticiasRojas(ns))
+      .catch(() => renderNoticiasRojas(
+        String(sesion.hora_noticia_roja || '').split(',').filter(Boolean).map(h => ({ hora: h.trim() }))
+      ))
     soportesNaranja?.setValues(sesion.soportes_naranja || [])
     resistenciasNaranja?.setValues(sesion.resistencias_naranja || [])
     updatePremktPuntos()
