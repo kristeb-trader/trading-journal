@@ -38,7 +38,9 @@ js/coach.js      — Coach IA: flujo 3 etapas, chat, diagnóstico, guardar. Lee 
 js/metrics.js    — KPIs y métricas generales (cards del calendario)
 js/charts.js     — Sección Análisis unificada: filtros Mes/Trimestre/Anual
 js/form.js       — Formulario de sesión diaria + experimentos
-js/db.js         — Capa de datos Supabase (todas las queries)
+js/disciplina.js — Dashboard de Disciplina: semáforo por fase, racha, errores por causa
+js/db.js         — Capa de datos Supabase (todas las queries) + **cálculo canónico de
+                   disciplina** (ver "Reglas de oro de la disciplina" más abajo)
 js/experimentos.js — Laboratorio de Experimentos: veredictos + matriz cronológica
 js/apex.js       — Apex Tracker: cuentas de fondeo, vista detalle, auto-carga NT8
 js/estrategia.js — Editor del rulebook `catalogo_reglas` por capas
@@ -54,7 +56,7 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 | `sesiones` | Registro diario: emoción, premercado, setup (el checklist ya NO vive aquí). `setup` (texto) + **`setup_codigo`** (FK a `catalogo_setup_variantes`); el trigger `fn_sync_setup_codigo` los mantiene sincronizados escriba quien escriba (web, bot, Worker o NT8) |
 | **`sesion_checklist`** | **Checklist diario normalizado** (1 fila = sesión × regla). FK a `sesiones(sesion_date)` y `catalogo_reglas(codigo)`; `cumplido` bool. Reemplaza al JSONB `sesiones.checklist` y a las columnas `chk_*`. Triggers: sesión nueva → materializa en `true`; **regla nueva → solo de hoy en adelante** (Jul 2026: antes rellenaba TODO el historial en `true` e inflaba la disciplina). **Sin fila = N/A**: `calcDisciplinaStats` ignora los ítems no registrados. `db.js` reconstruye `s.checklist` en memoria al leer |
 | `diagnosticos_diarios` | Análisis IA: 3 secciones técnicas + 4 diagnóstico + chat |
-| `diagnostico_errores` | Errores detectados (manual + IA) con recomendaciones |
+| `diagnostico_errores` | Errores detectados (manual + IA) con recomendaciones. **`regla_codigo`** (FK a `catalogo_reglas`, Ago 2026) = la regla del checklist que ese error contradice → la disciplina la cuenta **incumplida aunque la casilla esté marcada**. NULL = no toca el checklist (los psicológicos: Miedo, Duda, Rabia…) |
 | `diagnostico_experimentos` | Condiciones en prueba (T/S) por sesión |
 | `catalogo_errores` / `catalogo_emociones` / `catalogo_experimentos` | Maestros |
 | **`catalogo_reglas`** | **Rulebook canónico unificado** (1 fila = 1 regla; antes `reglas`, renombrada Jul 2026). Capas filosofia/proceso/riesgo; `tipo` dura/blanda; `es_checklist`+`fase` → checklist diario (`sesion_checklist`). **`setup`** apunta a `catalogo_setups.codigo` (o NULL = común): una regla aplica a un día si es NULL o coincide con la familia del setup de ese día. Ver [[rulebook-modelo]] |
@@ -84,11 +86,28 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 4. Conventional commits en español: `feat/fix/docs(scope): descripción`
 5. Cambios en BD → entregar SQL en `docs/migrations/` y avisar al usuario que lo corra
 
-## Estado actual (Jul 2026)
+## Estado actual (Ago 2026)
 Funcionando: todas las secciones — Disciplina, Análisis, Calendario+Métricas, Apex,
 Experimentos, Trades, Sesión (antes "Registrar"), Historial, Coach IA, Imágenes,
 Estrategia, Datos, **Fechas Especiales** (ese es el orden del menú). Coach IA 3 etapas,
 checklist normalizado, cuenta principal configurable, filtro de cuenta persistente.
+
+> 🎯 **REGLAS DE ORO DE LA DISCIPLINA (Ago 2026).** El criterio vive **solo** en `db.js`
+> (`esDiaHabil` · `fechasConTrades` · `sesionOpero` · `discFactorAplica` ·
+> `reglasRotasPorDia` · `reglaCumplida` · `calcDisciplinaStats`); estuvo duplicado en 4
+> sitios y se desincronizó. Al tocar disciplina, cambiar **ahí** y dejar que
+> `metrics/charts/calendar/disciplina/app` deleguen. Cuatro invariantes:
+> 1. **Sábados y domingos no cuentan en NADA.** El AddOn crea filas de `sesiones` al
+>    abrir NT8; sin este filtro entraban como días operados.
+> 2. **`no_opero = false` NO significa que operó** — es el default de la columna. Las
+>    Fases 2/3 solo aplican si hubo **operativa real** (trades ese día o setup declarado).
+> 3. **Los días sin conexión** (`no_opero=true` + `se_conecto=false`) quedan fuera de
+>    toda estadística, no solo de la disciplina.
+> 4. **El checklist es auto-reportado y puede mentir.** Un error con `regla_codigo`
+>    tumba esa regla aunque la casilla esté en `true` (caso real: 8-jul marcó "no operar
+>    con noticia roja" y operó en día FOMC).
+> `conTrades` se construye SIEMPRE con **todos** los trades, sin el filtro de cuenta: la
+> disciplina es del proceso del trader, no de una cuenta (ya causó una regresión).
 
 > ⏰ **REGLA DE ORO — zona horaria (ya causó 2 bugs).** NinjaTrader está en hora de
 > **Colombia (UTC-5)**: todo lo que exporta (velas y `entry_time`/`exit_time`) viene en
@@ -98,9 +117,15 @@ checklist normalizado, cuenta principal configurable, filtro de cuenta persisten
 
 ### Pendientes abiertos
 - **Verificar en vivo el Coach IA** tras los últimos cambios (validación por fases,
-  títulos de regla descriptivos, horas en ET): generar un análisis y confirmar.
+  títulos de regla descriptivos, horas en ET **y la 9ª parte `reglaCodigo`** del formato
+  de errores): generar un análisis y confirmar que vincula bien error → regla.
 - Recomendaciones tipificadas en Coach IA (Fase 4B): implementado salvo inyectar el
   catálogo de recomendaciones en el prompt (para que reutilice nombres y no duplique).
+- Modal del día: un ítem tumbado por un error se ve igual que uno nunca marcado.
+  `_checklistDia` ya expone `roto` para distinguirlos visualmente ("marcado, pero el
+  diagnóstico lo desmiente") — falta el render.
+- Los 39 errores históricos sin `regla_codigo` se comportan como antes; se irán
+  tipificando solos según el Coach analice días nuevos.
 - Estadísticas de 3 corridas, volumen en trades, tasa de ejecución de setups válidos.
 - "Dejé de ganar": ampliar para capturar más casos (miedo, reingreso no tomado…).
 - Rendimiento general del Journal (el modal del día cargaba lento).
@@ -118,7 +143,16 @@ checklist normalizado, cuenta principal configurable, filtro de cuenta persisten
 > tiene trades reales en `trades` (22-24 jul) → el routing de `SupabaseAutoExport` hacia
 > la cuenta principal está verificado end-to-end.
 
-> **BD limpia (re-verificado 24 jul 2026 contra la BD real — 17 tablas vivas):** no quedan tablas ni columnas
+> ✅ **Cerrado (3 ago):** `ChecklistChaumer` recompilado de nuevo con la **guarda de fin
+> de semana** (`EsFinDeSemana()` en `UpsertSesionAsync`/`UpsertChecklistAsync`) → abrir
+> NT8 un sábado ya no deja filas fantasma en `sesiones`.
+
+> ⚠️ **Efecto lateral asumido (3 ago):** la **tasa de errores** y los **días limpios**
+> tienen ahora un denominador menor (salieron los días sin conexión), así que sus
+> porcentajes son más altos que los que Kris venía viendo. Es lo pedido, no un bug.
+
+> **BD limpia (re-verificado 24 jul 2026 contra la BD real — 17 tablas vivas; única
+> columna añadida desde entonces: `diagnostico_errores.regla_codigo`, 3 ago):** no quedan tablas ni columnas
 > legacy. Eliminadas: `apex_registros`, `fomc_dates`, las `*_archivada`,
 > `reglas_legacy_backup`, `checklist_items`, `sesion_casuisticas`,
 > `experimento_registros`, `catalogo_casuisticas`, `errores_sesion`, y de `sesiones`

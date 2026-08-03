@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 24 Julio 2026 (ver *Checkpoint Jul 2026 (8)* al final: **filtro de cuentas multi-selección** — nombres completos, default por cuenta principal, combinar PA + evaluación). Previo — *Checkpoint Jul 2026 (7)*: **setups paramétricos** — `catalogo_setups` + `catalogo_setup_variantes`, reglas por setup, administración desde el Journal, Telegram y NT8 dinámicos). Checkpoints previos: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
+**Última actualización:** 3 Agosto 2026 (ver *Checkpoint Ago 2026 (1)* al final: **calendario — fechas especiales futuras** y **verdad de la disciplina** — fines de semana fuera, días sin operativa no penalizan, y un error tumba la regla del checklist que contradice). Previo — *Checkpoint Jul 2026 (8)*: **filtro de cuentas multi-selección** (nombres completos, default por cuenta principal, combinar PA + evaluación); *Checkpoint Jul 2026 (7)*: **setups paramétricos** — `catalogo_setups` + `catalogo_setup_variantes`, reglas por setup, administración desde el Journal, Telegram y NT8 dinámicos. Checkpoints previos: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `E:\Proyectos\Trading Journal` (migrado desde `C:\Users\Asus\Claro drive\Trading Journal` el 6 jul 2026)
@@ -1344,6 +1344,112 @@ nombres abreviados → nunca casaba y caía al hardcode `PA-APEX` (la PA quemada
 > **Nota:** Análisis sigue leyendo **solo la tabla `trades`**. Las cuentas de
 > evaluación viejas (`-11`, `-12`, `-13`) viven en `apex_trades` y se consultan en
 > Apex Tracker (decisión explícita de Kris, 24 jul).
+
+---
+
+## Checkpoint Ago 2026 (1) — Calendario: fechas futuras + la verdad de la disciplina (3 ago)
+
+Sesión de trabajo sobre el Calendario. Empezó por un detalle visual y terminó
+destapando tres formas distintas en que la disciplina mentía.
+
+### 📅 Fechas especiales futuras (commit `873e09b`)
+
+Los festivos y días FOMC solo tomaban su color **cuando llegaba la fecha**: todas las
+ramas de fecha especial del render estaban bloqueadas por `isFuture`, aunque `load()`
+ya trae el año completo de `catalogo_fechas`. El dato estaba; el render lo tiraba.
+
+- Festivo/FOMC/vacaciones/otras se detectan sin el filtro de futuro. Un día futuro
+  especial toma su color con `.future-especial` (opacidad 0.72, para que se note que
+  aún no llega) en vez del `.future` apagado, y muestra su badge.
+- Ese día es clicable y abre el modal informativo.
+- El modal informativo ahora reconoce **FOMC** (antes solo festivo/vacaciones/otras):
+  un FOMC sin trades ni sesión abría el modal normal vacío. Si hay sesión registrada
+  se respeta el modal normal, para no perder sus notas.
+- `fomcDates` pasa de `Set` a mapa `date → {name, emoji}` (el modal necesita el nombre).
+- CSS nuevo: `.future-especial` y `.day-especial` (las fechas de tipo "otro" solo
+  tenían badge, sin color de celda).
+
+### 🎯 Disciplina — tres bugs de fondo (commits `3fe6e2b`, `c63d6d1`)
+
+**Síntoma 1: agosto marcaba 44% sin haber operado un solo día.**
+El AddOn de NT8 crea la fila de `sesiones` al abrir la plataforma (la necesita por la
+FK de `sesion_checklist`), y esa fila nace con `no_opero = false` — el **default de la
+columna**. `discFactorAplica` usaba justo ese campo para decidir si aplican las Fases
+2 y 3, así que un día con la pre-sesión hecha y sin GO evaluaba 5 ítems de lectura y
+ejecución que nunca ocurrieron: 4/9 = 44%.
+
+- **`sesionOpero()`**: las Fases 2/3 solo aplican si hubo **operativa real** (trades ese
+  día o setup declarado). Sin el Set de fechas con trades se mantiene el criterio
+  histórico (`!no_opero`), para no alterar el pasado en silencio.
+- **`esDiaHabil()`**: sábados y domingos fuera de **toda** estadística (disciplina, días
+  con actividad, tasa de errores, P&L). Había una sesión fantasma del sábado 25-jul,
+  borrada por migración; y 2 trades de domingo de `Sim101` que ya no entran.
+- **Días sin conexión fuera de todo**: `activeSesiones` en `metrics.js` pasa a filtrar
+  por `seConecto` — antes el denominador de la tasa de errores y los días limpios
+  incluían días en que ni te conectaste.
+- **AddOn `ChecklistChaumer`**: guarda de fin de semana en `UpsertSesionAsync` y
+  `UpsertChecklistAsync` (punto único: cubre checklist, GO y hora de noticia).
+  ✅ Recompilado en NT8 el 3 ago.
+
+**Síntoma 2: julio marcaba 100% con un error grave dentro.**
+El 8-jul el checklist decía `chk_noticias` ("No operar con noticia roja activa") =
+**cumplida**, y el diagnóstico del mismo día registraba el error **"FOMC"**: operó un
+IRI tendencial en día FOMC, a sabiendas (`regla_vista = true`). El checklist es
+**auto-reportado antes de operar** y nadie vuelve atrás a desmarcarlo.
+
+- **`diagnostico_errores.regla_codigo`** (FK a `catalogo_reglas`): la regla que ese
+  error contradice. `NULL` = no toca el checklist — los errores psicológicos (Miedo,
+  Duda, Rabia, Ansiedad, FOMO) siguen contando solo en la tasa de errores.
+- **`reglaCumplida()`**: si hay un error vinculado a la regla X ese día, X cuenta como
+  **incumplida aunque la casilla esté marcada**. Aplicado en el cálculo canónico, en el
+  dashboard (total, por fase, racha e historial) y en el modal del día (que además
+  expone `roto` para poder distinguirlo visualmente más adelante).
+- **Backfill de 8 errores** que mapean sin ambigüedad: FOMC → `chk_noticias`, Mover Stop
+  → `chk_no_mover`, Trade sin Consecución → `chk_consecucion`, Entrada Tardía →
+  `chk_orden`. Los otros 39 quedan en `NULL` y se comportan igual que antes.
+- **Coach IA**: el formato de error pasa de 8 a **9 partes** (`reglaCodigo`). El prompt
+  recibe los códigos de las reglas aplicables a ese día y el parser **valida contra el
+  catálogo** antes de guardar (hay FK). Retro-compatible con las líneas viejas.
+
+**Síntoma 3 (regresión detectada y corregida en la misma sesión):** `conTrades` se
+construía con los trades **ya filtrados por cuenta**, así que los días de feb–mar
+(operados en la PA vieja, sin setup declarado) se daban por no operados al tener el
+filtro en la cuenta actual, y perdían sus Fases 2/3. Ahora se usa siempre el total sin
+filtrar — **la disciplina es del proceso del trader, no de una cuenta**.
+
+### 🧹 Criterio centralizado
+
+El criterio de disciplina estaba **duplicado en 4 sitios**. Ahora vive solo en `db.js`
+(`esDiaHabil`, `fechasConTrades`, `sesionOpero`, `discFactorAplica`, `reglasRotasPorDia`,
+`reglaCumplida`, `calcDisciplinaStats`): se eliminaron las copias muertas de
+`factorAplica`/`setupFamilyOf` en `metrics.js`, `disciplina.js` delega y `app.js` usa el
+mismo. `calcDisciplinaStats(sesiones, items, opts)` pasa a objeto de opciones
+(`{conTrades, rotas}`) en vez de seguir sumando parámetros. De paso, `charts.js` pasaba
+`casByDate` donde el API ya esperaba otra cosa (residuo que se ignoraba en silencio).
+
+### Verificación
+
+Sin poder usar la app con login (RLS), se stubeó la capa de datos y se ejecutó el
+**código real**: render del calendario, `calcDisciplinaStats`, `Metrics.init()` y
+`Disciplina.init()`.
+
+| Caso | Resultado |
+|---|---|
+| FOMC futuro (19-ago) | `day-fomc future-especial`, opacidad 0.72, badge, clicable |
+| Días futuros normales (16) | Intactos: `.future` 0.4, sin color/badge, no clicables |
+| Agosto sin operar | 44% → **100%** (4/4) |
+| 8-jul con error FOMC | 100% → **92%** (12/13) |
+| Error psicológico / de otro día | No altera la disciplina |
+| Día operado con trades sin setup | 9 ítems aplicables (histórico intacto) |
+| Filtro apuntando a otra cuenta | 13 ítems siguen aplicando (regresión cubierta) |
+| Sábado · día sin conexión | 0 aplicables |
+
+Migraciones: `2026-08-03-borrar-sesion-fin-de-semana.sql`,
+`2026-08-03-errores-regla-codigo.sql` (ambas aplicadas vía MCP).
+
+> ⚠️ **Efecto lateral asumido:** la **tasa de errores** y los **días limpios** tienen ahora
+> un denominador menor (los días sin conexión salieron), así que sus porcentajes suben
+> respecto a lo que se venía viendo. Es el comportamiento pedido, no un bug.
 
 ---
 
