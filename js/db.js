@@ -302,7 +302,9 @@ const DB = {
     }
     const { data, error } = await supa
       .from('catalogo_reglas')
-      .select('id, clave:codigo, fase, setup, texto:titulo, orden, activo:activa, peso')
+      // `bloquea_go` = hay que marcarla para dar GO; `aplica_si` = condición de
+      // contexto del día (siempre|dia_fomc|hay_noticia); `evidencia` = auto|declarada.
+      .select('id, clave:codigo, fase, setup, texto:titulo, enunciado, orden, activo:activa, peso, bloquea_go, aplica_si, evidencia, campo')
       .eq('es_checklist', true)
       .order('fase', { ascending: true })
       .order('orden', { ascending: true })
