@@ -110,7 +110,7 @@ const Coach = (() => {
   // ── Construcción del System Prompt ────────────────────────────────────
 
   async function buildSystemPrompt(date) {
-    const [reglas, historial, patrones, sesion, trades, casuisticas, emociones, catalogoErrores] = await Promise.all([
+    const [reglas, historial, patrones, sesion, trades, casuisticas, emociones, catalogoErrores, , fechasEsp, objetivos] = await Promise.all([
       cargarReglas(),
       cargarHistorialCompacto(),
       detectarPatrones(),
@@ -120,6 +120,8 @@ const Coach = (() => {
       DB.getCatalogoEmociones(),
       DB.getCatalogoCasuisticas(),
       DB.fetchCuentaPrincipal(),   // asegura el cache de la cuenta principal
+      DB.getFechasEspeciales().catch(() => []),   // para la regla "día FOMC"
+      DB.getObjetivos().catch(() => null),        // stop máximo en puntos
     ])
     // Familia del setup operado ese día (iri | reingreso | null). Si no se operó
     // pero se identificó un setup válido que no se tomó, se usa ese.
@@ -195,13 +197,32 @@ const Coach = (() => {
     // al setup del día: si no se filtra, en un día de Reingreso se le mandaban al
     // Coach las reglas de IRI y las reportaba como incumplidas.
     const chkItems = DB.checklistItemsSync().filter(it => reglaAplica(it, familiaDia))
+    // Contexto para resolver las reglas automáticas de este día (ago 2026): el
+    // sistema las verifica con los datos, no con la casilla del trader.
+    // `trades` sin filtrar por cuenta: la disciplina es del proceso del trader,
+    // no de una cuenta (el análisis sí se restringe a la principal, pero las
+    // reglas de riesgo aplican a lo que se ejecutó ese día, venga de donde venga).
+    const _discCtx = discContexto({
+      trades, errores: casuisticas, fechasEsp,
+      stopMaxPuntos: objetivos?.stop_max_puntos,
+    })
     const checklistStr = sesion
-      ? chkItems.map(it => `${(sesion.checklist?.[it.clave] ?? sesion[it.clave]) ? '✓' : '✗'} [F${it.fase}] ${it.texto}`).join('\n  ')
+      ? chkItems.map(it => {
+          if ((it.evidencia || 'declarada') === 'auto') {
+            const r = reglaAutoResultado(it.clave, sesion, _discCtx)
+            if (r === null) return `— [F${it.fase}] ${it.texto} (verificada por datos: sin evidencia hoy)`
+            return `${r ? '✓' : '✗'} [F${it.fase}] ${it.texto} ← VERIFICADO POR DATOS, no es autoevaluación`
+          }
+          return `${(sesion.checklist?.[it.clave] ?? sesion[it.clave]) ? '✓' : '✗'} [F${it.fase}] ${it.texto}`
+        }).join('\n  ')
       : 'Sin datos de checklist'
     // Códigos de las reglas aplicables al día: el Coach los usa para vincular cada
-    // error con la regla que contradice (9ª parte del formato de errores).
-    const codigosReglaStr = chkItems.length
-      ? chkItems.map(it => `  - ${it.clave} → "${it.texto}" [F${it.fase}]`).join('\n')
+    // error con la regla que contradice (9ª parte del formato de errores). Se
+    // excluyen las automáticas: el sistema ya las detecta solo y vincularlas no
+    // cambiaría nada en el cálculo.
+    const reglasVinculables = chkItems.filter(it => (it.evidencia || 'declarada') !== 'auto')
+    const codigosReglaStr = reglasVinculables.length
+      ? reglasVinculables.map(it => `  - ${it.clave} → "${it.texto}" [F${it.fase}]`).join('\n')
       : '  (sin reglas de checklist aplicables a este día)'
 
     // Casuísticas
@@ -309,7 +330,7 @@ Responde SIEMPRE en español. Sé estricto y directo — si el trader cometió e
 
 ${reglasDuras}
 
-Estas reglas NO admiten excepción. Si la sesión viola cualquiera, el VEREDICTO final es INVÁLIDO por más bueno que se vea el resto del setup, y debes nombrar la regla rota por su **TÍTULO descriptivo** (p. ej. "R:R siempre 1:1", "Stop máximo de 80 puntos"). NUNCA muestres el código interno (\`rr_1a1\`, \`chk_orden\`…): es solo referencia, el trader no lo entiende. Las demás reglas (blandas) son guías sujetas a criterio.
+Estas reglas NO admiten excepción. Si la sesión viola cualquiera, el VEREDICTO final es INVÁLIDO por más bueno que se vea el resto del setup, y debes nombrar la regla rota por su **TÍTULO descriptivo** (p. ej. "Stop máximo de 80 puntos", "Día FOMC: solo reingresos"). NUNCA muestres el código interno (\`chk_consecucion\`, \`chk_orden\`…): es solo referencia, el trader no lo entiende. Las demás reglas (blandas) son guías sujetas a criterio.
 
 ---
 
@@ -387,6 +408,10 @@ Trades:
 
 Checklist:
   ${checklistStr}
+  (Las líneas marcadas "VERIFICADO POR DATOS" las comprobó el sistema con los trades
+   reales, no las marcó el trader: son hechos, no autoevaluación. Si una sale ✗, la
+   regla se rompió aunque el trader creyera cumplirla — dilo sin rodeos. El resto del
+   checklist SÍ es auto-reportado y puede no coincidir con lo que pasó.)
 
 Errores cometidos:
 ${casStr}
@@ -855,7 +880,7 @@ ${catalogoStr}
   }
 
   // VALIDACIÓN → tarjeta por setup con checklist + stop/target
-  // Limpia códigos internos que la IA pueda colar igual (`rr_1a1` → R:R siempre 1:1)
+  // Limpia códigos internos que la IA pueda colar igual (`chk_orden` → Orden precolocada a tiempo)
   function _limpiaCodigos(txt) {
     return (txt || '').replace(/`([a-z0-9_]{3,30})`/gi, (m, cod) => {
       const r = (reglasCache || []).find(x => x.codigo === cod)
@@ -1104,7 +1129,7 @@ ${catalogoStr}
 "**Fase 1 · Pre-sesión**", "**Fase 2 · Lectura del setup**", "**Fase 3 · Ejecución**"
 Bajo cada fase, un filtro por línea: "✅/❌ Título descriptivo de la regla — explicación breve".
 Al final del setup: "Stop: X pts | Target: Y pts".
-USA SIEMPRE el título descriptivo de la regla, NUNCA el código interno (nada de \`rr_1a1\` ni \`chk_orden\`).
+USA SIEMPRE el título descriptivo de la regla, NUNCA el código interno (nada de \`chk_consecucion\` ni \`chk_orden\`).
 
 NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivines precios: usa los valores exactos (línea verde = PDH, línea roja = PDL, zonas naranjas, precios de los trades); si falta un dato, pregúntalo.`
 
