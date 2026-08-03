@@ -7,6 +7,9 @@ const Metrics = (() => {
   let allObjetivos     = null
   let allExpCatalogo   = []
   let allExpRegistros  = []
+  // Fechas especiales por tipo: { festivo: Set(fechas), fomc: Set(fechas), … }
+  // Las usa el desglose de días para separar festivos y FOMC de los "no conectados".
+  let fechasEspByDate  = {}
 
   // Taxonomía de errores (debe coincidir con el catálogo)
   // Colores semánticos por tipo: color = punto/barra (sólido), text = etiqueta (claro)
@@ -124,6 +127,39 @@ const Metrics = (() => {
   function calYear() {
     if (typeof Calendar !== 'undefined') return Calendar.getYear()
     return new Date().getFullYear()
+  }
+
+  // Rango [from, to] del período — mismo criterio que filterByPeriod, extraído para
+  // poder recorrer el calendario día a día en el desglose.
+  function periodBounds(period) {
+    if (period === 'month') {
+      const y = calYear(), m = calMonth()
+      const lastDay = new Date(y, m, 0).getDate()
+      return {
+        from: `${y}-${String(m).padStart(2, '0')}-01`,
+        to:   `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
+      }
+    }
+    if (period === 'week') {
+      const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1)
+      return { from: d.toISOString().slice(0, 10), to: '9999-12-31' }
+    }
+    return { from: '0000-01-01', to: '9999-12-31' }
+  }
+
+  // Fechas ISO de los días hábiles (Lun–Vie) entre dos fechas, ambas incluidas.
+  function diasHabilesEntre(from, to) {
+    const out = []
+    if (!from || !to || from > to) return out
+    const d = new Date(`${from}T12:00:00`), end = new Date(`${to}T12:00:00`)
+    while (d <= end) {
+      const dow = d.getDay()
+      if (dow >= 1 && dow <= 5) {
+        out.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`)
+      }
+      d.setDate(d.getDate() + 1)
+    }
+    return out
   }
 
   // Filtra al período pedido. Sábados y domingos quedan SIEMPRE fuera: el mercado no
@@ -371,43 +407,53 @@ const Metrics = (() => {
     // no entra en disciplina, tasa de errores, días limpios ni "dejé de ganar".
     const activeSesiones = sesiones.filter(seConecto)
 
-    // ── Desglose T · S · Sin · No · F (días, no trades) ──────────────────────
-    // Clasificación por DÍA con la misma prioridad que el calendario (calendar.js
-    // dayResult): la sesión no_opero manda sobre el trade, para no duplicar un día
-    // que tenga ambos (dato inconsistente, ej. trade + "Sin setup" el mismo día).
-    // Solo cuenta días "con actividad" (trade, o sesión conectada) — coherente con
-    // el total del widget del calendario — así T+S+Sin+No+F siempre cuadra.
+    // ── Desglose de días del período ─────────────────────────────────────────
+    // Universo: TODOS los días hábiles del período (hasta hoy; los futuros no
+    // cuentan). Se parte en dos ramas que suman el total, sin solapamiento:
+    //
+    //   Días de trabajo (= conectados)      Días sin operar
+    //     ├─ Targets                          ├─ Festivos
+    //     ├─ Stops                            ├─ FOMC   (solo si NO se operó)
+    //     └─ Sin resultado                    ├─ No conectados
+    //        (no entré, o cerró en B.E.)      └─ Sin registro
+    //
+    // Un día FOMC en el que SÍ se operó es un día de trabajo, no un "FOMC".
+    // Prioridad en la rama derecha: festivo > FOMC > no conectado > sin registro.
     const sesionesByDate = {}
     sesiones.forEach(s => { sesionesByDate[s.sesion_date] = s })
-    const diasConActividadSet = new Set([
-      ...Object.keys(tradesByDate),
-      ...activeSesiones.map(s => s.sesion_date),
-    ])
-    const breakdown = { T: 0, S: 0, Sin: 0, No: 0, F: 0 }
-    diasConActividadSet.forEach(fecha => {
-      const s = sesionesByDate[fecha]
-      const dTrades = tradesByDate[fecha] || []
-      if (s?.no_opero) {
-        const m = s.motivo_no_opero
-        if (m === 'FOMC' || m === 'Festivo')                                breakdown.F++
-        else if (m === 'Sin setup' || m === 'Setup válido no tomado')       breakdown.Sin++
-        else                                                                breakdown.No++
-        return
-      }
-      const nonBE = dTrades.filter(t => !isBreakEven(t))
-      if (!nonBE.length) { breakdown.No++; return }   // solo B.E. ese día
-      const tg = nonBE.filter(isWinTrade).length
-      const sl = nonBE.filter(isLossTrade).length
-      if (tg > 0 && sl === 0) breakdown.T++
-      else if (sl > 0 && tg === 0) breakdown.S++
-      else {
+    const conectadasSet = new Set(activeSesiones.map(s => s.sesion_date))
+
+    const desglose = {
+      trabajo: 0, targets: 0, stops: 0, sinResultado: 0,
+      sinOperar: 0, festivos: 0, fomc: 0, noConectados: 0, sinRegistro: 0,
+      totalHabiles: 0,
+    }
+    const hoyISO = new Date().toISOString().slice(0, 10)
+    const { from, to } = periodBounds(period)
+    for (const fecha of diasHabilesEntre(from, to > hoyISO ? hoyISO : to)) {
+      desglose.totalHabiles++
+      if (conectadasSet.has(fecha)) {
+        // ── Día de trabajo: se conectó (haya operado o no) ──
+        desglose.trabajo++
+        const nonBE = (tradesByDate[fecha] || []).filter(t => !isBreakEven(t))
+        const tg = nonBE.filter(isWinTrade).length
+        const sl = nonBE.filter(isLossTrade).length
         const net = nonBE.reduce((a, t) => a + (parseFloat(t.profit) || 0), 0)
-        if (net > 6) breakdown.T++
-        else if (net < -6) breakdown.S++
-        else breakdown.No++
+        if      (tg > 0 && sl === 0) desglose.targets++
+        else if (sl > 0 && tg === 0) desglose.stops++
+        else if (net > 6)            desglose.targets++
+        else if (net < -6)           desglose.stops++
+        else                         desglose.sinResultado++  // no entré, o B.E.
+      } else {
+        // ── Día sin operar ──
+        desglose.sinOperar++
+        if      (fechasEspByDate.festivo?.has(fecha)) desglose.festivos++
+        else if (fechasEspByDate.fomc?.has(fecha))    desglose.fomc++
+        else if (sesionesByDate[fecha])               desglose.noConectados++
+        else                                          desglose.sinRegistro++
       }
-    })
-    const diasActividadTotal = diasConActividadSet.size
+    }
+    const diasActividadTotal = desglose.trabajo
 
     // Casuísticas filtradas por el mismo período
     const periodCasuisticas = filterCasuisticasByPeriod(allCasuisticas, period)
@@ -562,11 +608,11 @@ const Metrics = (() => {
       { label: 'Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días${costoErrores > 0 ? ` · ≈ <span style="color:var(--red)">-$${costoErrores.toFixed(0)}</span>` : ''}${trendErr}` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
       { label: 'Dejé de ganar', value: dejeGanarStat.targets > 0 ? `${dejeGanarStat.targets} ⚠️` : '0 ✅', icon: 'ti-mood-sad', color: dejeGanarStat.targets === 0 ? 'green' : dejeGanarStat.targets <= 2 ? 'warning' : 'red', sub: dejeGanarStat.total > 0 ? `${dejeGanarStat.targets}T · ${dejeGanarStat.stops}S dejados pasar` : 'Sin setups perdidos', clickable: dejeGanarStat.total > 0, action: 'deje-ganar' },
       {
-        label: 'T · S · Sin · No · F',
-        value: `<span style="color:var(--accent)">${breakdown.T}</span> · <span style="color:var(--red)">${breakdown.S}</span> · <span style="color:#8b8eff">${breakdown.Sin}</span> · <span style="color:var(--text3)">${breakdown.No}</span> · <span style="color:#60a5fa">${breakdown.F}</span>`,
-        icon: 'ti-chart-bar',
+        label: 'Días de trabajo',
+        value: `${desglose.trabajo}`,
+        icon: 'ti-calendar-check',
         color: 'neutral',
-        sub: `${diasActividadTotal} día${diasActividadTotal !== 1 ? 's' : ''} · Ratio T/S: ${breakdown.S > 0 ? (breakdown.T / breakdown.S).toFixed(2) : breakdown.T > 0 ? '∞' : '—'}`,
+        sub: `Ratio T/S: ${desglose.stops > 0 ? (desglose.targets / desglose.stops).toFixed(2) : desglose.targets > 0 ? '∞' : '—'}`,
       },
     ]
 
@@ -597,6 +643,66 @@ const Metrics = (() => {
     })
 
     renderCalEquity(trades)
+    renderDesgloseDias(desglose)
+  }
+
+  // ── Desglose de días (bloque bajo la curva de equity) ──────────────────────
+  // Dos ramas que suman el total de días hábiles del período: los de trabajo
+  // (conectado, haya operado o no) y los que no se operó.
+  function renderDesgloseDias(d) {
+    const cont = document.getElementById('diasDesglose')
+    if (!cont) return
+    const per = document.getElementById('ddPeriodo')
+    if (per) per.textContent = `${MESES[calMonth() - 1]} ${calYear()} · ${d.totalHabiles} día${d.totalHabiles !== 1 ? 's' : ''} hábiles`
+
+    // fila: [icono, etiqueta, valor, clase de color, tooltip]
+    const fila = (icon, label, val, cls, hint) => {
+      const pct = d.totalHabiles > 0 ? (val / d.totalHabiles * 100) : 0
+      return `
+        <div class="dd-row${val === 0 ? ' is-zero' : ''}"${hint ? ` title="${hint}"` : ''}>
+          <span class="dd-dot ${cls}"><i class="ti ${icon}"></i></span>
+          <span class="dd-label">${label}</span>
+          <span class="dd-bar"><span class="dd-bar-fill ${cls}" style="width:${pct.toFixed(1)}%"></span></span>
+          <span class="dd-val">${val}</span>
+        </div>`
+    }
+
+    const pctTrabajo = d.totalHabiles > 0 ? Math.round(d.trabajo / d.totalHabiles * 100) : 0
+    const pctSin     = d.totalHabiles > 0 ? Math.round(d.sinOperar / d.totalHabiles * 100) : 0
+
+    cont.innerHTML = `
+      <div class="dd-col">
+        <div class="dd-head">
+          <div class="dd-head-txt">
+            <span class="dd-head-label">Días de trabajo</span>
+            <span class="dd-head-sub">Te conectaste al mercado</span>
+          </div>
+          <div class="dd-head-num">
+            <span class="dd-total accent">${d.trabajo}</span>
+            <span class="dd-pct">${pctTrabajo}%</span>
+          </div>
+        </div>
+        ${fila('ti-trending-up',   'Targets',       d.targets,      'c-target', 'Días que cerraron en positivo')}
+        ${fila('ti-trending-down', 'Stops',         d.stops,        'c-stop',   'Días que cerraron en negativo')}
+        ${fila('ti-minus',         'Sin resultado', d.sinResultado, 'c-flat',   'Te conectaste pero el día no acabó en target ni en stop: analizaste y no entraste, o cerró en break even')}
+      </div>
+
+      <div class="dd-col">
+        <div class="dd-head">
+          <div class="dd-head-txt">
+            <span class="dd-head-label">Días sin operar</span>
+            <span class="dd-head-sub">No hubo sesión de trading</span>
+          </div>
+          <div class="dd-head-num">
+            <span class="dd-total muted">${d.sinOperar}</span>
+            <span class="dd-pct">${pctSin}%</span>
+          </div>
+        </div>
+        ${fila('ti-user-off',       'No conectados', d.noConectados, 'c-off',     'No abriste la plataforma ese día')}
+        ${fila('ti-building-bank',  'Festivos',      d.festivos,     'c-holiday', 'Mercado cerrado')}
+        ${fila('ti-chart-candle',   'FOMC',          d.fomc,         'c-fomc',    'Días FOMC en los que NO operaste (si operaste, cuenta como día de trabajo)')}
+        ${d.sinRegistro > 0 ? fila('ti-help-circle', 'Sin registro', d.sinRegistro, 'c-none', 'Días hábiles sin sesión registrada y sin fecha especial') : ''}
+      </div>`
   }
 
   // Curva de equity del mes seleccionado (sección Calendario)
@@ -639,12 +745,20 @@ const Metrics = (() => {
   }
 
   async function init() {
-    let checklistItems
-    ;[allTrades, allSesiones, allCasuisticas, allCatalogo, allObjetivos, allExpCatalogo, allExpRegistros, checklistItems] = await Promise.all([
+    let checklistItems, fechasEsp
+    ;[allTrades, allSesiones, allCasuisticas, allCatalogo, allObjetivos, allExpCatalogo, allExpRegistros, checklistItems, fechasEsp] = await Promise.all([
       DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getCatalogoCasuisticas(), DB.getObjetivos(), DB.getCatalogoExperimentos(), DB.getAllExperimentoRegistros(),
-      DB.getChecklistItems({ soloActivos: true }).catch(() => null)
+      DB.getChecklistItems({ soloActivos: true }).catch(() => null),
+      DB.getFechasEspeciales().catch(() => []),
     ])
     buildDiscFactors(checklistItems)
+    // Índice por tipo → Set de fechas (festivos y FOMC del desglose de días)
+    fechasEspByDate = {}
+    ;(fechasEsp || []).forEach(f => {
+      if (!f.tipo || !f.fecha) return
+      if (!fechasEspByDate[f.tipo]) fechasEspByDate[f.tipo] = new Set()
+      fechasEspByDate[f.tipo].add(f.fecha)
+    })
     render('month')
 
     document.getElementById('closeDisciplineModal').addEventListener('click', () => {

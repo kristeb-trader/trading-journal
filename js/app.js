@@ -126,12 +126,15 @@ const Modal = {
     return pts
   },
 
-  // Cabecera del modal: Puntos · Resultado · P&L a la derecha de la fecha
+  // Cabecera del modal: Puntos · Resultado · P&L · Setup, en un recuadro con relieve
+  // y color según el resultado del día.
   _headStats(trades, sesion) {
     trades = trades || []
     if (!trades.length && !sesion) return ''
     const st = this._dayState(trades, sesion)
     const badgeCls = st.cls === 'mst-green' ? 'r-t' : st.cls === 'mst-red' ? 'r-s' : 'r-o'
+    // Tono del recuadro: verde en target, rojo en stop, neutro en el resto
+    const boxTone = st.cls === 'mst-green' ? 'tone-t' : st.cls === 'mst-red' ? 'tone-s' : 'tone-o'
     const cells = []
     if (trades.length) {
       const pts = this._puntosDia(trades)
@@ -149,7 +152,13 @@ const Modal = {
       const pnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
       cells.push(`<div class="mh-stat"><label>P&amp;L</label><span class="mh-val ${pnl < 0 ? 'neg' : 'pos'}">${pnl >= 0 ? '+' : '−'}$${Math.abs(pnl).toFixed(2)}</span></div>`)
     }
-    return cells.join('')
+    // Setup operado (a la derecha). Solo si el día tiene uno declarado.
+    const setup = (sesion?.setup || '').trim()
+    if (setup) {
+      const esc = setup.replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]))
+      cells.push(`<div class="mh-stat mh-stat-setup"><label>Setup</label><span class="mh-setup" title="${esc}">${esc}</span></div>`)
+    }
+    return `<div class="mh-box ${boxTone}">${cells.join('')}</div>`
   },
 
   // Checklist aplicable al día (mismo criterio que discFactorAplica en db.js):
