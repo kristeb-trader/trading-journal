@@ -157,11 +157,14 @@ const Modal = {
   // ese día o setup declarado — `no_opero=false` es el default de la columna y no
   // prueba nada); ítems por setup solo si el setup del día es de esa familia. Solo
   // ítems con valor registrado.
-  _checklistDia(chkItems, sesion, trades) {
+  // `casuisticas`: errores del día — si uno contradice una regla, esa regla se
+  // muestra como incumplida aunque su casilla esté marcada (ver reglaCumplida).
+  _checklistDia(chkItems, sesion, trades, casuisticas) {
     if (!sesion || !esDiaHabil(sesion.sesion_date)) return []
     const conectado = !sesion.no_opero || sesion.se_conecto !== false
     if (!conectado) return []
     const opero = sesionOpero(sesion, fechasConTrades(trades))
+    const rotas = reglasRotasPorDia(casuisticas)
     const fam = DB.setupFamily(sesion)
     return (chkItems || []).filter(i => {
       if ((i.fase || 1) !== 1 && !opero) return false
@@ -169,11 +172,16 @@ const Modal = {
       const val = sesion.checklist?.[i.clave] ?? sesion[i.clave]
       if (val === undefined) return false
       return true
-    }).map(i => ({ ...i, ok: !!(sesion.checklist?.[i.clave] ?? sesion[i.clave]) }))
+    }).map(i => {
+      const marcado = !!(sesion.checklist?.[i.clave] ?? sesion[i.clave])
+      const roto = rotas.get(sesion.sesion_date)?.has(i.clave) || false
+      // `roto` = la casilla decía sí, pero un error del día la desmiente
+      return { ...i, ok: marcado && !roto, roto: marcado && roto }
+    })
   },
 
   // Pestaña 1 — Resumen: el día en 5 segundos (hero + proceso + errores + siguiente paso)
-  _renderResumen({ trades, sesion, diag, casuisticas, emociones, chkItems }) {
+  _renderResumen({ trades, sesion, diag, casuisticas, emociones, chkItems, allDayTrades }) {
     if (!sesion && !diag && !trades.length) {
       return '<div class="modal-no-trade"><i class="ti ti-calendar-off"></i><p>Sin registro para este día</p></div>'
     }
@@ -210,7 +218,7 @@ const Modal = {
       : ''
 
     // ── Proceso: UNA barra con el checklist real del día; solo se listan los ✗ ──
-    const items = this._checklistDia(chkItems, sesion, trades)
+    const items = this._checklistDia(chkItems, sesion, allDayTrades || trades, casuisticas)
     let procesoHtml = ''
     if (items.length) {
       const ok = items.filter(i => i.ok).length
@@ -260,7 +268,7 @@ const Modal = {
   },
 
   // Pestaña 2 — Operativa (tabla de trades estilo Coach + campos + checklist por fases)
-  _renderOperativa({ trades, sesion, chkItems, allDayTrades }) {
+  _renderOperativa({ trades, sesion, chkItems, allDayTrades, casuisticas }) {
     const pnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
     const targets = trades.filter(isWinTrade).length
     const stops = trades.filter(isLossTrade).length
@@ -333,7 +341,7 @@ const Modal = {
       : ''
 
     // Checklist por fases (dinámico desde catalogo_reglas; solo ítems aplicables al día)
-    const items = this._checklistDia(chkItems, sesion, trades)
+    const items = this._checklistDia(chkItems, sesion, allDayTrades || trades, casuisticas)
     let chkHtml = ''
     if (items.length) {
       const FASES = { 1: 'Fase 1 · Pre-sesión', 2: 'Fase 2 · Lectura del setup', 3: 'Fase 3 · Ejecución' }

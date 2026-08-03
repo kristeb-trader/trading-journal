@@ -148,10 +148,16 @@ const Charts = (() => {
   // ── Cálculos ──────────────────────────────────────────────────────────────
   // Disciplina canónica (misma que calendario y dashboard): adherencia al checklist,
   // consciente de fase y sin penalizar ítems no registrados. casByDate ya no se usa.
-  function calcDiscipline(sesiones, trades) {
+  // Usa SIEMPRE `allTrades`/`allCas` del módulo (sin filtro de cuenta ni de período):
+  // la disciplina es del proceso del trader, no de una cuenta. `conTrades` evita
+  // evaluar Fases 2/3 en días sin operativa; `rotas` hace que un error registrado
+  // tumbe la regla que contradice aunque su casilla esté marcada.
+  function calcDiscipline(sesiones) {
     if (!sesiones || !sesiones.length) return null
-    // `fechasConTrades` evita evaluar Fases 2/3 en días conectados sin operativa.
-    return calcDisciplinaStats(sesiones, null, fechasConTrades(trades)).pct
+    return calcDisciplinaStats(sesiones, null, {
+      conTrades: fechasConTrades(allTrades),
+      rotas: reglasRotasPorDia(allCas),
+    }).pct
   }
 
   function statsOf(trades) {
@@ -173,7 +179,8 @@ const Charts = (() => {
   // ── KPIs ──────────────────────────────────────────────────────────────────
   function renderKpis(trades, sesiones, casByDate, subs) {
     const s = statsOf(trades)
-    const disc = calcDiscipline(sesiones, trades)
+    // `allTrades` sin filtro de cuenta: la disciplina es del proceso, no de la cuenta.
+    const disc = calcDiscipline(sesiones)
 
     // Consistencia: sub-períodos positivos
     let posSub = 0, activeSub = 0
@@ -379,7 +386,7 @@ const Charts = (() => {
       const ss = sesiones.filter(s => s.sesion_date >= sp.from && s.sesion_date <= sp.to)
       const st = statsOf(tt)
       cum += st.pnl
-      const disc = calcDiscipline(ss, tt)
+      const disc = calcDiscipline(ss)
       const hasData = tt.length > 0 || ss.filter(s => !s.no_opero).length > 0
       if (!hasData) {
         return `<tr class="annual-row-empty"><td class="annual-month-name">${sp.label}</td><td colspan="7" class="annual-empty-cell">— sin actividad —</td></tr>`
@@ -406,7 +413,7 @@ const Charts = (() => {
     }).join('')
 
     const tot = statsOf(trades)
-    const totDisc = calcDiscipline(sesiones, trades)
+    const totDisc = calcDiscipline(sesiones)
     const totRent = capital > 0 ? `${(tot.pnl / capital * 100).toFixed(2)}%` : '—'
     const totEfec = tot.efec != null ? `${tot.efec.toFixed(1)}%` : '—'
 

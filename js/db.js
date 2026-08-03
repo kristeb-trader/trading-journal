@@ -148,11 +148,34 @@ function discFactorAplica(f, s, conTrades) {
   if (f.setup) return _discSetupFamily(s) === f.setup
   return true
 }
+// Reglas que un error contradice, indexadas por día: Map fecha → Set(regla_codigo).
+// Se construye desde `diagnostico_errores.regla_codigo`.
+function reglasRotasPorDia(errores) {
+  const m = new Map()
+  ;(errores || []).forEach(e => {
+    if (!e.regla_codigo || !e.sesion_date) return
+    if (!m.has(e.sesion_date)) m.set(e.sesion_date, new Set())
+    m.get(e.sesion_date).add(e.regla_codigo)
+  })
+  return m
+}
+// ¿La regla se cumplió REALMENTE ese día? La casilla del checklist es auto-reportada
+// por el trader antes/durante la sesión; si el diagnóstico posterior registró un error
+// que rompe esa misma regla, manda el error. (Ej. 8-jul-2026: "No operar con noticia
+// roja" marcada en true y un error "FOMC" por operar ese día → cuenta como incumplida.)
+function reglaCumplida(s, key, rotas) {
+  if (!s[key]) return false
+  return !(rotas && rotas.get(s.sesion_date)?.has(key))
+}
 // % de disciplina sobre un conjunto de sesiones. Solo cuenta ítems aplicables CON
 // valor registrado. Devuelve { total, ok, pct } (pct null si no hay datos).
-// `conTrades`: Set de fechas con trades (ver `fechasConTrades`) — pásalo siempre que
-// se tengan los trades del período, para no evaluar Fases 2/3 en días sin operativa.
-function calcDisciplinaStats(sesiones, items, conTrades) {
+// opts:
+//   conTrades — Set de fechas con trades (ver `fechasConTrades`). Pásalo siempre que
+//     se tengan los trades, SIN filtro de cuenta: la disciplina es del proceso del
+//     trader, no de una cuenta. Evita evaluar Fases 2/3 en días sin operativa.
+//   rotas — Map de reglas contradichas por errores (ver `reglasRotasPorDia`).
+function calcDisciplinaStats(sesiones, items, opts) {
+  const { conTrades = null, rotas = null } = opts || {}
   const factores = (items || DB.checklistItemsSync())
     .filter(i => i.activo !== false)
     .map(i => ({ key: i.clave, fase: i.fase || 1, setup: i.setup || null }))
@@ -160,7 +183,7 @@ function calcDisciplinaStats(sesiones, items, conTrades) {
   ;(sesiones || []).forEach(s => factores.forEach(f => {
     if (!discFactorAplica(f, s, conTrades)) return
     if (s[f.key] === undefined) return
-    total++; if (s[f.key]) ok++
+    total++; if (reglaCumplida(s, f.key, rotas)) ok++
   }))
   return { total, ok, pct: total > 0 ? Math.round(ok / total * 100) : null }
 }
@@ -439,7 +462,7 @@ const DB = {
   async getCasuisticasByDate(date) {
     const { data, error } = await supa
       .from('diagnostico_errores')
-      .select('id, sesion_date, casuistica:error, tipo, resultado, origen, descripcion, catalogo_id, fase, regla_vista, recomendacion_ia, recomendacion_manual, recomendacion:recomendacion_id(nombre), created_at')
+      .select('id, sesion_date, casuistica:error, tipo, resultado, origen, descripcion, catalogo_id, fase, regla_vista, regla_codigo, recomendacion_ia, recomendacion_manual, recomendacion:recomendacion_id(nombre), created_at')
       .eq('sesion_date', date)
       .order('created_at', { ascending: true })
     if (error) throw error
@@ -467,7 +490,7 @@ const DB = {
   async getAllCasuisticas() {
     const { data, error } = await supa
       .from('diagnostico_errores')
-      .select('id, sesion_date, casuistica:error, tipo, resultado, origen, descripcion, catalogo_id, fase, regla_vista, created_at')
+      .select('id, sesion_date, casuistica:error, tipo, resultado, origen, descripcion, catalogo_id, fase, regla_vista, regla_codigo, created_at')
       .order('sesion_date', { ascending: false })
     if (error) throw error
     return data
@@ -716,6 +739,7 @@ const DB = {
           const upd = { origen: 'ambos', descripcion: e.detalle || null }
           if (e.fase) upd.fase = e.fase
           if (e.reglaVista != null) upd.regla_vista = e.reglaVista
+          if (e.reglaCodigo) upd.regla_codigo = e.reglaCodigo
           await supa.from('diagnostico_errores').update(upd).eq('id', match.id)
         }
         continue
@@ -759,6 +783,9 @@ const DB = {
         origen: 'ia',
         fase: e.fase || null,
         regla_vista: e.reglaVista == null ? null : e.reglaVista,
+        // Regla del checklist que este error contradice (NULL = ninguna). Hace que
+        // la disciplina la cuente como incumplida aunque la casilla esté marcada.
+        regla_codigo: e.reglaCodigo || null,
         recomendacion_id: recId,
         recomendacion_ia: (e.recTexto && e.recTexto.toLowerCase() !== 'ninguna') ? e.recTexto : null,
         recomendacion_manual: e.recManual || null,

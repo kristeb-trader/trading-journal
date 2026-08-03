@@ -218,10 +218,9 @@ const Metrics = (() => {
 
   // Disciplina de un conjunto de sesiones: { total, ok, pct } sobre factores aplicables.
   // Delegado al cálculo canónico global (db.js) para que el número coincida en
-  // calendario, análisis y dashboard. `conTrades` (Set de fechas con trades) evita
-  // evaluar Fases 2/3 en días conectados donde no hubo operativa.
-  function calcDisciplina(sesiones, conTrades) {
-    const r = calcDisciplinaStats(sesiones, null, conTrades)
+  // calendario, análisis y dashboard.
+  function calcDisciplina(sesiones, opts) {
+    const r = calcDisciplinaStats(sesiones, null, opts)
     return { total: r.total, ok: r.ok, pct: r.pct ?? 0 }
   }
 
@@ -417,7 +416,15 @@ const Metrics = (() => {
     // Fase 1 (Pre-sesión) cuenta en días conectados (operados o no); Fases 2/3 solo
     // si hubo operativa real ese día (trades o setup declarado). Así un día en que
     // se hizo la pre-sesión y no se llegó a operar suma su Fase 1 y nada más.
-    const disc = calcDisciplina(activeSesiones, fechasConTrades(trades))
+    // OJO: `allTrades` (sin el filtro de cuenta) — la disciplina es del proceso del
+    // trader, no de una cuenta. Con los trades filtrados, un día operado en otra
+    // cuenta parecería "no operado" y sus Fases 2/3 desaparecerían del cálculo.
+    // `rotas`: un error que contradice una regla la cuenta como incumplida aunque
+    // la casilla del checklist esté marcada.
+    const disc = calcDisciplina(activeSesiones, {
+      conTrades: fechasConTrades(allTrades),
+      rotas: reglasRotasPorDia(periodCasuisticas),
+    })
     const chkItemsTotal = disc.total
     const chkItemsOk    = disc.ok
     const disciplinaProceso = disc.pct

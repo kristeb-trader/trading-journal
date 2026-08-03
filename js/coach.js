@@ -198,6 +198,11 @@ const Coach = (() => {
     const checklistStr = sesion
       ? chkItems.map(it => `${(sesion.checklist?.[it.clave] ?? sesion[it.clave]) ? '✓' : '✗'} [F${it.fase}] ${it.texto}`).join('\n  ')
       : 'Sin datos de checklist'
+    // Códigos de las reglas aplicables al día: el Coach los usa para vincular cada
+    // error con la regla que contradice (9ª parte del formato de errores).
+    const codigosReglaStr = chkItems.length
+      ? chkItems.map(it => `  - ${it.clave} → "${it.texto}" [F${it.fase}]`).join('\n')
+      : '  (sin reglas de checklist aplicables a este día)'
 
     // Casuísticas
     const casStr = casuisticas.length
@@ -429,8 +434,8 @@ Cuando recibas la instrucción de diagnóstico final, integra TODO lo conversado
 [ENTRADA VÁLIDA / ENTRADA INVÁLIDA + razón exacta, ahora sí con el cierre de toda la sesión]
 
 **⚠️ ERRORES DETECTADOS**
-Lista CADA error en UNA línea con este formato EXACTO (OCHO partes separadas por " | "):
-NombreError | tipo | resultado | detalleError | NombreRec | textoRec | fase | reglaVista
+Lista CADA error en UNA línea con este formato EXACTO (NUEVE partes separadas por " | "):
+NombreError | tipo | resultado | detalleError | NombreRec | textoRec | fase | reglaVista | reglaCodigo
 - NombreError: 1 a 4 palabras, SIN comillas ni caracteres especiales. Si coincide con el CATÁLOGO de abajo, usa EXACTAMENTE ese nombre. Si es nuevo, crea uno breve.
 - tipo: psicologico | analitico | operativo | marcado
 - resultado: SOLO en días NO operados/setups no tomados → T o S (qué habría pasado). En días operados → ninguno.
@@ -439,9 +444,13 @@ NombreError | tipo | resultado | detalleError | NombreRec | textoRec | fase | re
 - textoRec: acción concreta y específica para corregir el error. Si no aplica recomendación → ninguna.
 - fase: la FASE del proceso donde ocurrió el error: 1 (Pre-sesión: cuenta/calendario/zonas), 2 (Lectura del setup: 5 velas, consecución, estructura IRI, retroceso/límite de riesgo), 3 (Ejecución: orden a tiempo, gestión). Si no aplica a una fase, deja vacío.
 - reglaVista: SOLO si el error fue violar una regla conocida → "vista" (vio la regla y la violó: impulsividad, disciplina) o "noVista" (no la vio/no la supo a tiempo: falla analítica). Si no aplica, deja vacío.
-Ejemplo día operado: Error de Marcación | marcado | ninguno | Marqué la zona 10 puntos arriba. | Revisión de zonas | Siempre verificar la zona en 5 min antes de marcarla en 1 min. | 2 |
-Ejemplo regla violada: Excedió Retroceso | psicologico | ninguno | Retroceso $145 > límite $120, lo vio y entró igual. | Respetar stop máx | Si el retroceso supera el límite, NO entrar sin excepción. | 2 | vista
-Ejemplo día no operado: Miedo | psicologico | T | No tomé la entrada por miedo. | Visualización pre-sesión | Antes de operar visualiza 3 entradas recientes exitosas para anclar confianza. | 3 |
+- reglaCodigo: el CÓDIGO EXACTO de la regla del checklist que este error contradice, de la lista CÓDIGOS DE REGLA de abajo. Es CRÍTICO: el trader marcó esa casilla como cumplida antes de operar, y este código es lo que permite corregirla. Rellénalo SOLO si el error rompe directamente esa regla concreta. Si el error no contradice ninguna regla del checklist (típico de los psicológicos: miedo, duda, rabia, ansiedad), DÉJALO VACÍO. No inventes códigos ni fuerces una correspondencia dudosa.
+Ejemplo día operado: Error de Marcación | marcado | ninguno | Marqué la zona 10 puntos arriba. | Revisión de zonas | Siempre verificar la zona en 5 min antes de marcarla en 1 min. | 2 | | chk_zonas
+Ejemplo regla violada: Excedió Retroceso | psicologico | ninguno | Retroceso $145 > límite $120, lo vio y entró igual. | Respetar stop máx | Si el retroceso supera el límite, NO entrar sin excepción. | 2 | vista | stop_max_puntos
+Ejemplo sin regla: Miedo | psicologico | T | No tomé la entrada por miedo. | Visualización pre-sesión | Antes de operar visualiza 3 entradas recientes exitosas para anclar confianza. | 3 | |
+
+CÓDIGOS DE REGLA del checklist (para la parte reglaCodigo — usa el código, no el título):
+${codigosReglaStr}
 Si NO hubo errores, escribe exactamente: NINGUNO
 - Si hay una ALERTA DE RIESGO arriba: cuando el trader VIO la alerta y entró igual, clasifícalo como error psicológico de impulsividad (el más grave, prioritario); si NO la vio a tiempo, clasifícalo como error analítico/de proceso. El límite de stop máximo es una regla NO negociable: si el stop en dólares lo supera, la entrada es INVÁLIDA por más bueno que se vea el resto del setup.
 
@@ -714,7 +723,11 @@ ${catalogoStr}
         const fase = ['1', '2', '3'].includes(faseRaw) ? parseInt(faseRaw) : null
         const rvRaw = (parts[7] || '').toLowerCase().trim()
         const reglaVista = /^vista/.test(rvRaw) ? true : /^no/.test(rvRaw) ? false : null
-        if (nombre) out.push({ nombre, tipo, resultado, detalle, recNombre, recTexto, fase, reglaVista })
+        // Parte 9 (opcional): código de la regla del checklist que el error contradice.
+        // Se valida contra el catálogo para no guardar códigos inventados (hay FK).
+        const rcRaw = (parts[8] || '').replace(/[`'"]/g, '').trim()
+        const reglaCodigo = rcRaw && DB.checklistItemsSync().some(i => i.clave === rcRaw) ? rcRaw : null
+        if (nombre) out.push({ nombre, tipo, resultado, detalle, recNombre, recTexto, fase, reglaVista, reglaCodigo })
       } else if (l.length > 2) {
         out.push({ nombre: l.slice(0, 40), tipo: '', resultado: null, detalle: l })
       }
@@ -1229,6 +1242,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
         recManual: '',
         fase: e.fase ?? null,
         reglaVista: e.reglaVista ?? null,
+        reglaCodigo: e.reglaCodigo ?? null,
         yaRegistrado: yaRegistrados.includes(key),
         nuevo: !catalogoNombres.includes(key),
         recNueva: recKey && !recCatalogoNombres.includes(recKey),
@@ -1329,6 +1343,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
         recManual: e.recManual || null,
         fase:      e.fase ?? null,
         reglaVista: e.reglaVista ?? null,
+        reglaCodigo: e.reglaCodigo ?? null,
       })
     })
     return confirmados

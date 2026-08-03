@@ -26,10 +26,14 @@ const Disciplina = (() => {
 
   // ── Helpers de disciplina ─────────────────────────────────────────────────
   // El criterio vive en db.js (fuente única compartida con calendario y análisis).
-  // `conTrades` se recalcula en cada compute() con los trades del rango.
+  // `conTrades` y `rotas` se recalculan en cada compute().
   const seConecto = s => !s.no_opero || s.se_conecto !== false
-  let conTrades = null
+  let conTrades = null   // Set de fechas con trades (operativa real)
+  let rotas     = null   // Map fecha → Set(regla_codigo) contradichas por un error
   const factorAplica = (f, s) => discFactorAplica(f, s, conTrades)
+  // ¿La regla se cumplió de verdad? La casilla es auto-reportada; un error que la
+  // contradice manda sobre ella (ver reglaCumplida en db.js).
+  const cumple = (s, key) => reglaCumplida(s, key, rotas)
   function buildFactors(items) {
     const src = (items && items.length) ? items : DB.checklistClaves().map(c => ({ clave: c, texto: c, fase: 1 }))
     DISC_FACTORS = src.filter(i => i.activo !== false)
@@ -76,7 +80,10 @@ const Disciplina = (() => {
     const cas = casuisticas.filter(c => c.sesion_date && inR(c.sesion_date, r) && esDiaHabil(c.sesion_date))
     const trd = trades.filter(t => t.trade_date && inR(t.trade_date, r) && esDiaHabil(t.trade_date))
 
-    conTrades = fechasConTrades(trd)   // lo usa factorAplica → discFactorAplica
+    // Índices por día: se construyen con TODO el histórico (no con el rango ni con
+    // el filtro de cuenta) — son "qué pasó ese día", no métricas del período.
+    conTrades = fechasConTrades(trades)         // lo usa factorAplica → discFactorAplica
+    rotas     = reglasRotasPorDia(casuisticas)  // lo usa cumple() → reglaCumplida
     const conectadas = ses.filter(seConecto)
     // "Operadas" = con operativa real (trades o setup declarado). `no_opero=false` no
     // basta: es el default de la columna y una sesión creada al abrir NT8 nace así.
@@ -92,7 +99,7 @@ const Disciplina = (() => {
     ses.forEach(s => DISC_FACTORS.forEach(f => {
       if (!factorAplica(f, s)) return
       if (s[f.key] === undefined) return
-      dTotal++; if (s[f.key]) dOk++
+      dTotal++; if (cumple(s, f.key)) dOk++
     }))
     const disciplinaPct = dTotal > 0 ? Math.round(dOk / dTotal * 100) : null
 
@@ -103,7 +110,7 @@ const Disciplina = (() => {
       const factores = facs.map(f => {
         const aplicables = baseDias.filter(s => factorAplica(f, s))
         const registradas = aplicables.filter(s => s[f.key] !== undefined)
-        const fails = registradas.filter(s => !s[f.key]).map(s => s.sesion_date).sort()
+        const fails = registradas.filter(s => !cumple(s, f.key)).map(s => s.sesion_date).sort()
         return {
           key: f.key, label: f.label,
           aplica: registradas.length, ok: registradas.length - fails.length, fails,
@@ -125,7 +132,7 @@ const Disciplina = (() => {
     let racha = 0
     for (const s of opOrd) {
       const registrados = DISC_FACTORS.filter(f => factorAplica(f, s) && s[f.key] !== undefined)
-      if (registrados.length && registrados.every(f => s[f.key])) racha++
+      if (registrados.length && registrados.every(f => cumple(s, f.key))) racha++
       else break
     }
 
@@ -164,7 +171,7 @@ const Disciplina = (() => {
     // Historial de racha (últimas 12 sesiones operadas)
     const hist = [...operadas].sort((a, b) => a.sesion_date.localeCompare(b.sesion_date)).slice(-12).map(s => {
       const registrados = DISC_FACTORS.filter(f => factorAplica(f, s) && s[f.key] !== undefined)
-      const fails = registrados.filter(f => !s[f.key]).length
+      const fails = registrados.filter(f => !cumple(s, f.key)).length
       const tieneError = (casByDate[s.sesion_date] || []).length > 0
       const enVentana = tradesEnVentanaNoticia(trByDate[s.sesion_date] || [], s).length > 0
       if (!registrados.length) return 'empty'
