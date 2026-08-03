@@ -44,14 +44,15 @@ const Modal = {
     // Datos extra: diagnóstico del Coach + errores + emociones + checklist dinámico
     // (catalogo_reglas) + total de trades del día SIN filtro de cuenta (para avisar
     // cuando el filtro está ocultando trades).
-    const [diag, casuisticas, emociones, chkItems, allDayTrades] = await Promise.all([
+    const [diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp] = await Promise.all([
       dateStr ? DB.getDiagnosticoByDate(dateStr) : null,
       dateStr ? DB.getCasuisticasByDate(dateStr) : [],
       DB.getCatalogoEmociones().catch(() => []),
       DB.getChecklistItems({ soloActivos: true }).catch(() => []),
       dateStr ? DB.getTradesByDate(dateStr).catch(() => []) : [],
+      DB.getFechasEspeciales().catch(() => []),   // la regla FOMC necesita saber si lo era
     ])
-    const ctx = { dateStr, trades, sesion, diag, casuisticas, emociones, chkItems, allDayTrades }
+    const ctx = { dateStr, trades, sesion, diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp }
 
     document.getElementById('modalResumen').innerHTML   = this._renderResumen(ctx)
     document.getElementById('modalOperativa').innerHTML = this._renderOperativa(ctx)
@@ -161,36 +162,34 @@ const Modal = {
     return `<div class="mh-box ${boxTone}">${cells.join('')}</div>`
   },
 
-  // Checklist aplicable al día (mismo criterio que discFactorAplica en db.js):
-  // Fase 1 en días hábiles conectados; Fases 2/3 solo si hubo operativa real (trades
-  // ese día o setup declarado — `no_opero=false` es el default de la columna y no
-  // prueba nada); ítems por setup solo si el setup del día es de esa familia. Solo
-  // ítems con valor registrado.
-  // `casuisticas`: errores del día — si uno contradice una regla, esa regla se
-  // muestra como incumplida aunque su casilla esté marcada (ver reglaCumplida).
-  _checklistDia(chkItems, sesion, trades, casuisticas) {
-    if (!sesion || !esDiaHabil(sesion.sesion_date)) return []
-    const conectado = !sesion.no_opero || sesion.se_conecto !== false
-    if (!conectado) return []
-    const opero = sesionOpero(sesion, fechasConTrades(trades))
-    const rotas = reglasRotasPorDia(casuisticas)
-    const fam = DB.setupFamily(sesion)
+  // Checklist aplicable al día. Delega el criterio en db.js (fuente única) para que
+  // el modal muestre exactamente los mismos ítems que cuenta la disciplina.
+  // Cada ítem sale con:
+  //   ok    — se cumplió
+  //   roto  — la casilla decía sí pero un error del día la desmiente
+  //   auto  — la resolvió el dato, no el trader (no es marcable)
+  _checklistDia(chkItems, sesion, trades, casuisticas, fechasEsp) {
+    if (!sesion) return []
+    const ctx = discContexto({ trades, errores: casuisticas, fechasEsp })
     return (chkItems || []).filter(i => {
-      if ((i.fase || 1) !== 1 && !opero) return false
-      if (i.setup && i.setup !== fam) return false
-      const val = sesion.checklist?.[i.clave] ?? sesion[i.clave]
-      if (val === undefined) return false
-      return true
+      const f = { fase: i.fase || 1, setup: i.setup || null, aplica_si: i.aplica_si || 'siempre' }
+      if (!discFactorAplica(f, sesion, ctx)) return false
+      if ((i.evidencia || 'declarada') === 'auto') {
+        return reglaAutoResultado(i.clave, sesion, ctx) !== null   // sin dato → no se muestra
+      }
+      return (sesion.checklist?.[i.clave] ?? sesion[i.clave]) !== undefined
     }).map(i => {
+      if ((i.evidencia || 'declarada') === 'auto') {
+        return { ...i, ok: reglaAutoResultado(i.clave, sesion, ctx) === true, roto: false, auto: true }
+      }
       const marcado = !!(sesion.checklist?.[i.clave] ?? sesion[i.clave])
-      const roto = rotas.get(sesion.sesion_date)?.has(i.clave) || false
-      // `roto` = la casilla decía sí, pero un error del día la desmiente
-      return { ...i, ok: marcado && !roto, roto: marcado && roto }
+      const roto = ctx.rotas.get(sesion.sesion_date)?.has(i.clave) || false
+      return { ...i, ok: marcado && !roto, roto: marcado && roto, auto: false }
     })
   },
 
   // Pestaña 1 — Resumen: el día en 5 segundos (hero + proceso + errores + siguiente paso)
-  _renderResumen({ trades, sesion, diag, casuisticas, emociones, chkItems, allDayTrades }) {
+  _renderResumen({ trades, sesion, diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp }) {
     if (!sesion && !diag && !trades.length) {
       return '<div class="modal-no-trade"><i class="ti ti-calendar-off"></i><p>Sin registro para este día</p></div>'
     }
@@ -227,7 +226,7 @@ const Modal = {
       : ''
 
     // ── Proceso: UNA barra con el checklist real del día; solo se listan los ✗ ──
-    const items = this._checklistDia(chkItems, sesion, allDayTrades || trades, casuisticas)
+    const items = this._checklistDia(chkItems, sesion, allDayTrades || trades, casuisticas, fechasEsp)
     let procesoHtml = ''
     if (items.length) {
       const ok = items.filter(i => i.ok).length
@@ -277,7 +276,7 @@ const Modal = {
   },
 
   // Pestaña 2 — Operativa (tabla de trades estilo Coach + campos + checklist por fases)
-  _renderOperativa({ trades, sesion, chkItems, allDayTrades, casuisticas }) {
+  _renderOperativa({ trades, sesion, chkItems, allDayTrades, casuisticas, fechasEsp }) {
     const pnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
     const targets = trades.filter(isWinTrade).length
     const stops = trades.filter(isLossTrade).length
@@ -350,7 +349,7 @@ const Modal = {
       : ''
 
     // Checklist por fases (dinámico desde catalogo_reglas; solo ítems aplicables al día)
-    const items = this._checklistDia(chkItems, sesion, allDayTrades || trades, casuisticas)
+    const items = this._checklistDia(chkItems, sesion, allDayTrades || trades, casuisticas, fechasEsp)
     let chkHtml = ''
     if (items.length) {
       const FASES = { 1: 'Fase 1 · Pre-sesión', 2: 'Fase 2 · Lectura del setup', 3: 'Fase 3 · Ejecución' }

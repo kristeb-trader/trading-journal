@@ -10,6 +10,7 @@ const Metrics = (() => {
   // Fechas especiales por tipo: { festivo: Set(fechas), fomc: Set(fechas), … }
   // Las usa el desglose de días para separar festivos y FOMC de los "no conectados".
   let fechasEspByDate  = {}
+  let allFechasEsp     = []   // crudas, para el contexto de disciplina (regla FOMC)
 
   // Taxonomía de errores (debe coincidir con el catálogo)
   // Colores semánticos por tipo: color = punto/barra (sólido), text = etiqueta (claro)
@@ -462,15 +463,14 @@ const Metrics = (() => {
     // Fase 1 (Pre-sesión) cuenta en días conectados (operados o no); Fases 2/3 solo
     // si hubo operativa real ese día (trades o setup declarado). Así un día en que
     // se hizo la pre-sesión y no se llegó a operar suma su Fase 1 y nada más.
-    // OJO: `allTrades` (sin el filtro de cuenta) — la disciplina es del proceso del
-    // trader, no de una cuenta. Con los trades filtrados, un día operado en otra
-    // cuenta parecería "no operado" y sus Fases 2/3 desaparecerían del cálculo.
-    // `rotas`: un error que contradice una regla la cuenta como incumplida aunque
-    // la casilla del checklist esté marcada.
-    const disc = calcDisciplina(activeSesiones, {
-      conTrades: fechasConTrades(allTrades),
-      rotas: reglasRotasPorDia(periodCasuisticas),
-    })
+    // OJO: `allTrades` y `allCasuisticas` SIN filtrar (ni por cuenta ni por período)
+    // — la disciplina es del proceso del trader, no de una cuenta, y el contexto es
+    // "qué pasó ese día". Con los trades filtrados, un día operado en otra cuenta
+    // parecería "no operado" y sus Fases 2/3 desaparecerían del cálculo.
+    const disc = calcDisciplina(activeSesiones, discContexto({
+      trades: allTrades, errores: allCasuisticas, fechasEsp: allFechasEsp,
+      stopMaxPuntos: allObjetivos?.stop_max_puntos,
+    }))
     const chkItemsTotal = disc.total
     const chkItemsOk    = disc.ok
     const disciplinaProceso = disc.pct
@@ -653,7 +653,9 @@ const Metrics = (() => {
     const cont = document.getElementById('diasDesglose')
     if (!cont) return
     const per = document.getElementById('ddPeriodo')
-    if (per) per.textContent = `${MESES[calMonth() - 1]} ${calYear()} · ${d.totalHabiles} día${d.totalHabiles !== 1 ? 's' : ''} hábiles`
+    if (per) per.textContent = d.totalHabiles === 1
+      ? `${MESES[calMonth() - 1]} ${calYear()} · 1 día hábil`
+      : `${MESES[calMonth() - 1]} ${calYear()} · ${d.totalHabiles} días hábiles`
 
     // fila: [icono, etiqueta, valor, clase de color, tooltip]
     const fila = (icon, label, val, cls, hint) => {
@@ -753,6 +755,7 @@ const Metrics = (() => {
     ])
     buildDiscFactors(checklistItems)
     // Índice por tipo → Set de fechas (festivos y FOMC del desglose de días)
+    allFechasEsp = fechasEsp || []
     fechasEspByDate = {}
     ;(fechasEsp || []).forEach(f => {
       if (!f.tipo || !f.fecha) return

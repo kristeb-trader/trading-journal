@@ -3,6 +3,7 @@
 // del rulebook, diagnostico_errores, trades). Estilo coherente con la app.
 const Disciplina = (() => {
   let trades = [], sesiones = [], casuisticas = [], catalogo = []
+  let fechasEsp = [], stopMax = 80   // contexto de disciplina (regla FOMC, stop máx)
   let DISC_FACTORS = []
   let period = 'month'
   let loaded = false, wired = false
@@ -26,18 +27,27 @@ const Disciplina = (() => {
 
   // ── Helpers de disciplina ─────────────────────────────────────────────────
   // El criterio vive en db.js (fuente única compartida con calendario y análisis).
-  // `conTrades` y `rotas` se recalculan en cada compute().
+  // `ctx` se reconstruye en cada compute() con los datos COMPLETOS (sin filtrar).
   const seConecto = s => !s.no_opero || s.se_conecto !== false
-  let conTrades = null   // Set de fechas con trades (operativa real)
-  let rotas     = null   // Map fecha → Set(regla_codigo) contradichas por un error
-  const factorAplica = (f, s) => discFactorAplica(f, s, conTrades)
-  // ¿La regla se cumplió de verdad? La casilla es auto-reportada; un error que la
-  // contradice manda sobre ella (ver reglaCumplida en db.js).
-  const cumple = (s, key) => reglaCumplida(s, key, rotas)
+  let ctx = {}
+  const factorAplica = (f, s) => discFactorAplica(f, s, ctx)
+  // ¿La regla se cumplió de verdad? Si es automática la resuelve el dato; si es
+  // declarada vale la casilla, salvo que un error la contradiga. `null` = no
+  // evaluable (no cuenta ni a favor ni en contra).
+  function cumple(s, key, f) {
+    if (f && f.evidencia === 'auto') return reglaAutoResultado(key, s, ctx)
+    return reglaCumplida(s, key, ctx.rotas)
+  }
+  // ¿El ítem tiene con qué evaluarse ese día?
+  function evaluable(s, f) {
+    if (f.evidencia === 'auto') return reglaAutoResultado(f.key, s, ctx) !== null
+    return s[f.key] !== undefined
+  }
   function buildFactors(items) {
     const src = (items && items.length) ? items : DB.checklistClaves().map(c => ({ clave: c, texto: c, fase: 1 }))
     DISC_FACTORS = src.filter(i => i.activo !== false)
-      .map(i => ({ key: i.clave, label: i.texto, fase: i.fase || 1, setup: i.setup || null }))
+      .map(i => ({ key: i.clave, label: i.texto, fase: i.fase || 1, setup: i.setup || null,
+                   evidencia: i.evidencia || 'declarada', aplica_si: i.aplica_si || 'siempre' }))
   }
 
   // ── Período (Mes / Trimestre / Todo) + navegación de mes ──────────────────
@@ -82,12 +92,11 @@ const Disciplina = (() => {
 
     // Índices por día: se construyen con TODO el histórico (no con el rango ni con
     // el filtro de cuenta) — son "qué pasó ese día", no métricas del período.
-    conTrades = fechasConTrades(trades)         // lo usa factorAplica → discFactorAplica
-    rotas     = reglasRotasPorDia(casuisticas)  // lo usa cumple() → reglaCumplida
+    ctx = discContexto({ trades, errores: casuisticas, fechasEsp, stopMaxPuntos: stopMax })
     const conectadas = ses.filter(seConecto)
     // "Operadas" = con operativa real (trades o setup declarado). `no_opero=false` no
     // basta: es el default de la columna y una sesión creada al abrir NT8 nace así.
-    const operadas   = ses.filter(s => sesionOpero(s, conTrades))
+    const operadas   = ses.filter(s => sesionOpero(s, ctx.conTrades))
 
     // Trades por fecha
     const trByDate = {}
@@ -98,8 +107,8 @@ const Disciplina = (() => {
     let dTotal = 0, dOk = 0
     ses.forEach(s => DISC_FACTORS.forEach(f => {
       if (!factorAplica(f, s)) return
-      if (s[f.key] === undefined) return
-      dTotal++; if (cumple(s, f.key)) dOk++
+      if (!evaluable(s, f)) return
+      dTotal++; if (cumple(s, f.key, f)) dOk++
     }))
     const disciplinaPct = dTotal > 0 ? Math.round(dOk / dTotal * 100) : null
 
@@ -109,8 +118,8 @@ const Disciplina = (() => {
       const baseDias = fase === 1 ? conectadas : operadas
       const factores = facs.map(f => {
         const aplicables = baseDias.filter(s => factorAplica(f, s))
-        const registradas = aplicables.filter(s => s[f.key] !== undefined)
-        const fails = registradas.filter(s => !cumple(s, f.key)).map(s => s.sesion_date).sort()
+        const registradas = aplicables.filter(s => evaluable(s, f))
+        const fails = registradas.filter(s => !cumple(s, f.key, f)).map(s => s.sesion_date).sort()
         return {
           key: f.key, label: f.label,
           aplica: registradas.length, ok: registradas.length - fails.length, fails,
@@ -131,8 +140,8 @@ const Disciplina = (() => {
     const opOrd = [...operadas].sort((a, b) => b.sesion_date.localeCompare(a.sesion_date))
     let racha = 0
     for (const s of opOrd) {
-      const registrados = DISC_FACTORS.filter(f => factorAplica(f, s) && s[f.key] !== undefined)
-      if (registrados.length && registrados.every(f => cumple(s, f.key))) racha++
+      const registrados = DISC_FACTORS.filter(f => factorAplica(f, s) && evaluable(s, f))
+      if (registrados.length && registrados.every(f => cumple(s, f.key, f))) racha++
       else break
     }
 
@@ -170,8 +179,8 @@ const Disciplina = (() => {
 
     // Historial de racha (últimas 12 sesiones operadas)
     const hist = [...operadas].sort((a, b) => a.sesion_date.localeCompare(b.sesion_date)).slice(-12).map(s => {
-      const registrados = DISC_FACTORS.filter(f => factorAplica(f, s) && s[f.key] !== undefined)
-      const fails = registrados.filter(f => !cumple(s, f.key)).length
+      const registrados = DISC_FACTORS.filter(f => factorAplica(f, s) && evaluable(s, f))
+      const fails = registrados.filter(f => !cumple(s, f.key, f)).length
       const tieneError = (casByDate[s.sesion_date] || []).length > 0
       const enVentana = tradesEnVentanaNoticia(trByDate[s.sesion_date] || [], s).length > 0
       if (!registrados.length) return 'empty'
@@ -429,14 +438,17 @@ const Disciplina = (() => {
   async function load() {
     const cont = document.getElementById('disciplinaContent')
     try {
-      const [t, s, c, cat, items] = await Promise.all([
+      const [t, s, c, cat, items, fe, obj] = await Promise.all([
         DB.getTrades(),
         DB.getSesiones(),
         DB.getAllCasuisticas(),
         DB.getCatalogoCasuisticas().catch(() => []),
         DB.getChecklistItems({ soloActivos: true }).catch(() => null),
+        DB.getFechasEspeciales().catch(() => []),
+        DB.getObjetivos().catch(() => null),
       ])
       trades = t || []; sesiones = s || []; casuisticas = c || []; catalogo = cat || []
+      fechasEsp = fe || []; stopMax = obj?.stop_max_puntos || 80
       buildFactors(items)
       loaded = true
     } catch (e) {

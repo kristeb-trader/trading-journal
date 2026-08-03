@@ -3,6 +3,7 @@ const Charts = (() => {
   let allTrades   = []
   let allSesiones = []
   let allCas      = []
+  let allFechasEsp = []   // para el contexto de disciplina (regla FOMC)
   const instances = {}
 
   let period   = 'month'                       // month | quarter | year
@@ -148,16 +149,14 @@ const Charts = (() => {
   // ── Cálculos ──────────────────────────────────────────────────────────────
   // Disciplina canónica (misma que calendario y dashboard): adherencia al checklist,
   // consciente de fase y sin penalizar ítems no registrados. casByDate ya no se usa.
-  // Usa SIEMPRE `allTrades`/`allCas` del módulo (sin filtro de cuenta ni de período):
-  // la disciplina es del proceso del trader, no de una cuenta. `conTrades` evita
-  // evaluar Fases 2/3 en días sin operativa; `rotas` hace que un error registrado
-  // tumbe la regla que contradice aunque su casilla esté marcada.
+  // Usa SIEMPRE los datos del módulo sin filtrar (ni por cuenta ni por período): la
+  // disciplina es del proceso del trader, no de una cuenta, y el contexto del día
+  // (trades, errores, FOMC) es "qué pasó", no una métrica del período.
   function calcDiscipline(sesiones) {
     if (!sesiones || !sesiones.length) return null
-    return calcDisciplinaStats(sesiones, null, {
-      conTrades: fechasConTrades(allTrades),
-      rotas: reglasRotasPorDia(allCas),
-    }).pct
+    return calcDisciplinaStats(sesiones, null, discContexto({
+      trades: allTrades, errores: allCas, fechasEsp: allFechasEsp,
+    })).pct
   }
 
   function statsOf(trades) {
@@ -457,7 +456,7 @@ const Charts = (() => {
   }
 
   async function init() {
-    ;[allTrades, allSesiones, allCas] = await Promise.all([DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas()])
+    ;[allTrades, allSesiones, allCas, allFechasEsp] = await Promise.all([DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getFechasEspeciales().catch(() => [])])
 
     AccountFilter.create('analysis', {
       mountId: 'accountFilterAnalysis',

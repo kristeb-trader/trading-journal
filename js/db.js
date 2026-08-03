@@ -137,16 +137,80 @@ function sesionOpero(s, conTrades) {
   if (!conTrades) return true
   return conTrades.has(s.sesion_date) || !!(s.setup_codigo || s.setup)
 }
+// ¿Ese día había noticia roja registrada? La columna la mantiene sincronizada un
+// trigger desde `sesion_noticias`, así que sirve como fuente para el contexto.
+function _hayNoticia(s) { return !!(s && s.hora_noticia_roja && String(s.hora_noticia_roja).trim()) }
+
+// ── Contexto del día: TERCER eje de aplicabilidad ────────────────────────────
+// Una regla se filtra por FASE (cuándo), por FAMILIA DE SETUP (para qué setup) y
+// —desde el rediseño de ago 2026— por CONTEXTO del día. Sin esto, una regla como
+// "en día FOMC solo reingresos" contaría como cumplida los ~250 días que no son
+// FOMC y su porcentaje no diría nada.
+function discAplicaContexto(f, s, opts) {
+  const cond = f.aplica_si || 'siempre'
+  if (cond === 'siempre') return true
+  if (cond === 'dia_fomc') return !!(opts && opts.fomcDates && opts.fomcDates.has(s.sesion_date))
+  if (cond === 'hay_noticia') return _hayNoticia(s)
+  return true
+}
+
 // ¿El factor (ítem del checklist) aplica y debe contarse para esta sesión?
 //  Solo días hábiles conectados. Fase 1 en todo día conectado; Fases 2/3 solo si
-//  hubo operativa real; reglas por setup solo si coincide la familia.
-function discFactorAplica(f, s, conTrades) {
+//  hubo operativa real; reglas por setup solo si coincide la familia; y las
+//  condicionales solo si su contexto se da ese día.
+function discFactorAplica(f, s, opts) {
+  // Retro-compatible: si llega un Set suelto, es el `conTrades` de la firma vieja.
+  const o = (opts instanceof Set) ? { conTrades: opts } : (opts || {})
   if (!esDiaHabil(s.sesion_date)) return false
   if (!_discSeConecto(s)) return false
-  const base = (f.fase || 1) === 1 ? true : sesionOpero(s, conTrades)
+  const base = (f.fase || 1) === 1 ? true : sesionOpero(s, o.conTrades)
   if (!base) return false
-  if (f.setup) return _discSetupFamily(s) === f.setup
-  return true
+  if (f.setup && _discSetupFamily(s) !== f.setup) return false
+  return discAplicaContexto(f, s, o)
+}
+
+// ── Verificación automática (reglas con `evidencia = 'auto'`) ────────────────
+// El checklist es auto-reportado; cuando el dato puede responder, responde el dato.
+// Devuelven true (cumplida) · false (incumplida) · null (NO evaluable → no cuenta
+// ni a favor ni en contra, igual que un ítem sin registrar).
+
+// $ por punto según el contrato: MNQ = $2, NQ = $20. Normalizar mal esto infla el
+// MAE ×10 en los trades de NQ (ya llevó a una conclusión falsa una vez).
+function _usdPorPunto(t) { return /^\s*MNQ/i.test(t.instrument || '') ? 2 : 20 }
+
+// MAE del trade convertido a PUNTOS. El riesgo se mide en puntos, no en dólares:
+// con varios contratos el importe escala pero la regla sigue siendo la misma.
+function maeEnPuntos(t) {
+  const qty = parseFloat(t.qty) || 0
+  if (!qty || t.mae == null) return null
+  return Math.abs(parseFloat(t.mae) || 0) / (_usdPorPunto(t) * qty)
+}
+
+function reglaAutoResultado(codigo, s, opts) {
+  const o = opts || {}
+  const trades = (o.tradesPorDia && o.tradesPorDia.get(s.sesion_date)) || []
+
+  if (codigo === 'stop_max_puntos') {
+    const lim = o.stopMaxPuntos || 80
+    const pts = trades.map(maeEnPuntos).filter(p => p != null)
+    if (!pts.length) return null                 // sin MAE no se puede afirmar nada
+    return pts.every(p => p <= lim)
+  }
+
+  if (codigo === 'chk_noticias') {
+    // Solo sobre la ENTRADA: estar ya dentro cuando sale la noticia es válido.
+    if (!trades.length || !_hayNoticia(s)) return null
+    return tradesEnVentanaNoticia(trades, s).length === 0
+  }
+
+  if (codigo === 'fomc_solo_reingreso') {
+    if (!trades.length) return null
+    const fam = _discSetupFamily(s)
+    if (!fam) return null                        // sin setup declarado no se puede juzgar
+    return fam === 'reingreso'
+  }
+
+  return null
 }
 // Reglas que un error contradice, indexadas por día: Map fecha → Set(regla_codigo).
 // Se construye desde `diagnostico_errores.regla_codigo`.
@@ -167,22 +231,52 @@ function reglaCumplida(s, key, rotas) {
   if (!s[key]) return false
   return !(rotas && rotas.get(s.sesion_date)?.has(key))
 }
-// % de disciplina sobre un conjunto de sesiones. Solo cuenta ítems aplicables CON
-// valor registrado. Devuelve { total, ok, pct } (pct null si no hay datos).
-// opts:
-//   conTrades — Set de fechas con trades (ver `fechasConTrades`). Pásalo siempre que
-//     se tengan los trades, SIN filtro de cuenta: la disciplina es del proceso del
-//     trader, no de una cuenta. Evita evaluar Fases 2/3 en días sin operativa.
-//   rotas — Map de reglas contradichas por errores (ver `reglasRotasPorDia`).
+// ── Contexto de disciplina ───────────────────────────────────────────────────
+// Construye de una vez todo lo que necesita el cálculo. Úsalo SIEMPRE con los
+// trades y errores COMPLETOS (sin filtro de cuenta ni de período): son índices de
+// "qué pasó ese día", no métricas del período. La disciplina es del proceso del
+// trader, no de una cuenta — pasarlos filtrados ya causó una regresión.
+function discContexto({ trades, fechasEsp, errores, stopMaxPuntos } = {}) {
+  const tradesPorDia = new Map()
+  ;(trades || []).forEach(t => {
+    const d = t.trade_date || t.entry_time?.slice(0, 10)
+    if (!d) return
+    if (!tradesPorDia.has(d)) tradesPorDia.set(d, [])
+    tradesPorDia.get(d).push(t)
+  })
+  return {
+    conTrades: new Set(tradesPorDia.keys()),
+    tradesPorDia,
+    fomcDates: new Set((fechasEsp || []).filter(f => f.tipo === 'fomc').map(f => f.fecha)),
+    rotas: reglasRotasPorDia(errores),
+    stopMaxPuntos: stopMaxPuntos || 80,
+  }
+}
+
+// % de disciplina sobre un conjunto de sesiones. Devuelve { total, ok, pct }.
+// Solo cuenta ítems APLICABLES y EVALUABLES:
+//   · regla `auto`      → la resuelve el dato; si no hay dato, no cuenta
+//   · regla `declarada` → la casilla del trader, salvo que un error la contradiga
+// opts: usa `discContexto()` para construirlo.
 function calcDisciplinaStats(sesiones, items, opts) {
-  const { conTrades = null, rotas = null } = opts || {}
+  const o = opts || {}
+  const rotas = o.rotas || null
   const factores = (items || DB.checklistItemsSync())
     .filter(i => i.activo !== false)
-    .map(i => ({ key: i.clave, fase: i.fase || 1, setup: i.setup || null }))
+    .map(i => ({
+      key: i.clave, fase: i.fase || 1, setup: i.setup || null,
+      aplica_si: i.aplica_si || 'siempre', evidencia: i.evidencia || 'declarada',
+    }))
   let total = 0, ok = 0
   ;(sesiones || []).forEach(s => factores.forEach(f => {
-    if (!discFactorAplica(f, s, conTrades)) return
-    if (s[f.key] === undefined) return
+    if (!discFactorAplica(f, s, o)) return
+    if (f.evidencia === 'auto') {
+      const r = reglaAutoResultado(f.key, s, o)
+      if (r === null) return            // sin evidencia suficiente: no cuenta
+      total++; if (r) ok++
+      return
+    }
+    if (s[f.key] === undefined) return  // ítem sin registrar = N/A
     total++; if (reglaCumplida(s, f.key, rotas)) ok++
   }))
   return { total, ok, pct: total > 0 ? Math.round(ok / total * 100) : null }
