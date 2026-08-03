@@ -1,9 +1,23 @@
 # Plan — Rediseño del checklist y de la métrica de disciplina
 
-> **Estado: PROPUESTA. No implementado.** Documento para revisar antes de tocar nada.
-> Fecha: 3 de agosto de 2026 · Acordado entre Kris y Claude en sesión de análisis.
+> **Estado: IMPLEMENTADO (3 de agosto de 2026).** Las 5 fases están aplicadas.
+> Queda **recompilar `ChecklistChaumer` en NinjaTrader** para que la Fase 4 surta efecto.
 >
-> Contexto previo: `docs/Disciplina.md` (cómo se calcula hoy).
+> Este documento conserva el diagnóstico y las decisiones. Para saber **cómo funciona
+> hoy** el cálculo, ver `docs/Disciplina.md`.
+>
+> | Fase | Estado | Commit |
+> |---|---|---|
+> | 1 · Base de datos | ✅ | `753d51b` |
+> | 2 · Cálculo (`db.js`) | ✅ | `2427888` |
+> | 3 · Web | ✅ | `06e42bd` |
+> | 4 · AddOn NT8 | ✅ código · ⏳ **falta recompilar** | `ec2af13` |
+> | 5 · Coach y docs | ✅ | `e183416` + este |
+>
+> **Resultado medido:** la disciplina global **subió de 81% a 83%**, no bajó como se
+> preveía. Al evaluar solo cuando hay algo que cumplir desaparecen tanto los aprobados
+> gratis (casillas siempre en `true`) como los suspensos gratis (reglas contadas en días
+> sin riesgo). Detalle por mes en `docs/Disciplina.md`.
 
 ---
 

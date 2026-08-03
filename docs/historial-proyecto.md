@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 3 Agosto 2026 (ver *Checkpoint Ago 2026 (1)* al final: **calendario — fechas especiales futuras** y **verdad de la disciplina** — fines de semana fuera, días sin operativa no penalizan, y un error tumba la regla del checklist que contradice). Previo — *Checkpoint Jul 2026 (8)*: **filtro de cuentas multi-selección** (nombres completos, default por cuenta principal, combinar PA + evaluación); *Checkpoint Jul 2026 (7)*: **setups paramétricos** — `catalogo_setups` + `catalogo_setup_variantes`, reglas por setup, administración desde el Journal, Telegram y NT8 dinámicos. Checkpoints previos: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
+**Última actualización:** 3 Agosto 2026 (ver *Checkpoint Ago 2026 (2)* al final: **rediseño del checklist y de la disciplina** — 17 reglas → 13, GO de 13 clics → 8, 3 reglas verificadas por datos, regla FOMC que detecta 3 violaciones históricas. Previo, *Checkpoint Ago 2026 (1)*: **calendario — fechas especiales futuras** y **verdad de la disciplina** — fines de semana fuera, días sin operativa no penalizan, y un error tumba la regla del checklist que contradice). Previo — *Checkpoint Jul 2026 (8)*: **filtro de cuentas multi-selección** (nombres completos, default por cuenta principal, combinar PA + evaluación); *Checkpoint Jul 2026 (7)*: **setups paramétricos** — `catalogo_setups` + `catalogo_setup_variantes`, reglas por setup, administración desde el Journal, Telegram y NT8 dinámicos. Checkpoints previos: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `E:\Proyectos\Trading Journal` (migrado desde `C:\Users\Asus\Claro drive\Trading Journal` el 6 jul 2026)
@@ -1450,6 +1450,93 @@ Migraciones: `2026-08-03-borrar-sesion-fin-de-semana.sql`,
 > ⚠️ **Efecto lateral asumido:** la **tasa de errores** y los **días limpios** tienen ahora
 > un denominador menor (los días sin conexión salieron), así que sus porcentajes suben
 > respecto a lo que se venía viendo. Es el comportamiento pedido, no un bug.
+
+---
+
+## Checkpoint Ago 2026 (2) — Rediseño del checklist y de la disciplina (3 ago)
+
+Sesión larga de análisis con Kris. Empezó con *"¿por qué junio tiene 95% de disciplina
+con 32% de errores?"* y terminó rehaciendo cómo se mide la disciplina.
+Plan completo y decisiones: `docs/plan-rediseno-checklist-disciplina.md`.
+Cómo funciona hoy: `docs/Disciplina.md`.
+
+### El diagnóstico
+
+Cinco defectos, todos verificados con datos:
+
+1. **El checklist no era un compromiso previo, era un recuerdo.** Solo **10 de 126
+   sesiones** tenían `checklist_go_at`: el 92% se marcaba después de conocer el resultado.
+2. **Preguntaba cosas que los datos ya saben** (stop, ventana de noticia, día FOMC).
+3. **Diluía y no ponderaba**: 184 casillas en junio; un día perdido movía menos de 1 punto.
+4. **Era redundante con Errores**: desde junio, día que falla el checklist = día con
+   error, 1 a 1 sin excepciones.
+5. **El GO obligaba a marcar hechos que aún no habían ocurrido** — o mentías, o perdías
+   el trade. **Hallazgo de Kris**, y el que más cambió el diseño.
+
+### Lo que se hizo
+
+**Checklist: 17 reglas → 13 por día. GO: 13 clics → 8. 3 reglas se verifican solas.**
+
+- **Regla nueva `fomc_solo_reingreso`.** Estaba escrita en `fil_1` ("día FOMC → solo
+  reingresos, NUNCA tendencial") pero enterrada en un texto de filosofía: **nunca se
+  preguntaba**. Detecta 3 violaciones históricas — 18-mar, 17-jun y 8-jul — las tres con
+  pérdida, **−$653** en total. La de marzo no se había registrado nunca.
+- **`chk_calendario` y `chk_noticias` tenían los enunciados INTERCAMBIADOS.** Se separan
+  en declarativa (Fase 1) y automática (Fase 3).
+- **Salen del checklist** `rr_1a1` (ya está en `fil_4`) y `no_fomc` (decía "preferible no
+  operar, a criterio" mientras el Coach la juzgaba grave: contradecía a la regla real).
+- 5 enunciados reescritos por solape; `chk_5velas` pierde el `(<5 velas)` que contradecía
+  a su propio enunciado; `chk_orden` sube a Fase 2.
+- **`sesion_noticias`**: varias noticias rojas por día con hora y nombre, en la web y en
+  el AddOn. Trigger bidireccional con `hora_noticia_roja` para no romper el Worker.
+- **Campos nuevos** en `catalogo_reglas`: `bloquea_go`, `aplica_si` y uso de `evidencia`.
+
+### Los tres conceptos nuevos
+
+| Concepto | Qué resuelve |
+|---|---|
+| **`evidencia = auto`** | Cuando el dato puede responder, responde el dato. Tres estados: cumplida, incumplida y **sin evidencia** (no cuenta) |
+| **`aplica_si`** | Tercer eje de aplicabilidad: **contexto del día**. Antes solo fase y familia de setup. Una regla se evalúa solo cuando había algo que cumplir |
+| **`bloquea_go`** | El GO cae DENTRO de la Fase 2, donde de verdad se da: con el rompimiento identificado y la orden lista |
+
+### Resultado
+
+**La disciplina SUBIÓ de 81% a 83% global**, en contra de lo previsto: las condicionales
+dejaron de contar ~120 días sin riesgo, y el stop —al verificarse por dato— sale 82
+cumplidos / 1 fallo donde antes se leía una casilla siempre en `true`.
+
+| Mes | Antes | Después |
+|---|---|---|
+| Feb | 75% | 79% |
+| Mar | 64% | 67% |
+| Abr | 70% | 71% |
+| May | 90% | 93% |
+| Jun | 95% | 95% |
+| Jul | 99% | 99% |
+| **Global** | **81%** | **83%** |
+
+### Correcciones de datos que salieron por el camino
+
+- **El límite de pérdida diaria ($150) estaba obsoleto.** El riesgo se mide en PUNTOS: un
+  stop de 80 pts cuesta entre $200 y $800 según los contratos, así que la regla en
+  dólares era imposible de cumplir. En puntos, julio da **9/9 días correctos**; en
+  dólares daba 5/9. Pasa a ser control de capital del Apex Tracker.
+- **Gestión del stop verificada**: 89 de 90 trades dentro de 80 puntos, MAE medio 31,4.
+  La única violación fue el 6-feb (96,5 pts).
+- **13 errores más vinculados a su regla** (21 de 46 en total): Error de Marcación (7) →
+  consecución, Contra Soporte (2) → target sin zonas, IRIs Poco Claros (2) → estructura,
+  Entré en Sim (1) → cuenta PA, Target Largo (1) → stop máximo.
+
+> ⚠️ **Pendiente: recompilar `ChecklistChaumer` en NT8.** Hasta entonces el AddOn sigue
+> exigiendo el checklist entero para dar GO.
+
+> ⚠️ **Error propio a no repetir:** al analizar el MAE lo normalicé con $2/punto para
+> todos los trades, pero 4 son de **NQ ($20/punto)**. Eso infló esos MAE ×10 y me llevó a
+> afirmar que había 5 trades con más de 80 puntos en contra cuando solo había 1. **El
+> multiplicador depende del contrato** (`_usdPorPunto` en db.js).
+
+Migraciones: `2026-08-03-rediseno-checklist-fase1.sql` (aplicada vía MCP).
+Commits: `753d51b` · `2427888` · `06e42bd` · `ec2af13` · `e183416`.
 
 ---
 

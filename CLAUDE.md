@@ -59,7 +59,8 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
 | `diagnostico_errores` | Errores detectados (manual + IA) con recomendaciones. **`regla_codigo`** (FK a `catalogo_reglas`, Ago 2026) = la regla del checklist que ese error contradice → la disciplina la cuenta **incumplida aunque la casilla esté marcada**. NULL = no toca el checklist (los psicológicos: Miedo, Duda, Rabia…) |
 | `diagnostico_experimentos` | Condiciones en prueba (T/S) por sesión |
 | `catalogo_errores` / `catalogo_emociones` / `catalogo_experimentos` | Maestros |
-| **`catalogo_reglas`** | **Rulebook canónico unificado** (1 fila = 1 regla; antes `reglas`, renombrada Jul 2026). Capas filosofia/proceso/riesgo; `tipo` dura/blanda; `es_checklist`+`fase` → checklist diario (`sesion_checklist`). **`setup`** apunta a `catalogo_setups.codigo` (o NULL = común): una regla aplica a un día si es NULL o coincide con la familia del setup de ese día. Ver [[rulebook-modelo]] |
+| **`sesion_noticias`** | **Noticias rojas del día** (Ago 2026): varias por día con `hora` + `nombre`. Ventana ±5 min sobre la **entrada** (estar ya dentro es válido). Trigger bidireccional con `sesiones.hora_noticia_roja` (texto) porque el Worker no versionado aún la escribe |
+| **`catalogo_reglas`** | **Rulebook canónico unificado** (1 fila = 1 regla; antes `reglas`, renombrada Jul 2026). Capas filosofia/proceso/riesgo; `tipo` dura/blanda; `es_checklist`+`fase` → checklist diario (`sesion_checklist`). **`bloquea_go`** (¿hace falta para dar GO?), **`aplica_si`** (siempre/dia_fomc/hay_noticia) y **`evidencia`** (auto/declarada) — Ago 2026. **`setup`** apunta a `catalogo_setups.codigo` (o NULL = común): una regla aplica a un día si es NULL o coincide con la familia del setup de ese día. Ver [[rulebook-modelo]] |
 | **`catalogo_setups`** | **Familias de setup** (`iri`, `reingreso`, …). Es lo que agrupa las reglas de Fase 2. Se gestiona en Datos → "Setups operativos" |
 | **`catalogo_setup_variantes`** | **Variantes operativas** (`iri_continuacion_alcista` → "IRI Continuación Alcista"): `setup_codigo` (FK a la familia), `subtipo`, `direccion`. Alimenta los dropdowns de la web, el teclado del bot y el AddOn NT8 |
 | `objetivos` | Config global (single row): Stop máx (`stop_max_puntos`, default 80), trades/día, P&L objetivo, límite pérdida, y **`cuenta_principal`** (la cuenta que el journal usa para P&L/análisis/Coach; se elige en Datos) |
@@ -93,10 +94,13 @@ Estrategia, Datos, **Fechas Especiales** (ese es el orden del menú). Coach IA 3
 checklist normalizado, cuenta principal configurable, filtro de cuenta persistente.
 
 > 🎯 **REGLAS DE ORO DE LA DISCIPLINA (Ago 2026).** El criterio vive **solo** en `db.js`
-> (`esDiaHabil` · `fechasConTrades` · `sesionOpero` · `discFactorAplica` ·
-> `reglasRotasPorDia` · `reglaCumplida` · `calcDisciplinaStats`); estuvo duplicado en 4
-> sitios y se desincronizó. Al tocar disciplina, cambiar **ahí** y dejar que
-> `metrics/charts/calendar/disciplina/app` deleguen. Cuatro invariantes:
+> (`discContexto` · `esDiaHabil` · `sesionOpero` · `discFactorAplica` ·
+> `discAplicaContexto` · `reglaAutoResultado` · `maeEnPuntos` · `reglasRotasPorDia` ·
+> `reglaCumplida` · `calcDisciplinaStats`); estuvo duplicado en 4 sitios y se
+> desincronizó. Al tocar disciplina, cambiar **ahí** y dejar que
+> `metrics/charts/calendar/disciplina/app/coach` deleguen. **Construye el contexto con
+> `discContexto()` y pásale trades y errores COMPLETOS** (sin filtro de cuenta ni de
+> período): son índices de "qué pasó ese día", no métricas. Siete invariantes:
 > 1. **Sábados y domingos no cuentan en NADA.** El AddOn crea filas de `sesiones` al
 >    abrir NT8; sin este filtro entraban como días operados.
 > 2. **`no_opero = false` NO significa que operó** — es el default de la columna. Las
@@ -104,10 +108,21 @@ checklist normalizado, cuenta principal configurable, filtro de cuenta persisten
 > 3. **Los días sin conexión** (`no_opero=true` + `se_conecto=false`) quedan fuera de
 >    toda estadística, no solo de la disciplina.
 > 4. **El checklist es auto-reportado y puede mentir.** Un error con `regla_codigo`
->    tumba esa regla aunque la casilla esté en `true` (caso real: 8-jul marcó "no operar
->    con noticia roja" y operó en día FOMC).
-> `conTrades` se construye SIEMPRE con **todos** los trades, sin el filtro de cuenta: la
-> disciplina es del proceso del trader, no de una cuenta (ya causó una regresión).
+>    tumba esa regla aunque la casilla esté en `true`.
+> 5. **Hay reglas que NO se marcan: se calculan** (`evidencia='auto'`) — stop máximo,
+>    ventana de noticia y día FOMC. Devuelven true/false/**null**; `null` = sin evidencia
+>    y NO cuenta. Cuando el dato puede responder, responde el dato.
+> 6. **Tercer eje de aplicabilidad: `aplica_si`** (`siempre` · `dia_fomc` ·
+>    `hay_noticia`). Una regla solo se evalúa cuando había algo que cumplir; si no, su %
+>    se diluye en cientos de días sin riesgo y deja de significar nada.
+> 7. **`bloquea_go`**: el GO cae DENTRO de la Fase 2, no al final del checklist. Las
+>    reglas que describen hechos posteriores a la entrada no lo bloquean — exigirlas
+>    obligaba a marcar lo que aún no había pasado o a perder el trade.
+>
+> ⚠️ **$ por punto según contrato: MNQ = $2, NQ = $20.** Normalizar mal el MAE lo infla
+> ×10 en los trades de NQ (ya llevó a una conclusión falsa). El riesgo se mide en PUNTOS,
+> no en dólares: `objetivos.limite_perdida_dia` ($150) quedó obsoleto y es control de
+> capital de Apex, no regla de proceso.
 
 > ⏰ **REGLA DE ORO — zona horaria (ya causó 2 bugs).** NinjaTrader está en hora de
 > **Colombia (UTC-5)**: todo lo que exporta (velas y `entry_time`/`exit_time`) viene en
@@ -116,9 +131,12 @@ checklist normalizado, cuenta principal configurable, filtro de cuenta persisten
 > sobre RTH/premercado. Los parámetros RTH del indicador van en **ET (930/1600)**.
 
 ### Pendientes abiertos
+- 🔴 **Recompilar `ChecklistChaumer` en NT8** (Fase 4 del rediseño, 3 ago): GO con solo
+  las 8 reglas que lo bloquean + lista de noticias rojas. Sin recompilar, el AddOn sigue
+  exigiendo el checklist entero.
 - **Verificar en vivo el Coach IA** tras los últimos cambios (validación por fases,
-  títulos de regla descriptivos, horas en ET **y la 9ª parte `reglaCodigo`** del formato
-  de errores): generar un análisis y confirmar que vincula bien error → regla.
+  títulos de regla descriptivos, horas en ET, la 9ª parte `reglaCodigo` **y el bloque
+  "VERIFICADO POR DATOS"** del checklist): generar un análisis y confirmar.
 - Recomendaciones tipificadas en Coach IA (Fase 4B): implementado salvo inyectar el
   catálogo de recomendaciones en el prompt (para que reutilice nombres y no duplique).
 - Modal del día: un ítem tumbado por un error se ve igual que uno nunca marcado.

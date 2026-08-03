@@ -6,6 +6,10 @@
 >
 > El cálculo vive en `js/db.js` (fuente única). Lo consumen `metrics.js` (card del
 > calendario), `disciplina.js` (dashboard), `charts.js` (Análisis) y `app.js` (modal del día).
+>
+> **Incluye el rediseño del 3 de agosto de 2026**: reglas verificadas por datos,
+> condicionalidad por contexto del día y el GO dentro de la Fase 2. Plan y motivos en
+> `docs/plan-rediseno-checklist-disciplina.md`.
 
 ---
 
@@ -19,9 +23,13 @@
 | **Fase más débil** | Dónde se te escapa el proceso | la fase (1, 2 o 3) con menor % |
 | **Racha** | Días operados seguidos sin fallar | contando hacia atrás desde el más reciente |
 
-**Clave para no confundirse:** la **Disciplina** cuenta *ítems* (casillas de reglas).
-Los **Errores** y **Días limpios** cuentan *días*. Son escalas distintas, por eso un mes
-puede tener 99% de disciplina y 6% de errores a la vez.
+**Dos claves para no confundirse:**
+
+1. La **Disciplina** cuenta *ítems* (casillas de reglas). Los **Errores** y **Días
+   limpios** cuentan *días*. Son escalas distintas, por eso un mes puede tener 99% de
+   disciplina y 6% de errores a la vez.
+2. **No todas las reglas las respondes tú.** Tres se verifican con los datos del día
+   (⚙️) y el resto son declaradas (✋). Ver *Paso 2b*.
 
 ---
 
@@ -83,10 +91,61 @@ no aplican. En la base de datos verás sus filas en `false`, pero se descartan.
 > Esto explica una confusión típica: ver "13 de 17 casillas" en la base de datos y creer
 > que fallaste 4. Esas 4 son del otro setup.
 
+### Reglas condicionales por contexto del día
+
+*(Rediseño de agosto 2026.)* Además de la fase y del setup, una regla puede depender del
+**contexto del día**:
+
+| Regla | Solo cuenta si… |
+|---|---|
+| **Día FOMC: solo reingresos** | ese día era FOMC |
+| **No entrar en ventana de noticia roja** | ese día había noticia roja registrada |
+
+Es lo que hace que el número signifique algo. Si "en día FOMC solo reingresos" contara
+como cumplida los ~250 días que no son FOMC, saldría al 99% siempre y no diría nada.
+**Una regla solo se evalúa cuando había algo que cumplir.**
+
 ### Casillas sin registrar = N/A
 
 Si una regla es nueva y no existía cuando registraste una sesión vieja, **no cuenta**.
 No suma ni resta. Así, crear una regla hoy no te hunde el histórico.
+
+---
+
+## Paso 2b — Quién responde cada regla
+
+*(Rediseño de agosto 2026.)* No todas las reglas se responden igual. El campo
+`evidencia` de `catalogo_reglas` decide quién contesta:
+
+| Tipo | Quién responde | Se puede maquillar |
+|---|---|---|
+| ✋ **Declarada** | Tú, marcando la casilla | Sí |
+| ⚙️ **Automática** | El sistema, con los datos del día | No |
+
+Las tres automáticas de hoy:
+
+| Regla | Cómo se verifica |
+|---|---|
+| **Stop máximo 80 puntos** | MAE del trade ÷ ($ por punto × contratos) |
+| **No entrar en ventana de noticia roja** | Hora de entrada contra cada ventana de ±5 min |
+| **Día FOMC: solo reingresos** | Fecha marcada como FOMC + familia del setup operado |
+
+> ⚠️ **El $ por punto depende del contrato: MNQ = $2, NQ = $20.** Normalizar mal esto
+> infla el MAE ×10 en los trades de NQ, y ya llevó una vez a una conclusión falsa.
+
+Una regla automática tiene **tres** resultados posibles: cumplida, incumplida y **sin
+evidencia**. Sin evidencia (no hay MAE, no hubo trades, no había noticia) no cuenta ni a
+favor ni en contra — igual que una casilla sin registrar.
+
+**Por qué importa:** el checklist es auto-reportado y se marca antes de saber cómo acaba
+el día. Cuando el dato puede responder, responde el dato.
+
+### El GO no va al final del checklist
+
+El campo `bloquea_go` separa las reglas que se pueden responder **antes** de entrar de
+las que describen hechos **posteriores**. Solo las primeras bloquean el GO en el AddOn
+(8 de 13). Antes había que marcarlo todo, incluidos hechos que aún no habían ocurrido:
+o marcabas en falso, o perdías el trade llenando casillas.
 
 ---
 
@@ -97,20 +156,20 @@ No suma ni resta. Así, crear una regla hoy no te hunde el histórico.
 ### La casilla no es la última palabra
 
 El checklist lo marcas **tú, antes o durante** la operación. Es auto-reportado: puede no
-coincidir con lo que pasó después.
+coincidir con lo que pasó después. Hay **dos mecanismos** que lo corrigen:
 
-Por eso, **si el diagnóstico del día registró un error que contradice una regla concreta,
-esa regla cuenta como incumplida aunque tú hayas marcado la casilla.**
+**1. La verificación automática.** Si la regla es ⚙️, manda el dato y la casilla ni se
+mira.
 
-**Caso real — 8 de julio de 2026:**
+**2. El vínculo error → regla.** Si el diagnóstico registró un error que contradice una
+regla **declarada**, esa regla cuenta como incumplida aunque marcaras la casilla.
 
-| Fuente | Qué decía |
-|---|---|
-| Tu checklist | ✅ "No operar con noticia roja activa" — marcada como cumplida |
-| El diagnóstico | ⚠️ Error **"FOMC"**: operaste un IRI tendencial en día FOMC, sabiendo que la regla lo prohíbe |
+**Caso real — 8 de julio de 2026:** operaste un IRI tendencial en día FOMC, sabiendo que
+la regla lo prohíbe. Tu checklist estaba marcado entero. La regla
+**"Día FOMC: solo reingresos"** lo detecta sola, cruzando la fecha del calendario con el
+setup que operaste — sin depender de que nadie lo confesara.
 
-Resultado: esa casilla cuenta como **incumplida**. El 8 de julio pasó de 13/13 (100%) a
-**12/13 (92%)**.
+Resultado: **12 de 13**.
 
 **No todos los errores tocan la Disciplina.** Solo los que contradicen una regla del
 checklist. Los psicológicos —Miedo, Duda, Rabia, Ansiedad, FOMO— no corresponden a
@@ -124,36 +183,27 @@ Julio tuvo **22 días hábiles con sesión**. De esos:
 
 De los 16 conectados: **9 operados** y **7 conectados sin operar**.
 
-| Día | ¿Operó? | Setup | Casillas que aplican | Cumplidas |
+| Día | ¿Operó? | Setup | Casillas evaluadas | Cumplidas |
 |---|---|---|---|---|
-| 01, 02, 07, 13, 14, 15, 21 jul | No | — | 4 c/u *(solo Fase 1)* | 4 c/u |
-| 06 jul | Sí | IRI | 13 | 13 |
-| **08 jul** | Sí | IRI | 13 | **12** ← error FOMC |
-| 09, 10, 16 jul | Sí | IRI | 13 c/u | 13 c/u |
-| 22, 23, 27 jul | Sí | IRI | 13 c/u | 13 c/u |
-| 24 jul | Sí | Reingreso | 13 | 13 |
-
-**Las cuentas:**
+| 01, 02, 07, 13, 14, 15, 21 | No | — | 3 *(solo Fase 1)* | 3 |
+| 06, 09 | Sí | IRI | 12 | 12 |
+| **08** | Sí | IRI | 13 | **12** ← día FOMC operado tendencial |
+| 10, 16, 22, 23, 27 | Sí | IRI | 11 | 11 |
+| 24 | Sí | Reingreso | 11 | 11 |
 
 ```
-Días conectados sin operar:  7 días × 4 casillas  =  28
-Días operados:               9 días × 13 casillas = 117
-                                            TOTAL = 145 casillas
-
-Cumplidas: 144    Fallidas: 1  (chk_noticias del 8-jul)
-
-Disciplina = 144 ÷ 145 = 99,3 %  →  se muestra 99 %
+Total julio: 123 de 124  →  99 %
 ```
 
-**Por qué un día operado suma 13 casillas:**
+**Por qué el número de casillas cambia de un día a otro.** Porque cada regla solo se
+evalúa cuando hay algo que cumplir:
 
-```
-Fase 1 (comunes)                  4
-Fase 2 común                      1
-Fase 2 de la familia del setup    4   (las 4 de IRI, o las 4 de Reingreso)
-Fase 3 (comunes)                  4
-                          TOTAL  13
-```
+- **11** es el día normal: 3 de Fase 1 + 5 de Fase 2 + 1 de Fase 3 declaradas, más
+  *Stop máximo* y *Rompimiento + consecución*.
+- **12** cuando además había **noticia roja** registrada y se operó (entra
+  *No entrar en ventana*): días 6 y 9.
+- **13** cuando además era **día FOMC**: el día 8.
+- **3** en los días que te conectaste sin operar: solo la Fase 1.
 
 ---
 
@@ -198,20 +248,19 @@ dónde está la fuga: ¿en la preparación, en la lectura o en la ejecución?
 
 | Fase | Casillas | Cumplidas | % |
 |---|---|---|---|
-| **Fase 1 — Pre-sesión** | 64 | 63 | **98%** ← la más débil |
-| Fase 2 — Lectura del setup | 45 | 45 | 100% |
-| Fase 3 — Ejecución | 36 | 36 | 100% |
+| Fase 1 — Pre-sesión | 48 | 48 | 100% |
+| **Fase 2 — Lectura del setup** | 55 | 54 | **98%** ← la más débil |
+| Fase 3 — Ejecución | 21 | 21 | 100% |
 
-De dónde salen esas casillas:
-- **Fase 1:** 16 días conectados × 4 reglas = 64
-- **Fase 2:** 9 días operados × 5 reglas (1 común + 4 del setup) = 45
-- **Fase 3:** 9 días operados × 4 reglas = 36
+De dónde salen: **Fase 1** = 16 días conectados × 3 reglas. **Fase 2** = 9 días operados
+× 6 reglas, más la de FOMC el día que aplicó. **Fase 3** = 9 × 2 declaradas, más las
+automáticas evaluables.
 
-La Fase 1 es la más débil por **un solo ítem**: el `chk_noticias` del 8 de julio. Con 64
-casillas en juego, un fallo pesa 1,6%.
+La Fase 2 es la más débil por **un solo ítem**: el "Día FOMC: solo reingresos" del 8 de
+julio. Con 55 casillas en juego, un fallo pesa 1,8%.
 
 > Que la fase más débil marque 98% no significa que la disciplina sea 98%. Son cosas
-> distintas: 99% es el total de las 145 casillas; 98% es solo el bloque de Fase 1.
+> distintas: 99% es el total de las 124 casillas; 98% es solo el bloque de Fase 2.
 
 ---
 
@@ -221,7 +270,7 @@ Días **operados** consecutivos, contando hacia atrás desde el más reciente, c
 las casillas aplicables cumplidas. Se corta en el primer día con algún fallo.
 
 En julio la racha es de **7 días** (27, 24, 23, 22, 16, 10 y 9 de julio); se corta en el
-8 de julio por el error FOMC.
+8 de julio por operar tendencial en día FOMC.
 
 Ojo con dos cosas:
 - Solo cuenta **días operados**. Un día en que te conectaste y no operaste no suma ni
@@ -255,17 +304,23 @@ nacieron con el rulebook de junio, y sus filas de feb–may quedaron rellenas en
 comparabilidad con lo que ya venías mirando. Se dejaron como están — léelo con esa
 salvedad.
 
-**Disciplina por mes (al 3 de agosto de 2026):**
+**Disciplina por mes (tras el rediseño del 3 de agosto de 2026):**
 
 | Mes | Ítems | Disciplina |
 |---|---|---|
-| Febrero | 172 | 75,0% |
-| Marzo | 218 | 64,2% |
-| Abril | 225 | 70,2% |
-| Mayo | 188 | 89,9% |
-| Junio | 184 | 95,1% |
-| Julio | 145 | 99,3% |
-| **Global** | **1145** | **81,0%** |
+| Febrero | 137 | 79% |
+| Marzo | 180 | 67% |
+| Abril | 188 | 71% |
+| Mayo | 156 | 93% |
+| Junio | 154 | 95% |
+| Julio | 124 | 99% |
+| **Global** | **951** | **83%** |
+
+> El rediseño **subió** el global de 81% a 83%, en contra de lo esperado. Motivo: las
+> reglas condicionales dejaron de contar los ~120 días sin riesgo, y el stop máximo —al
+> verificarse por dato— sale 82 cumplidos / 1 fallo, donde antes se leía una casilla que
+> estaba en `true` siempre. Al medir solo cuando hay algo que cumplir desaparecen tanto
+> los aprobados gratis como los suspensos gratis.
 
 **Errores en días no conectados.** El numerador de Errores % cuenta las fechas con error
 del período; el denominador solo los días conectados. Si algún día llegara a tener un
@@ -279,7 +334,7 @@ ocurre en ningún mes.
 |---|---|
 | Rompimiento de zona + consecución | Error de Marcación (7) · Trade sin Consecución (2) |
 | No mover Target/Stop | Mover Stop (3) |
-| No operar con noticia roja activa | FOMC (2) |
+| Día FOMC: solo reingresos | FOMC (2) — *la regla ya lo detecta sola; el vínculo queda por trazabilidad* |
 | Estructura I-R-I fluida | IRIs Poco Claros (2) |
 | Target sin zonas en contra | Contra Soporte (2) |
 | Orden precolocada a tiempo | Entrada Tardía (1) |
@@ -315,6 +370,10 @@ Todo en `js/db.js`, como fuente única:
 
 | Función | Qué hace |
 |---|---|
+| `discContexto({...})` | Construye el contexto del cálculo (trades, errores, FOMC, stop máx) |
+| `discAplicaContexto(f, s, ctx)` | ¿El contexto del día activa esta regla? (`dia_fomc`, `hay_noticia`) |
+| `reglaAutoResultado(cod, s, ctx)` | Resuelve una regla ⚙️ → true / false / null |
+| `maeEnPuntos(t)` | MAE a puntos, con $/punto según contrato (MNQ $2, NQ $20) |
 | `esDiaHabil(fecha)` | Descarta sábados y domingos |
 | `fechasConTrades(trades)` | Qué días tuvieron trades |
 | `sesionOpero(s, conTrades)` | ¿Hubo operativa real ese día? |
