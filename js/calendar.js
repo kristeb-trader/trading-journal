@@ -7,7 +7,7 @@ const Calendar = (() => {
   let casuisticasCache = {} // date → true (has errors)
   let allTradesRaw = []     // sin filtrar por cuenta
   let cmeHolidays     = {}        // date → { name, emoji } festivos (de catalogo_fechas)
-  let fomcDates       = new Set() // fechas ISO de días FOMC del año
+  let fomcDates       = {}        // date → { name, emoji } días FOMC del año
   let vacacionesDates = {}        // date → { name, emoji } vacaciones
   let otrasDates      = {}        // date → { name, emoji } otras fechas especiales
 
@@ -128,9 +128,9 @@ const Calendar = (() => {
     ])
 
     // Fechas especiales del año, clasificadas por tipo (de catalogo_fechas)
-    cmeHolidays = {}; vacacionesDates = {}; otrasDates = {}; fomcDates = new Set()
+    cmeHolidays = {}; vacacionesDates = {}; otrasDates = {}; fomcDates = {}
     fechasEsp.forEach(f => {
-      if (f.tipo === 'fomc')            fomcDates.add(f.fecha)
+      if (f.tipo === 'fomc')            fomcDates[f.fecha]       = { name: f.nombre || 'FOMC',       emoji: f.emoji || '🏛️' }
       else if (f.tipo === 'festivo')    cmeHolidays[f.fecha]     = { name: f.nombre || 'Festivo',    emoji: f.emoji || '🏦' }
       else if (f.tipo === 'vacaciones') vacacionesDates[f.fecha] = { name: f.nombre || 'Vacaciones', emoji: f.emoji || '🏖️' }
       else                              otrasDates[f.fecha]      = { name: f.nombre || 'Especial',   emoji: f.emoji || '⭐' }
@@ -203,55 +203,71 @@ const Calendar = (() => {
         const sesion = sesionesCache[dateStr]
         const isFuture  = dateStr > today
         const isToday   = dateStr === today
-        const isHoliday = !isFuture && (dateStr in cmeHolidays)
-        const isFomc    = !isFuture && fomcDates.has(dateStr)
+        // Las fechas especiales NO se filtran por `isFuture`: se pintan desde que se
+        // cargan (atenuadas) para poder ver venir el FOMC o el festivo.
+        const isHoliday    = dateStr in cmeHolidays
+        const isFomc       = dateStr in fomcDates
+        const isVacaciones = dateStr in vacacionesDates
+        const isOtra       = dateStr in otrasDates
+        const esEspecial   = isHoliday || isFomc || isVacaciones || isOtra
 
-        let result = isFuture ? null : dayResult(trades, sesion, dateStr)
-        // Día FOMC automático (en fomc_dates) sin operar: mismo look que el FOMC manual
-        if (!isFuture && isFomc && !sesion?.no_opero && trades.length === 0) result = 'fomc'
-        // Día FOMC en el que SÍ se operó: color normal según el resultado (la marca
-        // FOMC se conserva solo en la leyenda/badge, no en el color de la celda).
+        let result
+        if (!isFuture) {
+          result = dayResult(trades, sesion, dateStr)
+          // Día FOMC automático (de catalogo_fechas) sin operar: mismo look que el manual
+          if (isFomc && !sesion?.no_opero && trades.length === 0) result = 'fomc'
+          // Día FOMC en el que SÍ se operó: color normal según el resultado (la marca
+          // FOMC se conserva solo en la leyenda/badge, no en el color de la celda).
+        } else if (esEspecial) {
+          // Futuro + fecha especial → ya toma su color (FOMC manda sobre el resto)
+          result = isFomc ? 'fomc' : isHoliday ? 'festivo' : isVacaciones ? 'vacaciones' : 'especial'
+        } else {
+          result = null
+        }
+
         let cellClass = 'cal-cell'
-        if (isFuture) cellClass += ' future'
-        else cellClass += ` day-${result}`
+        if (result) cellClass += ` day-${result}`
+        // Futuro normal: apagado. Futuro especial: atenuado, pero con su color visible.
+        if (isFuture) cellClass += esEspecial ? ' future-especial' : ' future'
         if (isToday) cellClass += ' today'
 
         const pnl = dayPnl(trades)
         const pnlHtml = pnl !== null
           ? `<div class="cal-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(0)}</div>`
           : ''
-        const clickable = !isFuture ? `data-date="${dateStr}" style="cursor:pointer"` : ''
+        // Los días futuros solo son clicables si son fecha especial (modal informativo)
+        const clickable = (!isFuture || esEspecial) ? `data-date="${dateStr}" style="cursor:pointer"` : ''
 
+        // Las ramas de sesión/trades solo aplican al pasado; las de fecha especial,
+        // también al futuro.
         let statusBadge = ''
-        if (!isFuture) {
-          if (sesion?.no_opero) {
-            if (sesion.motivo_no_opero === 'Setup válido no tomado') {
-              statusBadge = `<div class="cal-status-badge badge-sinsetup">⚠️ Setup válido — no entré</div>`
-            } else if (sesion.motivo_no_opero === 'Sin setup') {
-              statusBadge = `<div class="cal-status-badge badge-sinsetup"><i class="ti ti-eye-off"></i> Sin entradas</div>`
-            } else if (sesion.motivo_no_opero === 'FOMC') {
-              statusBadge = `<div class="cal-status-badge badge-fomc"><i class="ti ti-chart-candle"></i> FOMC</div>`
-            } else if (sesion.motivo_no_opero === 'Festivo') {
-              statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> Festivo</div>`
-            } else {
-              statusBadge = `<div class="cal-status-badge badge-noopero"><i class="ti ti-user-off"></i> No operé</div>`
-            }
-          } else if (trades.length > 0 && trades.every(t => isBreakEven(t.profit))) {
-            statusBadge = `<div class="cal-status-badge badge-be"><i class="ti ti-scale"></i> B.E.</div>`
-          } else if (isHoliday && !trades.length) {
-            // Festivo (sin sesión registrada)
-            statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> Festivo</div>`
-          } else if ((dateStr in vacacionesDates) && !trades.length) {
-            const v = vacacionesDates[dateStr]
-            statusBadge = `<div class="cal-status-badge badge-vacaciones">${v.emoji || '🏖️'} ${v.name || 'Vacaciones'}</div>`
-          } else if ((dateStr in otrasDates) && !trades.length) {
-            const o = otrasDates[dateStr]
-            statusBadge = `<div class="cal-status-badge badge-especial">${o.emoji || '⭐'} ${o.name || 'Especial'}</div>`
-          }
-          // FOMC (en catalogo_fechas): badge aunque se haya operado, para no perder la marca
-          if (!statusBadge && isFomc) {
+        if (!isFuture && sesion?.no_opero) {
+          if (sesion.motivo_no_opero === 'Setup válido no tomado') {
+            statusBadge = `<div class="cal-status-badge badge-sinsetup">⚠️ Setup válido — no entré</div>`
+          } else if (sesion.motivo_no_opero === 'Sin setup') {
+            statusBadge = `<div class="cal-status-badge badge-sinsetup"><i class="ti ti-eye-off"></i> Sin entradas</div>`
+          } else if (sesion.motivo_no_opero === 'FOMC') {
             statusBadge = `<div class="cal-status-badge badge-fomc"><i class="ti ti-chart-candle"></i> FOMC</div>`
+          } else if (sesion.motivo_no_opero === 'Festivo') {
+            statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> Festivo</div>`
+          } else {
+            statusBadge = `<div class="cal-status-badge badge-noopero"><i class="ti ti-user-off"></i> No operé</div>`
           }
+        } else if (!isFuture && trades.length > 0 && trades.every(t => isBreakEven(t.profit))) {
+          statusBadge = `<div class="cal-status-badge badge-be"><i class="ti ti-scale"></i> B.E.</div>`
+        } else if (isHoliday && !trades.length) {
+          // Festivo (sin sesión registrada)
+          statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> Festivo</div>`
+        } else if (isVacaciones && !trades.length) {
+          const v = vacacionesDates[dateStr]
+          statusBadge = `<div class="cal-status-badge badge-vacaciones">${v.emoji || '🏖️'} ${v.name || 'Vacaciones'}</div>`
+        } else if (isOtra && !trades.length) {
+          const o = otrasDates[dateStr]
+          statusBadge = `<div class="cal-status-badge badge-especial">${o.emoji || '⭐'} ${o.name || 'Especial'}</div>`
+        }
+        // FOMC (en catalogo_fechas): badge aunque se haya operado, para no perder la marca
+        if (!statusBadge && isFomc) {
+          statusBadge = `<div class="cal-status-badge badge-fomc"><i class="ti ti-chart-candle"></i> FOMC</div>`
         }
 
         // Icono error (superior derecha)
@@ -346,9 +362,16 @@ const Calendar = (() => {
       DB.getSesionByDate(dateStr),
     ])
 
-    // Fecha especial (festivo / vacaciones / otra) sin operar → modal informativo.
+    // Fecha especial (FOMC / festivo / vacaciones / otra) sin operar → modal informativo.
     // Si ese día se operó, cae al modal normal para ver los trades.
     if (!trades.length) {
+      // FOMC solo si tampoco hay sesión registrada: si la hay, el modal normal
+      // muestra el motivo y las notas de ese día.
+      if (!sesion && fomcDates[dateStr]) {
+        const f = fomcDates[dateStr]
+        openHolidayModal(dateStr, f.name, f.emoji)
+        return
+      }
       const esp = cmeHolidays[dateStr] || vacacionesDates[dateStr] || otrasDates[dateStr]
       if (esp) { openHolidayModal(dateStr, esp.name, esp.emoji); return }
     }

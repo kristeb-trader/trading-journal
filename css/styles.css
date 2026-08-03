@@ -351,6 +351,10 @@ small { font-size: 0.82em; }
    del resultado y la marca FOMC queda solo en el badge. */
 .cal-cell.day-fomc     { background: rgba(194,137,72,0.12);  border-color: rgba(194,137,72,0.35); }
 .cal-cell.day-vacaciones { background: rgba(45,178,133,0.10); border-color: rgba(45,178,133,0.30); }
+.cal-cell.day-especial   { background: rgba(224,163,59,0.10); border-color: rgba(224,163,59,0.28); }
+/* Fecha especial futura (FOMC, festivo, vacaciones…): se pinta desde ya con su color,
+   atenuada, para verla venir. El día futuro normal usa .future (mucho más apagado). */
+.cal-cell.future-especial { opacity: 0.72; }
 
 .cal-status-badge {
   font-size: 0.6rem; font-weight: 700; letter-spacing: 0.03em;
