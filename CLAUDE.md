@@ -161,6 +161,8 @@ checklist normalizado, cuenta principal configurable, filtro de cuenta persisten
 > `apex_cuentas`, `catalogo_reglas`, `catalogo_fechas`, `objetivos`, etc.
 
 ## Para contexto adicional
+- **Cómo se calcula la disciplina (y errores / días limpios), paso a paso con el ejemplo
+  real de julio: `docs/Disciplina.md`** ← leerlo antes de tocar cualquier métrica de disciplina
 - Historial completo + hitos cerrados: `docs/historial-proyecto.md`
 - Esquema BD detallado: `memory/db-schema.md` · Perfil del usuario: `memory/user-profile.md`
 - Planes: `docs/plan-seguridad-rls.md`, `docs/plan-disciplina-fases.md`, `docs/plan-unificacion-reglas.md`
