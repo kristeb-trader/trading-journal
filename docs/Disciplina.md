@@ -255,15 +255,57 @@ nacieron con el rulebook de junio, y sus filas de feb–may quedaron rellenas en
 comparabilidad con lo que ya venías mirando. Se dejaron como están — léelo con esa
 salvedad.
 
+**Disciplina por mes (al 3 de agosto de 2026):**
+
+| Mes | Ítems | Disciplina |
+|---|---|---|
+| Febrero | 172 | 75,0% |
+| Marzo | 218 | 64,2% |
+| Abril | 225 | 70,2% |
+| Mayo | 188 | 89,9% |
+| Junio | 184 | 95,1% |
+| Julio | 145 | 99,3% |
+| **Global** | **1145** | **81,0%** |
+
 **Errores en días no conectados.** El numerador de Errores % cuenta las fechas con error
 del período; el denominador solo los días conectados. Si algún día llegara a tener un
 error registrado sin estar conectado, el porcentaje quedaría ligeramente alto. Hoy no
 ocurre en ningún mes.
 
-**Errores históricos sin vínculo.** De los 47 errores registrados, solo 8 están
-vinculados a una regla (FOMC, Mover Stop, Trade sin Consecución, Entrada Tardía). Los
-otros 39 no bajan la Disciplina. El Coach IA los va tipificando a medida que analiza días
-nuevos.
+**Errores vinculados a una regla.** De los 46 errores registrados, **21 están vinculados**
+(3 ago 2026) y por tanto tumban su casilla:
+
+| Regla | Errores que la contradicen |
+|---|---|
+| Rompimiento de zona + consecución | Error de Marcación (7) · Trade sin Consecución (2) |
+| No mover Target/Stop | Mover Stop (3) |
+| No operar con noticia roja activa | FOMC (2) |
+| Estructura I-R-I fluida | IRIs Poco Claros (2) |
+| Target sin zonas en contra | Contra Soporte (2) |
+| Orden precolocada a tiempo | Entrada Tardía (1) |
+| Cuenta PA activa verificada | Entré en Sim y no Real (1) |
+| Stop máximo de 80 puntos | Target Largo (1) |
+
+Los **25 restantes se dejan sin vínculo a propósito**, en tres grupos:
+
+- **Psicológicos (16)** — Miedo, Duda, Rabia, Ansiedad, Baja Confianza, FOMO,
+  Sobreconfianza, Sobre-Apalancamiento, Dos trades, Confundir Reglas. No hay casilla que
+  prevenga sentir miedo: cuentan solo en la tasa de errores.
+- **Condiciones de mercado (4)** — 3ª Corrida, Contra Máximo Histórico, Contra Máximo y
+  Mínimo Premercado. Viven en el **Laboratorio de Experimentos**, que es donde se decide
+  si merecen convertirse en regla; vincularlas ahora adelantaría esa decisión.
+- **Ya contados o sin regla equivalente (5)** — *Checklist Incompleto* (el error ES que
+  había casillas en ✗ → restaría dos veces), *Entrada con Filtros en Rojo* ×2 (no dice
+  qué filtro, y la del 17-jun ya la cubre el error FOMC de ese día), *Descartar Setup
+  Válido* ×2 (no existe una regla que obligue a tomar todo setup válido).
+
+De aquí en adelante el Coach IA rellena el vínculo solo, al analizar cada día nuevo.
+
+> **Ojo con el alcance de cada regla.** Una regla de Fase 2 o 3 solo cuenta en días con
+> operativa real, y una regla por setup solo en días de esa familia. Por eso "Error de
+> Marcación" → *Rompimiento de zona + consecución* (que es exclusiva de IRI) solo surte
+> efecto en 2 de sus 7 días: en los otros el día no fue operado, o la casilla ya estaba
+> en ✗. El vínculo queda documentado igual, pero no penaliza dos veces.
 
 ---
 
