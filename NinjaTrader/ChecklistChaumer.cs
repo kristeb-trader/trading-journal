@@ -157,8 +157,25 @@ namespace NinjaTrader.NinjaScript.AddOns
         // Estado
         // Checked vive en el Item (no solo en el CheckBox): los ítems del setup
         // no visible conservan su marca aunque su Box no esté renderizado.
-        private class Item { public string Clave; public int Fase; public string Setup; public string Texto; public bool Checked; public CheckBox Box; }
+        // BloqueaGo: hay que marcarla para poder dar GO. Las que van en false describen
+        //   hechos POSTERIORES a la entrada (consecución, gestión): marcarlas antes de
+        //   tiempo obligaba a mentir o a perder el trade esperando a llenar el checklist.
+        // Evidencia: "auto" = la resuelve el sistema con los trades del día; no se marca.
+        private class Item {
+            public string Clave; public int Fase; public string Setup; public string Texto;
+            public bool Checked; public CheckBox Box;
+            public bool BloqueaGo = true; public string Evidencia = "declarada";
+            public bool EsAuto { get { return Evidencia == "auto"; } }
+        }
         private readonly List<Item> items = new List<Item>();
+
+        // Noticias rojas del día: varias, cada una con su ventana de ±5 min sobre la
+        // ENTRADA. Estar ya dentro de una posición cuando sale la noticia es válido.
+        private class Noticia {
+            public string Hora; public string Nombre;
+            public TextBox HoraBox; public TextBox NombreBox;
+        }
+        private readonly List<Noticia> noticias = new List<Noticia>();
 
         // Familias de setup: se leen de catalogo_setups, así un setup nuevo sale
         // solo (antes eran dos botones fijos IRI/REINGRESO en el código).
@@ -177,6 +194,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         private bool inNoticiaWindow = false;       // dentro de la ventana ±5 min de la noticia roja
         private const int NOTICIA_MARGEN_MIN = 5;   // ventana de bloqueo ±5 min
         private DispatcherTimer timer;
+        private DispatcherTimer noticiasSaveTimer;  // debounce al escribir las noticias
 
         // UI refs
         private StackPanel sectionsPanel;
@@ -189,7 +207,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         private TextBlock statusText;
         private TextBlock dateText;
         private ToggleButton pinButton;
-        private TextBox horaBox;                     // "HH:MM" hora de la noticia roja
+        private StackPanel noticiasPanel;           // filas de noticias rojas (hora + nombre)
         private Border noticiaCard;
         private TextBlock noticiaWin;               // ventana / estado NO OPERAR
 
@@ -256,28 +274,33 @@ namespace NinjaTrader.NinjaScript.AddOns
             Grid.SetRow(statusBanner, 1);
             root.Children.Add(statusBanner);
 
-            // Panel de noticia roja (hora + ventana de bloqueo ±5 min)
-            var noticiaInner = new Grid { Margin = new Thickness(8, 6, 8, 6) };
-            noticiaInner.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            noticiaInner.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            noticiaInner.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            // Panel de noticias rojas: VARIAS por día, cada una con su ventana ±5 min.
+            var noticiaInner = new StackPanel { Margin = new Thickness(8, 6, 8, 6) };
+            var noticiaHead = new Grid();
+            noticiaHead.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            noticiaHead.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             var noticiaLbl = new TextBlock {
-                Text = "🚫 Noticia roja", Foreground = TEXT2, FontSize = 11,
-                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
+                Text = "🚫 Noticias rojas", Foreground = TEXT2, FontSize = 11,
+                VerticalAlignment = VerticalAlignment.Center };
             Grid.SetColumn(noticiaLbl, 0);
-            noticiaInner.Children.Add(noticiaLbl);
-            horaBox = new TextBox {
-                Width = 58, Height = 24, Text = "", FontSize = 12,
-                Background = Brush("#2A2A26"), Foreground = TEXT, BorderBrush = BORDER, BorderThickness = new Thickness(1),
-                VerticalContentAlignment = VerticalAlignment.Center, ToolTip = "Hora de la noticia roja (HH:MM, hora ET)"
+            noticiaHead.Children.Add(noticiaLbl);
+            var addBtn = new Button {
+                Content = "+", Width = 22, Height = 20, FontSize = 12, FontWeight = FontWeights.Bold,
+                Background = Brush("#2A2A26"), Foreground = ACCENT, BorderBrush = BORDER,
+                BorderThickness = new Thickness(1), Cursor = System.Windows.Input.Cursors.Hand,
+                ToolTip = "Añadir noticia roja"
             };
-            horaBox.TextChanged += OnHoraChanged;
-            Grid.SetColumn(horaBox, 1);
-            noticiaInner.Children.Add(horaBox);
+            addBtn.Click += (s, e) => { AddNoticia(null, null); RenderNoticias(); };
+            Grid.SetColumn(addBtn, 1);
+            noticiaHead.Children.Add(addBtn);
+            noticiaInner.Children.Add(noticiaHead);
+
+            noticiasPanel = new StackPanel { Margin = new Thickness(0, 4, 0, 0) };
+            noticiaInner.Children.Add(noticiasPanel);
+
             noticiaWin = new TextBlock {
-                Text = "Sin noticia", Foreground = TEXT2, FontSize = 11, TextWrapping = TextWrapping.Wrap,
-                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
-            Grid.SetColumn(noticiaWin, 2);
+                Text = "Sin noticias", Foreground = TEXT2, FontSize = 11, TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 4, 0, 0) };
             noticiaInner.Children.Add(noticiaWin);
             noticiaCard = new Border {
                 Background = CARD, BorderBrush = BORDER, BorderThickness = new Thickness(1),
@@ -384,6 +407,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             sectionsPanel.Children.Clear();
             faseBadges.Clear();
             foreach (var it in items) it.Box = null;   // los no visibles quedan sin Box (estado en Item.Checked)
+            bool goSepPuesto = false;                  // el separador ▶ GO se pinta una sola vez
 
             foreach (int fase in new[] { 1, 2, 3 })
             {
@@ -410,6 +434,40 @@ namespace NinjaTrader.NinjaScript.AddOns
 
                 foreach (var it in ofFase)
                 {
+                    // Separador del GO: se pinta UNA sola vez en todo el checklist, justo
+                    // antes del primer ítem que ya no bloquea (cae dentro de la Fase 2).
+                    if (!goSepPuesto && !it.BloqueaGo)
+                    {
+                        goSepPuesto = true;
+                        var sep = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 7, 0, 3) };
+                        sep.Children.Add(new Border {
+                            Background = Brush("#1F3D33"), BorderBrush = ACCENT, BorderThickness = new Thickness(1),
+                            CornerRadius = new CornerRadius(9), Padding = new Thickness(7, 1, 7, 1),
+                            Child = new TextBlock { Text = "▶ GO", Foreground = ACCENT, FontSize = 10, FontWeight = FontWeights.Bold }
+                        });
+                        sep.Children.Add(new TextBlock {
+                            Text = "  se marca después de entrar", Foreground = TEXT2, FontSize = 10,
+                            VerticalAlignment = VerticalAlignment.Center });
+                        faseStack.Children.Add(sep);
+                    }
+
+                    // Ítems verificados por dato: no se marcan, los resuelve el journal
+                    // con los trades del día. Se muestran para no esconder que existen.
+                    if (it.EsAuto)
+                    {
+                        var auto = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(2, 4, 2, 4) };
+                        auto.Children.Add(new TextBlock {
+                            Text = "⚙ ", Foreground = Brush("#60A5FA"), FontSize = 12,
+                            VerticalAlignment = VerticalAlignment.Center });
+                        auto.Children.Add(new TextBlock {
+                            Text = it.Texto, TextWrapping = TextWrapping.Wrap, Foreground = TEXT2, FontSize = 11,
+                            VerticalAlignment = VerticalAlignment.Center, MaxWidth = 250 });
+                        auto.ToolTip = "Se verifica solo con los trades del día";
+                        faseStack.Children.Add(auto);
+                        it.Box = null;
+                        continue;
+                    }
+
                     var cb = new CheckBox {
                         Content = new TextBlock { Text = it.Texto, TextWrapping = TextWrapping.Wrap, Foreground = TEXT, FontSize = 12 },
                         Margin = new Thickness(2, 4, 2, 4), Foreground = TEXT, IsChecked = it.Checked,
@@ -445,7 +503,8 @@ namespace NinjaTrader.NinjaScript.AddOns
         {
             foreach (var kv in faseBadges)
             {
-                var ofFase = items.Where(i => i.Fase == kv.Key && IsVisible(i)).ToList();
+                // Los ítems automáticos no se marcan: no cuentan para el progreso.
+                var ofFase = items.Where(i => i.Fase == kv.Key && IsVisible(i) && !i.EsAuto).ToList();
                 int done = ofFase.Count(i => i.Checked);
                 kv.Value.Text = done + "/" + ofFase.Count;
                 kv.Value.Foreground = (ofFase.Count > 0 && done == ofFase.Count) ? ACCENT : TEXT2;
@@ -474,11 +533,14 @@ namespace NinjaTrader.NinjaScript.AddOns
         }
 
         // ═══ Lógica de estado ════════════════════════════════════════════════
-        // El GO exige el 100% de los ítems VISIBLES (Fase 1 + Fase 2 del setup elegido + Fase 3)
+        // El GO exige el 100% de los ítems que lo BLOQUEAN: los que se pueden responder
+        // ANTES de entrar. Los demás (consecución, gestión, y los automáticos) describen
+        // hechos posteriores — exigirlos aquí obligaba a marcar lo que aún no ha pasado,
+        // o a perder el trade mientras se llenaba el checklist.
         private bool AllChecked()
         {
-            var vis = items.Where(IsVisible).ToList();
-            return vis.Count > 0 && vis.All(i => i.Checked);
+            var req = items.Where(i => IsVisible(i) && i.BloqueaGo && !i.EsAuto).ToList();
+            return req.Count > 0 && req.All(i => i.Checked);
         }
 
         private void UpdateGoButton()
@@ -543,41 +605,130 @@ namespace NinjaTrader.NinjaScript.AddOns
         }
         private static string FmtMin(int t) { int x = ((t % 1440) + 1440) % 1440; return (x / 60).ToString("00") + ":" + (x % 60).ToString("00"); }
 
-        private void OnHoraChanged(object sender, TextChangedEventArgs e)
+        // ── Noticias rojas (varias por día) ──────────────────────────────────
+        private void AddNoticia(string hora, string nombre)
         {
-            if (applyingRemote) return;
-            lastHoraChangeUtc = DateTime.UtcNow;
-            string txt = horaBox.Text.Trim();
-            // Guardar solo cuando está vacío (limpiar) o es una hora válida completa
-            if (txt.Length == 0) _ = SaveHoraAsync(null);
-            else if (ParseHhmm(txt) >= 0) _ = SaveHoraAsync(txt);
+            noticias.Add(new Noticia { Hora = hora ?? "", Nombre = nombre ?? "" });
+        }
+
+        // Reconstruye las filas: [hora] [nombre] [x]
+        private void RenderNoticias()
+        {
+            if (noticiasPanel == null) return;
+            noticiasPanel.Children.Clear();
+            foreach (var n in noticias.ToList())
+            {
+                var row = new Grid { Margin = new Thickness(0, 2, 0, 2) };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var hb = new TextBox {
+                    Width = 52, Height = 22, Text = n.Hora, FontSize = 11,
+                    Background = Brush("#2A2A26"), Foreground = TEXT, BorderBrush = BORDER,
+                    BorderThickness = new Thickness(1), VerticalContentAlignment = VerticalAlignment.Center,
+                    ToolTip = "Hora de la noticia (HH:MM, hora ET)"
+                };
+                var nb = new TextBox {
+                    Height = 22, Text = n.Nombre, FontSize = 11, Margin = new Thickness(4, 0, 4, 0),
+                    Background = Brush("#2A2A26"), Foreground = TEXT2, BorderBrush = BORDER,
+                    BorderThickness = new Thickness(1), VerticalContentAlignment = VerticalAlignment.Center,
+                    ToolTip = "Nombre (ISM, NFP…)"
+                };
+                var del = new Button {
+                    Content = "✕", Width = 20, Height = 20, FontSize = 10,
+                    Background = Brush("#2A2A26"), Foreground = TEXT2, BorderBrush = BORDER,
+                    BorderThickness = new Thickness(1), Cursor = System.Windows.Input.Cursors.Hand
+                };
+                n.HoraBox = hb; n.NombreBox = nb;
+                hb.TextChanged += OnNoticiasChanged;
+                nb.TextChanged += OnNoticiasChanged;
+                del.Click += (s, e) => { noticias.Remove(n); RenderNoticias(); OnNoticiasChanged(null, null); };
+
+                Grid.SetColumn(hb, 0); Grid.SetColumn(nb, 1); Grid.SetColumn(del, 2);
+                row.Children.Add(hb); row.Children.Add(nb); row.Children.Add(del);
+                noticiasPanel.Children.Add(row);
+            }
             UpdateNoticiaAlert();
         }
 
-        private async Task SaveHoraAsync(string hhmm)
+        private void OnNoticiasChanged(object sender, TextChangedEventArgs e)
         {
+            if (applyingRemote) return;
+            lastHoraChangeUtc = DateTime.UtcNow;
+            foreach (var n in noticias)
+            {
+                if (n.HoraBox != null)   n.Hora   = n.HoraBox.Text.Trim();
+                if (n.NombreBox != null) n.Nombre = n.NombreBox.Text.Trim();
+            }
+            UpdateNoticiaAlert();
+
+            // Debounce: guardar 900 ms después de la última tecla. Sin esto, escribir
+            // "ISM Manufacturing PMI" lanzaría un DELETE+INSERT por cada pulsación.
+            if (noticiasSaveTimer == null)
+            {
+                noticiasSaveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(900) };
+                noticiasSaveTimer.Tick += (s2, e2) => { noticiasSaveTimer.Stop(); _ = SaveNoticiasAsync(); };
+            }
+            noticiasSaveTimer.Stop();
+            noticiasSaveTimer.Start();
+        }
+
+        // Reemplaza el set del día en `sesion_noticias`. Un trigger sincroniza
+        // `sesiones.hora_noticia_roja` para el Worker y la web.
+        private async Task SaveNoticiasAsync()
+        {
+            if (EsFinDeSemana()) return;
             try
             {
-                var body = new JObject { ["sesion_date"] = currentDate, ["hora_noticia_roja"] = (hhmm == null ? (JToken)JValue.CreateNull() : (JToken)hhmm) };
-                await UpsertSesionAsync(body).ConfigureAwait(false);
+                // La fila de sesiones debe existir antes (FK)
+                await UpsertSesionAsync(new JObject { ["sesion_date"] = currentDate }).ConfigureAwait(false);
+
+                var del = new HttpRequestMessage(HttpMethod.Delete,
+                    SUPABASE_URL + "/rest/v1/sesion_noticias?sesion_date=eq." + currentDate);
+                var dres = await http.SendAsync(del).ConfigureAwait(false);
+                if (!dres.IsSuccessStatusCode)
+                    throw new Exception("DELETE HTTP " + (int)dres.StatusCode);
+
+                var rows = new JArray();
+                foreach (var n in noticias)
+                {
+                    if (ParseHhmm(n.Hora) < 0) continue;   // hora incompleta: aún se está escribiendo
+                    rows.Add(new JObject {
+                        ["sesion_date"] = currentDate,
+                        ["hora"] = n.Hora,
+                        ["nombre"] = string.IsNullOrWhiteSpace(n.Nombre) ? (JToken)JValue.CreateNull() : (JToken)n.Nombre
+                    });
+                }
+                if (rows.Count > 0)
+                {
+                    var req = new HttpRequestMessage(HttpMethod.Post, SUPABASE_URL + "/rest/v1/sesion_noticias");
+                    req.Content = new StringContent(rows.ToString(), Encoding.UTF8, "application/json");
+                    var res = await http.SendAsync(req).ConfigureAwait(false);
+                    if (!res.IsSuccessStatusCode)
+                        throw new Exception("HTTP " + (int)res.StatusCode + ": " + await res.Content.ReadAsStringAsync().ConfigureAwait(false));
+                }
                 await Dispatcher.InvokeAsync(() => SetStatus("🟢 Sincronizado", ACCENT));
             }
             catch (Exception ex)
             {
-                await Dispatcher.InvokeAsync(() => SetStatus("🟡 Hora sin guardar (sin conexión)", WARNING));
-                NinjaTrader.Code.Output.Process("ChecklistChaumer SaveHora: " + ex.Message, PrintTo.OutputTab1);
+                await Dispatcher.InvokeAsync(() => SetStatus("🟡 Noticias sin guardar (sin conexión)", WARNING));
+                NinjaTrader.Code.Output.Process("ChecklistChaumer SaveNoticias: " + ex.Message, PrintTo.OutputTab1);
             }
         }
 
-        // Evalúa la ventana contra la hora actual ET y actualiza panel + GO + ítem.
+        // Evalúa TODAS las ventanas contra la hora actual ET y actualiza panel + GO.
+        // La más cercana manda: basta con estar dentro de una para bloquear.
         private void UpdateNoticiaAlert()
         {
-            int n = ParseHhmm(horaBox.Text);
+            if (noticiaWin == null || noticiaCard == null) return;
             bool wasIn = inNoticiaWindow;
-            if (n < 0)
+            var validas = noticias.Where(n => ParseHhmm(n.Hora) >= 0).ToList();
+
+            if (validas.Count == 0)
             {
                 inNoticiaWindow = false;
-                noticiaWin.Text = "Sin noticia";
+                noticiaWin.Text = "Sin noticias";
                 noticiaWin.Foreground = TEXT2;
                 noticiaCard.Background = CARD;
                 noticiaCard.BorderBrush = BORDER;
@@ -585,39 +736,39 @@ namespace NinjaTrader.NinjaScript.AddOns
             else
             {
                 int now = (int)EtNow().TimeOfDay.TotalMinutes;
-                inNoticiaWindow = Math.Abs(now - n) <= NOTICIA_MARGEN_MIN;
-                string win = FmtMin(n - NOTICIA_MARGEN_MIN) + " → " + FmtMin(n + NOTICIA_MARGEN_MIN);
+                inNoticiaWindow = validas.Any(n => Math.Abs(now - ParseHhmm(n.Hora)) <= NOTICIA_MARGEN_MIN);
                 if (inNoticiaWindow)
                 {
-                    noticiaWin.Text = "🚫 NO OPERAR · " + win;
+                    var dentro = validas.First(n => Math.Abs(now - ParseHhmm(n.Hora)) <= NOTICIA_MARGEN_MIN);
+                    int m = ParseHhmm(dentro.Hora);
+                    noticiaWin.Text = "🚫 NO OPERAR · " + FmtMin(m - NOTICIA_MARGEN_MIN) + " → " + FmtMin(m + NOTICIA_MARGEN_MIN);
                     noticiaWin.Foreground = Brushes.White;
                     noticiaCard.Background = RED;
                     noticiaCard.BorderBrush = RED;
                 }
                 else
                 {
-                    noticiaWin.Text = "No operar " + win;
+                    // Fuera de ventana: anunciar la PRÓXIMA del día (la ya pasada no importa)
+                    var futuras = validas.Where(n => ParseHhmm(n.Hora) > now).OrderBy(n => ParseHhmm(n.Hora)).ToList();
+                    if (futuras.Count > 0)
+                    {
+                        var prox = futuras.First();
+                        int m = ParseHhmm(prox.Hora);
+                        string quien = string.IsNullOrWhiteSpace(prox.Nombre) ? "" : " (" + prox.Nombre + ")";
+                        noticiaWin.Text = "Próxima" + quien + ": no operar "
+                                        + FmtMin(m - NOTICIA_MARGEN_MIN) + " → " + FmtMin(m + NOTICIA_MARGEN_MIN)
+                                        + "  ·  faltan " + (m - now) + " min";
+                    }
+                    else
+                    {
+                        noticiaWin.Text = validas.Count + " noticia" + (validas.Count != 1 ? "s" : "") + " · todas pasadas";
+                    }
                     noticiaWin.Foreground = Brush("#E87C7B");
                     noticiaCard.Background = CARD;
                     noticiaCard.BorderBrush = Brush("#5A2A2A");
                 }
             }
-            // Auto-marcar el ítem "No operar con noticia roja" (chk_noticias):
-            // respetado (true) mientras NO estemos dentro de la ventana; false dentro.
-            AutoMarkNoticia(!inNoticiaWindow);
             if (wasIn != inNoticiaWindow) UpdateGoButton();
-        }
-
-        private void AutoMarkNoticia(bool respetado)
-        {
-            var it = items.FirstOrDefault(x => x.Clave == "chk_noticias");
-            if (it == null) return;
-            if (it.Checked == respetado) return;   // ya está en el estado deseado
-            applyingRemote = true;
-            it.Checked = respetado;
-            if (it.Box != null) it.Box.IsChecked = respetado;
-            applyingRemote = false;
-            _ = SaveStateAsync();
         }
 
         // ═══ Red (Supabase REST) ═════════════════════════════════════════════
@@ -651,7 +802,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             await LoadSetupsAsync().ConfigureAwait(false);   // el filtro de Fase 2 depende de las familias
             try
             {
-                string url = SUPABASE_URL + "/rest/v1/catalogo_reglas?es_checklist=eq.true&activa=eq.true&order=fase.asc,orden.asc&select=clave:codigo,fase,setup,texto:titulo,orden";
+                string url = SUPABASE_URL + "/rest/v1/catalogo_reglas?es_checklist=eq.true&activa=eq.true&order=fase.asc,orden.asc&select=clave:codigo,fase,setup,texto:titulo,orden,bloquea_go,evidencia";
                 string json = await http.GetStringAsync(url).ConfigureAwait(false);
                 var arr = JArray.Parse(json);
 
@@ -663,7 +814,11 @@ namespace NinjaTrader.NinjaScript.AddOns
                             Clave = (string)t["clave"],
                             Fase  = t["fase"] != null && t["fase"].Type != JTokenType.Null ? (int)t["fase"] : 1,
                             Setup = t["setup"] != null && t["setup"].Type != JTokenType.Null ? (string)t["setup"] : null,
-                            Texto = (string)t["texto"]
+                            Texto = (string)t["texto"],
+                            // Si la columna faltara (BD sin migrar), el default conserva
+                            // el comportamiento anterior: todo bloquea y todo se marca.
+                            BloqueaGo = t["bloquea_go"] == null || t["bloquea_go"].Type == JTokenType.Null || (bool)t["bloquea_go"],
+                            Evidencia = t["evidencia"] != null && t["evidencia"].Type != JTokenType.Null ? (string)t["evidencia"] : "declarada"
                         });
                     RenderSections();
                     UpdateGoButton();
@@ -681,13 +836,14 @@ namespace NinjaTrader.NinjaScript.AddOns
             try
             {
                 // El checklist vive en sesion_checklist (relacional); se trae anidado.
-                string url = SUPABASE_URL + "/rest/v1/sesiones?sesion_date=eq." + currentDate + "&select=checklist_go_at,hora_noticia_roja,sesion_checklist(regla_codigo,cumplido)";
+                // Checklist y noticias viven en tablas relacionales; se traen anidadas.
+                string url = SUPABASE_URL + "/rest/v1/sesiones?sesion_date=eq." + currentDate + "&select=checklist_go_at,sesion_checklist(regla_codigo,cumplido),sesion_noticias(hora,nombre)";
                 string json = await http.GetStringAsync(url).ConfigureAwait(false);
                 var arr = JArray.Parse(json);
 
                 JObject checklist = null;
                 bool hasGo = false;
-                string horaRemota = null;
+                var noticiasRemotas = new List<Noticia>();
                 if (arr.Count > 0)
                 {
                     // Reconstruye { codigo: bool } desde las filas anidadas de sesion_checklist
@@ -700,8 +856,18 @@ namespace NinjaTrader.NinjaScript.AddOns
                     }
                     var goAt = arr[0]["checklist_go_at"];
                     hasGo = goAt != null && goAt.Type != JTokenType.Null;
-                    var hn = arr[0]["hora_noticia_roja"];
-                    if (hn != null && hn.Type != JTokenType.Null) horaRemota = (string)hn;
+                    var nArr = arr[0]["sesion_noticias"] as JArray;
+                    if (nArr != null)
+                        foreach (var row in nArr)
+                        {
+                            string h = (string)row["hora"] ?? "";
+                            if (h.Length >= 5) h = h.Substring(0, 5);   // "09:00:00" → "09:00"
+                            noticiasRemotas.Add(new Noticia {
+                                Hora = h,
+                                Nombre = row["nombre"] != null && row["nombre"].Type != JTokenType.Null ? (string)row["nombre"] : ""
+                            });
+                        }
+                    noticiasRemotas = noticiasRemotas.OrderBy(n => n.Hora).ToList();
                 }
 
                 await Dispatcher.InvokeAsync(() =>
@@ -716,11 +882,18 @@ namespace NinjaTrader.NinjaScript.AddOns
                         it.Checked = val;
                         if (it.Box != null && it.Box.IsChecked != val) it.Box.IsChecked = val;
                     }
-                    // Hora de la noticia (no pisar si el usuario la está editando)
+                    // Noticias (no pisar si el usuario las está editando). Se comparan
+                    // por contenido para no re-renderizar en cada poll y perder el foco.
                     if ((DateTime.UtcNow - lastHoraChangeUtc).TotalSeconds >= 3)
                     {
-                        string h = horaRemota ?? "";
-                        if (horaBox.Text != h) horaBox.Text = h;
+                        string firmaLocal  = string.Join("|", noticias.Select(n => n.Hora + "~" + n.Nombre));
+                        string firmaRemota = string.Join("|", noticiasRemotas.Select(n => n.Hora + "~" + n.Nombre));
+                        if (firmaLocal != firmaRemota)
+                        {
+                            noticias.Clear();
+                            foreach (var n in noticiasRemotas) noticias.Add(n);
+                            RenderNoticias();
+                        }
                     }
                     applyingRemote = false;
 
@@ -845,7 +1018,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                 goConfirmed = false;
                 applyingRemote = true;
                 foreach (var it in items) { it.Checked = false; if (it.Box != null) it.Box.IsChecked = false; }
-                if (horaBox != null) horaBox.Text = "";   // nueva sesión: limpiar la hora del día
+                noticias.Clear(); RenderNoticias();       // nueva sesión: sin noticias aún
                 applyingRemote = false;
                 dateText.Text = currentDate;
                 UpdateNoticiaAlert();
