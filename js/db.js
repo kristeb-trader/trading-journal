@@ -354,9 +354,11 @@ const DB = {
   },
 
   async upsertSesion(payload) {
-    // El checklist se persiste en sesion_checklist (relacional). El resto de la
-    // sesión va por el Worker /api/session (no versionado), que no conoce el checklist.
-    const { checklist, ...rest } = payload
+    // El checklist y las noticias viven en tablas relacionales propias
+    // (sesion_checklist, sesion_noticias). Hay que SACARLOS del payload: el resto va
+    // al Worker /api/session (no versionado), que lo escribe tal cual como columnas de
+    // `sesiones` — cualquier clave que no sea una columna real revienta el guardado.
+    const { checklist, noticiasRojas, ...rest } = payload
     const secret = localStorage.getItem('dashboard_secret') || ''
     const res = await fetch('https://broad-hall-c53f.kristerock.workers.dev/api/session', {
       method: 'POST',
@@ -385,8 +387,8 @@ const DB = {
       }
     }
     // Noticias rojas → sesion_noticias (después del Worker: hay FK a sesiones).
-    if (payload.noticiasRojas !== undefined && rest.sesion_date) {
-      await DB.saveNoticias(rest.sesion_date, payload.noticiasRojas)
+    if (noticiasRojas !== undefined && rest.sesion_date) {
+      await DB.saveNoticias(rest.sesion_date, noticiasRojas)
     }
   },
 
