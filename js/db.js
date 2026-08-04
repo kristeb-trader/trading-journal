@@ -204,6 +204,10 @@ function reglaAutoResultado(codigo, s, opts) {
   }
 
   if (codigo === 'fomc_solo_reingreso') {
+    // La regla SOLO existe en días FOMC. Se comprueba aquí y no solo en
+    // `discFactorAplica` porque hay llamadores que piden el resultado directamente
+    // (el Coach): sin esta guarda, un día normal con IRI salía como violación.
+    if (!(o.fomcDates && o.fomcDates.has(s.sesion_date))) return null
     if (!trades.length) return null
     const fam = _discSetupFamily(s)
     if (!fam) return null                        // sin setup declarado no se puede juzgar

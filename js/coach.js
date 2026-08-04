@@ -196,7 +196,6 @@ const Coach = (() => {
     // Checklist (catálogo dinámico, agrupado por fase). Solo los ítems APLICABLES
     // al setup del día: si no se filtra, en un día de Reingreso se le mandaban al
     // Coach las reglas de IRI y las reportaba como incumplidas.
-    const chkItems = DB.checklistItemsSync().filter(it => reglaAplica(it, familiaDia))
     // Contexto para resolver las reglas automáticas de este día (ago 2026): el
     // sistema las verifica con los datos, no con la casilla del trader.
     // `trades` sin filtrar por cuenta: la disciplina es del proceso del trader,
@@ -206,6 +205,12 @@ const Coach = (() => {
       trades, errores: casuisticas, fechasEsp,
       stopMaxPuntos: objetivos?.stop_max_puntos,
     })
+    // Filtrado por setup Y por contexto del día: una regla condicional (día FOMC,
+    // hay noticia) no debe ni aparecer si su contexto no se dio ese día, o el Coach
+    // la reporta como violada cuando ni siquiera existía.
+    const chkItems = DB.checklistItemsSync().filter(it =>
+      reglaAplica(it, familiaDia) &&
+      (!sesion || discAplicaContexto({ aplica_si: it.aplica_si }, sesion, _discCtx)))
     const checklistStr = sesion
       ? chkItems.map(it => {
           if ((it.evidencia || 'declarada') === 'auto') {

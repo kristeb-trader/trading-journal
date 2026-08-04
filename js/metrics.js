@@ -412,7 +412,7 @@ const Metrics = (() => {
     // Universo: TODOS los días hábiles del período (hasta hoy; los futuros no
     // cuentan). Se parte en dos ramas que suman el total, sin solapamiento:
     //
-    //   Días de trabajo (= conectados)      Días sin operar
+    //   Días conectados      Días sin operar
     //     ├─ Targets                          ├─ Festivos
     //     ├─ Stops                            ├─ FOMC   (solo si NO se operó)
     //     └─ Sin resultado                    ├─ No conectados
@@ -608,7 +608,7 @@ const Metrics = (() => {
       { label: 'Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días${costoErrores > 0 ? ` · ≈ <span style="color:var(--red)">-$${costoErrores.toFixed(0)}</span>` : ''}${trendErr}` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
       { label: 'Dejé de ganar', value: dejeGanarStat.targets > 0 ? `${dejeGanarStat.targets} ⚠️` : '0 ✅', icon: 'ti-mood-sad', color: dejeGanarStat.targets === 0 ? 'green' : dejeGanarStat.targets <= 2 ? 'warning' : 'red', sub: dejeGanarStat.total > 0 ? `${dejeGanarStat.targets}T · ${dejeGanarStat.stops}S dejados pasar` : 'Sin setups perdidos', clickable: dejeGanarStat.total > 0, action: 'deje-ganar' },
       {
-        label: 'Días de trabajo',
+        label: 'Días conectados',
         value: `${desglose.trabajo}`,
         icon: 'ti-calendar-check',
         color: 'neutral',
@@ -676,7 +676,7 @@ const Metrics = (() => {
       <div class="dd-col">
         <div class="dd-head">
           <div class="dd-head-txt">
-            <span class="dd-head-label">Días de trabajo</span>
+            <span class="dd-head-label">Días conectados</span>
             <span class="dd-head-sub">Te conectaste al mercado</span>
           </div>
           <div class="dd-head-num">

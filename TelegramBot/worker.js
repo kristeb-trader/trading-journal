@@ -565,12 +565,28 @@ async function handleText(msg, env) {
       await saveState(env.KV, chatId, state);
       await sendMessage(token, chatId, PREMKT_PROMPTS.pre_resist);
       break;
-    case STEPS.PRE_RESIST:
+    case STEPS.PRE_RESIST: {
       state.data.resistencias_naranja = parseNumList(text);
-      state.step = STEPS.PRE_NOTICIAS;
-      await saveState(env.KV, chatId, state);
-      await sendMessage(token, chatId, PREMKT_PROMPTS.pre_noticias);
+      // Las noticias ya NO se piden aquí (ago 2026): las registra el AddOn
+      // `ChecklistChaumer` en `sesion_noticias`, con hora y nombre de cada una.
+      // Preguntarlas otra vez duplicaba el dato y alargaba el flujo del bot.
+      if (state.data.no_opero) {
+        state.step = STEPS.REFLEXION;
+        await saveState(env.KV, chatId, state);
+        await sendMessage(token, chatId, '✍️ <b>Análisis del día</b>\n\nEscribe tu análisis de la sesión (no hubo setup válido):');
+      } else {
+        state.step = STEPS.EMOCION;
+        await saveState(env.KV, chatId, state);
+        const emociones = await fetchEmociones(env);
+        await sendMessage(token, chatId,
+          '😊 <b>Estado emocional</b>\n\n¿Cómo llegas a la sesión de hoy?',
+          emociones.length ? emocionKeyboard(emociones) : { inline_keyboard: [[{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]] }
+        );
+      }
       break;
+    }
+    // Se conserva por si algún estado quedó guardado en KV a mitad del flujo viejo:
+    // no vuelve a preguntar, solo deja avanzar.
     case STEPS.PRE_NOTICIAS: {
       const t = text.toLowerCase();
       state.data.noticias = (t === '/skip' || t === 'skip' || t === '-') ? null : text;
