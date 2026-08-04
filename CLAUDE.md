@@ -46,7 +46,10 @@ js/apex.js       — Apex Tracker: cuentas de fondeo, vista detalle, auto-carga 
 js/estrategia.js — Editor del rulebook `catalogo_reglas` por capas
 js/fechas.js     — Sección Fechas Especiales: CRUD de `catalogo_fechas` (fomc/festivo/vacaciones/otro) por año
 css/styles.css   — Dark mode completo + responsive mobile
-TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker)
+TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker). NO pide niveles de
+                   premercado (los pone `SupabaseDailyLevels`) ni noticias (las registra
+                   el AddOn en `sesion_noticias`). Se despliega solo al hacer push
+
 ```
 
 ## Tablas principales (Supabase)
@@ -115,6 +118,9 @@ checklist normalizado, cuenta principal configurable, filtro de cuenta persisten
 > 6. **Tercer eje de aplicabilidad: `aplica_si`** (`siempre` · `dia_fomc` ·
 >    `hay_noticia`). Una regla solo se evalúa cuando había algo que cumplir; si no, su %
 >    se diluye en cientos de días sin riesgo y deja de significar nada.
+>    ⚠️ La condición se comprueba **dentro de `reglaAutoResultado`**, no solo en
+>    `discFactorAplica`: el Coach pide el resultado suelto y sin esa guarda reportaba
+>    "violaste la regla del FOMC" en días que no eran FOMC (bug real, 3 ago).
 > 7. **`bloquea_go`**: el GO cae DENTRO de la Fase 2, no al final del checklist. Las
 >    reglas que describen hechos posteriores a la entrada no lo bloquean — exigirlas
 >    obligaba a marcar lo que aún no había pasado o a perder el trade.
@@ -123,6 +129,12 @@ checklist normalizado, cuenta principal configurable, filtro de cuenta persisten
 > ×10 en los trades de NQ (ya llevó a una conclusión falsa). El riesgo se mide en PUNTOS,
 > no en dólares: `objetivos.limite_perdida_dia` ($150) quedó obsoleto y es control de
 > capital de Apex, no regla de proceso.
+
+> 📤 **Al guardar una sesión: `upsertSesion` manda el payload al Worker `/api/session`,
+> que lo escribe TAL CUAL como columnas de `sesiones`.** Cualquier clave que no sea una
+> columna real revienta el guardado entero (PGRST204). Las claves de tablas relacionales
+> —hoy `checklist` y `noticiasRojas`— hay que **sacarlas del destructuring** antes de
+> enviarlo. Ya rompió el guardado una vez (3 ago).
 
 > ⏰ **REGLA DE ORO — zona horaria (ya causó 2 bugs).** NinjaTrader está en hora de
 > **Colombia (UTC-5)**: todo lo que exporta (velas y `entry_time`/`exit_time`) viene en

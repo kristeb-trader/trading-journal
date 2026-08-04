@@ -1540,6 +1540,35 @@ cumplidos / 1 fallo donde antes se leía una casilla siempre en `true`.
 Migraciones: `2026-08-03-rediseno-checklist-fase1.sql` (aplicada vía MCP).
 Commits: `753d51b` · `2427888` · `06e42bd` · `ec2af13` · `e183416`.
 
+### Ajustes tras estrenarlo (mismo día)
+
+**🐛 Guardar sesión rompía con PGRST204** (`4b37fda`). `upsertSesion` saca `checklist`
+del payload antes de mandarlo al Worker `/api/session`, porque ese Worker escribe lo que
+recibe **tal cual** como columnas de `sesiones`. Al añadir la lista de noticias en la
+Fase 3 se pasó `noticiasRojas` al payload pero no se sacó del destructuring, así que
+viajaba como columna inexistente y PostgREST rechazaba el guardado entero. Ahora se
+extraen las dos claves relacionales (`checklist` y `noticiasRojas`).
+
+**🐛 La regla FOMC marcaba violación en días normales** (`393465e`). `reglaAutoResultado`
+no comprobaba el contexto: devolvía `false` en **cualquier** día operado con IRI. El
+cálculo de disciplina estaba bien —filtra antes con `discFactorAplica`— pero **el Coach
+pide el resultado directamente**, así que reportaba al trader una violación inexistente.
+
+> ⚠️ **Lección:** una regla condicional debe comprobar su propio contexto **dentro** de
+> `reglaAutoResultado`, no solo en el filtro de aplicabilidad. Hay llamadores que piden
+> el resultado suelto. Además el Coach ahora filtra el checklist por `aplica_si`, para
+> que una regla condicional ni aparezca si su contexto no se dio ese día.
+
+Verificado: 27-jul y 3-ago (IRI, no FOMC) → N/A y fuera del checklist; 8-jul (IRI en día
+FOMC) → sigue marcando violación. La disciplina histórica no se movió (julio 123/124).
+
+**🤖 Telegram deja de pedir las noticias** (`393465e`). Las registra el AddOn en
+`sesion_noticias` con hora y nombre, así que preguntarlas otra vez duplicaba el dato y
+alargaba el flujo. `PRE_RESIST` pasa directo a emoción (o a reflexión si no operó); el
+paso viejo se conserva por si quedó algún estado a medias en KV.
+
+**🏷️ "Días de trabajo" → "Días conectados"** en la card del calendario y el desglose.
+
 ---
 
 ## Cómo continuar en un nuevo chat
