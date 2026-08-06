@@ -46,8 +46,45 @@ const Disciplina = (() => {
   function buildFactors(items) {
     const src = (items && items.length) ? items : DB.checklistClaves().map(c => ({ clave: c, texto: c, fase: 1 }))
     DISC_FACTORS = src.filter(i => i.activo !== false)
-      .map(i => ({ key: i.clave, label: i.texto, fase: i.fase || 1, setup: i.setup || null,
+      .map(i => ({ key: i.clave, label: i.texto, enunciado: i.enunciado || '',
+                   fase: i.fase || 1, setup: i.setup || null, bloqueaGo: i.bloquea_go !== false,
                    evidencia: i.evidencia || 'declarada', aplica_si: i.aplica_si || 'siempre' }))
+  }
+
+  // ── Por qué falló una regla un día concreto ───────────────────────────────
+  // Tres motivos distintos que el tablero mostraba idénticos: la casilla sin
+  // marcar, la casilla marcada que un error del diagnóstico desmiente (regla de
+  // oro nº 4) y la regla `auto` que resolvió el dato en contra.
+  const MOTIVOS = {
+    sin_marcar: { badge: '🔲 Sin marcar',       cls: 'plain' },
+    roto:       { badge: '⚠️ Desmentida',       cls: 'broken' },
+    auto:       { badge: '⚙ Verificado por dato', cls: 'auto' },
+  }
+  function evidenciaAuto(f, s) {
+    const trs = (ctx.tradesPorDia && ctx.tradesPorDia.get(s.sesion_date)) || []
+    if (f.key === 'stop_max_puntos') {
+      const pts = trs.map(maeEnPuntos).filter(p => p != null)
+      if (!pts.length) return 'Verificado por dato.'
+      return `El peor movimiento en contra fue de <b>${Math.max(...pts).toFixed(1)} pts</b>, por encima del stop máximo de ${ctx.stopMaxPuntos} pts.`
+    }
+    if (f.key === 'chk_noticias') {
+      const en = tradesEnVentanaNoticia(trs, s)
+      if (!en.length) return 'Verificado por dato.'
+      return `${en.length} entrada${en.length !== 1 ? 's' : ''} dentro de la ventana ±5 min de la noticia roja de las <b>${esc(String(s.hora_noticia_roja).slice(0,5))}</b>.`
+    }
+    if (f.key === 'fomc_solo_reingreso') {
+      return `Día FOMC operado con <b>${esc(s.setup || 'setup sin declarar')}</b>. En día FOMC solo se permiten reingresos.`
+    }
+    return 'El dato del día resolvió la regla en contra.'
+  }
+  function motivoFallo(f, s, dCas) {
+    if (f.evidencia === 'auto') return { tipo: 'auto', texto: evidenciaAuto(f, s), errores: [] }
+    if (!s[f.key]) return { tipo: 'sin_marcar', texto: 'La casilla quedó sin marcar: incumplimiento declarado por ti.', errores: [] }
+    return {
+      tipo: 'roto',
+      texto: 'Marcaste la casilla como cumplida, pero el diagnóstico del día registró un error que contradice esta regla.',
+      errores: (dCas || []).filter(c => c.regla_codigo === f.key),
+    }
   }
 
   // ── Período (Mes / Trimestre / Todo) + navegación de mes ──────────────────
@@ -98,9 +135,11 @@ const Disciplina = (() => {
     // basta: es el default de la columna y una sesión creada al abrir NT8 nace así.
     const operadas   = ses.filter(s => sesionOpero(s, ctx.conTrades))
 
-    // Trades por fecha
+    // Trades y errores por fecha
     const trByDate = {}
     trd.forEach(t => { (trByDate[t.trade_date] = trByDate[t.trade_date] || []).push(t) })
+    const casByDate = {}
+    cas.forEach(c => { (casByDate[c.sesion_date] = casByDate[c.sesion_date] || []).push(c) })
 
     // Disciplina total — solo cuentan los ítems con valor registrado en la sesión
     // (un ítem sin registrar, p. ej. una regla nueva en días previos, es N/A).
@@ -119,10 +158,18 @@ const Disciplina = (() => {
       const factores = facs.map(f => {
         const aplicables = baseDias.filter(s => factorAplica(f, s))
         const registradas = aplicables.filter(s => evaluable(s, f))
-        const fails = registradas.filter(s => !cumple(s, f.key, f)).map(s => s.sesion_date).sort()
+        const fallidas = registradas.filter(s => !cumple(s, f.key, f))
+          .sort((a, b) => b.sesion_date.localeCompare(a.sesion_date))
+        // Cada fallo lleva su porqué, para poder abrirlo desde el tablero.
+        const failsInfo = fallidas.map(s => ({
+          date: s.sesion_date,
+          ...motivoFallo(f, s, casByDate[s.sesion_date] || []),
+        }))
         return {
-          key: f.key, label: f.label,
-          aplica: registradas.length, ok: registradas.length - fails.length, fails,
+          key: f.key, label: f.label, enunciado: f.enunciado, fase: f.fase,
+          evidencia: f.evidencia, aplica_si: f.aplica_si, bloqueaGo: f.bloqueaGo,
+          aplica: registradas.length, ok: registradas.length - fallidas.length,
+          fails: fallidas.map(s => s.sesion_date), failsInfo,
           cobertura: registradas.length, aplicablesTotal: aplicables.length,
         }
       })
@@ -166,10 +213,6 @@ const Disciplina = (() => {
     const fechasError = new Set(cas.map(c => c.sesion_date))
     const diasLimpios = conectadas.filter(s => !fechasError.has(s.sesion_date)).length
     const diasLimpiosPct = conectadas.length ? Math.round(diasLimpios / conectadas.length * 100) : null
-
-    // Errores por fecha (para el log)
-    const casByDate = {}
-    cas.forEach(c => { (casByDate[c.sesion_date] = casByDate[c.sesion_date] || []).push(c) })
 
     // Registro de sesiones (días con actividad), más reciente primero
     const log = conectadas
@@ -292,11 +335,14 @@ const Disciplina = (() => {
           ? `<span class="dd-cov" title="Sesiones con dato registrado / sesiones aplicables">datos ${fc.cobertura}/${fc.aplicablesTotal}</span>`
           : ''
         const rate = noData ? `<span class="dd-nodata">sin datos</span>` : `${fc.ok}/${fc.aplica}`
+        // Solo se abre lo que tiene algo que mostrar: los días en que falló.
+        const clic = fc.fails.length > 0
         return `
-          <div class="dd-check-row">
+          <div class="dd-check-row${clic ? ' dd-clickable' : ''}"${clic ? ` data-fail-key="${fc.key}" title="Ver ${fc.fails.length} día${fc.fails.length !== 1 ? 's' : ''} en que falló"` : ''}>
             <span class="dd-dot ${dotCls}"></span>
             <span class="dd-check-label">${esc(fc.label)}${cov ? ' ' + cov : ''}</span>
             <span class="dd-check-rate">${rate}</span>
+            ${clic ? '<i class="ti ti-chevron-right dd-chev"></i>' : ''}
           </div>`
       }).join('')
       return `
@@ -370,6 +416,57 @@ const Disciplina = (() => {
       el.addEventListener('click', () => openErrorsModal({ tipo: el.dataset.errTipo })))
     cont.querySelectorAll('[data-err-causa]').forEach(el =>
       el.addEventListener('click', () => openErrorsModal({ causa: el.dataset.errCausa })))
+    cont.querySelectorAll('[data-fail-key]').forEach(el =>
+      el.addEventListener('click', () => openFactorModal(el.dataset.failKey)))
+  }
+
+  // ── Modal: días en que falló una regla del checklist ──────────────────────
+  // Muestra el enunciado completo (no visible en el tablero) y, por día, POR QUÉ
+  // falló. Cada día es clicable → modal del día (delegación en metrics.js).
+  function openFactorModal(key) {
+    if (!lastData) return
+    let fc = null
+    lastData.phases.forEach(p => p.factores.forEach(f => { if (f.key === key) fc = f }))
+    if (!fc) return
+
+    const meta = [
+      `Fase ${fc.fase}`,
+      fc.evidencia === 'auto' ? '⚙ verificada por datos' : 'declarada por ti',
+      fc.bloqueaGo ? 'bloquea el GO' : 'no bloquea el GO',
+      fc.aplica_si === 'dia_fomc' ? 'solo días FOMC'
+        : fc.aplica_si === 'hay_noticia' ? 'solo con noticia roja' : 'aplica siempre',
+    ].map(m => `<span class="dd-rule-meta-item">${esc(m)}</span>`).join('')
+
+    const dias = fc.failsInfo.map(fi => {
+      const mo = MOTIVOS[fi.tipo] || MOTIVOS.sin_marcar
+      const dow = DOW[new Date(fi.date + 'T00:00:00').getDay()]
+      const tags = (fi.errores || []).map(c =>
+        `<span class="disc-fail-tag">${(TIPO[c.tipo]?.emoji) || '❔'} ${esc(c.casuistica || 'Error')}</span>`).join('')
+      const desc = (fi.errores || []).filter(c => c.descripcion)
+        .map(c => `<div class="dd-fail-desc">${esc(c.descripcion)}</div>`).join('')
+      return `
+        <div class="disc-fail-day" data-date="${fi.date}" style="cursor:pointer" title="Ver el detalle del día">
+          <div class="disc-fail-day-header">
+            <span class="disc-date-dow">${dow}</span>
+            <span class="disc-date-val">${fi.date}</span>
+            <span class="dd-fail-badge ${mo.cls}">${mo.badge}</span>
+          </div>
+          <div class="dd-fail-why">${fi.texto}</div>
+          ${tags ? `<div class="disc-fail-tags">${tags}</div>` : ''}
+          ${desc}
+        </div>`
+    }).join('') || '<p style="color:var(--text3);padding:8px 0">Sin fallos en el período.</p>'
+
+    const h = document.getElementById('disciplineModalTitle')
+    if (h) h.innerHTML = `<i class="ti ti-checkup-list"></i> ${esc(fc.label)}`
+    document.getElementById('disciplineModalContent').innerHTML = `
+      <div style="padding:16px 20px 20px">
+        ${fc.enunciado ? `<div class="dd-rule-enunciado">${esc(fc.enunciado)}</div>` : ''}
+        <div class="dd-rule-meta">${meta}</div>
+        <p class="disc-section-title">${fc.failsInfo.length} día${fc.failsInfo.length !== 1 ? 's' : ''} sin cumplirla de ${fc.aplica} evaluado${fc.aplica !== 1 ? 's' : ''} — ${esc(lastData.r.label)}</p>
+        ${dias}
+      </div>`
+    document.getElementById('disciplineModal').classList.remove('hidden')
   }
 
   // ── Modal: días con errores (por tipo o por causa/nombre) ────────────────
