@@ -1637,6 +1637,44 @@ necesario porque el UPDATE deja tuplas muertas en la TOAST y el espacio no vuelv
 
 ---
 
+### Coach IA — prompt caching sobre el system prompt y la gráfica (10 ago)
+
+**El problema:** cada turno del chat reenviaba a precio completo el system prompt
+entero (rulebook + estrategia + 60 resúmenes + catálogos) **y** la gráfica en base64.
+Una sesión de coaching son 3+ llamadas, así que todo eso se pagaba 3+ veces.
+
+**El arreglo:** `cache_control` de Anthropic (GA, sin cabecera beta) en dos puntos —
+el máximo por petición son 4:
+
+1. **El system prompt**, que es idéntico durante toda la sesión (se construye una vez
+   en la Etapa 1 y se reutiliza). Pasa de string a bloque de texto con marca.
+2. **El último bloque del último turno del usuario**, avanzando turno a turno: cada
+   llamada relee lo que escribió la anterior — incluida la imagen, que vive en el
+   primer mensaje. En un turno 3 típico eso es el **99,9% del payload**.
+
+**TTL de 1 h** en vez de los 5 min por defecto: entre el análisis y el diagnóstico el
+trader *lee*, y esa pausa se come los 5 minutos. Con 1 h el equilibrio son 3 llamadas,
+justo el flujo normal. Una sesión de solo 2 llamadas paga ~10% de más — asumido.
+
+**La invariante que había que respetar:** el caché es un match de **prefijo byte a
+byte**. Un mismo mensaje tiene que serializarse igual en todos los turnos, así que
+`mensajesConCache` normaliza **siempre** a bloques tipados (si un turno mandara string
+y el siguiente bloque, el prefijo cambiaría y no habría un solo acierto). Devuelve una
+copia: `chatHistory` no lleva marcas — es lo que se persiste.
+
+El Worker proxy reenvía el body con `JSON.stringify(body)` **tal cual**, así que
+`cache_control` pasa sin tocarlo: no hubo que desplegar nada.
+
+`llamarClaude` ahora loguea `cache_creation_input_tokens` / `cache_read_input_tokens`
+en consola. **Si "leídos" sale 0 turno tras turno, el prefijo se está rompiendo** y se
+está pagando todo completo sin avisar.
+
+**Verificación:** 13 asserts sobre el código real — una sola marca por petición, en el
+sitio correcto, sin contaminar `chatHistory`, con el prefijo compartido byte a byte
+idéntico entre los turnos 1, 2 y 3, y la imagen intacta tras el copiado.
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo

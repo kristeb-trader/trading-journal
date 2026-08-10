@@ -606,6 +606,43 @@ ${catalogoStr}
     }).join('\n')
   }
 
+  // ── Prompt caching ─────────────────────────────────────────────────────
+  // El system prompt (rulebook + estrategia + 60 resúmenes + catálogos) y la
+  // gráfica en base64 se reenviaban ÍNTEGROS en cada turno del chat. Con
+  // `cache_control` se escriben una vez (×1.25) y se releen a ×0.1.
+  //
+  // TTL de 1 h en vez de los 5 min por defecto: entre el análisis y el
+  // diagnóstico el trader LEE, y esa pausa se come de sobra los 5 minutos.
+  // Con 1h el punto de equilibrio son 3 llamadas — justo el flujo normal
+  // (análisis → chat → diagnóstico). Si un día solo se hacen 2, se paga un
+  // 10% de más; a cambio no se recalienta un prompt enorme en cada pausa.
+  const CACHE_CTRL = { type: 'ephemeral', ttl: '1h' }
+
+  // El caché es un match de PREFIJO byte a byte, así que un mismo mensaje debe
+  // serializarse igual en todos los turnos: se normaliza SIEMPRE a bloques
+  // (si en un turno viajara como string y en el siguiente como bloque, el
+  // prefijo cambiaría y no habría acierto).
+  const _bloques = c => Array.isArray(c)
+    ? c.map(b => ({ ...b }))
+    : [{ type: 'text', text: String(c ?? '') }]
+
+  // Marca el ÚLTIMO bloque del último turno del usuario. Al avanzar la marca
+  // turno a turno, cada llamada relee lo que escribió la anterior (incluida la
+  // imagen, que vive en el primer mensaje). Solo una marca: el límite son 4 por
+  // petición y la del system prompt ya ocupa otra.
+  // Devuelve una COPIA: `chatHistory` no debe llevar marcas de caché — es lo que
+  // se persiste, y mutarlo cambiaría los bytes del prefijo.
+  function mensajesConCache(mensajes) {
+    const out = (mensajes || []).map(m => ({ ...m, content: _bloques(m.content) }))
+    for (let i = out.length - 1; i >= 0; i--) {
+      if (out[i].role !== 'user') continue
+      const bs = out[i].content
+      if (bs.length) bs[bs.length - 1].cache_control = CACHE_CTRL
+      break
+    }
+    return out
+  }
+
   // ── Llamada a Claude ───────────────────────────────────────────────────
 
   async function llamarClaude(userContent, isFirst = false) {
@@ -631,8 +668,10 @@ ${catalogoStr}
       body: JSON.stringify({
         model: MODEL,
         max_tokens: MAX_TOKENS,
-        system: systemPromptCache,
-        messages: chatHistory,
+        // El system prompt es idéntico durante toda la sesión de coaching (se
+        // construye una vez en la Etapa 1), así que es el prefijo cacheable.
+        system: [{ type: 'text', text: systemPromptCache, cache_control: CACHE_CTRL }],
+        messages: mensajesConCache(chatHistory),
       })
     })
 
@@ -642,6 +681,14 @@ ${catalogoStr}
     }
 
     const data = await res.json()
+
+    // Verificación del caché: si `leídos` sale 0 turno tras turno, algo está
+    // rompiendo el prefijo (el system prompt cambió, o un mensaje se serializó
+    // distinto) y se está pagando todo a precio completo sin avisar.
+    const u = data?.usage
+    if (u) console.info('[Coach] caché — escritos: %d · leídos: %d · sin cachear: %d',
+      u.cache_creation_input_tokens || 0, u.cache_read_input_tokens || 0, u.input_tokens || 0)
+
     const texto = data?.content?.[0]?.text || ''
     if (!texto) throw new Error('Respuesta vacía de Claude')
 
