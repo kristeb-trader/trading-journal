@@ -53,6 +53,11 @@ const Coach = (() => {
 
   // Errores detectados por la IA pendientes de confirmar (registro unificado)
   let erroresDetectados = []   // [{ descripcion, tipo, yaRegistrado }]
+  // ¿Esta sesión llegó a revisar la lista de errores? `saveErroresIA` BORRA los
+  // errores IA del día antes de reinsertar, así que guardar con la lista vacía
+  // los elimina. Al retomar un día ya guardado y solo chatear, la lista está
+  // vacía porque nunca se generó un diagnóstico — no porque no haya errores.
+  let erroresRevisados  = false
 
   // Taxonomía de errores (debe coincidir con el catálogo)
   const TIPOS = [
@@ -652,6 +657,13 @@ ${catalogoStr}
     if (isFirst) {
       systemPromptCache = await buildSystemPrompt(coachDate)
       chatHistory = []
+    } else if (!systemPromptCache) {
+      // Sesión guardada que se retoma: la app pintó el análisis en pantalla, pero
+      // el Coach no tiene NADA en la cabeza (reglas, estrategia, histórico, datos
+      // del día). Se le reconstruye el contexto de esa fecha antes de continuar.
+      // No cuesta una llamada a la IA: son lecturas de Supabase.
+      systemPromptCache = await buildSystemPrompt(coachDate)
+      restaurarImagenEnChat()
     }
 
     // Agregar mensaje al historial
@@ -693,6 +705,9 @@ ${catalogoStr}
     if (!texto) throw new Error('Respuesta vacía de Claude')
 
     chatHistory.push({ role: 'assistant', content: texto })
+    // Punto único por el que pasa TODO contenido nuevo: si el día venía marcado
+    // como "Ya guardado" (sesión retomada), ahora hay algo sin persistir.
+    marcarSinGuardar()
     return texto
   }
 
@@ -1170,6 +1185,7 @@ ${catalogoStr}
     analisisHecho = false
     sesionCerrada = false
     diagnosticoHecho = false
+    erroresRevisados = false
     systemPromptCache = null
 
     const chatEl = document.getElementById('coachChatMessages')
@@ -1292,7 +1308,14 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
       if (diagEl) diagEl.innerHTML = `<div class="coach-error"><i class="ti ti-alert-triangle"></i> Error: ${err.message}</div>`
       Toast.show('Error al generar diagnóstico: ' + err.message, 'error')
     } finally {
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-clipboard-check"></i> Generar Diagnóstico' }
+      // Si ya hay diagnóstico (recién generado o cargado de la BD), el botón
+      // reemplaza — que se lea así antes de pulsarlo.
+      if (btn) {
+        btn.disabled = false
+        btn.innerHTML = diagnosticoHecho
+          ? '<i class="ti ti-refresh"></i> Regenerar diagnóstico'
+          : '<i class="ti ti-clipboard-check"></i> Generar Diagnóstico'
+      }
     }
   }
 
@@ -1331,6 +1354,9 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
         recNueva: recKey && !recCatalogoNombres.includes(recKey),
       }
     })
+    // La lista existe y es la de esta sesión: a partir de aquí guardar SÍ debe
+    // reescribir los errores del día (incluido vaciarlos si el día salió limpio).
+    erroresRevisados = true
     renderErroresConfirm()
   }
 
@@ -1438,7 +1464,10 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     const input = document.getElementById('coachChatInput')
     const texto = input?.value?.trim()
     if (!texto) return
-    if (!systemPromptCache) { Toast.show('Primero haz el análisis inicial', 'warning'); return }
+    // Basta con que exista un análisis — hecho ahora o cargado de un día guardado.
+    // (Antes se exigía `systemPromptCache`, que un día cargado nunca tiene: por eso
+    // una sesión guardada quedaba en solo lectura sin decirlo.)
+    if (!analisisHecho) { Toast.show('Primero haz el análisis técnico', 'warning'); return }
 
     input.value = ''
     renderMensaje('user', texto)
@@ -1490,6 +1519,18 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     document.querySelectorAll('.coach-save-btn').forEach(btn => btn.classList.add('hidden'))
   }
 
+  // Un día ya guardado deja los botones en "Ya guardado" y bloquea `guardarDiagnostico`.
+  // En cuanto se genera contenido nuevo sobre ese día hay que poder volver a guardar.
+  function marcarSinGuardar() {
+    if (!diagnosticoGuardado) return
+    diagnosticoGuardado = false
+    document.querySelectorAll('.coach-save-btn').forEach(btn => {
+      btn.disabled = false
+      btn.innerHTML = '<i class="ti ti-device-floppy"></i> Guardar diagnóstico'
+      btn.classList.remove('hidden')
+    })
+  }
+
   // La gráfica viaja como base64 dentro del mensaje de la Etapa 1. En MEMORIA se
   // conserva (el chat la necesita para responder sobre el gráfico), pero NO se
   // persiste: son cientos de KB por sesión dentro de un JSONB, y la imagen ya vive
@@ -1505,6 +1546,26 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
           b?.type === 'image' ? { type: 'text', text: IMG_PLACEHOLDER } : b),
       }
     })
+  }
+
+  // La operación inversa, al retomar una sesión guardada: el chat restaurado trae
+  // el marcador en lugar de la gráfica. Si la imagen del día ya se recargó desde
+  // Cloudinary (lo hace `autoCargarImagen` al abrir la fecha), se devuelve a su
+  // sitio original para que el Coach pueda volver a MIRAR el gráfico al continuar.
+  // Best-effort: si la imagen aún no llegó o el día no tenía, se sigue sin ella.
+  function restaurarImagenEnChat() {
+    if (!imagenBase64) return false
+    for (const m of chatHistory) {
+      if (!Array.isArray(m?.content)) continue
+      const i = m.content.findIndex(b => b?.type === 'text' && b.text === IMG_PLACEHOLDER)
+      if (i < 0) continue
+      m.content[i] = {
+        type: 'image',
+        source: { type: 'base64', media_type: imagenBase64.mediaType, data: imagenBase64.data },
+      }
+      return true
+    }
+    return false
   }
 
   async function guardarDiagnostico() {
@@ -1527,17 +1588,26 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
       // El veredicto se parsea junto con la validación para detectar VÁLIDA/INVÁLIDA
       const setuosJson   = parsearSetupsJson(`${diagnosticoActual.validacion || ''}\n${diagnosticoActual.veredicto || ''}`)
 
-      // Marcar errores repetidos comparando con el histórico ANTERIOR a este día
-      // (el corte lo hace la query; antes traía todo y solo excluía el día actual,
-      // así que un día pasado se marcaba como "patrón" por lo que vino después).
-      const historicos = await DB.getErroresHistoricos(600, coachDate)
-      const conteoHist = {}
-      historicos.forEach(h => {
-        const k = (h.descripcion || '').toLowerCase().trim()
-        if (k) conteoHist[k] = (conteoHist[k] || 0) + 1
-      })
-      const patronesDetectados = erroresConfirmados.filter(e =>
-        (conteoHist[(e.nombre || '').toLowerCase().trim()] || 0) >= 2)
+      // El patrón se deriva de los errores, así que solo se recalcula si esta
+      // sesión revisó la lista. Si no (día retomado en el que solo se chateó),
+      // se conservan los valores del diagnóstico cargado en vez de vaciarlos.
+      let patronDetectado   = !!diagnosticoActual.patronDetectado
+      let patronDescripcion = diagnosticoActual.patronDescripcion || null
+      if (erroresRevisados) {
+        // Marcar errores repetidos comparando con el histórico ANTERIOR a este día
+        // (el corte lo hace la query; antes traía todo y solo excluía el día actual,
+        // así que un día pasado se marcaba como "patrón" por lo que vino después).
+        const historicos = await DB.getErroresHistoricos(600, coachDate)
+        const conteoHist = {}
+        historicos.forEach(h => {
+          const k = (h.descripcion || '').toLowerCase().trim()
+          if (k) conteoHist[k] = (conteoHist[k] || 0) + 1
+        })
+        const patrones = erroresConfirmados.filter(e =>
+          (conteoHist[(e.nombre || '').toLowerCase().trim()] || 0) >= 2)
+        patronDetectado   = patrones.length > 0
+        patronDescripcion = patrones.map(e => e.nombre).join('; ') || null
+      }
 
       const payload = {
         sesion_date:          coachDate,
@@ -1550,8 +1620,8 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
         sec_resumen_compacto: diagnosticoActual.resumen,
         setups_json:          setuosJson,
         estado_emocional_fin_id: emocionFinId,
-        patron_detectado:     patronesDetectados.length > 0,
-        patron_descripcion:   patronesDetectados.map(e => e.nombre).join('; ') || null,
+        patron_detectado:     patronDetectado,
+        patron_descripcion:   patronDescripcion,
         chat_messages:        chatSinImagenes(chatHistory),
         modelo_usado:         MODEL,
         updated_at:           new Date().toISOString(),
@@ -1559,8 +1629,11 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
 
       await DB.saveDiagnostico(payload)
 
-      // Errores confirmados → ocurrencias (diagnostico_errores, origen 'ia'/'ambos')
-      await DB.saveErroresIA(coachDate, erroresConfirmados)
+      // Errores confirmados → ocurrencias (diagnostico_errores, origen 'ia'/'ambos').
+      // Solo si esta sesión revisó la lista: `saveErroresIA` BORRA los errores IA
+      // del día antes de reinsertar, así que llamarlo con la lista vacía (día
+      // retomado en el que solo se chateó) los eliminaría en silencio.
+      if (erroresRevisados) await DB.saveErroresIA(coachDate, erroresConfirmados)
 
       // Emoción de inicio y confianza → fuente única en `sesiones`
       // (solo si ya existe la sesión; no creamos sesiones huérfanas desde el Coach)
@@ -1688,11 +1761,37 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
       aprendizaje: diag.sec_aprendizaje,
       resumen:     limpiarResumen(diag.sec_resumen_compacto),
     })
+
+    // Rehidratar el ESTADO, no solo el HTML. `guardarDiagnostico` arma el payload
+    // desde `diagnosticoActual`; sin esto, regenerar el diagnóstico sobre un día
+    // cargado guardaría las 3 secciones de la Etapa 1 en blanco y BORRARÍA de la
+    // BD lo que ya había escrito.
+    Object.assign(diagnosticoActual, {
+      contexto:    diag.sec_contexto || '',
+      desarrollo:  diag.sec_desarrollo || '',
+      validacion,
+      veredicto,
+      errores:     diag.sec_errores || '',
+      aprendizaje: diag.sec_aprendizaje || '',
+      resumen:     limpiarResumen(diag.sec_resumen_compacto),
+      // No son secciones: se conservan para no vaciarlos al volver a guardar.
+      patronDetectado:   diag.patron_detectado,
+      patronDescripcion: diag.patron_descripcion,
+    })
+
     unlockStage('coachStageChat')
     unlockStage('coachStageDiagnostico')
     analisisHecho = true
     sesionCerrada = true
     diagnosticoHecho = true
+
+    // El día queda editable: se puede chatear y regenerar. El contexto del Coach
+    // se reconstruye solo, en la primera llamada (ver `llamarClaude`).
+    const diagBtn = document.getElementById('coachDiagnosticoBtn')
+    if (diagBtn) {
+      diagBtn.disabled = false
+      diagBtn.innerHTML = '<i class="ti ti-refresh"></i> Regenerar diagnóstico'
+    }
   }
 
   // Desde la sección Historial: navega al Coach y carga esa fecha (sin doble carga)
@@ -1824,6 +1923,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     sesionCerrada       = false
     diagnosticoHecho    = false
     erroresDetectados   = []
+    erroresRevisados    = false
     systemPromptCache   = null
     imagenBase64        = null
 

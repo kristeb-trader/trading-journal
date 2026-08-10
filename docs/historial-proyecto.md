@@ -1675,6 +1675,54 @@ idéntico entre los turnos 1, 2 y 3, y la imagen intacta tras el copiado.
 
 ---
 
+### Coach IA — retomar una sesión guardada (10 ago)
+
+**El síntoma:** al abrir un día que ya tenía diagnóstico, la pantalla mostraba todo
+(análisis, diagnóstico, conversación) y las etapas se veían desbloqueadas, pero el chat
+respondía *"Primero haz el análisis inicial"* y el botón de diagnóstico estaba gris.
+**Solo lectura, sin decirlo.** La única salida era relanzar el Análisis Técnico, que
+gasta una llamada y se lleva por delante la conversación guardada.
+
+**La causa:** `cargarFecha` llama a `resetPanel` (deja `systemPromptCache = null` y el
+botón `disabled`) y luego a `mostrarDiagnosticoGuardado`, que restauraba la UI y los
+flags de etapa pero **no reconstruía el contexto del Coach ni reactivaba el botón**.
+
+### Dos bugs latentes que el candado estaba tapando
+
+Habilitarlo sin más habría provocado pérdida de datos. Los dos estaban dormidos
+**precisamente porque no se podía escribir en un día cargado**:
+
+1. **`mostrarDiagnosticoGuardado` pintaba el HTML pero nunca rehidrataba
+   `diagnosticoActual`.** Como `guardarDiagnostico` arma el payload desde ahí,
+   regenerar el diagnóstico sobre un día cargado habría guardado `sec_contexto`,
+   `sec_desarrollo` y `sec_validacion` en `undefined` → **borrando las 3 secciones de
+   la Etapa 1** en la BD. La guarda de "primero genera el análisis" no lo frena porque
+   `resumen` sí queda lleno tras regenerar. Verificado contra el código anterior:
+   `diagnosticoActual` quedaba literalmente `{}`.
+2. **`saveErroresIA` borra los errores IA del día antes de reinsertar.** Retomar un día
+   y solo chatear deja la lista de confirmación vacía — no porque el día esté limpio,
+   sino porque nunca se generó un diagnóstico — así que guardar habría **eliminado los
+   errores ya registrados**. Ahora un flag `erroresRevisados` distingue "revisada y
+   vacía" de "nunca revisada"; el patrón detectado se conserva por el mismo motivo.
+
+### Lo que se hizo
+
+| Pieza | Cómo |
+|---|---|
+| Rehidratar el estado | `Object.assign(diagnosticoActual, …)` con las 7 secciones + los campos de patrón |
+| Reconstruir el contexto | **Perezoso**, dentro de `llamarClaude`: si no hay `systemPromptCache` y no es la primera llamada, se reconstruye para esa fecha. No cuesta llamada a la IA — son lecturas de Supabase — y no se paga por el mero hecho de mirar un día |
+| Guardia del chat | `enviarMensaje` pasa a exigir `analisisHecho` (hecho ahora **o** cargado) en vez de `systemPromptCache` |
+| Botón | Se habilita al cargar y pasa a decir **"Regenerar diagnóstico"** — reemplaza, no añade |
+| Volver a guardar | `marcarSinGuardar()` desde `llamarClaude`, el punto único por el que pasa todo contenido nuevo |
+| La gráfica | `restaurarImagenEnChat()` devuelve la imagen de Cloudinary a su sitio en el chat (operación inversa de `chatSinImagenes`), para que el Coach pueda volver a **mirar** el gráfico. Best-effort: si aún no se recargó, se continúa sin ella |
+
+**Verificación:** 25 asserts ejecutando el flujo real (`cargarFecha` → `guardarDiagnostico`)
+con DOM y Supabase stubeados — incluidos los dos casos críticos: las 3 secciones
+sobreviven al guardado, y guardar sin haber revisado la lista **no** toca los errores.
+Más una comparación A/B contra el commit anterior que confirma que el bug era real.
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo
