@@ -234,7 +234,7 @@ function buildResumen(data) {
   return (
     `✅ <b>Sesión guardada</b>\n\n` +
     `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
-    (stars ? `⭐ <b>Confianza:</b> ${stars}\n` : '') +
+    (stars ? `⭐ <b>Confianza entrada:</b> ${stars}\n` : '') +
     premkt +
     `📊 <b>Contexto:</b> ${data.contexto}\n` +
     `🔢 <b>Corrida:</b> ${data.num_corrida}ª\n` +
@@ -487,7 +487,7 @@ async function handleCallback(cbq, env) {
         state.step = STEPS.CONFIANZA;
         await saveState(env.KV, chatId, state);
         await editMessage(token, chatId, msgId,
-          '⭐ <b>Nivel de confianza</b>\n\n¿Cuánta confianza tienes en tu operativa hoy?',
+          '⭐ <b>Confianza en la entrada</b>\n\n¿Qué tan convencido estabas al entrar?',
           CONFIANZA_KEYBOARD
         );
       } else if (action.startsWith('conf_')) {

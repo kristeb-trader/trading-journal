@@ -1731,6 +1731,52 @@ reales: `diagnosticoActual` quedaba en `{}`, y la promesa de la imagen resolvía
 
 ---
 
+### Coach IA — confianza en la entrada + simetría stop/target (10 ago)
+
+Dos peticiones de Kris tras usar el Coach.
+
+**1. "Confianza pre-sesión" → "Confianza en la entrada".** La pregunta vieja no aportaba
+nada: *"ahí siempre voy a estar bien"*. Medir la convicción **al apretar el gatillo** sí
+discrimina. Se reutiliza la columna `nivel_confianza` (mismo rango 1-5, sin migración):
+los valores históricos significan lo anterior, pero como eran uniformemente altos no
+había señal que perder — **y no contaminan nada**, porque la confianza solo entra al
+prompt para el día que se analiza; el historial de 60 días son resúmenes compactos.
+
+Cambia la etiqueta en el panel del Coach, el tooltip del modal del día y la pregunta del
+bot de Telegram (*"¿Qué tan convencido estabas al entrar?"*). Y una sección nueva en el
+prompt para que el Coach la **cruce con los hechos** en vez de recitarla:
+
+| Confianza | Lo que pasó | Lectura |
+|---|---|---|
+| Alta (4-5) | reglas rotas | **sobreconfianza** — el patrón más caro |
+| Baja (1-2) | entró igual | error de proceso aunque gane: ¿qué filtro no estaba claro? |
+| Baja (1-2) | no entró, setup válido | el filtro funcionó; ¿la duda estaba justificada? |
+| Alta (4-5) | proceso limpio + STOP | **no es un error** — coste del negocio, no buscar culpables |
+
+Incluye el aviso de sesgo: se puntúa *después* de operar, así que un día verde se
+recuerda como más convencido de lo que fue.
+
+**2. El Coach preguntaba el stop teniendo el target (y al revés).** La regla 1:1 ya
+estaba en el rulebook (`fil_1`, `fil_4`: *"Target = mismo recorrido"*), pero el prompt
+tenía una orden que la pisaba: *"Si necesitas un dato que NO está registrado,
+PREGÚNTALO en lugar de suponerlo"*. El Coach trataba el stop como dato ausente que no
+debía inventar — obedeciendo, no fallando.
+
+Ahora esa orden lleva una excepción explícita y hay una sección que la desarrolla:
+conocer un lado **es** conocer los dos, y derivarlo no es adivinar, es aplicar la regla
+del trader. Además se deriva del propio trade: si cerró en TARGET, sus puntos son el
+target *y* el stop; si cerró en STOP, el valor absoluto es el stop *y* el target. Solo
+se pregunta si ningún lado se puede derivar (cierre manual sin tocar ninguno).
+
+**Verificación:** 15 asserts sobre el **prompt real** — generado cargando `db.js` +
+`coach.js` juntos con Supabase stubeado, no revisando el código fuente a ojo. Confirma
+el valor de confianza renderizado, las 4 lecturas cruzadas, las dos direcciones del 1:1,
+y que la excepción se enuncia antes de la sección que la explica.
+
+> El bot de Telegram se despliega solo al hacer push.
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo

@@ -208,7 +208,7 @@ const Modal = {
     const meta = []
     if (trades.length) meta.push(`${trades.length} trade${trades.length !== 1 ? 's' : ''}`)
     if (emoIni) meta.push(`${emoIni.emoji}${emoFin ? ` → ${emoFin.emoji}` : ''} ${emoIni.nombre}${emoFin ? ` → ${emoFin.nombre}` : ''}`)
-    if (conf) meta.push(`<span class="md2-stars" title="Confianza ${conf}/5">${'★'.repeat(conf)}${'☆'.repeat(5 - conf)}</span>`)
+    if (conf) meta.push(`<span class="md2-stars" title="Confianza en la entrada ${conf}/5">${'★'.repeat(conf)}${'☆'.repeat(5 - conf)}</span>`)
     const hero = `
       <div class="md2-hero ${st.cls}">
         <div class="md2-hero-l">

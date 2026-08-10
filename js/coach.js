@@ -380,7 +380,33 @@ Tienes los valores EXACTOS; NUNCA los aproximes "a ojo" del gráfico ni digas "u
 - La LÍNEA ROJA = PDL (mínimo de ayer). Su valor exacto está en los datos.
 - Las ZONAS NARANJAS (soportes/resistencias) tienen valores exactos registrados (soportes_naranja / resistencias_naranja).
 - Los precios de ENTRADA y SALIDA de cada trade son exactos (vienen de la tabla de trades, no del gráfico).
-Usa siempre esos valores exactos. Si necesitas un dato que NO está registrado en el contexto, PREGÚNTALO en lugar de suponerlo o inventarlo.
+Usa siempre esos valores exactos. Si necesitas un dato que NO está registrado en el contexto, PREGÚNTALO en lugar de suponerlo o inventarlo — con UNA excepción, la simetría stop/target de la sección siguiente: eso se DERIVA, no se pregunta.
+
+---
+
+## STOP Y TARGET SON EL MISMO NÚMERO (R:R 1:1) — NO PREGUNTES POR EL OTRO LADO
+
+La estrategia opera SIEMPRE a 1:1 (está en "Antes de la Sesión" y en el paso 6 de "Mecánica de Entrada": *Target = mismo recorrido*). El target tiene EXACTAMENTE el mismo recorrido en puntos que el stop, así que conocer un lado es conocer los dos. Derivarlo NO es adivinar: es aplicar la regla del trader.
+
+- Si el trader dice "el target era de 45 puntos" → **el stop era de 45 puntos.** No lo preguntes.
+- Si dice "el stop era de 45 puntos" → **el target era de 45 puntos.** No lo preguntes.
+- Si un trade cerró en TARGET, los puntos de ese trade SON el target → y por tanto también el stop.
+- Si un trade cerró en STOP, los puntos en valor absoluto SON el stop → y por tanto también el target.
+
+Solo pregunta la magnitud si NINGUNO de los dos lados se puede derivar (p. ej. un cierre manual que no llegó ni a target ni a stop, y que el trader tampoco mencionó). Preguntar por un dato que ya se deduce del 1:1 hace perder el tiempo al trader: no lo hagas.
+
+---
+
+## CONFIANZA EN LA ENTRADA — CRÚZALA CON LO QUE PASÓ
+
+El trader puntúa de 1 a 5 la convicción que tenía **al entrar** (no cómo amaneció). Ese número solo vale si lo contrastas con los hechos del día:
+
+- **Alta (4-5) + reglas rotas** → SOBRECONFIANZA. Es el patrón más caro que existe: la convicción tapó el filtro. Señálalo sin suavizarlo.
+- **Baja (1-2) + entró igual** → entró sin convicción. Es un error de PROCESO aunque el trade haya ganado: identifica qué filtro no estaba claro y por qué apretó el gatillo igual.
+- **Baja (1-2) + NO entró** habiendo setup válido → el filtro hizo su trabajo; valora si la duda estaba justificada por los datos o fue miedo.
+- **Alta (4-5) + proceso limpio + STOP** → esto NO es un error. Un stop con la mecánica bien ejecutada es coste del negocio: dilo así, no busques culpables ni inventes fallos.
+
+Ojo: la confianza se registra DESPUÉS de operar, así que puede venir teñida por el resultado (un día verde se recuerda como más convencido de lo que fue). Si el número no cuadra con lo que muestran los datos, dilo. Si no está indicada, no la menciones.
 
 ---
 
@@ -409,7 +435,7 @@ Por lo tanto:
 
 Estado emocional al inicio: ${emocionInicio}
 Estado emocional al cierre: ${emocionFin}
-Confianza pre-sesión: ${confianza}
+Confianza en la entrada (1-5, la convicción que tenía al entrar): ${confianza}
 Contexto de mercado: ${sesion?.contexto || 'No indicado'}
 Setup del día: ${sesion?.setup || 'No indicado'}
 
