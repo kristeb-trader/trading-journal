@@ -1443,6 +1443,23 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     document.querySelectorAll('.coach-save-btn').forEach(btn => btn.classList.add('hidden'))
   }
 
+  // La gráfica viaja como base64 dentro del mensaje de la Etapa 1. En MEMORIA se
+  // conserva (el chat la necesita para responder sobre el gráfico), pero NO se
+  // persiste: son cientos de KB por sesión dentro de un JSONB, y la imagen ya vive
+  // en Cloudinary (`sesiones.imagen_url`), desde donde `autoCargarImagen` la
+  // recarga sola al abrir el día. Guardarla aquí era duplicarla.
+  const IMG_PLACEHOLDER = '[Gráfica de la sesión — adjunta en el análisis original]'
+  function chatSinImagenes(mensajes) {
+    return (mensajes || []).map(m => {
+      if (!Array.isArray(m?.content)) return m
+      return {
+        ...m,
+        content: m.content.map(b =>
+          b?.type === 'image' ? { type: 'text', text: IMG_PLACEHOLDER } : b),
+      }
+    })
+  }
+
   async function guardarDiagnostico() {
     if (diagnosticoGuardado) { Toast.show('Ya guardado', 'info'); return }
     if (!diagnosticoActual.resumen && !diagnosticoActual.contexto) { Toast.show('Primero genera el análisis', 'warning'); return }
@@ -1488,7 +1505,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
         estado_emocional_fin_id: emocionFinId,
         patron_detectado:     patronesDetectados.length > 0,
         patron_descripcion:   patronesDetectados.map(e => e.nombre).join('; ') || null,
-        chat_messages:        chatHistory,
+        chat_messages:        chatSinImagenes(chatHistory),
         modelo_usado:         MODEL,
         updated_at:           new Date().toISOString(),
       }
@@ -1847,9 +1864,13 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
           // respuesta estructurada): ya viven en sus paneles, no deben duplicarse en el chat.
           let prevFueInstruccion = false
           diag.chat_messages.forEach(msg => {
-            // content puede ser string (texto) o array (imagen + texto)
+            // content puede ser string (texto) o array (imagen + texto). Se juntan
+            // TODOS los bloques de texto: desde que la imagen se guarda como un
+            // bloque-marcador de texto, quedarse con el primero devolvía el marcador
+            // y no la instrucción → la Etapa 1 dejaba de reconocerse como mensaje de
+            // orquestación y volcaba el análisis entero dentro del chat.
             const texto = Array.isArray(msg.content)
-              ? (msg.content.find(c => c.type === 'text')?.text || '')
+              ? msg.content.filter(c => c?.type === 'text').map(c => c.text || '').join('\n')
               : (msg.content || '')
             if (msg.role === 'user' && esInstruccionSistema(texto)) { prevFueInstruccion = true; return }
             if (msg.role === 'assistant' && prevFueInstruccion) { prevFueInstruccion = false; return }

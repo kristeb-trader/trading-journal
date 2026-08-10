@@ -1602,6 +1602,41 @@ de la cadena.
 
 ---
 
+### Coach IA — la gráfica base64 ya no se guarda en `chat_messages` (10 ago)
+
+**El problema:** la imagen del día viaja a Claude como bloque `image` en base64 dentro
+del primer mensaje, y `chatHistory` **entero** se guardaba en el JSONB `chat_messages`.
+Medido en la BD real: **46 filas, 40 MB de chat**, la más pesada 1274 kB, sobre una tabla
+de 42 MB — el ~95% del peso eran imágenes duplicadas. Duplicadas porque **ya viven en
+Cloudinary** (`sesiones.imagen_url`) y el Coach las recarga solo con `autoCargarImagen`
+al abrir el día (verificado: las 46 tienen URL, 0 sin respaldo).
+
+**El arreglo** (`chatSinImagenes` en `coach.js`): al persistir, cada bloque `image` se
+sustituye por un bloque de **texto** marcador. En **memoria no se toca** — el chat sigue
+viendo la gráfica para responder sobre ella; lo que cambia es solo lo que baja a Postgres.
+El marcador es contenido válido para la API por si esa conversación se reenvía.
+
+**Efecto colateral que había que cubrir:** al restaurar el chat, la extracción del texto
+del mensaje tomaba `content.find(c => c.type === 'text')` — el **primer** bloque, que
+ahora es el marcador. `esInstruccionSistema` dejaba de reconocer la Etapa 1 y el análisis
+técnico completo se volcaba dentro del chat. Ahora se **juntan todos** los bloques de
+texto (retro-compatible con las conversaciones ya guardadas).
+
+| | Antes | Después |
+|---|---|---|
+| `chat_messages` (46 filas) | 40 MB | 270 kB |
+| Fila más pesada | 1274 kB | 11 kB |
+| Tabla completa | 42 MB | **664 kB** |
+
+**Verificación:** 15 asserts sobre el código real de `coach.js` (sin base64 al guardar,
+imagen intacta en memoria, marcador válido, retro-compatibilidad y bordes) + conteos
+jsonb en la BD: **0 bloques `image`, 0 `source`**, 46/46 filas con análisis y conversación.
+
+Migración: `2026-08-10-chat-messages-sin-imagenes.sql` (aplicada vía MCP + `VACUUM FULL`,
+necesario porque el UPDATE deja tuplas muertas en la TOAST y el espacio no vuelve solo).
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo
