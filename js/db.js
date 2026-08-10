@@ -817,11 +817,17 @@ const DB = {
     if (error) throw error
   },
 
-  async getHistorialCompacto(limit = 60) {
-    const { data, error } = await supa
+  // `antesDe` (YYYY-MM-DD, EXCLUSIVA): solo diagnósticos de días anteriores. El Coach
+  // la pasa con la fecha analizada para no meterle en el prompt lo que pasó DESPUÉS
+  // de ese día (al re-analizar el 8-jul se le colaban los resúmenes de agosto).
+  // Sin ella devuelve todo el historial (la sección Historial lo lista completo).
+  async getHistorialCompacto(limit = 60, antesDe = null) {
+    let q = supa
       .from('diagnosticos_diarios')
       .select('sesion_date, sec_resumen_compacto, setups_json, estado_emocional_fin_id, patron_detectado, patron_descripcion')
       .not('sec_resumen_compacto', 'is', null)
+    if (antesDe) q = q.lt('sesion_date', antesDe)
+    const { data, error } = await q
       .order('sesion_date', { ascending: false })
       .limit(limit)
     if (error) throw error
@@ -930,10 +936,15 @@ const DB = {
 
   // Errores recientes (planos) para detección de patrones e historial.
   // Devuelve `descripcion` (alias de error) para compatibilidad con el Coach.
-  async getErroresHistoricos(limit = 600) {
-    const { data, error } = await supa
+  // `antesDe` (YYYY-MM-DD, EXCLUSIVA): mismo criterio que `getHistorialCompacto`.
+  // Los patrones repetidos que ve el Coach deben ser los que ya existían ESE día,
+  // no los que se acumularon después.
+  async getErroresHistoricos(limit = 600, antesDe = null) {
+    let q = supa
       .from('diagnostico_errores')
       .select('sesion_date, tipo, descripcion:error, origen, resultado')
+    if (antesDe) q = q.lt('sesion_date', antesDe)
+    const { data, error } = await q
       .order('sesion_date', { ascending: false })
       .limit(limit)
     if (error) throw error

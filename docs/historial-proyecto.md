@@ -1571,6 +1571,37 @@ paso viejo se conserva por si quedó algún estado a medias en KV.
 
 ---
 
+## Checkpoint Ago 2026 (3) — Coach IA: fuga temporal del historial (10 ago)
+
+**El problema:** `cargarHistorialCompacto()` y `detectarPatrones()` traían los últimos
+registros **sin filtrar por la fecha analizada**. Al re-analizar el 8-jul, el system
+prompt incluía los resúmenes y los errores de agosto: el Coach razonaba con información
+que ese día no existía y citaba como "patrón repetido" lo que pasó después.
+
+**El arreglo:** parámetro `antesDe` (exclusivo, `.lt('sesion_date', …)`) en
+`DB.getHistorialCompacto` y `DB.getErroresHistoricos`. El Coach lo pasa con `coachDate`
+en los tres puntos donde miraba el pasado:
+
+| Punto | Antes | Ahora |
+|---|---|---|
+| `cargarHistorialCompacto` (prompt) | últimos 60 resúmenes globales | 60 sesiones **anteriores** al día |
+| `detectarPatrones` (prompt) | todos los errores | errores **anteriores** al día |
+| `guardarDiagnostico` (`patron_detectado`) | todos menos el día actual | solo los **anteriores** |
+
+Sin el parámetro las dos funciones devuelven todo, así que la **sección Historial**
+(`renderHistorial`) sigue listando el histórico completo — no se tocó.
+
+El `.lt` va **antes** de `.order`/`.limit`: al revés, PostgREST cortaría los 60 más
+recientes globales y luego filtraría, dejando el historial vacío al analizar días viejos.
+Los encabezados del prompt ahora dicen la fecha de corte y una línea explícita de que no
+hay información posterior.
+
+**Verificación:** ejecutado el código real de `db.js` con la capa Supabase stubeada —
+8 asserts: `.lt` presente con fecha y ausente sin ella, resultados filtrados, y el orden
+de la cadena.
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo

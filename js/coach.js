@@ -112,8 +112,8 @@ const Coach = (() => {
   async function buildSystemPrompt(date) {
     const [reglas, historial, patrones, sesion, trades, casuisticas, emociones, catalogoErrores, , fechasEsp, objetivos] = await Promise.all([
       cargarReglas(),
-      cargarHistorialCompacto(),
-      detectarPatrones(),
+      cargarHistorialCompacto(date),
+      detectarPatrones(date),
       DB.getSesionByDate(date),
       DB.getTradesByDate(date),
       DB.getCasuisticasByDate(date),
@@ -353,15 +353,17 @@ Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes.
 
 ---
 
-## PATRONES CRÍTICOS DEL TRADER
+## PATRONES CRÍTICOS DEL TRADER (errores repetidos ANTES del ${date})
 
 ${patrones}
 
 ---
 
-## HISTORIAL DE SESIONES (últimos 60 días)
+## HISTORIAL DE SESIONES (las 60 sesiones ANTERIORES al ${date})
 
 ${historial}
+
+Este historial y los patrones de arriba llegan hasta el día ANTERIOR a la sesión que analizas: es lo que se sabía en ese momento. NO tienes información de días posteriores, así que no la des por supuesta.
 
 ---
 
@@ -562,8 +564,11 @@ ${catalogoStr}
     return duras.map(fmtReglaLinea).join('\n')
   }
 
-  async function cargarHistorialCompacto() {
-    const historial = await DB.getHistorialCompacto(60)
+  // Historial PREVIO a la fecha analizada. Sin el corte, al analizar un día pasado
+  // se le pasaban al Coach los resúmenes de días posteriores: razonaba con
+  // información que ese día no existía (y citaba "patrones" del futuro).
+  async function cargarHistorialCompacto(hasta) {
+    const historial = await DB.getHistorialCompacto(60, hasta || null)
     if (!historial.length) return 'Sin historial previo registrado.'
     return historial
       .slice()
@@ -573,8 +578,9 @@ ${catalogoStr}
       .join('\n')
   }
 
-  async function detectarPatrones() {
-    const erroresData = await DB.getErroresHistoricos()
+  // Patrones repetidos ANTERIORES a la fecha analizada (mismo criterio que el historial).
+  async function detectarPatrones(hasta) {
+    const erroresData = await DB.getErroresHistoricos(600, hasta || null)
     if (!erroresData.length) return 'Sin patrones identificados aún.'
 
     // Contar errores por nombre — el tipo puede variar entre sesiones, usamos el más reciente
@@ -1457,15 +1463,15 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
       // El veredicto se parsea junto con la validación para detectar VÁLIDA/INVÁLIDA
       const setuosJson   = parsearSetupsJson(`${diagnosticoActual.validacion || ''}\n${diagnosticoActual.veredicto || ''}`)
 
-      // Marcar errores repetidos comparando con el histórico
-      const historicos = await DB.getErroresHistoricos()
+      // Marcar errores repetidos comparando con el histórico ANTERIOR a este día
+      // (el corte lo hace la query; antes traía todo y solo excluía el día actual,
+      // así que un día pasado se marcaba como "patrón" por lo que vino después).
+      const historicos = await DB.getErroresHistoricos(600, coachDate)
       const conteoHist = {}
-      historicos
-        .filter(h => h.sesion_date !== coachDate)
-        .forEach(h => {
-          const k = (h.descripcion || '').toLowerCase().trim()
-          if (k) conteoHist[k] = (conteoHist[k] || 0) + 1
-        })
+      historicos.forEach(h => {
+        const k = (h.descripcion || '').toLowerCase().trim()
+        if (k) conteoHist[k] = (conteoHist[k] || 0) + 1
+      })
       const patronesDetectados = erroresConfirmados.filter(e =>
         (conteoHist[(e.nombre || '').toLowerCase().trim()] || 0) >= 2)
 
