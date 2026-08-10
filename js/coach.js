@@ -44,6 +44,7 @@ const Coach = (() => {
   let tradesActual      = []   // trades PA del día (para el bloque de operativa)
   let pendingDate       = null // fecha solicitada desde Historial, se carga al entrar al Coach
   let imagenBase64      = null // chart subido (si existe)
+  let imagenPromesa     = null // carga en curso de la gráfica del día desde Cloudinary
   let diagnosticoGuardado = false
 
   // Máquina de estados del flujo en 3 etapas
@@ -663,6 +664,7 @@ ${catalogoStr}
       // del día). Se le reconstruye el contexto de esa fecha antes de continuar.
       // No cuesta una llamada a la IA: son lecturas de Supabase.
       systemPromptCache = await buildSystemPrompt(coachDate)
+      await imagenPromesa   // la gráfica puede seguir bajando de Cloudinary
       restaurarImagenEnChat()
     }
 
@@ -1843,20 +1845,28 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     reader.readAsDataURL(file)
   }
 
+  // Devuelve una promesa que resuelve cuando `imagenBase64` YA está puesta.
+  // `readAsDataURL` es asíncrono por callback: sin envolverlo, la función
+  // terminaba antes de que la imagen existiera, así que esperarla no servía de
+  // nada y al retomar un día se podía mandar el chat sin la gráfica.
   async function autoCargarImagen(url) {
     try {
       const res = await fetch(url)
       if (!res.ok) return
       const blob = await res.blob()
-      const reader = new FileReader()
-      reader.onload = e => {
-        const dataUrl = e.target.result
-        imagenBase64 = { data: dataUrl.split(',')[1], mediaType: blob.type || 'image/jpeg' }
-        document.getElementById('coachPreviewImg').src = dataUrl
-        document.getElementById('coachUploadArea').classList.add('hidden')
-        document.getElementById('coachImagePreview').classList.remove('hidden')
-      }
-      reader.readAsDataURL(blob)
+      await new Promise(resolve => {
+        const reader = new FileReader()
+        reader.onload = e => {
+          const dataUrl = e.target.result
+          imagenBase64 = { data: dataUrl.split(',')[1], mediaType: blob.type || 'image/jpeg' }
+          document.getElementById('coachPreviewImg').src = dataUrl
+          document.getElementById('coachUploadArea').classList.add('hidden')
+          document.getElementById('coachImagePreview').classList.remove('hidden')
+          resolve()
+        }
+        reader.onerror = () => resolve()   // sin imagen, pero sin colgar la espera
+        reader.readAsDataURL(blob)
+      })
     } catch (_) {
       // URL inaccesible o CORS — deja el área de upload manual visible
     }
@@ -1894,7 +1904,9 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     if (confianzaGuardada && confianza)  confianza.value = confianzaGuardada
 
     // Auto-cargar imagen del día desde la sesión si existe
-    if (sesion?.imagen_url) autoCargarImagen(sesion.imagen_url)
+    // No se espera aquí (bajar la imagen no debe retrasar el panel), pero se
+    // guarda la promesa: al retomar un día, el chat sí la espera antes de enviar.
+    if (sesion?.imagen_url) imagenPromesa = autoCargarImagen(sesion.imagen_url)
 
     // Estrellas de confianza
     renderStars(confianzaGuardada || 0)
@@ -1926,6 +1938,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     erroresRevisados    = false
     systemPromptCache   = null
     imagenBase64        = null
+    imagenPromesa       = null
 
     const chatEl = document.getElementById('coachChatMessages')
     if (chatEl) chatEl.innerHTML = ''

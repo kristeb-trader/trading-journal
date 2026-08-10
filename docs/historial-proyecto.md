@@ -1716,10 +1716,18 @@ Habilitarlo sin más habría provocado pérdida de datos. Los dos estaban dormid
 | Volver a guardar | `marcarSinGuardar()` desde `llamarClaude`, el punto único por el que pasa todo contenido nuevo |
 | La gráfica | `restaurarImagenEnChat()` devuelve la imagen de Cloudinary a su sitio en el chat (operación inversa de `chatSinImagenes`), para que el Coach pueda volver a **mirar** el gráfico. Best-effort: si aún no se recargó, se continúa sin ella |
 
+**Carrera cerrada en `autoCargarImagen`:** `readAsDataURL` es asíncrono por callback,
+así que la función **terminaba antes de asignar `imagenBase64`** — esperarla no servía
+de nada. Ahora se envuelve el `FileReader` en una promesa y `setupEmocionConfianza`
+guarda la promesa en `imagenPromesa` (sin esperarla: bajar la imagen no debe retrasar
+el panel). El chat sí la espera antes de enviar, así que al retomar un día la gráfica
+está garantizada, se escriba a los 30 s o al medio segundo de abrirlo.
+
 **Verificación:** 25 asserts ejecutando el flujo real (`cargarFecha` → `guardarDiagnostico`)
 con DOM y Supabase stubeados — incluidos los dos casos críticos: las 3 secciones
 sobreviven al guardado, y guardar sin haber revisado la lista **no** toca los errores.
-Más una comparación A/B contra el commit anterior que confirma que el bug era real.
+Más dos comparaciones A/B contra el commit anterior que confirman que ambos fallos eran
+reales: `diagnosticoActual` quedaba en `{}`, y la promesa de la imagen resolvía vacía.
 
 ---
 
