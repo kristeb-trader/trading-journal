@@ -2,8 +2,18 @@
 const Coach = (() => {
 
   const CLAUDE_URL = 'https://broad-hall-c53f.kristerock.workers.dev/api/claude'
-  const MODEL      = 'claude-sonnet-4-6'
-  const MAX_TOKENS = 3000
+  const MODEL      = 'claude-sonnet-5'
+  // Sonnet 5 PIENSA por defecto, y el razonamiento sale del mismo presupuesto que
+  // la respuesta: con los 3000 de antes el diagnóstico se cortaría a medias.
+  const MAX_TOKENS = 8000
+  // Se declara explícito aunque `adaptive` sea el default: en Sonnet 4.6 omitirlo
+  // significaba lo CONTRARIO (sin pensar), así que dejarlo escrito evita que el
+  // próximo que lea esto crea que seguimos sin razonamiento.
+  const THINKING   = { type: 'adaptive' }
+  // El Coach es interactivo y el proxy no hace streaming: la respuesta entera viaja
+  // en una sola petición. `low` acota cuánto piensa y mantiene la latencia parecida
+  // a la de hoy. Si el análisis se queda corto, subir a 'medium' (una línea).
+  const EFFORT     = 'low'
 
   // El Coach IA solo analiza la CUENTA PRINCIPAL configurada (Datos → Cuenta
   // principal, guardada en objetivos.cuenta_principal). Las demás se ignoran.
@@ -708,6 +718,8 @@ ${catalogoStr}
       body: JSON.stringify({
         model: MODEL,
         max_tokens: MAX_TOKENS,
+        thinking: THINKING,
+        output_config: { effort: EFFORT },
         // El system prompt es idéntico durante toda la sesión de coaching (se
         // construye una vez en la Etapa 1), así que es el prefijo cacheable.
         system: [{ type: 'text', text: systemPromptCache, cache_control: CACHE_CTRL }],
@@ -729,7 +741,18 @@ ${catalogoStr}
     if (u) console.info('[Coach] caché — escritos: %d · leídos: %d · sin cachear: %d',
       u.cache_creation_input_tokens || 0, u.cache_read_input_tokens || 0, u.input_tokens || 0)
 
-    const texto = data?.content?.[0]?.text || ''
+    // Con razonamiento activo, `content[0]` es un bloque `thinking` (de texto vacío,
+    // porque no pedimos que lo devuelva). Quedarse con el primer bloque a secas daba
+    // "" y rompía TODAS las llamadas: hay que buscar el bloque de tipo `text`.
+    const texto = (data?.content || []).filter(b => b?.type === 'text')
+      .map(b => b.text || '').join('\n').trim()
+
+    if (data?.stop_reason === 'max_tokens') {
+      // El corte es silencioso: llegaría un diagnóstico a medias que el parser
+      // trocearía sin quejarse. Mejor decirlo.
+      console.warn('[Coach] respuesta CORTADA por max_tokens — sube MAX_TOKENS o baja EFFORT')
+      Toast.show('La respuesta se cortó por longitud. Vuelve a generarla.', 'warning')
+    }
     if (!texto) throw new Error('Respuesta vacía de Claude')
 
     chatHistory.push({ role: 'assistant', content: texto })
@@ -905,10 +928,13 @@ ${catalogoStr}
       cerrarBtn.disabled = true
     }
 
+    // Ya hay diagnóstico, pero el botón sigue vivo: si la IA lo coló en el chat,
+    // el trader debe poder rehacerlo por la vía formal. (Antes se apagaba aquí, y
+    // en un día retomado eso le quitaba el "Regenerar" que sí tenía al abrirlo.)
     const diagBtn = document.getElementById('coachDiagnosticoBtn')
     if (diagBtn) {
-      diagBtn.disabled = true
-      diagBtn.innerHTML = '<i class="ti ti-circle-check"></i> Diagnóstico generado'
+      diagBtn.disabled = false
+      diagBtn.innerHTML = '<i class="ti ti-refresh"></i> Regenerar diagnóstico'
     }
 
     mostrarGuardar()

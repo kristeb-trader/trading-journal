@@ -28,7 +28,7 @@ Sistema distribuido de registro, análisis y visualización de operativa en futu
 | Proxy IA | Cloudflare Worker #1 | Bypass CORS → Anthropic API |
 | Bot Telegram | Cloudflare Worker #2 | Flujo conversacional de sesiones |
 | Estado conversación | Cloudflare KV | Sesiones temporales del bot (TTL 1h) |
-| Análisis IA | Anthropic Claude API (`claude-sonnet-4-5-20251001`) | Coach IA · análisis Chaumer · multi-turn · visión de imagen |
+| Análisis IA | Anthropic Claude API (`claude-sonnet-5`) | Coach IA · análisis Chaumer · multi-turn · visión de imagen |
 | Imágenes | Cloudinary | Upload, almacenamiento y CDN |
 | Captura automática | C# Indicator (.NET 4.8 / NinjaTrader 8) | Exportación de trades en tiempo real |
 
@@ -88,8 +88,8 @@ Sistema distribuido de registro, análisis y visualización de operativa en futu
                                           ▼
                            ╔══════════════════════════╗
                            ║  Anthropic Claude API    ║
-                           ║  claude-sonnet-4-5       ║
-                           ║  -20251001               ║
+                           ║  claude-sonnet-5         ║
+                           ║  thinking + caching      ║
                            ║  ~$0.02 / diagnóstico    ║
                            ╚══════════════════════════╝
 ```
@@ -197,7 +197,7 @@ coach.js (sección-coach)
            ├─ DB.getEstrategiaSection()        ← 6 secciones de estrategia Chaumer
            ├─ DB.getSesionesForContext(60 días) ← historial + patrones
            └─ DB.getSessionForCoach(date)      ← sesión del día (trades, checklist, etc.)
-      → fetch(Worker #1) con claude-sonnet-4-5-20251001, max_tokens=3000
+      → fetch(Worker #1) con claude-sonnet-5, max_tokens=8000, thinking adaptive
       → renderAnalisis() — 6 tarjetas: Contexto│Desarrollo│Validación│Errores│Aprendizaje│Resumen
       → [Btn "Guardar"] → DB.saveDiagnostico() → diagnosticos_diarios
 
@@ -628,4 +628,4 @@ trading-journal/
 | Anthropic Claude | Pay-per-use | — | ~20 diagnósticos/mes | ~$0.40 |
 | **Total mensual** | | | | **< $0.50** |
 
-> El costo aumentó con v4.0 porque se usa `claude-sonnet-4-5-20251001` (más potente que haiku) con max_tokens=3000 y un system prompt rico (~4000 tokens). Costo estimado por diagnóstico: ~$0.02. Para 20 sesiones/mes el costo total es ~$0.40/mes — sigue siendo despreciable.
+> El costo aumentó con v4.0 al pasar de haiku a la familia sonnet, con un system prompt rico (~6000 tokens con el tokenizador de Sonnet 5). Desde Ago 2026 el **prompt caching** compensa: el system prompt y la gráfica se escriben una vez y se releen a ×0.1 en los turnos siguientes. Costo estimado: ~$0.02/diagnóstico → ~$0.40/mes para 20 sesiones.

@@ -12,7 +12,7 @@ Dashboard personal para registro y análisis de operativa diaria en NQ/MNQ Futur
 | Frontend | HTML + JS vanilla (sin frameworks) — GitHub Pages |
 | Base de datos | Supabase (PostgreSQL) — **RLS activado** (web vía login `authenticated`; bot/worker/NT8 con `service_role`) |
 | Proxy IA | Cloudflare Worker `broad-hall-c53f.kristerock.workers.dev` |
-| Análisis IA | Claude API `claude-sonnet-4-6` |
+| Análisis IA | Claude API `claude-sonnet-5` (adaptive thinking, effort `low`, prompt caching) |
 | Imágenes | Cloudinary (cloud: `dq4n7bjta`, preset: `trading-journal`) |
 | Bot | Telegram → Cloudflare Worker #2 + KV |
 | Exportación | Indicador C# en NinjaTrader 8 (`NinjaTrader/SupabaseAutoExport.cs`) — routing: PA-* **y la cuenta principal** (`objetivos.cuenta_principal`) →`trades`+Telegram, resto (eval Apex)→`apex_trades` sin notificar |

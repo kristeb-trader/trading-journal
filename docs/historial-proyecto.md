@@ -1806,6 +1806,50 @@ y que la excepción se enuncia antes de la sección que la explica.
 
 ---
 
+### Coach IA — migración a Sonnet 5 + botón coherente + manual al día (11 ago)
+
+**El botón.** Si la IA colaba el diagnóstico dentro del chat,
+`procesarDiagnosticoDesdeChat` apagaba el botón ("Diagnóstico generado") — y en un día
+retomado eso le quitaba al trader el "Regenerar" que sí tenía al abrirlo. Ahora queda
+habilitado como "Regenerar diagnóstico", igual que en el resto del flujo.
+
+**Sonnet 5 — no era cambiar la cadena del modelo.** `claude-sonnet-4-6` →
+`claude-sonnet-5` traía un cambio de comportamiento que **habría roto todas las
+llamadas**:
+
+| | Sonnet 4.6 | Sonnet 5 |
+|---|---|---|
+| Omitir `thinking` | NO piensa | **piensa** (adaptive por defecto) |
+| Primer bloque de la respuesta | `text` | **`thinking`** (de texto vacío) |
+
+El código leía `data.content[0].text`. Con Sonnet 5 ese primer bloque es de
+razonamiento → `undefined` → `''` → **"Respuesta vacía de Claude" en cada llamada**.
+Ahora se filtran los bloques `type === 'text'` y se concatenan.
+
+Lo demás de la migración:
+- **`max_tokens` 3000 → 8000.** El razonamiento sale del MISMO presupuesto que la
+  respuesta; con 3000 el diagnóstico se cortaba a media frase.
+- **`thinking: {type:'adaptive'}` explícito**, aunque sea el default: en 4.6 omitirlo
+  significaba lo contrario, así que dejarlo escrito evita malentendidos futuros.
+- **`effort: 'low'`.** El proxy no hace streaming: la respuesta entera viaja en una
+  petición, así que acotar cuánto piensa mantiene la latencia parecida a la de hoy.
+  Subir a `'medium'` es una línea si el análisis se queda corto.
+- **Aviso de corte.** `stop_reason === 'max_tokens'` ahora avisa por consola y con un
+  toast: el corte era silencioso y el parser troceaba el resto sin quejarse.
+- No hacía falta tocar el Worker (reenvía el body tal cual) ni el prompt caching.
+
+**Documentación.** `manual-tecnico.md` seguía en `claude-sonnet-4-5-20251001` con el
+fragmento de la petición sin caché. Actualizado, más una nota de qué comprobar **antes**
+de cambiar de modelo (¿piensa por defecto? ¿siguen aceptándose los parámetros?). Igual
+en `arquitectura-tecnica.md` y `CLAUDE.md`. **Las filas de changelog de v4.0 (mayo) NO
+se tocaron**: son registro histórico, y ahí `claude-sonnet-4-5` era cierto.
+
+**Verificación:** 13 asserts nuevos simulando la forma de respuesta de Sonnet 5 —
+incluida la comprobación de que el método viejo (`content[0].text`) devolvía `""`. Las 6
+suites juntas: **89 comprobaciones, 0 fallos**.
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo

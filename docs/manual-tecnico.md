@@ -123,7 +123,7 @@
 | Proxy IA | Cloudflare Worker #1 | Workers Free (100k req/día) | Bypass CORS para llamadas a Anthropic |
 | Bot Telegram | Cloudflare Worker #2 | Workers Free | Webhook Telegram + state machine |
 | KV Sessions | Cloudflare KV | Free (100k reads/día) | Estado de sesión del bot (TTL 3600s) |
-| IA / Coach | Anthropic Claude | claude-sonnet-4-5-20251001 | Coach IA · diagnóstico 6 secciones · chat · Vision |
+| IA / Coach | Anthropic Claude | claude-sonnet-5 | Coach IA · 3 secciones + 4 de diagnóstico · chat · Vision · prompt caching |
 | Imágenes | Cloudinary | Free tier | Upload + CDN de capturas de pantalla |
 | Indicador | C# .NET 4.8 | NinjaTrader 8 (8.1.7.0) | Exportación automática de trades a Supabase |
 
@@ -481,13 +481,21 @@ const res = await fetch(CLAUDE_PROXY_URL, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    model: 'claude-sonnet-4-5-20251001',
-    max_tokens: 3000,
-    system: systemPromptCache,   // estrategia + historial 60 días
-    messages: chatHistory        // multi-turn; puede incluir imágenes base64
+    model: 'claude-sonnet-5',
+    max_tokens: 8000,                      // el razonamiento sale de aquí también
+    thinking: { type: 'adaptive' },        // Sonnet 5 piensa; explícito a propósito
+    output_config: { effort: 'low' },      // acota la latencia (proxy sin streaming)
+    // `system` va como ARRAY de bloques para poder marcar el caché (ahorra ~90%
+    // en los turnos siguientes). Como string no se puede cachear.
+    system: [{ type: 'text', text: systemPromptCache, cache_control: { type: 'ephemeral', ttl: '1h' } }],
+    messages: mensajesConCache(chatHistory)  // marca el último turno del usuario
   })
 });
 ```
+
+> ⚠️ **La respuesta NO es `content[0].text`.** Con razonamiento activo el primer
+> bloque es de tipo `thinking`; hay que filtrar los bloques `type === 'text'`.
+> Y conviene mirar `stop_reason === 'max_tokens'`: el corte es silencioso.
 
 ---
 
@@ -809,11 +817,24 @@ Luego actualizar: `db.js`, `SupabaseAutoExport.cs` (recompilar), `TelegramBot/wo
 
 ### Cambiar el modelo de IA
 
-En `coach.js`, función `callClaude()`, buscar y modificar:
+En `coach.js`, arriba del módulo:
 ```javascript
-model: 'claude-sonnet-4-5-20251001'
+const MODEL      = 'claude-sonnet-5'
+const MAX_TOKENS = 8000
+const THINKING   = { type: 'adaptive' }
+const EFFORT     = 'low'   // low | medium | high | xhigh | max
 ```
-No hay cambios en CF Worker #1 (es proxy genérico).
+No hay cambios en CF Worker #1 (reenvía el body tal cual con `JSON.stringify`).
+
+**Antes de cambiar de modelo, comprobar dos cosas** — un cambio de familia puede
+alterar el comportamiento sin dar error:
+1. **¿Piensa por defecto?** Sonnet 5 sí; Sonnet 4.6 no. Eso mueve el primer bloque
+   de la respuesta y consume del mismo `max_tokens`.
+2. **¿Sigue aceptando los parámetros?** `budget_tokens` y `temperature` están
+   retirados en los modelos nuevos y devuelven 400.
+
+Si el análisis se queda corto, subir `EFFORT` a `'medium'`. Si aparecen cortes por
+longitud (aviso en consola), subir `MAX_TOKENS`.
 
 ### Modificar el prompt del Coach IA
 
@@ -933,9 +954,14 @@ O desde Cloudflare Dashboard → KV → buscar key `s:372127764` → Delete.
 | Cloudinary | Free | 25 GB storage, 25 GB BW | <100 MB | $0 |
 | **TOTAL** | | | | **~$0.40/mes** |
 
-**Modelo de IA:** `claude-sonnet-4-5-20251001`
-- Input: $3.00 / MTok
-- Output: $15.00 / MTok
+**Modelo de IA:** `claude-sonnet-5`
+- Input: $3.00 / MTok · Output: $15.00 / MTok
+- Precio introductorio hasta el 31-ago-2026: $2.00 / $10.00 por MTok
+- **Prompt caching activo** (Ago 2026): el system prompt y la gráfica se escriben
+  una vez (×1.25) y se releen a ×0.1 en los turnos siguientes. En una sesión de 3
+  llamadas eso es la mayor parte del gasto de entrada.
+- Sonnet 5 tokeniza distinto: el mismo texto cuenta ~30% más tokens que en 4.6.
+  Con el precio introductorio el coste real baja igualmente.
 - Costo por diagnóstico v4.0 (~4000 tokens in + ~1500 tokens out): ~$0.02
 
 > Aumentó respecto a v3.0 porque usamos Sonnet (vs. Haiku) con max_tokens=3000 y un system prompt rico con estrategia + historial 60 días. Sigue siendo despreciable para el uso personal (~$0.40/mes con 20 sesiones diarias).
