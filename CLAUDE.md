@@ -80,6 +80,21 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker). NO pide niveles d
 2. **Chat** (opcional) → si la IA genera el diagnóstico estructurado, se auto-aplica al Step 3
 3. **Diagnóstico Final** → 2ª llamada IA → 4 secciones (Veredicto / Errores / Aprendizaje / Resumen)
 
+> ⚠️ **Invariantes del Coach (Ago 2026) — romperlas no da error, da silencio.**
+> - **El prompt lleva `cache_control` (system + último turno de usuario).** Es un match de
+>   PREFIJO byte a byte: cualquier cosa que varíe el system prompt o la serialización de
+>   un mensaje entre turnos mata el caché sin avisar. `llamarClaude` loguea escritos/leídos:
+>   si "leídos" sale 0 turno tras turno, se rompió el prefijo.
+> - **La gráfica NO se persiste** en `chat_messages` (se sustituye por un marcador de texto;
+>   vive en Cloudinary, `sesiones.imagen_url`). `chatSinImagenes` al guardar,
+>   `restaurarImagenEnChat` al retomar. La tabla llegó a pesar 42 MB por esto.
+> - **Historial y patrones del prompt están cortados a la fecha analizada** (`antesDe`): al
+>   analizar un día pasado, el Coach NO debe ver lo que vino después.
+> - **`saveErroresIA` BORRA los errores IA del día antes de reinsertar.** Solo se llama si
+>   la sesión revisó la lista (`erroresRevisados`); si no, guardar los eliminaría.
+> - **`sesiones.nivel_confianza` = confianza EN LA ENTRADA** desde el 11 ago (antes era
+>   "pre-sesión", que no discriminaba). Los valores previos significan lo viejo.
+
 ## Convención P&L
 `profit` = **NETO** (comisión round-trip ya descontada). `commission` = round-trip total. Unificada Jun 2026.
 

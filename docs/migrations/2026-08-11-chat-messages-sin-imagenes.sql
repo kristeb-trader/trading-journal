@@ -1,4 +1,4 @@
--- 2026-08-10 — Quitar las imágenes base64 de `diagnosticos_diarios.chat_messages`
+-- 2026-08-11 — Quitar las imágenes base64 de `diagnosticos_diarios.chat_messages`
 --
 -- Contexto: el Coach mandaba la gráfica del día a Claude como bloque `image` en
 -- base64 dentro del primer mensaje, y `chatHistory` completo se guardaba en el

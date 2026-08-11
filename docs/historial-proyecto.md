@@ -1600,7 +1600,7 @@ pocos días en el mes, uno malo pesa mucho; se diluye según avanza el mes.
 
 ---
 
-## Checkpoint Ago 2026 (3) — Coach IA: fuga temporal del historial (10 ago)
+## Checkpoint Ago 2026 (3) — Coach IA: fuga temporal del historial (11 ago)
 
 **El problema:** `cargarHistorialCompacto()` y `detectarPatrones()` traían los últimos
 registros **sin filtrar por la fecha analizada**. Al re-analizar el 8-jul, el system
@@ -1631,7 +1631,7 @@ de la cadena.
 
 ---
 
-### Coach IA — la gráfica base64 ya no se guarda en `chat_messages` (10 ago)
+### Coach IA — la gráfica base64 ya no se guarda en `chat_messages` (11 ago)
 
 **El problema:** la imagen del día viaja a Claude como bloque `image` en base64 dentro
 del primer mensaje, y `chatHistory` **entero** se guardaba en el JSONB `chat_messages`.
@@ -1661,12 +1661,12 @@ texto (retro-compatible con las conversaciones ya guardadas).
 imagen intacta en memoria, marcador válido, retro-compatibilidad y bordes) + conteos
 jsonb en la BD: **0 bloques `image`, 0 `source`**, 46/46 filas con análisis y conversación.
 
-Migración: `2026-08-10-chat-messages-sin-imagenes.sql` (aplicada vía MCP + `VACUUM FULL`,
+Migración: `2026-08-11-chat-messages-sin-imagenes.sql` (aplicada vía MCP + `VACUUM FULL`,
 necesario porque el UPDATE deja tuplas muertas en la TOAST y el espacio no vuelve solo).
 
 ---
 
-### Coach IA — prompt caching sobre el system prompt y la gráfica (10 ago)
+### Coach IA — prompt caching sobre el system prompt y la gráfica (11 ago)
 
 **El problema:** cada turno del chat reenviaba a precio completo el system prompt
 entero (rulebook + estrategia + 60 resúmenes + catálogos) **y** la gráfica en base64.
@@ -1704,7 +1704,7 @@ idéntico entre los turnos 1, 2 y 3, y la imagen intacta tras el copiado.
 
 ---
 
-### Coach IA — retomar una sesión guardada (10 ago)
+### Coach IA — retomar una sesión guardada (11 ago)
 
 **El síntoma:** al abrir un día que ya tenía diagnóstico, la pantalla mostraba todo
 (análisis, diagnóstico, conversación) y las etapas se veían desbloqueadas, pero el chat
@@ -1760,7 +1760,7 @@ reales: `diagnosticoActual` quedaba en `{}`, y la promesa de la imagen resolvía
 
 ---
 
-### Coach IA — confianza en la entrada + simetría stop/target (10 ago)
+### Coach IA — confianza en la entrada + simetría stop/target (11 ago)
 
 Dos peticiones de Kris tras usar el Coach.
 
