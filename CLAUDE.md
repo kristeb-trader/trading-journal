@@ -143,19 +143,14 @@ checklist normalizado, cuenta principal configurable, filtro de cuenta persisten
 > sobre RTH/premercado. Los parámetros RTH del indicador van en **ET (930/1600)**.
 
 ### Pendientes abiertos
-- 🔴 **Verificar en vivo el Coach IA** (previsto para la sesión del 4 ago): validación por
-  fases, títulos de regla descriptivos, horas en ET, la 9ª parte `reglaCodigo` **y el
-  bloque "VERIFICADO POR DATOS"** del checklist. Generar un análisis y confirmar.
-- **Estrenar el checklist rediseñado en vivo** (4 ago): comprobar que el GO se habilita
-  con 8 ítems, que las noticias rojas se registran desde el AddOn y que las 3 reglas
-  automáticas resuelven bien al cierre del día.
 - Recomendaciones tipificadas en Coach IA (Fase 4B): implementado salvo inyectar el
   catálogo de recomendaciones en el prompt (para que reutilice nombres y no duplique).
 - Modal del día: un ítem tumbado por un error se ve igual que uno nunca marcado.
   `_checklistDia` ya expone `roto` para distinguirlos visualmente ("marcado, pero el
   diagnóstico lo desmiente") — falta el render.
-- Los 39 errores históricos sin `regla_codigo` se comportan como antes; se irán
-  tipificando solos según el Coach analice días nuevos.
+- **23 de 50 errores** tienen `regla_codigo` (11 ago). Los 27 sin vínculo son en su
+  mayoría psicológicos y condiciones de mercado, que **no deben tenerlo**; el resto se va
+  tipificando solo según el Coach analiza días nuevos.
 - Estadísticas de 3 corridas, volumen en trades, tasa de ejecución de setups válidos.
 - "Dejé de ganar": ampliar para capturar más casos (miedo, reingreso no tomado…).
 - Rendimiento general del Journal (el modal del día cargaba lento).
@@ -182,6 +177,13 @@ checklist normalizado, cuenta principal configurable, filtro de cuenta persisten
 > automáticos se muestran con ⚙ y sin casilla, y las **noticias rojas son una lista**
 > (varias por día, con nombre, alerta de la próxima ventana y bloqueo del GO dentro de
 > ella). Las 5 fases del rediseño quedan activas end-to-end.
+
+> ✅ **Cerrado (11 ago) — rediseño VERIFICADO en vivo.** 6 sesiones operadas con el
+> sistema nuevo (3-11 ago) sin incidencias. El Coach rellena bien la 9ª parte: en el
+> análisis del 6-ago vinculó "Descartar Setup Válido"→`target_sin_zonas` y "Error de
+> Marcación"→`chk_zonas`, y dejó **sin vínculo** los psicológicos (Duda, Rabia). Razona
+> el vínculo caso a caso: para "Error de Marcación" eligió `chk_zonas` donde el backfill
+> histórico usa `chk_consecucion`, y acertó — el detalle era una zona mal marcada.
 
 > ⚠️ **Efecto lateral asumido (3 ago):** la **tasa de errores** y los **días limpios**
 > tienen ahora un denominador menor (salieron los días sin conexión), así que sus

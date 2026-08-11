@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 3 Agosto 2026 (ver *Checkpoint Ago 2026 (2)* al final: **rediseño del checklist y de la disciplina** — 17 reglas → 13, GO de 13 clics → 8, 3 reglas verificadas por datos, regla FOMC que detecta 3 violaciones históricas. Previo, *Checkpoint Ago 2026 (1)*: **calendario — fechas especiales futuras** y **verdad de la disciplina** — fines de semana fuera, días sin operativa no penalizan, y un error tumba la regla del checklist que contradice). Previo — *Checkpoint Jul 2026 (8)*: **filtro de cuentas multi-selección** (nombres completos, default por cuenta principal, combinar PA + evaluación); *Checkpoint Jul 2026 (7)*: **setups paramétricos** — `catalogo_setups` + `catalogo_setup_variantes`, reglas por setup, administración desde el Journal, Telegram y NT8 dinámicos. Checkpoints previos: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
+**Última actualización:** 11 Agosto 2026 — rediseño **verificado en vivo** tras 6 sesiones (ver *Checkpoint Ago 2026 (2)* al final: **rediseño del checklist y de la disciplina** — 17 reglas → 13, GO de 13 clics → 8, 3 reglas verificadas por datos, regla FOMC que detecta 3 violaciones históricas. Previo, *Checkpoint Ago 2026 (1)*: **calendario — fechas especiales futuras** y **verdad de la disciplina** — fines de semana fuera, días sin operativa no penalizan, y un error tumba la regla del checklist que contradice). Previo — *Checkpoint Jul 2026 (8)*: **filtro de cuentas multi-selección** (nombres completos, default por cuenta principal, combinar PA + evaluación); *Checkpoint Jul 2026 (7)*: **setups paramétricos** — `catalogo_setups` + `catalogo_setup_variantes`, reglas por setup, administración desde el Journal, Telegram y NT8 dinámicos. Checkpoints previos: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `E:\Proyectos\Trading Journal` (migrado desde `C:\Users\Asus\Claro drive\Trading Journal` el 6 jul 2026)
@@ -1568,6 +1568,35 @@ alargaba el flujo. `PRE_RESIST` pasa directo a emoción (o a reflexión si no op
 paso viejo se conserva por si quedó algún estado a medias en KV.
 
 **🏷️ "Días de trabajo" → "Días conectados"** en la card del calendario y el desglose.
+
+### ✅ Verificado en vivo (11 ago) — el rediseño funciona end-to-end
+
+Tras 6 sesiones operadas con el sistema nuevo (3, 4, 5, 6, 10 y 11 de agosto), sin
+incidencias en el AddOn ni en el guardado.
+
+**El Coach rellena bien el vínculo error → regla.** El análisis del **6 de agosto** —el
+primero con errores desde el rediseño— quedó así:
+
+| Error | Tipo | → Regla vinculada |
+|---|---|---|
+| Descartar Setup Válido | operativo | `target_sin_zonas` |
+| Error de Marcación | marcado | `chk_zonas` |
+| Duda | psicológico | *(ninguna)* ✓ |
+| Rabia | psicológico | *(ninguna)* ✓ |
+
+Es exactamente el comportamiento diseñado: vincula los que contradicen una regla y deja
+vacía la 9ª parte en los psicológicos, que no tienen casilla que romper.
+
+> 💡 **El Coach razona el vínculo, no aplica una tabla fija.** Para "Error de Marcación"
+> eligió `chk_zonas`, mientras que el backfill histórico de esa misma etiqueta apunta a
+> `chk_consecucion`. En este caso acertó mejor: el detalle era *"zona naranja marcada en
+> 29515 en lugar de 29537.25"* — un fallo de marcación de zona, no de consecución. Que
+> discrepe según el caso concreto es buena señal.
+
+**De paso, una lectura de la métrica de errores.** Agosto marcaba **17%** con un solo día
+malo: 1 día con errores ÷ 6 días conectados = 16,7%. Los 4 errores del 6-ago cuentan como
+**un** día — la métrica mide frecuencia de días con fallos, no cantidad de errores. Con
+pocos días en el mes, uno malo pesa mucho; se diluye según avanza el mes.
 
 ---
 
