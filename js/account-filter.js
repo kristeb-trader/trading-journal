@@ -176,8 +176,12 @@ const AccountFilter = (() => {
   async function setAccounts(id, accounts) {
     const st = inst[id]
     if (!st) return
-    st.accounts = [...new Set(accounts.filter(Boolean))].sort()
     st.principal = await principalOnce()
+    // La cuenta principal SIEMPRE está en la lista, aunque todavía no tenga trades.
+    // La lista sale de las cuentas presentes en `trades`, así que una cuenta recién
+    // estrenada quedaba invisible hasta su primer export — y con ella el default,
+    // que cae en la principal (pasó con la Apex-15 el 14-ago).
+    st.accounts = [...new Set([...accounts, st.principal].filter(Boolean))].sort()
     const restored = restore(st)
     st.selected = restored === undefined ? defaultSelection(st) : restored
     if (st.selected && !st.selected.length) st.selected = null

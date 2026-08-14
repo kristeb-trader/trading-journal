@@ -32,9 +32,11 @@ using NinjaTrader.NinjaScript.Indicators;
  *     instrumento si se opera más de uno).
  *
  * Routing automático por nombre de cuenta:
- *   - Cuenta PA real (prefijo "PA-") y la CUENTA PRINCIPAL configurada (Datos →
- *     Cuenta principal, leída de objetivos.cuenta_principal al iniciar): trades →
- *     tabla `trades` + notificación Telegram. La app deriva sus días desde `trades`.
+ *   - Cuenta PA real (prefijo "PA-") y la CUENTA PRINCIPAL configurada en Datos:
+ *     trades → tabla `trades` + notificación Telegram. La app deriva sus días de ahí.
+ *     `objetivos.cuenta_principal` se lee al iniciar Y SE REFRESCA CADA 5 MIN, así que
+ *     cambiarla en Datos surte efecto sin reiniciar NinjaTrader (antes había que
+ *     reiniciar: el 14-ago los trades de la cuenta nueva acabaron en `apex_trades`).
  *   - Cualquier otra cuenta (evaluación): trades → tabla `apex_trades`, SIN
  *     Telegram. La app deriva días/balance/threshold desde estos trades.
  *
@@ -121,6 +123,11 @@ namespace NinjaTrader.NinjaScript.Indicators
         // Nombre de la cuenta principal (leído de objetivos al iniciar). Su trade va
         // a `trades` + Telegram aunque no empiece con "PA-".
         private volatile string cuentaPrincipal = string.Empty;
+        // Refresco periódico de la cuenta principal: sin él, cambiarla en Datos no tenía
+        // efecto hasta reiniciar NinjaTrader (el indicador la cachea al arrancar).
+        private System.Threading.Timer cuentaPrincipalTimer;
+        private static readonly TimeSpan CUENTA_PRINCIPAL_REFRESCO = TimeSpan.FromMinutes(5);
+        private volatile bool primeraLecturaCuenta = true;   // para informar solo al inicio y en cada cambio
 
         private static string ReadServiceKey()
         {
@@ -242,13 +249,21 @@ namespace NinjaTrader.NinjaScript.Indicators
                 string resp = await client.GetStringAsync(OBJETIVOS_ENDPOINT);
                 var m = System.Text.RegularExpressions.Regex.Match(
                     resp ?? "", "\"cuenta_principal\"\\s*:\\s*\"([^\"]+)\"");
-                if (m.Success)
+                // Se informa en la primera lectura y luego SOLO cuando cambia: esto
+                // corre cada 5 minutos y si no llenaría el log de líneas repetidas.
+                string anterior = cuentaPrincipal;
+                cuentaPrincipal = m.Success ? m.Groups[1].Value : string.Empty;
+                bool cambio = !string.Equals(anterior, cuentaPrincipal, StringComparison.OrdinalIgnoreCase);
+
+                if (primeraLecturaCuenta || cambio)
                 {
-                    cuentaPrincipal = m.Groups[1].Value;
-                    Print("[SupabaseAutoExport] Cuenta principal (→ trades + Telegram): " + cuentaPrincipal);
+                    primeraLecturaCuenta = false;
+                    if (!string.IsNullOrEmpty(cuentaPrincipal))
+                        Print("[SupabaseAutoExport] Cuenta principal (→ trades + Telegram): " + cuentaPrincipal
+                              + (string.IsNullOrEmpty(anterior) ? "" : "  (antes: " + anterior + ")"));
+                    else
+                        Print("[SupabaseAutoExport] Sin cuenta principal configurada; solo las PA-* van a trades.");
                 }
-                else
-                    Print("[SupabaseAutoExport] Sin cuenta principal configurada; solo las PA-* van a trades.");
             }
             catch (Exception ex)
             {
@@ -308,9 +323,16 @@ namespace NinjaTrader.NinjaScript.Indicators
                 httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + supabaseKey);
                 httpClient.DefaultRequestHeaders.Add("Prefer",        "return=minimal");
 
-                // Leer la cuenta principal de la BD (fire-and-forget): así, si se cambia
-                // en Datos, el routing se actualiza al reiniciar NT sin recompilar.
+                // Leer la cuenta principal de la BD (fire-and-forget).
                 Task.Run(() => LoadCuentaPrincipalAsync());
+
+                // …y REFRESCARLA cada 5 min. Antes solo se leía al arrancar, así que
+                // cambiarla en Datos no surtía efecto hasta reiniciar NinjaTrader: el
+                // 14-ago los trades de la cuenta nueva se fueron a `apex_trades` porque
+                // el indicador seguía con la anterior en memoria.
+                cuentaPrincipalTimer = new System.Threading.Timer(
+                    _ => Task.Run(() => LoadCuentaPrincipalAsync()),
+                    null, CUENTA_PRINCIPAL_REFRESCO, CUENTA_PRINCIPAL_REFRESCO);
             }
             else if (State == State.DataLoaded)
             {
@@ -338,6 +360,9 @@ namespace NinjaTrader.NinjaScript.Indicators
                 List<string> cuentas;
                 lock (mergeLock) { cuentas = new List<string>(pendingByAccount.Keys); }
                 foreach (var c in cuentas) FlushAccount(c);
+
+                cuentaPrincipalTimer?.Dispose();
+                cuentaPrincipalTimer = null;
 
                 httpClient?.Dispose();
                 httpClient = null;
