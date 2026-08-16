@@ -522,8 +522,10 @@ const SessionForm = (() => {
       payload.precio_min_pre       = numOrNull('precioMinPre')
       payload.soportes_naranja     = soportesNaranja ? soportesNaranja.getValues() : []
       payload.resistencias_naranja = resistenciasNaranja ? resistenciasNaranja.getValues() : []
-      payload.noticias             = document.getElementById('noticias').value.trim() || null
-      // Las noticias van a sesion_noticias; un trigger sincroniza hora_noticia_roja
+      // Las noticias van a sesion_noticias; un trigger sincroniza hora_noticia_roja.
+      // `sesiones.noticias` (textarea libre) se retiró del formulario el 16-ago:
+      // no se escribe más, pero NO se manda null para no borrar el texto histórico
+      // de los días viejos (ya migrado a sesion_noticias, se conserva por si acaso).
       payload.noticiasRojas        = getNoticiasRojas()
     } else {
       payload.precio_apertura_ayer = null
@@ -535,7 +537,6 @@ const SessionForm = (() => {
       payload.precio_min_pre     = null
       payload.soportes_naranja     = []
       payload.resistencias_naranja = []
-      payload.noticias           = null
       payload.noticiasRojas      = []
     }
 
@@ -640,7 +641,6 @@ const SessionForm = (() => {
     document.getElementById('precioApertura').value   = sesion.precio_apertura ?? ''
     document.getElementById('precioMaxPre').value     = sesion.precio_max_pre ?? ''
     document.getElementById('precioMinPre').value     = sesion.precio_min_pre ?? ''
-    document.getElementById('noticias').value         = sesion.noticias || ''
     // Noticias rojas: se leen de sesion_noticias (con su nombre). Si la consulta
     // falla, se cae al texto sincronizado de la sesión para no perder las horas.
     DB.getNoticiasByDate(sesion.sesion_date)

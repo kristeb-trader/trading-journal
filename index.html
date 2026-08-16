@@ -334,12 +334,12 @@
                 </div>
               </div>
 
-              <label style="margin-top:12px;display:block">📰 Noticias del día</label>
-              <textarea id="noticias" rows="2" placeholder="9:00am → ISM Services PMI"></textarea>
-
               <!-- Noticias ROJAS: varias por día, cada una con su ventana de ±5 min.
                    Se guardan en `sesion_noticias`; un trigger sincroniza el texto
-                   de `sesiones.hora_noticia_roja` para el Worker no versionado. -->
+                   de `sesiones.hora_noticia_roja` para el Worker no versionado.
+                   El textarea libre «Noticias del día» (`sesiones.noticias`) se
+                   retiró el 16-ago: duplicaba esto y su contenido se migró a
+                   `sesion_noticias` (migración 2026-08-16-migrar-noticias-texto). -->
               <label style="margin-top:12px;display:block">🚫 Noticias rojas <span class="lbl-hint">— no se opera ±5 min alrededor de cada una</span></label>
               <div id="noticiasRojasList" class="nr-list"></div>
               <button type="button" class="btn-add-nr" id="addNoticiaRoja">
