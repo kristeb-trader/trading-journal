@@ -509,6 +509,32 @@
               <span class="card-meta" id="cierreMeta"></span>
             </div>
 
+            <!-- Estado emocional y confianza. Vivían en el Coach IA, que era el
+                 único sitio donde se podían anotar; son datos de la sesión
+                 (`sesiones.estado_emocional_id` / `nivel_confianza`) salvo la
+                 emoción de cierre, que pertenece al diagnóstico del día. -->
+            <div class="form-group emo-row">
+              <div class="emo-col">
+                <label for="emocionInicio">¿Cómo llegué?</label>
+                <select id="emocionInicio"><option value="">Estado al inicio</option></select>
+              </div>
+              <div class="emo-col">
+                <label for="emocionFin">¿Cómo terminé?</label>
+                <select id="emocionFin"><option value="">Estado al cierre</option></select>
+              </div>
+              <div class="emo-col">
+                <label title="Qué tan convencido estabas al apretar el gatillo">Confianza en la entrada</label>
+                <div class="emo-stars" id="confianzaStars">
+                  <button type="button" class="emo-star" data-val="1" title="Muy baja — entré con dudas">★</button>
+                  <button type="button" class="emo-star" data-val="2" title="Baja">★</button>
+                  <button type="button" class="emo-star" data-val="3" title="Normal">★</button>
+                  <button type="button" class="emo-star" data-val="4" title="Alta">★</button>
+                  <button type="button" class="emo-star" data-val="5" title="Máxima — setup de libro">★</button>
+                </div>
+                <input type="hidden" id="confianzaVal">
+              </div>
+            </div>
+
             <!-- Experimentos del día (solo cuando sí operó) -->
             <div class="form-group op-only">
               <label><i class="ti ti-flask" style="font-size:0.9rem;margin-right:4px"></i>Experimentos del día</label>
@@ -632,34 +658,10 @@
             <span class="coach-date-hint" id="coachDateHint"></span>
           </div>
 
-          <!-- Fila de controles: emoción + confianza + imagen -->
+          <!-- Emoción y confianza se registran en el Diario (pestaña 1): son
+               datos de la sesión, no del análisis. Aquí queda solo la gráfica,
+               que es lo que el Coach necesita MIRAR para analizar. -->
           <div class="coach-controls-row">
-
-            <div class="coach-control-group">
-              <label class="coach-label">¿Cómo llegué?</label>
-              <select id="coachEmocionSelect" class="coach-select">
-                <option value="">Estado al inicio</option>
-              </select>
-            </div>
-
-            <div class="coach-control-group">
-              <label class="coach-label">¿Cómo terminé?</label>
-              <select id="coachEmocionFinSelect" class="coach-select">
-                <option value="">Estado al cierre</option>
-              </select>
-            </div>
-
-            <div class="coach-control-group">
-              <label class="coach-label" title="Qué tan convencido estabas al apretar el gatillo">Confianza en la entrada</label>
-              <div class="coach-stars" id="coachConfianzaStars">
-                <button type="button" class="coach-star" data-val="1" title="Muy baja — entré con dudas">★</button>
-                <button type="button" class="coach-star" data-val="2" title="Baja">★</button>
-                <button type="button" class="coach-star" data-val="3" title="Normal">★</button>
-                <button type="button" class="coach-star" data-val="4" title="Alta">★</button>
-                <button type="button" class="coach-star" data-val="5" title="Máxima — setup de libro">★</button>
-              </div>
-              <input type="hidden" id="coachConfianzaVal">
-            </div>
 
             <div class="coach-control-group coach-img-group">
               <label class="coach-label">Gráfica del día</label>

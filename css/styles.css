@@ -960,6 +960,23 @@ textarea { resize: vertical; min-height: 80px; }
 .op-trades-total td { font-weight: 700; border-bottom: none; color: var(--text); }
 .op-trades-empty { font-size: 0.83rem; color: var(--text3); padding: 4px 0; }
 
+/* Emoción y confianza (movidas del Coach al Diario) */
+.emo-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px; align-items: start;
+}
+.emo-col { display: flex; flex-direction: column; gap: 6px; }
+.emo-stars { display: flex; gap: 4px; }
+.emo-star {
+  background: none; border: none; padding: 0 2px; cursor: pointer;
+  font-size: 1.45rem; line-height: 1; color: var(--border2, #403F38);
+  transition: color var(--transition), transform 0.1s;
+}
+.emo-star:hover { transform: scale(1.12); }
+.emo-star.on { color: var(--warning); }
+#sessionFieldset:disabled .emo-star { cursor: default; }
+#sessionFieldset:disabled .emo-star:hover { transform: none; }
+
 .collapse-keep { margin-bottom: 4px; }
 .collapsible:not(.collapsed) > .collapse-keep { margin-bottom: 16px; }
 

@@ -165,17 +165,14 @@ const Coach = (() => {
       .map(c => `  - "${c.nombre}"${c.tipo ? ` [${tipoNombre[c.tipo] || c.tipo}]` : ''}`)
       .join('\n') || '  (catálogo vacío)'
 
-    // Emoción inicio (UI tiene precedencia para capturar lo recién seleccionado)
-    const emocionInicioId = parseInt(document.getElementById('coachEmocionSelect')?.value) || sesion?.estado_emocional_id
-    const emocionInicio = emocionInicioId
-      ? (emociones.find(e => e.id === emocionInicioId)?.nombre || 'No indicado')
+    // Emoción y confianza se registran en el Diario, así que se leen del dato
+    // guardado: la de llegada de `sesiones`, la de cierre del diagnóstico del día.
+    const nombreEmocion = id => id
+      ? (emociones.find(e => e.id === id)?.nombre || 'No indicado')
       : 'No indicado'
-
-    // Emoción cierre
-    const emocionFinId = parseInt(document.getElementById('coachEmocionFinSelect')?.value) || null
-    const emocionFin = emocionFinId
-      ? (emociones.find(e => e.id === emocionFinId)?.nombre || 'No indicado')
-      : 'No indicado'
+    const emocionInicio = nombreEmocion(sesion?.estado_emocional_id)
+    const diagDia = await DB.getDiagnosticoByDate(date).catch(() => null)
+    const emocionFin = nombreEmocion(diagDia?.estado_emocional_fin_id)
 
     const confianza = sesion?.nivel_confianza
       ? `${sesion.nivel_confianza}/5`
@@ -1630,13 +1627,6 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     btns.forEach(btn => { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Guardando...' })
 
     try {
-      const emocionId    = document.getElementById('coachEmocionSelect')?.value
-        ? parseInt(document.getElementById('coachEmocionSelect').value) : null
-      const emocionFinId = document.getElementById('coachEmocionFinSelect')?.value
-        ? parseInt(document.getElementById('coachEmocionFinSelect').value) : null
-      const confianza    = document.getElementById('coachConfianzaVal')?.value
-        ? parseInt(document.getElementById('coachConfianzaVal').value) : null
-
       // Errores confirmados por el usuario en la lista (registro unificado)
       const erroresConfirmados = leerErroresConfirmados()
       // El veredicto se parsea junto con la validación para detectar VÁLIDA/INVÁLIDA
@@ -1673,7 +1663,9 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
         sec_aprendizaje:      diagnosticoActual.aprendizaje,
         sec_resumen_compacto: diagnosticoActual.resumen,
         setups_json:          setuosJson,
-        estado_emocional_fin_id: emocionFinId,
+        // La emoción de cierre y la confianza se registran en el Diario (son de
+        // la sesión, no del análisis). No se mandan desde aquí: hacerlo con los
+        // selectores ya retirados enviaría null y BORRARÍA lo que puso el Diario.
         patron_detectado:     patronDetectado,
         patron_descripcion:   patronDescripcion,
         chat_messages:        chatSinImagenes(chatHistory),
@@ -1689,18 +1681,8 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
       // retomado en el que solo se chateó) los eliminaría en silencio.
       if (erroresRevisados) await DB.saveErroresIA(coachDate, erroresConfirmados)
 
-      // Emoción de inicio y confianza → fuente única en `sesiones`
-      // (solo si ya existe la sesión; no creamos sesiones huérfanas desde el Coach)
-      if (emocionId || confianza) {
-        const sesion = await DB.getSesionByDate(coachDate)
-        if (sesion) {
-          await DB.upsertSesion({
-            sesion_date: coachDate,
-            estado_emocional_id: emocionId,
-            nivel_confianza: confianza,
-          })
-        }
-      }
+      // (Emoción de inicio y confianza ya no se escriben desde aquí: las guarda
+      // el Diario junto con el resto de la sesión.)
 
       diagnosticoGuardado = true
       Toast.show('Diagnóstico guardado correctamente', 'success')
@@ -1961,57 +1943,17 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     }
   }
 
-  // ── Selector de emoción y confianza ──────────────────────────────────
+  // ── Datos del día que necesita el panel ──────────────────────────────
+  // Emoción y confianza se registran en el Diario; aquí solo queda traer la
+  // gráfica del día, que es lo que el Coach necesita MIRAR para analizar.
+  async function cargarDatosDelDia(date) {
+    const emociones = await DB.getCatalogoEmociones().catch(() => [])
+    if (emociones.length) emocionesCache = emociones
 
-  async function setupEmocionConfianza(date) {
-    const select     = document.getElementById('coachEmocionSelect')
-    const confianza  = document.getElementById('coachConfianzaVal')
-    const starsEl    = document.getElementById('coachConfianzaStars')
-    if (!select) return
-
-    // Cargar emociones
-    const emociones = await DB.getCatalogoEmociones()
-    emocionesCache = emociones
-    const optionsHtml = emociones.map(e => `<option value="${e.id}">${e.emoji} ${e.nombre}</option>`).join('')
-    select.innerHTML = '<option value="">Estado al inicio</option>' + optionsHtml
-
-    // También poblar el select de emoción al cierre
-    const selectFin = document.getElementById('coachEmocionFinSelect')
-    if (selectFin) selectFin.innerHTML = '<option value="">Estado al cierre</option>' + optionsHtml
-
-    // Pre-llenar si ya hay diagnóstico o sesión guardada
-    const [sesion, diagExistente] = await Promise.all([
-      DB.getSesionByDate(date),
-      DB.getDiagnosticoByDate(date)
-    ])
-    // Fuente única: inicio + confianza viven en `sesiones`; cierre en `diagnosticos`
-    const emocionGuardada    = sesion?.estado_emocional_id
-    const emocionFinGuardada = diagExistente?.estado_emocional_fin_id
-    const confianzaGuardada  = sesion?.nivel_confianza
-    if (emocionGuardada)              select.value    = emocionGuardada
-    if (emocionFinGuardada && selectFin) selectFin.value = emocionFinGuardada
-    if (confianzaGuardada && confianza)  confianza.value = confianzaGuardada
-
-    // Auto-cargar imagen del día desde la sesión si existe
-    // No se espera aquí (bajar la imagen no debe retrasar el panel), pero se
-    // guarda la promesa: al retomar un día, el chat sí la espera antes de enviar.
+    const sesion = await DB.getSesionByDate(date).catch(() => null)
+    // No se espera (bajar la imagen no debe retrasar el panel), pero se guarda
+    // la promesa: al retomar un día, el chat sí la espera antes de enviar.
     if (sesion?.imagen_url) imagenPromesa = autoCargarImagen(sesion.imagen_url)
-
-    // Estrellas de confianza
-    renderStars(confianzaGuardada || 0)
-    starsEl?.querySelectorAll('.coach-star').forEach(star => {
-      star.addEventListener('click', () => {
-        const val = parseInt(star.dataset.val)
-        if (confianza) confianza.value = val
-        renderStars(val)
-      })
-    })
-  }
-
-  function renderStars(val) {
-    document.querySelectorAll('.coach-star').forEach(s => {
-      s.classList.toggle('active', parseInt(s.dataset.val) <= val)
-    })
   }
 
   // ── Cambio de fecha ───────────────────────────────────────────────────
@@ -2090,7 +2032,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     }
 
     resetPanel()
-    await setupEmocionConfianza(date)
+    await cargarDatosDelDia(date)
 
     // Si ya existe diagnóstico para esa fecha, mostrarlo directamente
     const diag = await DB.getDiagnosticoByDate(date)
