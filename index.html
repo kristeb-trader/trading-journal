@@ -86,15 +86,10 @@
         <span>Otros</span>
       </li>
     </ul>
-    <div class="sidebar-footer">
-      <div class="account-badge" title="Cuenta Fondeo">
-        <i class="ti ti-building-bank"></i>
-        <span>Cuenta Fondeo</span>
-      </div>
-      <button class="logout-btn" id="logoutBtn" title="Cerrar sesión">
-        <i class="ti ti-logout"></i> <span>Cerrar sesión</span>
-      </button>
-    </div>
+    <!-- El pie se retiró: el badge "Cuenta Fondeo" era texto fijo escrito a mano
+         que ningún JS actualizaba, y el logout estaba oculto en móvil
+         (.sidebar-footer { display:none }), así que desde el teléfono no había
+         forma de cerrar sesión. Ambos viven ahora en Otros › Ajustes. -->
   </nav>
 
   <!-- ── Main Content ──────────────────────────────────────────────────── -->
@@ -123,9 +118,6 @@
       <div class="header-actions">
         <button class="status-dot" id="connectionStatus" title="Comprobando conexión…" aria-label="Estado de la conexión">
           <i class="ti ti-loader-2 spin"></i>
-        </button>
-        <button class="btn-icon" id="openSettings" title="Ajustes">
-          <i class="ti ti-settings"></i>
         </button>
       </div>
     </header>
@@ -1102,6 +1094,51 @@
            una opción nueva es una entrada más en ese array — ni HTML ni CSS. -->
       <section class="section" id="section-otros">
         <div class="otros-grid" id="otrosGrid"></div>
+
+        <!-- Ajustes. "Claves y objetivos" abre el #settingsModal de siempre, sin
+             tocar su markup ni su lógica: solo cambia quién lo dispara (antes, la
+             tuerca de la barra superior). "Cerrar sesión" vive aquí porque el pie
+             del sidebar está oculto en móvil y dejaba al journal sin logout. -->
+        <div class="ajustes-card">
+          <div class="ajustes-title"><i class="ti ti-settings"></i> Ajustes</div>
+
+          <button type="button" class="ajustes-row" id="ajustesClaves">
+            <i class="ti ti-key"></i>
+            <span class="ajustes-row-txt">
+              <span class="ajustes-row-name">Claves y objetivos</span>
+              <span class="ajustes-row-sub">API de Claude, Dashboard Secret y objetivos del día</span>
+            </span>
+            <i class="ti ti-chevron-right ajustes-row-go"></i>
+          </button>
+
+          <!-- Inerte a propósito: no es un botón, es un recordatorio. El tema
+               claro no se construye hasta consolidar el color (ver §7 del diseño). -->
+          <div class="ajustes-row ajustes-row-off">
+            <i class="ti ti-contrast"></i>
+            <span class="ajustes-row-txt">
+              <span class="ajustes-row-name">Tema</span>
+              <span class="ajustes-row-sub">Ahora mismo solo hay tema oscuro</span>
+            </span>
+            <span class="ajustes-row-tag">Pendiente</span>
+          </div>
+
+          <button type="button" class="ajustes-row" id="ajustesSeguridad">
+            <i class="ti ti-lock"></i>
+            <span class="ajustes-row-txt">
+              <span class="ajustes-row-name">Seguridad</span>
+              <span class="ajustes-row-sub">Cambiar la contraseña de acceso</span>
+            </span>
+            <i class="ti ti-chevron-right ajustes-row-go"></i>
+          </button>
+
+          <button type="button" class="ajustes-row ajustes-row-danger" id="logoutBtn">
+            <i class="ti ti-logout"></i>
+            <span class="ajustes-row-txt">
+              <span class="ajustes-row-name">Cerrar sesión</span>
+              <span class="ajustes-row-sub" id="ajustesCuenta"></span>
+            </span>
+          </button>
+        </div>
       </section>
 
       <!-- Modal: nueva/editar fecha especial -->
@@ -1334,6 +1371,37 @@
       <div class="modal-footer" style="justify-content:flex-end;">
         <button class="btn-primary" id="saveSettings">
           <i class="ti ti-device-floppy"></i> Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Seguridad — cambiar contraseña ───────────────────────── -->
+  <!-- No pide la contraseña actual: Supabase no la exige para una sesión ya
+       autenticada, y pedirla daría una falsa sensación de comprobación. -->
+  <div class="modal-overlay hidden" id="securityModal">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h3><i class="ti ti-lock"></i> Cambiar contraseña</h3>
+        <button class="btn-icon" id="closeSecurity"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-content" style="padding:16px 20px 20px">
+        <div class="form-group">
+          <label for="secPass1">Contraseña nueva</label>
+          <div style="display:flex; gap:8px;">
+            <input type="password" id="secPass1" autocomplete="new-password" placeholder="Mínimo 8 caracteres" style="flex:1">
+            <button type="button" class="btn-secondary" id="secToggle" style="padding:8px 10px; flex-shrink:0;" aria-label="Mostrar contraseña">
+              <i class="ti ti-eye"></i>
+            </button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:14px">
+          <label for="secPass2">Repite la contraseña</label>
+          <input type="password" id="secPass2" autocomplete="new-password" placeholder="La misma otra vez">
+        </div>
+        <div class="login-error hidden" id="secError" style="margin-top:12px"></div>
+        <button class="btn-primary" id="secGuardar" style="width:100%;margin-top:16px">
+          <i class="ti ti-device-floppy"></i> Cambiar contraseña
         </button>
       </div>
     </div>

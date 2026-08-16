@@ -1149,5 +1149,11 @@ const DB = {
   async signOut() {
     await supa.auth.signOut()
   },
+  // No pide la contraseña actual: Supabase no la exige para una sesión ya
+  // autenticada, y pedirla solo daría una falsa sensación de comprobación.
+  async changePassword(nueva) {
+    const { error } = await supa.auth.updateUser({ password: nueva })
+    if (error) throw error
+  },
 
 }

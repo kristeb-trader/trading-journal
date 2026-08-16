@@ -231,10 +231,15 @@ existe, [css/styles.css:769](../../css/styles.css)):
 | **Claves y objetivos** | Abre `#settingsModal` **tal cual está hoy** — API Key de Claude, Dashboard Secret y los 4 objetivos. Cero cambios en ese modal, cero riesgo |
 | **Tema** | **Inerte.** Sin interruptor. A la derecha, la etiqueta `Pendiente` en `--text3`. No es pulsable, no tiene `:hover`, no engaña (§7) |
 | **Seguridad** | Abre `#securityModal`, nuevo (§6) |
-| **Cerrar sesión** | El mismo `#logoutBtn` de hoy, movido aquí. Con esto el móvil recupera el logout |
+| **Cerrar sesión** | El mismo `#logoutBtn` de hoy, movido aquí. Con esto el móvil recupera el logout. Debajo, **el email de la sesión** (`session.user.email`) |
 
 El `.sidebar-footer` (badge "Cuenta Fondeo" + logout) **se elimina entero**. El badge era
 texto muerto; el logout vive ahora en Ajustes, donde se ve en las dos pantallas.
+
+El email bajo "Cerrar sesión" es el único añadido sobre el diseño original: donde antes
+había una etiqueta fija que mentía, ahora hay un dato real, y además responde a la pregunta
+que uno se hace justo antes de pulsar ese botón — *¿de qué cuenta estoy saliendo?*. No es
+la "cuenta principal" de Apex (esa sigue siendo otro encargo, §11).
 
 ---
 

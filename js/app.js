@@ -520,9 +520,15 @@ async function boot() {
   let session = null
   try { session = await DB.getSession() } catch (_) {}
   if (!session) { showLoginGate(); return }
+  // El logout vive en Otros › Ajustes desde que se retiró el pie del sidebar,
+  // que estaba oculto en móvil y dejaba al journal sin forma de cerrar sesión.
   document.getElementById('logoutBtn')?.addEventListener('click', async () => {
     await DB.signOut(); location.reload()
   })
+  // Bajo "Cerrar sesión", con qué cuenta se está dentro. Sustituye al badge
+  // "Cuenta Fondeo", que era texto fijo que nadie actualizaba.
+  const cuentaEl = document.getElementById('ajustesCuenta')
+  if (cuentaEl) cuentaEl.textContent = session.user?.email || ''
 
   // Check Supabase connectivity. La barra solo muestra el punto de color: el
   // texto decía lo mismo que el color y ocupaba sitio. El detalle sale al pulsarlo.
@@ -553,8 +559,9 @@ async function boot() {
   // del fallback por prefijo.
   await DB.preloadCatalogos()
 
-  // Settings modal
-  const openSettings = document.getElementById('openSettings')
+  // Settings modal. Lo dispara ahora la fila "Claves y objetivos" de Otros ›
+  // Ajustes, en vez de la tuerca de la barra superior. El modal en sí no cambia.
+  const openSettings = document.getElementById('ajustesClaves')
   const settingsModal = document.getElementById('settingsModal')
   const closeSettings = document.getElementById('closeSettings')
   const inputClaudeKey = document.getElementById('inputClaudeKey')
@@ -626,6 +633,56 @@ async function boot() {
 
     Toast.show('Ajustes guardados', 'success')
     settingsModal.classList.add('hidden')
+  })
+
+  // ── Seguridad: cambiar contraseña ───────────────────────────────────────
+  const secModal = document.getElementById('securityModal')
+  const secP1 = document.getElementById('secPass1')
+  const secP2 = document.getElementById('secPass2')
+  const secErr = document.getElementById('secError')
+  const secBtn = document.getElementById('secGuardar')
+
+  const secCerrar = () => {
+    secModal.classList.add('hidden')
+    secP1.value = ''; secP2.value = ''
+    secErr.classList.add('hidden')
+  }
+  document.getElementById('ajustesSeguridad')?.addEventListener('click', () => {
+    secCerrar(); secModal.classList.remove('hidden'); secP1.focus()
+  })
+  document.getElementById('closeSecurity').addEventListener('click', secCerrar)
+  secModal.addEventListener('click', e => { if (e.target === secModal) secCerrar() })
+
+  document.getElementById('secToggle').addEventListener('click', () => {
+    const oculta = secP1.type === 'password'
+    secP1.type = secP2.type = oculta ? 'text' : 'password'
+    document.getElementById('secToggle').innerHTML = oculta
+      ? '<i class="ti ti-eye-off"></i>' : '<i class="ti ti-eye"></i>'
+  })
+
+  secBtn.addEventListener('click', async () => {
+    const p1 = secP1.value, p2 = secP2.value
+    const fallo = p1.length < 8
+      ? 'La contraseña necesita al menos 8 caracteres.'
+      : p1 !== p2 ? 'Las dos contraseñas no coinciden.' : null
+    if (fallo) {
+      secErr.textContent = fallo; secErr.classList.remove('hidden')
+      return
+    }
+    secErr.classList.add('hidden')
+    secBtn.disabled = true
+    secBtn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Cambiando…'
+    try {
+      await DB.changePassword(p1)
+      secCerrar()
+      Toast.show('Contraseña actualizada', 'success')
+    } catch (e) {
+      secErr.textContent = e.message || 'No se pudo cambiar la contraseña.'
+      secErr.classList.remove('hidden')
+    } finally {
+      secBtn.disabled = false
+      secBtn.innerHTML = '<i class="ti ti-device-floppy"></i> Cambiar contraseña'
+    }
   })
 
   // Modal events

@@ -76,8 +76,8 @@ small { font-size: 0.82em; }
 }
 .sidebar.collapsed { width: 60px; }
 .sidebar.collapsed .logo span,
-.sidebar.collapsed .nav-item span,
-.sidebar.collapsed .account-badge span { display: none; }
+.sidebar.collapsed .nav-item span { display: none; }
+
 
 .sidebar-header { padding: 18px 16px; border-bottom: 1px solid var(--border); }
 .logo { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 600; color: var(--accent); }
@@ -195,23 +195,6 @@ small { font-size: 0.82em; }
   background: var(--bg2); color: var(--text3); font-size: 1.6rem;
 }
 
-.sidebar-footer { padding: 12px 16px; border-top: 1px solid var(--border); }
-.account-badge {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 0.78rem; color: var(--text3);
-  white-space: nowrap; overflow: hidden;
-}
-.account-badge i { font-size: 1rem; min-width: 16px; }
-
-.logout-btn {
-  display: flex; align-items: center; gap: 8px; width: 100%;
-  margin-top: 10px; padding: 8px 10px; border-radius: 8px;
-  background: transparent; border: 1px solid var(--border);
-  color: var(--text2); font-size: 0.8rem; cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.logout-btn:hover { background: rgba(226,75,74,0.10); border-color: rgba(226,75,74,0.3); color: var(--red); }
-.logout-btn i { font-size: 1rem; min-width: 16px; }
 
 /* ── Login gate ───────────────────────────────────────────────────────── */
 .login-gate {
@@ -1878,11 +1861,54 @@ body.modal-open { overflow: hidden; }
 .otros-card:active { transform: scale(0.98); }
 .otros-card:focus-visible { outline: 2px solid var(--accent-txt); outline-offset: 2px; }
 
+/* Ajustes, dentro de Otros. Filas, no tarjetas: son acciones de una línea, y
+   una rejilla de tarjetas las haría parecer secciones más de la app. */
+.ajustes-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-top: 28px; max-width: 860px; overflow: hidden;
+}
+.ajustes-title {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  font-size: 0.78rem; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text3);
+}
+.ajustes-row {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 14px 18px; text-align: left;
+  color: var(--text); border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+.ajustes-row:last-child { border-bottom: none; }
+.ajustes-row > i:first-child { font-size: 1.15rem; color: var(--text2); flex-shrink: 0; }
+.ajustes-row-txt { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.ajustes-row-name { font-size: 0.92rem; font-weight: 500; }
+.ajustes-row-sub { font-size: 0.76rem; color: var(--text3); }
+.ajustes-row-go { font-size: 1rem; color: var(--text3); flex-shrink: 0; }
+button.ajustes-row:hover { background: var(--bg3); }
+button.ajustes-row:hover > i:first-child { color: var(--accent-txt); }
+button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline-offset: -2px; }
+.ajustes-row-danger:hover { background: var(--red-dim); }
+.ajustes-row-danger:hover > i:first-child,
+.ajustes-row-danger:hover .ajustes-row-name { color: var(--red-txt); }
+/* Fila inerte: ni cursor de mano ni hover. Debe leerse como un recordatorio,
+   no como un botón roto. */
+.ajustes-row-off { cursor: default; }
+.ajustes-row-off .ajustes-row-name { color: var(--text2); }
+.ajustes-row-tag {
+  font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text3); border: 1px solid var(--border);
+  border-radius: 20px; padding: 3px 10px; flex-shrink: 0;
+}
+
 @media (max-width: 640px) {
   /* Dos columnas, no una: con una sola, seis tarjetas obligan a deslizar en la
      pantalla cuyo motivo de existir es precisamente no deslizar. */
   .otros-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .otros-card { padding: 14px 12px; }
+  .ajustes-row { padding: 13px 14px; gap: 12px; }
 }
 .catalog-item {
   display: flex; align-items: center; gap: 10px;
@@ -2568,7 +2594,7 @@ body.modal-open { overflow: hidden; }
 /* ── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .sidebar { width: 60px; }
-  .sidebar .logo span, .sidebar .nav-item span, .sidebar .account-badge span { display: none; }
+  .sidebar .logo span, .sidebar .nav-item span { display: none; }
   .main-content { margin-left: 60px; }
   .calendar-grid { gap: 3px; grid-template-columns: repeat(5, 1fr) minmax(70px, 1fr); }
   .cal-cell { min-height: 60px; padding: 4px 5px; }
@@ -2591,8 +2617,7 @@ body.modal-open { overflow: hidden; }
     border-top: 1px solid var(--border);
     z-index: 200;
   }
-  .sidebar-header,
-  .sidebar-footer { display: none; }
+  .sidebar-header { display: none; }
 
   .nav-menu {
     display: flex;
