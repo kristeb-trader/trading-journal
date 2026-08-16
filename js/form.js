@@ -401,25 +401,27 @@ const SessionForm = (() => {
   // ── Noticias rojas del día (varias) ───────────────────────────────────────
   // Cada una define una ventana de ±5 min en la que NO se abre posición. Estar ya
   // dentro cuando sale la noticia es válido: la regla es sobre la entrada.
-  const MARGEN_NOTICIA = 5
-
-  function ventanaTexto(hhmm) {
-    const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || '')
-    if (!m) return ''
-    const base = (+m[1]) * 60 + (+m[2])
-    const fmt = t => { const x = ((t % 1440) + 1440) % 1440; return String((x / 60) | 0).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0') }
-    return `No operar ${fmt(base - MARGEN_NOTICIA)} → ${fmt(base + MARGEN_NOTICIA)}`
-  }
-
+  // Cada fila lleva DOS caras: la de lectura (hora + noticia, limpia) y la de
+  // edición (los inputs). El CSS enseña una u otra según el modo, así el día se
+  // lee de un vistazo y solo aparecen los campos cuando se va a escribir.
+  // No se muestra la ventana "No operar HH:MM → HH:MM": ocupa sitio y el dato
+  // que importa es la noticia. El cálculo de ±5 min sigue vivo en db.js, que es
+  // quien avisa si un trade entró dentro de la ventana.
   function filaNoticiaHtml(n = {}) {
     const hora = n.hora || ''
     const nombre = (n.nombre || '').replace(/"/g, '&quot;')
+    const esc = s => (s || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
     return `
       <div class="nr-row">
-        <input type="time" class="nr-hora" value="${hora}">
-        <input type="text" class="nr-nombre" placeholder="Nombre de la noticia (ISM, NFP…)" value="${nombre}">
-        <span class="nr-win${hora ? ' on' : ''}">${ventanaTexto(hora)}</span>
-        <button type="button" class="nr-del" title="Quitar"><i class="ti ti-x"></i></button>
+        <div class="nr-read">
+          <span class="nr-hora-txt">${esc(hora) || '--:--'}</span>
+          <span class="nr-nombre-txt">${esc(n.nombre) || 'Sin nombre'}</span>
+        </div>
+        <div class="nr-edit">
+          <input type="time" class="nr-hora" value="${hora}">
+          <input type="text" class="nr-nombre" placeholder="Nombre de la noticia (ISM, NFP…)" value="${nombre}">
+          <button type="button" class="nr-del" title="Quitar"><i class="ti ti-x"></i></button>
+        </div>
       </div>`
   }
 
@@ -429,7 +431,7 @@ const SessionForm = (() => {
     const rows = (lista || [])
     cont.innerHTML = rows.length
       ? rows.map(filaNoticiaHtml).join('')
-      : '<div class="nr-empty">Sin noticias rojas registradas</div>'
+      : '<div class="nr-empty">Sin noticias rojas</div>'
     wireNoticiasRojas()
   }
 
@@ -437,12 +439,14 @@ const SessionForm = (() => {
     const cont = document.getElementById('noticiasRojasList')
     if (!cont) return
     cont.querySelectorAll('.nr-row').forEach(row => {
-      const hora = row.querySelector('.nr-hora')
-      const win  = row.querySelector('.nr-win')
-      hora?.addEventListener('input', () => {
-        win.textContent = ventanaTexto(hora.value)
-        win.classList.toggle('on', !!hora.value)
-      })
+      // Escribir en los inputs actualiza la cara de lectura de esa misma fila,
+      // para que al guardar no salte de un texto a otro.
+      const hora   = row.querySelector('.nr-hora')
+      const nombre = row.querySelector('.nr-nombre')
+      const hTxt   = row.querySelector('.nr-hora-txt')
+      const nTxt   = row.querySelector('.nr-nombre-txt')
+      hora?.addEventListener('input',   () => { if (hTxt) hTxt.textContent = hora.value || '--:--' })
+      nombre?.addEventListener('input', () => { if (nTxt) nTxt.textContent = nombre.value || 'Sin nombre' })
       row.querySelector('.nr-del')?.addEventListener('click', () => {
         row.remove()
         if (!cont.querySelector('.nr-row')) renderNoticiasRojas([])
