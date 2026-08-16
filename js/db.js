@@ -377,8 +377,8 @@ const DB = {
       throw new Error(`Error ${res.status}: ${text}`)
     }
     // Checklist → filas en sesion_checklist (tras crear/actualizar la fila por el
-    // Worker; el trigger ya materializó las reglas en true, aquí se actualizan las
-    // que el trader marcó distinto). Upsert por (sesion_date, regla_codigo).
+    // Worker). Ya NO hay trigger que las materialice en true: la sesión nace limpia
+    // y aquí se escribe lo que el trader marcó. Upsert por (sesion_date, regla_codigo).
     if (checklist && rest.sesion_date) {
       const now = new Date().toISOString()
       const rows = Object.entries(checklist).map(([regla_codigo, cumplido]) => ({

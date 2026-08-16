@@ -915,8 +915,9 @@ namespace NinjaTrader.NinjaScript.AddOns
         {
             try
             {
-                // 1) Asegura la fila de sesiones (FK de sesion_checklist; el trigger
-                //    materializa las reglas en true si la fila es nueva).
+                // 1) Asegura la fila de sesiones (la FK de sesion_checklist la exige).
+                //    Ya NO hay trigger que materialice el checklist: lo que se guarda
+                //    es exactamente lo que hay marcado en pantalla.
                 await UpsertSesionAsync(new JObject { ["sesion_date"] = currentDate }).ConfigureAwait(false);
                 // 2) Escribe TODAS las claves (ambos setups): cambiar de vista no borra marcas.
                 await UpsertChecklistAsync().ConfigureAwait(false);
@@ -1024,8 +1025,11 @@ namespace NinjaTrader.NinjaScript.AddOns
                 UpdateNoticiaAlert();
                 UpdateGoButton();
 
-                // Reflejar el reset en BD (los upserts ya se auto-bloquean en fin de semana)
-                if (!EsFinDeSemana()) _ = SaveStateAsync();
+                // NO se escribe nada en BD al empezar el día: una sesión nueva nace
+                // LIMPIA y sin filas en `sesion_checklist` (sin fila = N/A, no cuenta
+                // ni a favor ni en contra). Las filas se crean con el primer clic del
+                // trader — SaveStateAsync ya asegura la fila de `sesiones` por la FK.
+                // Guardar aquí dejaba las 18 reglas en `false` sin haber tocado nada.
             }
         }
 
