@@ -1167,7 +1167,9 @@ const SessionForm = (() => {
 
   function renderExpList() {
     updateCierreMeta()
-    ['expTradeList', 'expSNTList'].forEach(listId => {
+    // El `;` inicial NO es opcional: sin él, la línea anterior y este array se
+    // leen como `updateCierreMeta()['expSNTList']` y revienta al guardar.
+    ;['expTradeList', 'expSNTList'].forEach(listId => {
       const list = document.getElementById(listId)
       if (!list) return
 
