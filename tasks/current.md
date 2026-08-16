@@ -54,20 +54,24 @@ sintaxis válida.
 En un navegador normal la PWA funciona. Si quieres confirmarlo: abre la app en Chrome y
 mira **DevTools → Application → Service Workers**.
 
-### Service worker — dos cosas reales que sí salieron (menores)
+### ✅ Service worker — `APP_SHELL` arreglado (16 ago)
 
-Al analizar `sw.js` para lo anterior:
+Lo que sí era real: `APP_SHELL` se declaraba en `sw.js` y **no se usaba en ningún sitio**
+(`install` solo precacheaba `CDN_SHELL`), listaba `js/annual.js` —que ya no existe— y le
+faltaban 6 archivos que sí. La PWA no abría sin conexión en la primera visita.
 
-1. **`APP_SHELL` es código muerto.** Se declara en `sw.js:17` y **no se usa en ningún
-   sitio**: `install` solo precachea `CDN_SHELL`. Además lista `js/annual.js`, que ya no
-   existe, y le faltan 6 archivos que sí existen (`account-filter`, `apex`, `disciplina`,
-   `estrategia`, `experimentos`, `fechas`).
-2. **Consecuencia:** la primera visita **sin conexión** no tiene nada cacheado. A partir de
-   la segunda sí, porque la estrategia network-first va guardando lo que descarga. O sea:
-   funciona, pero no hace lo que su propio código dice que hace.
+Arreglado: `install` ahora precachea los 25 recursos propios + los 3 del CDN, y `CACHE`
+sube a `nqjournal-v5` para forzar la reinstalación.
 
-Arreglarlo bien (que `install` precachee de verdad el shell) **cambia el comportamiento
-offline** de la PWA, así que va con decisión aparte.
+**Al añadir un `<script>` a `index.html`, añadirlo también a `APP_SHELL`.** Si no, ese
+archivo no está en la primera visita sin conexión. Hay un comentario en `sw.js` que lo
+recuerda.
+
+**Pendiente de comprobación tuya:** no pude registrar el service worker en el navegador de
+pruebas (lo bloquea). Verificado que las 28 entradas responden 200 y que `APP_SHELL`
+coincide exactamente con los `<script>` de `index.html`, pero **el precacheo real no se ha
+visto ejecutar**. Para confirmarlo: Chrome → DevTools → Application → Cache Storage →
+`nqjournal-v5` debe tener 28 entradas.
 
 ### Modal del día — distinguir el ítem tumbado del nunca marcado
 
