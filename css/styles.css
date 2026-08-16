@@ -1114,6 +1114,61 @@ body.modal-open { overflow: hidden; }
 }
 @keyframes modalIn { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
 
+/* ── Vista del día: pantalla completa ─────────────────────────────────────── */
+/* Sustituye al modal de 3 pestañas. Ocupa toda la pantalla para que quepan el
+   gráfico grande y el diagnóstico en un solo scroll. */
+.modal.modal-full {
+  max-width: none; width: 100vw; height: 100vh; max-height: 100vh;
+  border-radius: 0; border: none; animation: dvIn 0.16s ease;
+}
+@keyframes dvIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-overlay:has(.modal-full) { padding: 0; align-items: stretch; }
+
+.dv-header { gap: 16px; flex-wrap: wrap; background: var(--card); }
+.dv-header h3 { flex: 0 0 auto; }
+.dv-header .mh-stats { margin-left: auto; margin-right: 0; }
+.dv-back { flex: 0 0 auto; }
+.dv-esc {
+  flex: 0 0 auto; font-size: 0.72rem; color: var(--text3);
+  border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px;
+}
+.dv-footer { display: flex; gap: 10px; justify-content: flex-end; }
+
+/* Cuerpo: una columna legible y centrada, no todo el ancho de la pantalla */
+.dv-body { max-width: 900px; margin: 0 auto; }
+.dv-img { text-align: center; margin-bottom: 22px; }
+.dv-img img {
+  max-width: 100%; max-height: 62vh; border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+/* Bloques de texto: una barra de color por tipo de contenido */
+.dv-block { border-left: 2px solid var(--accent); padding: 2px 0 2px 14px; margin: 18px 0; }
+.dv-block.blu { border-left-color: #5B94C9; }
+.dv-block.red { border-left-color: var(--red); }
+.dv-block.amb { border-left-color: var(--warning); }
+.dv-block.gry { border-left-color: var(--border2, #403F38); }
+.dv-lbl {
+  font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent); font-weight: 700; margin-bottom: 6px;
+}
+.dv-block.blu .dv-lbl { color: #8FBDE8; }
+.dv-block.red .dv-lbl { color: #F2706F; }
+.dv-block.amb .dv-lbl { color: #E0A33B; }
+.dv-block.gry .dv-lbl { color: var(--text3); }
+.dv-txt { font-size: 0.9rem; color: var(--text2); line-height: 1.65; }
+.dv-txt p { margin: 0 0 8px; }
+.dv-txt p:last-child { margin-bottom: 0; }
+.dv-txt strong { color: var(--text); }
+
+@media (max-width: 720px) {
+  .dv-header { gap: 10px; padding: 12px 14px; }
+  .dv-header h3 { font-size: 0.95rem; }
+  .dv-header .mh-stats { order: 3; flex: 1 0 100%; margin: 0; }
+  .dv-esc { display: none; }
+  .dv-img img { max-height: 42vh; }
+}
+
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px 20px; border-bottom: 1px solid var(--border);

@@ -1203,33 +1203,27 @@
   </main>
 
   <!-- ── Modal: Detalle del día ──────────────────────────────────────── -->
+  <!-- Vista del día: pantalla completa, de lectura. Sustituye al modal de 3
+       pestañas (Gráfica/Resumen/Operativa) por un solo scroll con lo relevante
+       del día. Se cierra con Esc o con "Volver al calendario". -->
   <div class="modal-overlay hidden" id="dayModal">
-    <div class="modal">
-      <div class="modal-header">
+    <div class="modal modal-full">
+      <div class="modal-header dv-header">
+        <button class="btn-secondary dv-back" id="closeModal">
+          <i class="ti ti-chevron-left"></i> Volver al calendario
+        </button>
         <h3 id="modalDateTitle">Detalle del día</h3>
         <div class="mh-stats" id="modalHeadStats"></div>
-        <button class="btn-icon" id="closeModal" title="Cerrar">
-          <i class="ti ti-x"></i>
-        </button>
-      </div>
-      <div class="modal-tabs">
-        <button class="tab-btn active" data-tab="grafica"><i class="ti ti-photo"></i> Gráfica</button>
-        <button class="tab-btn" data-tab="resumen"><i class="ti ti-layout-dashboard"></i> Resumen</button>
-        <button class="tab-btn" data-tab="operativa"><i class="ti ti-chart-bar"></i> Operativa</button>
+        <span class="dv-esc">Esc para salir</span>
       </div>
       <div class="modal-content">
-        <div class="tab-panel active" id="tab-grafica">
-          <div id="modalGrafica"></div>
-        </div>
-        <div class="tab-panel" id="tab-resumen">
-          <div id="modalResumen"></div>
-        </div>
-        <div class="tab-panel" id="tab-operativa">
-          <div id="modalOperativa"></div>
-        </div>
+        <div id="modalDia" class="dv-body"></div>
       </div>
-      <div class="modal-footer">
-        <button class="btn-secondary" id="editSessionBtn">
+      <div class="modal-footer dv-footer">
+        <button class="btn-secondary" id="closeModalBottom">
+          <i class="ti ti-chevron-left"></i> Volver al calendario
+        </button>
+        <button class="btn-primary" id="editSessionBtn">
           <i class="ti ti-eye"></i> Ver sesión
         </button>
       </div>

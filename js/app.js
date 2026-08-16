@@ -54,9 +54,7 @@ const Modal = {
     ])
     const ctx = { dateStr, trades, sesion, diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp }
 
-    document.getElementById('modalResumen').innerHTML   = this._renderResumen(ctx)
-    document.getElementById('modalOperativa').innerHTML = this._renderOperativa(ctx)
-    document.getElementById('modalGrafica').innerHTML   = this._renderGrafica(ctx)
+    document.getElementById('modalDia').innerHTML = this._renderVistaDia(ctx)
 
     // Footer: Editar vs Registrar según exista la sesión
     const editBtn = document.getElementById('editSessionBtn')
@@ -66,7 +64,7 @@ const Modal = {
 
     // Eventos: lightbox, toggles de errores, ver completo
     setTimeout(() => {
-      const img = modal.querySelector('#modalGrafica img')
+      const img = modal.querySelector('#modalDia .dv-img img')
       if (img) img.addEventListener('click', () => Lightbox.open(img.src))
       modal.querySelectorAll('.modal-cas-row.has-detail').forEach(row => {
         row.addEventListener('click', () => {
@@ -82,12 +80,7 @@ const Modal = {
       })
     }, 50)
 
-    // Reset a la pestaña Gráfica (primera)
-    modal.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
-    modal.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'))
-    modal.querySelector('.tab-btn[data-tab="grafica"]').classList.add('active')
-    document.getElementById('tab-grafica').classList.add('active')
-
+    modal.querySelector('.modal-content').scrollTop = 0   // abrir siempre arriba
     modal.classList.remove('hidden')
     document.body.classList.add('modal-open')
   },
@@ -136,11 +129,8 @@ const Modal = {
     const badgeCls = st.cls === 'mst-green' ? 'r-t' : st.cls === 'mst-red' ? 'r-s' : 'r-o'
     // Tono del recuadro: verde en target, rojo en stop, neutro en el resto
     const boxTone = st.cls === 'mst-green' ? 'tone-t' : st.cls === 'mst-red' ? 'tone-s' : 'tone-o'
+    // Orden pedido: Resultado · Puntos · P&L · Setup
     const cells = []
-    if (trades.length) {
-      const pts = this._puntosDia(trades)
-      if (pts != null) cells.push(`<div class="mh-stat"><label>Puntos</label><span class="mh-val ${pts < 0 ? 'neg' : 'pos'}">${pts >= 0 ? '+' : ''}${pts.toFixed(2)}</span></div>`)
-    }
     const CORTO = {
       'Setup válido — no entré': 'NO ENTRÉ',
       'Sin entradas válidas': 'SIN ENTRADAS',
@@ -150,6 +140,8 @@ const Modal = {
     }
     cells.push(`<div class="mh-stat"><label>Resultado</label><span class="cz-rb ${badgeCls}" title="${st.label}">${CORTO[st.label] || st.label}</span></div>`)
     if (trades.length) {
+      const pts = this._puntosDia(trades)
+      if (pts != null) cells.push(`<div class="mh-stat"><label>Puntos</label><span class="mh-val ${pts < 0 ? 'neg' : 'pos'}">${pts >= 0 ? '+' : ''}${pts.toFixed(2)}</span></div>`)
       const pnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
       cells.push(`<div class="mh-stat"><label>P&amp;L</label><span class="mh-val ${pnl < 0 ? 'neg' : 'pos'}">${pnl >= 0 ? '+' : '−'}$${Math.abs(pnl).toFixed(2)}</span></div>`)
     }
@@ -188,202 +180,62 @@ const Modal = {
     })
   },
 
-  // Pestaña 1 — Resumen: el día en 5 segundos (hero + proceso + errores + siguiente paso)
-  _renderResumen({ trades, sesion, diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp }) {
-    if (!sesion && !diag && !trades.length) {
-      return '<div class="modal-no-trade"><i class="ti ti-calendar-off"></i><p>Sin registro para este día</p></div>'
-    }
+  // ── Vista del día (pantalla completa) ────────────────────────────────────
+  // Un solo scroll: gráfico → lo que escribió el trader → lo que dijo el Coach.
+  // Sustituye a las 3 pestañas; el P&L ya vive en la cabecera, así que aquí NO
+  // se repite (el banner grande del antiguo Resumen era ese duplicado).
 
-    const st = this._dayState(trades, sesion)
-    const pnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
-    const emoIni = emociones.find(e => e.id === sesion?.estado_emocional_id)
-    const emoFin = emociones.find(e => e.id === diag?.estado_emocional_fin_id)
-    const conf = sesion?.nivel_confianza
-
-    // ── Hero: P&L grande (o el estado del día) + badge + setup ──
-    const heroMain = trades.length
-      ? `<div class="md2-pnl ${pnl >= 0 ? 'pos' : 'neg'}">${pnl >= 0 ? '+' : '−'}$${Math.abs(pnl).toFixed(2)}</div>`
-      : `<div class="md2-pnl none">${st.icon}</div>`
-    const setupChip = sesion?.setup ? `<span class="md2-setup">${sesion.setup}</span>` : ''
-    const meta = []
-    if (trades.length) meta.push(`${trades.length} trade${trades.length !== 1 ? 's' : ''}`)
-    if (emoIni) meta.push(`${emoIni.emoji}${emoFin ? ` → ${emoFin.emoji}` : ''} ${emoIni.nombre}${emoFin ? ` → ${emoFin.nombre}` : ''}`)
-    if (conf) meta.push(`<span class="md2-stars" title="Confianza en la entrada ${conf}/5">${'★'.repeat(conf)}${'☆'.repeat(5 - conf)}</span>`)
-    const hero = `
-      <div class="md2-hero ${st.cls}">
-        <div class="md2-hero-l">
-          ${heroMain}
-          ${meta.length ? `<div class="md2-meta">${meta.join('<span class="md2-dot">·</span>')}</div>` : ''}
-        </div>
-        <div class="md2-hero-r">
-          <span class="md2-badge ${st.cls}">${st.icon} ${st.label}</span>
-          ${setupChip}
-        </div>
-      </div>`
-
-    const setupObs = sesion?.setup_valido_no_tomado && sesion.setup_observado
-      ? `<div class="mr-setupobs"><i class="ti ti-eye"></i> Setup observado: <b>${sesion.setup_observado}</b>${sesion.motivo_no_entrada ? ` · no entré por <b>${sesion.motivo_no_entrada}</b>` : ''}</div>`
-      : ''
-
-    // ── Proceso: UNA barra con el checklist real del día; solo se listan los ✗ ──
-    const items = this._checklistDia(chkItems, sesion, allDayTrades || trades, casuisticas, fechasEsp)
-    let procesoHtml = ''
-    if (items.length) {
-      const ok = items.filter(i => i.ok).length
-      const pct = Math.round(ok / items.length * 100)
-      const cls = pct === 100 ? 'ok' : pct >= 70 ? 'warn' : 'bad'
-      const fails = items.filter(i => !i.ok)
-      const failsHtml = fails.slice(0, 4).map(i => `<div class="md2-fail">✗ ${i.texto}</div>`).join('')
-        + (fails.length > 4 ? `<div class="md2-fail more">+${fails.length - 4} más</div>` : '')
-      procesoHtml = `
-        <div class="md2-block">
-          <div class="md2-block-head"><span class="md2-block-title">Proceso</span><span class="md2-proc-n ${cls}">${ok}/${items.length} · ${pct}%</span></div>
-          <div class="md2-proc-track"><div class="md2-proc-fill ${cls}" style="width:${pct}%"></div></div>
-          ${failsHtml}
-        </div>`
-    }
-
-    // ── Errores: chips solo si hay (el detalle vive en la pestaña Gráfica) ──
-    const errHtml = casuisticas.length ? `
-      <div class="md2-block">
-        <div class="md2-block-head"><span class="md2-block-title">⚠️ Errores</span><span class="md2-proc-n bad">${casuisticas.length}</span></div>
-        <div class="md2-errs">${casuisticas.map(c => {
-          const emo = this._TIPO_EMO[c.tipo] || '•'
-          const res = (c.resultado === 'T' || c.resultado === 'S') ? ` <b class="${c.resultado === 'T' ? 'res-t' : 'res-s'}">${c.resultado}</b>` : ''
-          return `<span class="mr-chip err">${emo} ${c.casuistica}${res}</span>`
-        }).join('')}</div>
-      </div>`
-      : (sesion || diag ? '<div class="md2-clean">✅ Día sin errores registrados</div>' : '')
-
-    // ── Siguiente paso: UNA recomendación (IA > manual > aprendizaje) ──
-    let rec = null
-    for (const c of casuisticas) {
-      if (c.recomendacion_ia) { rec = { txt: c.recomendacion_ia, tag: c.recomendacion?.nombre } ; break }
-      if (c.recomendacion_manual && !rec) rec = { txt: c.recomendacion_manual, tag: '✍️ Nota propia' }
-    }
-    if (!rec && diag?.sec_aprendizaje) rec = { txt: this._truncate(this._mdStrip(diag.sec_aprendizaje), 200), tag: 'Aprendizaje' }
-    const recHtml = rec ? `
-      <div class="md2-block md2-next">
-        <div class="md2-block-head"><span class="md2-block-title">💡 Siguiente paso</span>${rec.tag ? `<span class="md2-rec-tag">${rec.tag}</span>` : ''}</div>
-        <p class="md2-rec-txt">${rec.txt}</p>
-      </div>` : ''
-
-    const verBtn = diag
-      ? `<div class="mr-actions"><button class="btn-primary btn-sm" id="modalVerCompleto"><i class="ti ti-file-search"></i> Ver diagnóstico completo</button></div>`
-      : ''
-
-    return hero + setupObs + procesoHtml + errHtml + recHtml + verBtn
+  // Markdown mínimo: **negrita**, `código` y saltos de línea. Las secciones del
+  // Coach vienen en markdown ligero y sin esto se leen con los asteriscos.
+  _md(s) {
+    const esc = (s || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+    return esc
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`(.+?)`/g, '$1')
+      .replace(/^\s*[-*]\s+/gm, '• ')
+      .replace(/\n{2,}/g, '</p><p>')
+      .replace(/\n/g, '<br>')
   },
 
-  // Pestaña 2 — Operativa (tabla de trades estilo Coach + campos + checklist por fases)
-  _renderOperativa({ trades, sesion, chkItems, allDayTrades, casuisticas, fechasEsp }) {
-    const pnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
-    const targets = trades.filter(isWinTrade).length
-    const stops = trades.filter(isLossTrade).length
-
-    // Verificación automática: trades dentro de la ventana ±5 min de la noticia roja
-    const enVentana = tradesEnVentanaNoticia(trades, sesion)
-    const enVentanaSet = new Set(enVentana.map(t => t.id))
-    const noticiaWarn = enVentana.length
-      ? `<div class="modal-noticia-warn"><i class="ti ti-alert-triangle"></i> Operaste dentro de la ventana de la noticia roja (${sesion.hora_noticia_roja} ±5 min): ${enVentana.length} trade${enVentana.length !== 1 ? 's' : ''}.</div>`
-      : ''
-
-    let tradesHtml
-    if (!trades.length) {
-      // Estados vacíos inteligentes: distinguir filtro de cuenta / sin export / no operó
-      const ocultos = (allDayTrades || []).length
-      if (ocultos > 0) {
-        tradesHtml = `<div class="modal-no-trade"><i class="ti ti-filter"></i><p>Hay ${ocultos} trade${ocultos !== 1 ? 's' : ''} de otras cuentas este día</p><p class="text-dim">Cambia el filtro de cuenta del calendario para verlos</p></div>`
-      } else if (sesion?.no_opero) {
-        tradesHtml = `<div class="modal-no-trade"><i class="ti ti-coffee"></i><p>Sin operación este día</p><p class="text-dim">${sesion.motivo_no_opero || ''}</p></div>`
-      } else if (sesion) {
-        tradesHtml = `<div class="modal-no-trade"><i class="ti ti-plug-x"></i><p>Sesión operada, pero sin trades exportados</p><p class="text-dim">Revisa que el indicador de NinjaTrader haya exportado el trade</p></div>`
-      } else {
-        tradesHtml = '<div class="modal-no-trade"><i class="ti ti-chart-off"></i><p>Sin trades registrados</p></div>'
-      }
-    } else {
-      // Tabla estilo Coach: hora · dirección · entrada→salida · puntos · resultado · P&L
-      const rows = trades.map(t => {
-        const dir = /short|sell/i.test(t.market_pos || '') ? 'SHORT' : 'LONG'
-        const e = parseFloat(t.entry_price), x = parseFloat(t.exit_price)
-        const hasPx = isFinite(e) && isFinite(x)
-        const pts = hasPx ? (dir === 'SHORT' ? e - x : x - e) : null
-        const be = Math.abs(parseFloat(t.profit) || 0) <= 6
-        const res = be ? 'B.E.' : t.resultado === 'target' ? 'TARGET' : t.resultado === 'stop' ? 'STOP' : (parseFloat(t.profit) > 0 ? 'TARGET' : 'STOP')
-        const rescls = be ? 'r-o' : res === 'TARGET' ? 'r-t' : 'r-s'
-        const p = parseFloat(t.profit) || 0
-        const flag = enVentanaSet.has(t.id) ? '<span title="Entró en la ventana de la noticia roja">🚫 </span>' : ''
-        return `<tr${enVentanaSet.has(t.id) ? ' class="trade-en-ventana"' : ''}>
-          <td>${flag}${[t.entry_time, t.exit_time].filter(Boolean).map(h => (h || '').slice(0, 5)).join(' → ') || '—'}</td>
-          <td>${dir === 'LONG' ? '▲' : '▼'} ${dir}</td>
-          <td>${hasPx ? `${e} → ${x}` : '—'}</td>
-          <td class="${pts != null && pts < 0 ? 'neg' : 'pos'}">${pts != null ? (pts >= 0 ? '+' : '') + pts.toFixed(2) : '—'}</td>
-          <td><span class="cz-rb ${rescls}">${res}</span></td>
-          <td class="${p < 0 ? 'neg' : 'pos'}">${p >= 0 ? '+' : '−'}$${Math.abs(p).toFixed(2)}</td>
-        </tr>`
-      }).join('')
-      tradesHtml = `
-        <div class="modal-summary-bar">
-          <div class="ms-stat"><span>${trades.length}</span><small>Trades</small></div>
-          <div class="ms-stat green"><span>${targets}</span><small>Targets</small></div>
-          <div class="ms-stat red"><span>${stops}</span><small>Stops</small></div>
-          <div class="ms-stat ${pnl >= 0 ? 'green' : 'red'}"><span>${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</span><small>P&L</small></div>
-        </div>
-        <div class="cz-optable-wrap"><table class="cz-optable"><thead><tr>
-          <th>Hora</th><th>Dir</th><th>Entrada → Salida</th><th>Puntos</th><th>Resultado</th><th>P&amp;L</th>
-        </tr></thead><tbody>${rows}</tbody></table></div>`
-    }
-
-    const campos = []
-    if (sesion?.contexto) campos.push(['Contexto', sesion.contexto])
-    if (sesion?.num_corrida) campos.push(['Corrida', `${sesion.num_corrida}ª`])
-    if (sesion?.velas_corrida) campos.push(['Velas', sesion.velas_corrida])
-    // Retroceso: primero el registrado en la sesión (dato del trader); el derivado
-    // |P&L/2| solo como fallback (no cuadra cuando qty ≠ 2 contratos MNQ).
-    if (sesion?.puntos_retroceso) campos.push(['Retroceso', `${sesion.puntos_retroceso} pts`])
-    else if (trades.length) campos.push(['Retroceso', `≈${Math.abs(pnl / 2).toFixed(2)} pts`])
-    if (sesion?.setup) campos.push(['Setup', sesion.setup])
-    // Noticias rojas del día: todas, con su ventana de ±5 min. La columna de texto
-    // la mantiene sincronizada un trigger desde `sesion_noticias`.
-    const horasNR = String(sesion?.hora_noticia_roja || '').split(',').map(h => h.trim()).filter(Boolean)
-    if (horasNR.length) {
-      campos.push([
-        horasNR.length > 1 ? `Noticias rojas (${horasNR.length})` : 'Noticia roja',
-        horasNR.map(h => h.slice(0, 5)).join(' · '),
-      ])
-    }
-    const camposHtml = campos.length
-      ? `<div class="modal-fields">${campos.map(([l, v]) => `<div class="mf-item"><label>${l}</label><span>${v}</span></div>`).join('')}</div>`
-      : ''
-
-    // Checklist por fases (dinámico desde catalogo_reglas; solo ítems aplicables al día)
-    const items = this._checklistDia(chkItems, sesion, allDayTrades || trades, casuisticas, fechasEsp)
-    let chkHtml = ''
-    if (items.length) {
-      const FASES = { 1: 'Fase 1 · Pre-sesión', 2: 'Fase 2 · Lectura del setup', 3: 'Fase 3 · Ejecución' }
-      const ok = items.filter(i => i.ok).length
-      let groups = ''
-      ;[1, 2, 3].forEach(f => {
-        const ofF = items.filter(i => (i.fase || 1) === f)
-        if (!ofF.length) return
-        groups += `<div class="cz-dgroup"><div class="cz-dgt">${FASES[f]}</div>` +
-          ofF.map(i => `<div class="cz-chk ${i.ok ? 'ok' : 'no'}"><span class="cz-cic">${i.ok ? '✓' : '✗'}</span><span>${i.texto}</span></div>`).join('') +
-          `</div>`
-      })
-      chkHtml = `
-        <div class="modal-section-title" style="margin-top:16px"><i class="ti ti-checklist"></i> Checklist Reglas (${ok}/${items.length})</div>
-        ${groups}`
-    }
-
-    return noticiaWarn + tradesHtml + camposHtml + chkHtml
+  _bloque(lbl, contenido, tono = '') {
+    if (!contenido || !String(contenido).trim()) return ''
+    return `<div class="dv-block ${tono}">
+      <div class="dv-lbl">${lbl}</div>
+      <div class="dv-txt"><p>${this._md(contenido)}</p></div>
+    </div>`
   },
 
-  // Pestaña 3 — Gráfica (imagen + errores con detalle)
-  _renderGrafica({ sesion, casuisticas }) {
-    const imgHtml = sesion?.imagen_url
-      ? `<div class="modal-image-wrap"><img src="${sesion.imagen_url}" alt="Captura del día" loading="lazy" style="cursor:zoom-in" title="Clic para ampliar"></div>`
-      : '<div class="modal-no-trade"><i class="ti ti-photo-off"></i><p>Sin imagen para este día</p></div>'
+  _renderVistaDia(ctx) {
+    const { sesion, diag } = ctx
 
+    const img = sesion?.imagen_url
+      ? `<div class="dv-img"><img src="${sesion.imagen_url}" alt="Gráfico del día" loading="lazy" style="cursor:zoom-in" title="Clic para ampliar"></div>`
+      : '<div class="modal-no-trade"><i class="ti ti-photo-off"></i><p>Sin gráfico para este día</p></div>'
+
+    // "Análisis del día" = las dos voces: la del trader y la del Coach.
+    const coach = [diag?.sec_contexto, diag?.sec_desarrollo, diag?.sec_validacion]
+      .filter(s => s && s.trim()).join('\n\n')
+
+    const cuerpo = [
+      this._bloque('Tu reflexión', sesion?.analisis_trader, 'gry'),
+      this._bloque('Análisis del Coach', coach),
+      this._bloque('Veredicto', diag?.sec_veredicto, 'blu'),
+      this._bloque('Errores', diag?.sec_errores, 'red'),
+      this._bloque('Aprendizaje', diag?.sec_aprendizaje, 'amb'),
+      this._bloque('Notas adicionales', sesion?.resumen_ia, 'gry'),
+    ].join('')
+
+    const vacio = !cuerpo
+      ? `<p class="modal-empty-sub">Este día aún no tiene análisis ni diagnóstico.</p>` : ''
+
+    // Los errores registrados (con su tipo, origen y recomendación) siguen
+    // saliendo con el mismo bloque de siempre: es el detalle accionable.
+    return img + cuerpo + vacio + this._renderErroresLista(ctx)
+  },
+
+  // Lista de errores registrados del día (tipo, origen, T/S, detalle y
+  // recomendación). El gráfico ya lo pinta _renderVistaDia.
+  _renderErroresLista({ casuisticas }) {
     const erroresHtml = `
       <div class="modal-section-title"><span style="font-size:0.95rem">⚠️</span> Errores</div>
       ${casuisticas.length > 0
@@ -412,7 +264,7 @@ const Modal = {
           }).join('')
         : '<p class="modal-empty-sub">✅ Sin errores registrados</p>'}`
 
-    return imgHtml + erroresHtml
+    return erroresHtml
   },
 
   close() {
@@ -637,8 +489,11 @@ async function boot() {
   })
 
   // Modal events
+  // La vista del día ya no tiene pestañas (es un solo scroll); initTabs se
+  // conserva por si otra sección usa `.tab-btn`, pero aquí no aplica.
   Modal.initTabs()
   document.getElementById('closeModal').addEventListener('click', () => Modal.close())
+  document.getElementById('closeModalBottom')?.addEventListener('click', () => Modal.close())
   document.getElementById('dayModal').addEventListener('click', e => {
     if (e.target === document.getElementById('dayModal')) Modal.close()
   })
