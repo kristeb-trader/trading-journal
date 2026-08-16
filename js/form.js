@@ -200,8 +200,9 @@ const SessionForm = (() => {
     try { trades = await DB.getTradesByDate(date) } catch { return }
     if (myId !== tradesCancelId) return          // llegó una fecha más nueva
 
-    const cuenta = DB.cuentaPrincipal()
-    const propios = (trades || []).filter(t => (t.account || '') === cuenta)
+    // Sin filtro por cuenta principal: la cuenta de Apex rota y filtrar por la
+    // de hoy vaciaba los días operados con una cuenta anterior.
+    const propios = trades || []
     if (!propios.length) {
       wrap.innerHTML = '<p class="op-trades-empty">Sin trades registrados este día.</p>'
       return

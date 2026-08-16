@@ -543,6 +543,9 @@ const DB = {
       this.getSetups().catch(() => {}),
       this.getSetupVariantes().catch(() => {}),
       this.getChecklistItems().catch(() => {}),
+      // Sin esto, `cuentaPrincipal()` devuelve el fallback histórico hasta que
+      // alguien la pida, y el Coach analizaría la cuenta equivocada.
+      this.fetchCuentaPrincipal().catch(() => {}),
     ])
   },
 

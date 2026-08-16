@@ -1739,14 +1739,11 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
       // día que simplemente nadie ha analizado todavía.
       const conDiagnostico = new Set((diagnosticados || []).map(d => d.sesion_date))
 
-      // Trades de la cuenta principal, agrupados por día (misma cuenta que
-      // analiza el Coach, para que el P&L cuadre con la cabecera).
-      const cuenta = cuentaAnalisis()
+      // Trades agrupados por día. SIN filtrar por la cuenta principal: la cuenta
+      // de Apex rota (la -14 pasó a ser la -15) y filtrar por la de hoy dejaba
+      // en blanco casi todo el histórico.
       const tradesPorDia = {}
-      ;(tradesAll || []).forEach(t => {
-        if ((t.account || '') !== cuenta) return
-        ;(tradesPorDia[t.trade_date] ||= []).push(t)
-      })
+      ;(tradesAll || []).forEach(t => { (tradesPorDia[t.trade_date] ||= []).push(t) })
 
       const erroresMap = {}
       erroresFlat.forEach(e => { (erroresMap[e.sesion_date] ||= []).push(e) })

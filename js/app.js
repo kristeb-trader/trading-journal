@@ -321,7 +321,13 @@ const SesionOperativa = {
 
   // Recuadro de resultado del día activo, encima de las pestañas. Reutiliza el
   // mismo render que la vista del día para que un día se lea igual en todas
-  // partes. Se mide sobre la cuenta principal, como hace el Coach.
+  // partes.
+  //
+  // OJO: NO se filtra por la cuenta principal. La cuenta de Apex rota (la -14
+  // pasó a ser la -15), así que filtrar por la principal de HOY dejaba en blanco
+  // todos los días operados con una cuenta anterior — que es casi todo el
+  // histórico. `trades` ya contiene solo la operativa del journal, así que los
+  // trades del día son los del día, con la cuenta que fuera.
   async syncHead(date) {
     const el = document.getElementById('soHeadStats')
     if (!el) return
@@ -331,9 +337,7 @@ const SesionOperativa = {
         DB.getTradesByDate(date).catch(() => []),
         DB.getSesionByDate(date).catch(() => null),
       ])
-      const cuenta = DB.cuentaPrincipal()
-      const propios = (trades || []).filter(t => (t.account || '') === cuenta)
-      el.innerHTML = Modal._headStats(propios, sesion)
+      el.innerHTML = Modal._headStats(trades || [], sesion)
     } catch { el.innerHTML = '' }
   },
 }

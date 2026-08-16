@@ -2775,8 +2775,12 @@ body.modal-open { overflow: hidden; }
 .coach-save-btn { background: var(--accent); }
 
 /* ── Etapas del flujo (Análisis Técnico → Coaching → Diagnóstico) ───────── */
+/* Cada etapa en su tarjeta, como el resto de Sesión Operativa: así se ve dónde
+   empieza y acaba cada paso en vez de un muro continuo de texto. */
 .coach-stage {
-  margin-bottom: 22px;
+  margin-bottom: 14px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 18px;
   transition: opacity 0.25s ease, filter 0.25s ease;
 }
 .coach-stage-label {
