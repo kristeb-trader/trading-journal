@@ -157,6 +157,94 @@ const SessionForm = (() => {
     updatePhaseProgress()
   }
 
+  // Barra de cumplimiento del checklist (visible con la tarjeta plegada).
+  // Cuenta solo los ítems VISIBLES, que son los aplicables al setup del día.
+  function updateChecklistBar() {
+    const fill = document.getElementById('chkProgFill')
+    const pct  = document.getElementById('chkProgPct')
+    if (!fill || !pct) return
+    const inputs = [...document.querySelectorAll('#checklistContainer input[type="checkbox"]')]
+      .filter(i => i.offsetParent !== null || !i.closest('.hidden'))
+    const total = inputs.length
+    const ok = inputs.filter(i => i.checked).length
+    const p = total ? Math.round(ok / total * 100) : 0
+    fill.style.width = p + '%'
+    fill.classList.toggle('full', total > 0 && ok === total)
+    pct.textContent = total ? `${p}%` : '—'
+    pct.title = total ? `${ok} de ${total} reglas` : 'Sin reglas aplicables'
+  }
+
+  // Chips del título de "Cierre del día": errores y experimentos del día.
+  function updateCierreMeta() {
+    const el = document.getElementById('cierreMeta')
+    if (!el) return
+    const chips = []
+    if (casPendientes.length) chips.push(`<span class="chip-soft">${casPendientes.length} error${casPendientes.length !== 1 ? 'es' : ''}</span>`)
+    if (expRegistros.length)  chips.push(`<span class="chip-soft">${expRegistros.length} experimento${expRegistros.length !== 1 ? 's' : ''}</span>`)
+    el.innerHTML = chips.join('')
+  }
+
+  // Trades del día dentro de "La operación" + sus chips (puntos y nº de trades).
+  // Misma cuenta y mismo cálculo de puntos que usa la vista del día.
+  let tradesCancelId = 0
+  async function renderTradesDia(date) {
+    const wrap = document.getElementById('opTradesWrap')
+    const meta = document.getElementById('opMeta')
+    if (!wrap) return
+    const myId = ++tradesCancelId
+    wrap.innerHTML = ''
+    if (meta) meta.innerHTML = ''
+    if (!date) return
+
+    let trades = []
+    try { trades = await DB.getTradesByDate(date) } catch { return }
+    if (myId !== tradesCancelId) return          // llegó una fecha más nueva
+
+    const cuenta = DB.cuentaPrincipal()
+    const propios = (trades || []).filter(t => (t.account || '') === cuenta)
+    if (!propios.length) {
+      wrap.innerHTML = '<p class="op-trades-empty">Sin trades registrados este día.</p>'
+      return
+    }
+
+    const ptsDe = t => {
+      const e = parseFloat(t.entry_price), x = parseFloat(t.exit_price)
+      if (!isFinite(e) || !isFinite(x)) return null
+      return /short|sell/i.test(t.market_pos || '') ? e - x : x - e
+    }
+    const totalPts = propios.reduce((a, t) => a + (ptsDe(t) ?? 0), 0)
+    const totalPnl = propios.reduce((a, t) => a + (parseFloat(t.profit) || 0), 0)
+
+    if (meta) meta.innerHTML =
+      `<span class="chip-pts ${totalPts < 0 ? 'neg' : 'pos'}">${totalPts >= 0 ? '+' : ''}${totalPts.toFixed(1)} pts</span>` +
+      `<span class="chip-soft">${propios.length} trade${propios.length !== 1 ? 's' : ''}</span>`
+
+    const fmtHora = h => (h || '').slice(0, 5)
+    wrap.innerHTML = `
+      <table class="op-trades">
+        <tr><th>Hora</th><th>Dir</th><th>Entrada → Salida</th><th>Puntos</th><th>Resultado</th><th class="ta-r">P&amp;L</th></tr>
+        ${propios.map(t => {
+          const p = ptsDe(t)
+          const pnl = parseFloat(t.profit) || 0
+          const dir = /short|sell/i.test(t.market_pos || '') ? 'Short' : 'Long'
+          return `<tr>
+            <td>${fmtHora(t.entry_time)}</td>
+            <td>${dir}</td>
+            <td>${t.entry_price ?? '—'} → ${t.exit_price ?? '—'}</td>
+            <td class="${p != null && p < 0 ? 'neg' : 'pos'}">${p != null ? (p >= 0 ? '+' : '') + p.toFixed(1) : '—'}</td>
+            <td>${t.resultado || '—'}</td>
+            <td class="ta-r ${pnl < 0 ? 'neg' : 'pos'}">${pnl >= 0 ? '+' : '−'}$${Math.abs(pnl).toFixed(2)}</td>
+          </tr>`
+        }).join('')}
+        <tr class="op-trades-total">
+          <td colspan="3">Total</td>
+          <td class="${totalPts < 0 ? 'neg' : 'pos'}">${totalPts >= 0 ? '+' : ''}${totalPts.toFixed(1)}</td>
+          <td></td>
+          <td class="ta-r ${totalPnl < 0 ? 'neg' : 'pos'}">${totalPnl >= 0 ? '+' : '−'}$${Math.abs(totalPnl).toFixed(2)}</td>
+        </tr>
+      </table>`
+  }
+
   function updatePhaseProgress() {
     [1, 2, 3].forEach(f => {
       const inputs = [...document.querySelectorAll(`#checklistContainer input[data-fase="${f}"]`)]
@@ -166,6 +254,7 @@ const SessionForm = (() => {
       el.textContent = `${done}/${inputs.length}`
       el.classList.toggle('complete', inputs.length > 0 && done === inputs.length)
     })
+    updateChecklistBar()   // la barra del título resume las tres fases
   }
 
   // Cards colapsables: el título hace de cabecera clickable con flecha.
@@ -461,6 +550,7 @@ const SessionForm = (() => {
       hidden.value = pts.toFixed(2)
     }
     evalRiesgo(pts)
+    renderTradesDia(date)
   }
 
   // Bloque 1: alerta proactiva si el retroceso (en PUNTOS) supera el stop máximo.
@@ -786,6 +876,7 @@ const SessionForm = (() => {
   }
 
   function renderCasList() {
+    updateCierreMeta()
     const list = document.getElementById('casList')
     if (!casPendientes.length) { list.innerHTML = ''; return }
     list.innerHTML = casPendientes.map((c, i) => `
@@ -1001,6 +1092,7 @@ const SessionForm = (() => {
   }
 
   function renderExpList() {
+    updateCierreMeta()
     ['expTradeList', 'expSNTList'].forEach(listId => {
       const list = document.getElementById(listId)
       if (!list) return

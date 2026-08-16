@@ -908,6 +908,58 @@ textarea { resize: vertical; min-height: 80px; }
 .collapsible.collapsed > .form-section-title:has(+ .collapse-keep) {
   margin-bottom: 14px; padding-bottom: 8px; border-bottom-color: var(--border);
 }
+/* Chips informativos en el título de una tarjeta (a la derecha, antes de la flecha) */
+.card-meta { margin-left: auto; display: flex; gap: 7px; align-items: center; }
+.collapsible > .form-section-title .card-meta { margin-right: 4px; }
+.chip-soft {
+  font-size: 0.71rem; font-weight: 500; letter-spacing: 0; text-transform: none;
+  color: var(--text3); background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+}
+.chip-pts {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0; text-transform: none;
+  border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.chip-pts.pos { background: var(--accent-dim); color: #3FE0A6; }
+.chip-pts.neg { background: rgba(226,75,74,0.14); color: #F2706F; }
+
+/* Barra de cumplimiento del checklist */
+.chk-prog { padding-bottom: 2px; }
+.chk-prog-top { font-size: 0.78rem; color: var(--text2); text-align: center; margin-bottom: 7px; }
+.chk-prog-row { display: flex; align-items: center; gap: 12px; }
+.chk-track {
+  flex: 1; height: 13px; border-radius: 999px;
+  background: var(--bg); border: 1px solid var(--border); overflow: hidden;
+}
+.chk-fill {
+  height: 100%; width: 0; border-radius: 999px; background: var(--warning);
+  transition: width var(--transition), background var(--transition);
+}
+.chk-fill.full { background: var(--accent); }
+.chk-pct {
+  font-size: 1.02rem; font-weight: 700; color: var(--text);
+  font-variant-numeric: tabular-nums; min-width: 52px; text-align: right;
+}
+
+/* Trades del día dentro de "La operación" */
+.op-trades-wrap { margin-bottom: 14px; }
+.op-trades { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.op-trades th {
+  font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text3); font-weight: 500; text-align: left;
+  padding: 6px 8px; border-bottom: 1px solid var(--border);
+}
+.op-trades td {
+  padding: 7px 8px; border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.op-trades .ta-r { text-align: right; }
+.op-trades .pos { color: #3FE0A6; }
+.op-trades .neg { color: #F2706F; }
+.op-trades-total td { font-weight: 700; border-bottom: none; color: var(--text); }
+.op-trades-empty { font-size: 0.83rem; color: var(--text3); padding: 4px 0; }
+
 .collapse-keep { margin-bottom: 4px; }
 .collapsible:not(.collapsed) > .collapse-keep { margin-bottom: 16px; }
 
