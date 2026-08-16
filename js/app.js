@@ -284,6 +284,60 @@ const Modal = {
   },
 }
 
+// ── Sesión Operativa: pestañas Diario / Coach IA / Días anteriores ────────
+// Funde lo que eran tres secciones. Cada módulo conserva su markup y sus ids,
+// así que form.js y coach.js siguen funcionando sin enterarse del cambio.
+
+const SesionOperativa = {
+  tab: 'diario',
+  coachIniciado: false,
+
+  init() {
+    document.getElementById('soTabs')?.addEventListener('click', e => {
+      const btn = e.target.closest('.so-tab')
+      if (btn) this.showTab(btn.dataset.tab)
+    })
+  },
+
+  async showTab(tab) {
+    this.tab = tab
+    document.querySelectorAll('#soTabs .so-tab').forEach(b =>
+      b.classList.toggle('active', b.dataset.tab === tab))
+    document.querySelectorAll('#section-register .so-panel').forEach(p =>
+      p.classList.toggle('active', p.id === `so-panel-${tab}`))
+
+    try {
+      if (tab === 'coach') {
+        // El Coach se inicializa la primera vez; después solo se refresca.
+        if (!this.coachIniciado) { this.coachIniciado = true; await Coach.init() }
+        else Coach.refresh()
+      } else if (tab === 'dias') {
+        await Coach.renderHistorial()
+      }
+    } catch (err) {
+      Toast.show('Error al abrir la pestaña: ' + err.message, 'error')
+    }
+  },
+
+  // Recuadro de resultado del día activo, encima de las pestañas. Reutiliza el
+  // mismo render que la vista del día para que un día se lea igual en todas
+  // partes. Se mide sobre la cuenta principal, como hace el Coach.
+  async syncHead(date) {
+    const el = document.getElementById('soHeadStats')
+    if (!el) return
+    if (!date) { el.innerHTML = ''; return }
+    try {
+      const [trades, sesion] = await Promise.all([
+        DB.getTradesByDate(date).catch(() => []),
+        DB.getSesionByDate(date).catch(() => null),
+      ])
+      const cuenta = DB.cuentaPrincipal()
+      const propios = (trades || []).filter(t => (t.account || '') === cuenta)
+      el.innerHTML = Modal._headStats(propios, sesion)
+    } catch { el.innerHTML = '' }
+  },
+}
+
 // ── Navigation ────────────────────────────────────────────────────────────
 
 const Nav = {
@@ -291,20 +345,24 @@ const Nav = {
     calendar: 'Calendario',
     trades: 'Trades',
     gallery: 'Imágenes',
-    coach: 'Coach IA',
-    register: 'Sesión',
+    register: 'Sesión Operativa',
     analysis: 'Análisis',
     disciplina: 'Disciplina',
     experimentos: 'Experimentos',
     apex: 'Apex Tracker',
-    historial: 'Historial',
     estrategia: 'Estrategia',
     data: 'Datos',
     fechas: 'Fechas Especiales',
   },
+  // `coach` e `historial` ya no son secciones: son pestañas de Sesión Operativa.
+  // Se mantienen como alias para no romper a quien navega a ellas (el modal del
+  // día, Coach.abrirFecha, enlaces internos…).
+  TAB_ALIAS: { coach: 'coach', historial: 'dias' },
   initialized: new Set(),
 
   async go(sectionId) {
+    const tabPedida = this.TAB_ALIAS[sectionId]
+    if (tabPedida) sectionId = 'register'
     document.querySelectorAll('.nav-item').forEach(item => {
       item.classList.toggle('active', item.dataset.section === sectionId)
     })
@@ -325,18 +383,12 @@ const Nav = {
         if (sectionId === 'disciplina') await Disciplina.init()
         if (sectionId === 'experimentos') await Experimentos.init()
         if (sectionId === 'apex') await Apex.init()
-        if (sectionId === 'coach') await Coach.init()
         if (sectionId === 'estrategia') await Estrategia.init()
-        if (sectionId === 'historial') await Coach.renderHistorial()
         if (sectionId === 'data') await DataManager.init()
         if (sectionId === 'fechas') await Fechas.init()
       } catch (err) {
         Toast.show('Error cargando sección: ' + err.message, 'error')
       }
-    } else if (sectionId === 'coach') {
-      Coach.refresh()
-    } else if (sectionId === 'historial') {
-      Coach.renderHistorial()
     } else if (sectionId === 'experimentos') {
       Experimentos.reload()
     } else if (sectionId === 'apex') {
@@ -349,6 +401,13 @@ const Nav = {
       SessionForm.onShow()
     } else if (sectionId === 'fechas') {
       Fechas.reload()
+    }
+
+    // Si se pidió una pestaña concreta (alias coach/historial), se abre; si no,
+    // al entrar a la sección se vuelve al Diario.
+    if (sectionId === 'register') {
+      await SesionOperativa.showTab(tabPedida || 'diario')
+      SesionOperativa.syncHead(document.getElementById('sesionDate')?.value)
     }
   },
 
@@ -506,6 +565,7 @@ async function boot() {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') Modal.close() })
 
   // Navigation
+  SesionOperativa.init()
   Nav.init()
 
   // Precargar el catálogo del checklist (claves dinámicas para calendario/charts/métricas)

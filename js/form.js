@@ -10,6 +10,14 @@ const SessionForm = (() => {
     document.getElementById('sesionDate').value = today
   }
 
+  // Propaga la fecha activa al resto de Sesión Operativa: el recuadro de
+  // resultado de la cabecera y, si el Coach ya se abrió alguna vez, la fecha que
+  // analiza. Antes cada pantalla llevaba su propia fecha y no se hablaban.
+  function syncFechaGlobal(date) {
+    if (typeof SesionOperativa !== 'undefined') SesionOperativa.syncHead(date)
+    if (typeof Coach !== 'undefined' && Coach.setFecha) Coach.setFecha(date)
+  }
+
   // Modo lectura ('view') vs edición ('edit'). En 'view' se bloquea todo el
   // fieldset y se ocultan acciones; el botón "Editar sesión" desbloquea.
   function setMode(mode) {
@@ -841,6 +849,9 @@ const SessionForm = (() => {
       let sesion = null
       try { sesion = await DB.getSesionByDate(date) } catch (_) {}
       prefill(sesion, date)
+      // La fecha es única para toda la pantalla: arrastra la cabecera y, si el
+      // Coach ya está abierto, también su análisis.
+      syncFechaGlobal(date)
     }
     // Mover ±1 día con las flechas (◀ atrás / ▶ adelante)
     function shiftDate(delta) {

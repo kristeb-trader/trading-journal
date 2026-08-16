@@ -76,17 +76,13 @@
         <i class="ti ti-list-details"></i>
         <span>Trades</span>
       </li>
-      <li class="nav-item" data-section="register" title="Sesión">
+      <!-- Sesión Operativa absorbe lo que antes eran tres entradas de menú
+           (Sesión, Historial y Coach IA): ahora son pestañas de la misma
+           pantalla. `Nav.go('coach')` y `Nav.go('historial')` siguen valiendo:
+           se traducen a esta sección + su pestaña. -->
+      <li class="nav-item" data-section="register" title="Sesión Operativa">
         <i class="ti ti-square-rounded-plus"></i>
         <span>Sesión</span>
-      </li>
-      <li class="nav-item" data-section="historial" title="Historial">
-        <i class="ti ti-history"></i>
-        <span>Historial</span>
-      </li>
-      <li class="nav-item" data-section="coach" title="Coach IA">
-        <i class="ti ti-robot"></i>
-        <span>Coach IA</span>
       </li>
       <li class="nav-item" data-section="gallery" title="Imágenes">
         <i class="ti ti-photo"></i>
@@ -233,28 +229,45 @@
         <div class="pagination" id="tradesPagination"></div>
       </section>
 
-      <!-- ═══ 4. REGISTRAR SESIÓN ══════════════════════════════════════════ -->
+      <!-- ═══ 4. SESIÓN OPERATIVA ══════════════════════════════════════════ -->
+      <!-- Funde lo que eran tres pantallas: el registro del día, el Coach IA y
+           el historial. Una sola fecha manda sobre las tres pestañas. -->
       <section class="section" id="section-register">
         <div class="analysis-hero">
-          <h2 class="analysis-hero-title">Registrar Sesión</h2>
+          <h2 class="analysis-hero-title">Sesión Operativa</h2>
         </div>
+
+        <!-- Cabecera común: la fecha del día + el recuadro de resultado.
+             Vive FUERA del formulario para que mande también sobre el Coach. -->
+        <div class="so-head">
+          <div class="date-stepper">
+            <button type="button" class="btn-icon" id="sesionDatePrev" title="Día anterior">
+              <i class="ti ti-chevron-left"></i>
+            </button>
+            <input type="date" id="sesionDate" name="sesion_date" required form="sessionForm">
+            <button type="button" class="btn-icon" id="sesionDateNext" title="Día siguiente">
+              <i class="ti ti-chevron-right"></i>
+            </button>
+          </div>
+          <div class="mh-stats" id="soHeadStats"></div>
+        </div>
+
+        <div class="so-tabs" id="soTabs">
+          <button type="button" class="so-tab active" data-tab="diario">
+            <i class="ti ti-clipboard-text"></i> Diario
+          </button>
+          <button type="button" class="so-tab" data-tab="coach">
+            <i class="ti ti-robot"></i> Coach IA
+          </button>
+          <button type="button" class="so-tab" data-tab="dias">
+            <i class="ti ti-history"></i> Días anteriores
+          </button>
+        </div>
+
+        <!-- ── Pestaña: Diario ── -->
+        <div class="so-panel active" id="so-panel-diario">
         <div class="form-container">
           <form id="sessionForm" autocomplete="off">
-
-          <!-- Navegación de fecha: FUERA del fieldset para que las flechas y el
-               selector funcionen también en modo lectura (días ya guardados). -->
-          <div class="form-group session-date-nav">
-            <label for="sesionDate">Fecha de la sesión</label>
-            <div class="date-stepper">
-              <button type="button" class="btn-icon" id="sesionDatePrev" title="Día anterior">
-                <i class="ti ti-chevron-left"></i>
-              </button>
-              <input type="date" id="sesionDate" name="sesion_date" required>
-              <button type="button" class="btn-icon" id="sesionDateNext" title="Día siguiente">
-                <i class="ti ti-chevron-right"></i>
-              </button>
-            </div>
-          </div>
 
           <fieldset id="sessionFieldset">
 
@@ -587,6 +600,151 @@
 
           </form>
         </div>
+        </div><!-- /#so-panel-diario -->
+
+        <!-- ── Pestaña: Coach IA ── (el markup se inyecta aquí desde el bloque
+             original; conserva todos los ids para que coach.js siga igual) -->
+        <div class="so-panel" id="so-panel-coach">
+
+          <!-- Selector de fecha -->
+          <!-- El Coach ya no lleva su propio selector de fecha: la manda la
+               cabecera de Sesión Operativa, común a las tres pestañas. Solo
+               queda el hint (hoy / ayer / hace N días). -->
+          <div class="coach-date-row">
+            <span class="coach-date-hint" id="coachDateHint"></span>
+          </div>
+
+          <!-- Fila de controles: emoción + confianza + imagen -->
+          <div class="coach-controls-row">
+
+            <div class="coach-control-group">
+              <label class="coach-label">¿Cómo llegué?</label>
+              <select id="coachEmocionSelect" class="coach-select">
+                <option value="">Estado al inicio</option>
+              </select>
+            </div>
+
+            <div class="coach-control-group">
+              <label class="coach-label">¿Cómo terminé?</label>
+              <select id="coachEmocionFinSelect" class="coach-select">
+                <option value="">Estado al cierre</option>
+              </select>
+            </div>
+
+            <div class="coach-control-group">
+              <label class="coach-label" title="Qué tan convencido estabas al apretar el gatillo">Confianza en la entrada</label>
+              <div class="coach-stars" id="coachConfianzaStars">
+                <button type="button" class="coach-star" data-val="1" title="Muy baja — entré con dudas">★</button>
+                <button type="button" class="coach-star" data-val="2" title="Baja">★</button>
+                <button type="button" class="coach-star" data-val="3" title="Normal">★</button>
+                <button type="button" class="coach-star" data-val="4" title="Alta">★</button>
+                <button type="button" class="coach-star" data-val="5" title="Máxima — setup de libro">★</button>
+              </div>
+              <input type="hidden" id="coachConfianzaVal">
+            </div>
+
+            <div class="coach-control-group coach-img-group">
+              <label class="coach-label">Gráfica del día</label>
+              <div class="coach-upload-area" id="coachUploadArea">
+                <i class="ti ti-photo-up"></i>
+                <span>Arrastra o haz clic para subir</span>
+                <input type="file" id="coachImageInput" accept="image/*" hidden>
+              </div>
+              <div class="coach-img-preview hidden" id="coachImagePreview">
+                <img id="coachPreviewImg" src="" alt="Gráfica">
+                <button type="button" class="coach-remove-img" id="coachRemoveImg" title="Quitar imagen">
+                  <i class="ti ti-x"></i>
+                </button>
+              </div>
+            </div>
+
+          </div><!-- /.coach-controls-row -->
+
+          <!-- Botones de acción principales -->
+          <div class="coach-action-row">
+            <button class="btn-primary" id="coachAnalyzeBtn">
+              <i class="ti ti-chart-dots-3"></i> Análisis Técnico
+            </button>
+            <button class="btn-primary coach-save-btn hidden" id="coachSaveBtn">
+              <i class="ti ti-device-floppy"></i> Guardar diagnóstico
+            </button>
+          </div>
+
+          <!-- ═══ ETAPA 1: Análisis Técnico ═══ -->
+          <div class="coach-stage" id="coachStageTecnico">
+            <div class="coach-stage-label">
+              <span class="coach-stage-num">1</span>
+              <span>Análisis Técnico</span>
+            </div>
+            <div id="coachAnalisisContent" class="coach-analisis-content">
+              <div class="coach-placeholder">
+                <i class="ti ti-chart-dots-3"></i>
+                <p>Haz clic en <strong>Análisis Técnico</strong> para que el Coach lea el contexto, el desarrollo y la validación de setups de la sesión.</p>
+                <p class="coach-placeholder-hint">Sube la gráfica del día para un análisis más preciso. Sin imagen, usará los datos del diario.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══ ETAPA 2: Sesión de Coaching ═══ -->
+          <div class="coach-stage coach-stage-locked" id="coachStageChat">
+            <div class="coach-stage-label">
+              <span class="coach-stage-num">2</span>
+              <span>Sesión de Coaching</span>
+              <button class="btn-sm btn-ghost coach-cerrar-btn hidden" id="coachCerrarSesionBtn" title="Cerrar la sesión de coaching y habilitar el diagnóstico">
+                <i class="ti ti-circle-check"></i> Cerrar sesión
+              </button>
+            </div>
+            <div class="coach-chat-wrap">
+              <div class="coach-chat-messages" id="coachChatMessages"></div>
+              <div class="coach-chat-input-row">
+                <textarea
+                  id="coachChatInput"
+                  class="coach-chat-input"
+                  rows="2"
+                  placeholder="Pregunta sobre un setup, un error, la estrategia... (Enter para enviar, Shift+Enter para nueva línea)"></textarea>
+                <button class="btn-primary coach-send-btn" id="coachSendBtn" title="Enviar">
+                  <i class="ti ti-send"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══ ETAPA 3: Diagnóstico Final ═══ -->
+          <div class="coach-stage coach-stage-locked" id="coachStageDiagnostico">
+            <div class="coach-stage-label">
+              <span class="coach-stage-num">3</span>
+              <span>Diagnóstico Final</span>
+            </div>
+            <div class="coach-action-row">
+              <button class="btn-primary" id="coachDiagnosticoBtn" disabled>
+                <i class="ti ti-clipboard-check"></i> Generar Diagnóstico
+              </button>
+            </div>
+            <div id="coachDiagnosticoContent" class="coach-analisis-content">
+              <div class="coach-placeholder coach-placeholder-sm">
+                <i class="ti ti-lock"></i>
+                <p>Cierra la sesión de coaching para generar el veredicto, los errores y el aprendizaje del día.</p>
+              </div>
+            </div>
+            <div id="coachErroresConfirm" class="coach-errores-confirm"></div>
+            <div class="coach-action-row coach-action-row-bottom">
+              <button class="btn-primary coach-save-btn hidden" id="coachSaveBtnBottom">
+                <i class="ti ti-device-floppy"></i> Guardar diagnóstico
+              </button>
+            </div>
+          </div>
+
+        </div><!-- /#so-panel-coach -->
+
+        <!-- ── Pestaña: Días anteriores ── -->
+        <div class="so-panel" id="so-panel-dias">
+          <div id="coachHistorialList" class="coach-historial-list">
+            <div class="coach-placeholder">
+              <i class="ti ti-history"></i>
+              <p>Los días registrados aparecerán aquí.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- ═══ 5. DATOS ════════════════════════════════════════════════════ -->
@@ -758,167 +916,6 @@
       </section>
 
       <!-- ═══ COACH IA ════════════════════════════════════════════════════════ -->
-      <section class="section" id="section-coach">
-        <div class="analysis-hero">
-          <h2 class="analysis-hero-title">Coach IA — Estrategia Chaumer</h2>
-        </div>
-
-        <!-- ── Panel: Análisis de Hoy ─────────────────────────────────────── -->
-        <div class="coach-tab-panel active" id="coach-panel-analisis">
-
-          <!-- Selector de fecha -->
-          <div class="coach-date-row">
-            <div class="coach-date-group">
-              <label class="coach-label" for="coachDatePicker">Sesión a analizar</label>
-              <div class="coach-date-nav">
-                <button type="button" class="coach-date-arrow" id="coachPrevDay" title="Día anterior">
-                  <i class="ti ti-chevron-left"></i>
-                </button>
-                <input type="date" id="coachDatePicker" class="coach-date-input">
-                <button type="button" class="coach-date-arrow" id="coachNextDay" title="Día siguiente">
-                  <i class="ti ti-chevron-right"></i>
-                </button>
-              </div>
-            </div>
-            <span class="coach-date-hint" id="coachDateHint"></span>
-          </div>
-
-          <!-- Fila de controles: emoción + confianza + imagen -->
-          <div class="coach-controls-row">
-
-            <div class="coach-control-group">
-              <label class="coach-label">¿Cómo llegué?</label>
-              <select id="coachEmocionSelect" class="coach-select">
-                <option value="">Estado al inicio</option>
-              </select>
-            </div>
-
-            <div class="coach-control-group">
-              <label class="coach-label">¿Cómo terminé?</label>
-              <select id="coachEmocionFinSelect" class="coach-select">
-                <option value="">Estado al cierre</option>
-              </select>
-            </div>
-
-            <div class="coach-control-group">
-              <label class="coach-label" title="Qué tan convencido estabas al apretar el gatillo">Confianza en la entrada</label>
-              <div class="coach-stars" id="coachConfianzaStars">
-                <button type="button" class="coach-star" data-val="1" title="Muy baja — entré con dudas">★</button>
-                <button type="button" class="coach-star" data-val="2" title="Baja">★</button>
-                <button type="button" class="coach-star" data-val="3" title="Normal">★</button>
-                <button type="button" class="coach-star" data-val="4" title="Alta">★</button>
-                <button type="button" class="coach-star" data-val="5" title="Máxima — setup de libro">★</button>
-              </div>
-              <input type="hidden" id="coachConfianzaVal">
-            </div>
-
-            <div class="coach-control-group coach-img-group">
-              <label class="coach-label">Gráfica del día</label>
-              <div class="coach-upload-area" id="coachUploadArea">
-                <i class="ti ti-photo-up"></i>
-                <span>Arrastra o haz clic para subir</span>
-                <input type="file" id="coachImageInput" accept="image/*" hidden>
-              </div>
-              <div class="coach-img-preview hidden" id="coachImagePreview">
-                <img id="coachPreviewImg" src="" alt="Gráfica">
-                <button type="button" class="coach-remove-img" id="coachRemoveImg" title="Quitar imagen">
-                  <i class="ti ti-x"></i>
-                </button>
-              </div>
-            </div>
-
-          </div><!-- /.coach-controls-row -->
-
-          <!-- Botones de acción principales -->
-          <div class="coach-action-row">
-            <button class="btn-primary" id="coachAnalyzeBtn">
-              <i class="ti ti-chart-dots-3"></i> Análisis Técnico
-            </button>
-            <button class="btn-primary coach-save-btn hidden" id="coachSaveBtn">
-              <i class="ti ti-device-floppy"></i> Guardar diagnóstico
-            </button>
-          </div>
-
-          <!-- ═══ ETAPA 1: Análisis Técnico ═══ -->
-          <div class="coach-stage" id="coachStageTecnico">
-            <div class="coach-stage-label">
-              <span class="coach-stage-num">1</span>
-              <span>Análisis Técnico</span>
-            </div>
-            <div id="coachAnalisisContent" class="coach-analisis-content">
-              <div class="coach-placeholder">
-                <i class="ti ti-chart-dots-3"></i>
-                <p>Haz clic en <strong>Análisis Técnico</strong> para que el Coach lea el contexto, el desarrollo y la validación de setups de la sesión.</p>
-                <p class="coach-placeholder-hint">Sube la gráfica del día para un análisis más preciso. Sin imagen, usará los datos del diario.</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- ═══ ETAPA 2: Sesión de Coaching ═══ -->
-          <div class="coach-stage coach-stage-locked" id="coachStageChat">
-            <div class="coach-stage-label">
-              <span class="coach-stage-num">2</span>
-              <span>Sesión de Coaching</span>
-              <button class="btn-sm btn-ghost coach-cerrar-btn hidden" id="coachCerrarSesionBtn" title="Cerrar la sesión de coaching y habilitar el diagnóstico">
-                <i class="ti ti-circle-check"></i> Cerrar sesión
-              </button>
-            </div>
-            <div class="coach-chat-wrap">
-              <div class="coach-chat-messages" id="coachChatMessages"></div>
-              <div class="coach-chat-input-row">
-                <textarea
-                  id="coachChatInput"
-                  class="coach-chat-input"
-                  rows="2"
-                  placeholder="Pregunta sobre un setup, un error, la estrategia... (Enter para enviar, Shift+Enter para nueva línea)"></textarea>
-                <button class="btn-primary coach-send-btn" id="coachSendBtn" title="Enviar">
-                  <i class="ti ti-send"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- ═══ ETAPA 3: Diagnóstico Final ═══ -->
-          <div class="coach-stage coach-stage-locked" id="coachStageDiagnostico">
-            <div class="coach-stage-label">
-              <span class="coach-stage-num">3</span>
-              <span>Diagnóstico Final</span>
-            </div>
-            <div class="coach-action-row">
-              <button class="btn-primary" id="coachDiagnosticoBtn" disabled>
-                <i class="ti ti-clipboard-check"></i> Generar Diagnóstico
-              </button>
-            </div>
-            <div id="coachDiagnosticoContent" class="coach-analisis-content">
-              <div class="coach-placeholder coach-placeholder-sm">
-                <i class="ti ti-lock"></i>
-                <p>Cierra la sesión de coaching para generar el veredicto, los errores y el aprendizaje del día.</p>
-              </div>
-            </div>
-            <div id="coachErroresConfirm" class="coach-errores-confirm"></div>
-            <div class="coach-action-row coach-action-row-bottom">
-              <button class="btn-primary coach-save-btn hidden" id="coachSaveBtnBottom">
-                <i class="ti ti-device-floppy"></i> Guardar diagnóstico
-              </button>
-            </div>
-          </div>
-
-        </div><!-- /#coach-panel-analisis -->
-
-      </section><!-- /#section-coach -->
-
-      <!-- ═══ HISTORIAL ═══════════════════════════════════════════════════════ -->
-      <section class="section" id="section-historial">
-        <div class="analysis-hero">
-          <h2 class="analysis-hero-title">Historial de Diagnósticos</h2>
-        </div>
-        <div id="coachHistorialList" class="coach-historial-list">
-          <div class="coach-placeholder">
-            <i class="ti ti-history"></i>
-            <p>Los diagnósticos guardados aparecerán aquí.</p>
-          </div>
-        </div>
-      </section><!-- /#section-historial -->
 
       <!-- ═══ 7. GALERÍA DE IMÁGENES ═══════════════════════════════════════ -->
       <section class="section" id="section-gallery">

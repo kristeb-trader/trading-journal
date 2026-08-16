@@ -2034,16 +2034,13 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     if (img)     img.src = ''
   }
 
+  // La fecha activa la lleva la cabecera de Sesión Operativa.
+  function fechaDeLaCabecera() {
+    return document.getElementById('sesionDate')?.value || null
+  }
+
   async function cargarFecha(date) {
     coachDate = date
-
-    // Sincronizar el selector de fecha (relevante al venir desde Historial)
-    const picker = document.getElementById('coachDatePicker')
-    if (picker && picker.value !== date) picker.value = date
-
-    // Botón "adelante" deshabilitado si el próximo día hábil ya sería futuro
-    const nextBtn = document.getElementById('coachNextDay')
-    if (nextBtn) nextBtn.disabled = shiftWeekday(date, 1) > today()
 
     // Hint: hoy / ayer / hace N días
     const hintEl = document.getElementById('coachDateHint')
@@ -2123,27 +2120,11 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     // Imagen
     setupImagenCoach()
 
-    // Selector de fecha
-    const datePicker = document.getElementById('coachDatePicker')
-    if (datePicker) {
-      datePicker.value = today()
-      datePicker.addEventListener('change', () => {
-        if (datePicker.value) cargarFecha(datePicker.value)
-      })
-    }
+    // (El selector de fecha y las flechas propias del Coach se retiraron: la
+    // fecha la manda la cabecera de Sesión Operativa, común a las 3 pestañas.)
 
-    // Botones día anterior / siguiente (saltan fines de semana)
-    document.getElementById('coachPrevDay')?.addEventListener('click', () => {
-      if (coachDate) cargarFecha(shiftWeekday(coachDate, -1))
-    })
-    document.getElementById('coachNextDay')?.addEventListener('click', () => {
-      if (!coachDate) return
-      const nd = shiftWeekday(coachDate, 1)
-      if (nd <= today()) cargarFecha(nd)
-    })
-
-    // Cargar la fecha pendiente (si se entró desde Historial) o la de hoy
-    await cargarFecha(pendingDate || today())
+    // Cargar la fecha pendiente (la que trae la cabecera o la vista del día)
+    await cargarFecha(pendingDate || fechaDeLaCabecera() || today())
     pendingDate = null
   }
 
@@ -2157,11 +2138,20 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     reglasCache = null
   }
 
-  // Abre el Coach IA con una fecha específica cargada (desde el modal del día)
+  // Abre el Coach IA con una fecha específica cargada (desde la vista del día)
   function abrirFecha(date) {
     pendingDate = date
     Nav.go('coach')
   }
 
-  return { init, refresh, clearCache, renderHistorial, abrirFecha }
+  // La fecha la manda ahora la cabecera de Sesión Operativa (una sola para las
+  // tres pestañas). Si el Coach ya está montado se recarga; si no, queda
+  // pendiente y la toma su init().
+  function setFecha(date) {
+    if (!date || date === coachDate) return
+    if (document.getElementById('coachAnalisisContent') && coachDate) cargarFecha(date)
+    else pendingDate = date
+  }
+
+  return { init, refresh, clearCache, renderHistorial, abrirFecha, setFecha }
 })()
