@@ -67,11 +67,8 @@ sube a `nqjournal-v5` para forzar la reinstalación.
 archivo no está en la primera visita sin conexión. Hay un comentario en `sw.js` que lo
 recuerda.
 
-**Pendiente de comprobación tuya:** no pude registrar el service worker en el navegador de
-pruebas (lo bloquea). Verificado que las 28 entradas responden 200 y que `APP_SHELL`
-coincide exactamente con los `<script>` de `index.html`, pero **el precacheo real no se ha
-visto ejecutar**. Para confirmarlo: Chrome → DevTools → Application → Cache Storage →
-`nqjournal-v5` debe tener 28 entradas.
+**✅ Verificado por Kris en Chrome (16 ago):** Cache Storage → `nqjournal-v5` con las **28
+entradas**. El precacheo funciona end-to-end.
 
 ### Modal del día — distinguir el ítem tumbado del nunca marcado
 

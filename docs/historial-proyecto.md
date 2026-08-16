@@ -1996,10 +1996,17 @@ invariantes del Coach, `upsertSesion`, y la decision cerrada del 24 jul sobre la
 reglas de feb-may. Y la estructura de `js/` / `index.html` / `styles.css`, que se
 analizo y se aplazo con su propio diseno (ver `tasks/backlog.md`).
 
-### Pendiente detectado, no causado aqui
+### Falsa alarma y un bug real (16 ago)
 
-El registro del **service worker falla**. Salio al verificar la Fase 6 en el navegador;
-`sw.js` no se toco. Anotado en `tasks/current.md` sin diagnosticar.
+Al verificar la Fase 6 reporte que el registro del **service worker** fallaba. Era falso:
+lo bloqueaba el navegador embebido de la prueba. La prueba de control fue registrar
+`manifest.json` como SW y obtener el mismo error — un JSON deberia fallar por MIME type.
+
+Pero el analisis destapo un bug real: **`APP_SHELL` en `sw.js` era codigo muerto**. Se
+declaraba y no se usaba en ningun sitio (`install` solo precacheaba el CDN), listaba
+`js/annual.js` —que ya no existe— y le faltaban 6 archivos que si. La PWA no abria sin
+conexion en la primera visita. Arreglado: `install` precachea 28 entradas y `CACHE`
+sube a `nqjournal-v5`. **Verificado por Kris en Chrome: 28 entradas en Cache Storage.**
 
 ---
 
