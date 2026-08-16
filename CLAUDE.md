@@ -78,11 +78,28 @@ Lo que el esquema no cuenta y hay que saber:
 
 ## Lenguaje visual
 
-- **Tokens:** `css/styles.css`, bloque `:root`. Fondo `#1a1a18`, accent `#1D9E75`,
-  stop/error `#E24B4A`, warning `#BA7517`. Cards `radius 10px`, transiciones 150ms.
-- Iconos: Tabler Icons (CDN). Gráficas: Chart.js (CDN).
+**Tokens:** `css/styles.css`, bloque `:root` (26 tokens). Cards `radius 10px`, transiciones
+150ms. Iconos: Tabler Icons (CDN). Gráficas: Chart.js (CDN).
+
+**Cada color semántico tiene DOS valores y no son intercambiables:**
+
+| Familia | `base` — bordes, fondos, rellenos | `-txt` — texto sobre fondo oscuro | `-dim` |
+|---|---|---|---|
+| accent | `--accent` #1D9E75 | `--accent-txt` #3FE0A6 | `--accent-dim` |
+| stop/error | `--red` #E24B4A | `--red-txt` #F2706F | `--red-dim` |
+| warning | `--warning` #BA7517 | `--warning-txt` #E0A33B | `--warning-dim` |
+| info / Fase 3 | `--blue` #5B94C9 | `--blue-txt` #8FBDE8 | — |
+| experimentos | `--violet` #7C6CF3 | `--violet-txt` #AFA9EC | — |
+
+La `base` **no contrasta lo suficiente como texto**: para eso está la variante `-txt`.
+Usar la base en un `color:` es el error típico.
+
+- ⚠️ **Al tocar UI: usar el token, NUNCA el hex.** Cada literal nuevo es un lenguaje
+  visual nuevo.
 - ⚠️ **Deuda conocida:** conviven dos lenguajes visuales — el nuevo (16 ago) solo está en
-  la pestaña Diario. Al tocar UI: usar tokens, **no añadir hex nuevos**.
+  la pestaña Diario. Y quedan **45 literales** sin tokenizar (eran 140), casi todos
+  variantes casi-idénticas de estos mismos colores. Se consolidan al migrar cada pantalla,
+  no en bloque: unificarlas cambiaría píxeles. Ver `tasks/current.md`.
 
 ## Stack y URLs
 
