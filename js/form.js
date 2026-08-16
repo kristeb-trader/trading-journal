@@ -48,10 +48,19 @@ const SessionForm = (() => {
         const vacio = controles.length > 0 && !controles.some(conValor)
         g.classList.toggle('vacio-en-lectura', view && vacio)
       })
-    // Grupos de botones (corrida, zonas en contra…): vacíos si no hay opción activa
+    // Grupos de botones (corrida, zonas en contra…): vacíos si no hay opción
+    // activa. OJO: solo se oculta el grupo si los botones son TODO su contenido.
+    // Sin esta comprobación, los T/S de errores y experimentos —que están sin
+    // elegir mientras solo se consulta— se llevaban por delante la lista entera
+    // de errores y experimentos del día.
     sec.querySelectorAll('.btn-group').forEach(g => {
+      const grupo = g.closest('.form-group')
+      if (!grupo) return
+      const tieneMasContenido = grupo.querySelector(
+        '.cas-list, .exp-list, select, textarea, input:not([type="hidden"])')
+      if (tieneMasContenido) return
       const sinElegir = !g.querySelector('.btn-option.active')
-      g.closest('.form-group')?.classList.toggle('vacio-en-lectura', view && sinElegir)
+      grupo.classList.toggle('vacio-en-lectura', view && sinElegir)
     })
     // Estrellas de confianza: sin valoración no aportan nada en lectura
     const conf = document.getElementById('confianzaVal')
@@ -172,21 +181,29 @@ const SessionForm = (() => {
         ? `<div class="phase-hint"><i class="ti ti-info-circle"></i> Elige el <b>SetUp</b> en Operativa para ver sus reglas propias.</div>`
         : ''
       const badge = (f === 2 && fam) ? `<span class="phase-setup-badge">${DB.setupLabel(fam)}</span>` : ''
+      // Cada fase se pliega por separado: de un vistazo se ven las 3 con su
+      // contador, y solo se abre la que se quiera revisar.
       return `
-        <div class="phase-card phase-card-${f}${opOnly}">
-          <div class="phase-card-head">
+        <div class="phase-card phase-card-${f}${opOnly} plegada">
+          <button type="button" class="phase-card-head" data-fase-toggle="${f}">
             <span class="phase-card-icon"><i class="ti ${FASE_META[f].icon}"></i></span>
             <div class="phase-card-titles">
               <div class="phase-card-title">${FASE_META[f].titulo}${badge}</div>
               <div class="phase-card-when">${FASE_META[f].when}</div>
             </div>
             <span class="phase-progress" id="phaseProg${f}">0/${items.filter(i => (i.evidencia || 'declarada') !== 'auto').length}</span>
+            <i class="ti ti-chevron-down phase-chevron"></i>
+          </button>
+          <div class="phase-card-body">
+            ${aviso}
+            <div class="checklist">${checks}</div>
           </div>
-          ${aviso}
-          <div class="checklist">${checks}</div>
         </div>`
     }).join('')
     cont.querySelectorAll('input[type="checkbox"]').forEach(c => c.addEventListener('change', updatePhaseProgress))
+    cont.querySelectorAll('[data-fase-toggle]').forEach(btn => {
+      btn.addEventListener('click', () => btn.closest('.phase-card').classList.toggle('plegada'))
+    })
     // Fases 2/3 solo aplican cuando se operó: ocultarlas si "No operé Hoy" está activo
     if (document.getElementById('noOpero')?.checked)
       cont.querySelectorAll('.op-only').forEach(el => el.classList.add('hidden'))
@@ -424,8 +441,10 @@ const SessionForm = (() => {
   function setupNaranjaLines(wrapId) {
     const wrap = document.getElementById(wrapId)
     if (!wrap) return null
+    // Sin placeholder "Línea N": en lectura se leía como si hubiera un registro
+    // vacío. Las cajas sin valor se esconden solas (ver `refresh`).
     wrap.innerHTML = Array.from({ length: 5 }, (_, i) =>
-      `<input type="number" step="0.25" class="premkt-line${i > 0 ? ' hidden' : ''}" data-i="${i}" placeholder="Línea ${i + 1}">`
+      `<input type="number" step="0.25" class="premkt-line${i > 0 ? ' hidden' : ''}" data-i="${i}" placeholder="">`
     ).join('')
     const inputs = [...wrap.querySelectorAll('.premkt-line')]
     const refresh = () => {

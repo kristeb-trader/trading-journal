@@ -993,6 +993,56 @@ textarea { resize: vertical; min-height: 80px; }
 /* Emoción y confianza (movidas del Coach al Diario) */
 .lista-vacia { font-size: 0.82rem; color: var(--text3); padding: 4px 2px; margin: 0; }
 
+/* ── Fases del checklist: cada una se pliega por su cuenta ────────────────── */
+.phase-card-head {
+  width: 100%; background: none; border: none; font-family: inherit;
+  text-align: left; cursor: pointer; padding: 0; color: inherit;
+}
+.phase-chevron {
+  font-size: 1.05rem; color: var(--text3); flex: 0 0 auto; margin-left: 10px;
+  transition: transform var(--transition);
+}
+.phase-card:not(.plegada) .phase-chevron { transform: rotate(180deg); }
+.phase-card.plegada .phase-card-head { margin-bottom: 0; }
+.phase-card.plegada .phase-card-body { display: none; }
+.phase-card-body { padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--border); }
+
+/* ── La operación: bloques con un rótulo, en vez de filas sueltas ─────────── */
+.op-bloque { margin-bottom: 18px; }
+.op-bloque:last-child { margin-bottom: 0; }
+.op-bloque-lbl {
+  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.11em;
+  text-transform: uppercase; color: var(--text3);
+  padding-bottom: 6px; margin-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.op-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px 16px; align-items: start;
+}
+.op-grid .form-group { margin-bottom: 0; }
+.op-ancho { grid-column: 1 / -1; }
+.op-dato {
+  padding: 8px 0; color: var(--text); font-size: 0.95rem; font-weight: 600;
+  font-variant-numeric: tabular-nums; min-height: 36px; display: flex; align-items: center;
+}
+/* Botones de opción compactos y repartidos, no pegados a la izquierda */
+.op-grid .btn-group { display: flex; gap: 6px; }
+.op-grid .btn-group .btn-option { flex: 1; text-align: center; padding: 8px 6px; }
+
+/* ── Líneas naranjas: chips, no una columna de cajas ──────────────────────── */
+.premkt-lines-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+.premkt-lines-wrap .premkt-line {
+  width: 104px; flex: 0 0 auto; text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+#section-register.view-mode .premkt-lines-wrap .premkt-line {
+  width: auto; min-width: 0; padding: 3px 11px;
+  background: rgba(186,117,23,0.10); border: 1px solid rgba(186,117,23,0.28);
+  border-radius: 999px; color: var(--warning); font-weight: 600; font-size: 0.8rem;
+}
+/* En lectura, una línea sin valor no es una línea */
+#section-register.view-mode .premkt-line:placeholder-shown { display: none; }
+
 .emo-row {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px; align-items: start;

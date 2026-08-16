@@ -361,7 +361,10 @@
             </div>
 
             <!-- ═══ 2. Checklist Reglas ═══ -->
-            <div class="form-card collapsible">
+            <!-- Esta tarjeta NO se pliega entera: el resumen (barra + las 3
+                 fases con su contador) siempre se ve, y el detalle se despliega
+                 fase por fase. -->
+            <div class="form-card">
             <div class="form-section-title"><i class="ti ti-checklist"></i> Checklist de reglas</div>
 
             <!-- Barra de cumplimiento: se ve aunque la tarjeta esté plegada,
@@ -433,42 +436,68 @@
                 <span class="card-meta" id="opMeta"></span>
               </div>
 
-              <!-- Trades del día: antes solo se veían en el calendario y dentro
-                   del Coach; se registraba la sesión sin ver lo que se operó. -->
-              <div id="opTradesWrap" class="op-trades-wrap"></div>
-              <div class="form-row">
-                <div class="form-group" data-vacio-auto>
-                  <label for="contexto">Contexto de mercado</label>
-                  <select id="contexto" name="contexto">
-                    <option value="">Seleccionar...</option>
-                    <option value="Alcista fuerte">📈 Alcista fuerte</option>
-                    <option value="Alcista">↗ Alcista</option>
-                    <option value="Mixto">↔ Mixto</option>
-                    <option value="Bajista">↘ Bajista</option>
-                    <option value="Bajista fuerte">📉 Bajista fuerte</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>Número de corrida</label>
-                  <div class="btn-group" id="corrida">
-                    <button type="button" class="btn-option" data-value="1">1ª corrida</button>
-                    <button type="button" class="btn-option" data-value="2">2ª corrida</button>
-                    <button type="button" class="btn-option" data-value="3">3ª corrida</button>
+              <!-- Bloque 1 · QUÉ se operó -->
+              <div class="op-bloque">
+                <div class="op-bloque-lbl">El setup</div>
+                <div class="op-grid">
+                  <div class="form-group op-ancho">
+                    <label for="setup">SetUp operado</label>
+<!-- Opciones desde catalogo_setup_variantes (form.js → loadSetups) -->
+                    <select id="setup" name="setup">
+                      <option value="">Seleccionar setup...</option>
+                    </select>
                   </div>
-                  <input type="hidden" id="numCorrida" name="num_corrida">
+                  <div class="form-group" data-vacio-auto>
+                    <label for="contexto">Contexto de mercado</label>
+                    <select id="contexto" name="contexto">
+                      <option value="">Seleccionar...</option>
+                      <option value="Alcista fuerte">📈 Alcista fuerte</option>
+                      <option value="Alcista">↗ Alcista</option>
+                      <option value="Mixto">↔ Mixto</option>
+                      <option value="Bajista">↘ Bajista</option>
+                      <option value="Bajista fuerte">📉 Bajista fuerte</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div class="form-row">
-                <div class="form-group" data-vacio-auto>
-                  <label for="velasCorrida">Velas en la corrida</label>
-                  <input type="number" id="velasCorrida" name="velas_corrida" min="1" max="20" placeholder="1 – 20">
+              <!-- Bloque 2 · CÓMO se leyó el movimiento -->
+              <div class="op-bloque">
+                <div class="op-bloque-lbl">La lectura</div>
+                <div class="op-grid">
+                  <div class="form-group">
+                    <label>Número de corrida</label>
+                    <div class="btn-group" id="corrida">
+                      <button type="button" class="btn-option" data-value="1">1ª</button>
+                      <button type="button" class="btn-option" data-value="2">2ª</button>
+                      <button type="button" class="btn-option" data-value="3">3ª</button>
+                    </div>
+                    <input type="hidden" id="numCorrida" name="num_corrida">
+                  </div>
+                  <div class="form-group" data-vacio-auto>
+                    <label for="velasCorrida">Velas en la corrida</label>
+                    <input type="number" id="velasCorrida" name="velas_corrida" min="1" max="20" placeholder="1 – 20">
+                  </div>
+                  <div class="form-group">
+                    <label>Puntos de retroceso</label>
+                    <div id="puntosRetrocesoDisplay" class="op-dato">— pts</div>
+                    <input type="hidden" id="puntosRetroceso">
+                  </div>
+                  <div class="form-group op-ancho">
+                    <label>¿Había zonas vigentes en contra?</label>
+                    <div class="btn-group" id="zonasContra">
+                      <button type="button" class="btn-option" data-value="true">Sí había zonas</button>
+                      <button type="button" class="btn-option" data-value="false">No había zonas</button>
+                    </div>
+                    <input type="hidden" id="zonasContraVal" name="zonas_contra">
+                  </div>
                 </div>
-                <div class="form-group">
-                  <label>Puntos de retroceso</label>
-                  <div id="puntosRetrocesoDisplay" style="padding:8px 12px;background:var(--card2);border-radius:6px;color:var(--text2);font-size:0.9rem;min-height:36px;display:flex;align-items:center">— pts</div>
-                  <input type="hidden" id="puntosRetroceso">
-                </div>
+              </div>
+
+              <!-- Bloque 3 · QUÉ pasó (lo trae NinjaTrader) -->
+              <div class="op-bloque">
+                <div class="op-bloque-lbl">Los trades</div>
+                <div id="opTradesWrap" class="op-trades-wrap"></div>
               </div>
 
               <!-- Alerta de riesgo (Bloque 1): visible solo si el retroceso supera el stop máximo -->
@@ -485,22 +514,6 @@
                 <input type="hidden" id="alertaVistaVal" name="alerta_riesgo_vista">
               </div>
 
-              <div class="form-group">
-                <label>¿Había zonas vigentes en contra?</label>
-                <div class="btn-group" id="zonasContra">
-                  <button type="button" class="btn-option" data-value="true">Sí había zonas</button>
-                  <button type="button" class="btn-option" data-value="false">No había zonas</button>
-                </div>
-                <input type="hidden" id="zonasContraVal" name="zonas_contra">
-              </div>
-
-              <div class="form-group">
-                <label for="setup"><i class="ti ti-chart-dots-3" style="font-size:0.9rem; margin-right:4px"></i>SetUp</label>
-<!-- Opciones desde catalogo_setup_variantes (form.js → loadSetups) -->
-                <select id="setup" name="setup">
-                  <option value="">Seleccionar setup...</option>
-                </select>
-              </div>
             </div>
 
             <!-- ═══ 4. Post-Operativa ═══ -->
