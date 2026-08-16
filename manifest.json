@@ -1,6 +1,6 @@
 {
-  "name": "NQ Journal — Trading Diario",
-  "short_name": "NQ Journal",
+  "name": "Trading Journal",
+  "short_name": "Trading Journal",
   "description": "Journal de operativa NQ/MNQ Futures — Metodología Chaumer",
   "start_url": ".",
   "scope": "/trading-journal/",

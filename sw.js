@@ -1,10 +1,10 @@
-// Service Worker — NQ Journal PWA
+// Service Worker — Trading Journal PWA
 // Estrategia:
 //   - app shell (JS/CSS/HTML propios): network-first → siempre frescos, caché de respaldo offline
 //   - CDN (tabler, supabase, chart.js): cache-first → no cambian, carga instantánea
 //   - APIs externas (supabase, cloudinary, workers.dev...): network-only
 
-const CACHE = 'nqjournal-v5'
+const CACHE = 'nqjournal-v6'
 
 // Recursos CDN que no cambian → cache-first
 const CDN_SHELL = [
