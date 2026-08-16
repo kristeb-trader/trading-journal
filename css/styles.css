@@ -672,9 +672,16 @@ small { font-size: 0.82em; }
   padding-left: 12px; padding-right: 12px; cursor: pointer;
   -webkit-appearance: auto; appearance: auto;
 }
-/* De un grupo de botones, en lectura solo se ve el elegido */
+/* De un grupo de botones, en lectura solo se ve el elegido — y se lee como un
+   valor más, no como un botón encendido: en una pantalla de consulta un botón
+   verde sugiere que algo se puede pulsar. */
 #section-register.view-mode .btn-option:not(.active) { display: none; }
-#section-register.view-mode .btn-option.active { cursor: default; }
+#section-register.view-mode .btn-group { display: block; }
+#section-register.view-mode .btn-option.active {
+  cursor: default; background: none; border-color: transparent; box-shadow: none;
+  color: var(--text); font-size: 0.95rem; font-weight: 600;
+  padding: 8px 0; text-align: left; width: auto;
+}
 /* Estrellas: sin las apagadas se pierde la escala, así que se quedan */
 #section-register.view-mode .emo-star { cursor: default; }
 
@@ -954,23 +961,53 @@ textarea { resize: vertical; min-height: 80px; }
 .chip-pts.pos { background: var(--accent-dim); color: #3FE0A6; }
 .chip-pts.neg { background: rgba(226,75,74,0.14); color: #F2706F; }
 
-/* Barra de cumplimiento del checklist */
-.chk-prog { padding-bottom: 2px; }
-.chk-prog-top { font-size: 0.78rem; color: var(--text2); text-align: center; margin-bottom: 7px; }
-.chk-prog-row { display: flex; align-items: center; gap: 12px; }
+/* Barra de cumplimiento: una sola fila — rótulo, barra, porcentaje */
+.chk-prog {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;
+}
+.chk-prog-top {
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text3); flex: 0 0 auto;
+}
+.chk-prog-row { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
 .chk-track {
-  flex: 1; height: 13px; border-radius: 999px;
-  background: var(--bg); border: 1px solid var(--border); overflow: hidden;
+  flex: 1; height: 8px; border-radius: 999px;
+  background: var(--bg); overflow: hidden;
 }
 .chk-fill {
   height: 100%; width: 0; border-radius: 999px; background: var(--warning);
-  transition: width var(--transition), background var(--transition);
+  transition: width 0.35s ease, background var(--transition);
 }
 .chk-fill.full { background: var(--accent); }
 .chk-pct {
-  font-size: 1.02rem; font-weight: 700; color: var(--text);
-  font-variant-numeric: tabular-nums; min-width: 52px; text-align: right;
+  font-size: 1.05rem; font-weight: 700; color: var(--text);
+  font-variant-numeric: tabular-nums; min-width: 46px; text-align: right; flex: 0 0 auto;
 }
+
+/* Fases: filas dentro de la tarjeta, no tarjetas dentro de la tarjeta */
+#checklistContainer .phase-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: 0 10px 10px 0;
+  padding: 0; margin-bottom: 8px; overflow: hidden;
+}
+#checklistContainer .phase-card-1 { border-left-color: var(--accent); }
+#checklistContainer .phase-card-2 { border-left-color: var(--warning); }
+#checklistContainer .phase-card-3 { border-left-color: #5B94C9; }
+#checklistContainer .phase-card-head {
+  display: flex; align-items: center; gap: 12px; padding: 13px 16px; margin: 0;
+}
+#checklistContainer .phase-card:hover .phase-card-head { background: rgba(255,255,255,0.02); }
+#checklistContainer .phase-card-icon { width: 32px; height: 32px; font-size: 1.05rem; }
+#checklistContainer .phase-card-title { font-size: 0.92rem; font-weight: 600; color: var(--text); }
+#checklistContainer .phase-card-1 .phase-card-title,
+#checklistContainer .phase-card-2 .phase-card-title,
+#checklistContainer .phase-card-3 .phase-card-title { color: var(--text); }
+#checklistContainer .phase-card-when { font-size: 0.72rem; color: var(--text3); margin-top: 2px; }
+#checklistContainer .phase-card-body { padding: 0 16px 14px; margin-top: 0; border-top: 1px solid var(--border); padding-top: 12px; }
 
 /* Trades del día dentro de "La operación" */
 .op-trades-wrap { margin-bottom: 14px; }
@@ -991,6 +1028,64 @@ textarea { resize: vertical; min-height: 80px; }
 .op-trades-empty { font-size: 0.83rem; color: var(--text3); padding: 4px 0; }
 
 /* Emoción y confianza (movidas del Coach al Diario) */
+/* ══════════════════════════════════════════════════════════════════════════
+   SISTEMA VISUAL DE LAS TARJETAS DE SESIÓN OPERATIVA
+   Principio: chrome callado, dato fuerte. Antes las 5 tarjetas repetían la
+   misma cabecera verde en mayúsculas y competían entre sí; ahora el color
+   vive en el icono (uno por tipo de tarjeta) y el título se lee como texto.
+   ══════════════════════════════════════════════════════════════════════════ */
+.card-x {
+  background: linear-gradient(180deg, rgba(255,255,255,0.028) 0%, rgba(0,0,0,0.10) 100%);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px 20px;
+  margin-bottom: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 1px 3px rgba(0,0,0,0.28);
+  transition: border-color var(--transition);
+}
+.card-x:hover { border-color: var(--border2, #403F38); }
+
+/* Cabecera: icono en pastilla de color + título normal + meta a la derecha */
+.card-x > .form-section-title {
+  display: flex; align-items: center; gap: 13px;
+  font-size: 0.98rem; font-weight: 600; letter-spacing: 0;
+  text-transform: none; color: var(--text);
+  border-bottom: none; padding: 0; margin: 0 0 18px;
+}
+.card-x > .form-section-title > i:first-child {
+  width: 34px; height: 34px; flex: 0 0 auto; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  background: var(--bg3); color: var(--text2);
+}
+.card-x[data-tono="ambar"]   > .form-section-title > i:first-child { background: rgba(186,117,23,0.16); color: #E0A33B; }
+.card-x[data-tono="verde"]   > .form-section-title > i:first-child { background: rgba(29,158,117,0.16);  color: #3FE0A6; }
+.card-x[data-tono="azul"]    > .form-section-title > i:first-child { background: rgba(91,148,201,0.16);  color: #8FBDE8; }
+.card-x[data-tono="violeta"] > .form-section-title > i:first-child { background: rgba(139,124,216,0.16); color: #A99CE8; }
+.card-x[data-tono="gris"]    > .form-section-title > i:first-child { background: var(--bg3);             color: var(--text2); }
+
+/* Plegado: el título es la zona clicable, sin borde que lo separe */
+.card-x.collapsible.collapsed > .form-section-title { margin-bottom: 0; border-bottom-color: transparent; }
+.card-x.collapsible:not(.collapsed) > .form-section-title { margin-bottom: 18px; }
+.card-x .collapse-chevron { color: var(--text3); }
+
+/* Etiquetas de campo: micro-mayúsculas discretas, el valor manda */
+.card-x .form-group > label,
+.card-x .premkt-field label,
+.card-x .emo-col > label,
+.card-x .premkt-lines-col > label {
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text3);
+}
+/* En lectura el valor se lee como dato, no como campo de formulario */
+#section-register.view-mode .card-x input[type="text"],
+#section-register.view-mode .card-x input[type="number"],
+#section-register.view-mode .card-x select,
+#section-register.view-mode .card-x textarea {
+  font-size: 0.95rem; font-weight: 600; color: var(--text);
+}
+#section-register.view-mode .card-x textarea { font-weight: 400; color: var(--text2); line-height: 1.6; }
+
 .lista-vacia { font-size: 0.82rem; color: var(--text3); padding: 4px 2px; margin: 0; }
 
 /* ── Fases del checklist: cada una se pliega por su cuenta ────────────────── */
