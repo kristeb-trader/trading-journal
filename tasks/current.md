@@ -14,8 +14,13 @@ Diseño aprobado: `docs/disenos/2026-08-16-reestructuracion.md` (v3).
 - [x] **Fase 2** — `CLAUDE.md` de 259 a 149 líneas + `.claude/rules/` con carga bajo demanda
 - [x] **Fase 3** — Memoria: 11 archivos → 2, seis contradicciones eliminadas
 - [x] **Fase 4** — `docs/` y `tasks/`: archivar, borrar, decisiones, índice, checkpoints
-- [ ] **Fase 5** — Los 4 skills genéricos en `~/.claude/skills/`
+- [x] **Fase 5** — Los 4 skills genéricos en `~/.claude/skills/`
 - [ ] **Fase 6** — Tokens CSS (aprobada, va al final y aparte porque toca `styles.css`)
+
+> Los skills viven fuera del repo (`~/.claude/skills/`), así que no aparecen en estos
+> commits: `flujo-desarrollo` (reescrito), `lenguaje-visual`, `base-de-datos` y
+> `documentacion` (+ `references/contrato.md`). Este repo es la **primera implementación
+> del contrato** y sirve de plantilla para KrisKapital.
 
 ## Siguiente
 
