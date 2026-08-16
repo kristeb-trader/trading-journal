@@ -39,12 +39,35 @@ casi-idénticas de los mismos colores (`#e87c7b` junto a `#f2706f`, `#a99cff` ju
 que no se tocan en bloque: se consolidan al migrar cada pantalla, que es cuando el cambio
 visual está justificado y se puede revisar.
 
-### Service worker — error en consola al cargar
+### ~~Service worker — error en consola~~ → FALSA ALARMA (16 ago)
 
-`An unknown error occurred when fetching the script`, y `getRegistrations()` devuelve
-vacío: el registro de `sw.js` está fallando. **Detectado el 16 ago, no diagnosticado.** No
-lo causó la reestructuración —`sw.js` no se tocó— y no rompe la app, pero la PWA no está
-funcionando como debería.
+**No hay tal error.** Lo reporté al verificar la Fase 6 y era un artefacto del navegador
+embebido en el que probé (`Claude/… Electron/42.7.0`), que **bloquea el registro de
+service workers**.
+
+La prueba de control es concluyente: registrar `./manifest.json` como service worker da
+**exactamente el mismo mensaje** ("An unknown error occurred when fetching the script").
+Un JSON debería fallar por MIME type, no por "unknown error" — el navegador ni siquiera
+llega a descargar el archivo. Y `sw.js` se sirve con 200, `application/javascript` y
+sintaxis válida.
+
+En un navegador normal la PWA funciona. Si quieres confirmarlo: abre la app en Chrome y
+mira **DevTools → Application → Service Workers**.
+
+### Service worker — dos cosas reales que sí salieron (menores)
+
+Al analizar `sw.js` para lo anterior:
+
+1. **`APP_SHELL` es código muerto.** Se declara en `sw.js:17` y **no se usa en ningún
+   sitio**: `install` solo precachea `CDN_SHELL`. Además lista `js/annual.js`, que ya no
+   existe, y le faltan 6 archivos que sí existen (`account-filter`, `apex`, `disciplina`,
+   `estrategia`, `experimentos`, `fechas`).
+2. **Consecuencia:** la primera visita **sin conexión** no tiene nada cacheado. A partir de
+   la segunda sí, porque la estrategia network-first va guardando lo que descarga. O sea:
+   funciona, pero no hace lo que su propio código dice que hace.
+
+Arreglarlo bien (que `install` precachee de verdad el shell) **cambia el comportamiento
+offline** de la PWA, así que va con decisión aparte.
 
 ### Modal del día — distinguir el ítem tumbado del nunca marcado
 

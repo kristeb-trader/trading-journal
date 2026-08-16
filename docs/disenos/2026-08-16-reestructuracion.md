@@ -996,11 +996,16 @@ Tres, todas menores y ya reflejadas arriba:
    colores; unificarlas cambiaría píxeles, y la Fase 6 se aprobó con la condición de que no
    cambiara nada visualmente. Se consolidan al migrar cada pantalla.
 
-### Hallazgo lateral, no causado por esta reestructuración
+### Hallazgo lateral — retractado (16 ago)
 
-El registro del **service worker falla** (`getRegistrations()` vuelve vacío). Detectado al
-verificar la Fase 6 con el navegador. `sw.js` no se tocó. Anotado en `tasks/current.md` sin
-diagnosticar: la consola **no está limpia**, y no se declara como tal.
+Al verificar la Fase 6 reporté que el registro del **service worker fallaba**. **Era falso.**
+El navegador embebido donde probé (`Claude/… Electron/42.7.0`) bloquea el registro de
+service workers: registrar `./manifest.json` da el mismo error, y un JSON debería fallar
+por MIME type. `sw.js` se sirve 200 con MIME correcto y sintaxis válida.
+
+Lo que sí es real y salió de ese análisis: `APP_SHELL` en `sw.js:17` es **código muerto**
+(nunca se usa; `install` solo precachea `CDN_SHELL`), lista un archivo que no existe y le
+faltan 6 que sí. Ver `tasks/current.md`.
 
 ---
 
