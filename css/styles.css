@@ -808,6 +808,46 @@ small { font-size: 0.82em; }
 .so-panel { display: none; }
 .so-panel.active { display: block; }
 
+/* Días anteriores: índice del diario, una fila por día */
+.dias-row {
+  display: grid; grid-template-columns: 130px 92px 100px minmax(0, 1fr) 210px;
+  gap: 12px; align-items: center; padding: 11px 14px;
+  border-bottom: 1px solid var(--border); font-size: 0.86rem;
+}
+.dias-head {
+  font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.09em;
+  color: var(--text3); border-bottom: 1px solid var(--border2, #403F38);
+}
+.dias-item { cursor: pointer; transition: background var(--transition); }
+.dias-item:hover { background: var(--bg3); }
+.dias-fecha { font-weight: 600; }
+.dias-pnl { font-variant-numeric: tabular-nums; }
+.dias-pnl.pos { color: #3FE0A6; }
+.dias-pnl.neg { color: #F2706F; }
+.dias-setup { color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dias-pill {
+  font-size: 0.7rem; padding: 3px 9px; border-radius: 999px; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dias-pill.p-t { background: var(--accent-dim); color: #3FE0A6; }
+.dias-pill.p-s { background: rgba(226,75,74,0.14); color: #F2706F; }
+.dias-pill.p-n { background: var(--bg3); color: var(--text3); }
+.dias-errs { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+.dias-etag {
+  font-size: 0.7rem; padding: 3px 9px; border-radius: 999px;
+  background: rgba(226,75,74,0.14); color: #F2706F;
+  max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dias-emore { font-size: 0.7rem; color: var(--text3); }
+.dias-clean { font-size: 0.76rem; color: #3FE0A6; }
+.dias-nd { font-size: 0.76rem; color: var(--text3); }
+
+@media (max-width: 720px) {
+  .dias-row { grid-template-columns: 88px 78px 88px; row-gap: 6px; }
+  .dias-head, .dias-setup { display: none; }
+  .dias-errs, .dias-clean, .dias-nd { grid-column: 1 / -1; }
+}
+
 @media (max-width: 720px) {
   .so-head { gap: 10px; padding: 10px 12px; }
   .so-head .mh-stats { order: 3; flex: 1 0 100%; margin: 0; }

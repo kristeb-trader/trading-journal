@@ -1717,6 +1717,11 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
 
   // ── Sección historial ──────────────────────────────────────────────────
 
+  // Días anteriores: el índice del diario. Lista TODOS los días registrados, no
+  // solo los que pasaron por el Coach — antes leía `diagnosticos_diarios` y de
+  // 135 sesiones solo aparecían las ~50 diagnosticadas; el resto era invisible
+  // aunque tuviera trades. La columna útil es la de errores, no si hay o no
+  // diagnóstico guardado.
   async function renderHistorial() {
     const container = document.getElementById('coachHistorialList')
     if (!container) return
@@ -1724,57 +1729,92 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     container.innerHTML = '<div class="coach-loading"><i class="ti ti-loader-2 spin"></i></div>'
 
     try {
-      const [historial, emociones, sesiones, erroresFlat] = await Promise.all([
-        DB.getHistorialCompacto(30),
-        emocionesCache.length ? Promise.resolve(emocionesCache) : DB.getCatalogoEmociones(),
+      const [sesiones, tradesAll, erroresFlat, diagnosticados] = await Promise.all([
         DB.getSesiones(),
-        DB.getErroresHistoricos(),
+        DB.getTrades().catch(() => []),
+        DB.getErroresHistoricos().catch(() => []),
+        DB.getHistorialCompacto(9999).catch(() => []),
       ])
-      emocionesCache = emociones
+      // Días que ya pasaron por el Coach: sirve para no leer "sin errores" en un
+      // día que simplemente nadie ha analizado todavía.
+      const conDiagnostico = new Set((diagnosticados || []).map(d => d.sesion_date))
 
-      if (!historial.length) {
-        container.innerHTML = '<p class="coach-empty">Sin diagnósticos guardados aún.</p>'
+      // Trades de la cuenta principal, agrupados por día (misma cuenta que
+      // analiza el Coach, para que el P&L cuadre con la cabecera).
+      const cuenta = cuentaAnalisis()
+      const tradesPorDia = {}
+      ;(tradesAll || []).forEach(t => {
+        if ((t.account || '') !== cuenta) return
+        ;(tradesPorDia[t.trade_date] ||= []).push(t)
+      })
+
+      const erroresMap = {}
+      erroresFlat.forEach(e => { (erroresMap[e.sesion_date] ||= []).push(e) })
+
+      // Universo: días con sesión registrada ∪ días con trades
+      const fechas = [...new Set([
+        ...(sesiones || []).map(s => s.sesion_date),
+        ...Object.keys(tradesPorDia),
+      ])].sort().reverse()
+
+      if (!fechas.length) {
+        container.innerHTML = '<p class="coach-empty">Aún no hay días registrados.</p>'
         return
       }
 
-      // Mapas por fecha: emoción-inicio desde `sesiones`, errores desde tabla estructurada
       const sesionMap = {}
-      sesiones.forEach(s => { sesionMap[s.sesion_date] = s })
-      const erroresMap = {}
-      erroresFlat.forEach(e => {
-        if (!erroresMap[e.sesion_date]) erroresMap[e.sesion_date] = []
-        erroresMap[e.sesion_date].push(e)
-      })
+      ;(sesiones || []).forEach(s => { sesionMap[s.sesion_date] = s })
+      const esc = s => (s || '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]))
 
-      container.innerHTML = historial.map(d => {
-        const sesion     = sesionMap[d.sesion_date]
-        const emocion    = emociones.find(e => e.id === sesion?.estado_emocional_id)
-        const emocionFin = emociones.find(e => e.id === d.estado_emocional_fin_id)
-        const errores    = erroresMap[d.sesion_date] || []
-        const tieneAlerta = d.patron_detectado
-        const resultado = d.sec_resumen_compacto?.includes('TARGET ✅') ? 'target'
-          : d.sec_resumen_compacto?.includes('STOP ❌') ? 'stop' : 'be'
+      container.innerHTML = `
+        <div class="dias-row dias-head">
+          <span>Fecha</span><span>Resultado</span><span>P&amp;L</span><span>Setup</span><span>Errores</span>
+        </div>` + fechas.map(f => {
+        const sesion = sesionMap[f]
+        const trades = tradesPorDia[f] || []
+        // Mismo criterio de estado que el calendario y la vista del día
+        const st  = Modal._dayState(trades, sesion)
+        const pnl = trades.reduce((a, t) => a + (parseFloat(t.profit) || 0), 0)
+        const pill = st.cls === 'mst-green' ? 't' : st.cls === 'mst-red' ? 's' : 'n'
+        const errs = erroresMap[f] || []
+
+        const errHtml = errs.length
+          ? `<span class="dias-errs">${errs.slice(0, 2).map(e => `<span class="dias-etag" title="${esc(e.descripcion)}">${esc(e.descripcion)}</span>`).join('')}${errs.length > 2 ? `<span class="dias-emore">+${errs.length - 2}</span>` : ''}</span>`
+          // Sin errores registrados NO significa día limpio si nadie lo analizó:
+          // se distingue para no leer como un acierto lo que es un hueco.
+          : (conDiagnostico.has(f)
+              ? '<span class="dias-clean">Sin errores</span>'
+              : '<span class="dias-nd">— sin analizar</span>')
 
         return `
-          <div class="hist-item hist-item-${resultado}" data-date="${d.sesion_date}">
-            <div class="hist-header">
-              <span class="hist-date">${fmtDate(d.sesion_date)}</span>
-              ${emocion ? `<span class="hist-emocion">${emocion.emoji} ${emocion.nombre}${emocionFin ? ` → ${emocionFin.emoji} ${emocionFin.nombre}` : ''}</span>` : ''}
-              ${tieneAlerta ? '<span class="hist-alert">⚠️</span>' : ''}
-            </div>
-            <div class="hist-resumen">${limpiarResumen(d.sec_resumen_compacto) || '—'}</div>
-            ${errores.length ? `<div class="hist-errores">${errores.map(e => `<span class="hist-error-tag">${e.descripcion}</span>`).join('')}</div>` : ''}
+          <div class="dias-row dias-item" data-date="${f}">
+            <span class="dias-fecha">${fmtDate(f)}</span>
+            <span class="dias-pill p-${pill}">${st.label}</span>
+            <span class="dias-pnl ${pnl < 0 ? 'neg' : pnl > 0 ? 'pos' : ''}">${trades.length ? `${pnl >= 0 ? '+' : '−'}$${Math.abs(pnl).toFixed(2)}` : '—'}</span>
+            <span class="dias-setup">${esc(sesion?.setup || '—')}</span>
+            ${errHtml}
           </div>`
       }).join('')
 
-      // Click para expandir diagnóstico
-      container.querySelectorAll('.hist-item').forEach(item => {
-        item.addEventListener('click', () => verDiagnostico(item.dataset.date))
+      // Clic en un día: lo carga en esta misma pantalla (no navega a otra)
+      container.querySelectorAll('.dias-item').forEach(item => {
+        item.addEventListener('click', () => abrirDiaEnSesion(item.dataset.date))
       })
 
     } catch (err) {
       container.innerHTML = `<p class="coach-error">Error: ${err.message}</p>`
     }
+  }
+
+  // Carga un día en Sesión Operativa sin salir de la pantalla: mueve la fecha de
+  // la cabecera (que arrastra Diario, Coach y cabecera) y abre el Diario.
+  function abrirDiaEnSesion(date) {
+    const inp = document.getElementById('sesionDate')
+    if (inp) {
+      inp.value = date
+      inp.dispatchEvent(new Event('change'))
+    }
+    if (typeof SesionOperativa !== 'undefined') SesionOperativa.showTab('diario')
   }
 
   // Separa el veredicto (Etapa 3) que quedó concatenado dentro de sec_validacion
