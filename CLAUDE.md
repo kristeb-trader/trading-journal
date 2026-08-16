@@ -29,15 +29,17 @@ Dashboard personal para registro y análisis de operativa diaria en NQ/MNQ Futur
 
 ## Archivos clave
 ```
-js/app.js        — Boot, navegación SPA, Modal.openDay (modal del calendario)
+js/app.js        — Boot, navegación SPA, `SesionOperativa` (pestañas + cabecera)
+                   y `Modal.openDay` = **vista del día a pantalla completa**
+js/form.js       — Pestaña "Diario" de Sesión Operativa (el formulario del día)
 js/account-filter.js — Filtro de cuentas compartido (multi-selección con checkboxes).
                    Nombre COMPLETO de la cuenta; default = `objetivos.cuenta_principal`.
                    Lo usan Análisis, Calendario, Trades y Métricas (hereda el del Calendario)
 js/calendar.js   — Calendario mensual, filtro de cuenta, openDayModal
-js/coach.js      — Coach IA: flujo 3 etapas, chat, diagnóstico, guardar. Lee de `catalogo_reglas`
+js/coach.js      — Pestaña "Coach IA" (3 etapas, chat, diagnóstico) + `renderHistorial`
+                   = pestaña "Días anteriores". Lee de `catalogo_reglas`
 js/metrics.js    — KPIs y métricas generales (cards del calendario)
 js/charts.js     — Sección Análisis unificada: filtros Mes/Trimestre/Anual
-js/form.js       — Formulario de sesión diaria + experimentos
 js/disciplina.js — Dashboard de Disciplina: semáforo por fase, racha, errores por causa
 js/db.js         — Capa de datos Supabase (todas las queries) + **cálculo canónico de
                    disciplina** (ver "Reglas de oro de la disciplina" más abajo)
@@ -62,7 +64,7 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker). NO pide niveles d
 | `diagnostico_errores` | Errores detectados (manual + IA) con recomendaciones. **`regla_codigo`** (FK a `catalogo_reglas`, Ago 2026) = la regla del checklist que ese error contradice → la disciplina la cuenta **incumplida aunque la casilla esté marcada**. NULL = no toca el checklist (los psicológicos: Miedo, Duda, Rabia…) |
 | `diagnostico_experimentos` | Condiciones en prueba (T/S) por sesión |
 | `catalogo_errores` / `catalogo_emociones` / `catalogo_experimentos` | Maestros |
-| **`sesion_noticias`** | **Noticias rojas del día** (Ago 2026): varias por día con `hora` + `nombre`. Ventana ±5 min sobre la **entrada** (estar ya dentro es válido). Trigger bidireccional con `sesiones.hora_noticia_roja` (texto) porque el Worker no versionado aún la escribe |
+| **`sesion_noticias`** | **Noticias rojas del día** (Ago 2026): varias por día con `hora` + `nombre`. Ventana ±5 min sobre la **entrada** (estar ya dentro es válido). Trigger bidireccional con `sesiones.hora_noticia_roja` (texto) porque el Worker no versionado aún la escribe. **UNIQUE (sesion_date, hora)**: una noticia por hora — el CPI publica 4 cifras a las 7:30 pero es un evento con una ventana. La columna vieja `sesiones.noticias` (textarea libre) se retiró de la UI el 16 ago y su contenido se migró aquí; **la columna no se borró** |
 | **`catalogo_reglas`** | **Rulebook canónico unificado** (1 fila = 1 regla; antes `reglas`, renombrada Jul 2026). Capas filosofia/proceso/riesgo; `tipo` dura/blanda; `es_checklist`+`fase` → checklist diario (`sesion_checklist`). **`bloquea_go`** (¿hace falta para dar GO?), **`aplica_si`** (siempre/dia_fomc/hay_noticia) y **`evidencia`** (auto/declarada) — Ago 2026. **`setup`** apunta a `catalogo_setups.codigo` (o NULL = común): una regla aplica a un día si es NULL o coincide con la familia del setup de ese día. Ver [[rulebook-modelo]] |
 | **`catalogo_setups`** | **Familias de setup** (`iri`, `reingreso`, …). Es lo que agrupa las reglas de Fase 2. Se gestiona en Datos → "Setups operativos" |
 | **`catalogo_setup_variantes`** | **Variantes operativas** (`iri_continuacion_alcista` → "IRI Continuación Alcista"): `setup_codigo` (FK a la familia), `subtipo`, `direccion`. Alimenta los dropdowns de la web, el teclado del bot y el AddOn NT8 |
@@ -94,6 +96,34 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker). NO pide niveles d
 >   la sesión revisó la lista (`erroresRevisados`); si no, guardar los eliminaría.
 > - **`sesiones.nivel_confianza` = confianza EN LA ENTRADA** desde el 11 ago (antes era
 >   "pre-sesión", que no discriminaba). Los valores previos significan lo viejo.
+> - **El Coach NO escribe emoción ni confianza** (16 ago): las registra el Diario. Volver
+>   a mandarlas desde aquí enviaría `null` —sus selectores ya no existen— y borraría lo
+>   que puso el Diario. Para el prompt se leen del dato guardado.
+> - **El Coach no tiene selector de fecha propio**: la manda la cabecera de Sesión
+>   Operativa vía `Coach.setFecha(date)`.
+
+## Sesión Operativa (16 ago)
+Una pantalla (`section-register`, menú "Sesión") con **3 pestañas** y **una sola fecha**:
+**Diario** (`form.js`) · **Coach IA** (`coach.js`) · **Días anteriores** (`Coach.renderHistorial`).
+`SesionOperativa` en `app.js` controla pestañas y cabecera.
+
+> ⚠️ **Invariantes**
+> - `Nav.go('coach')` y `Nav.go('historial')` son **alias** que abren esta sección y su
+>   pestaña (`Nav.TAB_ALIAS`). Siguen usándose desde la vista del día — no romperlos.
+> - El markup del Coach vive dentro de la sección **conservando todos sus ids**: por eso
+>   `coach.js` funciona sin cambios. Si se mueve, mantener los ids.
+> - **Nada interactivo dentro de `#sessionFieldset` funciona en modo lectura**: el fieldset
+>   se deshabilita entero y un control deshabilitado no recibe clics. Lo que deba responder
+>   en lectura va fuera del fieldset o como `role="button"` (así son los desplegables de
+>   fase del checklist).
+> - **NO filtrar por `objetivos.cuenta_principal` al mostrar los trades de un día.** La
+>   cuenta de Apex rota (la -14 pasó a la -15) y filtrar por la de hoy vacía todo el
+>   histórico anterior. `trades` ya contiene solo la operativa del journal.
+> - **En lectura no se dibujan los campos vacíos** (`marcarVacios` + `.vacio-en-lectura`).
+>   Al ocultar un grupo de botones sin opción elegida, comprobar que no arrastre listas:
+>   los T/S de errores y experimentos llegaron a ocultar sus propias listas.
+> - **El diseño aprobado está en el artefacto de la propuesta y manda.** Ya pasó que se
+>   implementara otra cosa y hubo que rehacerlo.
 
 ## Convención P&L
 `profit` = **NETO** (comisión round-trip ya descontada). `commission` = round-trip total. Unificada Jun 2026.
@@ -107,9 +137,16 @@ TelegramBot/worker.js — Bot de Telegram (Cloudflare Worker). NO pide niveles d
 
 ## Estado actual (Ago 2026)
 Funcionando: todas las secciones — Disciplina, Análisis, Calendario+Métricas, Apex,
-Experimentos, Trades, Sesión (antes "Registrar"), Historial, Coach IA, Imágenes,
-Estrategia, Datos, **Fechas Especiales** (ese es el orden del menú). Coach IA 3 etapas,
-checklist normalizado, cuenta principal configurable, filtro de cuenta persistente.
+Experimentos, Trades, **Sesión Operativa** (funde Sesión + Historial + Coach IA en 3
+pestañas), Imágenes, Estrategia, Datos, **Fechas Especiales** (ese es el orden del menú).
+Coach IA 3 etapas, checklist normalizado, cuenta principal configurable, filtro de cuenta
+persistente. El clic en el calendario abre la **vista del día a pantalla completa**.
+
+> 📌 **Pendiente de diseño:** el lenguaje visual nuevo (16 ago) solo está en la pestaña
+> **Diario**. Las pestañas Coach IA y Días anteriores, y el resto de la app (calendario,
+> disciplina, análisis), siguen con el estilo viejo. Los manuales
+> (`manual-tecnico.md`, `manual-usuario.md`, `arquitectura-*.md`) describen el modelo
+> viejo de tres secciones separadas.
 
 > 🎯 **REGLAS DE ORO DE LA DISCIPLINA (Ago 2026).** El criterio vive **solo** en `db.js`
 > (`discContexto` · `esDiaHabil` · `sesionOpero` · `discFactorAplica` ·

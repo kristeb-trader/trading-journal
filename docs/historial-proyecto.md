@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial Completo del Proyecto
 
-**Última actualización:** 11 Agosto 2026 — rediseño **verificado en vivo** tras 6 sesiones (ver *Checkpoint Ago 2026 (2)* al final: **rediseño del checklist y de la disciplina** — 17 reglas → 13, GO de 13 clics → 8, 3 reglas verificadas por datos, regla FOMC que detecta 3 violaciones históricas. Previo, *Checkpoint Ago 2026 (1)*: **calendario — fechas especiales futuras** y **verdad de la disciplina** — fines de semana fuera, días sin operativa no penalizan, y un error tumba la regla del checklist que contradice). Previo — *Checkpoint Jul 2026 (8)*: **filtro de cuentas multi-selección** (nombres completos, default por cuenta principal, combinar PA + evaluación); *Checkpoint Jul 2026 (7)*: **setups paramétricos** — `catalogo_setups` + `catalogo_setup_variantes`, reglas por setup, administración desde el Journal, Telegram y NT8 dinámicos. Checkpoints previos: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
+**Última actualización:** 16 Agosto 2026 — **Sesión Operativa**: Sesión + Coach IA + Historial se funden en una pantalla de 3 pestañas con una sola fecha, y el modal del calendario pasa a vista del día a pantalla completa (ver *Checkpoint Ago 2026 (3)* al final). Antes — 11 Agosto 2026: rediseño **verificado en vivo** tras 6 sesiones (ver *Checkpoint Ago 2026 (2)*: **rediseño del checklist y de la disciplina** — 17 reglas → 13, GO de 13 clics → 8, 3 reglas verificadas por datos, regla FOMC que detecta 3 violaciones históricas. Previo, *Checkpoint Ago 2026 (1)*: **calendario — fechas especiales futuras** y **verdad de la disciplina** — fines de semana fuera, días sin operativa no penalizan, y un error tumba la regla del checklist que contradice). Previo — *Checkpoint Jul 2026 (8)*: **filtro de cuentas multi-selección** (nombres completos, default por cuenta principal, combinar PA + evaluación); *Checkpoint Jul 2026 (7)*: **setups paramétricos** — `catalogo_setups` + `catalogo_setup_variantes`, reglas por setup, administración desde el Journal, Telegram y NT8 dinámicos. Checkpoints previos: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
 **Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
 **Rama principal:** `main`
 **Working directory local:** `E:\Proyectos\Trading Journal` (migrado desde `C:\Users\Asus\Claro drive\Trading Journal` el 6 jul 2026)
@@ -1847,6 +1847,84 @@ se tocaron**: son registro histórico, y ahí `claude-sonnet-4-5` era cierto.
 **Verificación:** 13 asserts nuevos simulando la forma de respuesta de Sonnet 5 —
 incluida la comprobación de que el método viejo (`content[0].text`) devolvía `""`. Las 6
 suites juntas: **89 comprobaciones, 0 fallos**.
+
+---
+
+## Checkpoint Ago 2026 (3) — Sesión Operativa: tres pantallas en una (16 ago)
+
+Para entender un día había que recorrer **cuatro** pantallas (Calendario, Sesión,
+Historial y Coach IA) y varios datos se pedían dos veces. Ahora son **dos**.
+
+### Sesión Operativa (`section-register`, menú "Sesión")
+
+Absorbe lo que eran tres entradas de menú. Cabecera común (fecha + el recuadro de
+resultado **Resultado · Puntos · P&L · Setup**) y **tres pestañas**:
+
+| Pestaña | Qué es |
+|---|---|
+| **Diario** | El formulario de registro de siempre |
+| **Coach IA** | Las 3 etapas del Coach |
+| **Días anteriores** | El índice del diario (era la sección Historial) |
+
+- **Una sola fecha** manda sobre las tres. Antes Sesión y Coach llevaban cada uno
+  la suya y no se hablaban. `SesionOperativa` (en `app.js`) controla pestañas y
+  cabecera; `Coach.setFecha(date)` recibe la fecha desde el Diario.
+- `Nav.go('coach')` y `Nav.go('historial')` **siguen valiendo**: son alias que
+  abren esta sección y su pestaña (`Nav.TAB_ALIAS`). No romper esto.
+- El markup del Coach se movió **conservando todos sus ids**, así que `coach.js`
+  no se enteró del cambio.
+- El Coach se inicializa la primera vez que se abre su pestaña, no al arrancar.
+
+### Vista del día (antes modal del calendario)
+
+El modal de 3 pestañas (Gráfica/Resumen/Operativa) pasa a **pantalla completa**,
+un solo scroll, sin pestañas: gráfico → *Tu reflexión* → *Análisis del Coach* →
+Veredicto → Errores → Aprendizaje → Notas. Se cierra con `Esc` o los botones.
+Se eliminaron `_renderResumen` y `_renderOperativa` (191 líneas muertas).
+
+### Datos que cambiaron de sitio
+
+- **Emoción (llegada y cierre) y confianza** se registran en el **Diario**, no en
+  el Coach. Llegada y confianza → `sesiones`; la de cierre → `diagnosticos_diarios`.
+  ⚠️ El Coach **ya no manda esos campos** al guardar: con sus selectores retirados
+  enviaría `null` y borraría lo que puso el Diario.
+- **Noticias**: se retira el textarea libre `sesiones.noticias`. Todo vive en
+  `sesion_noticias` (varias por día). El texto viejo se migró
+  (`2026-08-16-migrar-noticias-texto.sql`) y la columna **no se borró**.
+  El 14 y 15 de julio pasaron de una hora a dos: la ventana de ±5 min de la
+  publicación de la mañana no se estaba vigilando.
+
+### Reglas de oro que salieron de los bugs de esta sesión
+
+- **NO filtrar por `cuenta_principal` al mostrar días.** La cuenta de Apex rota
+  (la -14 pasó a la -15); filtrar por la de hoy vacía todo el histórico anterior.
+  `trades` ya contiene solo la operativa del journal.
+- **`preloadCatalogos` trae la cuenta principal.** Sin eso, `cuentaPrincipal()`
+  devuelve el fallback histórico y el Coach analiza la cuenta equivocada.
+- **Nada interactivo dentro de `#sessionFieldset` funciona en modo lectura**: el
+  fieldset se deshabilita entero. Los desplegables de fase del checklist son
+  `role="button"`, no `<button>`, por esto.
+- **Ojo con los `;` al insertar código**: `updateCierreMeta()` seguido de un array
+  literal se leyó como `updateCierreMeta()['expSNTList']` y reventaba al guardar.
+  `node --check` NO lo detecta: es sintaxis válida con otro significado.
+- **En lectura no se dibujan campos vacíos** (`marcarVacios` + `.vacio-en-lectura`).
+  Al ocultar grupos de botones sin opción elegida, comprobar que no arrastren
+  listas: los T/S de errores y experimentos se llevaban por delante sus listas.
+
+### Diseño
+
+La maqueta aprobada está en el artefacto de la propuesta. **Es la fuente de
+verdad**: en esta sesión se implementó otra cosa y hubo que rehacerlo. Claves:
+título de tarjeta verde en mayúsculas y sin icono, barra de cumplimiento gruesa
+con rótulo centrado, fases como filas con acento de color, y "La operación" con
+recuadros `CONTEXTO · CORRIDA · RETROCESO · ZONAS EN CONTRA` + tabla de trades.
+
+### Pendiente
+
+- Llevar el mismo lenguaje visual a las pestañas **Coach IA** y **Días anteriores**
+  y al resto de la app (calendario, disciplina, análisis) — siguen con el estilo viejo.
+- Los manuales (`manual-tecnico.md`, `manual-usuario.md`, `arquitectura-*.md`)
+  describen el modelo viejo de 3 secciones separadas.
 
 ---
 
