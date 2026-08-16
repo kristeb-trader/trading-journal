@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "PowerShell(git *)",
+      "Bash(node --check *)",
+      "Bash(node -e *)",
+      "Bash(node --input-type=module -e *)",
+      "Bash(npx --yes wrangler *)",
+      "Bash(gh *)",
+      "PowerShell(gh *)",
+      "mcp__61b871b3-9b9d-46fd-98b7-0e2e420cafa7__*",
+      "mcp__Claude_Browser__*",
+      "mcp__visualize__*"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(rm -rf *)"
+    ]
+  }
+}
