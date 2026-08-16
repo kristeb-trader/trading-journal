@@ -342,6 +342,37 @@ const SesionOperativa = {
   },
 }
 
+// ── Otros: índice de las secciones que salieron del menú ─────────────────
+// La barra del móvil solo aguanta 6 botones (60px cada uno contra ~390px de
+// pantalla). Estas 6 secciones siguen existiendo igual: solo cambia por dónde
+// se llega a ellas. Añadir una opción nueva = una entrada más en este array.
+
+const Otros = {
+  ITEMS: [
+    { id: 'experimentos', icon: 'ti-flask',          name: 'Experimentos',      desc: 'Qué estás probando y si funciona' },
+    { id: 'trades',       icon: 'ti-list-details',   name: 'Trades',            desc: 'Todas tus operaciones, una a una' },
+    { id: 'gallery',      icon: 'ti-photo',          name: 'Imágenes',          desc: 'Los gráficos de cada día' },
+    { id: 'estrategia',   icon: 'ti-book-2',         name: 'Estrategia',        desc: 'Tus reglas y setups' },
+    { id: 'data',         icon: 'ti-database',       name: 'Datos',             desc: 'Cuentas, catálogos e importación' },
+    { id: 'fechas',       icon: 'ti-calendar-star',  name: 'Fechas Especiales', desc: 'Festivos, FOMC y días marcados' },
+  ],
+
+  init() {
+    const grid = document.getElementById('otrosGrid')
+    if (!grid) return
+    grid.innerHTML = this.ITEMS.map(it => `
+      <button type="button" class="otros-card" data-goto="${it.id}">
+        <i class="ti ${it.icon}"></i>
+        <span class="otros-card-name">${it.name}</span>
+        <span class="otros-card-desc">${it.desc}</span>
+      </button>`).join('')
+    grid.addEventListener('click', e => {
+      const card = e.target.closest('.otros-card')
+      if (card) Nav.go(card.dataset.goto)
+    })
+  },
+}
+
 // ── Navigation ────────────────────────────────────────────────────────────
 
 const Nav = {
@@ -357,23 +388,35 @@ const Nav = {
     estrategia: 'Estrategia',
     data: 'Datos',
     fechas: 'Fechas Especiales',
+    otros: 'Otros',
   },
   // `coach` e `historial` ya no son secciones: son pestañas de Sesión Operativa.
   // Se mantienen como alias para no romper a quien navega a ellas (el modal del
   // día, Coach.abrirFecha, enlaces internos…).
   TAB_ALIAS: { coach: 'coach', historial: 'dias' },
+  // Secciones sin botón propio: iluminan el de "Otros", que es de donde se llega.
+  // Sin esto la barra se quedaría entera apagada al entrar en cualquiera de ellas,
+  // porque `go()` enciende el .nav-item cuyo data-section coincide.
+  PADRE: {
+    experimentos: 'otros', trades: 'otros', gallery: 'otros',
+    estrategia: 'otros', data: 'otros', fechas: 'otros',
+  },
   initialized: new Set(),
 
   async go(sectionId) {
     const tabPedida = this.TAB_ALIAS[sectionId]
     if (tabPedida) sectionId = 'register'
+    const padre = this.PADRE[sectionId] || null
     document.querySelectorAll('.nav-item').forEach(item => {
-      item.classList.toggle('active', item.dataset.section === sectionId)
+      item.classList.toggle('active', item.dataset.section === (padre || sectionId))
     })
     document.querySelectorAll('.section').forEach(sec => {
       sec.classList.toggle('active', sec.id === `section-${sectionId}`)
     })
     document.getElementById('currentSectionTitle').textContent = this.sections[sectionId] || ''
+    // El chevron de volver solo tiene sentido dentro de una subsección.
+    document.getElementById('navBack')?.classList.toggle('hidden', !padre)
+    this._padreActual = padre
 
     // Lazy init sections
     if (!this.initialized.has(sectionId)) {
@@ -390,6 +433,7 @@ const Nav = {
         if (sectionId === 'estrategia') await Estrategia.init()
         if (sectionId === 'data') await DataManager.init()
         if (sectionId === 'fechas') await Fechas.init()
+        if (sectionId === 'otros') Otros.init()
       } catch (err) {
         Toast.show('Error cargando sección: ' + err.message, 'error')
       }
@@ -421,6 +465,9 @@ const Nav = {
     })
     document.getElementById('menuToggle').addEventListener('click', () => {
       document.getElementById('sidebar').classList.toggle('collapsed')
+    })
+    document.getElementById('navBack')?.addEventListener('click', () => {
+      if (this._padreActual) this.go(this._padreActual)
     })
   }
 }

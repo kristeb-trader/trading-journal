@@ -256,6 +256,8 @@ small { font-size: 0.82em; }
 }
 .menu-toggle { color: var(--text2); font-size: 1.3rem; padding: 4px; border-radius: 6px; }
 .menu-toggle:hover { background: var(--bg3); color: var(--text); }
+.nav-back { color: var(--text2); font-size: 1.2rem; padding: 4px; border-radius: 6px; }
+.nav-back:hover { background: var(--bg3); color: var(--text); }
 .header-info { flex: 1; font-weight: 500; font-size: 1rem; }
 .status-indicator { font-size: 0.8rem; display: flex; align-items: center; gap: 4px; color: var(--text3); }
 .status-indicator.connected { color: var(--accent); }
@@ -1833,6 +1835,40 @@ body.modal-open { overflow: hidden; }
 .catalog-add input { flex: 1; }
 .catalog-list { display: flex; flex-direction: column; gap: 6px; }
 .catalog-empty { font-size: 0.85rem; color: var(--text3); text-align: center; padding: 20px 0; }
+
+/* ── Otros — índice de las secciones que salieron del menú ─────────────── */
+/* Hereda la superficie de .catalog-card (mismo fondo, borde y radio). Lo que
+   añade es lo que allí no hace falta: es un destino de navegación, así que
+   necesita hover, pulsación y foco visibles. */
+.otros-grid {
+  /* 240px con max-width 860 da 3 columnas: las 6 tarjetas caen en 2 filas
+     iguales. Con 180px salían 4+2 y la última fila quedaba coja. */
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px; max-width: 860px;
+}
+.otros-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  text-align: left;
+  color: var(--text);
+  transition: background var(--transition), border-color var(--transition), transform var(--transition);
+}
+.otros-card i { font-size: 1.5rem; color: var(--accent-txt); margin-bottom: 2px; }
+.otros-card-name { font-size: 0.98rem; font-weight: 600; }
+.otros-card-desc { font-size: 0.78rem; color: var(--text3); line-height: 1.45; }
+.otros-card:hover { background: var(--bg3); border-color: var(--accent); }
+.otros-card:active { transform: scale(0.98); }
+.otros-card:focus-visible { outline: 2px solid var(--accent-txt); outline-offset: 2px; }
+
+@media (max-width: 640px) {
+  /* Dos columnas, no una: con una sola, seis tarjetas obligan a deslizar en la
+     pantalla cuyo motivo de existir es precisamente no deslizar. */
+  .otros-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .otros-card { padding: 14px 12px; }
+}
 .catalog-item {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 12px; border-radius: 8px;

@@ -64,18 +64,6 @@
         <i class="ti ti-calendar-month"></i>
         <span>Calendario</span>
       </li>
-      <li class="nav-item" data-section="apex" title="Apex Tracker">
-        <i class="ti ti-trophy"></i>
-        <span>Apex</span>
-      </li>
-      <li class="nav-item" data-section="experimentos" title="Experimentos">
-        <i class="ti ti-flask"></i>
-        <span>Experimentos</span>
-      </li>
-      <li class="nav-item" data-section="trades" title="Trades">
-        <i class="ti ti-list-details"></i>
-        <span>Trades</span>
-      </li>
       <!-- Sesión Operativa absorbe lo que antes eran tres entradas de menú
            (Sesión, Historial y Coach IA): ahora son pestañas de la misma
            pantalla. `Nav.go('coach')` y `Nav.go('historial')` siguen valiendo:
@@ -84,21 +72,18 @@
         <i class="ti ti-square-rounded-plus"></i>
         <span>Sesión</span>
       </li>
-      <li class="nav-item" data-section="gallery" title="Imágenes">
-        <i class="ti ti-photo"></i>
-        <span>Imágenes</span>
+      <li class="nav-item" data-section="apex" title="Apex Tracker">
+        <i class="ti ti-trophy"></i>
+        <span>Apex</span>
       </li>
-      <li class="nav-item" data-section="estrategia" title="Estrategia">
-        <i class="ti ti-book-2"></i>
-        <span>Estrategia</span>
-      </li>
-      <li class="nav-item" data-section="data" title="Datos">
-        <i class="ti ti-database"></i>
-        <span>Datos</span>
-      </li>
-      <li class="nav-item" data-section="fechas" title="Fechas Especiales">
-        <i class="ti ti-calendar-star"></i>
-        <span>Fechas Especiales</span>
+      <!-- Solo 6 botones: 11 no cabían en la barra inferior del móvil (660px de
+           barra contra ~390px de pantalla) y había que deslizar sin ninguna pista
+           de que hubiera más. Las 6 secciones restantes viven en "Otros" y siguen
+           siendo secciones normales: `Nav.PADRE` mantiene este botón encendido
+           mientras se está dentro de cualquiera de ellas. -->
+      <li class="nav-item" data-section="otros" title="Otros">
+        <i class="ti ti-layout-grid"></i>
+        <span>Otros</span>
       </li>
     </ul>
     <div class="sidebar-footer">
@@ -119,6 +104,12 @@
     <header class="top-bar">
       <button class="btn-icon menu-toggle" id="menuToggle" title="Menú">
         <i class="ti ti-menu-2"></i>
+      </button>
+      <!-- Vuelta a "Otros" desde sus subsecciones. Solo se muestra cuando la
+           sección actual tiene padre (Nav.PADRE): en el móvil es la única salida,
+           porque esas secciones ya no tienen botón propio. -->
+      <button class="btn-icon nav-back hidden" id="navBack" title="Volver a Otros" aria-label="Volver a Otros">
+        <i class="ti ti-chevron-left"></i>
       </button>
       <div class="header-info" id="currentSectionTitle">Calendario</div>
       <div class="header-actions">
@@ -1123,6 +1114,17 @@
           </div>
         </div>
         <div id="fechasContent"></div>
+      </section>
+
+      <!-- ═══ OTROS ═══════════════════════════════════════════════════════ -->
+      <!-- Índice de las secciones que salieron del menú. No muestra datos: es
+           una rejilla fija que genera app.js desde OTROS_ITEMS, así que añadir
+           una opción nueva es una entrada más en ese array — ni HTML ni CSS. -->
+      <section class="section" id="section-otros">
+        <div class="analysis-hero">
+          <h2 class="analysis-hero-title">Otros</h2>
+        </div>
+        <div class="otros-grid" id="otrosGrid"></div>
       </section>
 
       <!-- Modal: nueva/editar fecha especial -->
