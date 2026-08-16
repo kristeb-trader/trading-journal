@@ -436,6 +436,10 @@
                 <span class="card-meta" id="opMeta"></span>
               </div>
 
+              <!-- Resumen de lectura en 3 recuadros (solo en modo lectura).
+                   Lo rellena renderOpResumen(); en edición se ven los campos. -->
+              <div id="opResumen" class="op-stats"></div>
+
               <!-- Bloque 1 · QUÉ se operó -->
               <div class="op-bloque">
                 <div class="op-bloque-lbl">El setup</div>
@@ -494,8 +498,9 @@
                 </div>
               </div>
 
-              <!-- Bloque 3 · QUÉ pasó (lo trae NinjaTrader) -->
-              <div class="op-bloque">
+              <!-- Bloque 3 · QUÉ pasó (lo trae NinjaTrader). `op-bloque-datos`
+                   marca que NO es un bloque de campos: se ve también en lectura. -->
+              <div class="op-bloque op-bloque-datos">
                 <div class="op-bloque-lbl">Los trades</div>
                 <div id="opTradesWrap" class="op-trades-wrap"></div>
               </div>

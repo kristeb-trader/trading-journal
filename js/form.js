@@ -27,6 +27,7 @@ const SessionForm = (() => {
     if (fs)  fs.disabled = view
     if (sec) sec.classList.toggle('view-mode', view)
     marcarVacios(view)
+    renderOpResumen()
   }
 
   // En lectura, un día se consulta: los valores se leen como texto (lo hace el
@@ -185,7 +186,8 @@ const SessionForm = (() => {
       // contador, y solo se abre la que se quiera revisar.
       return `
         <div class="phase-card phase-card-${f}${opOnly} plegada">
-          <button type="button" class="phase-card-head" data-fase-toggle="${f}">
+          <div class="phase-card-head" role="button" tabindex="0" data-fase-toggle="${f}"
+               aria-label="Ver las reglas de ${FASE_META[f].titulo}">
             <span class="phase-card-icon"><i class="ti ${FASE_META[f].icon}"></i></span>
             <div class="phase-card-titles">
               <div class="phase-card-title">${FASE_META[f].titulo}${badge}</div>
@@ -193,7 +195,7 @@ const SessionForm = (() => {
             </div>
             <span class="phase-progress" id="phaseProg${f}">0/${items.filter(i => (i.evidencia || 'declarada') !== 'auto').length}</span>
             <i class="ti ti-chevron-down phase-chevron"></i>
-          </button>
+          </div>
           <div class="phase-card-body">
             ${aviso}
             <div class="checklist">${checks}</div>
@@ -201,8 +203,15 @@ const SessionForm = (() => {
         </div>`
     }).join('')
     cont.querySelectorAll('input[type="checkbox"]').forEach(c => c.addEventListener('change', updatePhaseProgress))
-    cont.querySelectorAll('[data-fase-toggle]').forEach(btn => {
-      btn.addEventListener('click', () => btn.closest('.phase-card').classList.toggle('plegada'))
+    // El toggle NO puede ser un <button>: vive dentro de `#sessionFieldset`, que
+    // en modo lectura está deshabilitado, y un botón deshabilitado no recibe
+    // clics — las fases no se abrían justo al consultar un día.
+    cont.querySelectorAll('[data-fase-toggle]').forEach(el => {
+      const toggle = () => el.closest('.phase-card').classList.toggle('plegada')
+      el.addEventListener('click', toggle)
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle() }
+      })
     })
     // Fases 2/3 solo aplican cuando se operó: ocultarlas si "No operé Hoy" está activo
     if (document.getElementById('noOpero')?.checked)
@@ -264,6 +273,34 @@ const SessionForm = (() => {
     })
   }
 
+  // Resumen de "La operación" en 3 recuadros, para el modo lectura: contexto,
+  // corrida (nº + velas) y retroceso. En edición mandan los campos del
+  // formulario; esto es solo la cara de consulta.
+  function renderOpResumen() {
+    const cont = document.getElementById('opResumen')
+    if (!cont) return
+    const txt = id => {
+      const el = document.getElementById(id)
+      if (!el) return ''
+      if (el.tagName === 'SELECT') return el.selectedOptions[0]?.textContent.trim() || ''
+      return (el.value || '').trim()
+    }
+    const corridaBtn = document.querySelector('#corrida .btn-option.active')?.textContent.trim()
+    const velas = txt('velasCorrida')
+    const corrida = [corridaBtn, velas ? `${velas} velas` : ''].filter(Boolean).join(' · ')
+    const retro = document.getElementById('puntosRetrocesoDisplay')?.textContent.trim()
+    const zonas = document.querySelector('#zonasContra .btn-option.active')?.textContent.trim()
+
+    const celda = (k, v) => v
+      ? `<div class="op-stat"><div class="op-stat-k">${k}</div><div class="op-stat-v">${v}</div></div>` : ''
+    cont.innerHTML = [
+      celda('Contexto', txt('contexto')),
+      celda('Corrida', corrida),
+      celda('Retroceso', retro && retro !== '— pts' ? retro : ''),
+      celda('Zonas en contra', zonas),
+    ].join('')
+  }
+
   // Chips del título de "Cierre del día": errores y experimentos del día.
   function updateCierreMeta() {
     const el = document.getElementById('cierreMeta')
@@ -311,6 +348,13 @@ const SessionForm = (() => {
       `<span class="chip-soft">${propios.length} trade${propios.length !== 1 ? 's' : ''}</span>`
 
     const fmtHora = h => (h || '').slice(0, 5)
+    // Precios con separador de miles y 2 decimales: en una columna de números
+    // "30743.5" y "30810" no se comparan de un vistazo.
+    const fmtPx = v => {
+      const n = parseFloat(v)
+      return isFinite(n) ? n.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'
+    }
+    const fmtRes = r => r ? r.charAt(0).toUpperCase() + r.slice(1) : '—'
     wrap.innerHTML = `
       <table class="op-trades">
         <tr><th>Hora</th><th>Dir</th><th>Entrada → Salida</th><th>Puntos</th><th>Resultado</th><th class="ta-r">P&amp;L</th></tr>
@@ -321,9 +365,9 @@ const SessionForm = (() => {
           return `<tr>
             <td>${fmtHora(t.entry_time)}</td>
             <td>${dir}</td>
-            <td>${t.entry_price ?? '—'} → ${t.exit_price ?? '—'}</td>
+            <td>${fmtPx(t.entry_price)} → ${fmtPx(t.exit_price)}</td>
             <td class="${p != null && p < 0 ? 'neg' : 'pos'}">${p != null ? (p >= 0 ? '+' : '') + p.toFixed(1) : '—'}</td>
-            <td>${t.resultado || '—'}</td>
+            <td>${fmtRes(t.resultado)}</td>
             <td class="ta-r ${pnl < 0 ? 'neg' : 'pos'}">${pnl >= 0 ? '+' : '−'}$${Math.abs(pnl).toFixed(2)}</td>
           </tr>`
         }).join('')}
