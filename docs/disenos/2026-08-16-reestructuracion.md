@@ -417,11 +417,13 @@ Especiales (ese es el orden del menú).
 | "Flujo de trabajo (obligatorio)" | 6 | Skill `flujo-desarrollo` (era duplicado) |
 | "Pendientes abiertos" (7 viñetas) | ~12 | `tasks/current.md` y `tasks/backlog.md` (§13.2) |
 
-**Lo que se gana:** ~122 líneas salen del arranque de cada sesión. Las invariantes
+**Lo que se gana:** ~110 líneas salen del arranque de cada sesión. Las invariantes
 vuelven **solo cuando abres el archivo al que afectan**; los pendientes, cuando preguntas
 por ellos. Nada se pierde: cada cosa sigue presente cuando importa.
 
-**Tamaño resultante: ~123 líneas.**
+**Tamaño real tras implementar (Fase 2): 149 líneas / 8.457 bytes** — desde 259 líneas /
+20.277 bytes. Estimé ~123; quedó en 149 porque la tabla "lo que el esquema no dice"
+conservó más detalle del previsto. Sigue muy por debajo del límite de 200 del estándar.
 
 ---
 
@@ -819,8 +821,8 @@ opcional y va al final.
 
 | Métrica | Antes | Después |
 |---|---|---|
-| `CLAUDE.md` | 259 líneas / ~6.000 tokens por sesión | ~123 líneas / ~2.800 tokens |
-| Contexto fijo por sesión | ~7.500 tokens | ~4.600 tokens (**−39%**) |
+| `CLAUDE.md` | 259 líneas / 20.277 bytes / ~6.000 tokens | **149 líneas / 8.457 bytes / ~2.500 tokens** ✅ medido |
+| Contexto fijo por sesión | ~7.500 tokens | ~4.250 tokens (**−43%**) ✅ medido |
 | Archivos de memoria | 11 (28 KB), 6 contradicciones | 2 (~2 KB), 0 contradicciones |
 | Documentación engañosa | 3.627 líneas mezcladas con la vigente | 0 en circulación (archivada con aviso) |
 | Reglas de permisos | 122 literales, con una clave dentro | 11 patrones + 3 bloqueos |
