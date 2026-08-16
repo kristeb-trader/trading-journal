@@ -9,7 +9,7 @@
 >
 > **Incluye el rediseño del 3 de agosto de 2026**: reglas verificadas por datos,
 > condicionalidad por contexto del día y el GO dentro de la Fase 2. Plan y motivos en
-> `docs/plan-rediseno-checklist-disciplina.md`.
+> `docs/archivo/plan-rediseno-checklist-disciplina.md`.
 
 ---
 

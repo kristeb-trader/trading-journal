@@ -1,10 +1,20 @@
-# Trading Journal NQ Futures — Historial Completo del Proyecto
+# Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 16 Agosto 2026 — **Sesión Operativa**: Sesión + Coach IA + Historial se funden en una pantalla de 3 pestañas con una sola fecha, y el modal del calendario pasa a vista del día a pantalla completa (ver *Checkpoint Ago 2026 (3)* al final). Antes — 11 Agosto 2026: rediseño **verificado en vivo** tras 6 sesiones (ver *Checkpoint Ago 2026 (2)*: **rediseño del checklist y de la disciplina** — 17 reglas → 13, GO de 13 clics → 8, 3 reglas verificadas por datos, regla FOMC que detecta 3 violaciones históricas. Previo, *Checkpoint Ago 2026 (1)*: **calendario — fechas especiales futuras** y **verdad de la disciplina** — fines de semana fuera, días sin operativa no penalizan, y un error tumba la regla del checklist que contradice). Previo — *Checkpoint Jul 2026 (8)*: **filtro de cuentas multi-selección** (nombres completos, default por cuenta principal, combinar PA + evaluación); *Checkpoint Jul 2026 (7)*: **setups paramétricos** — `catalogo_setups` + `catalogo_setup_variantes`, reglas por setup, administración desde el Journal, Telegram y NT8 dinámicos. Checkpoints previos: disciplina unificada · métricas coherentes · ventana de noticia roja · Reglas y Estrategia · NT8 DailyLevels/ChecklistChaumer). Historial base — Fases 14-22: Errores renombrado · Laboratorio de Experimentos · Apex Tracker · Análisis unificado · indicadores NT8 routing + DailyLevels · Coach futuro continuo · calendario hero · Disciplina por 3 fases (Bloques 1-5) · Registrar en cards + modo lectura/editar)
-**Repositorio:** `https://github.com/kristeb-trader/trading-journal` (privado)
-**Rama principal:** `main`
-**Working directory local:** `E:\Proyectos\Trading Journal` (migrado desde `C:\Users\Asus\Claro drive\Trading Journal` el 6 jul 2026)
-**URL producción:** `https://kristeb-trader.github.io/trading-journal`
+**Última actualización:** 2026-08-16
+
+| Fecha | Checkpoint |
+|---|---|
+| 2026-08-16 | Sesión Operativa: tres pantallas en una |
+| 2026-08-11 | Coach IA: fuga temporal del historial |
+| 2026-08-03b | Rediseño del checklist y de la disciplina |
+| 2026-08-03 | Calendario: fechas futuras + la verdad de la disciplina |
+| 2026-07-24b | Filtro de cuentas multi-selección |
+
+Los anteriores, en orden, más abajo. Las fases 1–22 están antes de los checkpoints.
+
+> **Qué es este archivo:** la narrativa de qué pasó y cuándo. Para el estado actual,
+> `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que
+> falta, `tasks/current.md`.
 
 ---
 
@@ -1015,7 +1025,7 @@ Reestructuración para conectar **Disciplina, Reglas y Errores** bajo un eje com
 
 ---
 
-## Checkpoint Jun 2026 — hitos completados (movidos desde CLAUDE.md)
+## Checkpoint 2026-06-30 — Hitos completados (movidos desde CLAUDE.md)
 
 > Estos ítems estaban en la sección "Pendientes" de CLAUDE.md pero ya están COMPLETADOS.
 > Se conservan aquí como registro; el detalle vive en los planes/migraciones citados.
@@ -1045,7 +1055,7 @@ Reestructuración para conectar **Disciplina, Reglas y Errores** bajo un eje com
 
 ---
 
-## Checkpoint Jul 2026 — disciplina, métricas coherentes y ventana de noticia roja
+## Checkpoint 2026-07-02 — Disciplina, métricas coherentes y ventana de noticia roja
 
 - **📊 Coherencia de métricas (COMPLETADO).** Clasificador global `tradeOutcome`
   (`db.js`): un trade no-BE sin `resultado` target/stop (p. ej. cerrado `close`) se
@@ -1094,7 +1104,7 @@ Reestructuración para conectar **Disciplina, Reglas y Errores** bajo un eje com
 
 ---
 
-## Checkpoint Jul 2026 (2) — checklist normalizado en `sesion_checklist`
+## Checkpoint 2026-07-08 — Checklist normalizado en `sesion_checklist`
 
 Rediseño del modelo de datos del checklist: de un JSONB por sesión a una tabla
 relacional. Motivado por preferencia del usuario (BD 100% normalizada, sin JSON).
@@ -1126,7 +1136,7 @@ relacional. Motivado por preferencia del usuario (BD 100% normalizada, sin JSON)
 
 ---
 
-## Checkpoint Jul 2026 (3) — Fechas especiales (`catalogo_fechas`) + reorden del menú
+## Checkpoint 2026-07-08b — Fechas especiales (`catalogo_fechas`) + reorden del menú
 
 - **Nueva tabla `catalogo_fechas`** (`tipo`: fomc/festivo/vacaciones/otro; fecha, nombre,
   emoji, notas, activa). Unifica y reemplaza a `fomc_dates` (migrada) y al cálculo de
@@ -1145,7 +1155,7 @@ relacional. Motivado por preferencia del usuario (BD 100% normalizada, sin JSON)
 
 ---
 
-## Checkpoint Jul 2026 (2b) — Coach IA: datos operativos + análisis desplegable
+## Checkpoint 2026-07-09 — Coach IA: datos operativos + análisis desplegable
 
 - **Coach ya no pide precios que están en la BD:** el prompt incluye el detalle por-trade
   (hora, dirección, entrada→salida, puntos, resultado, P&L), no solo el agregado.
@@ -1156,7 +1166,7 @@ relacional. Motivado por preferencia del usuario (BD 100% normalizada, sin JSON)
 
 ---
 
-## Checkpoint Jul 2026 (4) — Modal del día rediseñado (Resumen + Operativa)
+## Checkpoint 2026-07-15 — Modal del día rediseñado (Resumen + Operativa)
 
 - **Resumen "el día en 5 segundos":** hero con P&L grande + badge resultado + chip del
   setup + metadatos (trades, emociones, confianza) en una línea; bloque **Proceso** con
@@ -1175,7 +1185,7 @@ relacional. Motivado por preferencia del usuario (BD 100% normalizada, sin JSON)
 
 ---
 
-## Checkpoint Jul 2026 (5) — Cuenta principal configurable
+## Checkpoint 2026-07-21 — Cuenta principal configurable
 
 Motivación: el usuario quemó la PA `PA-APEX-232411-03` y compró una evaluación nueva
 `APEX-232411-14`, que quiere llevar como cuenta principal del journal.
@@ -1197,7 +1207,7 @@ Motivación: el usuario quemó la PA `PA-APEX-232411-03` y compró una evaluaci�
 
 ---
 
-## Checkpoint Jul 2026 (6) — Zona horaria, Coach más claro y UI consistente
+## Checkpoint 2026-07-23 — Zona horaria, Coach más claro y UI consistente
 
 ### 🕐 Zona horaria (causó 2 bugs; regla de oro del proyecto)
 **NinjaTrader está configurado en hora de Colombia (UTC-5)**, así que TODO lo que
@@ -1237,7 +1247,7 @@ adelante (09:30 ET = **08:30 Colombia**); en invierno coinciden.
 
 ---
 
-## Checkpoint Jul 2026 (7) — Setups paramétricos (Fases A-E, 24 jul)
+## Checkpoint 2026-07-24 — Setups paramétricos (Fases A-E)
 
 Motivación: los setups eran texto libre hardcodeado en 6 sitios y la *familia*
 (IRI / Reingreso) se deducía con `startsWith('iri')` repetido en 5 archivos JS.
@@ -1297,7 +1307,7 @@ re-renderizan; sin setup elegido se muestran solo las comunes + aviso.
 
 ---
 
-## Checkpoint Jul 2026 (8) — Filtro de cuentas multi-selección (24 jul)
+## Checkpoint 2026-07-24b — Filtro de cuentas multi-selección
 
 Motivación: la cuenta principal actual (`APEX-232411-14`) **no aparecía** en el
 selector de cuentas de Análisis.
@@ -1347,7 +1357,7 @@ nombres abreviados → nunca casaba y caía al hardcode `PA-APEX` (la PA quemada
 
 ---
 
-## Checkpoint Ago 2026 (1) — Calendario: fechas futuras + la verdad de la disciplina (3 ago)
+## Checkpoint 2026-08-03 — Calendario: fechas futuras + la verdad de la disciplina
 
 Sesión de trabajo sobre el Calendario. Empezó por un detalle visual y terminó
 destapando tres formas distintas en que la disciplina mentía.
@@ -1453,7 +1463,7 @@ Migraciones: `2026-08-03-borrar-sesion-fin-de-semana.sql`,
 
 ---
 
-## Checkpoint Ago 2026 (2) — Rediseño del checklist y de la disciplina (3 ago)
+## Checkpoint 2026-08-03b — Rediseño del checklist y de la disciplina
 
 Sesión larga de análisis con Kris. Empezó con *"¿por qué junio tiene 95% de disciplina
 con 32% de errores?"* y terminó rehaciendo cómo se mide la disciplina.
@@ -1600,7 +1610,7 @@ pocos días en el mes, uno malo pesa mucho; se diluye según avanza el mes.
 
 ---
 
-## Checkpoint Ago 2026 (3) — Coach IA: fuga temporal del historial (11 ago)
+## Checkpoint 2026-08-11 — Coach IA: fuga temporal del historial
 
 **El problema:** `cargarHistorialCompacto()` y `detectarPatrones()` traían los últimos
 registros **sin filtrar por la fecha analizada**. Al re-analizar el 8-jul, el system
@@ -1850,7 +1860,7 @@ suites juntas: **89 comprobaciones, 0 fallos**.
 
 ---
 
-## Checkpoint Ago 2026 (3) — Sesión Operativa: tres pantallas en una (16 ago)
+## Checkpoint 2026-08-16 — Sesión Operativa: tres pantallas en una
 
 Para entender un día había que recorrer **cuatro** pantallas (Calendario, Sesión,
 Historial y Coach IA) y varios datos se pedían dos veces. Ahora son **dos**.
