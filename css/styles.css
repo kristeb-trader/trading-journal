@@ -634,7 +634,10 @@ small { font-size: 0.82em; }
 #sessionFieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 
 /* Botón "Editar sesión" del encabezado: solo visible en modo lectura */
-#section-register:not(.view-mode) #editarSesionBtn { display: none; }
+/* El bloque de "Editar sesión" solo existe en modo lectura; en edición manda
+   .form-actions (Guardar / Limpiar). Se oculta el contenedor entero para que no
+   deje un hueco al final del formulario. */
+#section-register:not(.view-mode) #formActionsView { display: none; }
 
 /* ── Modo lectura (visualización) ─────────────────────────────────────── */
 /* Oculta acciones de edición y deja todo legible (no "deshabilitado feo") */
@@ -824,19 +827,42 @@ textarea { resize: vertical; min-height: 80px; }
 .collapsible.collapsed > .form-section-title {
   margin-bottom: 0; padding-bottom: 0; border-bottom-color: transparent;
 }
-.collapsible.collapsed > *:not(.form-section-title) { display: none; }
+/* `.collapse-keep` sobrevive al plegado: es el resumen que se consulta a diario
+   (en Premercado: las noticias rojas y los rangos). El título recupera su
+   separación porque debajo sigue habiendo contenido. */
+.collapsible.collapsed > *:not(.form-section-title):not(.collapse-keep) { display: none; }
+.collapsible.collapsed > .form-section-title:has(+ .collapse-keep) {
+  margin-bottom: 14px; padding-bottom: 8px; border-bottom-color: var(--border);
+}
+.collapse-keep { margin-bottom: 4px; }
+.collapsible:not(.collapsed) > .collapse-keep { margin-bottom: 16px; }
+
+/* Noticias rojas — bloque destacado dentro de Premercado */
+.nr-block {
+  background: rgba(226,75,74,0.10); border: 1px solid rgba(226,75,74,0.30);
+  border-radius: 10px; padding: 12px 14px;
+}
+.nr-title { font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+
+/* Rangos: chips compactos, no una barra ancha */
+.premkt-puntos {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 10px; background: none; border: none; padding: 0;
+}
+.premkt-puntos .rg {
+  font-size: 0.75rem; color: var(--text3);
+  background: rgba(186,117,23,0.10); border: 1px solid rgba(186,117,23,0.25);
+  border-radius: 999px; padding: 3px 11px;
+}
+.premkt-puntos .rg b { color: var(--warning); font-variant-numeric: tabular-nums; }
 .form-card > .form-group:last-child,
 .form-card > *:last-child { margin-bottom: 0; }
 #premercadoSection > label:first-child { font-size: 0.95rem; font-weight: 600; color: var(--text); }
 .premkt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
 .premkt-field { display: flex; flex-direction: column; gap: 4px; }
 .premkt-field label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.02em; color: var(--text3); }
-.premkt-puntos {
-  margin-top: 8px; font-size: 0.82rem; color: var(--text2);
-  background: rgba(186,117,23,0.10); border: 1px solid rgba(186,117,23,0.25);
-  border-radius: 6px; padding: 6px 10px; display: inline-block;
-}
-.premkt-puntos b { color: var(--warning); }
+/* (El estilo de .premkt-puntos vive arriba, junto a .collapse-keep: son chips
+   compactos dentro de la zona que sobrevive al plegado.) */
 .premkt-lines { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
 .premkt-lines-col > label { font-size: 0.8rem; color: var(--text2); display: block; margin-bottom: 6px; }
 .premkt-lines-wrap { display: flex; flex-direction: column; gap: 6px; }
@@ -937,6 +963,9 @@ textarea { resize: vertical; min-height: 80px; }
 
 /* Form actions */
 .form-actions { display: flex; gap: 10px; margin-top: 8px; }
+/* Clase propia (no `.form-actions`): ese selector es justo el que el modo
+   lectura oculta, y aquí hace falta lo contrario. */
+.form-actions-view { display: flex; gap: 10px; margin-top: 8px; }
 .btn-primary {
   display: flex; align-items: center; gap: 6px;
   padding: 10px 20px; border-radius: 8px;

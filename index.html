@@ -238,12 +238,6 @@
         <div class="analysis-hero">
           <h2 class="analysis-hero-title">Registrar Sesión</h2>
         </div>
-        <div class="section-actions">
-          <button type="button" class="btn-secondary" id="editarSesionBtn">
-            <i class="ti ti-edit"></i> Editar sesión
-          </button>
-        </div>
-
         <div class="form-container">
           <form id="sessionForm" autocomplete="off">
 
@@ -291,6 +285,25 @@
             <!-- ═══ 1. Premercado — contexto técnico ═══ -->
             <div class="form-group collapsible" id="premercadoSection">
               <div class="form-section-title"><i class="ti ti-sunrise"></i> Premercado — contexto técnico</div>
+
+              <!-- Zona SIEMPRE visible (sobrevive al plegado, ver .collapse-keep):
+                   lo único de esta tarjeta que se consulta a diario. El resto
+                   (precios y líneas naranjas) se registra para el Coach y vive
+                   detrás de la flecha. -->
+              <div class="collapse-keep">
+                <div class="nr-block">
+                  <div class="nr-title">🚫 Noticias rojas <span class="lbl-hint">— no se opera ±5 min alrededor de cada una</span></div>
+                  <div id="noticiasRojasList" class="nr-list"></div>
+                  <button type="button" class="btn-add-nr" id="addNoticiaRoja">
+                    <i class="ti ti-plus"></i> Añadir noticia roja
+                  </button>
+                </div>
+                <div class="premkt-puntos" id="premktPuntos">
+                  <span class="rg">Rango ayer <b id="rangoPrevDay">— pts</b></span>
+                  <span class="rg">Overnight <b id="rangoOvernight">— pts</b></span>
+                </div>
+              </div>
+
               <div class="premkt-grid">
                 <div class="premkt-field">
                   <label>Apertura ayer (PDO)</label>
@@ -321,8 +334,6 @@
                   <input type="number" step="0.25" id="precioApertura" placeholder="30743.50">
                 </div>
               </div>
-              <div class="premkt-puntos" id="premktPuntos">Rango día anterior: <b id="rangoPrevDay">— pts</b> &nbsp;·&nbsp; Rango Overnight: <b id="rangoOvernight">— pts</b></div>
-
               <div class="premkt-lines">
                 <div class="premkt-lines-col">
                   <label>🟠 Soportes (líneas naranjas)</label>
@@ -334,17 +345,6 @@
                 </div>
               </div>
 
-              <!-- Noticias ROJAS: varias por día, cada una con su ventana de ±5 min.
-                   Se guardan en `sesion_noticias`; un trigger sincroniza el texto
-                   de `sesiones.hora_noticia_roja` para el Worker no versionado.
-                   El textarea libre «Noticias del día» (`sesiones.noticias`) se
-                   retiró el 16-ago: duplicaba esto y su contenido se migró a
-                   `sesion_noticias` (migración 2026-08-16-migrar-noticias-texto). -->
-              <label style="margin-top:12px;display:block">🚫 Noticias rojas <span class="lbl-hint">— no se opera ±5 min alrededor de cada una</span></label>
-              <div id="noticiasRojasList" class="nr-list"></div>
-              <button type="button" class="btn-add-nr" id="addNoticiaRoja">
-                <i class="ti ti-plus"></i> Añadir noticia roja
-              </button>
             </div>
 
             <!-- ═══ 2. Checklist Reglas ═══ -->
@@ -574,6 +574,16 @@
               </button>
             </div>
           </fieldset>
+
+          <!-- "Editar sesión" va FUERA del fieldset (si no, `fieldset:disabled`
+               lo desactivaría justo cuando hace falta) pero al final del
+               formulario, junto a Guardar/Limpiar. Solo uno de los dos bloques
+               se ve a la vez, según el modo lectura/edición. -->
+          <div class="form-actions-view" id="formActionsView">
+            <button type="button" class="btn-primary" id="editarSesionBtn">
+              <i class="ti ti-edit"></i> Editar sesión
+            </button>
+          </div>
 
           </form>
         </div>
