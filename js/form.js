@@ -26,6 +26,42 @@ const SessionForm = (() => {
     const sec = document.getElementById('section-register')
     if (fs)  fs.disabled = view
     if (sec) sec.classList.toggle('view-mode', view)
+    marcarVacios(view)
+  }
+
+  // En lectura, un día se consulta: los valores se leen como texto (lo hace el
+  // CSS) y lo que está vacío se esconde, en vez de dejar decenas de cajas en
+  // blanco. Al pulsar "Editar sesión" vuelve a aparecer todo para poder llenarlo.
+  function marcarVacios(view) {
+    const sec = document.getElementById('section-register')
+    if (!sec) return
+    const conValor = el => {
+      if (!el) return false
+      if (el.type === 'checkbox' || el.type === 'radio') return el.checked
+      return String(el.value || '').trim() !== ''
+    }
+    // Grupos simples: se ocultan si ninguno de sus controles tiene valor
+    sec.querySelectorAll('.premkt-field, .premkt-lines-col, .emo-col, .form-group[data-vacio-auto]')
+      .forEach(g => {
+        const controles = [...g.querySelectorAll('input, select, textarea')]
+          .filter(c => c.type !== 'hidden')
+        const vacio = controles.length > 0 && !controles.some(conValor)
+        g.classList.toggle('vacio-en-lectura', view && vacio)
+      })
+    // Grupos de botones (corrida, zonas en contra…): vacíos si no hay opción activa
+    sec.querySelectorAll('.btn-group').forEach(g => {
+      const sinElegir = !g.querySelector('.btn-option.active')
+      g.closest('.form-group')?.classList.toggle('vacio-en-lectura', view && sinElegir)
+    })
+    // Estrellas de confianza: sin valoración no aportan nada en lectura
+    const conf = document.getElementById('confianzaVal')
+    document.getElementById('confianzaStars')?.closest('.emo-col')
+      ?.classList.toggle('vacio-en-lectura', view && !conValor(conf))
+
+    // "No operé hoy": en lectura solo se enseña si el día FUE de no operar.
+    const noOpero = document.getElementById('noOpero')
+    noOpero?.closest('.form-row')
+      ?.classList.toggle('vacio-en-lectura', view && !noOpero.checked)
   }
 
   // ── Checklist dinámico (catálogo en BD) ────────────────────────────────────
@@ -950,7 +986,9 @@ const SessionForm = (() => {
   function renderCasList() {
     updateCierreMeta()
     const list = document.getElementById('casList')
-    if (!casPendientes.length) { list.innerHTML = ''; return }
+    // En lectura la fila de "añadir" está oculta: sin este texto la tarjeta
+    // quedaría en blanco y no se sabría si es que no hubo errores o falta cargar.
+    if (!casPendientes.length) { list.innerHTML = '<p class="lista-vacia">Sin errores registrados</p>'; return }
     list.innerHTML = casPendientes.map((c, i) => `
       <div class="cas-tag">
         <div class="cas-tag-left">
@@ -1173,7 +1211,7 @@ const SessionForm = (() => {
       const list = document.getElementById(listId)
       if (!list) return
 
-      if (!expRegistros.length) { list.innerHTML = ''; return }
+      if (!expRegistros.length) { list.innerHTML = '<p class="lista-vacia">Sin experimentos registrados</p>'; return }
 
       list.innerHTML = expRegistros.map((r, i) => `
         <div class="exp-tag">

@@ -641,12 +641,42 @@ small { font-size: 0.82em; }
 
 /* ── Modo lectura (visualización) ─────────────────────────────────────── */
 /* Oculta acciones de edición y deja todo legible (no "deshabilitado feo") */
+/* Modo lectura: fuera TODO lo que sirve para meter datos. Un día ya registrado
+   se consulta; los desplegables y cajas de "añadir" solo aparecen al pulsar
+   "Editar sesión". Se ocultan las filas enteras, no solo su botón: si no, el
+   desplegable y las cajas vacías seguían ocupando la tarjeta. */
 #section-register.view-mode .form-actions,
-#section-register.view-mode #casAgregar,
-#section-register.view-mode #expTradeAgregar,
-#section-register.view-mode #expSNTAgregar,
+#section-register.view-mode .cas-input-row,
+#section-register.view-mode .exp-add-row,
 #section-register.view-mode #uploadArea,
 #section-register.view-mode .cas-del { display: none; }
+
+/* Lo que no tiene valor no se dibuja: un día se lee, no se rellena */
+#section-register.view-mode .vacio-en-lectura { display: none; }
+
+/* Los controles con valor se leen como texto, sin caja ni borde */
+#section-register.view-mode input[type="text"],
+#section-register.view-mode input[type="number"],
+#section-register.view-mode input[type="date"],
+#section-register.view-mode input[type="time"],
+#section-register.view-mode select,
+#section-register.view-mode textarea {
+  background: none; border-color: transparent; padding-left: 0; padding-right: 0;
+  color: var(--text); cursor: default; resize: none;
+  -webkit-appearance: none; appearance: none;
+}
+#section-register.view-mode textarea { min-height: 0; height: auto; }
+/* La fecha de la cabecera SÍ sigue siendo un control: se navega en lectura */
+#section-register.view-mode .so-head input[type="date"] {
+  background: var(--bg3); border-color: var(--border);
+  padding-left: 12px; padding-right: 12px; cursor: pointer;
+  -webkit-appearance: auto; appearance: auto;
+}
+/* De un grupo de botones, en lectura solo se ve el elegido */
+#section-register.view-mode .btn-option:not(.active) { display: none; }
+#section-register.view-mode .btn-option.active { cursor: default; }
+/* Estrellas: sin las apagadas se pierde la escala, así que se quedan */
+#section-register.view-mode .emo-star { cursor: default; }
 
 #sessionFieldset:disabled { opacity: 1; }
 #sessionFieldset:disabled input,
@@ -961,6 +991,8 @@ textarea { resize: vertical; min-height: 80px; }
 .op-trades-empty { font-size: 0.83rem; color: var(--text3); padding: 4px 0; }
 
 /* Emoción y confianza (movidas del Coach al Diario) */
+.lista-vacia { font-size: 0.82rem; color: var(--text3); padding: 4px 2px; margin: 0; }
+
 .emo-row {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px; align-items: start;

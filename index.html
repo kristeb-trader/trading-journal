@@ -437,7 +437,7 @@
                    del Coach; se registraba la sesión sin ver lo que se operó. -->
               <div id="opTradesWrap" class="op-trades-wrap"></div>
               <div class="form-row">
-                <div class="form-group">
+                <div class="form-group" data-vacio-auto>
                   <label for="contexto">Contexto de mercado</label>
                   <select id="contexto" name="contexto">
                     <option value="">Seleccionar...</option>
@@ -460,7 +460,7 @@
               </div>
 
               <div class="form-row">
-                <div class="form-group">
+                <div class="form-group" data-vacio-auto>
                   <label for="velasCorrida">Velas en la corrida</label>
                   <input type="number" id="velasCorrida" name="velas_corrida" min="1" max="20" placeholder="1 – 20">
                 </div>
@@ -585,14 +585,14 @@
             </div>
 
             <!-- Reflexión -->
-            <div class="form-group">
+            <div class="form-group" data-vacio-auto>
               <label for="analisisTrader">Reflexión / Análisis del día</label>
               <textarea id="analisisTrader" name="analisis_trader" rows="5"
                 placeholder="¿Cómo fue la sesión? ¿Qué salió bien? ¿Qué mejorar? ¿Seguiste las reglas?"></textarea>
             </div>
 
             <!-- Notas adicionales -->
-            <div class="form-group">
+            <div class="form-group" data-vacio-auto>
               <label for="resumenIA">Notas adicionales</label>
               <textarea id="resumenIA" name="resumen_ia" rows="3"
                 placeholder="Apuntes extra, ideas para mañana, contexto adicional..."></textarea>
