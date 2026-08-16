@@ -2798,13 +2798,14 @@ body.modal-open { overflow: hidden; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  font-size: 0.78rem;
+  background: var(--accent-dim);
+  color: #3FE0A6;
+  font-size: 0.8rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
 .coach-cerrar-btn { margin-left: auto; }
@@ -2815,7 +2816,15 @@ body.modal-open { overflow: hidden; }
   pointer-events: none;
   filter: grayscale(0.5);
 }
-.coach-stage-locked .coach-stage-num { background: var(--text3); }
+.coach-stage-locked .coach-stage-num { background: var(--bg3); color: var(--text3); }
+
+/* Etiqueta de estado de la etapa (Listo / Opcional), como en el diseño */
+.coach-stage-chip {
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0; text-transform: none;
+  border-radius: 999px; padding: 3px 10px;
+  background: var(--bg3); color: var(--text3); border: 1px solid var(--border);
+}
+.coach-stage-chip.ok { background: var(--accent-dim); color: #3FE0A6; border-color: transparent; }
 
 .coach-placeholder-sm { padding: 28px 20px; }
 .coach-placeholder-sm i { font-size: 1.8rem; margin-bottom: 8px; }
@@ -2980,39 +2989,52 @@ body.modal-open { overflow: hidden; }
 }
 
 /* ── 6 Analysis sections ─────────────────────────────────────────────────── */
+/* Salida del Coach: una barra de color a la izquierda por tipo de contenido,
+   igual que en la vista del día. Antes cada bloque era una caja con cabecera
+   gris; apilados, el análisis se leía como un formulario y no como un texto. */
 .coach-section {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  margin-bottom: 12px;
-  overflow: hidden;
+  background: none;
+  border: none;
+  border-left: 2px solid var(--accent);
+  border-radius: 0;
+  padding: 2px 0 2px 14px;
+  margin-bottom: 18px;
+  overflow: visible;
 }
-.coach-section.cs-has-errors {
-  border-color: rgba(186,117,23,0.4);
-}
-.coach-section.cs-resumen {
-  border-color: rgba(29,158,117,0.3);
-  background: rgba(29,158,117,0.05);
-}
+.coach-section#cs-desarrollo   { border-left-color: var(--warning); }
+.coach-section#cs-validacion   { border-left-color: #5B94C9; }
+.coach-section.cs-veredicto    { border-left-color: #5B94C9; }
+.coach-section#cs-errores,
+.coach-section.cs-has-errors   { border-left-color: var(--red); }
+.coach-section#cs-aprendizaje  { border-left-color: var(--warning); }
+.coach-section.cs-resumen      { border-left-color: var(--border2, #403F38); background: none; }
+
 .coach-section-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: var(--bg3);
-  font-size: 0.8rem;
+  gap: 7px;
+  padding: 0;
+  background: none;
+  border-bottom: none;
+  font-size: 0.66rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text2);
-  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: 6px;
 }
-.cs-icon { font-size: 1rem; }
+.coach-section#cs-desarrollo  > .coach-section-header { color: #E0A33B; }
+.coach-section#cs-validacion  > .coach-section-header,
+.coach-section.cs-veredicto   > .coach-section-header { color: #8FBDE8; }
+.coach-section#cs-errores     > .coach-section-header { color: #F2706F; }
+.coach-section#cs-aprendizaje > .coach-section-header { color: #E0A33B; }
+.coach-section.cs-resumen     > .coach-section-header { color: var(--text3); }
+.cs-icon { font-size: 0.95rem; }
 .coach-section-body {
-  padding: 14px 16px;
+  padding: 0;
   font-size: 0.88rem;
-  line-height: 1.75;
-  color: var(--text);
+  line-height: 1.65;
+  color: var(--text2);
   white-space: pre-wrap;
 }
 .coach-valid   { color: var(--accent); }
