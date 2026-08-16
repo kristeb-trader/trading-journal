@@ -136,7 +136,7 @@ DESPUÉS [‹]  ANÁLISIS  ················ ●
 | `#currentSectionTitle` | Pasa a ser **el único** título: verde `--accent-txt`, mayúsculas, `1.05rem` / `0.95rem` en móvil, `font-weight 700`, `letter-spacing .06em` |
 | `#sectionContext` (nuevo) | Dato variable al lado, pequeño y en `--text3`: `Agosto 2026`, el mes filtrado de Imágenes, el subtítulo de Disciplina |
 | `.status-indicator` | Pierde el texto "Conectado". Se queda **solo el punto de color** y pasa a ser `<button>`: al pulsarlo, un toast dice el estado. `aria-label` + `title` obligatorios |
-| `#openSettings` (la tuerca) | **Se va de la barra** → Otros › Ajustes › Claves y objetivos |
+| `#openSettings` (la tuerca) | **Se va de la barra** → Otros › Ajustes › Claves y objetivos. ⚠️ **Se retira en la Fase 3, no en la 2**: cada fase se sube a producción, y quitarla antes de que exista la fila de Ajustes dejaría los ajustes inalcanzables entre un despliegue y el siguiente |
 | `.menu-toggle` (☰) | Se queda como está: solo escritorio, ya está oculto en móvil ([css/styles.css:2584](../../css/styles.css)) |
 | `#navBack` (nuevo) | Chevron de volver, visible solo en subsecciones (§2.3) |
 
@@ -350,8 +350,8 @@ pantalla afectada mirada de verdad.
 | Fase | Qué | Cómo se verifica |
 |---|---|---|
 | **1** | Barra de 6 botones + `section-otros` con las 6 tarjetas + `Nav.PADRE` + chevron de volver | A 390 px: los 6 caben sin deslizar. Entrar y volver de las 6 subsecciones; "Otros" queda encendido en todas. Las 11 secciones siguen abriendo |
-| **2** | Título único arriba (verde, mayúscula) + `#sectionContext` + retirada de los 11 heroes + barra superior limpia | Recorrer las 11 secciones: un solo título en cada una. Calendario muestra el mes y cambia al navegar; Imágenes al filtrar; Disciplina muestra su subtítulo |
-| **3** | Ajustes: Claves y objetivos · Tema (inerte) · Seguridad · Cerrar sesión | El modal de claves abre y guarda igual que antes. Cerrar sesión funciona **desde el móvil**. Cambiar contraseña y volver a entrar con la nueva. La fila Tema no responde al clic |
+| **2** | Título único arriba (verde, mayúscula) + `#sectionContext` + retirada de los 11 heroes + conexión reducida al punto. **La tuerca sigue en la barra** hasta la Fase 3 | Recorrer las 11 secciones: un solo título en cada una. Calendario muestra el mes y cambia al navegar; Imágenes al filtrar; Disciplina muestra su rango |
+| **3** | Ajustes: Claves y objetivos · Tema (inerte) · Seguridad · Cerrar sesión. **Y ahí se retira la tuerca de la barra** | El modal de claves abre y guarda igual que antes. Cerrar sesión funciona **desde el móvil**. Cambiar contraseña y volver a entrar con la nueva. La fila Tema no responde al clic |
 | **4** | Renombrado a "Trading Journal" + `sw.js` v6 | Pestaña, login, sidebar y el icono instalado en el móvil. Recargar dos veces por el service worker |
 
 ---

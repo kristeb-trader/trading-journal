@@ -370,8 +370,9 @@ const Metrics = (() => {
   const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
   function render(period = 'all') {
-    const heroEl = document.getElementById('calHeroTitle')
-    if (heroEl) heroEl.textContent = `Estadísticas — ${MESES[calMonth() - 1]} ${calYear()}`
+    // El mes va al contexto de la barra superior: el título de la sección es
+    // uno solo y vive allí desde que se retiraron los heroes duplicados.
+    Nav.setContexto('calendar', `${MESES[calMonth() - 1]} ${calYear()}`)
 
     // Comparte la selección de cuentas del Calendario (mismo filtro)
     const accountFiltered = AccountFilter.filter('calendar', allTrades)

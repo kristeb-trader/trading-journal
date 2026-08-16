@@ -111,11 +111,19 @@
       <button class="btn-icon nav-back hidden" id="navBack" title="Volver a Otros" aria-label="Volver a Otros">
         <i class="ti ti-chevron-left"></i>
       </button>
-      <div class="header-info" id="currentSectionTitle">Calendario</div>
+      <!-- Título ÚNICO de la sección. Antes vivía aquí Y otra vez dentro de cada
+           sección (.analysis-hero-title), en verde y a 2.1rem: dos títulos para la
+           misma pantalla. El dato variable que llevaban dos de esos títulos —el mes
+           del Calendario, el filtro de Imágenes, el rango de Disciplina— es lo que
+           ahora va en #sectionContext. -->
+      <div class="header-info">
+        <span class="header-title" id="currentSectionTitle">Calendario</span>
+        <span class="header-context" id="sectionContext"></span>
+      </div>
       <div class="header-actions">
-        <span class="status-indicator" id="connectionStatus">
-          <i class="ti ti-loader-2 spin"></i> Conectando...
-        </span>
+        <button class="status-dot" id="connectionStatus" title="Comprobando conexión…" aria-label="Estado de la conexión">
+          <i class="ti ti-loader-2 spin"></i>
+        </button>
         <button class="btn-icon" id="openSettings" title="Ajustes">
           <i class="ti ti-settings"></i>
         </button>
@@ -127,9 +135,10 @@
 
       <!-- ═══ 1. CALENDARIO ═══════════════════════════════════════════════ -->
       <section class="section active" id="section-calendar">
+        <!-- Sin título central: el mes lo escribe metrics.js en #sectionContext.
+             El grid pasa de 3 columnas a 2 (cuenta | nav de mes). -->
         <div class="calendar-header">
           <div class="acct-filter-sm" id="accountFilterCalendar"></div>
-          <h2 class="analysis-hero-title" id="calHeroTitle">Estadísticas</h2>
           <div class="calendar-nav">
             <button class="btn-icon" id="prevMonth" title="Mes anterior">
               <i class="ti ti-chevron-left"></i>
@@ -180,9 +189,6 @@
 
       <!-- ═══ 3. TRADES ════════════════════════════════════════════════════ -->
       <section class="section" id="section-trades">
-        <div class="analysis-hero">
-          <h2 class="analysis-hero-title">Registro de Trades</h2>
-        </div>
         <div class="section-header">
           <div class="table-controls">
             <input type="text" class="search-input" id="tradeSearch" placeholder="Buscar...">
@@ -224,9 +230,6 @@
       <!-- Funde lo que eran tres pantallas: el registro del día, el Coach IA y
            el historial. Una sola fecha manda sobre las tres pestañas. -->
       <section class="section" id="section-register">
-        <div class="analysis-hero">
-          <h2 class="analysis-hero-title">Sesión Operativa</h2>
-        </div>
 
         <!-- Cabecera común: la fecha del día + el recuadro de resultado.
              Vive FUERA del formulario para que mande también sobre el Coach. -->
@@ -777,9 +780,6 @@
 
       <!-- ═══ 5. DATOS ════════════════════════════════════════════════════ -->
       <section class="section" id="section-data">
-        <div class="analysis-hero">
-          <h2 class="analysis-hero-title">Gestión de Datos</h2>
-        </div>
 
         <div class="data-top-cards">
           <!-- Cuenta principal (la que se lleva en el journal: calendario, análisis, Coach) -->
@@ -902,9 +902,6 @@
 
       <!-- ═══ ESTRATEGIA ══════════════════════════════════════════════════════ -->
       <section class="section" id="section-estrategia">
-        <div class="rb-hero">
-          <h2 class="analysis-hero-title">Reglas y Estrategia</h2>
-        </div>
 
         <!-- Pestañas por capa (Filosofía · Proceso · Riesgo) -->
         <div class="rb-tabs" id="rbCapaPills"></div>
@@ -925,11 +922,9 @@
 
       <!-- ═══ DISCIPLINA ══════════════════════════════════════════════════════ -->
       <section class="section" id="section-disciplina">
+        <!-- Sin título ni subtítulo: el rango del período lo escribe disciplina.js
+             en #sectionContext. .dd-hero sobrevive porque sostiene los controles. -->
         <div class="dd-hero">
-          <div class="dd-hero-titles">
-            <h2 class="analysis-hero-title">Dashboard de Disciplina</h2>
-            <div class="dd-hero-sub" id="disciplinaHeroSub">—</div>
-          </div>
           <div class="dd-hero-controls">
             <div class="dd-monthnav" id="disciplinaMonthNav">
               <button class="btn-icon" id="disciplinaPrev" title="Mes anterior"><i class="ti ti-chevron-left"></i></button>
@@ -947,18 +942,12 @@
 
       <!-- ═══ 7. GALERÍA DE IMÁGENES ═══════════════════════════════════════ -->
       <section class="section" id="section-gallery">
-        <div class="analysis-hero">
-          <h2 class="analysis-hero-title" id="galleryTitle">Imágenes</h2>
-        </div>
         <div class="gallery-months-bar" id="galleryMonthsBar"></div>
         <div class="gallery-grid" id="galleryGrid"></div>
       </section>
 
       <!-- ═══ 6. ANÁLISIS ══════════════════════════════════════════════════ -->
       <section class="section" id="section-analysis">
-        <div class="analysis-hero">
-          <h2 class="analysis-hero-title">Análisis &amp; Estadísticas</h2>
-        </div>
 
         <!-- Filtros -->
         <div class="analysis-controls">
@@ -1054,9 +1043,6 @@
 
       <!-- ═══ EXPERIMENTOS ═══════════════════════════════════════════════ -->
       <section class="section" id="section-experimentos">
-        <div class="analysis-hero">
-          <h2 class="analysis-hero-title">Laboratorio de Experimentos</h2>
-        </div>
 
         <div class="analysis-controls">
           <div class="period-selector" id="expdPeriodSelector">
@@ -1087,9 +1073,6 @@
       <section class="section" id="section-apex">
         <!-- Vista lista: KPIs globales + cards por cuenta -->
         <div id="apexLista">
-          <div class="analysis-hero">
-            <h2 class="analysis-hero-title">Apex Tracker — Pruebas de Fondeo</h2>
-          </div>
           <div class="section-actions">
             <button class="btn-primary btn-sm" id="apexNuevaCuenta"><i class="ti ti-plus"></i> Nueva cuenta</button>
           </div>
@@ -1103,9 +1086,6 @@
 
       <!-- ═══ FECHAS ESPECIALES ═══════════════════════════════════════════ -->
       <section class="section" id="section-fechas">
-        <div class="analysis-hero">
-          <h2 class="analysis-hero-title">Fechas Especiales</h2>
-        </div>
         <div class="section-actions">
           <div class="fechas-toolbar">
             <select id="fechasYear" class="filter-select"></select>
@@ -1121,9 +1101,6 @@
            una rejilla fija que genera app.js desde OTROS_ITEMS, así que añadir
            una opción nueva es una entrada más en ese array — ni HTML ni CSS. -->
       <section class="section" id="section-otros">
-        <div class="analysis-hero">
-          <h2 class="analysis-hero-title">Otros</h2>
-        </div>
         <div class="otros-grid" id="otrosGrid"></div>
       </section>
 

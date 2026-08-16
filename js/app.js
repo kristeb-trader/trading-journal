@@ -403,6 +403,23 @@ const Nav = {
   },
   initialized: new Set(),
 
+  // Dato variable que acompaña al título en la barra superior: el mes del
+  // Calendario, el filtro de Imágenes, el rango de Disciplina. Se guarda POR
+  // SECCIÓN y no se borra al salir: al volver a una sección ya inicializada
+  // nadie vuelve a escribirlo (`go()` no re-renderiza el Calendario), así que
+  // limpiarlo dejaría la barra sin el mes.
+  CONTEXTO: {},
+
+  setContexto(sectionId, txt) {
+    this.CONTEXTO[sectionId] = txt || ''
+    if (this._actual === sectionId) this._pintaContexto(sectionId)
+  },
+
+  _pintaContexto(sectionId) {
+    const el = document.getElementById('sectionContext')
+    if (el) el.textContent = this.CONTEXTO[sectionId] || ''
+  },
+
   async go(sectionId) {
     const tabPedida = this.TAB_ALIAS[sectionId]
     if (tabPedida) sectionId = 'register'
@@ -417,6 +434,8 @@ const Nav = {
     // El chevron de volver solo tiene sentido dentro de una subsección.
     document.getElementById('navBack')?.classList.toggle('hidden', !padre)
     this._padreActual = padre
+    this._actual = sectionId
+    this._pintaContexto(sectionId)
 
     // Lazy init sections
     if (!this.initialized.has(sectionId)) {
@@ -505,15 +524,26 @@ async function boot() {
     await DB.signOut(); location.reload()
   })
 
-  // Check Supabase connectivity
+  // Check Supabase connectivity. La barra solo muestra el punto de color: el
+  // texto decía lo mismo que el color y ocupaba sitio. El detalle sale al pulsarlo.
+  const dot = document.getElementById('connectionStatus')
+  const setDot = (ok, detalle) => {
+    dot.innerHTML = '<i class="ti ti-circle-filled"></i>'
+    dot.classList.remove('connected', 'disconnected')
+    dot.classList.add(ok ? 'connected' : 'disconnected')
+    dot.title = ok ? 'Conectado' : 'Sin conexión'
+    dot.setAttribute('aria-label', dot.title)
+    dot._detalle = detalle || dot.title
+    dot._ok = ok
+  }
+  dot.addEventListener('click', () => Toast.show(dot._detalle, dot._ok ? 'success' : 'error'))
+
   try {
     const { error } = await supa.from('trades').select('trade_number').limit(1)
     if (error) throw error
-    document.getElementById('connectionStatus').innerHTML = '<i class="ti ti-circle-filled"></i> Conectado'
-    document.getElementById('connectionStatus').classList.add('connected')
+    setDot(true, 'Conectado a Supabase')
   } catch (err) {
-    document.getElementById('connectionStatus').innerHTML = '<i class="ti ti-circle-filled"></i> Sin conexión'
-    document.getElementById('connectionStatus').classList.add('disconnected')
+    setDot(false, 'Sin conexión a Supabase: ' + (err.message || err))
     console.error('Supabase error:', err)
     Toast.show('Sin conexión a Supabase: ' + (err.message || err), 'error')
   }

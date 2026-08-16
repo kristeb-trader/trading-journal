@@ -128,7 +128,6 @@ const Gallery = (() => {
 
   function render() {
     const grid  = document.getElementById('galleryGrid')
-    const title = document.getElementById('galleryTitle')
     if (!grid) return
 
     const today    = new Date().toISOString().slice(0, 10)
@@ -136,11 +135,12 @@ const Gallery = (() => {
       ? allImages.filter(i => i.sesion_date.startsWith(activeMonth))
       : allImages
 
+    // El mes filtrado va al contexto de la barra superior (título único).
     if (activeMonth) {
       const [y, mo] = activeMonth.split('-')
-      title.textContent = `${MONTHS_ES[parseInt(mo)-1]} ${y}`
+      Nav.setContexto('gallery', `${MONTHS_ES[parseInt(mo)-1]} ${y}`)
     } else {
-      title.textContent = 'Todas las imágenes'
+      Nav.setContexto('gallery', 'Todas las imágenes')
     }
 
     // Mapa de imágenes por fecha

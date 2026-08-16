@@ -528,8 +528,8 @@ const Disciplina = (() => {
   }
 
   function refreshTitle() {
-    const el = document.getElementById('disciplinaHeroSub')
-    if (el) el.textContent = range().label
+    // El rango del período va al contexto de la barra superior (título único).
+    Nav.setContexto('disciplina', range().label)
   }
 
   async function load() {

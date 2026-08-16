@@ -258,11 +258,36 @@ small { font-size: 0.82em; }
 .menu-toggle:hover { background: var(--bg3); color: var(--text); }
 .nav-back { color: var(--text2); font-size: 1.2rem; padding: 4px; border-radius: 6px; }
 .nav-back:hover { background: var(--bg3); color: var(--text); }
-.header-info { flex: 1; font-weight: 500; font-size: 1rem; }
-.status-indicator { font-size: 0.8rem; display: flex; align-items: center; gap: 4px; color: var(--text3); }
-.status-indicator.connected { color: var(--accent); }
-.status-indicator.disconnected { color: var(--red); }
-.status-indicator i { font-size: 0.5rem; }
+
+/* Título único de la sección: el que antes se duplicaba dentro de cada pantalla.
+   Verde en --accent-txt y no en --accent: la base no contrasta como texto. */
+.header-info { flex: 1; display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.header-title {
+  color: var(--accent-txt);
+  font-size: 1.05rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+/* El dato variable de la sección (mes, filtro, rango). Se recorta antes que el
+   título, que es lo que nunca debe partirse. */
+.header-context {
+  font-size: 0.82rem; color: var(--text3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+
+/* Conexión: solo el punto de color. El texto "Conectado" ocupaba la barra para
+   decir lo que el color ya dice; al pulsarlo, un toast da el detalle. */
+.status-dot {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%;
+  color: var(--text3); flex-shrink: 0;
+  transition: background var(--transition), color var(--transition);
+}
+.status-dot:hover { background: var(--bg3); }
+.status-dot i { font-size: 0.62rem; }
+.status-dot i.spin { font-size: 1rem; }
+.status-dot.connected { color: var(--accent-txt); }
+.status-dot.disconnected { color: var(--red-txt); }
 
 /* ── Content Area ────────────────────────────────────────────────────── */
 .content-area { flex: 1; padding: 24px; }
@@ -292,19 +317,18 @@ small { font-size: 0.82em; }
 .calendar-topbar .filter-select-sm { margin-left: 0; }
 
 /* Header del Calendario: cuenta | título central | nav de mes en una fila */
+/* Dos columnas desde que el título salió de aquí: cuenta | nav de mes. */
 .calendar-header {
-  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
-  gap: 12px; margin-bottom: 48px;
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  gap: 12px; margin-bottom: 32px;
 }
 .calendar-header > .filter-select-sm,
 .calendar-header > .acct-filter-sm { justify-self: start; margin-left: 0; max-width: 220px; }
-.calendar-header > .analysis-hero-title { justify-self: center; font-size: 1.85rem; }
 .calendar-header > .calendar-nav { justify-self: end; }
 @media (max-width: 768px) {
   .calendar-header { grid-template-columns: 1fr; justify-items: center; gap: 8px; }
   .calendar-header > .filter-select-sm,
   .calendar-header > .acct-filter-sm { justify-self: stretch; max-width: none; }
-  .calendar-header > .analysis-hero-title { font-size: 1.5rem; }
 }
 
 .calendar-legend {
@@ -1351,14 +1375,6 @@ textarea { resize: vertical; min-height: 80px; }
 .analysis-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .analysis-right .filter-select-sm,
 .analysis-right .acct-filter-sm { margin-left: 0; }
-.analysis-hero { text-align: center; margin-bottom: 22px; }
-.analysis-hero-title {
-  display: inline-block; font-size: 2.1rem; font-weight: 700; letter-spacing: -0.02em;
-  background: linear-gradient(135deg, var(--accent) 0%, #5fe0b3 50%, var(--accent) 100%);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent; color: transparent;
-  text-shadow: 0 2px 20px rgba(29,158,117,0.20);
-}
 .period-picker { display: flex; align-items: center; gap: 6px; }
 .period-pick {
   background: var(--bg3); color: var(--text); border: 1px solid var(--border);
@@ -1370,7 +1386,6 @@ textarea { resize: vertical; min-height: 80px; }
   .filter-select-sm { margin-left: 0; max-width: none; flex: 1 0 100%; }
   .acct-filter-sm { margin-left: 0; max-width: none; flex: 1 0 100%; }
   .analysis-right { margin-left: 0; flex-wrap: wrap; }
-  .analysis-hero-title { font-size: 1.5rem; }
 }
 #analysisKpiStrip { margin-bottom: 20px; }
 .analysis-kpi-row {
@@ -2618,6 +2633,9 @@ body.modal-open { overflow: hidden; }
 
   /* Top bar */
   .menu-toggle { display: none; }
+  .top-bar { padding: 0 12px; gap: 10px; }
+  .header-title { font-size: 0.95rem; letter-spacing: 0.05em; }
+  .header-context { font-size: 0.76rem; }
 
   /* Calendar */
   .calendar-grid {
@@ -3664,7 +3682,6 @@ body.modal-open { overflow: hidden; }
 }
 
 /* ── Estrategia: Rulebook canónico (editor por capas) ────────────────────── */
-.rb-hero { text-align: center; margin-bottom: 22px; }
 
 /* Pestañas por capa */
 .rb-tabs {
@@ -3881,12 +3898,6 @@ body.modal-open { overflow: hidden; }
   flex-wrap: wrap; gap: 16px; margin-bottom: 26px;
   border-bottom: 1px solid var(--border); padding-bottom: 18px;
 }
-.dd-hero-eyebrow {
-  font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--accent); font-weight: 600; margin-bottom: 6px;
-}
-.dd-hero .analysis-hero-title { font-size: 1.85rem; display: block; }
-.dd-hero-sub { font-size: 0.85rem; color: var(--text3); margin-top: 5px; }
 .dd-period-bar { display: flex; gap: 5px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
 .dd-period {
   border: none; background: none; color: var(--text2); cursor: pointer;
