@@ -4,7 +4,7 @@
 |---|---|
 | **Versión** | v3 |
 | **Fecha** | 2026-08-16 |
-| **Estado** | ✅ **APROBADO** (2026-08-16) — en implementación |
+| **Estado** | ✅ **IMPLEMENTADO** (2026-08-16) — las 6 fases cerradas y verificadas |
 | **Origen** | `docs/prompt-reestructuracion.md` + diagnóstico Fase 2 |
 | **Cambios v2** | Separación en 4 capas: nace `tasks/` y `docs/decisiones.md`; los pendientes salen del `CLAUDE.md`. Justificación en §13 |
 | **Alcance** | Documentación, memoria, skills, configuración. **No cambia el comportamiento de la app.** |
@@ -956,6 +956,52 @@ esquema de tablas, pendientes) es justo lo que ese esquema dice que no debe esta
 
 ---
 
+## 14. Resultado real de la implementación (2026-08-16)
+
+Las 6 fases cerradas el mismo día. Medido, no estimado.
+
+| Fase | Commit | Verificación que pasó |
+|---|---|---|
+| 1 · Configuración | `cdee3cc` | `settings.json` versionable · `settings.local.json` sigue ignorado · `rules/` versionable · el archivo con la clave anon fuera del disco |
+| 2 · `CLAUDE.md` + rules | `11647f5` | 149 líneas (<200) · las 5 secciones con nombre exacto · 0 rutas con arroba · los 11 paths de las reglas apuntan a archivos reales |
+| 3 · Memoria | `023cc3e` | **Las 6 contradicciones, una por una** · 11 archivos → 2 |
+| 4 · `docs/` + `tasks/` | `023cc3e` | 0 títulos de checkpoint duplicados · 14 en formato ISO · 0 enlaces rotos (se arregló 1 en `Disciplina.md`) |
+| 5 · Skills | `c9e3275` | Los 4 cargan · ninguno pasa de 170 líneas (límite 500) · **0 menciones** a este proyecto · el repo pasa los 7 chequeos del contrato |
+| 6 · Tokens CSS | `9b05791` | **0 diferencias** al resolver tokens en ambas versiones · llaves 1803/1803 · 0 variables sin declarar · los 4 tokens computan en navegador el mismo `rgb()` |
+
+### Cifras finales
+
+| Métrica | Antes | Después |
+|---|---|---|
+| `CLAUDE.md` | 259 líneas / 20.277 B | **149 líneas / 8.457 B** (−58%) |
+| Archivos de memoria | 11 (28 KB) | **2** (~2 KB) |
+| Contradicciones vivas | 6 | **0** |
+| Docs engañosos en circulación | 3.627 líneas | **0** (archivados con aviso de en qué mienten) |
+| Reglas de permisos | 122 literales, 1 con clave dentro | **11 patrones + 3 bloqueos** |
+| Skills genéricos | 1, contaminado y contradictorio | **4**, con contrato |
+| Tokens CSS / literales sueltos | 19 / 140 | **26 / 45** |
+| Migraciones con registro | 6 de 65 | 65 en el índice; 100% de las nuevas en Supabase |
+
+### Desviaciones respecto al diseño
+
+Tres, todas menores y ya reflejadas arriba:
+
+1. **`CLAUDE.md` quedó en 149 líneas, no ~123.** La tabla "lo que el esquema no dice"
+   conservó más detalle del previsto. Sigue muy por debajo del límite.
+2. **Se corrigió una ruta en `docs/Disciplina.md`** (el plan que se archivó). Es un enlace,
+   no el criterio — el criterio no se tocó.
+3. **Quedaron 45 literales de color**, no 0. Son variantes casi-idénticas de los mismos
+   colores; unificarlas cambiaría píxeles, y la Fase 6 se aprobó con la condición de que no
+   cambiara nada visualmente. Se consolidan al migrar cada pantalla.
+
+### Hallazgo lateral, no causado por esta reestructuración
+
+El registro del **service worker falla** (`getRegistrations()` vuelve vacío). Detectado al
+verificar la Fase 6 con el navegador. `sw.js` no se tocó. Anotado en `tasks/current.md` sin
+diagnosticar: la consola **no está limpia**, y no se declara como tal.
+
+---
+
 ## Registro de versiones
 
 | Versión | Fecha | Cambios |
@@ -963,3 +1009,4 @@ esquema de tablas, pendientes) es justo lo que ese esquema dice que no debe esta
 | v1 | 2026-08-16 | Diseño inicial |
 | v2 | 2026-08-16 | Contraste con el esquema de 4 capas (§13). Nace `tasks/` (current + backlog) y los pendientes salen del `CLAUDE.md`. Nace `docs/decisiones.md` (ADR-lite). Se descarta el uso de `@import` con la cita oficial. `CLAUDE.md` baja de ~135 a ~123 líneas. Se rechaza con evidencia el `docs/` de 10-15 archivos y los `CLAUDE.md` anidados |
 | v3 | 2026-08-16 | **Aprobado.** Se cierran las dos decisiones abiertas: Fase 6 (tokens CSS) se hace al final como fase separada; no se crean `arquitectura.md` ni `database.md` |
+| v4 | 2026-08-16 | **Implementado.** §14 con el resultado real medido, las verificaciones que pasó cada fase, las 3 desviaciones respecto al diseño y un hallazgo lateral (el service worker falla, ajeno a esta reestructuración) |

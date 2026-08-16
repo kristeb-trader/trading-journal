@@ -4,11 +4,11 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
 | 2026-08-11 | Coach IA: fuga temporal del historial |
 | 2026-08-03b | Rediseño del checklist y de la disciplina |
 | 2026-08-03 | Calendario: fechas futuras + la verdad de la disciplina |
-| 2026-07-24b | Filtro de cuentas multi-selección |
 
 Los anteriores, en orden, más abajo. Las fases 1–22 están antes de los checkpoints.
 
@@ -1946,3 +1946,60 @@ recuadros `CONTEXTO · CORRIDA · RETROCESO · ZONAS EN CONTRA` + tabla de trade
 4. Para cambios en la BD: SQL Editor de Supabase → `https://jothoslozctflfrnysrx.supabase.co`
 5. **Regla operativa:** cada cambio en cualquier archivo debe hacerse **commit y push inmediatamente**
 6. **Flujo de trabajo con IA:** analizar → presentar diagnóstico → esperar aprobación → implementar → commit
+
+---
+
+## Checkpoint 2026-08-16b — Reestructuracion documental
+
+Cambio de **orden**, no de funcionalidad: la app no se toco. Diseno aprobado y
+persistido en `docs/disenos/2026-08-16-reestructuracion.md` (v4), 6 fases.
+
+### El diagnostico
+
+El `CLAUDE.md` habia crecido a 259 lineas mezclando cinco cosas —referencia,
+invariantes, post-mortems, changelog y flujo de trabajo— y se cargaba entero en cada
+sesion. La memoria automatica describia el proyecto por su cuenta y se habia quedado en
+julio: **seis datos tenian dos o tres respuestas distintas** segun donde miraras.
+
+| Dato | Decia | La verdad |
+|---|---|---|
+| Modelo de IA | sonnet-5 / haiku-4-5 / sonnet-4-6 | `claude-sonnet-5` |
+| Seguridad BD | "RLS activado" y "RLS deshabilitado" | activo en las 18 tablas |
+| `fomc_dates`, `apex_registros`, `estrategia_chaumer` | documentadas como vivas | borradas |
+| Triggers del checklist | descritos funcionando | eliminados el 16 ago |
+| Stop maximo | 60 puntos y 80 puntos | 80 puntos |
+| Nº de tablas | 17 | 18 |
+
+Ademas: 3.627 lineas de manuales describiendo la app de tres secciones, dos checkpoints
+titulados igual, 122 permisos literales (uno con la clave anon dentro) y los disenos
+aprobados viviendo solo en el chat.
+
+### Lo que se hizo
+
+- **`CLAUDE.md` 259 -> 149 lineas.** Adopta 5 secciones con nombre estable
+  (Invariantes / Verificacion / Diseno / Datos / Lenguaje visual) que son el **contrato**
+  que leen los skills genericos.
+- **`.claude/rules/`** con `paths:`: las 7 reglas de oro de la disciplina y las
+  invariantes del Coach, de Sesion Operativa y de NinjaTrader cargan **solo al abrir el
+  archivo al que afectan**. No se pierden; dejan de pagarse siempre.
+- **Memoria de 11 archivos a 2.** Guarda al usuario, no al proyecto: lo que describe el
+  proyecto se fue al repo, que cambia en el mismo commit que el codigo.
+- **`docs/decisiones.md`**: 9 decisiones con su porque, que antes habia que deducir.
+- **`tasks/`**: los pendientes salen del `CLAUDE.md`, porque cambian cada semana.
+- **4 skills genericos** en `~/.claude/skills/`, sin una sola mencion a este proyecto.
+- **Tokens CSS**: 19 -> 26, 140 -> 45 literales. Ni un color cambio.
+
+### Lo que NO se toco
+
+El comportamiento de la app, el criterio de disciplina, el P&L neto, la zona horaria, las
+invariantes del Coach, `upsertSesion`, y la decision cerrada del 24 jul sobre las 6
+reglas de feb-may. Y la estructura de `js/` / `index.html` / `styles.css`, que se
+analizo y se aplazo con su propio diseno (ver `tasks/backlog.md`).
+
+### Pendiente detectado, no causado aqui
+
+El registro del **service worker falla**. Salio al verificar la Fase 6 en el navegador;
+`sw.js` no se toco. Anotado en `tasks/current.md` sin diagnosticar.
+
+---
+
