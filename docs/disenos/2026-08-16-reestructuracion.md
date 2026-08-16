@@ -973,7 +973,7 @@ Las 6 fases cerradas el mismo día. Medido, no estimado.
 
 | Métrica | Antes | Después |
 |---|---|---|
-| `CLAUDE.md` | 259 líneas / 20.277 B | **149 líneas / 8.457 B** (−58%) |
+| `CLAUDE.md` | 259 líneas / 20.277 B | **166 líneas / 9.9 KB** (−51%) — 149 tras la Fase 2, +17 al documentar el sistema de tokens en la Fase 6 |
 | Archivos de memoria | 11 (28 KB) | **2** (~2 KB) |
 | Contradicciones vivas | 6 | **0** |
 | Docs engañosos en circulación | 3.627 líneas | **0** (archivados con aviso de en qué mienten) |
@@ -986,8 +986,10 @@ Las 6 fases cerradas el mismo día. Medido, no estimado.
 
 Tres, todas menores y ya reflejadas arriba:
 
-1. **`CLAUDE.md` quedó en 149 líneas, no ~123.** La tabla "lo que el esquema no dice"
-   conservó más detalle del previsto. Sigue muy por debajo del límite.
+1. **`CLAUDE.md` quedó en 166 líneas, no ~123.** 149 tras la Fase 2 (la tabla "lo que el
+   esquema no dice" conservó más detalle del previsto) y +17 en la Fase 6, al documentar
+   la estructura base/-txt/-dim que el skill `lenguaje-visual` necesita para ser concreto
+   aquí. Sigue por debajo del límite de 200.
 2. **Se corrigió una ruta en `docs/Disciplina.md`** (el plan que se archivó). Es un enlace,
    no el criterio — el criterio no se tocó.
 3. **Quedaron 45 literales de color**, no 0. Son variantes casi-idénticas de los mismos
