@@ -74,7 +74,7 @@ const AccountFilter = (() => {
   function render(st) {
     const all = st.selected === null
     st.el.innerHTML = `
-      <button type="button" class="acct-filter-btn" aria-expanded="false" title="Filtrar por cuenta">
+      <button type="button" class="acct-filter-btn" aria-expanded="false" title="Cuenta: ${esc(label(st))} — toca para cambiar">
         <span class="acct-filter-text">${esc(label(st))}</span>
         <i class="ti ti-chevron-down acct-filter-caret"></i>
       </button>
@@ -98,6 +98,9 @@ const AccountFilter = (() => {
   function updateLabel(st) {
     const t = st.el.querySelector('.acct-filter-text')
     if (t) t.textContent = label(st)
+    // El botón puede quedar estrecho en móvil y mostrar solo el final del nombre;
+    // el title lleva siempre el nombre entero.
+    st.el.querySelector('.acct-filter-btn')?.setAttribute('title', `Cuenta: ${label(st)} — toca para cambiar`)
   }
 
   function closeAll(except) {

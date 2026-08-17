@@ -372,7 +372,15 @@ const Metrics = (() => {
   function render(period = 'all') {
     // El mes va al contexto de la barra superior: el título de la sección es
     // uno solo y vive allí desde que se retiraron los heroes duplicados.
-    Nav.setContexto('calendar', `${MESES[calMonth() - 1]} ${calYear()}`)
+    //
+    // En móvil se abrevia a 3 letras ("Ago 2026"). Calendario es la única pantalla
+    // con título + fecha + filtro de cuenta a la vez, y en 390 px las tres no caben:
+    // abreviar el mes libera ~36 px y evita que se recorten con puntos suspensivos
+    // tanto la fecha como el nombre de la cuenta. Abreviado sigue siendo exacto;
+    // recortado, no.
+    const mes = MESES[calMonth() - 1]
+    const estrecho = window.matchMedia('(max-width: 768px)').matches
+    Nav.setContexto('calendar', `${estrecho ? mes.slice(0, 3) : mes} ${calYear()}`)
 
     // Comparte la selección de cuentas del Calendario (mismo filtro)
     const accountFiltered = AccountFilter.filter('calendar', allTrades)

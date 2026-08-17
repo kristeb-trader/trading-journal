@@ -350,9 +350,24 @@ small { font-size: 0.82em; }
 @media (max-width: 900px) {
   .header-actions > .acct-filter-sm { max-width: 150px; }
 }
-@media (max-width: 560px) {
-  .header-actions > .acct-filter-sm { max-width: 118px; }
-  .header-actions > .acct-filter-sm .acct-filter-btn { font-size: 0.72rem; padding-left: 8px; padding-right: 5px; }
+/* El desplegable NO se recorta nunca, aunque el botón que lo abre sea estrecho:
+   se ancla al borde derecho para crecer hacia dentro (con `left: 0` se salía de
+   la pantalla) y se limita al ancho de la ventana. Que tape contenido está bien:
+   es temporal y se cierra al elegir. */
+.header-actions > .acct-filter-sm .acct-filter-panel {
+  left: auto; right: 0;
+  width: max-content; min-width: 200px;
+  max-width: calc(100vw - 20px);
+}
+@media (max-width: 768px) {
+  /* El botón se queda compacto y proporcionado. Lo que identifica una cuenta es
+     su FINAL (…-14 vs …-15), así que si no cabe se recorta por delante, no por
+     detrás: recortar por detrás dejaba "APEX-23…" en las dos y no se distinguían. */
+  .header-actions > .acct-filter-sm { max-width: none; }
+  .header-actions > .acct-filter-sm .acct-filter-btn { font-size: 0.72rem; padding: 0 6px 0 8px; gap: 4px; }
+  .header-actions > .acct-filter-sm .acct-filter-text { direction: rtl; text-align: right; }
+  /* Opciones a tamaño cómodo: es donde se lee el nombre completo. */
+  .acct-filter-panel .acct-filter-opt { padding: 10px 10px; font-size: 0.88rem; }
 }
 
 .calendar-legend {
@@ -2680,6 +2695,16 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
   .header-title,
   .header-context { font-size: 0.9rem; letter-spacing: 0.04em; }
   .header-context:not(:empty)::before { margin-right: 6px; }
+  /* El centro cede la mitad de la barra: las celdas laterales miden lo mismo
+     (es lo que centra el título), así que sin este tope el título se llevaba 251
+     de 390 px y al filtro le quedaban 52. El título nunca se parte; lo que cede
+     es la fecha, que se recorta con puntos. */
+  .header-info { max-width: 56vw; }
+  .header-title { flex-shrink: 0; }
+  /* La fecha, un punto por debajo del título: es lo único que puede ceder ancho
+     sin perder sentido, y así entra entera junto al filtro. */
+  .header-context { font-size: 0.8rem; }
+  .header-context:not(:empty)::before { margin-right: 5px; }
   /* Aquí sí: el sidebar-header está oculto y sin esto no hay marca de la app. */
   .hdr-logo { display: block; }
 
