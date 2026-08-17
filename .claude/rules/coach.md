@@ -59,3 +59,17 @@ un trade de plena apertura.
 
 Implementado salvo **inyectar el catálogo de recomendaciones en el prompt**, para que
 reutilice nombres en vez de duplicarlos. Ver `tasks/current.md`.
+
+## ⚠️ El formato de salida se define en DOS sitios
+
+`buildSystemPrompt` (system prompt) **y** `instruccionFormato` dentro de `analisisTecnico`
+(mensaje del turno del usuario). El segundo **pesa más**: va en el turno del usuario, más
+cerca de la atención del modelo.
+
+Cambiar solo el system prompt NO funciona — pasó el 16 ago con los resúmenes "En corto:":
+el modelo siguió el mensaje de instrucción, que aún tenía el formato viejo, y la única
+sección que salió bien fue Aprendizaje, cuyo formato vive solo en el system prompt.
+
+**Y el render nunca debe depender de que el modelo obedezca:** si falta la marca
+`En corto:`, `resumenDerivado()` saca el resumen del propio texto y el detalle se pliega
+igual. El muro técnico no se muestra jamás.

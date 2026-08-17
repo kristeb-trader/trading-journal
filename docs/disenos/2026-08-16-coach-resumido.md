@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Versión** | 1.1 |
+| **Versión** | 1.2 |
 | **Estado** | ✅ Aprobado por Kris (16 ago 2026) — implementado |
 | **Alcance** | Etapa 1 (Análisis técnico) y Etapa 3 (Diagnóstico final) de `section-coach` |
 | **Mockup** | https://claude.ai/code/artifact/affe4f53-1d51-4d9f-9751-9bd3dccff85f |
@@ -119,8 +119,40 @@ diario"*. Las clases `.cz-sec` / `.cz-keep` / `.cz-det` son ese patrón aplicado
 De paso se consolidan los literales de color de esta pantalla a tokens (deuda conocida
 nº 2 de `.claude/rules/estilos.md`: se consolidan al migrar cada pantalla).
 
+## v1.2 — lo que falló en la primera prueba real (16 ago)
+
+Kris regeneró el 14-ago y **siguió viendo el muro técnico**. Dos causas, las dos mías:
+
+**1. El formato estaba definido en DOS sitios y solo actualicé uno.**
+`buildSystemPrompt` (system) y `instruccionFormato` (mensaje del turno del usuario, en
+`analisisTecnico`). Cambié el system y me dejé el segundo, que **pesa más** porque va en el
+turno del usuario. El modelo obedeció al concreto y cercano: escribió el formato viejo.
+
+La prueba está en el dato guardado: de las cuatro secciones, la única que salió con
+`En corto:` fue **Aprendizaje** — la única cuyo formato vive *solo* en el system prompt.
+
+> ⚠️ **Al tocar el formato de salida hay que cambiarlo en LOS DOS SITIOS.** Queda un
+> comentario en `analisisTecnico` avisándolo.
+
+**2. La degradación estaba mal diseñada.** Si faltaba la marca, la sección se mostraba
+entera "para que no se viera vacía". Es exactamente lo que Kris no quiere ver, y convertía
+un fallo del modelo en el peor resultado posible.
+
+Ahora **el detalle se pliega SIEMPRE**, y si el modelo no escribió el resumen se **deriva
+del propio texto** (`resumenDerivado`):
+
+| Sección | De dónde sale el resumen si falta la marca |
+|---|---|
+| Contexto | la línea `Sesgo:` + la línea `Vigilar:` |
+| Desarrollo | la primera viñeta |
+| Validación | los contadores: *"6 de 11 filtros cumplidos. Falló la Fase 2."* |
+| Aprendizaje | la primera línea |
+
+Esto arregla de paso los **48 diagnósticos guardados antes del rediseño**: ahora se ven
+resumidos y plegados, no como un muro.
+
 ## Riesgos asumidos
 
 - **Resumen flojo con `effort: low`.** Si sale genérico, subir a `medium` — una línea.
-- **Si el modelo se salta la marca**, la sección cae al camino retrocompatible y se ve como
-  hoy. Degradación limpia, nunca pantalla vacía.
+- **El resumen derivado es peor que uno escrito por el modelo** — es una red de seguridad,
+  no un sustituto. Pero garantiza que la pantalla nunca vuelva a ser un muro técnico.

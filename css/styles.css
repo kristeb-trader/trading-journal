@@ -3389,8 +3389,6 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 /* El resumen: es lo único que se lee sin desplegar */
 .cz-keep { font-size: 0.93rem; color: var(--text); margin: 0; line-height: 1.5; }
 .cz-keep b, .cz-keep strong { color: var(--text); font-weight: 700; }
-/* Camino retrocompatible: diagnósticos sin resumen se muestran enteros */
-.cz-sec-full { margin-top: 2px; }
 
 /* Píldoras de fase — el resumen visual de Validación */
 .cz-pills { display: flex; gap: 7px; flex-wrap: wrap; margin: 2px 0 1px; }

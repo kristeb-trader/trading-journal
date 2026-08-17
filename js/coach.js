@@ -494,24 +494,36 @@ Reglas de la línea **En corto** (es lo único que se ve sin desplegar — si fa
 El **Detalle** sí va técnico y completo: es lo que se despliega y lo que TÚ mismo reutilizarás para el diagnóstico.
 
 **1. 🌍 CONTEXTO**
-En corto: <cómo venía el día y qué había que vigilar, en una frase>
-Detalle: 3 líneas, una por etiqueta, con este formato exacto "Etiqueta: valor":
+\`\`\`
+En corto: <cómo venía el día y qué había que vigilar, en 1-2 frases>
+Detalle:
 Sesgo: <Alcista|Bajista|Mixto> | <razón en pocas palabras>
 Vigilar: <el/los nivel(es) clave que importan hoy y por qué>
 Noticias: <noticia relevante del día, o "Sin noticias">
+\`\`\`
 NO incluyas "Datos de referencia" ni "Contexto adicional" en esta sección.
 
 **2. 📈 DESARROLLO DE SESIÓN**
-En corto: <qué hizo el precio y qué hizo el trader, en una o dos frases>
-Detalle: 3 a 5 viñetas cortas (una idea cada una), empezando cada línea con "- ": cronología de corridas, retrocesos, rompimientos y consecuciones.
+\`\`\`
+En corto: <qué hizo el precio y qué hizo el trader, en 1-2 frases>
+Detalle:
+- <3 a 5 viñetas cortas, una idea cada una: corridas, retrocesos, rompimientos, consecuciones>
+\`\`\`
 
 **3. ✅ VALIDACIÓN DE SETUPS**
-En corto: <en qué FASE se rompió el día y por qué, en una frase. Si no se rompió, dilo igual de claro.>
-Detalle: por cada setup potencial, en este formato compacto (sin párrafos largos):
+\`\`\`
+En corto: <en qué FASE se rompió el día y por qué, en 1 frase. Si no se rompió, dilo igual de claro.>
+Detalle:
 ### <Nombre del setup>
-AGRUPA los filtros por fase con estos subtítulos exactos: "**Fase 1 · Pre-sesión**", "**Fase 2 · Lectura del setup**", "**Fase 3 · Ejecución**"
-✅ <filtro cumplido>  (o)  ❌ <filtro no cumplido>   — una línea por filtro, breve
+**Fase 1 · Pre-sesión**
+✅ <filtro cumplido>   (o)   ❌ <filtro no cumplido> — una línea por filtro, breve
+**Fase 2 · Lectura del setup**
+…
+**Fase 3 · Ejecución**
+…
 Stop: <X> pts | Target: <Y> pts
+\`\`\`
+Omite la fase que no tenga ítems.
 IMPORTANTE: En esta etapa NO des el veredicto final (VÁLIDA/INVÁLIDA). Solo filtro por filtro. El veredicto va en el diagnóstico final.
 
 ### ETAPA 2 — SESIÓN DE COACHING (chat libre)
@@ -1194,21 +1206,41 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
     return out
   }
 
-  // Una sección: etiqueta + resumen + detalle plegado (SIEMPRE cerrado).
+  // Cuando el modelo NO escribe "En corto:", se deriva un resumen del propio
+  // texto. El trader no debe ver el muro técnico por un fallo del modelo ni por
+  // abrir un diagnóstico viejo: lo técnico va SIEMPRE plegado, sin excepción.
+  function resumenDerivado(clave, texto, fases) {
+    const L = (texto || '').split('\n').map(l => l.trim()).filter(Boolean)
+    if (!L.length) return ''
+    const limpia = s => s.replace(/^[-*•\s]+/, '').replace(/\*\*/g, '').trim()
+
+    if (clave === 'validacion') {
+      const t = Object.values(fases || {}).reduce((a, f) => ({ ok: a.ok + f.ok, total: a.total + f.total }), { ok: 0, total: 0 })
+      const setup = limpia(L.find(l => /^#{1,3}\s/.test(l)) || '').replace(/^#+\s*/, '')
+      if (!t.total) return setup
+      const rotas = [1, 2, 3].filter(f => fases[f] && fases[f].ok < fases[f].total)
+      return `${setup ? setup + ' — ' : ''}${t.ok} de ${t.total} filtros cumplidos.`
+        + (rotas.length ? ` Falló la Fase ${rotas.join(' y la ')}.` : ' Todos en verde.')
+    }
+    if (clave === 'contexto') {
+      const val = re => limpia(L.find(l => re.test(l)) || '').replace(re, '').trim()
+      const sesgo = val(/^\**\s*sesgo\s*:\s*\**/i).split('|').map(s => s.trim()).filter(Boolean).join(' — ')
+      const vig   = val(/^\**\s*vigilar\s*:\s*\**/i)
+      const out = [sesgo && `Sesgo ${sesgo.toLowerCase()}.`, vig && `A vigilar: ${vig}`].filter(Boolean).join(' ')
+      return out || limpia(L[0])
+    }
+    return limpia(L[0])   // desarrollo y cualquier otra: la primera idea
+  }
+
+  // Una sección: etiqueta + resumen + detalle SIEMPRE plegado y SIEMPRE cerrado.
   function czSeccion({ clase, label, resumen, extra = '', detalle, verDetalle = 'Ver detalle' }) {
     const hayDet = detalle && detalle.trim()
-    if (!resumen) {
-      // Camino retrocompatible: sin resumen no se pliega nada.
-      return `<div class="cz-sec ${clase}">
-        <div class="cz-sec-lbl">${label}</div>${extra}
-        <div class="cz-sec-full">${hayDet ? detalle : '<p class="cz-empty">—</p>'}</div>
-      </div>`
-    }
     return `<div class="cz-sec ${clase}">
       <div class="cz-sec-lbl">${label}</div>${extra}
-      <p class="cz-keep">${inlineMd(resumen)}</p>
+      ${resumen ? `<p class="cz-keep">${inlineMd(resumen)}</p>` : ''}
       ${hayDet ? `<details class="cz-det"><summary>${verDetalle}</summary>
-        <div class="cz-det-body">${detalle}</div></details>` : ''}
+        <div class="cz-det-body">${detalle}</div></details>`
+        : (resumen ? '' : '<p class="cz-empty">—</p>')}
     </div>`
   }
 
@@ -1227,7 +1259,6 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
 
     const fases = contarFases(val.detalle || val.resumen || secciones.validacion || '')
     const conFase = [1, 2, 3].filter(f => fases[f])
-    const falla = conFase.some(f => fases[f].ok < fases[f].total)
     const pills = conFase.length
       ? `<div class="cz-pills">${conFase.map(f => {
           const { ok, total } = fases[f]
@@ -1235,19 +1266,25 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
         }).join('')}</div>`
       : ''
 
+    // Si el modelo no escribió "En corto:", se deriva del propio texto. Nunca se
+    // cae al muro técnico: eso es exactamente lo que el rediseño evita.
+    const resCtx = ctx.resumen || resumenDerivado('contexto',   ctx.detalle)
+    const resDes = des.resumen || resumenDerivado('desarrollo', des.detalle)
+    const resVal = val.resumen || resumenDerivado('validacion', val.detalle, fases)
+
     // Colores fijos por sección (verde / naranja / azul), como el diseño aprobado.
     // Que la validación falle NO tiñe la sección: eso ya lo dicen las píldoras.
     container.innerHTML =
       czSeccion({
-        clase: 'c-ctx', label: 'Contexto', resumen: ctx.resumen,
+        clase: 'c-ctx', label: 'Contexto', resumen: resCtx,
         detalle: renderContexto(ctx.detalle) + czDatos('Referencias del día', renderPremercadoData(sesionActual)),
       }) +
       czSeccion({
-        clase: 'c-des', label: 'Desarrollo de sesión', resumen: des.resumen,
+        clase: 'c-des', label: 'Desarrollo de sesión', resumen: resDes,
         detalle: renderDesarrollo(des.detalle) + czDatos('Trades del día', renderOperativaData(tradesActual)),
       }) +
       czSeccion({
-        clase: 'c-val', label: 'Validación de setups', resumen: val.resumen, extra: pills,
+        clase: 'c-val', label: 'Validación de setups', resumen: resVal, extra: pills,
         detalle: renderValidacion(val.detalle), verDetalle: 'Ver las reglas una a una',
       })
   }
@@ -1292,7 +1329,8 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
           })
         : '') +
       czSeccion({
-        clase: 'c-apr', label: 'Aprendizaje del día', resumen: apr.resumen,
+        clase: 'c-apr', label: 'Aprendizaje del día',
+        resumen: apr.resumen || resumenDerivado('aprendizaje', apr.detalle),
         detalle: mdAnalisis(apr.detalle), verDetalle: 'Ver aprendizaje completo',
       })
   }
@@ -1360,17 +1398,41 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
     ocultarGuardar()
 
     try {
-      const instruccionFormato = `Realiza el ANÁLISIS TÉCNICO (Etapa 1) en exactamente 3 secciones, BREVES y claras. Encabezados EXACTOS:
+      // ⚠️ El formato se define en DOS sitios: aquí y en la Etapa 1 del system
+      // prompt. Este mensaje pesa más (va en el turno del usuario). Si se cambia
+      // el formato, hay que cambiarlo EN LOS DOS — tenerlo solo en el system
+      // prompt no sirvió: el modelo siguió este y no escribió los resúmenes.
+      const instruccionFormato = `Realiza el ANÁLISIS TÉCNICO (Etapa 1) en exactamente 3 secciones.
 
-**1. 🌍 CONTEXTO** → 3 líneas "Etiqueta: valor": Sesgo / Vigilar / Noticias. SIN datos crudos (no PDO/PDH/PDL ni "contexto adicional").
-**2. 📈 DESARROLLO DE SESIÓN** → 3-5 viñetas cortas empezando con "- ".
-**3. ✅ VALIDACIÓN DE SETUPS** → por setup: "### Nombre del setup". Dentro, AGRUPA los filtros POR FASE del proceso con estos subtítulos exactos (omite la fase que no tenga ítems):
-"**Fase 1 · Pre-sesión**", "**Fase 2 · Lectura del setup**", "**Fase 3 · Ejecución**"
-Bajo cada fase, un filtro por línea: "✅/❌ Título descriptivo de la regla — explicación breve".
-Al final del setup: "Stop: X pts | Target: Y pts".
-USA SIEMPRE el título descriptivo de la regla, NUNCA el código interno (nada de \`chk_consecucion\` ni \`chk_orden\`).
+⚠️ OBLIGATORIO: cada sección lleva DOS capas, con estas dos marcas escritas TAL CUAL, cada una en su propia línea. Sin ellas la respuesta es inválida:
 
-NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivines precios: usa los valores exactos (línea verde = PDH, línea roja = PDL, zonas naranjas, precios de los trades); si falta un dato, pregúntalo.`
+**1. 🌍 CONTEXTO**
+En corto: <1 o 2 frases en lenguaje llano. SIN precios crudos: di "el mínimo del premercado", no "30124.25". Si un número aporta, dilo como DISTANCIA en puntos.>
+Detalle:
+Sesgo: <Alcista|Bajista|Mixto> | <razón breve>
+Vigilar: <nivel(es) clave y por qué>
+Noticias: <la del día, o "Sin noticias">
+
+**2. 📈 DESARROLLO DE SESIÓN**
+En corto: <1 o 2 frases: qué hizo el precio y qué hizo el trader>
+Detalle:
+- <3 a 5 viñetas cortas, una idea cada una>
+
+**3. ✅ VALIDACIÓN DE SETUPS**
+En corto: <1 frase: en qué FASE se rompió el día y por qué. Si no se rompió, dilo igual de claro.>
+Detalle:
+### <Nombre del setup>
+**Fase 1 · Pre-sesión**
+✅/❌ <Título descriptivo de la regla> — <explicación breve>
+**Fase 2 · Lectura del setup**
+✅/❌ …
+**Fase 3 · Ejecución**
+✅/❌ …
+Stop: X pts | Target: Y pts
+
+Reglas: usa SIEMPRE el título descriptivo de la regla, NUNCA el código interno (nada de \`chk_consecucion\`). Omite la fase que no tenga ítems. La línea "En corto" es lo ÚNICO que el trader ve sin desplegar: si va cargada de jerga o de números, no le sirve de nada.
+
+NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivines precios: usa los valores exactos; si falta un dato, pregúntalo.`
 
       let userContent
       if (imagenBase64) {
