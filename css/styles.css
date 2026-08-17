@@ -711,7 +711,7 @@ small { font-size: 0.82em; }
   width: 38px; height: 38px; flex: 0 0 auto; border-radius: 10px;
   display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
 }
-.phase-card-1 .phase-card-icon { background: rgba(29,158,117,0.16); color: var(--accent); }
+.phase-card-1 .phase-card-icon { background: var(--accent-dim); color: var(--accent); }
 .phase-card-2 .phase-card-icon { background: rgba(186,117,23,0.18); color: var(--warning); }
 .phase-card-3 .phase-card-icon { background: rgba(91,148,201,0.18); color: var(--blue-txt); }
 .phase-card-titles { flex: 1; min-width: 0; }
@@ -1649,8 +1649,8 @@ body.modal-open { overflow: hidden; }
   padding: 5px 13px; border-radius: 999px; background: rgba(255,255,255,0.06); color: var(--text);
   border: 1px solid var(--border); white-space: nowrap;
 }
-.md2-badge.mst-green  { background: rgba(29,158,117,0.16); color: var(--accent-txt); border-color: rgba(29,158,117,0.4); }
-.md2-badge.mst-red    { background: rgba(226,75,74,0.16);  color: var(--red-txt); border-color: rgba(226,75,74,0.4); }
+.md2-badge.mst-green  { background: var(--accent-dim); color: var(--accent-txt); border-color: rgba(29,158,117,0.4); }
+.md2-badge.mst-red    { background: var(--red-dim);  color: var(--red-txt); border-color: rgba(226,75,74,0.4); }
 .md2-badge.mst-violet { background: rgba(124,108,243,0.16); color: #a99cf7; border-color: rgba(124,108,243,0.4); }
 .md2-setup { font-size: 0.72rem; font-weight: 600; color: var(--text3); background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 7px; padding: 2px 9px; }
 
@@ -2060,7 +2060,7 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
   display: flex; align-items: center; gap: 16px; padding: 16px 18px;
   border-radius: 14px; border: 1px solid rgba(63,224,166,0.45);
   background: linear-gradient(135deg, rgba(29,158,117,0.20), rgba(29,158,117,0.04));
-  box-shadow: 0 0 26px rgba(29,158,117,0.16);
+  box-shadow: 0 0 26px var(--accent-dim);
 }
 .disc2-streak-badge {
   width: 46px; height: 46px; border-radius: 13px; flex: 0 0 auto;
@@ -2115,7 +2115,7 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 }
 .disc2-warn {
   display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 10px;
-  border-radius: 999px; background: rgba(224,163,59,0.16); border: 1px solid rgba(224,163,59,0.4);
+  border-radius: 999px; background: var(--warning-dim); border: 1px solid rgba(224,163,59,0.4);
   color: #F0B454; font-size: 0.78rem; font-weight: 600;
 }
 .disc2-warn i { font-size: 0.82rem; transition: transform 0.15s; }
@@ -2285,7 +2285,7 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
   border-radius: 11px; white-space: nowrap;
 }
 .expd-badge.b-candidato { background: rgba(29,158,117,0.18); color: var(--accent); }
-.expd-badge.b-descartar { background: rgba(226,75,74,0.16);  color: var(--red); }
+.expd-badge.b-descartar { background: var(--red-dim);  color: var(--red); }
 .expd-badge.b-neutro    { background: var(--bg3); color: var(--text2); }
 .expd-badge.b-prueba    { background: rgba(186,117,23,0.18); color: var(--warning); }
 .expd-big { display: flex; align-items: baseline; gap: 8px; margin-bottom: 7px; flex-wrap: wrap; }
@@ -3316,9 +3316,9 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 .cz-lbl { font-size: 0.66rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text3); min-width: 72px; padding-top: 2px; flex: 0 0 auto; }
 .cz-val { color: var(--text); flex: 1; line-height: 1.5; }
 .cz-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 0.74rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; }
-.cz-chip.c-up   { background: rgba(29,158,117,0.16); color: var(--accent-txt); border: 1px solid rgba(29,158,117,0.4); }
-.cz-chip.c-down { background: rgba(226,75,74,0.16); color: var(--red-txt); border: 1px solid rgba(226,75,74,0.4); }
-.cz-chip.c-warn { background: rgba(224,163,59,0.16); color: var(--warning-txt); border: 1px solid rgba(224,163,59,0.4); }
+.cz-chip.c-up   { background: var(--accent-dim); color: var(--accent-txt); border: 1px solid rgba(29,158,117,0.4); }
+.cz-chip.c-down { background: var(--red-dim); color: var(--red-txt); border: 1px solid rgba(226,75,74,0.4); }
+.cz-chip.c-warn { background: var(--warning-dim); color: var(--warning-txt); border: 1px solid rgba(224,163,59,0.4); }
 .cz-tl { position: relative; margin-left: 4px; padding-left: 18px; }
 .cz-tl::before { content: ''; position: absolute; left: 3px; top: 5px; bottom: 5px; width: 2px; background: rgba(255,255,255,0.1); }
 .cz-ti { position: relative; margin-bottom: 9px; font-size: 0.85rem; color: var(--text); line-height: 1.45; }
@@ -3330,8 +3330,8 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 .cz-nm { font-size: 0.88rem; font-weight: 600; color: var(--text); }
 .cz-f { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; padding: 3px 0; color: var(--text); }
 .cz-ic { width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; flex: 0 0 auto; }
-.cz-ic.ok { background: rgba(29,158,117,0.16); color: var(--accent-txt); }
-.cz-ic.no { background: rgba(226,75,74,0.16); color: var(--red-txt); }
+.cz-ic.ok { background: var(--accent-dim); color: var(--accent-txt); }
+.cz-ic.no { background: var(--red-dim); color: var(--red-txt); }
 /* Validación de setups: filtros agrupados por fase del proceso */
 .cz-fase {
   border-left: 3px solid var(--border); border-radius: 0 8px 8px 0;
@@ -3340,18 +3340,101 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 }
 .cz-fase.f1 { border-left-color: var(--accent-txt); }
 .cz-fase.f2 { border-left-color: var(--warning-txt); }
-.cz-fase.f3 { border-left-color: #6FA8DC; }
+.cz-fase.f3 { border-left-color: var(--blue-txt); }
 .cz-fase.sinf { border-left-style: dashed; background: none; }
 .cz-fase-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 5px; }
 .cz-fase-t { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); }
 .cz-fase.f1 .cz-fase-t { color: var(--accent-txt); }
 .cz-fase.f2 .cz-fase-t { color: var(--warning-txt); }
-.cz-fase.f3 .cz-fase-t { color: #6FA8DC; }
+.cz-fase.f3 .cz-fase-t { color: var(--blue-txt); }
 .cz-fase-n { font-size: 0.72rem; font-weight: 700; color: var(--text3); font-variant-numeric: tabular-nums; }
 .cz-st { display: flex; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
 .cz-st .cz-b { font-size: 0.74rem; color: var(--text2); background: rgba(255,255,255,0.05); border-radius: 7px; padding: 4px 10px; }
 .cz-st .cz-b b { color: var(--text); font-weight: 600; }
 .cz-note { font-size: 0.74rem; color: var(--text3); margin-top: 8px; font-style: italic; }
+
+/* ── Coach: resumen visible + detalle plegado (16 ago) ───────────────────── */
+/* Mismo patrón que `.collapsible`/`.collapse-keep` del Diario: lo que se consulta
+   a diario queda a la vista, la técnica se despliega.
+   Diseño: docs/disenos/2026-08-16-coach-resumido.md */
+.cz-sec {
+  border-left: 2px solid var(--border);
+  padding: 2px 0 2px 13px; margin-bottom: 16px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.cz-sec:last-child { margin-bottom: 0; }
+.cz-sec.c-ctx { border-left-color: var(--blue); }
+.cz-sec.c-des { border-left-color: var(--warning); }
+.cz-sec.c-val { border-left-color: var(--border); }
+.cz-sec.c-ok  { border-left-color: var(--accent); }
+.cz-sec.c-bad { border-left-color: var(--red); }
+.cz-sec.c-apr { border-left-color: var(--warning); }
+.cz-sec-lbl {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text3);
+}
+/* El resumen: es lo único que se lee sin desplegar */
+.cz-keep { font-size: 0.93rem; color: var(--text); margin: 0; line-height: 1.5; }
+.cz-keep b, .cz-keep strong { color: var(--text); font-weight: 700; }
+/* Camino retrocompatible: diagnósticos sin resumen se muestran enteros */
+.cz-sec-full { margin-top: 2px; }
+
+/* Píldoras de fase — el resumen visual de Validación */
+.cz-pills { display: flex; gap: 7px; flex-wrap: wrap; margin: 2px 0 1px; }
+.cz-pill {
+  font-size: 0.71rem; font-weight: 600; border-radius: 999px; padding: 3px 11px;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.cz-pill.ok { background: var(--accent-dim); color: var(--accent-txt); }
+.cz-pill.no { background: var(--red-dim); color: var(--red-txt); }
+
+/* El desplegable. SIEMPRE arranca cerrado (no se persiste el estado: si lo
+   recordara, se vuelve al muro de texto sin darse cuenta). */
+details.cz-det { margin-top: 3px; }
+details.cz-det > summary {
+  list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.76rem; color: var(--text3); padding: 2px 0;
+  transition: color var(--transition);
+}
+details.cz-det > summary::-webkit-details-marker { display: none; }
+details.cz-det > summary::before {
+  content: '▸'; font-size: 0.7rem; transition: transform var(--transition);
+}
+details.cz-det[open] > summary::before { transform: rotate(90deg); }
+details.cz-det > summary:hover { color: var(--text2); }
+details.cz-det > summary:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px;
+}
+.cz-det-body {
+  margin-top: 9px; padding: 12px 14px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+}
+/* Datos crudos dentro del detalle (premercado / trades) */
+.cz-datos { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.cz-datos-t {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--text3); margin-bottom: 8px;
+}
+
+/* Veredicto — el dato principal del diagnóstico. Icono ADEMÁS de color. */
+.cz-verd {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 12px 14px; border-radius: 9px; margin-bottom: 16px;
+  border: 1px solid var(--border); background: var(--bg2);
+}
+.cz-verd.ok { background: var(--accent-dim); border-color: rgba(29,158,117,0.3); }
+.cz-verd.no { background: var(--red-dim);    border-color: rgba(226,75,74,0.3); }
+.cz-verd-ic {
+  width: 25px; height: 25px; border-radius: 50%; flex: 0 0 auto;
+  display: grid; place-items: center; font-size: 0.85rem; font-weight: 700;
+  background: var(--bg3); color: var(--text2);
+}
+.cz-verd.ok .cz-verd-ic { background: var(--accent); color: #fff; }
+.cz-verd.no .cz-verd-ic { background: var(--red);    color: #fff; }
+.cz-verd-t { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+.cz-verd.ok .cz-verd-t { color: var(--accent-txt); }
+.cz-verd.no .cz-verd-t { color: var(--red-txt); }
+.cz-verd-w { font-size: 0.86rem; color: var(--text2); margin: 3px 0 0; line-height: 1.5; }
 
 /* ── Bloques de datos colapsables (premercado / checklist / operativa) ────── */
 .cz-data { border-top: 1px dashed var(--border); margin: 4px 16px 0; }
@@ -3384,8 +3467,8 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 }
 .cz-chk { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 0.82rem; color: var(--text); }
 .cz-cic { width: 16px; height: 16px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; flex: 0 0 auto; }
-.cz-chk.ok .cz-cic { background: rgba(29,158,117,0.16); color: var(--accent-txt); }
-.cz-chk.no .cz-cic { background: rgba(226,75,74,0.16); color: var(--red-txt); }
+.cz-chk.ok .cz-cic { background: var(--accent-dim); color: var(--accent-txt); }
+.cz-chk.no .cz-cic { background: var(--red-dim); color: var(--red-txt); }
 .cz-chk.no { color: var(--text3); }
 .cz-optable-wrap { overflow-x: auto; }
 .cz-optable { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
@@ -3398,8 +3481,8 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 .cz-optable .pos { color: var(--accent); }
 .cz-optable .neg { color: var(--red); }
 .cz-rb { font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
-.cz-rb.r-t { background: rgba(29,158,117,0.16); color: var(--accent-txt); }
-.cz-rb.r-s { background: rgba(226,75,74,0.16); color: var(--red-txt); }
+.cz-rb.r-t { background: var(--accent-dim); color: var(--accent-txt); }
+.cz-rb.r-s { background: var(--red-dim); color: var(--red-txt); }
 .cz-rb.r-o { background: rgba(255,255,255,0.07); color: var(--text2); }
 
 /* ── Chat ────────────────────────────────────────────────────────────────── */
@@ -3725,15 +3808,15 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 .rb-crow { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
 .rb-bdg { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 9px; border-radius: 6px; }
 .b-capa { background: rgba(255,255,255,0.06); color: var(--text2); }
-.b-f1 { background: rgba(29,158,117,0.16); color: var(--accent-txt); }
-.b-f2 { background: rgba(224,163,59,0.16); color: var(--warning-txt); }
+.b-f1 { background: var(--accent-dim); color: var(--accent-txt); }
+.b-f2 { background: var(--warning-dim); color: var(--warning-txt); }
 .b-f3 { background: rgba(91,148,201,0.18); color: var(--blue-txt); }
 .b-setup { background: rgba(127,119,221,0.18); color: var(--violet-txt); }
 .rb-chip {
   margin-left: auto; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.04em;
   padding: 4px 11px; border-radius: 999px; cursor: pointer; white-space: nowrap;
 }
-.c-dura { background: rgba(226,75,74,0.16); color: var(--red-txt); border: 1px solid rgba(226,75,74,0.4); }
+.c-dura { background: var(--red-dim); color: var(--red-txt); border: 1px solid rgba(226,75,74,0.4); }
 .c-blanda { background: rgba(255,255,255,0.05); color: var(--text2); border: 1px solid rgba(255,255,255,0.1); }
 .rb-ttl { font-size: 1.02rem; font-weight: 600; margin: 0 0 5px; color: var(--text); }
 .rb-enu { font-size: 0.88rem; color: var(--text2); line-height: 1.55; margin: 0 0 12px; }
@@ -4002,7 +4085,7 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 .dd-cause-name { color: var(--text2); }
 .dd-cause-count { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 .dd-tag { font-size: 0.6rem; padding: 2px 6px; border-radius: 5px; margin-right: 8px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 700; }
-.dd-tag.psych { background: rgba(226,75,74,0.16); color: var(--red-txt); }
+.dd-tag.psych { background: var(--red-dim); color: var(--red-txt); }
 .dd-tag.analytic { background: rgba(186,117,23,0.18); color: var(--warning-txt); }
 .dd-tag.op { background: rgba(91,148,201,0.18); color: var(--blue-txt); }
 .dd-tag.mark { background: rgba(127,119,221,0.18); color: var(--violet-txt); }
@@ -4018,8 +4101,8 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 .dd-td-date { white-space: nowrap; color: var(--text); }
 .dd-td-detail { color: var(--text2); }
 .dd-res { font-size: 0.66rem; padding: 3px 8px; border-radius: 5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
-.dd-res.tg { background: rgba(29,158,117,0.16); color: var(--accent-txt); }
-.dd-res.sl { background: rgba(226,75,74,0.16); color: var(--red-txt); }
+.dd-res.tg { background: var(--accent-dim); color: var(--accent-txt); }
+.dd-res.sl { background: var(--red-dim); color: var(--red-txt); }
 .dd-res.mix { background: rgba(186,117,23,0.16); color: var(--warning-txt); }
 .dd-res.noop { background: rgba(255,255,255,0.06); color: var(--text3); }
 .dd-ok-pill { color: var(--accent); font-size: 0.8rem; }
@@ -4190,7 +4273,7 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
    Por defecto manda la de lectura: el día se consulta mucho más de lo que se
    escribe, y los inputs llenaban el bloque de cajas. */
 .nr-read { display: flex; align-items: baseline; gap: 14px; padding: 6px 0; }
-.nr-row + .nr-row .nr-read { border-top: 1px solid rgba(226,75,74,0.16); }
+.nr-row + .nr-row .nr-read { border-top: 1px solid var(--red-dim); }
 .nr-hora-txt {
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
   font-size: 0.95rem; font-weight: 700; color: var(--red-txt);

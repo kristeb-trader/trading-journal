@@ -475,21 +475,41 @@ ${expStr}
 El análisis se realiza en un flujo guiado de tres etapas. Tú produces dos entregables estructurados; entre ellos hay una sesión de chat libre.
 
 ### ETAPA 1 — ANÁLISIS TÉCNICO (primer entregable)
-Cuando recibas la instrucción de análisis técnico (o la imagen del gráfico), produce EXACTAMENTE estas 3 secciones. Sé BREVE y usa lenguaje claro (el lector es el trader, no un robot). Los datos de referencia (PDO/PDH/PDL/PDC/PDR, deriva overnight, etc.) son para TU análisis: NO los vuelques ni hagas tablas con ellos en el output.
+Cuando recibas la instrucción de análisis técnico (o la imagen del gráfico), produce EXACTAMENTE estas 3 secciones. Los datos de referencia (PDO/PDH/PDL/PDC/PDR, deriva overnight, etc.) son para TU análisis: NO los vuelques ni hagas tablas con ellos en el output.
+
+⚠️ **CADA UNA de las 3 secciones se escribe en DOS capas, con estas dos marcas literales:**
+
+\`\`\`
+En corto: <1 o 2 frases. Lo que el trader necesita saber si solo lee esto.>
+Detalle:
+<el desglose técnico, con el formato que se indica en cada sección>
+\`\`\`
+
+Reglas de la línea **En corto** (es lo único que se ve sin desplegar — si falla, el trader no entiende su día):
+- Lenguaje llano, como se lo explicarías hablando. **Sin números de precio crudos** (nada de "ONL 30124.25"): di "el mínimo del premercado" y, si el número aporta, la DISTANCIA en puntos ("a 18 puntos de tu entrada").
+- Di lo que SIGNIFICA, no lo que se ve: "no había tendencia que seguir" en vez de "apertura dentro del rango overnight".
+- Una idea, la que más importa. Si el día se rompió por una sola cosa, esa es la frase.
+- Nada de jerga innecesaria: ni "sesgo rotacional" ni "estructura I-R-I" si puedes decirlo con palabras normales.
+
+El **Detalle** sí va técnico y completo: es lo que se despliega y lo que TÚ mismo reutilizarás para el diagnóstico.
 
 **1. 🌍 CONTEXTO**
-Máximo 3 líneas, una por etiqueta, con este formato exacto "Etiqueta: valor":
+En corto: <cómo venía el día y qué había que vigilar, en una frase>
+Detalle: 3 líneas, una por etiqueta, con este formato exacto "Etiqueta: valor":
 Sesgo: <Alcista|Bajista|Mixto> | <razón en pocas palabras>
-Vigilar: <el/los nivel(es) clave que importan hoy y por qué, en lenguaje claro>
+Vigilar: <el/los nivel(es) clave que importan hoy y por qué>
 Noticias: <noticia relevante del día, o "Sin noticias">
 NO incluyas "Datos de referencia" ni "Contexto adicional" en esta sección.
 
 **2. 📈 DESARROLLO DE SESIÓN**
-3 a 5 viñetas cortas (una idea cada una), empezando cada línea con "- ": cronología de corridas, retrocesos, rompimientos y consecuciones.
+En corto: <qué hizo el precio y qué hizo el trader, en una o dos frases>
+Detalle: 3 a 5 viñetas cortas (una idea cada una), empezando cada línea con "- ": cronología de corridas, retrocesos, rompimientos y consecuciones.
 
 **3. ✅ VALIDACIÓN DE SETUPS**
-Por cada setup potencial, en este formato compacto (sin párrafos largos):
+En corto: <en qué FASE se rompió el día y por qué, en una frase. Si no se rompió, dilo igual de claro.>
+Detalle: por cada setup potencial, en este formato compacto (sin párrafos largos):
 ### <Nombre del setup>
+AGRUPA los filtros por fase con estos subtítulos exactos: "**Fase 1 · Pre-sesión**", "**Fase 2 · Lectura del setup**", "**Fase 3 · Ejecución**"
 ✅ <filtro cumplido>  (o)  ❌ <filtro no cumplido>   — una línea por filtro, breve
 Stop: <X> pts | Target: <Y> pts
 IMPORTANTE: En esta etapa NO des el veredicto final (VÁLIDA/INVÁLIDA). Solo filtro por filtro. El veredicto va en el diagnóstico final.
@@ -502,7 +522,7 @@ IMPORTANTE: durante el chat NO emitas el diagnóstico final estructurado (las 4 
 Cuando recibas la instrucción de diagnóstico final, integra TODO lo conversado en el chat y produce EXACTAMENTE estas 4 secciones:
 
 **🎯 VEREDICTO DE SETUP**
-[ENTRADA VÁLIDA / ENTRADA INVÁLIDA + razón exacta, ahora sí con el cierre de toda la sesión]
+Empieza SIEMPRE con "ENTRADA VÁLIDA" o "ENTRADA INVÁLIDA" y, en la MISMA línea o la siguiente, la razón en UNA frase llana (sin números crudos: usa distancias en puntos si hacen falta). Es lo primero y a veces lo único que se lee.
 
 **⚠️ ERRORES DETECTADOS**
 Lista CADA error en UNA línea con este formato EXACTO (NUEVE partes separadas por " | "):
@@ -529,7 +549,9 @@ CATÁLOGO DE ERRORES (usa estos nombres exactos cuando apliquen):
 ${catalogoStr}
 
 **🎓 APRENDIZAJE DEL DÍA**
-[Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para mañana]
+En corto: <la regla accionable que se lleva para mañana, en 1-2 frases y en lenguaje llano>
+Detalle:
+Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para mañana
 
 **📋 RESUMEN PARA DIARIO**
 [Una sola línea: [FECHA] · [DIRECCIÓN] · [SETUP] · [RESULTADO] · [APRENDIZAJE CLAVE]]`
@@ -1128,59 +1150,151 @@ ${catalogoStr}
     </tr></thead><tbody>${rows}</tbody></table></div>`
   }
 
-  // Etapa 1 — render del análisis técnico (3 secciones + bloques de datos colapsables)
+  // ── Resumen visible + detalle plegado ───────────────────────────────────
+  // El modelo escribe cada sección en dos capas ("En corto:" / "Detalle:").
+  // Diseño: docs/disenos/2026-08-16-coach-resumido.md
+  const _esCorto   = l => /^[*_`#\s]*(en\s+corto|resumen)\s*:/i.test(l)
+  const _esDetalle = l => /^[*_`#\s]*detalle\s*:/i.test(l)
+
+  // Devuelve { resumen, detalle }. SIN la marca "En corto:" —los diagnósticos
+  // guardados antes del rediseño— devuelve resumen vacío y todo en detalle: el
+  // render lo muestra abierto, para que un día viejo no se vea en blanco.
+  function partirResumen(texto) {
+    const lineas = (texto || '').split('\n')
+    const iCorto = lineas.findIndex(_esCorto)
+    if (iCorto < 0) return { resumen: '', detalle: (texto || '').trim() }
+    const iDet = lineas.findIndex(_esDetalle)
+    const fin  = iDet > iCorto ? iDet : lineas.length
+    // El `[*_\`]*` final es el cierre de la negrita: el modelo escribe
+    // "**En corto:** texto", y sin esto el "**" se colaba dentro del resumen.
+    const quita = /^[*_`#\s]*(en\s+corto|resumen|detalle)\s*:\s*[*_`]*\s*/i
+    const resumen = lineas.slice(iCorto, fin).join(' ').replace(quita, '').trim()
+    const detalle = iDet < 0 ? '' : [
+      lineas[iDet].replace(quita, ''),
+      ...lineas.slice(iDet + 1),
+    ].join('\n').trim()
+    return { resumen, detalle }
+  }
+
+  // Cuenta ✓/✗ por fase en el texto de validación. Son los MISMOS datos que ya
+  // pintaba `renderValidacion`; aquí son el resumen visual: de un vistazo se ve
+  // en qué fase se rompió el día.
+  function contarFases(texto) {
+    const out = {}
+    let fase = null
+    ;(texto || '').split('\n').forEach(raw => {
+      const l = raw.trim()
+      const f = l.match(/^[#*\s]*fase\s*([123])\b/i)
+      if (f) { fase = parseInt(f[1]); out[fase] = out[fase] || { ok: 0, total: 0 }; return }
+      const m = l.match(/^(✅|✓|☑|❌|✕|✗|🚫)/)
+      if (!m || !fase) return
+      out[fase].total++
+      if (/✅|✓|☑/.test(m[1])) out[fase].ok++
+    })
+    return out
+  }
+
+  // Una sección: etiqueta + resumen + detalle plegado (SIEMPRE cerrado).
+  function czSeccion({ clase, label, resumen, extra = '', detalle, verDetalle = 'Ver detalle' }) {
+    const hayDet = detalle && detalle.trim()
+    if (!resumen) {
+      // Camino retrocompatible: sin resumen no se pliega nada.
+      return `<div class="cz-sec ${clase}">
+        <div class="cz-sec-lbl">${label}</div>${extra}
+        <div class="cz-sec-full">${hayDet ? detalle : '<p class="cz-empty">—</p>'}</div>
+      </div>`
+    }
+    return `<div class="cz-sec ${clase}">
+      <div class="cz-sec-lbl">${label}</div>${extra}
+      <p class="cz-keep">${inlineMd(resumen)}</p>
+      ${hayDet ? `<details class="cz-det"><summary>${verDetalle}</summary>
+        <div class="cz-det-body">${detalle}</div></details>` : ''}
+    </div>`
+  }
+
+  // Bloque de datos crudos dentro del detalle (premercado / operativa)
+  const czDatos = (titulo, html) =>
+    `<div class="cz-datos"><div class="cz-datos-t">${titulo}</div>${html}</div>`
+
+  // Etapa 1 — resumen legible arriba, técnica debajo y plegada
   function renderAnalisisTecnico(secciones) {
     const container = document.getElementById('coachAnalisisContent')
     if (!container) return
-    const s = sesionActual
-    container.innerHTML = `
-      <div class="coach-section" id="cs-contexto">
-        <div class="coach-section-header"><span class="cs-icon">🌍</span><span>CONTEXTO</span></div>
-        <div class="coach-section-body cz">${renderContexto(secciones.contexto)}</div>
-        <details class="cz-data">
-          <summary><span class="cz-dsum-ic">🌅</span> Datos de premercado<span class="cz-caret"></span></summary>
-          <div class="cz-data-body">
-            ${renderPremercadoData(s)}
-          </div>
-        </details>
-      </div>
-      <div class="coach-section" id="cs-desarrollo">
-        <div class="coach-section-header"><span class="cs-icon">📈</span><span>DESARROLLO DE SESIÓN</span></div>
-        <div class="coach-section-body cz">${renderDesarrollo(secciones.desarrollo)}</div>
-        <details class="cz-data">
-          <summary><span class="cz-dsum-ic">📊</span> Datos de la operativa<span class="cz-caret"></span></summary>
-          <div class="cz-data-body">${renderOperativaData(tradesActual)}</div>
-        </details>
-      </div>
-      <div class="coach-section" id="cs-validacion">
-        <div class="coach-section-header"><span class="cs-icon">✅</span><span>VALIDACIÓN DE SETUPS</span></div>
-        <div class="coach-section-body cz">${renderValidacion(secciones.validacion)}</div>
-      </div>
-    `
+
+    const ctx = partirResumen(secciones.contexto)
+    const des = partirResumen(secciones.desarrollo)
+    const val = partirResumen(secciones.validacion)
+
+    const fases = contarFases(val.detalle || val.resumen || secciones.validacion || '')
+    const conFase = [1, 2, 3].filter(f => fases[f])
+    const falla = conFase.some(f => fases[f].ok < fases[f].total)
+    const pills = conFase.length
+      ? `<div class="cz-pills">${conFase.map(f => {
+          const { ok, total } = fases[f]
+          return `<span class="cz-pill ${ok === total ? 'ok' : 'no'}">Fase ${f} · ${ok}/${total}</span>`
+        }).join('')}</div>`
+      : ''
+
+    container.innerHTML =
+      czSeccion({
+        clase: 'c-ctx', label: 'Contexto', resumen: ctx.resumen,
+        detalle: renderContexto(ctx.detalle) + czDatos('Referencias del día', renderPremercadoData(sesionActual)),
+      }) +
+      czSeccion({
+        clase: 'c-des', label: 'Desarrollo de sesión', resumen: des.resumen,
+        detalle: renderDesarrollo(des.detalle) + czDatos('Trades del día', renderOperativaData(tradesActual)),
+      }) +
+      czSeccion({
+        clase: conFase.length ? (falla ? 'c-bad' : 'c-ok') : 'c-val',
+        label: 'Validación de setups', resumen: val.resumen, extra: pills,
+        detalle: renderValidacion(val.detalle), verDetalle: 'Ver las reglas una a una',
+      })
   }
 
-  // Etapa 3 — render del diagnóstico final (veredicto + errores + aprendizaje + resumen)
+  // Etapa 3 — el veredicto manda; el resto, resumido.
+  // "RESUMEN PARA DIARIO" ya NO se pinta: repetía lo que dice la cabecera de
+  // Sesión Operativa. Se sigue guardando (alimenta historial y modal del día).
   function renderDiagnostico(secciones) {
     const container = document.getElementById('coachDiagnosticoContent')
     if (!container) return
-    container.innerHTML = `
-      <div class="coach-section cs-veredicto" id="cs-veredicto">
-        <div class="coach-section-header"><span class="cs-icon">🎯</span><span>VEREDICTO DE SETUP</span></div>
-        <div class="coach-section-body">${mdAnalisis(secciones.veredicto)}</div>
-      </div>
-      <div class="coach-section ${secciones.errores && secciones.errores.length > 10 ? 'cs-has-errors' : ''}" id="cs-errores">
-        <div class="coach-section-header"><span class="cs-icon">⚠️</span><span>ERRORES DETECTADOS</span></div>
-        <div class="coach-section-body">${mdAnalisis(secciones.errores || 'Ninguno detectado.')}</div>
-      </div>
-      <div class="coach-section" id="cs-aprendizaje">
-        <div class="coach-section-header"><span class="cs-icon">🎓</span><span>APRENDIZAJE DEL DÍA</span></div>
-        <div class="coach-section-body">${mdAnalisis(secciones.aprendizaje)}</div>
-      </div>
-      <div class="coach-section cs-resumen" id="cs-resumen">
-        <div class="coach-section-header"><span class="cs-icon">📋</span><span>RESUMEN PARA DIARIO</span></div>
-        <div class="coach-section-body">${mdAnalisis(secciones.resumen)}</div>
-      </div>
-    `
+
+    // Veredicto: título corto + la razón. Lleva icono además del color — el
+    // color nunca solo (daltonismo, impresión).
+    const ver = (secciones.veredicto || '').trim()
+    const m = ver.match(/ENTRADA\s+(INV[ÁA]LIDA|V[ÁA]LIDA)\s*[—:\-–.]*\s*([\s\S]*)/i)
+    const mala = m ? /^INV/i.test(m[1]) : false
+    const titulo = m ? `Entrada ${m[1].toLowerCase()}` : 'Veredicto'
+    const razon  = (m ? m[2] : ver).trim()
+    const veredicto = ver
+      ? `<div class="cz-verd ${m ? (mala ? 'no' : 'ok') : 'na'}">
+          <span class="cz-verd-ic">${m ? (mala ? '✕' : '✓') : '•'}</span>
+          <div><div class="cz-verd-t">${titulo}</div>
+          ${razon ? `<p class="cz-verd-w">${inlineMd(razon)}</p>` : ''}</div>
+        </div>`
+      : ''
+
+    // Errores: arriba el recuento en lenguaje humano; el formato de 9 partes
+    // separado por "|" se va al detalle (antes se volcaba crudo en pantalla).
+    const errs = parsearErroresEstructurado(secciones.errores)
+    const errResumen = errs.length
+      ? `${errs.length} ${errs.length === 1 ? 'error' : 'errores'}: ${errs.map(e => e.nombre).join(' · ')}`
+      : ''
+    const apr = partirResumen(secciones.aprendizaje)
+
+    container.innerHTML = veredicto +
+      czSeccion({
+        clase: 'c-apr', label: 'Qué te llevas', resumen: apr.resumen,
+        detalle: mdAnalisis(apr.detalle), verDetalle: 'Ver aprendizaje completo',
+      }) +
+      (errs.length || (secciones.errores || '').trim()
+        ? czSeccion({
+            clase: errs.length ? 'c-bad' : 'c-ok',
+            label: 'Errores detectados',
+            resumen: errResumen || 'Día limpio — sin errores que registrar.',
+            detalle: errs.length ? mdAnalisis(secciones.errores) : '',
+            verDetalle: 'Ver el detalle de cada error',
+          })
+        : '')
   }
 
   // ── Render del chat ────────────────────────────────────────────────────
