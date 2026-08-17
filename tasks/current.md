@@ -6,6 +6,16 @@
 
 ## Ahora
 
+### ✅ Navegación de 6 botones (16 ago) — cerrado
+
+Diseño: `docs/disenos/2026-08-16-navegacion-6-botones.md` (v2). Las 4 fases dentro y
+verificadas. Resumen en `docs/historial-proyecto.md` § Checkpoint 2026-08-16c.
+
+**Lo único que queda por probar, y le toca a Kris:** el **cambio de contraseña real**. Se
+probaron las dos validaciones y el modal entero, pero no se ejecutó el cambio para no
+cambiarle la clave. Igual con **Cerrar sesión**: el botón está y es alcanzable en móvil,
+pero no se pulsó.
+
 ### Reestructuración documental (16 ago)
 
 Diseño aprobado: `docs/disenos/2026-08-16-reestructuracion.md` (v3).
@@ -33,7 +43,7 @@ Ya hay a qué ceñirse: la Fase 6 dejó los tokens declarados en `CLAUDE.md` §L
 Migrar **por pantalla completa**, nunca a medias — media pantalla migrada se ve peor que
 ninguna.
 
-**Quedan 45 literales de color** sin tokenizar (eran 140). Casi todos son variantes
+**Quedan 44 literales de color** sin tokenizar (eran 140). Casi todos son variantes
 casi-idénticas de los mismos colores (`#e87c7b` junto a `#f2706f`, `#a99cff` junto a
 `#afa9ec`, `#60a5fa` y `#6fa8dc` junto a `#5b94c9`). Unificarlos **cambiaría píxeles**, así
 que no se tocan en bloque: se consolidan al migrar cada pantalla, que es cuando el cambio

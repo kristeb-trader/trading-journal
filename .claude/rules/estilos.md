@@ -48,11 +48,11 @@ Estructura: `--sidebar-w` 220px · `--topbar-h` 56px · `--radius` 10px · `--sh
 1. **Dos lenguajes visuales conviviendo.** El nuevo (16 ago) solo está en la pestaña
    **Diario**; Coach IA, Días anteriores y el resto de la app siguen con el viejo. Migrar
    **por pantalla completa**, nunca a medias: media pantalla migrada se ve peor que ninguna.
-2. **Quedan 45 literales** de color fuera del `:root` (eran 140). Casi todos son variantes
+2. **Quedan 44 literales** de color fuera del `:root` (eran 140). Casi todos son variantes
    casi-idénticas de estos mismos colores — `#e87c7b` junto a `#f2706f`, `#a99cff` junto a
    `#afa9ec`, `#60a5fa` y `#6fa8dc` junto a `#5b94c9`. **Unificarlos cambiaría píxeles**,
    así que no se tocan en bloque: se consolidan al migrar cada pantalla, que es cuando el
    cambio visual está justificado y se puede revisar.
-3. **169 estilos inline** (58 en `index.html`, 111 en `js/`) escapan a este sistema.
+3. **177 estilos inline** (66 en `index.html`, 111 en `js/`) escapan a este sistema.
 
 Ver `tasks/current.md`.

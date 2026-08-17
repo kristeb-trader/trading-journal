@@ -2,6 +2,22 @@
 
 > Ideas sin fecha ni compromiso. Cuando una se activa, pasa a `current.md`.
 
+## Tema claro
+
+Pedido y **aplazado a sabiendas** (D-010). La fila ya existe en Otros › Ajustes, inerte y
+marcada "Pendiente". Los números están medidos, para no tener que volver a medirlos:
+
+| Fuera del `:root` | Cuántos |
+|---|---|
+| `rgba(255,255,255,…)` — invisibles sobre fondo claro | **82** |
+| Colores hex a mano | **44** |
+| Estilos incrustados en `index.html` | **66** |
+| Colores de gráficas (`charts.js` 5, `disciplina.js` 4) | **9** |
+
+Orden para retomarlo: consolidar en tokens → migrar **pantalla completa por pantalla
+completa** → encender el interruptor al final. Va junto con la deuda del doble lenguaje
+visual de abajo; son el mismo trabajo.
+
 ## Métricas que faltan
 
 - **Estadísticas de la 3ª corrida.** Hoy no se distingue el rendimiento por número de

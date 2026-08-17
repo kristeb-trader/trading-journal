@@ -10,6 +10,38 @@
 
 ---
 
+## D-010 — El tema claro se aplaza; en Ajustes solo queda la fila, marcada "Pendiente"
+
+**Decisión.** No se construye el tema claro. La fila **Tema** existe en Otros › Ajustes
+pero es **inerte**: sin interruptor, sin `[data-theme]`, sin `localStorage`, y `styles.css`
+no gana ni una regla de tema. Es un recordatorio visible, no una función a medias.
+
+**Motivo.** Se midió el CSS antes de decidir, y el sistema de color no gobierna lo
+suficiente como para soportar un segundo tema:
+
+| Fuera del `:root` | Cuántos | Qué pasaría en claro |
+|---|---|---|
+| `rgba(255,255,255,…)` | **82** | Bordes, hovers y separadores blancos **sobre fondo blanco: invisibles** |
+| Colores hex a mano | **44** | Pensados para fondo oscuro: chillones o lavados |
+| Estilos incrustados en el HTML | **66** | No responden a tokens en absoluto |
+| Colores de gráficas | 5 en `charts.js` + 4 en `disciplina.js` | Chart.js pintaría igual que hoy |
+
+Calendario, Disciplina, Análisis y el Coach se verían a trozos. Y **media pantalla migrada
+se ve peor que ninguna**: parece un error, no una transición.
+
+**Alternativas descartadas.** *Poner el interruptor igualmente* — Kris lo pidió así al
+principio y se implementó como fila inerte tras ver los números; un tema roto a trozos
+habría parecido un bug, no un trabajo en curso. *No poner nada* — se pierde la señal de que
+está pedido y pendiente.
+
+**Para retomarlo:** primero consolidar esos 82 blancos y 44 hex en tokens, después migrar
+**pantalla completa por pantalla completa**, y solo al final encender el interruptor. Orden
+en `.claude/rules/estilos.md`; números vivos en `tasks/backlog.md`.
+
+**Fecha.** 2026-08-16 · Detalle: `docs/disenos/2026-08-16-navegacion-6-botones.md` §7
+
+---
+
 ## D-009 — Los skills son genéricos y de usuario, no duplicados por proyecto
 
 **Decisión.** Los skills de proceso (`flujo-desarrollo`, `lenguaje-visual`,

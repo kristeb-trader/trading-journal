@@ -25,6 +25,12 @@ al abrir el archivo afectado.
 - **Sesión Operativa** — nada interactivo funciona dentro de `#sessionFieldset` en modo
   lectura; los trades del día NO se filtran por cuenta principal. Detalle:
   `.claude/rules/sesion.md`.
+- **Navegación: 6 botones, ni uno más** — en móvil la barra son botones de 60 px contra
+  ~390 px de pantalla; el 7º obliga a deslizar. Una sección nueva va a las tarjetas de
+  **Otros** (`Otros.ITEMS` en `app.js`) **y** a `Nav.PADRE`: sin la segunda, la barra se
+  queda entera apagada al entrar en ella.
+- **Un solo título por pantalla**, el de la barra superior. Las secciones NO llevan `<h2>`
+  propio: el dato variable (mes, filtro, rango) va a `Nav.setContexto(seccion, texto)`.
 - **Cerrado y no se reabre (24 jul)** — las 6 reglas con filas de relleno en feb–may
   (`rei_zona`, `chk_contexto`, `chk_no_mover`, `rr_1a1`, `stop_max_puntos`,
   `target_sin_zonas`) se quedan como están. Limpiarlas bajaría la disciplina global de
@@ -130,9 +136,10 @@ su pestaña — no romperlos.
 
 ## Estado
 
-Todas las secciones funcionando: Disciplina · Análisis · Calendario+Métricas · Apex ·
-Experimentos · Trades · Sesión Operativa · Imágenes · Estrategia · Datos · Fechas
-Especiales (ese es el orden del menú).
+Todas las secciones funcionando. **El menú son 6 botones** — Disciplina · Análisis ·
+Calendario · Sesión · Apex · **Otros** —, y las otras 6 secciones (Experimentos · Trades ·
+Imágenes · Estrategia · Datos · Fechas Especiales) se abren desde las tarjetas de **Otros**,
+donde vive también **Ajustes** (claves y objetivos, tema, seguridad, cerrar sesión).
 
 **Qué está en marcha y qué falta: `tasks/current.md`.**
 

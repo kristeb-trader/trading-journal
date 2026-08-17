@@ -4,6 +4,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
 | 2026-08-11 | Coach IA: fuga temporal del historial |
@@ -1946,6 +1947,55 @@ recuadros `CONTEXTO · CORRIDA · RETROCESO · ZONAS EN CONTRA` + tabla de trade
 4. Para cambios en la BD: SQL Editor de Supabase → `https://jothoslozctflfrnysrx.supabase.co`
 5. **Regla operativa:** cada cambio en cualquier archivo debe hacerse **commit y push inmediatamente**
 6. **Flujo de trabajo con IA:** analizar → presentar diagnóstico → esperar aprobación → implementar → commit
+
+---
+
+## Checkpoint 2026-08-16c — Navegación: 6 botones y la pantalla "Otros"
+
+Diseño aprobado y persistido en `docs/disenos/2026-08-16-navegacion-6-botones.md` (v2),
+4 fases. Kris lo pidió desde el móvil: no le cabían los botones y tenía que deslizar.
+
+### El diagnóstico
+
+| Qué | El número |
+|---|---|
+| Botones en la barra | 11 × 60 px = **660 px** de barra contra ~390 px de pantalla |
+| Visibles sin deslizar | 6,5 — y la barra de scroll está oculta a propósito, así que nada indicaba que hubiera más |
+| Títulos por pantalla | **2**: el de la barra (blanco) y el `.analysis-hero-title` de cada sección (verde, 2,1 rem) |
+| Formas de cerrar sesión desde el móvil | **0** — el botón vivía en el pie del sidebar, y ese pie está `display:none` en móvil |
+
+Y el badge "Cuenta Fondeo" del pie era texto fijo escrito a mano que ningún JS actualizaba.
+
+### Lo que se hizo
+
+- **Barra de 6:** Disciplina · Análisis · Calendario · Sesión · Apex · Otros. 360 px, entra
+  sin deslizar. Las otras 6 secciones **no se movieron ni perdieron sus ids**: solo cambia
+  por dónde se llega. `Nav.PADRE` mantiene "Otros" encendido dentro de ellas y un chevron
+  en la barra devuelve — en móvil es la única salida.
+- **Un solo título**, el de la barra, en `--accent-txt` y mayúsculas. Fuera los 11 heroes y
+  su CSS. El dato variable (mes del Calendario, filtro de Imágenes, rango de Disciplina) va
+  a `Nav.setContexto`, que lo guarda **por sección**: `go()` no re-renderiza el Calendario
+  al volver, así que limpiarlo dejaba la barra sin el mes.
+- **Ajustes dentro de Otros:** claves y objetivos (abre el modal de siempre, sin tocarlo),
+  tema (fila inerte, ver D-010), seguridad (cambiar contraseña vía `supa.auth.updateUser`)
+  y cerrar sesión — que así **vuelve a existir en el móvil**, con el email de la sesión
+  debajo en lugar del badge que mentía.
+- **"NQ Journal" → "Trading Journal"** en los 6 sitios; `CACHE` a v6 para que el service
+  worker no siga sirviendo el HTML viejo.
+
+### Verificación
+
+Las 12 secciones abren y ninguna tiene ya título duplicado. A 390 px: barra sin scroll
+(contenido 390 = visible 390), sin scroll horizontal de página, filas de Ajustes de 59-60 px
+(mínimo táctil 44). Contexto probado navegando meses en Calendario —incluido **volver desde
+otra sección y encontrarlo intacto**—, filtrando en Imágenes y cambiando período en
+Disciplina. Validaciones del cambio de contraseña probadas; **el cambio real no**, porque
+habría cambiado la contraseña de verdad.
+
+### Lo que NO entró
+
+El tema claro (D-010) y convertir "Cuenta Fondeo" en un dato real: se borró en vez de
+arreglarlo, y mostrar la cuenta principal de Apex sigue siendo otro encargo.
 
 ---
 

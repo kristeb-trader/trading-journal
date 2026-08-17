@@ -4,7 +4,7 @@
 |---|---|
 | **Versión** | v2 |
 | **Fecha** | 2026-08-16 |
-| **Estado** | 🟡 **PENDIENTE DE APROBACIÓN** |
+| **Estado** | ✅ **IMPLEMENTADO** (2026-08-16) — las 4 fases cerradas y verificadas. Checkpoint: `docs/historial-proyecto.md` § 2026-08-16c |
 | **Origen** | Petición de Kris: en el móvil no caben los 11 botones; títulos duplicados |
 | **Cambios v2** | **El tema claro sale del alcance.** La fila "Tema" se queda en Ajustes marcada como pendiente, sin interruptor y sin `[data-theme]`. Desaparece la antigua Fase 4; quedan 4 fases. Detalle y motivo medido en §7 |
 | **Alcance** | `index.html`, `css/styles.css`, `js/app.js`, `js/db.js`, `js/metrics.js`, `js/gallery.js`, `js/disciplina.js`, `manifest.json`, `sw.js`. **No toca datos, ni disciplina, ni el Coach.** |
