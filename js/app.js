@@ -54,17 +54,15 @@ const Modal = {
     ])
     const ctx = { dateStr, trades, sesion, diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp }
 
+    // La imagen va fuera del contenedor con scroll (queda fija); el texto dentro.
+    document.getElementById('modalDiaImg').innerHTML = this._renderImagenDia(ctx)
     document.getElementById('modalDia').innerHTML = this._renderVistaDia(ctx)
-
-    // Footer: Editar vs Registrar según exista la sesión
-    const editBtn = document.getElementById('editSessionBtn')
-    if (editBtn) editBtn.innerHTML = sesion
-      ? '<i class="ti ti-eye"></i> Ver sesión'
-      : '<i class="ti ti-square-rounded-plus"></i> Registrar sesión'
+    // Cada día arranca arriba: si no, hereda el scroll del día anterior.
+    document.querySelector('#dayModal .dv-scroll')?.scrollTo({ top: 0 })
 
     // Eventos: lightbox, toggles de errores, ver completo
     setTimeout(() => {
-      const img = modal.querySelector('#modalDia .dv-img img')
+      const img = modal.querySelector('#modalDiaImg img')
       if (img) img.addEventListener('click', () => Lightbox.open(img.src))
       modal.querySelectorAll('.modal-cas-row.has-detail').forEach(row => {
         row.addEventListener('click', () => {
@@ -205,20 +203,41 @@ const Modal = {
     </div>`
   },
 
+  // El gráfico va aparte: se monta en un contenedor FIJO fuera del scroll, para que
+  // al bajar solo se mueva el texto y la imagen siga a la vista.
+  _renderImagenDia({ sesion }) {
+    return sesion?.imagen_url
+      ? `<img src="${sesion.imagen_url}" alt="Gráfico del día" loading="lazy" style="cursor:zoom-in" title="Clic para ampliar">`
+      : '<div class="dv-sin-img"><i class="ti ti-photo-off"></i> Sin gráfico para este día</div>'
+  },
+
+  // Un bloque con resumen visible y detalle plegado, igual que las secciones del
+  // Coach (`czSeccion`): arriba lo legible, el desarrollo tras "Ver detalle".
+  _bloquePlegable(lbl, resumen, detalle, tono = '', verDetalle = 'Ver detalle') {
+    const hayRes = resumen && String(resumen).trim()
+    const hayDet = detalle && String(detalle).trim()
+    if (!hayRes && !hayDet) return ''
+    return `<div class="dv-block ${tono}">
+      <div class="dv-lbl">${lbl}</div>
+      ${hayRes ? `<div class="dv-txt"><p>${this._md(resumen)}</p></div>` : ''}
+      ${hayDet ? `<details class="cz-det"><summary>${verDetalle}</summary>
+        <div class="cz-det-body dv-txt"><p>${this._md(detalle)}</p></div></details>` : ''}
+    </div>`
+  },
+
   _renderVistaDia(ctx) {
     const { sesion, diag } = ctx
 
-    const img = sesion?.imagen_url
-      ? `<div class="dv-img"><img src="${sesion.imagen_url}" alt="Gráfico del día" loading="lazy" style="cursor:zoom-in" title="Clic para ampliar"></div>`
-      : '<div class="modal-no-trade"><i class="ti ti-photo-off"></i><p>Sin gráfico para este día</p></div>'
-
-    // "Análisis del día" = las dos voces: la del trader y la del Coach.
-    const coach = [diag?.sec_contexto, diag?.sec_desarrollo, diag?.sec_validacion]
+    // Lo primero que se lee es el RESUMEN del Coach (la línea que escribe para el
+    // diario). Todo el análisis largo —contexto, desarrollo, validación— queda
+    // detrás de "Ver detalle", como en la pestaña del Coach.
+    const detalleCoach = [diag?.sec_contexto, diag?.sec_desarrollo, diag?.sec_validacion]
       .filter(s => s && s.trim()).join('\n\n')
 
     const cuerpo = [
+      this._bloquePlegable('Resumen del Coach', diag?.sec_resumen_compacto, detalleCoach,
+                           '', 'Ver análisis completo'),
       this._bloque('Tu reflexión', sesion?.analisis_trader, 'gry'),
-      this._bloque('Análisis del Coach', coach),
       this._bloque('Veredicto', diag?.sec_veredicto, 'blu'),
       this._bloque('Errores', diag?.sec_errores, 'red'),
       this._bloque('Aprendizaje', diag?.sec_aprendizaje, 'amb'),
@@ -230,7 +249,7 @@ const Modal = {
 
     // Los errores registrados (con su tipo, origen y recomendación) siguen
     // saliendo con el mismo bloque de siempre: es el detalle accionable.
-    return img + cuerpo + vacio + this._renderErroresLista(ctx)
+    return cuerpo + vacio + this._renderErroresLista(ctx)
   },
 
   // Lista de errores registrados del día (tipo, origen, T/S, detalle y
@@ -714,16 +733,12 @@ async function boot() {
   // conserva por si otra sección usa `.tab-btn`, pero aquí no aplica.
   Modal.initTabs()
   document.getElementById('closeModal').addEventListener('click', () => Modal.close())
-  document.getElementById('closeModalBottom')?.addEventListener('click', () => Modal.close())
+  // El pie de la vista del día se eliminó (ago 2026): repetía el "volver" de la
+  // cabecera y el botón "Ver sesión". A la sesión se llega desde el menú Sesión.
   document.getElementById('dayModal').addEventListener('click', e => {
     if (e.target === document.getElementById('dayModal')) Modal.close()
   })
-  document.getElementById('editSessionBtn').addEventListener('click', () => {
-    const date = Modal.currentDate
-    const sesion = Modal.currentSesion
-    Modal.close()
-    SessionForm.prefill(sesion, date)
-  })
+  // Esc sigue cerrando aunque ya no se anuncie con una leyenda en la cabecera.
   document.addEventListener('keydown', e => { if (e.key === 'Escape') Modal.close() })
 
   // Navigation

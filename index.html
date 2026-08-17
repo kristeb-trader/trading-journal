@@ -1257,24 +1257,22 @@
        del día. Se cierra con Esc o con "Volver al calendario". -->
   <div class="modal-overlay hidden" id="dayModal">
     <div class="modal modal-full">
+      <!-- Cabecera: solo el botón de volver (sin leyenda), la fecha como título y el
+           recuadro de datos centrado. El pie desapareció: repetía el "volver" y el
+           "Ver sesión", y la leyenda "Esc para salir" era ruido. -->
       <div class="modal-header dv-header">
-        <button class="btn-secondary dv-back" id="closeModal">
-          <i class="ti ti-chevron-left"></i> Volver al calendario
-        </button>
-        <h3 id="modalDateTitle">Detalle del día</h3>
+        <div class="dv-izq">
+          <button class="btn-icon dv-back" id="closeModal" title="Volver al calendario" aria-label="Volver al calendario">
+            <i class="ti ti-chevron-left"></i>
+          </button>
+          <h3 id="modalDateTitle" class="dv-fecha">Detalle del día</h3>
+        </div>
         <div class="mh-stats" id="modalHeadStats"></div>
-        <span class="dv-esc">Esc para salir</span>
       </div>
-      <div class="modal-content">
+      <!-- La imagen queda FIJA bajo la cabecera y solo scrollea el texto. -->
+      <div class="dv-img-fixed" id="modalDiaImg"></div>
+      <div class="modal-content dv-scroll">
         <div id="modalDia" class="dv-body"></div>
-      </div>
-      <div class="modal-footer dv-footer">
-        <button class="btn-secondary" id="closeModalBottom">
-          <i class="ti ti-chevron-left"></i> Volver al calendario
-        </button>
-        <button class="btn-primary" id="editSessionBtn">
-          <i class="ti ti-eye"></i> Ver sesión
-        </button>
       </div>
     </div>
   </div>
