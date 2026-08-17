@@ -46,8 +46,11 @@
   <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
+      <!-- El icono real de la app (el mismo que el del móvil y la pestaña), no un
+           icono de tipografía: es la marca, y así es idéntica en los tres sitios.
+           icon-192 y no icon-512 porque a 24 px sobra resolución y pesa 4× menos. -->
       <div class="logo">
-        <i class="ti ti-chart-candle"></i>
+        <img src="icons/icon-192.png" alt="Trading Journal" class="logo-img">
         <span>Trading Journal</span>
       </div>
     </div>
@@ -101,6 +104,10 @@
          en cuanto aparecía el chevron de volver. -->
     <header class="top-bar">
       <div class="top-bar-side">
+        <!-- Icono de la app, arriba a la IZQUIERDA. Solo en móvil: en escritorio el
+             mismo icono ya está en el sidebar-header, que ahí es el borde superior
+             izquierdo de la aplicación. -->
+        <img src="icons/icon-192.png" alt="Trading Journal" class="hdr-logo">
         <button class="btn-icon menu-toggle" id="menuToggle" title="Menú">
           <i class="ti ti-menu-2"></i>
         </button>
@@ -131,22 +138,19 @@
         </button>
       </div>
       <div class="top-bar-side header-actions">
-        <!-- Los 3 filtros de cuenta viven aquí (cada sección tiene su propia selección
-             persistida). `Nav.go()` muestra el de la sección activa y oculta los demás. -->
-        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterCalendar"></div>
-        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterAnalysis"></div>
-        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterTrades"></div>
+        <!-- Los 3 filtros de cuenta se retiraron (17 ago): en móvil la barra los dejaba
+             sin espacio para su etiqueta, así que se veía una cartera sin nombre que no
+             decía qué hacía — y estaba filtrando de verdad, restringiendo Calendario,
+             Análisis y Trades a una sola cuenta sin que se notara. Sin su contenedor,
+             `AccountFilter.selected()` devuelve null = TODAS las cuentas, que es el
+             comportamiento que se quiere. El componente sigue en js/account-filter.js
+             por si algún día se vuelve a montar. -->
         <!-- Estado de la conexión: solo en Otros (Nav.HERRAMIENTAS). En el resto de
              pantallas era un adorno permanente; si falla la conexión, el toast del
              arranque ya avisa. -->
         <button class="status-dot hidden" id="connectionStatus" title="Comprobando conexión…" aria-label="Estado de la conexión">
           <i class="ti ti-loader-2 spin"></i>
         </button>
-        <!-- Icono de la app, el último de la fila: en móvil el sidebar-header está
-             oculto, así que sin esto no hay ninguna marca de la aplicación. -->
-        <span class="hdr-logo" title="Trading Journal" aria-hidden="true">
-          <i class="ti ti-chart-candle"></i>
-        </span>
       </div>
     </header>
 

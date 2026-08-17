@@ -435,19 +435,12 @@ const Nav = {
   //   filtro    → id del contenedor del filtro de cuentas de esa sección
   //   navMes    → mostrar las flechas ‹ › junto al mes
   HERRAMIENTAS: {
-    calendar: { filtro: 'accountFilterCalendar', navMes: true },
-    analysis: { filtro: 'accountFilterAnalysis' },
-    trades:   { filtro: 'accountFilterTrades' },
+    calendar: { navMes: true },
     otros:    { conexion: true },
   },
 
   _pintaHerramientas(sectionId) {
     const cfg = this.HERRAMIENTAS[sectionId] || {}
-    // Cada filtro tiene su propia selección persistida, así que los 3 conviven en el
-    // DOM y solo se muestra el de la sección activa.
-    document.querySelectorAll('.header-actions .hdr-tool').forEach(el => {
-      el.classList.toggle('hidden', el.id !== cfg.filtro)
-    })
     document.querySelectorAll('.header-info .hdr-nav').forEach(el => {
       el.classList.toggle('hidden', !cfg.navMes)
     })

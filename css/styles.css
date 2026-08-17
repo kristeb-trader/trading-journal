@@ -81,7 +81,9 @@ small { font-size: 0.82em; }
 
 .sidebar-header { padding: 18px 16px; border-bottom: 1px solid var(--border); }
 .logo { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 600; color: var(--accent); }
-.logo i { font-size: 1.4rem; }
+/* El icono trae su propio fondo redondeado, así que no necesita relleno ni borde;
+   solo el radio para que la esquina no se vea cuadrada sobre --bg2. */
+.logo-img { width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0; }
 
 .nav-menu { list-style: none; padding: 10px 0; flex: 1; }
 .nav-item {
@@ -296,15 +298,12 @@ small { font-size: 0.82em; }
 .status-dot.connected { color: var(--accent-txt); }
 .status-dot.disconnected { color: var(--red-txt); }
 
-/* Icono de la app en la barra superior — SOLO en móvil (se enciende en el bloque
-   de ≤768px). Ahí el `.sidebar-header` con el logo está oculto y la app se queda
-   sin ninguna marca. En escritorio el logo del sidebar ya está a la vista, y
-   meterlo también aquí lo aplastaba: la celda derecha mide lo mismo que la
-   izquierda (grid de 3 columnas) y el filtro de cuenta ya la llena. */
+/* Icono de la app en la barra superior, a la izquierda — SOLO en móvil (se
+   enciende en el bloque de ≤768px). Ahí el `.sidebar-header`, que es donde vive el
+   icono en escritorio, está oculto y la app se queda sin ninguna marca. */
 .hdr-logo {
   display: none;
-  align-items: center; justify-content: center;
-  color: var(--accent-txt); font-size: 1.4rem; flex-shrink: 0;
+  width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
 }
 
 /* ── Content Area ────────────────────────────────────────────────────── */
@@ -337,21 +336,6 @@ small { font-size: 0.82em; }
 /* `.calendar-header` se eliminó (ago 2026): el título ya estaba en la barra superior
    y el filtro de cuentas y las flechas de mes también subieron allí, así que la fila
    se quedó vacía. Eso recupera ~46 px de alto útil sobre el calendario. */
-
-/* Filtro de cuentas dentro de la barra superior: alto de la barra y ancho contenido
-   para no empujar al título fuera del centro. */
-.header-actions > .acct-filter-sm { margin-left: 0; max-width: 190px; min-width: 0; }
-.header-actions > .acct-filter-sm .acct-filter-btn { height: 30px; font-size: 0.78rem; }
-@media (max-width: 900px) {
-  .header-actions > .acct-filter-sm { max-width: 130px; }
-}
-/* En pantallas estrechas el nombre de cuenta es lo primero que sobra: se queda el
-   icono de cartera y el caret, que ya indican que hay un filtro y se puede abrir. */
-@media (max-width: 560px) {
-  .header-actions > .acct-filter-sm { max-width: none; }
-  .header-actions > .acct-filter-sm .acct-filter-text { display: none; }
-  .header-actions > .acct-filter-sm .acct-filter-btn { padding-left: 7px; padding-right: 5px; }
-}
 
 .calendar-legend {
   display: flex; gap: 16px; margin-bottom: 26px;
@@ -2680,7 +2664,7 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
   .header-context { font-size: 0.9rem; letter-spacing: 0.04em; }
   .header-context:not(:empty)::before { margin-right: 6px; }
   /* Aquí sí: el sidebar-header está oculto y sin esto no hay marca de la app. */
-  .hdr-logo { display: flex; }
+  .hdr-logo { display: block; }
 
   /* Calendar */
   .calendar-grid {
