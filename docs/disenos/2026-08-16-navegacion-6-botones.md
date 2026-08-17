@@ -2,10 +2,11 @@
 
 | | |
 |---|---|
-| **Versión** | v2 |
+| **Versión** | v3 |
 | **Fecha** | 2026-08-16 |
 | **Estado** | ✅ **IMPLEMENTADO** (2026-08-16) — las 4 fases cerradas y verificadas. Checkpoint: `docs/historial-proyecto.md` § 2026-08-16c |
 | **Origen** | Petición de Kris: en el móvil no caben los 11 botones; títulos duplicados |
+| **Cambios v3** | El título se **centra** y la fecha pasa a tener **su mismo color y tamaño**, separada por un `·`. La barra superior pasa de flex a un grid de 3 celdas: con flex, el título se descentraba en cuanto aparecía el chevron de volver. Detalle en §3 |
 | **Cambios v2** | **El tema claro sale del alcance.** La fila "Tema" se queda en Ajustes marcada como pendiente, sin interruptor y sin `[data-theme]`. Desaparece la antigua Fase 4; quedan 4 fases. Detalle y motivo medido en §7 |
 | **Alcance** | `index.html`, `css/styles.css`, `js/app.js`, `js/db.js`, `js/metrics.js`, `js/gallery.js`, `js/disciplina.js`, `manifest.json`, `sw.js`. **No toca datos, ni disciplina, ni el Coach.** |
 
@@ -133,8 +134,8 @@ DESPUÉS [‹]  ANÁLISIS  ················ ●
 
 | Elemento | Qué pasa |
 |---|---|
-| `#currentSectionTitle` | Pasa a ser **el único** título: verde `--accent-txt`, mayúsculas, `1.05rem` / `0.95rem` en móvil, `font-weight 700`, `letter-spacing .06em` |
-| `#sectionContext` (nuevo) | Dato variable al lado, pequeño y en `--text3`: `Agosto 2026`, el mes filtrado de Imágenes, el subtítulo de Disciplina |
+| `#currentSectionTitle` | Pasa a ser **el único** título: verde `--accent-txt`, mayúsculas, `1.05rem` / `0.9rem` en móvil, `font-weight 700`, `letter-spacing .06em`. **Centrado** (v3) |
+| `#sectionContext` (nuevo) | Dato variable al lado: `Agosto 2026`, el mes filtrado de Imágenes, el rango de Disciplina. **Mismo color y tamaño que el título** (v3), separado por un `·` en `--text3` que solo aparece si hay dato |
 | `.status-indicator` | Pierde el texto "Conectado". Se queda **solo el punto de color** y pasa a ser `<button>`: al pulsarlo, un toast dice el estado. `aria-label` + `title` obligatorios |
 | `#openSettings` (la tuerca) | **Se va de la barra** → Otros › Ajustes › Claves y objetivos. ⚠️ **Se retira en la Fase 3, no en la 2**: cada fase se sube a producción, y quitarla antes de que exista la fila de Ajustes dejaría los ajustes inalcanzables entre un despliegue y el siguiente |
 | `.menu-toggle` (☰) | Se queda como está: solo escritorio, ya está oculto en móvil ([css/styles.css:2584](../../css/styles.css)) |

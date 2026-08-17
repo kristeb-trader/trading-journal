@@ -229,14 +229,21 @@ small { font-size: 0.82em; }
 .sidebar.collapsed ~ .main-content { margin-left: 60px; }
 
 /* ── Top Bar ─────────────────────────────────────────────────────────── */
+/* Grid de 3 celdas: las dos laterales se reparten el sobrante a partes iguales,
+   así que la del medio queda centrada respecto a la pantalla pase lo que pase
+   con los botones de los lados. minmax(0,…) para que el título largo recorte
+   los lados en vez de desbordar la barra. */
 .top-bar {
   height: var(--topbar-h);
   background: var(--bg2);
   border-bottom: 1px solid var(--border);
-  display: flex; align-items: center;
-  padding: 0 20px; gap: 16px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  padding: 0 20px; gap: 12px;
   position: sticky; top: 0; z-index: 90;
 }
+.top-bar-side { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.top-bar-side.header-actions { justify-content: flex-end; }
 .menu-toggle { color: var(--text2); font-size: 1.3rem; padding: 4px; border-radius: 6px; }
 .menu-toggle:hover { background: var(--bg3); color: var(--text); }
 .nav-back { color: var(--text2); font-size: 1.2rem; padding: 4px; border-radius: 6px; }
@@ -244,18 +251,25 @@ small { font-size: 0.82em; }
 
 /* Título único de la sección: el que antes se duplicaba dentro de cada pantalla.
    Verde en --accent-txt y no en --accent: la base no contrasta como texto. */
-.header-info { flex: 1; display: flex; align-items: baseline; gap: 10px; min-width: 0; }
-.header-title {
+.header-info {
+  display: flex; align-items: baseline; justify-content: center;
+  gap: 8px; min-width: 0;
+}
+.header-title,
+.header-context {
   color: var(--accent-txt);
   font-size: 1.05rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.06em;
   white-space: nowrap;
 }
-/* El dato variable de la sección (mes, filtro, rango). Se recorta antes que el
-   título, que es lo que nunca debe partirse. */
-.header-context {
-  font-size: 0.82rem; color: var(--text3);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+/* El dato variable de la sección (mes, filtro, rango) se lee como parte del
+   título: mismo color y tamaño. El separador solo aparece si hay dato, y va en
+   --text3 para que sea una pausa y no una palabra más. */
+.header-context { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.header-context:not(:empty)::before {
+  content: '·';
+  color: var(--text3); font-weight: 400;
+  margin-right: 8px;
 }
 
 /* Conexión: solo el punto de color. El texto "Conectado" ocupaba la barra para
@@ -2658,9 +2672,10 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 
   /* Top bar */
   .menu-toggle { display: none; }
-  .top-bar { padding: 0 12px; gap: 10px; }
-  .header-title { font-size: 0.95rem; letter-spacing: 0.05em; }
-  .header-context { font-size: 0.76rem; }
+  .top-bar { padding: 0 10px; gap: 8px; }
+  .header-title,
+  .header-context { font-size: 0.9rem; letter-spacing: 0.04em; }
+  .header-context:not(:empty)::before { margin-right: 6px; }
 
   /* Calendar */
   .calendar-grid {

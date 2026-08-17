@@ -96,26 +96,31 @@
   <main class="main-content">
 
     <!-- Top Bar -->
+    <!-- Tres celdas (1fr | auto | 1fr) para que el título quede centrado respecto
+         a la PANTALLA, no al hueco que dejen los botones. Con flex se descentraba
+         en cuanto aparecía el chevron de volver. -->
     <header class="top-bar">
-      <button class="btn-icon menu-toggle" id="menuToggle" title="Menú">
-        <i class="ti ti-menu-2"></i>
-      </button>
-      <!-- Vuelta a "Otros" desde sus subsecciones. Solo se muestra cuando la
-           sección actual tiene padre (Nav.PADRE): en el móvil es la única salida,
-           porque esas secciones ya no tienen botón propio. -->
-      <button class="btn-icon nav-back hidden" id="navBack" title="Volver a Otros" aria-label="Volver a Otros">
-        <i class="ti ti-chevron-left"></i>
-      </button>
+      <div class="top-bar-side">
+        <button class="btn-icon menu-toggle" id="menuToggle" title="Menú">
+          <i class="ti ti-menu-2"></i>
+        </button>
+        <!-- Vuelta a "Otros" desde sus subsecciones. Solo se muestra cuando la
+             sección actual tiene padre (Nav.PADRE): en el móvil es la única salida,
+             porque esas secciones ya no tienen botón propio. -->
+        <button class="btn-icon nav-back hidden" id="navBack" title="Volver a Otros" aria-label="Volver a Otros">
+          <i class="ti ti-chevron-left"></i>
+        </button>
+      </div>
       <!-- Título ÚNICO de la sección. Antes vivía aquí Y otra vez dentro de cada
            sección (.analysis-hero-title), en verde y a 2.1rem: dos títulos para la
            misma pantalla. El dato variable que llevaban dos de esos títulos —el mes
            del Calendario, el filtro de Imágenes, el rango de Disciplina— es lo que
-           ahora va en #sectionContext. -->
+           ahora va en #sectionContext, con el mismo color y tamaño que el título. -->
       <div class="header-info">
         <span class="header-title" id="currentSectionTitle">Calendario</span>
         <span class="header-context" id="sectionContext"></span>
       </div>
-      <div class="header-actions">
+      <div class="top-bar-side header-actions">
         <button class="status-dot" id="connectionStatus" title="Comprobando conexión…" aria-label="Estado de la conexión">
           <i class="ti ti-loader-2 spin"></i>
         </button>
