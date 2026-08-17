@@ -822,7 +822,22 @@ opcional y va al final.
 | Métrica | Antes | Después |
 |---|---|---|
 | `CLAUDE.md` | 259 líneas / 20.277 bytes / ~6.000 tokens | **149 líneas / 8.457 bytes / ~2.500 tokens** ✅ medido |
-| Contexto fijo por sesión | ~7.500 tokens | ~4.250 tokens (**−43%**) ✅ medido |
+| Contexto fijo por sesión | ~7.500 tokens | ~4.250 tokens (−43%) ⚠️ **cifra engañosa, ver abajo** |
+
+> ⚠️ **CORRECCIÓN (2026-08-17) — el "−43% de contexto fijo" es engañoso.**
+> Medía solo `CLAUDE.md` + memoria + las descripciones de estos 4 skills. El arranque
+> **real** de una sesión —medido en los transcripts— es de **76k tokens**, no 7,5k: el
+> resto son las descripciones de todos los skills y plugins conectados, los esquemas de
+> herramientas y las instrucciones de los MCP.
+>
+> Sobre esa base, el ahorro real de esta reestructuración es de ~3.500 tokens = **4,6%**
+> del arranque, no el 43%. Y el arranque **subió** de 40k (24 jun) a 76k (17 ago), por
+> acumulación de plugins ajenos a este proyecto.
+>
+> La reestructuración sí resolvió lo que se propuso —6 contradicciones, 3.627 líneas de
+> documentación que mentía, y dónde va cada cosa—, pero **no fue una optimización de
+> tokens significativa**. El análisis completo y qué sí mueve la aguja:
+> `docs/disenos/2026-08-17-optimizacion-tokens.md`.
 | Archivos de memoria | 11 (28 KB), 6 contradicciones | 2 (~2 KB), 0 contradicciones |
 | Documentación engañosa | 3.627 líneas mezcladas con la vigente | 0 en circulación (archivada con aviso) |
 | Reglas de permisos | 122 literales, con una clave dentro | 11 patrones + 3 bloqueos |
