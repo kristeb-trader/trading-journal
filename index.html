@@ -138,13 +138,14 @@
         </button>
       </div>
       <div class="top-bar-side header-actions">
-        <!-- Los 3 filtros de cuenta se retiraron (17 ago): en móvil la barra los dejaba
-             sin espacio para su etiqueta, así que se veía una cartera sin nombre que no
-             decía qué hacía — y estaba filtrando de verdad, restringiendo Calendario,
-             Análisis y Trades a una sola cuenta sin que se notara. Sin su contenedor,
-             `AccountFilter.selected()` devuelve null = TODAS las cuentas, que es el
-             comportamiento que se quiere. El componente sigue en js/account-filter.js
-             por si algún día se vuelve a montar. -->
+        <!-- Los 3 filtros de cuenta viven aquí (cada sección tiene su propia selección
+             persistida). `Nav.go()` muestra el de la sección activa y oculta los demás.
+             Lo que se ve es el NOMBRE de la cuenta, nunca un icono suelto: la cartera se
+             retiró el 17 ago porque en móvil se comía la etiqueta y quedaba un icono que
+             no decía qué hacía, ocultando que el filtro estaba activo. -->
+        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterCalendar"></div>
+        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterAnalysis"></div>
+        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterTrades"></div>
         <!-- Estado de la conexión: solo en Otros (Nav.HERRAMIENTAS). En el resto de
              pantallas era un adorno permanente; si falla la conexión, el toast del
              arranque ya avisa. -->

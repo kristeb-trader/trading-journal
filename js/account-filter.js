@@ -75,7 +75,6 @@ const AccountFilter = (() => {
     const all = st.selected === null
     st.el.innerHTML = `
       <button type="button" class="acct-filter-btn" aria-expanded="false" title="Filtrar por cuenta">
-        <i class="ti ti-wallet"></i>
         <span class="acct-filter-text">${esc(label(st))}</span>
         <i class="ti ti-chevron-down acct-filter-caret"></i>
       </button>

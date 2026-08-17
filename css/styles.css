@@ -337,6 +337,24 @@ small { font-size: 0.82em; }
    y el filtro de cuentas y las flechas de mes también subieron allí, así que la fila
    se quedó vacía. Eso recupera ~46 px de alto útil sobre el calendario. */
 
+/* Filtro de cuentas dentro de la barra superior: alto de la barra y ancho contenido
+   para no empujar al título fuera del centro. */
+.header-actions > .acct-filter-sm { margin-left: 0; max-width: 190px; min-width: 0; }
+.header-actions > .acct-filter-sm .acct-filter-btn { height: 30px; font-size: 0.78rem; }
+/* El NOMBRE de la cuenta no se oculta nunca: se recorta con puntos suspensivos.
+   Ocultarlo dejaba un icono mudo que no decía qué era ni que estaba filtrando —
+   y llegó a esconder 97 de 98 trades sin que se notara (17 ago). */
+.header-actions > .acct-filter-sm .acct-filter-text {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+@media (max-width: 900px) {
+  .header-actions > .acct-filter-sm { max-width: 150px; }
+}
+@media (max-width: 560px) {
+  .header-actions > .acct-filter-sm { max-width: 118px; }
+  .header-actions > .acct-filter-sm .acct-filter-btn { font-size: 0.72rem; padding-left: 8px; padding-right: 5px; }
+}
+
 .calendar-legend {
   display: flex; gap: 16px; margin-bottom: 26px;
   font-size: 0.82rem; color: var(--text2);
@@ -576,7 +594,6 @@ small { font-size: 0.82em; }
   cursor: pointer; transition: border-color var(--transition);
 }
 .acct-filter-btn:hover, .acct-filter-btn[aria-expanded="true"] { border-color: var(--accent); }
-.acct-filter-btn > .ti-wallet { color: var(--text3); font-size: 0.95rem; flex-shrink: 0; }
 .acct-filter-text {
   flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
