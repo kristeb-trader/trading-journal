@@ -106,6 +106,25 @@ function tradesEnVentanaNoticia(trades, sesion, margen = 5) {
   return trades.filter(t => enVentanaNoticia(t.entry_time, sesion.hora_noticia_roja, margen))
 }
 
+// ── Formato de importes ──────────────────────────────────────────────────────
+// Los importes se muestran SIN decimales y con separador de miles: 2212 → "2.212".
+// Devuelve el valor absoluto redondeado: el signo lo pone quien llama, que suele
+// necesitar '+'/'−' propio y una clase de color distinta.
+//
+// Se agrupa a mano y NO con toLocaleString('es-ES'): en español el estándar CLDR no
+// agrupa los números de 4 dígitos (devuelve "2212" y solo agrupa desde "10.000"),
+// y aquí se quiere el punto siempre.
+function fmtMiles(n) {
+  const v = Math.abs(Math.round(parseFloat(n) || 0))
+  return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+// Importe con su signo ya puesto: 2212 → "+$2.212" · -1257.66 → "−$1.258"
+function fmtDinero(n, { masEnPositivo = true } = {}) {
+  const v = parseFloat(n) || 0
+  const signo = v < 0 ? '−' : (masEnPositivo ? '+' : '')
+  return `${signo}$${fmtMiles(v)}`
+}
+
 // ── Día hábil: sábados y domingos NUNCA cuentan para estadísticas ────────────
 // El mercado no se opera en fin de semana. El calendario solo pinta Lun–Vie, pero
 // pueden existir filas de `sesiones` de sábado/domingo: el AddOn de NT8 crea la fila

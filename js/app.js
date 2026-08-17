@@ -410,6 +410,29 @@ const Nav = {
   // limpiarlo dejaría la barra sin el mes.
   CONTEXTO: {},
 
+  // Controles que viven en la barra superior y pertenecen a UNA sección (ago 2026).
+  // Antes cada sección tenía su propia fila con el filtro de cuentas y las flechas de
+  // mes; al subirlos aquí se recupera ese alto en las tres pantallas.
+  //   filtro    → id del contenedor del filtro de cuentas de esa sección
+  //   navMes    → mostrar las flechas ‹ › junto al mes
+  HERRAMIENTAS: {
+    calendar: { filtro: 'accountFilterCalendar', navMes: true },
+    analysis: { filtro: 'accountFilterAnalysis' },
+    trades:   { filtro: 'accountFilterTrades' },
+  },
+
+  _pintaHerramientas(sectionId) {
+    const cfg = this.HERRAMIENTAS[sectionId] || {}
+    // Cada filtro tiene su propia selección persistida, así que los 3 conviven en el
+    // DOM y solo se muestra el de la sección activa.
+    document.querySelectorAll('.header-actions .hdr-tool').forEach(el => {
+      el.classList.toggle('hidden', el.id !== cfg.filtro)
+    })
+    document.querySelectorAll('.header-info .hdr-nav').forEach(el => {
+      el.classList.toggle('hidden', !cfg.navMes)
+    })
+  },
+
   setContexto(sectionId, txt) {
     this.CONTEXTO[sectionId] = txt || ''
     if (this._actual === sectionId) this._pintaContexto(sectionId)
@@ -436,6 +459,7 @@ const Nav = {
     this._padreActual = padre
     this._actual = sectionId
     this._pintaContexto(sectionId)
+    this._pintaHerramientas(sectionId)
 
     // Lazy init sections
     if (!this.initialized.has(sectionId)) {

@@ -234,7 +234,7 @@ const Calendar = (() => {
 
         const pnl = dayPnl(trades)
         const pnlHtml = pnl !== null
-          ? `<div class="cal-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(0)}</div>`
+          ? `<div class="cal-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${fmtDinero(pnl)}</div>`
           : ''
         // Los días futuros solo son clicables si son fecha especial (modal informativo)
         const clickable = (!isFuture || esEspecial) ? `data-date="${dateStr}" style="cursor:pointer"` : ''
@@ -303,7 +303,7 @@ const Calendar = (() => {
           html += `
             <div class="cal-cell cal-week-summary ${weekPnl >= 0 ? 'week-positive' : 'week-negative'}">
               <div class="week-label">Semana ${weekNum}</div>
-              <div class="week-pnl ${weekPnl >= 0 ? 'positive' : 'negative'}">${weekPnl >= 0 ? '+' : ''}$${weekPnl.toFixed(0)}</div>
+              <div class="week-pnl ${weekPnl >= 0 ? 'positive' : 'negative'}">${fmtDinero(weekPnl)}</div>
               <div class="week-trades">${weekTrades} trade${weekTrades !== 1 ? 's' : ''}</div>
             </div>`
         } else {
@@ -332,7 +332,7 @@ const Calendar = (() => {
       <div class="cal-month-total-widget ${totalPnl >= 0 ? 'positive' : 'negative'}">
         <span class="cmt-label">TOTAL ${monthName.toUpperCase()} ${currentYear}</span>
         <span class="cmt-sub">${diasActividad} día${diasActividad !== 1 ? 's' : ''} · ${totalTrades} trade${totalTrades !== 1 ? 's' : ''}</span>
-        <span class="cmt-amount ${totalPnl >= 0 ? 'positive' : 'negative'}">${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(0)}</span>
+        <span class="cmt-amount ${totalPnl >= 0 ? 'positive' : 'negative'}">${fmtDinero(totalPnl)}</span>
       </div>`
 
     grid.innerHTML = html

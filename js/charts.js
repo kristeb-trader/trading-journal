@@ -206,7 +206,7 @@ const Charts = (() => {
 
     document.getElementById('analysisKpiStrip').innerHTML = `
       <div class="analysis-kpi-row">
-        ${chip('P&L Neto', `${s.pnl>=0?'+':''}$${s.pnl.toFixed(0)}`, s.pnl>=0?'kpi-green':'kpi-red', 'kpiPnl')}
+        ${chip('P&L Neto', fmtDinero(s.pnl), s.pnl>=0?'kpi-green':'kpi-red', 'kpiPnl')}
         ${chip('Win Rate', `${winV}%`, parseFloat(winV)>=50?'kpi-green':'kpi-red', 'kpiWin')}
         ${chip('Rentabilidad', rent, capital>0 ? (s.pnl>=0?'kpi-green':'kpi-red') : 'kpi-neutral', 'kpiRent')}
         ${chip('Disciplina', disc!=null?`${disc}%`:'—', disc==null?'kpi-neutral':disc>=80?'kpi-green':disc>=55?'kpi-neutral':'kpi-red', 'kpiDisc')}
@@ -401,8 +401,8 @@ const Charts = (() => {
       return `
         <tr class="annual-row${st.pnl>0?' annual-row-pos':st.pnl<0?' annual-row-neg':''}">
           <td class="annual-month-name">${sp.label}</td>
-          <td class="${st.pnl>0?'annual-pos':st.pnl<0?'annual-neg':''} fw-600">${st.pnl>=0?'+':''}$${st.pnl.toFixed(2)}</td>
-          <td class="${cum>=0?'annual-pos':'annual-neg'}">${cum>=0?'+':''}$${cum.toFixed(2)}</td>
+          <td class="${st.pnl>0?'annual-pos':st.pnl<0?'annual-neg':''} fw-600">${fmtDinero(st.pnl)}</td>
+          <td class="${cum>=0?'annual-pos':'annual-neg'}">${fmtDinero(cum)}</td>
           <td>${rent}</td>
           <td class="${efecCls}">${efec}</td>
           <td class="${discCls}">${discStr}</td>
@@ -424,8 +424,8 @@ const Charts = (() => {
     document.getElementById('analysisTablaFoot').innerHTML = `
       <tr class="annual-totals-row">
         <td class="annual-totals-label">Total ${periodLabel()}</td>
-        <td class="${tot.pnl>=0?'annual-totals-pos':'annual-totals-neg'}">${tot.pnl>=0?'+':''}$${tot.pnl.toFixed(2)}</td>
-        <td class="${tot.pnl>=0?'annual-totals-pos':'annual-totals-neg'}">${tot.pnl>=0?'+':''}$${tot.pnl.toFixed(2)}</td>
+        <td class="${tot.pnl>=0?'annual-totals-pos':'annual-totals-neg'}">${fmtDinero(tot.pnl)}</td>
+        <td class="${tot.pnl>=0?'annual-totals-pos':'annual-totals-neg'}">${fmtDinero(tot.pnl)}</td>
         <td class="${capital<=0?'annual-totals-neutral':tot.pnl>=0?'annual-totals-pos':'annual-totals-neg'}">${totRent}</td>
         <td class="${tot.efec==null?'annual-totals-neutral':tot.efec>=50?'annual-totals-pos':tot.efec>=40?'annual-totals-warn':'annual-totals-neg'}">${totEfec}</td>
         <td class="${totDisc==null?'annual-totals-neutral':totDisc>=80?'annual-totals-pos':totDisc>=55?'annual-totals-warn':'annual-totals-neg'}">${totDisc!=null?totDisc+'%':'—'}</td>

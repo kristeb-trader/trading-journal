@@ -117,10 +117,25 @@
            del Calendario, el filtro de Imágenes, el rango de Disciplina— es lo que
            ahora va en #sectionContext, con el mismo color y tamaño que el título. -->
       <div class="header-info">
-        <span class="header-title" id="currentSectionTitle">Calendario</span>
-        <span class="header-context" id="sectionContext"></span>
+        <!-- Flechas de mes: navegan el dato que se está mirando, así que van pegadas
+             al contexto. Solo se muestran en las secciones que las usan (Nav.HERRAMIENTAS). -->
+        <button class="btn-icon hdr-nav hidden" id="prevMonth" title="Mes anterior" aria-label="Mes anterior">
+          <i class="ti ti-chevron-left"></i>
+        </button>
+        <div class="header-titles">
+          <span class="header-title" id="currentSectionTitle">Calendario</span>
+          <span class="header-context" id="sectionContext"></span>
+        </div>
+        <button class="btn-icon hdr-nav hidden" id="nextMonth" title="Mes siguiente" aria-label="Mes siguiente">
+          <i class="ti ti-chevron-right"></i>
+        </button>
       </div>
       <div class="top-bar-side header-actions">
+        <!-- Los 3 filtros de cuenta viven aquí (cada sección tiene su propia selección
+             persistida). `Nav.go()` muestra el de la sección activa y oculta los demás. -->
+        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterCalendar"></div>
+        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterAnalysis"></div>
+        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterTrades"></div>
         <button class="status-dot" id="connectionStatus" title="Comprobando conexión…" aria-label="Estado de la conexión">
           <i class="ti ti-loader-2 spin"></i>
         </button>
@@ -132,19 +147,9 @@
 
       <!-- ═══ 1. CALENDARIO ═══════════════════════════════════════════════ -->
       <section class="section active" id="section-calendar">
-        <!-- Sin título central: el mes lo escribe metrics.js en #sectionContext.
-             El grid pasa de 3 columnas a 2 (cuenta | nav de mes). -->
-        <div class="calendar-header">
-          <div class="acct-filter-sm" id="accountFilterCalendar"></div>
-          <div class="calendar-nav">
-            <button class="btn-icon" id="prevMonth" title="Mes anterior">
-              <i class="ti ti-chevron-left"></i>
-            </button>
-            <button class="btn-icon" id="nextMonth" title="Mes siguiente">
-              <i class="ti ti-chevron-right"></i>
-            </button>
-          </div>
-        </div>
+        <!-- Sin cabecera propia: el mes va en #sectionContext, y el filtro de cuentas
+             y las flechas de mes viven en la barra superior (ago 2026). Esta sección
+             arranca directamente en las métricas. -->
 
         <!-- Métricas compactas (arriba del calendario) -->
         <div class="metrics-grid metrics-grid-compact" id="metricsGrid">
@@ -189,7 +194,7 @@
         <div class="section-header">
           <div class="table-controls">
             <input type="text" class="search-input" id="tradeSearch" placeholder="Buscar...">
-            <div class="acct-filter-sm" id="accountFilterTrades"></div>
+            <!-- El filtro de cuentas se movió a la barra superior (ago 2026) -->
             <select class="filter-select" id="tradeFilter">
               <option value="all">Todos</option>
               <option value="target">Target</option>
@@ -952,7 +957,7 @@
             </button>
           </div>
           <div class="analysis-right">
-            <div class="acct-filter-sm" id="accountFilterAnalysis"></div>
+            <!-- El filtro de cuentas se movió a la barra superior (ago 2026) -->
             <button class="btn-secondary btn-sm" id="analysisExportPdf" title="Exportar a PDF"><i class="ti ti-file-type-pdf"></i> PDF</button>
             <button class="btn-secondary btn-sm" id="analysisExportImg" title="Exportar como imagen"><i class="ti ti-photo-down"></i> Imagen</button>
           </div>

@@ -252,9 +252,19 @@ small { font-size: 0.82em; }
 /* Título único de la sección: el que antes se duplicaba dentro de cada pantalla.
    Verde en --accent-txt y no en --accent: la base no contrasta como texto. */
 .header-info {
-  display: flex; align-items: baseline; justify-content: center;
-  gap: 8px; min-width: 0;
+  display: flex; align-items: center; justify-content: center;
+  gap: 4px; min-width: 0;
 }
+/* El título y su dato van juntos en una línea; las flechas de mes quedan a los
+   lados, centradas contra el bloque y no contra la línea base del texto. */
+.header-titles {
+  display: flex; align-items: baseline; gap: 8px; min-width: 0;
+}
+/* Flechas de mes en la barra superior: navegan el dato que acompaña al título.
+   Más pequeñas que un .btn-icon normal para no competir con él. */
+.hdr-nav { width: 26px; height: 26px; flex: 0 0 26px; }
+.hdr-nav i { font-size: 0.95rem; }
+
 .header-title,
 .header-context {
   color: var(--accent-txt);
@@ -313,19 +323,23 @@ small { font-size: 0.82em; }
 }
 .calendar-topbar .filter-select-sm { margin-left: 0; }
 
-/* Header del Calendario: cuenta | título central | nav de mes en una fila */
-/* Dos columnas desde que el título salió de aquí: cuenta | nav de mes. */
-.calendar-header {
-  display: grid; grid-template-columns: 1fr auto; align-items: center;
-  gap: 12px; margin-bottom: 32px;
+/* `.calendar-header` se eliminó (ago 2026): el título ya estaba en la barra superior
+   y el filtro de cuentas y las flechas de mes también subieron allí, así que la fila
+   se quedó vacía. Eso recupera ~46 px de alto útil sobre el calendario. */
+
+/* Filtro de cuentas dentro de la barra superior: alto de la barra y ancho contenido
+   para no empujar al título fuera del centro. */
+.header-actions > .acct-filter-sm { margin-left: 0; max-width: 190px; min-width: 0; }
+.header-actions > .acct-filter-sm .acct-filter-btn { height: 30px; font-size: 0.78rem; }
+@media (max-width: 900px) {
+  .header-actions > .acct-filter-sm { max-width: 130px; }
 }
-.calendar-header > .filter-select-sm,
-.calendar-header > .acct-filter-sm { justify-self: start; margin-left: 0; max-width: 220px; }
-.calendar-header > .calendar-nav { justify-self: end; }
-@media (max-width: 768px) {
-  .calendar-header { grid-template-columns: 1fr; justify-items: center; gap: 8px; }
-  .calendar-header > .filter-select-sm,
-  .calendar-header > .acct-filter-sm { justify-self: stretch; max-width: none; }
+/* En pantallas estrechas el nombre de cuenta es lo primero que sobra: se queda el
+   icono de cartera y el caret, que ya indican que hay un filtro y se puede abrir. */
+@media (max-width: 560px) {
+  .header-actions > .acct-filter-sm { max-width: none; }
+  .header-actions > .acct-filter-sm .acct-filter-text { display: none; }
+  .header-actions > .acct-filter-sm .acct-filter-btn { padding-left: 7px; padding-right: 5px; }
 }
 
 .calendar-legend {
