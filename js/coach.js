@@ -1235,6 +1235,8 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
         }).join('')}</div>`
       : ''
 
+    // Colores fijos por sección (verde / naranja / azul), como el diseño aprobado.
+    // Que la validación falle NO tiñe la sección: eso ya lo dicen las píldoras.
     container.innerHTML =
       czSeccion({
         clase: 'c-ctx', label: 'Contexto', resumen: ctx.resumen,
@@ -1245,8 +1247,7 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
         detalle: renderDesarrollo(des.detalle) + czDatos('Trades del día', renderOperativaData(tradesActual)),
       }) +
       czSeccion({
-        clase: conFase.length ? (falla ? 'c-bad' : 'c-ok') : 'c-val',
-        label: 'Validación de setups', resumen: val.resumen, extra: pills,
+        clase: 'c-val', label: 'Validación de setups', resumen: val.resumen, extra: pills,
         detalle: renderValidacion(val.detalle), verDetalle: 'Ver las reglas una a una',
       })
   }
@@ -1258,20 +1259,16 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
     const container = document.getElementById('coachDiagnosticoContent')
     if (!container) return
 
-    // Veredicto: título corto + la razón. Lleva icono además del color — el
-    // color nunca solo (daltonismo, impresión).
+    // Veredicto: sección normal, como el resto. La palabra válida/inválida va
+    // resaltada — el sentido lo lleva el TEXTO, no el color, así que se lee
+    // igual sin distinguir tonos.
     const ver = (secciones.veredicto || '').trim()
     const m = ver.match(/ENTRADA\s+(INV[ÁA]LIDA|V[ÁA]LIDA)\s*[—:\-–.]*\s*([\s\S]*)/i)
     const mala = m ? /^INV/i.test(m[1]) : false
-    const titulo = m ? `Entrada ${m[1].toLowerCase()}` : 'Veredicto'
-    const razon  = (m ? m[2] : ver).trim()
-    const veredicto = ver
-      ? `<div class="cz-verd ${m ? (mala ? 'no' : 'ok') : 'na'}">
-          <span class="cz-verd-ic">${m ? (mala ? '✕' : '✓') : '•'}</span>
-          <div><div class="cz-verd-t">${titulo}</div>
-          ${razon ? `<p class="cz-verd-w">${inlineMd(razon)}</p>` : ''}</div>
-        </div>`
-      : ''
+    const verTexto = m
+      ? `Entrada <b class="${mala ? 'cz-no' : 'cz-si'}">${mala ? 'inválida' : 'válida'}</b>.`
+        + (m[2].trim() ? ` ${m[2].trim()}` : '')
+      : ver
 
     // Errores: arriba el recuento en lenguaje humano; el formato de 9 partes
     // separado por "|" se va al detalle (antes se volcaba crudo en pantalla).
@@ -1281,20 +1278,23 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
       : ''
     const apr = partirResumen(secciones.aprendizaje)
 
-    container.innerHTML = veredicto +
-      czSeccion({
-        clase: 'c-apr', label: 'Qué te llevas', resumen: apr.resumen,
-        detalle: mdAnalisis(apr.detalle), verDetalle: 'Ver aprendizaje completo',
-      }) +
+    // Orden del diseño: Veredicto → Errores → Aprendizaje.
+    // "Resumen para diario" no se pinta: lo dice la cabecera de Sesión Operativa.
+    container.innerHTML =
+      (ver ? czSeccion({ clase: 'c-ver', label: 'Veredicto', resumen: verTexto, detalle: '' }) : '') +
       (errs.length || (secciones.errores || '').trim()
         ? czSeccion({
-            clase: errs.length ? 'c-bad' : 'c-ok',
+            clase: errs.length ? 'c-err' : 'c-ok',
             label: 'Errores detectados',
             resumen: errResumen || 'Día limpio — sin errores que registrar.',
             detalle: errs.length ? mdAnalisis(secciones.errores) : '',
             verDetalle: 'Ver el detalle de cada error',
           })
-        : '')
+        : '') +
+      czSeccion({
+        clase: 'c-apr', label: 'Aprendizaje del día', resumen: apr.resumen,
+        detalle: mdAnalisis(apr.detalle), verDetalle: 'Ver aprendizaje completo',
+      })
   }
 
   // ── Render del chat ────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Versión** | 1.0 |
+| **Versión** | 1.1 |
 | **Estado** | ✅ Aprobado por Kris (16 ago 2026) — implementado |
 | **Alcance** | Etapa 1 (Análisis técnico) y Etapa 3 (Diagnóstico final) de `section-coach` |
 | **Mockup** | https://claude.ai/code/artifact/affe4f53-1d51-4d9f-9751-9bd3dccff85f |
@@ -67,12 +67,33 @@ De un vistazo se ve **en qué fase se rompió el día**, que es la pregunta que 
 checklist. Los contadores ya se calculaban en `renderValidacion`: no se le pide nada nuevo
 al modelo.
 
-### Etapa 3 — el veredicto manda
+### Etapa 3 — mismo orden y colores que el mockup de Kris
 
-1. **Veredicto** — banner con icono, fondo y color. Es la respuesta a "¿estuvo bien?", no
-   una sección más. Lleva **forma además de color** (icono ✓/✕): el color nunca solo.
-2. **Qué te llevas** — el aprendizaje en 1-2 líneas.
-3. **Errores a registrar** — los chips interactivos de siempre.
+1. **Veredicto** (azul) — la palabra *válida* / *inválida* va resaltada: el sentido lo
+   lleva el TEXTO, no el color, así que se lee igual sin distinguir tonos.
+2. **Errores detectados** (rojo; verde si el día salió limpio).
+3. **Aprendizaje del día** (naranja).
+4. **Errores a registrar** — los chips interactivos de siempre.
+
+> **v1.1** — el veredicto se probó como banner con icono y Kris prefirió su mockup:
+> sección normal, como las demás. Se descarta el banner.
+
+### Colores por sección
+
+| Sección | Borde y título |
+|---|---|
+| Contexto | verde — `--accent` / `--accent-txt` |
+| Desarrollo de sesión | naranja — `--warning` / `--warning-txt` |
+| Validación de setups | azul — `--blue` / `--blue-txt` |
+| Veredicto | azul — `--blue` / `--blue-txt` |
+| Errores detectados | rojo — `--red` / `--red-txt` |
+| Aprendizaje del día | naranja — `--warning` / `--warning-txt` |
+
+Título en MAYÚSCULA y del mismo tono que su borde, en variante `-txt` porque la `base` no
+contrasta como color de letra.
+
+**Validación va SIEMPRE en azul**, falle o no: si el título cambiara de color cada día se
+perdería la referencia visual. Que una fase falle ya lo dice su píldora en rojo.
 
 **Cambio de contenido:** hasta ahora la sección de errores volcaba el texto crudo del
 modelo, con el formato de 9 partes separado por `|` a la vista. Ahora ese texto vive en el
