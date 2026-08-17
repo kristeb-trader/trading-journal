@@ -424,12 +424,7 @@
             <!-- ═══ 3. Operativa (visible cuando sí operó) ═══ -->
             <div id="tradingFields" class="op-only form-card collapsible card-x" data-tono="azul">
               <div class="form-section-title"><i class="ti ti-chart-candle"></i> La operación
-                <span class="card-meta" id="opMeta"></span>
               </div>
-
-              <!-- Resumen de lectura en 3 recuadros (solo en modo lectura).
-                   Lo rellena renderOpResumen(); en edición se ven los campos. -->
-              <div id="opResumen" class="op-stats"></div>
 
               <!-- Bloque 1 · QUÉ se operó -->
               <div class="op-bloque">
@@ -460,18 +455,22 @@
               <div class="op-bloque">
                 <div class="op-bloque-lbl">La lectura</div>
                 <div class="op-grid">
-                  <div class="form-group">
-                    <label>Número de corrida</label>
-                    <div class="btn-group" id="corrida">
-                      <button type="button" class="btn-option" data-value="1">1ª</button>
-                      <button type="button" class="btn-option" data-value="2">2ª</button>
-                      <button type="button" class="btn-option" data-value="3">3ª</button>
+                  <!-- Corrida y velas van juntas: son un solo dato («2ª · 4
+                       velas»), y separarlas obligaba a leer dos campos. -->
+                  <div class="form-group op-ancho">
+                    <label>Corrida</label>
+                    <div class="corrida-row">
+                      <div class="btn-group" id="corrida">
+                        <button type="button" class="btn-option" data-value="1">1ª</button>
+                        <button type="button" class="btn-option" data-value="2">2ª</button>
+                        <button type="button" class="btn-option" data-value="3">3ª</button>
+                      </div>
+                      <input type="hidden" id="numCorrida" name="num_corrida">
+                      <div class="corrida-velas">
+                        <input type="number" id="velasCorrida" name="velas_corrida" min="1" max="20" placeholder="0">
+                        <span>velas</span>
+                      </div>
                     </div>
-                    <input type="hidden" id="numCorrida" name="num_corrida">
-                  </div>
-                  <div class="form-group" data-vacio-auto>
-                    <label for="velasCorrida">Velas en la corrida</label>
-                    <input type="number" id="velasCorrida" name="velas_corrida" min="1" max="20" placeholder="1 – 20">
                   </div>
                   <div class="form-group">
                     <label>Puntos de retroceso</label>
@@ -640,16 +639,6 @@
               </button>
             </div>
           </fieldset>
-
-          <!-- "Editar sesión" va FUERA del fieldset (si no, `fieldset:disabled`
-               lo desactivaría justo cuando hace falta) pero al final del
-               formulario, junto a Guardar/Limpiar. Solo uno de los dos bloques
-               se ve a la vez, según el modo lectura/edición. -->
-          <div class="form-actions-view" id="formActionsView">
-            <button type="button" class="btn-primary" id="editarSesionBtn">
-              <i class="ti ti-edit"></i> Editar sesión
-            </button>
-          </div>
 
           </form>
         </div>

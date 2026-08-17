@@ -669,57 +669,9 @@ small { font-size: 0.82em; }
 /* Fieldset envolvente: sin estilos por defecto del navegador */
 #sessionFieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 
-/* Botón "Editar sesión" del encabezado: solo visible en modo lectura */
-/* El bloque de "Editar sesión" solo existe en modo lectura; en edición manda
-   .form-actions (Guardar / Limpiar). Se oculta el contenedor entero para que no
-   deje un hueco al final del formulario. */
-#section-register:not(.view-mode) #formActionsView { display: none; }
-
-/* ── Modo lectura (visualización) ─────────────────────────────────────── */
-/* Oculta acciones de edición y deja todo legible (no "deshabilitado feo") */
-/* Modo lectura: fuera TODO lo que sirve para meter datos. Un día ya registrado
-   se consulta; los desplegables y cajas de "añadir" solo aparecen al pulsar
-   "Editar sesión". Se ocultan las filas enteras, no solo su botón: si no, el
-   desplegable y las cajas vacías seguían ocupando la tarjeta. */
-#section-register.view-mode .form-actions,
-#section-register.view-mode .cas-input-row,
-#section-register.view-mode .exp-add-row,
-#section-register.view-mode #uploadArea,
-#section-register.view-mode .cas-del { display: none; }
-
-/* Lo que no tiene valor no se dibuja: un día se lee, no se rellena */
-#section-register.view-mode .vacio-en-lectura { display: none; }
-
-/* Los controles con valor se leen como texto, sin caja ni borde */
-#section-register.view-mode input[type="text"],
-#section-register.view-mode input[type="number"],
-#section-register.view-mode input[type="date"],
-#section-register.view-mode input[type="time"],
-#section-register.view-mode select,
-#section-register.view-mode textarea {
-  background: none; border-color: transparent; padding-left: 0; padding-right: 0;
-  color: var(--text); cursor: default; resize: none;
-  -webkit-appearance: none; appearance: none;
-}
-#section-register.view-mode textarea { min-height: 0; height: auto; }
-/* La fecha de la cabecera SÍ sigue siendo un control: se navega en lectura */
-#section-register.view-mode .so-head input[type="date"] {
-  background: var(--bg3); border-color: var(--border);
-  padding-left: 12px; padding-right: 12px; cursor: pointer;
-  -webkit-appearance: auto; appearance: auto;
-}
-/* De un grupo de botones, en lectura solo se ve el elegido — y se lee como un
-   valor más, no como un botón encendido: en una pantalla de consulta un botón
-   verde sugiere que algo se puede pulsar. */
-#section-register.view-mode .btn-option:not(.active) { display: none; }
-#section-register.view-mode .btn-group { display: block; }
-#section-register.view-mode .btn-option.active {
-  cursor: default; background: none; border-color: transparent; box-shadow: none;
-  color: var(--text); font-size: 0.95rem; font-weight: 600;
-  padding: 8px 0; text-align: left; width: auto;
-}
-/* Estrellas: sin las apagadas se pierde la escala, así que se quedan */
-#section-register.view-mode .emo-star { cursor: default; }
+/* Sesión Operativa es SOLO edición: la cara de lectura vive en la vista del día
+   del calendario. Se retiraron las reglas de  y el botón
+   "Editar sesión" — la clase ya no se aplica nunca. */
 
 #sessionFieldset:disabled { opacity: 1; }
 #sessionFieldset:disabled input,
@@ -1110,13 +1062,6 @@ textarea { resize: vertical; min-height: 80px; }
   text-transform: uppercase; color: var(--text3);
 }
 /* En lectura el valor se lee como dato, no como campo de formulario */
-#section-register.view-mode .card-x input[type="text"],
-#section-register.view-mode .card-x input[type="number"],
-#section-register.view-mode .card-x select,
-#section-register.view-mode .card-x textarea {
-  font-size: 0.95rem; font-weight: 600; color: var(--text);
-}
-#section-register.view-mode .card-x textarea { font-weight: 400; color: var(--text2); line-height: 1.6; }
 
 .lista-vacia { font-size: 0.82rem; color: var(--text3); padding: 4px 2px; margin: 0; }
 
@@ -1136,27 +1081,34 @@ textarea { resize: vertical; min-height: 80px; }
 .phase-card.plegada .phase-card-body { display: none; }
 .phase-card-body { padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--border); }
 
-/* Resumen de la operación en recuadros — la cara de lectura del bloque */
-.op-stats { display: none; }
-#section-register.view-mode .op-stats {
-  display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;
+/* Chips de "Cierre del día": nombran el error y el experimento, no los cuentan.
+   Con la tarjeta plegada son el único resumen del cierre. */
+.chip-error {
+  font-size: 0.71rem; font-weight: 600; letter-spacing: 0; text-transform: none;
+  background: rgba(226,75,74,0.14); color: #F2706F;
+  border-radius: 999px; padding: 3px 11px; white-space: nowrap;
+  max-width: 210px; overflow: hidden; text-overflow: ellipsis;
 }
-/* En lectura, los bloques de CAMPOS se sustituyen por los recuadros; el de
-   datos (la tabla de trades) se queda. */
-#section-register.view-mode .op-bloque:not(.op-bloque-datos) { display: none; }
-#section-register.view-mode .op-bloque-datos .op-bloque-lbl { display: none; }
-.op-stat {
-  flex: 1 1 150px; border-radius: 8px; padding: 10px 14px;
-  border: 1px solid var(--border); background: var(--bg2);
+.chip-mas { font-size: 0.68rem; color: var(--text3); margin-left: 5px; letter-spacing: 0; text-transform: none; }
+.chip-exp {
+  font-size: 0.71rem; font-weight: 500; letter-spacing: 0; text-transform: none;
+  background: var(--bg3); color: var(--text2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 11px; white-space: nowrap;
+  max-width: 210px; overflow: hidden; text-overflow: ellipsis;
 }
-.op-stat-k {
-  font-size: 0.65rem; font-weight: 600; letter-spacing: 0.09em;
-  text-transform: uppercase; color: var(--text3);
+.chip-exp b { font-weight: 700; }
+.chip-exp.exp-t { background: var(--accent-dim); border-color: transparent; color: #3FE0A6; }
+.chip-exp.exp-s { background: rgba(226,75,74,0.14); border-color: transparent; color: #F2706F; }
+
+/* Corrida y velas en una fila: son un solo dato («2ª · 4 velas») */
+.corrida-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.corrida-row .btn-group { display: flex; gap: 6px; }
+.corrida-velas {
+  display: flex; align-items: center; gap: 8px;
+  padding-left: 12px; border-left: 1px solid var(--border);
 }
-.op-stat-v {
-  font-size: 0.98rem; margin-top: 4px; color: var(--text); font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
+.corrida-velas input { width: 70px; text-align: center; font-variant-numeric: tabular-nums; }
+.corrida-velas span { font-size: 0.8rem; color: var(--text3); }
 
 /* ── La operación: bloques con un rótulo, en vez de filas sueltas ─────────── */
 .op-bloque { margin-bottom: 18px; }
@@ -1186,13 +1138,6 @@ textarea { resize: vertical; min-height: 80px; }
   width: 104px; flex: 0 0 auto; text-align: center;
   font-variant-numeric: tabular-nums;
 }
-#section-register.view-mode .premkt-lines-wrap .premkt-line {
-  width: auto; min-width: 0; padding: 3px 11px;
-  background: rgba(186,117,23,0.10); border: 1px solid rgba(186,117,23,0.28);
-  border-radius: 999px; color: var(--warning); font-weight: 600; font-size: 0.8rem;
-}
-/* En lectura, una línea sin valor no es una línea */
-#section-register.view-mode .premkt-line:placeholder-shown { display: none; }
 
 .emo-row {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -4253,16 +4198,12 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 }
 .nr-nombre-txt { font-size: 0.88rem; color: var(--text); }
 
-.nr-edit { display: none; grid-template-columns: 120px minmax(0,1fr) 30px; align-items: center; gap: 8px; }
+/* Sesión Operativa es solo edición: manda la cara de campos. La de lectura
+   (`.nr-read`) se conserva porque la usa la vista del día del calendario. */
+.nr-read { display: none; }
+.nr-edit { display: grid; grid-template-columns: 120px minmax(0,1fr) 30px; align-items: center; gap: 8px; }
 .nr-edit input[type="time"], .nr-edit input[type="text"] { margin: 0; }
-
-/* En edición se invierte: aparecen los campos y desaparece el texto */
-#section-register:not(.view-mode) .nr-read { display: none; }
-#section-register:not(.view-mode) .nr-edit { display: grid; }
-#section-register:not(.view-mode) .nr-row + .nr-row { margin-top: 6px; }
-/* En lectura no hay nada que añadir ni pistas de edición que mostrar */
-#section-register.view-mode .btn-add-nr,
-#section-register.view-mode .lbl-hint { display: none; }
+.nr-row + .nr-row { margin-top: 6px; }
 
 .nr-del {
   width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;

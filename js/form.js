@@ -18,60 +18,13 @@ const SessionForm = (() => {
     if (typeof Coach !== 'undefined' && Coach.setFecha) Coach.setFecha(date)
   }
 
-  // Modo lectura ('view') vs edición ('edit'). En 'view' se bloquea todo el
-  // fieldset y se ocultan acciones; el botón "Editar sesión" desbloquea.
-  function setMode(mode) {
-    const view = mode === 'view'
-    const fs  = document.getElementById('sessionFieldset')
-    const sec = document.getElementById('section-register')
-    if (fs)  fs.disabled = view
-    if (sec) sec.classList.toggle('view-mode', view)
-    marcarVacios(view)
-    renderOpResumen()
-  }
-
-  // En lectura, un día se consulta: los valores se leen como texto (lo hace el
-  // CSS) y lo que está vacío se esconde, en vez de dejar decenas de cajas en
-  // blanco. Al pulsar "Editar sesión" vuelve a aparecer todo para poder llenarlo.
-  function marcarVacios(view) {
-    const sec = document.getElementById('section-register')
-    if (!sec) return
-    const conValor = el => {
-      if (!el) return false
-      if (el.type === 'checkbox' || el.type === 'radio') return el.checked
-      return String(el.value || '').trim() !== ''
-    }
-    // Grupos simples: se ocultan si ninguno de sus controles tiene valor
-    sec.querySelectorAll('.premkt-field, .premkt-lines-col, .emo-col, .form-group[data-vacio-auto]')
-      .forEach(g => {
-        const controles = [...g.querySelectorAll('input, select, textarea')]
-          .filter(c => c.type !== 'hidden')
-        const vacio = controles.length > 0 && !controles.some(conValor)
-        g.classList.toggle('vacio-en-lectura', view && vacio)
-      })
-    // Grupos de botones (corrida, zonas en contra…): vacíos si no hay opción
-    // activa. OJO: solo se oculta el grupo si los botones son TODO su contenido.
-    // Sin esta comprobación, los T/S de errores y experimentos —que están sin
-    // elegir mientras solo se consulta— se llevaban por delante la lista entera
-    // de errores y experimentos del día.
-    sec.querySelectorAll('.btn-group').forEach(g => {
-      const grupo = g.closest('.form-group')
-      if (!grupo) return
-      const tieneMasContenido = grupo.querySelector(
-        '.cas-list, .exp-list, select, textarea, input:not([type="hidden"])')
-      if (tieneMasContenido) return
-      const sinElegir = !g.querySelector('.btn-option.active')
-      grupo.classList.toggle('vacio-en-lectura', view && sinElegir)
-    })
-    // Estrellas de confianza: sin valoración no aportan nada en lectura
-    const conf = document.getElementById('confianzaVal')
-    document.getElementById('confianzaStars')?.closest('.emo-col')
-      ?.classList.toggle('vacio-en-lectura', view && !conValor(conf))
-
-    // "No operé hoy": en lectura solo se enseña si el día FUE de no operar.
-    const noOpero = document.getElementById('noOpero')
-    noOpero?.closest('.form-row')
-      ?.classList.toggle('vacio-en-lectura', view && !noOpero.checked)
+  // Sesión Operativa es la pantalla de EDICIÓN del día: aquí se registran los
+  // datos manuales, la imagen y el Coach. La cara de solo lectura vive en la
+  // vista del día del calendario, así que ya no hay modo lectura aquí (se
+  // retiraron `marcarVacios` y el botón "Editar sesión").
+  function setMode() {
+    document.getElementById('sessionFieldset')?.removeAttribute('disabled')
+    document.getElementById('section-register')?.classList.remove('view-mode')
   }
 
   // ── Checklist dinámico (catálogo en BD) ────────────────────────────────────
@@ -273,41 +226,39 @@ const SessionForm = (() => {
     })
   }
 
-  // Resumen de "La operación" en 3 recuadros, para el modo lectura: contexto,
-  // corrida (nº + velas) y retroceso. En edición mandan los campos del
-  // formulario; esto es solo la cara de consulta.
-  function renderOpResumen() {
-    const cont = document.getElementById('opResumen')
-    if (!cont) return
-    const txt = id => {
-      const el = document.getElementById(id)
-      if (!el) return ''
-      if (el.tagName === 'SELECT') return el.selectedOptions[0]?.textContent.trim() || ''
-      return (el.value || '').trim()
-    }
-    const corridaBtn = document.querySelector('#corrida .btn-option.active')?.textContent.trim()
-    const velas = txt('velasCorrida')
-    const corrida = [corridaBtn, velas ? `${velas} velas` : ''].filter(Boolean).join(' · ')
-    const retro = document.getElementById('puntosRetrocesoDisplay')?.textContent.trim()
-    const zonas = document.querySelector('#zonasContra .btn-option.active')?.textContent.trim()
-
-    const celda = (k, v) => v
-      ? `<div class="op-stat"><div class="op-stat-k">${k}</div><div class="op-stat-v">${v}</div></div>` : ''
-    cont.innerHTML = [
-      celda('Contexto', txt('contexto')),
-      celda('Corrida', corrida),
-      celda('Retroceso', retro && retro !== '— pts' ? retro : ''),
-      celda('Zonas en contra', zonas),
-    ].join('')
+  // Chips del título de "Cierre del día". Con la tarjeta plegada este es el
+  // único resumen del cierre, así que en vez de contar ("1 error") se nombra:
+  // el error más significativo y el experimento del día.
+  //
+  // Más significativo = el de mayor peso en la operativa. Los psicológicos van
+  // primero (son la causa raíz de los demás), luego los de proceso y por último
+  // los de marcación. A igualdad, el primero que se registró.
+  const _PESO_ERROR = { psicologico: 0, analitico: 1, operativo: 2, marcado: 3 }
+  function errorPrincipal() {
+    if (!casPendientes.length) return null
+    return [...casPendientes].sort((a, b) =>
+      (_PESO_ERROR[a.tipo] ?? 9) - (_PESO_ERROR[b.tipo] ?? 9))[0]
   }
 
-  // Chips del título de "Cierre del día": errores y experimentos del día.
   function updateCierreMeta() {
     const el = document.getElementById('cierreMeta')
     if (!el) return
+    const esc = s => (s || '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]))
     const chips = []
-    if (casPendientes.length) chips.push(`<span class="chip-soft">${casPendientes.length} error${casPendientes.length !== 1 ? 'es' : ''}</span>`)
-    if (expRegistros.length)  chips.push(`<span class="chip-soft">${expRegistros.length} experimento${expRegistros.length !== 1 ? 's' : ''}</span>`)
+
+    const err = errorPrincipal()
+    if (err) {
+      const resto = casPendientes.length - 1
+      chips.push(`<span class="chip-error" title="${esc(err.casuistica)}">${esc(err.casuistica)}</span>` +
+        (resto > 0 ? `<span class="chip-mas">+${resto}</span>` : ''))
+    }
+
+    expRegistros.forEach(r => {
+      const cls = r.resultado === 'T' ? 'exp-t' : r.resultado === 'S' ? 'exp-s' : ''
+      chips.push(`<span class="chip-exp ${cls}" title="Experimento: ${esc(r.nombre)}">` +
+        (r.resultado ? `<b>${r.resultado}</b> ` : '') + `${esc(r.nombre)}</span>`)
+    })
+
     el.innerHTML = chips.join('')
   }
 
@@ -316,11 +267,9 @@ const SessionForm = (() => {
   let tradesCancelId = 0
   async function renderTradesDia(date) {
     const wrap = document.getElementById('opTradesWrap')
-    const meta = document.getElementById('opMeta')
     if (!wrap) return
     const myId = ++tradesCancelId
     wrap.innerHTML = ''
-    if (meta) meta.innerHTML = ''
     if (!date) return
 
     let trades = []
@@ -340,13 +289,9 @@ const SessionForm = (() => {
       if (!isFinite(e) || !isFinite(x)) return null
       return /short|sell/i.test(t.market_pos || '') ? e - x : x - e
     }
-    const totalPts = propios.reduce((a, t) => a + (ptsDe(t) ?? 0), 0)
-    const totalPnl = propios.reduce((a, t) => a + (parseFloat(t.profit) || 0), 0)
-
-    if (meta) meta.innerHTML =
-      `<span class="chip-pts ${totalPts < 0 ? 'neg' : 'pos'}">${totalPts >= 0 ? '+' : ''}${totalPts.toFixed(1)} pts</span>` +
-      `<span class="chip-soft">${propios.length} trade${propios.length !== 1 ? 's' : ''}</span>`
-
+    // Sin chips de puntos/nº de trades en el título ni fila de total: el
+    // resultado del día ya vive en el recuadro de la cabecera, y casi siempre
+    // hay un solo trade, así que el total repetía la misma fila.
     const fmtHora = h => (h || '').slice(0, 5)
     // Precios con separador de miles y 2 decimales: en una columna de números
     // "30743.5" y "30810" no se comparan de un vistazo.
@@ -371,12 +316,6 @@ const SessionForm = (() => {
             <td class="ta-r ${pnl < 0 ? 'neg' : 'pos'}">${pnl >= 0 ? '+' : '−'}$${Math.abs(pnl).toFixed(2)}</td>
           </tr>`
         }).join('')}
-        <tr class="op-trades-total">
-          <td colspan="3">Total</td>
-          <td class="${totalPts < 0 ? 'neg' : 'pos'}">${totalPts >= 0 ? '+' : ''}${totalPts.toFixed(1)}</td>
-          <td></td>
-          <td class="ta-r ${totalPnl < 0 ? 'neg' : 'pos'}">${totalPnl >= 0 ? '+' : '−'}$${Math.abs(totalPnl).toFixed(2)}</td>
-        </tr>
       </table>`
   }
 
@@ -993,7 +932,10 @@ const SessionForm = (() => {
     })
     updatePhaseProgress()
 
-    setMode('view') // sesión existente: abrir en modo lectura
+    // Sesión Operativa es la pantalla de EDICIÓN: aquí se registran los datos
+    // manuales del día, la imagen y el Coach. La cara de solo lectura vive en la
+    // vista del día del calendario, así que ya no hay modo lectura aquí.
+    setMode('edit')
   }
 
   // ── Casuísticas ──────────────────────────────────────────────────────────
@@ -1107,7 +1049,6 @@ const SessionForm = (() => {
     })
     document.getElementById('sessionForm').addEventListener('submit', handleSubmit)
     document.getElementById('clearForm').addEventListener('click', clearForm)
-    document.getElementById('editarSesionBtn')?.addEventListener('click', () => setMode('edit'))
 
     // Navegar a una fecha: carga la sesión completa de ese día (o form limpio).
     async function goToDate(date) {
