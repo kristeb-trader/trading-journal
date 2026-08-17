@@ -31,6 +31,15 @@ al abrir el archivo afectado.
   queda entera apagada al entrar en ella.
 - **Un solo título por pantalla**, el de la barra superior. Las secciones NO llevan `<h2>`
   propio: el dato variable (mes, filtro, rango) va a `Nav.setContexto(seccion, texto)`.
+  Y los controles de sección (filtro de cuentas, flechas de mes) **viven en esa misma
+  barra**: se declaran en `Nav.HERRAMIENTAS`, no en el markup de la sección.
+- **Importes: `fmtMiles` / `fmtDinero` de `db.js`, nunca `toFixed(0)`.** Sin decimales y
+  con separador de miles (2212 → `2.212`). Se agrupa a mano porque `toLocaleString('es-ES')`
+  **no agrupa los números de 4 dígitos** (CLDR del español) y devolvía `"2212"`.
+- **Un trade vive en UNA tabla: `trades` o `apex_trades`, nunca en las dos.** `apex.js`
+  concatena ambas y filtra por cuenta; duplicar infla el **drawdown consumido** de Apex, que
+  es lo que decide si la cuenta se quema. La cuenta principal se ve en las dos vistas
+  estando solo en `trades`.
 - **Cerrado y no se reabre (24 jul)** — las 6 reglas con filas de relleno en feb–may
   (`rei_zona`, `chk_contexto`, `chk_no_mover`, `rr_1a1`, `stop_max_puntos`,
   `target_sin_zonas`) se quedan como están. Limpiarlas bajaría la disciplina global de
@@ -115,8 +124,10 @@ Lo que el esquema no cuenta y hay que saber:
 
 ```
 js/app.js         Boot, navegación SPA, SesionOperativa (pestañas + cabecera),
-                  Modal.openDay = vista del día a pantalla completa
-js/db.js          Toda query a Supabase + cálculo canónico de disciplina
+                  Modal.openDay = vista del día a pantalla completa,
+                  Nav.HERRAMIENTAS = controles de sección en la barra superior
+js/db.js          Toda query a Supabase + cálculo canónico de disciplina +
+                  fmtMiles/fmtDinero (formato de importes)
 js/form.js        Pestaña "Diario" de Sesión Operativa
 js/coach.js       Pestaña "Coach IA" (3 etapas) + renderHistorial = "Días anteriores"
 js/calendar.js    Calendario mensual · js/metrics.js  KPIs

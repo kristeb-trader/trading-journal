@@ -6,6 +6,26 @@
 
 ## Ahora
 
+### 🔴 Recompilar `SupabaseAutoExport` en NT8
+
+El indicador ahora **refresca `objetivos.cuenta_principal` cada 5 min** en vez de leerla
+solo al arrancar. Sin recompilar, cambiar la cuenta principal en Datos sigue sin surtir
+efecto hasta reiniciar NinjaTrader — y los trades de la cuenta nueva acaban en
+`apex_trades`, que es lo que pasó el 14-ago con la Apex-15.
+
+Al recompilar, en el Output debe salir una línea del tipo:
+`[SupabaseAutoExport] Cuenta principal (→ trades + Telegram): APEX-232411-15  (antes: …)`
+
+### 👀 Revisar a ojo la UI del 16 ago
+
+Dos cambios que **no se pudieron medir** (la pantalla de login altera el shell y el panel
+del navegador no compone frames para capturar):
+
+- **Controles en la barra superior** — el alto que se gana sobre el calendario y cómo queda
+  en móvil: si el filtro de cuentas aprieta o las flechas quedan raras junto al mes.
+- **Vista del día** — el alto de la imagen fija (`46vh` en escritorio, `34vh` en móvil).
+  Si come demasiado espacio de texto, o al contrario, es una línea de CSS.
+
 ### ✅ Navegación de 6 botones (16 ago) — cerrado
 
 Diseño: `docs/disenos/2026-08-16-navegacion-6-botones.md` (v2). Las 4 fases dentro y

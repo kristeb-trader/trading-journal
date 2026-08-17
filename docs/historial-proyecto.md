@@ -4,6 +4,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-08-16d | Cuenta Apex-15, importes con miles y vista del día |
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
@@ -1939,17 +1940,6 @@ recuadros `CONTEXTO · CORRIDA · RETROCESO · ZONAS EN CONTRA` + tabla de trade
 
 ---
 
-## Cómo continuar en un nuevo chat
-
-1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo
-2. El código fuente está en GitHub: `https://github.com/kristeb-trader/trading-journal`
-3. Working directory local: `E:\Proyectos\Trading Journal`
-4. Para cambios en la BD: SQL Editor de Supabase → `https://jothoslozctflfrnysrx.supabase.co`
-5. **Regla operativa:** cada cambio en cualquier archivo debe hacerse **commit y push inmediatamente**
-6. **Flujo de trabajo con IA:** analizar → presentar diagnóstico → esperar aprobación → implementar → commit
-
----
-
 ## Checkpoint 2026-08-16c — Navegación: 6 botones y la pantalla "Otros"
 
 Diseño aprobado y persistido en `docs/disenos/2026-08-16-navegacion-6-botones.md` (v2),
@@ -2060,3 +2050,96 @@ sube a `nqjournal-v5`. **Verificado por Kris en Chrome: 28 entradas en Cache Sto
 
 ---
 
+## Checkpoint 2026-08-16d — Cuenta Apex-15, formato de importes y vista del día
+
+### 🔀 La Apex-15 no salía en el calendario
+
+Kris configuró `APEX-232411-15` como cuenta principal y no aparecía en el selector.
+
+**Causa doble.** `SupabaseAutoExport` enruta por nombre de cuenta (`PA-*` y la principal
+→ `trades`; el resto → `apex_trades`) y leía `objetivos.cuenta_principal` **una sola vez,
+al arrancar**. El 14-ago se operó la -15 a las 09:28, cuando la principal era todavía la
+-14, así que el trade fue a `apex_trades`; el cambio de configuración llegó a las 13:12.
+Y el selector de cuentas se construye desde las cuentas presentes en `trades`, así que una
+cuenta sin trades **no existe como opción** — ni siquiera para ser el default.
+
+- **Datos:** se movió el trade del 14-ago a `trades`. Los del 12 y 13 se quedaron en
+  `apex_trades` porque esos días la operativa se replicó en la -14 y el mismo trade ya
+  estaba en `trades` bajo esa cuenta: moverlos habría contado la pérdida dos veces.
+- **`account-filter.js`:** la cuenta principal **siempre** está en la lista, aunque no
+  tenga trades. Arregla Calendario, Análisis y Trades de una vez.
+- **`SupabaseAutoExport.cs`:** la cuenta principal se **refresca cada 5 min**. Informa en
+  el log solo en la primera lectura y en cada cambio; el timer se libera en
+  `State.Terminated`. ⚠️ **Requiere recompilar.**
+
+> ⚠️ **NO duplicar un trade en `trades` y `apex_trades`.** `apex.js` hace
+> `[...apex_trades, ...trades].filter(t => t.account === cta.numero_cuenta)` asumiendo que
+> cada cuenta vive en UNA sola tabla. Duplicar haría que el Apex Tracker contase el trade
+> dos veces e inflase el **drawdown consumido** — el número que decide si la cuenta se
+> quema. Con el trade solo en `trades` se ve igual en las dos vistas, que es exactamente
+> el caso de la Apex-14.
+
+### 💰 Importes con separador de miles
+
+Helpers **`fmtMiles`** y **`fmtDinero`** en `db.js`, aplicados a los importes del
+calendario (día, semana, total del mes), la card P&L Neto, el KPI y la tabla de Análisis
+con sus totales, el coste de errores y el P&L de experimentos.
+
+> La agrupación se hace **a mano, no con `toLocaleString('es-ES')`**: en español el
+> estándar CLDR no agrupa los números de 4 dígitos, así que 2212 salía `"2212"` y solo
+> agrupaba desde `"10.000"`. Se detectó al verificar.
+> Ahora: `2212 → +$2.212` · `-1257,66 → −$1.258` · `1234567 → +$1.234.567`
+
+### 🧭 El filtro de cuentas y las flechas de mes suben a la barra superior
+
+`.calendar-header` **desaparece**: el título ya estaba arriba y esa fila solo sostenía esos
+dos controles, así que se recupera su alto completo sobre el calendario. También se
+quitaron de Análisis y Trades.
+
+- Las flechas `‹ ›` van pegadas al contexto: navegan el dato que se está mirando.
+- Los 3 filtros conviven en el header (cada sección tiene su selección persistida) y
+  **`Nav.HERRAMIENTAS` + `_pintaHerramientas`** muestran el de la sección activa. Añadir
+  una sección es una línea, no lógica nueva.
+- En ≤560 px se oculta el nombre de cuenta y queda el icono de cartera.
+
+### 🖼️ Vista del día — 7 ajustes
+
+| Antes | Ahora |
+|---|---|
+| Dos botones "Volver al calendario" | **Uno**: el pie entero se elimina |
+| El de arriba con leyenda | Solo icono (texto en `title`/`aria-label`) |
+| Leyenda "Esc para salir" | Fuera — Esc sigue cerrando |
+| Fecha en gris, sin estilo de título | **`--accent-txt`, mayúsculas**, como el resto de títulos |
+| Recuadro Puntos/Resultado/P&L/Setup a la izquierda | **Centrado** en la pantalla |
+| Botón "Ver sesión" | Fuera (iba en el pie) |
+| Imagen dentro del scroll | **Fija** bajo la cabecera, a todo el ancho; solo scrollea el texto |
+| Análisis del Coach completo y abierto | **Resumen** arriba + "Ver análisis completo" plegado |
+
+- La imagen sale de `.dv-scroll`; `.modal-full` pasa a columna flex y solo el texto
+  desborda. Cada día abre con el scroll arriba (antes heredaba el del día anterior).
+- El plegado usa el mismo `<details class="cz-det">` que la pestaña del Coach
+  (`_bloquePlegable`), así que se ve y se comporta igual.
+
+> ⚠️ **`.modal-header` se declara más abajo con `display:flex`** y ganaba por orden sobre
+> `.dv-header`, dejando el recuadro pegado a la izquierda (413 px desviado). Hace falta la
+> doble clase **`.modal-header.dv-header`**.
+
+> ⚠️ **Lección de verificación:** la primera prueba de "imagen fija" no valía — el
+> contenido era corto, no había scroll y la imagen no se movía trivialmente. Hubo que
+> repetirla con contenido largo y un scroll real de 500 px.
+
+Migración: `2026-08-14-mover-trade-apex15-a-trades.sql` (aplicada vía MCP).
+Commits: `d3e31ef` · `de45a1b` · `4794a77` · `3e97402`.
+
+---
+
+## Cómo continuar en un nuevo chat
+
+1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo
+2. El código fuente está en GitHub: `https://github.com/kristeb-trader/trading-journal`
+3. Working directory local: `E:\Proyectos\Trading Journal`
+4. Para cambios en la BD: SQL Editor de Supabase → `https://jothoslozctflfrnysrx.supabase.co`
+5. **Regla operativa:** cada cambio en cualquier archivo debe hacerse **commit y push inmediatamente**
+6. **Flujo de trabajo con IA:** analizar → presentar diagnóstico → esperar aprobación → implementar → commit
+
+---
