@@ -25,10 +25,10 @@ al abrir el archivo afectado.
 - **Sesión Operativa** — nada interactivo funciona dentro de `#sessionFieldset` en modo
   lectura; los trades del día NO se filtran por cuenta principal. Detalle:
   `.claude/rules/sesion.md`.
-- **Navegación: 6 botones, ni uno más** — en móvil la barra son botones de 60 px contra
-  ~390 px de pantalla; el 7º obliga a deslizar. Una sección nueva va a las tarjetas de
-  **Otros** (`Otros.ITEMS` en `app.js`) **y** a `Nav.PADRE`: sin la segunda, la barra se
-  queda entera apagada al entrar en ella.
+- **Navegación: 6 botones, ni uno más** — en móvil se reparten el ancho a partes iguales
+  (`flex: 1`, ~64 px cada uno en 390 px); el 7º los estrecha hasta recortar las etiquetas.
+  Una sección nueva va a las tarjetas de **Otros** (`Otros.ITEMS` en `app.js`) **y** a
+  `Nav.PADRE`: sin la segunda, la barra se queda entera apagada al entrar en ella.
 - **Un solo título por pantalla**, el de la barra superior. Las secciones NO llevan `<h2>`
   propio: el dato variable (mes, filtro, rango) va a `Nav.setContexto(seccion, texto)`.
   Y los controles de sección (filtro de cuentas, flechas de mes) **viven en esa misma
@@ -147,8 +147,8 @@ su pestaña — no romperlos.
 
 ## Estado
 
-Todas las secciones funcionando. **El menú son 6 botones** — Disciplina · Análisis ·
-Calendario · Sesión · Apex · **Otros** —, y las otras 6 secciones (Experimentos · Trades ·
+Todas las secciones funcionando. **El menú son 6 botones** — Calendario · Disciplina ·
+Análisis · Sesión · Apex · **Otros** —, y las otras 6 secciones (Experimentos · Trades ·
 Imágenes · Estrategia · Datos · Fechas Especiales) se abren desde las tarjetas de **Otros**,
 donde vive también **Ajustes** (claves y objetivos, tema, seguridad, cerrar sesión).
 

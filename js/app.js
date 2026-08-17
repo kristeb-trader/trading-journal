@@ -438,6 +438,7 @@ const Nav = {
     calendar: { filtro: 'accountFilterCalendar', navMes: true },
     analysis: { filtro: 'accountFilterAnalysis' },
     trades:   { filtro: 'accountFilterTrades' },
+    otros:    { conexion: true },
   },
 
   _pintaHerramientas(sectionId) {
@@ -450,6 +451,10 @@ const Nav = {
     document.querySelectorAll('.header-info .hdr-nav').forEach(el => {
       el.classList.toggle('hidden', !cfg.navMes)
     })
+    // El estado de la conexión solo se muestra en Otros, que es donde vive todo lo
+    // que es "sobre la app" y no sobre la operativa. Si falla, el toast del arranque
+    // avisa igualmente estés donde estés.
+    document.getElementById('connectionStatus')?.classList.toggle('hidden', !cfg.conexion)
   },
 
   setContexto(sectionId, txt) {

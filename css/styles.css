@@ -94,7 +94,7 @@ small { font-size: 0.82em; }
   transition: background var(--transition), color var(--transition);
   white-space: nowrap;
 }
-.nav-item i { font-size: 1.2rem; min-width: 20px; }
+.nav-item i { font-size: 1.35rem; min-width: 22px; }
 .nav-item:hover { background: var(--bg3); color: var(--text); }
 .nav-item.active { background: var(--accent-dim); color: var(--accent); font-weight: 500; }
 
@@ -295,6 +295,17 @@ small { font-size: 0.82em; }
 .status-dot i.spin { font-size: 1rem; }
 .status-dot.connected { color: var(--accent-txt); }
 .status-dot.disconnected { color: var(--red-txt); }
+
+/* Icono de la app en la barra superior — SOLO en móvil (se enciende en el bloque
+   de ≤768px). Ahí el `.sidebar-header` con el logo está oculto y la app se queda
+   sin ninguna marca. En escritorio el logo del sidebar ya está a la vista, y
+   meterlo también aquí lo aplastaba: la celda derecha mide lo mismo que la
+   izquierda (grid de 3 columnas) y el filtro de cuenta ya la llena. */
+.hdr-logo {
+  display: none;
+  align-items: center; justify-content: center;
+  color: var(--accent-txt); font-size: 1.4rem; flex-shrink: 0;
+}
 
 /* ── Content Area ────────────────────────────────────────────────────── */
 .content-area { flex: 1; padding: 24px; }
@@ -2631,32 +2642,29 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
   .nav-menu {
     display: flex;
     flex-direction: row;
-    justify-content: flex-start;
     align-items: center;
-    padding: 0 2px;
+    padding: 0 4px;
     width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
   }
-  .nav-menu::-webkit-scrollbar { display: none; }
+  /* Los 6 se reparten el ancho a partes iguales (`flex: 1`) en vez de medir 60 px
+     fijos alineados a la izquierda: así quedan centrados respecto a la pantalla
+     —antes sobraban ~30 px muertos a la derecha— y cada objetivo táctil crece. */
   .nav-item {
+    flex: 1 1 0;
+    min-width: 0;
     flex-direction: column;
-    gap: 1px;
-    padding: 4px 0;
+    gap: 2px;
+    padding: 4px 2px;
     margin: 0;
     border-radius: 8px;
-    font-size: 0.58rem;
-    flex: 0 0 60px;
-    width: 60px;
+    font-size: 0.62rem;
     justify-content: center;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
   }
-  .nav-item span { display: block !important; overflow: hidden; text-overflow: ellipsis; }
-  .nav-item i { font-size: 1.2rem; min-width: auto; }
+  .nav-item span { display: block !important; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .nav-item i { font-size: 1.5rem; min-width: auto; }
 
   /* Main content */
   .main-content {
@@ -2671,6 +2679,8 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
   .header-title,
   .header-context { font-size: 0.9rem; letter-spacing: 0.04em; }
   .header-context:not(:empty)::before { margin-right: 6px; }
+  /* Aquí sí: el sidebar-header está oculto y sin esto no hay marca de la app. */
+  .hdr-logo { display: flex; }
 
   /* Calendar */
   .calendar-grid {

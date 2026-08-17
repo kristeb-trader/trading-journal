@@ -2,10 +2,11 @@
 
 | | |
 |---|---|
-| **Versión** | v3 |
+| **Versión** | v4 |
 | **Fecha** | 2026-08-16 |
 | **Estado** | ✅ **IMPLEMENTADO** (2026-08-16) — las 4 fases cerradas y verificadas. Checkpoint: `docs/historial-proyecto.md` § 2026-08-16c |
 | **Origen** | Petición de Kris: en el móvil no caben los 11 botones; títulos duplicados |
+| **Cambios v4** (17 ago) | Orden nuevo: **Calendario · Disciplina · Análisis · Sesión · Apex · Otros**. Iconos más grandes (1,35 rem escritorio / 1,5 rem móvil) y los 6 botones se **reparten el ancho** (`flex: 1`) en vez de medir 60 px fijos pegados a la izquierda. El **icono de la app** aparece arriba a la derecha, solo en móvil. El **punto de conexión solo en Otros**. Y se arregló `ti-chart-candlestick`, que **no existe en Tabler 3.19**: el icono de la app llevaba desde siempre invisible. Detalle en §12 |
 | **Cambios v3** | El título se **centra** y la fecha pasa a tener **su mismo color y tamaño**, separada por un `·`. La barra superior pasa de flex a un grid de 3 celdas: con flex, el título se descentraba en cuanto aparecía el chevron de volver. Detalle en §3 |
 | **Cambios v2** | **El tema claro sale del alcance.** La fila "Tema" se queda en Ajustes marcada como pendiente, sin interruptor y sin `[data-theme]`. Desaparece la antigua Fase 4; quedan 4 fases. Detalle y motivo medido en §7 |
 | **Alcance** | `index.html`, `css/styles.css`, `js/app.js`, `js/db.js`, `js/metrics.js`, `js/gallery.js`, `js/disciplina.js`, `manifest.json`, `sw.js`. **No toca datos, ni disciplina, ni el Coach.** |
@@ -70,11 +71,11 @@ en el HTML: ningún JS la actualiza. Es decoración que miente.
 ## 2. Navegación — antes y después
 
 ```
-ANTES (11 botones)                    DESPUÉS (6 botones)
+ANTES (11 botones)                    DESPUÉS (6 botones — orden v4)
 ─────────────────────                 ────────────────────────────────
-Disciplina                            Disciplina
-Análisis                              Análisis
-Calendario                            Calendario
+Disciplina                            Calendario
+Análisis                              Disciplina
+Calendario                            Análisis
 Apex                ─┐                Sesión
 Experimentos         │                Apex
 Trades               ├─ 7 se van      Otros ──┬── Experimentos
@@ -383,3 +384,47 @@ pantalla afectada mirada de verdad.
 - No reordena las secciones dentro de cada pantalla: solo se les quita el título duplicado.
 - No convierte "Cuenta Fondeo" en un dato real: lo **borra**. Si Kris quiere ver la cuenta
   principal en algún sitio, es otro encargo.
+
+---
+
+## 12. Ajustes de la v4 (17 ago)
+
+### 12.1 Orden y tamaño del menú
+
+Orden nuevo, decidido por Kris: **Calendario · Disciplina · Análisis · Sesión · Apex ·
+Otros**. Calendario primero porque es la pantalla de entrada de la app.
+
+Los botones ya no miden **60 px fijos alineados a la izquierda** (`flex: 0 0 60px` +
+`justify-content: flex-start`), que en una pantalla de 390 px dejaba **30 px muertos a la
+derecha** y por eso se veían corridos. Ahora se **reparten el ancho a partes iguales**:
+
+| | Antes | Ahora |
+|---|---|---|
+| Ancho por botón (390 px) | 60 px | **64 px** |
+| Hueco a la izquierda / derecha | 0 / 30 px | **4 / 4 px** |
+| Icono en móvil | 1,2 rem (16,8 px) | **1,5 rem (21 px)** |
+| Icono en escritorio | 1,2 rem | **1,35 rem (18,9 px)** |
+| Etiqueta en móvil | 0,58 rem | **0,62 rem** |
+
+Con `flex: 1` un 7º botón ya no haría scroll: estrecharía los seis hasta recortar las
+etiquetas. La invariante del `CLAUDE.md` se actualizó para decir eso.
+
+### 12.2 El icono de la app, arriba a la derecha — y por qué no se veía
+
+**Causa raíz:** `ti-chart-candlestick` **no existe en Tabler Icons 3.19.0**. Su
+`::before` resuelve a `content: none`, así que el elemento medía **0 px**. El icono de la
+app estaba escrito en tres sitios —logo del sidebar, logo del login y la barra superior— y
+**en los tres era invisible**. El nombre correcto es `ti-chart-candle`.
+
+Se probaron las **93 clases `ti-` que usa la app**: es la única rota.
+
+Dónde se muestra el icono de la barra: **solo en móvil** (`≤768px`). En escritorio el logo
+del sidebar ya está a la vista con su texto, y meterlo también en la barra lo aplastaba —
+la celda derecha del grid mide lo mismo que la izquierda (§3) y el filtro de cuenta ya la
+llena, así que al logo le quedaban 2 px.
+
+### 12.3 El estado de la conexión, solo en Otros
+
+Entra en `Nav.HERRAMIENTAS` como `otros: { conexion: true }`, el mismo mecanismo que ya
+gobierna los filtros de cuenta y las flechas de mes. En el resto de pantallas era un adorno
+permanente; si la conexión falla, el toast del arranque avisa igual estés donde estés.

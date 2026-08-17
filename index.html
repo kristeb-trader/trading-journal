@@ -34,7 +34,7 @@
   <!-- ── Login gate ───────────────────────────────────────────────────── -->
   <div class="login-gate hidden" id="loginGate">
     <form class="login-card" id="loginForm">
-      <div class="login-logo"><i class="ti ti-chart-candlestick"></i> Trading Journal</div>
+      <div class="login-logo"><i class="ti ti-chart-candle"></i> Trading Journal</div>
       <p class="login-sub">Inicia sesión para continuar</p>
       <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" required>
       <input type="password" id="loginPassword" placeholder="Contraseña" autocomplete="current-password" required>
@@ -47,11 +47,15 @@
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="logo">
-        <i class="ti ti-chart-candlestick"></i>
+        <i class="ti ti-chart-candle"></i>
         <span>Trading Journal</span>
       </div>
     </div>
     <ul class="nav-menu">
+      <li class="nav-item active" data-section="calendar" title="Calendario">
+        <i class="ti ti-calendar-month"></i>
+        <span>Calendario</span>
+      </li>
       <li class="nav-item" data-section="disciplina" title="Disciplina">
         <i class="ti ti-checkup-list"></i>
         <span>Disciplina</span>
@@ -59,10 +63,6 @@
       <li class="nav-item" data-section="analysis" title="Análisis">
         <i class="ti ti-chart-line"></i>
         <span>Análisis</span>
-      </li>
-      <li class="nav-item active" data-section="calendar" title="Calendario">
-        <i class="ti ti-calendar-month"></i>
-        <span>Calendario</span>
       </li>
       <!-- Sesión Operativa absorbe lo que antes eran tres entradas de menú
            (Sesión, Historial y Coach IA): ahora son pestañas de la misma
@@ -136,9 +136,17 @@
         <div class="acct-filter-sm hdr-tool hidden" id="accountFilterCalendar"></div>
         <div class="acct-filter-sm hdr-tool hidden" id="accountFilterAnalysis"></div>
         <div class="acct-filter-sm hdr-tool hidden" id="accountFilterTrades"></div>
-        <button class="status-dot" id="connectionStatus" title="Comprobando conexión…" aria-label="Estado de la conexión">
+        <!-- Estado de la conexión: solo en Otros (Nav.HERRAMIENTAS). En el resto de
+             pantallas era un adorno permanente; si falla la conexión, el toast del
+             arranque ya avisa. -->
+        <button class="status-dot hidden" id="connectionStatus" title="Comprobando conexión…" aria-label="Estado de la conexión">
           <i class="ti ti-loader-2 spin"></i>
         </button>
+        <!-- Icono de la app, el último de la fila: en móvil el sidebar-header está
+             oculto, así que sin esto no hay ninguna marca de la aplicación. -->
+        <span class="hdr-logo" title="Trading Journal" aria-hidden="true">
+          <i class="ti ti-chart-candle"></i>
+        </span>
       </div>
     </header>
 
