@@ -242,6 +242,26 @@ namespace NinjaTrader.NinjaScript.Indicators
                  Description = "Opcional. Dejar en blanco si no se usa.")]
         public string Cuenta6 { get; set; }
 
+        // Simulación y playback no son operativa real. Con "Registrar todas" en ON,
+        // Sim101 se registraba como una cuenta más: sus trades iban a `apex_trades` y el
+        // Apex Tracker la mostraba como si fuera una evaluación, con balance y drawdown
+        // propios (18 ago 2026). Si se elige a mano en un slot Cuenta N sí se registra —
+        // ahí la intención es explícita.
+        private static bool EsCuentaSimulada(Account acc)
+        {
+            try
+            {
+                var prov = acc?.Connection?.Options?.Provider;
+                if (prov == Cbi.Provider.Simulator || prov == Cbi.Provider.Playback) return true;
+            }
+            catch { }
+
+            // Red de seguridad por nombre, por si la conexión aún no está resuelta
+            string n = acc?.Name ?? string.Empty;
+            return n.StartsWith("Sim",      StringComparison.OrdinalIgnoreCase)
+                || n.StartsWith("Playback", StringComparison.OrdinalIgnoreCase);
+        }
+
         // Routing automático por nombre: van al journal (trades) + Telegram la cuenta
         // PA real (prefijo "PA-") y la CUENTA PRINCIPAL configurada; el resto va a
         // apex_trades sin notificar.
@@ -362,6 +382,9 @@ namespace NinjaTrader.NinjaScript.Indicators
                 {
                     foreach (Account acc in Account.All)
                     {
+                        // "Todas las conectadas" nunca incluye simulación/playback
+                        if (RegistrarTodas && EsCuentaSimulada(acc)) continue;
+
                         if (DebeMonitorear(acc.Name))
                         {
                             monitoredAccounts.Add(acc);

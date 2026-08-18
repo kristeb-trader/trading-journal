@@ -49,8 +49,22 @@ configurada** (`objetivos.cuenta_principal`, que el indicador lee de Supabase al
 tabla `trades` + notificación de Telegram. El resto (evaluaciones Apex) → `apex_trades`,
 sin notificar. Estado de trade por-cuenta, para no mezclar trades simultáneos.
 
-Por eso una cuenta de **evaluación** puede alimentar el journal. Al cambiar de cuenta principal:
-elegirla en Datos y **reiniciar NinjaTrader** — no hace falta recompilar.
+Por eso una cuenta de **evaluación** puede alimentar el journal. Al cambiar de cuenta
+principal basta con elegirla en Datos: el indicador **la refresca cada 5 min** (16 ago 2026).
+Ni reiniciar NinjaTrader ni recompilar.
+
+
+**Simulación y playback nunca se registran con "Registrar todas" en ON** (18 ago 2026):
+`EsCuentaSimulada(acc)` mira `acc.Connection.Options.Provider` (`Cbi.Provider.Simulator` /
+`Playback`), con respaldo por nombre (`Sim*`, `Playback*`). **Escape:** apagar "Registrar
+todas" y poner la cuenta de simulación en un slot `Cuenta N` — ahí la intención es
+explícita y sí se registra.
+
+**Dónde acaban esos trades:** en `apex_trades`, como cualquier cuenta que no sea `PA-*` ni
+la principal. Y **no** aparecen en el Apex Tracker: `apex.js` empareja los trades contra las
+cuentas de `apex_cuentas` (`t.account === cta.numero_cuenta`), así que una cuenta que no
+está dada de alta ahí es una fila huérfana — guardada, invisible. Para verlas hace falta una
+pantalla que las lea; hoy no existe.
 
 ## Niveles de referencia (`SupabaseDailyLevels`, v2.1)
 

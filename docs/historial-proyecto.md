@@ -2193,10 +2193,24 @@ sintaxis. Los dos identificadores nuevos se confirmaron por reflexión sobre
 `NinjaTrader.Core.dll`: `Cbi.Operation = {Add, Update, Remove}` y
 `Execution.ExecutionId : String`.
 
-### De paso
 
-`Sim101` se está exportando a `apex_trades` (un NQ de +1.017,96 el 18-ago) porque
-`RegistrarTodas` está en ON. Aparece como una cuenta más en el Apex Tracker.
+### Sim101 fuera del auto-export
+
+`RegistrarTodas` en ON registraba también la cuenta de simulación. `EsCuentaSimulada(acc)`
+mira `acc.Connection.Options.Provider` (`Cbi.Provider = {…, Simulator, Playback}`,
+verificado por reflexión), con respaldo por nombre, y el bucle de suscripción hace
+`if (RegistrarTodas && EsCuentaSimulada(acc)) continue;`. Ponerla a mano en un slot
+`Cuenta N` la sigue registrando: ahí la intención es explícita.
+
+> ⚠️ **Corrección de diagnóstico.** Dije que Sim101 salía en el Apex Tracker "como una
+> evaluación más". **No es cierto**, y lo di por hecho desde el invariante de CLAUDE.md sin
+> abrir `apex.js`. El tracker empareja los trades contra las cuentas de `apex_cuentas`
+> (`t.account === cta.numero_cuenta`) y Sim101 no está dada de alta ahí. Sus filas eran
+> **huérfanas**: guardadas en `apex_trades` e invisibles en toda la app. El motivo real de
+> excluirlas es no acumular basura, no un número inflado.
+
+Se borraron las tres filas fantasma/huérfanas: `trades` #108, `apex_trades` #125 (−1.593,80)
+y `apex_trades` #140 (Sim101, 18-ago, NQ Long 29620,75 → 29671,75, +1.017,96).
 
 ---
 

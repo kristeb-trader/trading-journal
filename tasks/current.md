@@ -6,12 +6,15 @@
 
 ## Ahora
 
-### 🔴 Recompilar `SupabaseAutoExport` en NT8 (parche anti-replay)
+### 🔴 Recompilar `SupabaseAutoExport` en NT8 (anti-replay + Sim101)
 
 El indicador ya no procesa el **replay de ejecuciones** que NinjaTrader entrega al
 resuscribirse (recompilar, reconectar, recargar el gráfico). Sin recompilar, sigue naciendo
 un **trade espejo** cada vez: el fantasma del 18-ago duplicó el P&L del día y el del 24-jun
 metió −$1.593,80 falsos en la evaluación `APEX-232411-11`.
+
+En el mismo commit va la exclusión de simulación/playback del auto-export, así que la
+recompilación cubre las dos cosas.
 
 Detalle y cómo cazarlos en la BD: `.claude/rules/ninjatrader.md` § Anti-replay.
 
