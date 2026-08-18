@@ -435,11 +435,16 @@ const Nav = {
   //   filtro    → id del contenedor del filtro de cuentas de esa sección
   //   navMes    → mostrar las flechas ‹ › junto al mes
   HERRAMIENTAS: {
-    calendar: { filtro: 'accountFilterCalendar', navMes: true },
-    analysis: { filtro: 'accountFilterAnalysis' },
-    trades:   { filtro: 'accountFilterTrades' },
-    otros:    { conexion: true },
+    calendar:   { filtro: 'accountFilterCalendar', navMes: true },
+    analysis:   { filtro: 'accountFilterAnalysis' },
+    trades:     { filtro: 'accountFilterTrades' },
+    disciplina: { filtro: 'disciplinaPeriod', navMes: true },
+    otros:      { conexion: true },
   },
+
+  // Sección visible ahora mismo. Las flechas de mes de la barra las comparten
+  // Calendario y Disciplina, así que cada uno atiende solo cuando le toca.
+  actual() { return this._actual },
 
   _pintaHerramientas(sectionId) {
     const cfg = this.HERRAMIENTAS[sectionId] || {}

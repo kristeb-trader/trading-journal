@@ -146,6 +146,11 @@
         <div class="acct-filter-sm hdr-tool hidden" id="accountFilterCalendar"></div>
         <div class="acct-filter-sm hdr-tool hidden" id="accountFilterAnalysis"></div>
         <div class="acct-filter-sm hdr-tool hidden" id="accountFilterTrades"></div>
+        <!-- Selector de período de Disciplina (Mes/Trimestre/Año/Todo). Vive aquí y no
+             en la sección: los controles de sección van en la barra (Nav.HERRAMIENTAS).
+             Desplegable, no píldoras: en móvil las 4 opciones competían por el ancho
+             con el título y las flechas. Lo pinta disciplina.js. -->
+        <div class="per-filter hdr-tool hidden" id="disciplinaPeriod"></div>
         <!-- Estado de la conexión: solo en Otros (Nav.HERRAMIENTAS). En el resto de
              pantallas era un adorno permanente; si falla la conexión, el toast del
              arranque ya avisa. -->
@@ -926,17 +931,9 @@
 
       <!-- ═══ DISCIPLINA ══════════════════════════════════════════════════════ -->
       <section class="section" id="section-disciplina">
-        <!-- Sin título ni subtítulo: el rango del período lo escribe disciplina.js
-             en #sectionContext. .dd-hero sobrevive porque sostiene los controles. -->
-        <div class="dd-hero">
-          <div class="dd-hero-controls">
-            <div class="dd-monthnav" id="disciplinaMonthNav">
-              <button class="btn-icon" id="disciplinaPrev" title="Mes anterior"><i class="ti ti-chevron-left"></i></button>
-              <button class="btn-icon" id="disciplinaNext" title="Mes siguiente"><i class="ti ti-chevron-right"></i></button>
-            </div>
-            <div class="dd-period-bar" id="disciplinaPeriod"></div>
-          </div>
-        </div>
+        <!-- Sin cabecera propia: el rango del período lo escribe disciplina.js en
+             #sectionContext, y sus controles (flechas de navegación y selector de
+             período) viven en la barra superior — ver Nav.HERRAMIENTAS. -->
         <div id="disciplinaContent">
           <div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Cargando...</div>
         </div>

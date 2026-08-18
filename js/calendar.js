@@ -409,8 +409,11 @@ const Calendar = (() => {
       if (e.key === 'Escape') closeHoliday()
     })
 
-    document.getElementById('prevMonth').addEventListener('click', () => navigate(-1))
-    document.getElementById('nextMonth').addEventListener('click', () => navigate(1))
+    // Las flechas de la barra superior las comparten Calendario y Disciplina
+    // (Nav.HERRAMIENTAS), así que solo se atienden con el Calendario a la vista.
+    const enCalendario = () => typeof Nav === 'undefined' || Nav.actual() === 'calendar'
+    document.getElementById('prevMonth').addEventListener('click', () => { if (enCalendario()) navigate(-1) })
+    document.getElementById('nextMonth').addEventListener('click', () => { if (enCalendario()) navigate(1) })
     // El componente persiste la selección; aquí solo se recarga la vista.
     AccountFilter.create('calendar', {
       mountId: 'accountFilterCalendar',

@@ -2133,6 +2133,75 @@ Commits: `d3e31ef` · `de45a1b` · `4794a77` · `3e97402`.
 
 ---
 
+## Checkpoint Ago 2026 (3) — Dashboard de Disciplina: el porqué de cada fallo (6 ago)
+
+Sesión sobre el tablero por fase. Kris preguntó por qué "Target sin zonas en contra"
+salía en rojo con 3/4, y se terminó cambiando cómo se navega y se lee todo el dashboard.
+
+### 🔍 Cada regla abre los días en que falló
+
+El tablero decía "3/4" y ahí se acababa: ni qué día, ni por qué. Ahora la fila con
+fallos es clicable y abre un modal con el **enunciado completo** de la regla —que no se
+veía en ninguna pantalla— sus metadatos (fase, evidencia, si bloquea el GO, `aplica_si`)
+y un bloque por día fallido con **su motivo**, que hasta ahora se veían idénticos:
+
+| Motivo | Cuándo | Qué muestra |
+|---|---|---|
+| 🔲 Sin marcar | la casilla quedó en `false` | incumplimiento declarado |
+| ⚠️ Desmentida | marcada, pero un error la contradice (regla de oro nº 4) | el error y su descripción |
+| ⚙ Verificado por dato | reglas `evidencia=auto` | MAE en puntos vs el límite, hora de la noticia, setup del día FOMC |
+
+Clic en un día → modal del día, reusando la delegación que ya existía en `metrics.js`.
+
+**El caso que lo motivó (6-ago):** la casilla estaba marcada en `true`; la tumba el error
+*"Descartar Setup Válido"* (`regla_codigo = target_sin_zonas`). Descartó el Setup A, con
+todos los filtros en verde, porque la zona naranja estaba en 29515 (último máximo) y no en
+29537.25 (el de más rechazos). El filtro se aplicó bien sobre un nivel mal marcado — no fue
+una violación por impulsividad, sino una ejecución no fiable de la regla.
+
+### 🎛️ Los controles suben a la barra superior
+
+La sección tenía su propia fila de controles (`.dd-hero`), contradiciendo el invariante de
+navegación: los controles de sección van en la barra, declarados en `Nav.HERRAMIENTAS`.
+
+- **Flechas ‹ ›**: se reusan las de la barra (`#prevMonth`/`#nextMonth`, hasta ahora solo del
+  Calendario) con `navMes: true`. Como son compartidas, **cada módulo atiende solo cuando su
+  sección está a la vista** — de ahí el `Nav.actual()` nuevo.
+- **Selector de período**: desplegable compacto en `.header-actions`, mismo patrón que el
+  filtro de cuentas. Píldoras no: en móvil las 4 opciones competían con el título.
+- **Período nuevo: Año** (1-ene → 31-dic).
+- **Las flechas avanzan una unidad del período**: Mes ±1 · Trimestre ±3 meses · Año ±1 año ·
+  Todo → se ocultan. Antes en Trimestre saltaban de mes en mes.
+- `.dd-hero`, `.dd-hero-controls`, `.dd-monthnav` y `.dd-period-bar` se eliminan del CSS.
+
+### 🧩 Fase 2 separada por familia de setup
+
+Las 4 reglas del Reingreso leían "sin datos" todos los días de IRI, mezcladas con las de
+IRI y las comunes en una sola lista. Ahora la fase se agrupa en **Comunes · IRI ·
+Reingreso**, cada grupo con su propio ratio. Los nombres salen de `catalogo_setups`, no de
+una lista fija, y las fases con una sola familia (1 y 3) no se parten. El % grande de la
+fase sigue siendo el global, para no mover la tarjeta "Fase más débil".
+
+### Verificación
+
+Con la capa de datos stubeada y el **código real** (la app pide login por RLS), sobre datos
+reales de agosto y julio:
+
+| Caso | Resultado |
+|---|---|
+| Agosto · filas clicables | `chk_zonas` y `target_sin_zonas`, las 2 con fallos ✓ |
+| Modal de `target_sin_zonas` | 6-ago · ⚠️ Desmentida + el error ✓ |
+| Motivo `auto` (8-jul, FOMC) | "Día FOMC operado con IRI Apertura Alcista" ✓ |
+| Motivo `auto` (stop) | MAE 900 / (2 × 5) = "90.0 pts, por encima de 80" ✓ |
+| Fase 2 en julio | Comunes 4/5 · IRI 4/4 · Reingreso 3/4 ✓ |
+| Navegación | Trimestre ‹ → abr–jun · Año › → 2027 · Todo → flechas ocultas ✓ |
+| `_pintaHerramientas` real | disciplina: período+flechas · calendario: cuenta+flechas · trades: nada ✓ |
+| Móvil 375px | sin solape título/botón, panel dentro de pantalla, sin scroll horizontal ✓ |
+
+Commits: `a729522` (modal de reglas) · este.
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo

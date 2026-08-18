@@ -2,7 +2,7 @@
 // errores por tipo y registro de sesiones). Lee de Supabase (sesiones, checklist
 // del rulebook, diagnostico_errores, trades). Estilo coherente con la app.
 const Disciplina = (() => {
-  let trades = [], sesiones = [], casuisticas = [], catalogo = []
+  let trades = [], sesiones = [], casuisticas = [], catalogo = [], setupsCat = []
   let fechasEsp = [], stopMax = 80   // contexto de disciplina (regla FOMC, stop máx)
   let DISC_FACTORS = []
   let period = 'month'
@@ -87,24 +87,38 @@ const Disciplina = (() => {
     }
   }
 
-  // ── Período (Mes / Trimestre / Todo) + navegación de mes ──────────────────
+  // ── Período (Mes / Trimestre / Año / Todo) + navegación ───────────────────
+  // Las flechas avanzan UNA unidad del período que se está mirando: en trimestre
+  // saltaban de mes en mes y el rango cambiaba a medias.
+  const PERIODOS = [
+    { k: 'month',   label: 'Mes',       corto: 'Mes',  paso: 1 },
+    { k: 'quarter', label: 'Trimestre', corto: 'Trim', paso: 3 },
+    { k: 'year',    label: 'Año',       corto: 'Año',  paso: 12 },
+    { k: 'all',     label: 'Todo',      corto: 'Todo', paso: 0 },
+  ]
+  const periodoInfo = () => PERIODOS.find(p => p.k === period) || PERIODOS[0]
+
   let navY = null, navM = null   // mes/año que muestra el dashboard
   function ensureNav() {
     if (navM != null) return
     navM = (typeof Calendar !== 'undefined' && Calendar.getMonth) ? Calendar.getMonth() : new Date().getMonth() + 1
     navY = (typeof Calendar !== 'undefined' && Calendar.getYear) ? Calendar.getYear() : new Date().getFullYear()
   }
-  function navMonth(delta) {
+  function navPeriodo(delta) {
+    const paso = periodoInfo().paso
+    if (!paso) return
     ensureNav()
-    navM += delta
-    if (navM > 12) { navM = 1; navY++ }
-    if (navM < 1) { navM = 12; navY-- }
+    // Se navega en meses y se normaliza: 12 meses = 1 año, 3 = 1 trimestre.
+    const idx = (navY * 12 + (navM - 1)) + delta * paso
+    navY = Math.floor(idx / 12)
+    navM = (idx % 12) + 1
     updateMonthNav(); refreshTitle(); render()
   }
   function range() {
     ensureNav()
     const m = navM, y = navY
     if (period === 'all') return { from: '0000-00-00', to: '9999-99-99', label: 'Todo el histórico' }
+    if (period === 'year') return { from: `${y}-01-01`, to: `${y}-12-31`, label: `Año ${y}` }
     if (period === 'quarter') {
       const qStart = Math.floor((m - 1) / 3) * 3 + 1
       const from = `${y}-${String(qStart).padStart(2,'0')}-01`
@@ -166,7 +180,7 @@ const Disciplina = (() => {
           ...motivoFallo(f, s, casByDate[s.sesion_date] || []),
         }))
         return {
-          key: f.key, label: f.label, enunciado: f.enunciado, fase: f.fase,
+          key: f.key, label: f.label, enunciado: f.enunciado, fase: f.fase, setup: f.setup,
           evidencia: f.evidencia, aplica_si: f.aplica_si, bloqueaGo: f.bloqueaGo,
           aplica: registradas.length, ok: registradas.length - fallidas.length,
           fails: fallidas.map(s => s.sesion_date), failsInfo,
@@ -327,7 +341,7 @@ const Disciplina = (() => {
     // ── Phase board ──
     const phaseHtml = d.phases.map(p => {
       const col = p.pct == null ? p.color : p.pct >= 85 ? '#3FE0A6' : p.pct >= 60 ? '#E0A33B' : '#E24B4A'
-      const rows = p.factores.map(fc => {
+      const fila = fc => {
         const noData = fc.cobertura === 0
         const ok = !noData && fc.fails.length === 0
         const dotCls = noData ? 'na' : ok ? 'ok' : 'fail'
@@ -344,6 +358,21 @@ const Disciplina = (() => {
             <span class="dd-check-rate">${rate}</span>
             ${clic ? '<i class="ti ti-chevron-right dd-chev"></i>' : ''}
           </div>`
+      }
+      // Las reglas de un setup solo aplican a ese setup, así que mezclarlas en una
+      // lista única hacía leer "sin datos" en las 4 del Reingreso cada día de IRI.
+      // Con una sola familia presente no se parte nada (Fases 1 y 3).
+      const rows = agruparPorSetup(p.factores).map(g => {
+        const cuerpo = g.factores.map(fila).join('')
+        if (!g.nombre) return cuerpo
+        const con = g.factores.filter(fc => fc.cobertura > 0)
+        const ok = con.reduce((a, fc) => a + fc.ok, 0)
+        const tot = con.reduce((a, fc) => a + fc.aplica, 0)
+        return `
+          <div class="dd-group-head">
+            <span class="dd-group-name">${esc(g.nombre)}</span>
+            <span class="dd-group-rate">${tot ? `${ok}/${tot}` : 'no aplicó'}</span>
+          </div>${cuerpo}`
       }).join('')
       return `
         <div class="dd-phase">
@@ -418,6 +447,25 @@ const Disciplina = (() => {
       el.addEventListener('click', () => openErrorsModal({ causa: el.dataset.errCausa })))
     cont.querySelectorAll('[data-fail-key]').forEach(el =>
       el.addEventListener('click', () => openFactorModal(el.dataset.failKey)))
+  }
+
+  // Agrupa los ítems de una fase por familia de setup. Devuelve un solo grupo sin
+  // nombre (no se pinta encabezado) si todos son comunes o todos del mismo setup.
+  // Los nombres salen del catálogo `catalogo_setups`, no de una lista fija.
+  function agruparPorSetup(factores) {
+    const claves = [...new Set(factores.map(fc => fc.setup || ''))]
+    if (claves.length < 2) return [{ nombre: null, factores }]
+    const nombreDe = k => {
+      if (!k) return 'Comunes'
+      const c = setupsCat.find(x => x.codigo === k)
+      return c ? c.nombre : k.charAt(0).toUpperCase() + k.slice(1)
+    }
+    // Comunes primero; el resto en el orden del catálogo.
+    const orden = k => k ? 1 + Math.max(0, setupsCat.findIndex(x => x.codigo === k)) : 0
+    return claves.sort((a, b) => orden(a) - orden(b)).map(k => ({
+      nombre: nombreDe(k),
+      factores: factores.filter(fc => (fc.setup || '') === k),
+    }))
   }
 
   // ── Modal: días en que falló una regla del checklist ──────────────────────
@@ -514,17 +562,39 @@ const Disciplina = (() => {
     document.getElementById('disciplineModal').classList.remove('hidden')
   }
 
-  function renderPeriodPills() {
+  // Desplegable (no píldoras): comparte la barra con el título y las flechas, y
+  // en móvil las 4 opciones a la vista no caben.
+  function renderPeriodPicker() {
     const el = document.getElementById('disciplinaPeriod')
     if (!el) return
-    const opt = (k, l) => `<button class="dd-period ${period === k ? 'on' : ''}" data-period="${k}">${l}</button>`
-    el.innerHTML = opt('month', 'Mes') + opt('quarter', 'Trimestre') + opt('all', 'Todo')
+    const abierto = !!el.querySelector('.per-filter-panel:not(.hidden)')
+    const opts = PERIODOS.map(p => `
+      <button type="button" class="per-filter-opt ${period === p.k ? 'on' : ''}" data-period="${p.k}">
+        <i class="ti ${period === p.k ? 'ti-check' : ''}"></i>${p.label}
+      </button>`).join('')
+    el.innerHTML = `
+      <button type="button" class="per-filter-btn" id="disciplinaPeriodBtn" title="Período del dashboard">
+        <span class="per-filter-text">${periodoInfo().label}</span>
+        <i class="ti ti-chevron-down"></i>
+      </button>
+      <div class="per-filter-panel ${abierto ? '' : 'hidden'}">${opts}</div>`
+  }
+  function togglePeriodPanel(abrir) {
+    const p = document.querySelector('#disciplinaPeriod .per-filter-panel')
+    if (p) p.classList.toggle('hidden', abrir === undefined ? !p.classList.contains('hidden') : !abrir)
   }
 
-  // Los botones de mes solo aplican en Mes/Trimestre (no en "Todo").
+  // Las flechas de la barra superior son compartidas: aquí solo se deciden
+  // visibilidad y rótulo. En "Todo" no hay nada que navegar.
   function updateMonthNav() {
-    const el = document.getElementById('disciplinaMonthNav')
-    if (el) el.classList.toggle('hidden', period === 'all')
+    const info = periodoInfo()
+    ;['prevMonth', 'nextMonth'].forEach((id, i) => {
+      const b = document.getElementById(id)
+      if (!b) return
+      b.classList.toggle('hidden', !info.paso)
+      const txt = info.k === 'year' ? 'Año' : info.k === 'quarter' ? 'Trimestre' : 'Mes'
+      b.title = `${txt} ${i ? 'siguiente' : 'anterior'}`
+    })
   }
 
   function refreshTitle() {
@@ -535,7 +605,7 @@ const Disciplina = (() => {
   async function load() {
     const cont = document.getElementById('disciplinaContent')
     try {
-      const [t, s, c, cat, items, fe, obj] = await Promise.all([
+      const [t, s, c, cat, items, fe, obj, sup] = await Promise.all([
         DB.getTrades(),
         DB.getSesiones(),
         DB.getAllCasuisticas(),
@@ -543,26 +613,34 @@ const Disciplina = (() => {
         DB.getChecklistItems({ soloActivos: true }).catch(() => null),
         DB.getFechasEspeciales().catch(() => []),
         DB.getObjetivos().catch(() => null),
+        DB.getSetups ? DB.getSetups().catch(() => []) : [],
       ])
       trades = t || []; sesiones = s || []; casuisticas = c || []; catalogo = cat || []
-      fechasEsp = fe || []; stopMax = obj?.stop_max_puntos || 80
+      fechasEsp = fe || []; stopMax = obj?.stop_max_puntos || 80; setupsCat = sup || []
       buildFactors(items)
       loaded = true
     } catch (e) {
       if (cont) cont.innerHTML = `<p class="coach-error">Error al cargar disciplina: ${esc(e.message)}</p>`
       return
     }
-    renderPeriodPills(); updateMonthNav(); refreshTitle(); render()
+    renderPeriodPicker(); updateMonthNav(); refreshTitle(); render()
   }
 
   function wire() {
     document.getElementById('disciplinaPeriod')?.addEventListener('click', e => {
+      if (e.target.closest('.per-filter-btn')) { togglePeriodPanel(); return }
       const b = e.target.closest('[data-period]'); if (!b) return
       period = b.dataset.period
-      renderPeriodPills(); updateMonthNav(); refreshTitle(); render()
+      renderPeriodPicker(); updateMonthNav(); refreshTitle(); render()
     })
-    document.getElementById('disciplinaPrev')?.addEventListener('click', () => navMonth(-1))
-    document.getElementById('disciplinaNext')?.addEventListener('click', () => navMonth(1))
+    // Clic fuera → se cierra el desplegable.
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#disciplinaPeriod')) togglePeriodPanel(false)
+    })
+    // Flechas de la barra superior, compartidas con el Calendario.
+    const aqui = () => typeof Nav === 'undefined' || Nav.actual() === 'disciplina'
+    document.getElementById('prevMonth')?.addEventListener('click', () => { if (aqui()) navPeriodo(-1) })
+    document.getElementById('nextMonth')?.addEventListener('click', () => { if (aqui()) navPeriodo(1) })
   }
 
   async function init() {
@@ -573,7 +651,7 @@ const Disciplina = (() => {
   }
 
   // Al volver a la sección: refrescar datos y reflejar el mes actual del calendario
-  async function reload() { await load() }
+  async function reload() { updateMonthNav(); await load() }
 
   return { init, reload }
 })()
