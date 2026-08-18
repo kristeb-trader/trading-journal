@@ -10,8 +10,7 @@
     {
       "name": "journal-verif",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["-y", "serve"],
-      "autoPort": true,
+      "runtimeArgs": ["-y", "serve", "-l", "3211"],
       "port": 3211
     }
   ]
