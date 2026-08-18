@@ -1,9 +1,10 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-08-16
+**Última actualización:** 2026-08-18
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-08-18 | Trades fantasma: el replay de ejecuciones de NinjaTrader |
 | 2026-08-16d | Cuenta Apex-15, importes con miles y vista del día |
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
@@ -2130,6 +2131,72 @@ quitaron de Análisis y Trades.
 
 Migración: `2026-08-14-mover-trade-apex15-a-trades.sql` (aplicada vía MCP).
 Commits: `d3e31ef` · `de45a1b` · `4794a77` · `3e97402`.
+
+---
+
+## Checkpoint 2026-08-18 — Trades fantasma: el replay de ejecuciones de NinjaTrader
+
+Kris vio dos trades el 18-ago donde solo hubo uno: el segundo, "malo y repetido", con
+entrada a las 10:01 y **salida a las 09:58**.
+
+### El síntoma
+
+| # | Dir | Entrada | Salida | Precio ent. | Precio sal. | exit_name | MAE | MFE | P&L |
+|---|-----|---------|--------|---|---|---|---|---|---|
+| 107 | Short | 09:58:41 | 10:01:35 | 29546,5 | 29526,5 | Target1 | 57 | 51 | +77,96 |
+| 108 | Long | 10:01:35 | 09:58:41 | 29526,5 | 29546,5 | External | 0 | 0 | +77,96 |
+
+El 108 es el **espejo exacto** del 107: precios y horas intercambiados, dirección invertida.
+Por eso el P&L salía idéntico — invertir a la vez la dirección y los precios se cancela.
+
+### La causa
+
+`SupabaseAutoExport` no reconstruye trades desde una lista: lleva una **máquina de estados**
+por cuenta (`NetQty`). Cuando el indicador **se resuscribe** —recompilar, reconectar,
+recargar el gráfico— NinjaTrader le vuelve a entregar las ejecuciones de la sesión, y las
+entrega **de la más reciente a la más antigua**. Con `states` recién reiniciado en 0:
+
+1. Llega la compra de salida → `NetQty = +2` → abre un Long fantasma.
+2. Llega la venta de entrada → `NetQty = 0` → lo cierra y lo publica.
+
+El handler procesaba **toda** notificación de ejecución: no miraba `e.Operation` ni llevaba
+registro de qué `ExecutionId` ya había visto.
+
+**Las tres huellas de un fantasma**, que sirven para detectarlos en la BD:
+`exit_time < entry_time` · `mae = mfe = 0` (`OnBarUpdate` nunca lo siguió) ·
+`exit_name` con el nombre de la orden de **entrada** ("External" si fue manual).
+
+### El fantasma de junio, que nadie había visto
+
+La consulta `where exit_time < entry_time` sacó otro en `apex_trades`: el **id 125** del
+24-jun, espejo del id 123, en la cuenta `APEX-232411-11`, por **−$1.593,80**. El
+`created_at` cierra el caso: el trade real se creó a las 14:21 UTC y el fantasma a las
+**16:54 UTC**, dos horas y media después — el momento de la resuscripción. Ese importe
+estuvo inflando el drawdown consumido de esa evaluación.
+
+### El arreglo
+
+`SupabaseAutoExport.cs`, tres candados en `OnAccountExecutionUpdate`:
+
+1. `if (e.Operation != Cbi.Operation.Add) return;` — `Update` y `Remove` re-notifican un
+   fill ya visto. (El enum es `Add`, **no** `Insert`: verificado por reflexión sobre
+   `NinjaTrader.Core.dll` y contra el propio `@TradedContracts.cs` de NT8.)
+2. `if (ex.Time < subscribedAt) return;` — `subscribedAt` se sella en `State.DataLoaded`
+   con 30 s de holgura para el desfase de reloj. Mata el replay de raíz.
+3. Un `HashSet` de `ExecutionId` ya procesados, por si un replay llegara como `Add` y con
+   hora reciente.
+
+**Verificación sin NT8 delante:** el `csc` del sistema es C# 5 y se atraganta con los `=>`
+y `?.` que NT8 sí acepta, así que se compiló **la versión de HEAD y la parcheada** y se
+compararon los errores: 14 idénticos en ambas → el parche no añade ni un problema de
+sintaxis. Los dos identificadores nuevos se confirmaron por reflexión sobre
+`NinjaTrader.Core.dll`: `Cbi.Operation = {Add, Update, Remove}` y
+`Execution.ExecutionId : String`.
+
+### De paso
+
+`Sim101` se está exportando a `apex_trades` (un NQ de +1.017,96 el 18-ago) porque
+`RegistrarTodas` está en ON. Aparece como una cuenta más en el Apex Tracker.
 
 ---
 

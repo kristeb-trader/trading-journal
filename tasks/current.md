@@ -6,15 +6,17 @@
 
 ## Ahora
 
-### 🔴 Recompilar `SupabaseAutoExport` en NT8
+### 🔴 Recompilar `SupabaseAutoExport` en NT8 (parche anti-replay)
 
-El indicador ahora **refresca `objetivos.cuenta_principal` cada 5 min** en vez de leerla
-solo al arrancar. Sin recompilar, cambiar la cuenta principal en Datos sigue sin surtir
-efecto hasta reiniciar NinjaTrader — y los trades de la cuenta nueva acaban en
-`apex_trades`, que es lo que pasó el 14-ago con la Apex-15.
+El indicador ya no procesa el **replay de ejecuciones** que NinjaTrader entrega al
+resuscribirse (recompilar, reconectar, recargar el gráfico). Sin recompilar, sigue naciendo
+un **trade espejo** cada vez: el fantasma del 18-ago duplicó el P&L del día y el del 24-jun
+metió −$1.593,80 falsos en la evaluación `APEX-232411-11`.
 
-Al recompilar, en el Output debe salir una línea del tipo:
-`[SupabaseAutoExport] Cuenta principal (→ trades + Telegram): APEX-232411-15  (antes: …)`
+Detalle y cómo cazarlos en la BD: `.claude/rules/ninjatrader.md` § Anti-replay.
+
+> El refresco de cuenta principal cada 5 min (pendiente anterior) **ya está recompilado**
+> y funcionando: el trade de hoy de la Apex-15 entró directo a `trades`.
 
 ### 👀 Revisar a ojo la UI del 16 ago
 

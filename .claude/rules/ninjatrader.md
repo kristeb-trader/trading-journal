@@ -86,6 +86,56 @@ se conserven al guardar.
 abrir NT8 un sábado ya no deja filas fantasma en `sesiones`. Ver
 `.claude/rules/disciplina.md`, invariante 1.
 
+
+## Anti-replay de ejecuciones (18 ago 2026) — trades fantasma
+
+`SupabaseAutoExport` **no** reconstruye trades desde una lista: lleva una máquina de estados
+por cuenta (`NetQty`: de 0 a ≠0 abre, de ≠0 a 0 cierra y publica).
+
+**Cuando el indicador se resuscribe** —recompilar, reconectar, recargar el gráfico— NT le
+vuelve a entregar las ejecuciones de la sesión, y las entrega **de la más reciente a la más
+antigua**. Con el estado recién reiniciado, el fill de **salida** se leía como apertura y el
+de **entrada** como cierre: nacía un **trade espejo** con el P&L duplicado.
+
+**Las tres huellas de un fantasma** (sirven para cazarlos en la BD):
+
+```sql
+select * from trades      where exit_time < entry_time;
+select * from apex_trades where exit_time < entry_time;
+```
+
+- `exit_time < entry_time`
+- `mae = 0 and mfe = 0` — `OnBarUpdate` nunca llegó a seguirlo
+- `exit_name` con el nombre de la orden de **entrada** (`External` si la entrada fue manual)
+
+Se encontraron dos: `trades` #108 (18-ago, +77,96) y `apex_trades` #125 (24-jun, −1.593,80,
+que inflaba el drawdown de la evaluación `APEX-232411-11`).
+
+**Los tres candados** en `OnAccountExecutionUpdate`:
+
+1. `if (e.Operation != Cbi.Operation.Add) return;` — el enum es **`Add`**, no `Insert`
+   (`NinjaTrader.Cbi.Operation = {Add, Update, Remove}`, verificado por reflexión).
+2. `if (ex.Time < subscribedAt) return;` — `subscribedAt` se sella en `State.DataLoaded`
+   con 30 s de holgura por el desfase de reloj.
+3. `HashSet` de `ExecutionId` ya procesados.
+
+## Verificar un `.cs` sin abrir NinjaTrader
+
+El `csc` del sistema (`C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe`) es **C# 5**
+y se atraganta con los `=>` y `?.` que NT8 sí acepta, así que no vale por sí solo. Lo que sí
+vale es **comparar contra la baseline**:
+
+```bash
+git show HEAD:NinjaTrader/X.cs > baseline.cs
+# compilar baseline.cs y X.cs con csc y comparar la lista de errores
+```
+
+Si la lista de errores es **idéntica**, el cambio no añade problemas de sintaxis. Y los tipos
+o miembros nuevos se confirman por reflexión sobre `NinjaTrader.Core.dll`
+(`[Reflection.Assembly]::ReflectionOnlyLoadFrom`). Referencias para compilar:
+`C:\Program Files\NinjaTrader 8\bin\*.dll` + `Documents\NinjaTrader 8\bin\Custom\NinjaTrader.Custom.dll`
++ las de WPF en `…\v4.0.30319\WPF\`.
+
 ## ⚠️ Tras editar cualquier `.cs`
 
 **Hay que recompilar en NinjaTrader 8** (F5 en el editor de NinjaScript). El push a git no

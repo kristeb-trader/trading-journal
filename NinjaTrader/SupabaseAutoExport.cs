@@ -148,6 +148,22 @@ namespace NinjaTrader.NinjaScript.Indicators
         // varias cuentas a la vez (mismo instrumento) no mezcle datos.
         private readonly object syncLock = new object();
 
+        // ── Anti-replay de ejecuciones (18 ago 2026) ──────────────────────────
+        // Al resuscribirse (recompilar, reconectar, recargar el gráfico) NinjaTrader
+        // vuelve a entregar las ejecuciones de la sesión, y las entrega de la MÁS
+        // RECIENTE a la más antigua. Con `states` recién reiniciado, el fill de salida
+        // se leía como apertura y el de entrada como cierre: nacía un trade espejo
+        // (Long en vez de Short, exit_time < entry_time, MAE/MFE = 0, exit_name con el
+        // nombre de la orden de entrada). Pasó el 18-ago con el trade de las 09:58, que
+        // duplicó el P&L del día. Tres candados:
+        //   1. solo Operation.Add (Update/Remove re-notifican un fill ya visto),
+        //   2. cada ExecutionId se procesa UNA sola vez,
+        //   3. se ignoran los fills anteriores a la suscripción (30 s de holgura).
+        private readonly HashSet<string> seenExecutions =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private DateTime subscribedAt = DateTime.MaxValue;
+        private static readonly TimeSpan REPLAY_HOLGURA = TimeSpan.FromSeconds(30);
+
         private class AcctState
         {
             public int      NetQty;
@@ -336,6 +352,12 @@ namespace NinjaTrader.NinjaScript.Indicators
             }
             else if (State == State.DataLoaded)
             {
+                // Momento de la suscripción: cualquier fill anterior a esto es un replay
+                // de NinjaTrader, no un trade nuevo. La holgura cubre el desfase entre
+                // `ex.Time` (hora del fill) y `DateTime.Now`.
+                subscribedAt = DateTime.Now - REPLAY_HOLGURA;
+                lock (syncLock) { seenExecutions.Clear(); }
+
                 lock (Account.All)
                 {
                     foreach (Account acc in Account.All)
@@ -355,6 +377,9 @@ namespace NinjaTrader.NinjaScript.Indicators
                     try { acc.ExecutionUpdate -= OnAccountExecutionUpdate; } catch { }
                 }
                 monitoredAccounts.Clear();
+
+                subscribedAt = DateTime.MaxValue;   // ya no aceptar fills: se está cerrando
+                lock (syncLock) { seenExecutions.Clear(); }
 
                 // Publicar cualquier trade pendiente (de cualquier cuenta) antes de terminar
                 List<string> cuentas;
@@ -396,10 +421,27 @@ namespace NinjaTrader.NinjaScript.Indicators
             {
                 Execution ex = e.Execution;
 
+                // Candado 1 — solo fills nuevos. Update/Remove son re-notificaciones
+                // del mismo fill (NT usa Add para el alta, como en @TradedContracts).
+                if (e.Operation != Cbi.Operation.Add) return;
+
                 if (ex.Instrument == null || ex.Instrument.FullName != Instrument.FullName)
                     return;
 
                 if (ex.Order == null) return;
+
+                // Candado 2 — replay: fills de antes de que existiera esta instancia.
+                if (ex.Time < subscribedAt) return;
+
+                // Candado 3 — un ExecutionId solo se procesa una vez, por si un replay
+                // llegara como Add y con hora reciente.
+                if (!string.IsNullOrEmpty(ex.ExecutionId))
+                {
+                    lock (syncLock)
+                    {
+                        if (!seenExecutions.Add(ex.ExecutionId)) return;
+                    }
+                }
 
                 string acctName = ex.Account != null ? ex.Account.Name : (sender as Account)?.Name;
                 if (string.IsNullOrEmpty(acctName)) return;
