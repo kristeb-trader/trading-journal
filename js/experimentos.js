@@ -18,7 +18,7 @@ const Experimentos = (() => {
     }
     if (period === '3m') {
       const d = new Date(); d.setDate(d.getDate() - 90)
-      return d.toISOString().slice(0, 10)
+      return isoLocal(d)
     }
     return null
   }

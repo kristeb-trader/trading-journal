@@ -125,6 +125,20 @@ function fmtDinero(n, { masEnPositivo = true } = {}) {
   return `${signo}$${fmtMiles(v)}`
 }
 
+// ── Fecha local en 'YYYY-MM-DD' ──────────────────────────────────────────────
+// NUNCA usar `new Date().toISOString().slice(0,10)` para obtener "hoy":
+// `toISOString` convierte a UTC y Colombia va 5 h por detrás, así que a partir
+// de las 19:00 locales devuelve YA el día siguiente. El journal se escribe por
+// la tarde-noche, justo en esa franja.
+//
+// Ojo: `new Date('2026-08-18T12:00:00').toISOString()` SÍ es correcto — el ancla
+// del mediodía absorbe el desfase (12:00 + 5 h = 17:00 UTC, mismo día) y por eso
+// se usa en getWeekKey/mondayOf. Lo que rompe es partir del instante actual.
+function isoLocal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+function hoyISO() { return isoLocal(new Date()) }
+
 // ── Día hábil: sábados y domingos NUNCA cuentan para estadísticas ────────────
 // El mercado no se opera en fin de semana. El calendario solo pinta Lun–Vie, pero
 // pueden existir filas de `sesiones` de sábado/domingo: el AddOn de NT8 crea la fila

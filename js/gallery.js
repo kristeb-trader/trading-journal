@@ -97,7 +97,7 @@ const Gallery = (() => {
   }
 
   function emptyCard(dateStr) {
-    const today    = new Date().toISOString().slice(0, 10)
+    const today    = hoyISO()
     const isFuture = dateStr > today
     const icon     = isFuture ? 'ti-clock' : 'ti-photo-off'
     return `
@@ -130,7 +130,7 @@ const Gallery = (() => {
     const grid  = document.getElementById('galleryGrid')
     if (!grid) return
 
-    const today    = new Date().toISOString().slice(0, 10)
+    const today    = hoyISO()
     const filtered = activeMonth
       ? allImages.filter(i => i.sesion_date.startsWith(activeMonth))
       : allImages

@@ -855,7 +855,7 @@ const Apex = (() => {
     document.getElementById('apexDiaModalTitle').innerHTML =
       `<i class="ti ti-calendar-plus"></i> Registrar día — ${cta.nombre}`
     document.getElementById('apexDiaCuentaId').value = cuentaId
-    document.getElementById('apexDiaFecha').value = new Date().toISOString().slice(0, 10)
+    document.getElementById('apexDiaFecha').value = hoyISO()
     document.getElementById('apexDiaPnl').value = ''
     document.getElementById('apexDiaBalance').value = ''
     document.getElementById('apexDiaThreshold').value = ''

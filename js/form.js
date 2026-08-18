@@ -10,14 +10,10 @@ const SessionForm = (() => {
   // muestra sábado ni domingo. No es solo cosmética: el AddOn de NT8 crea la fila
   // de `sesiones` con solo abrir la plataforma (la necesita por la FK de
   // `sesion_checklist`), así que existen sesiones fantasma de fin de semana.
-  // El criterio de día hábil es el de `db.js` (`esDiaHabil`), el mismo que usan
-  // calendario, análisis, disciplina y métricas — aquí no se reimplementa.
-  //
-  // Fecha local, NO `toISOString()`: en UTC-5 eso devuelve el día siguiente a
-  // partir de las 19:00 y el paso de viernes a sábado se colaría.
-  const isoLocal = d =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-
+  // Tanto el día hábil (`esDiaHabil`) como la fecha local (`isoLocal`/`hoyISO`)
+  // son los de `db.js` — aquí no se reimplementan. `hoyISO` en vez de
+  // `toISOString()` porque en UTC-5 eso devuelve el día siguiente a partir de
+  // las 19:00 y el paso de viernes a sábado se colaría.
   function sumarDias(fecha, n) {
     const d = new Date(`${fecha}T00:00:00`)
     d.setDate(d.getDate() + n)

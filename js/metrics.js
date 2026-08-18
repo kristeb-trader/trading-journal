@@ -143,7 +143,7 @@ const Metrics = (() => {
     }
     if (period === 'week') {
       const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1)
-      return { from: d.toISOString().slice(0, 10), to: '9999-12-31' }
+      return { from: isoLocal(d), to: '9999-12-31' }
     }
     return { from: '0000-01-01', to: '9999-12-31' }
   }
@@ -182,7 +182,7 @@ const Metrics = (() => {
     // week
     const d = new Date()
     d.setDate(d.getDate() - d.getDay() + 1)
-    const from = d.toISOString().slice(0, 10)
+    const from = isoLocal(d)
     return {
       trades: trades.filter(t => (t.trade_date || '') >= from),
       sesiones: sesiones.filter(s => s.sesion_date >= from),
@@ -201,7 +201,7 @@ const Metrics = (() => {
     // week
     const d = new Date()
     d.setDate(d.getDate() - d.getDay() + 1)
-    const from = d.toISOString().slice(0, 10)
+    const from = isoLocal(d)
     return casuisticas.filter(c => c.sesion_date >= from)
   }
 
@@ -220,7 +220,7 @@ const Metrics = (() => {
     mon.setDate(mon.getDate() - mon.getDay() + 1)
     const prevMon = new Date(mon); prevMon.setDate(mon.getDate() - 7)
     const prevSun = new Date(mon); prevSun.setDate(mon.getDate() - 1)
-    return { from: prevMon.toISOString().slice(0, 10), to: prevSun.toISOString().slice(0, 10), label: 'semana anterior' }
+    return { from: isoLocal(prevMon), to: isoLocal(prevSun), label: 'semana anterior' }
   }
 
   // Chip de tendencia: compara % actual vs anterior; goodWhenUp indica si subir es bueno
@@ -438,9 +438,9 @@ const Metrics = (() => {
       sinOperar: 0, festivos: 0, fomc: 0, noConectados: 0, sinRegistro: 0,
       totalHabiles: 0,
     }
-    const hoyISO = new Date().toISOString().slice(0, 10)
+    const hoy = hoyISO()
     const { from, to } = periodBounds(period)
-    for (const fecha of diasHabilesEntre(from, to > hoyISO ? hoyISO : to)) {
+    for (const fecha of diasHabilesEntre(from, to > hoy ? hoy : to)) {
       desglose.totalHabiles++
       if (conectadasSet.has(fecha)) {
         // ── Día de trabajo: se conectó (haya operado o no) ──
@@ -592,7 +592,7 @@ const Metrics = (() => {
     // ── Experimentos (filtrar por período) ────────────────────────────────
     const periodFrom = period === 'all' ? null
       : period === 'month' ? `${calYear()}-${String(calMonth()).padStart(2,'0')}-01`
-      : (() => { const d = new Date(); d.setDate(d.getDate()-d.getDay()+1); return d.toISOString().slice(0,10) })()
+      : (() => { const d = new Date(); d.setDate(d.getDate()-d.getDay()+1); return isoLocal(d) })()
     const expRegistrosPeriodo = allExpRegistros.filter(r =>
       !periodFrom || r.sesion_date >= periodFrom)
     const expStats = allExpCatalogo.filter(e => e.activo).map(exp => {

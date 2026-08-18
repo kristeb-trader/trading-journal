@@ -17,6 +17,12 @@ al abrir el archivo afectado.
 - **Horas: NinjaTrader está en hora de Colombia (UTC-5), no ET.** Convertir a ET antes de
   razonar sobre RTH o premercado. Ya causó 2 bugs. Detalle:
   `.claude/rules/ninjatrader.md`.
+- **Fechas: `hoyISO()` / `isoLocal()` de `db.js`, NUNCA
+  `new Date().toISOString().slice(0,10)`.** `toISOString` pasa a UTC y Colombia va 5 h por
+  detrás: a partir de las 19:00 locales devuelve ya el día siguiente, y el journal se
+  escribe de noche. Sí es correcto sobre una fecha anclada al mediodía
+  (`new Date(f + 'T12:00:00')`), que absorbe el desfase — por eso `getWeekKey` y `mondayOf`
+  se quedan como están.
 - **Guardar sesión** — `upsertSesion` manda el payload al Worker `/api/session`, que lo
   escribe TAL CUAL como columnas de `sesiones`. Una clave que no sea columna revienta el
   guardado entero (PGRST204). `checklist` y `noticiasRojas` van fuera del destructuring.

@@ -167,7 +167,7 @@ const Calendar = (() => {
       `<div class="cal-header${i === 5 ? ' cal-header-week' : ''}">${d}</div>`
     ).join('')
 
-    const today = new Date().toISOString().slice(0, 10)
+    const today = hoyISO()
     const lastDate = new Date(currentYear, currentMonth, 0) // último día del mes
 
     // Encontrar el lunes de la primera semana que contenga días del mes
