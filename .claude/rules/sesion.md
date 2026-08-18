@@ -27,6 +27,14 @@ Una pantalla (`section-register`, menú "Sesión") con **3 pestañas** y **una s
 - **En lectura no se dibujan los campos vacíos** (`marcarVacios` + `.vacio-en-lectura`). Al
   ocultar un grupo de botones sin opción elegida, comprobar que no arrastre listas: los T/S
   de errores y experimentos llegaron a ocultar sus propias listas.
+- **Nunca se muestra sábado ni domingo.** El stepper ‹ › salta el fin de semana (viernes
+  ▶ lunes), al abrir en finde se cae al viernes, elegir un finde en el `input type=date`
+  lo corrige con aviso, y "Días anteriores" los filtra. No es cosmética: el AddOn de NT8
+  crea la fila de `sesiones` con solo abrir la plataforma (la necesita por la FK de
+  `sesion_checklist`), así que hay sesiones fantasma de finde, y hay trades de simulación
+  en domingo. El criterio es `esDiaHabil` de `db.js` — **no reimplementarlo**: ya se
+  perdió una vez, cuando las 3 pestañas se unificaron en una sola fecha y el
+  `shiftWeekday` del Coach quedó huérfano sin que nadie lo notara.
 - **El diseño aprobado manda.** Vive en `docs/disenos/`. Ya pasó que se implementara otra
   cosa y hubo que rehacerla.
 

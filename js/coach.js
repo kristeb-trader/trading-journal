@@ -88,23 +88,6 @@ const Coach = (() => {
     return new Date().toISOString().slice(0, 10)
   }
 
-  // Desplaza una fecha 'YYYY-MM-DD' en delta días (sin problemas de zona horaria)
-  function shiftDay(dateStr, delta) {
-    const d = new Date(dateStr + 'T12:00:00')
-    d.setDate(d.getDate() + delta)
-    return d.toISOString().slice(0, 10)
-  }
-
-  // Desplaza al día hábil anterior/siguiente, saltando sábados y domingos
-  // (el mercado está cerrado esos días, no hay nada que cargar)
-  function shiftWeekday(dateStr, direction) {
-    let d = dateStr
-    do {
-      d = shiftDay(d, direction)
-    } while ([0, 6].includes(new Date(d + 'T12:00:00').getDay()))
-    return d
-  }
-
   function fmtDate(d) {
     if (!d) return ''
     const [y, m, day] = d.split('-')
@@ -1906,11 +1889,15 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
       const erroresMap = {}
       erroresFlat.forEach(e => { (erroresMap[e.sesion_date] ||= []).push(e) })
 
-      // Universo: días con sesión registrada ∪ días con trades
+      // Universo: días con sesión registrada ∪ días con trades, SIN fines de
+      // semana. El AddOn de NT8 crea la fila de `sesiones` con solo abrir la
+      // plataforma, así que un sábado puede tener sesión fantasma; y hay trades
+      // sueltos de simulación en domingo. Mismo criterio que el resto de la app
+      // (`esDiaHabil` de db.js).
       const fechas = [...new Set([
         ...(sesiones || []).map(s => s.sesion_date),
         ...Object.keys(tradesPorDia),
-      ])].sort().reverse()
+      ])].filter(esDiaHabil).sort().reverse()
 
       if (!fechas.length) {
         container.innerHTML = '<p class="coach-empty">Aún no hay días registrados.</p>'

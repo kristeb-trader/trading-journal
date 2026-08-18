@@ -5,9 +5,37 @@ const SessionForm = (() => {
   let suppressAutoLoad = false // evita que onShow pise la carga de prefill (editar día pasado)
   let objetivos = null // stop_max_usd etc. para la alerta de riesgo (Bloque 1)
 
+  // ── Días hábiles ────────────────────────────────────────────────────────
+  // El mercado está cerrado en fin de semana, así que Sesión Operativa nunca
+  // muestra sábado ni domingo. No es solo cosmética: el AddOn de NT8 crea la fila
+  // de `sesiones` con solo abrir la plataforma (la necesita por la FK de
+  // `sesion_checklist`), así que existen sesiones fantasma de fin de semana.
+  // El criterio de día hábil es el de `db.js` (`esDiaHabil`), el mismo que usan
+  // calendario, análisis, disciplina y métricas — aquí no se reimplementa.
+  //
+  // Fecha local, NO `toISOString()`: en UTC-5 eso devuelve el día siguiente a
+  // partir de las 19:00 y el paso de viernes a sábado se colaría.
+  const isoLocal = d =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+  function sumarDias(fecha, n) {
+    const d = new Date(`${fecha}T00:00:00`)
+    d.setDate(d.getDate() + n)
+    return isoLocal(d)
+  }
+
+  // Primer día hábil desde `fecha` avanzando en `dir` (por defecto hacia atrás:
+  // un sábado cae en el viernes anterior, que es la última sesión real).
+  function aDiaHabil(fecha, dir = -1) {
+    let d = fecha
+    for (let i = 0; i < 7 && !esDiaHabil(d); i++) d = sumarDias(d, dir)
+    return d
+  }
+
+  const hoyHabil = () => aDiaHabil(isoLocal(new Date()))
+
   function setToday() {
-    const today = new Date().toISOString().slice(0, 10)
-    document.getElementById('sesionDate').value = today
+    document.getElementById('sesionDate').value = hoyHabil()
   }
 
   // Propaga la fecha activa al resto de Sesión Operativa: el recuadro de
@@ -1060,19 +1088,28 @@ const SessionForm = (() => {
       // Coach ya está abierto, también su análisis.
       syncFechaGlobal(date)
     }
-    // Mover ±1 día con las flechas (◀ atrás / ▶ adelante)
+    // Mover ±1 día HÁBIL con las flechas (◀ atrás / ▶ adelante): del viernes se
+    // salta al lunes, no al sábado.
     function shiftDate(delta) {
-      const cur = document.getElementById('sesionDate').value || new Date().toISOString().slice(0, 10)
-      const d = new Date(cur + 'T00:00:00')
-      d.setDate(d.getDate() + delta)
-      goToDate(d.toISOString().slice(0, 10))
+      const cur = document.getElementById('sesionDate').value || hoyHabil()
+      goToDate(aDiaHabil(sumarDias(cur, delta), delta < 0 ? -1 : 1))
     }
     document.getElementById('sesionDatePrev')?.addEventListener('click', () => shiftDate(-1))
     document.getElementById('sesionDateNext')?.addEventListener('click', () => shiftDate(1))
 
-    // Cambiar la fecha con el selector carga ese día (igual que las flechas)
+    // Cambiar la fecha con el selector carga ese día (igual que las flechas).
+    // El `input type=date` del navegador no sabe deshabilitar fines de semana, así
+    // que si se elige uno se cae al viernes anterior y se avisa: quedarse en un
+    // sábado en blanco parecería que se perdió la sesión.
     document.getElementById('sesionDate').addEventListener('change', () => {
-      goToDate(document.getElementById('sesionDate').value)
+      const elegida = document.getElementById('sesionDate').value
+      if (!elegida) return
+      const habil = aDiaHabil(elegida)
+      if (habil !== elegida) {
+        document.getElementById('sesionDate').value = habil
+        Toast.show('Fin de semana: se muestra el viernes anterior', 'info')
+      }
+      goToDate(habil)
     })
 
     // Cambiar el setup del día re-filtra el checklist (IRI / Reingreso / universales)
@@ -1257,7 +1294,9 @@ const SessionForm = (() => {
     // sus cachés quedaron invalidadas y el formulario debe reflejarlo sin
     // obligar a recargar la página.
     await Promise.all([loadSetups(), loadChecklist()])
-    const today = new Date().toISOString().slice(0, 10)
+    // En sábado o domingo se abre el viernes, que es la última sesión real.
+    const today = hoyHabil()
+    document.getElementById('sesionDate').value = today
     let sesion = null
     try { sesion = await DB.getSesionByDate(today) } catch (_) { return }
     if (sesion) prefill(sesion)
