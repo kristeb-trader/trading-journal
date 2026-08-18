@@ -6,6 +6,13 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["-y", "serve", "-l", "3210"],
       "port": 3210
+    },
+    {
+      "name": "journal-verif",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "serve"],
+      "autoPort": true,
+      "port": 3211
     }
   ]
 }

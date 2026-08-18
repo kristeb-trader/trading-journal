@@ -432,11 +432,13 @@ const Nav = {
   // Controles que viven en la barra superior y pertenecen a UNA sección (ago 2026).
   // Antes cada sección tenía su propia fila con el filtro de cuentas y las flechas de
   // mes; al subirlos aquí se recupera ese alto en las tres pantallas.
-  //   filtro    → id del contenedor del filtro de cuentas de esa sección
+  //   filtro    → id (o array de ids) de los controles de esa sección en la barra
   //   navMes    → mostrar las flechas ‹ › junto al mes
+  // Análisis lleva DOS: el período y el filtro de cuentas. Por eso `filtro` admite
+  // array — el orden aquí no manda, manda el orden del DOM en .header-actions.
   HERRAMIENTAS: {
     calendar:   { filtro: 'accountFilterCalendar', navMes: true },
-    analysis:   { filtro: 'accountFilterAnalysis' },
+    analysis:   { filtro: ['analysisPeriod', 'accountFilterAnalysis'], navMes: true },
     trades:     { filtro: 'accountFilterTrades' },
     disciplina: { filtro: 'disciplinaPeriod', navMes: true },
     otros:      { conexion: true },
@@ -448,10 +450,14 @@ const Nav = {
 
   _pintaHerramientas(sectionId) {
     const cfg = this.HERRAMIENTAS[sectionId] || {}
-    // Cada filtro tiene su propia selección persistida, así que los 3 conviven en el
-    // DOM y solo se muestra el de la sección activa.
+    // La barra sabe qué sección muestra: el CSS lo necesita para apretar el
+    // espacio en móvil solo donde hace falta (Análisis lleva DOS controles).
+    document.querySelector('.top-bar')?.setAttribute('data-seccion', sectionId)
+    // Cada filtro tiene su propia selección persistida, así que todos conviven en el
+    // DOM y solo se muestran los de la sección activa.
+    const visibles = cfg.filtro == null ? [] : [].concat(cfg.filtro)
     document.querySelectorAll('.header-actions .hdr-tool').forEach(el => {
-      el.classList.toggle('hidden', el.id !== cfg.filtro)
+      el.classList.toggle('hidden', !visibles.includes(el.id))
     })
     document.querySelectorAll('.header-info .hdr-nav').forEach(el => {
       el.classList.toggle('hidden', !cfg.navMes)

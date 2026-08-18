@@ -143,6 +143,9 @@
              Lo que se ve es el NOMBRE de la cuenta, nunca un icono suelto: la cartera se
              retiró el 17 ago porque en móvil se comía la etiqueta y quedaba un icono que
              no decía qué hacía, ocultando que el filtro estaba activo. -->
+        <!-- Selector de período de Análisis (Mes/Trimestre/Anual + salto directo a
+             un mes/año concreto). Mismo componente que el de Disciplina. -->
+        <div class="per-filter hdr-tool hidden" id="analysisPeriod"></div>
         <div class="acct-filter-sm hdr-tool hidden" id="accountFilterCalendar"></div>
         <div class="acct-filter-sm hdr-tool hidden" id="accountFilterAnalysis"></div>
         <div class="acct-filter-sm hdr-tool hidden" id="accountFilterTrades"></div>
@@ -950,28 +953,10 @@
       <!-- ═══ 6. ANÁLISIS ══════════════════════════════════════════════════ -->
       <section class="section" id="section-analysis">
 
-        <!-- Filtros -->
-        <div class="analysis-controls">
-          <div class="period-selector" id="analysisPeriodSel">
-            <button class="period-btn active" data-period="month">Mes</button>
-            <button class="period-btn" data-period="quarter">Trimestre</button>
-            <button class="period-btn" data-period="year">Anual</button>
-          </div>
-          <div class="analysis-month-nav" id="analysisPeriodNav">
-            <button class="btn-icon" id="analysisPrevPeriod" title="Anterior">
-              <i class="ti ti-chevron-left"></i>
-            </button>
-            <div id="analysisPeriodPicker" class="period-picker"></div>
-            <button class="btn-icon" id="analysisNextPeriod" title="Siguiente">
-              <i class="ti ti-chevron-right"></i>
-            </button>
-          </div>
-          <div class="analysis-right">
-            <!-- El filtro de cuentas se movió a la barra superior (ago 2026) -->
-            <button class="btn-secondary btn-sm" id="analysisExportPdf" title="Exportar a PDF"><i class="ti ti-file-type-pdf"></i> PDF</button>
-            <button class="btn-secondary btn-sm" id="analysisExportImg" title="Exportar como imagen"><i class="ti ti-photo-down"></i> Imagen</button>
-          </div>
-        </div>
+        <!-- Sin cabecera propia: el período (mes/trimestre/año) lo escribe charts.js
+             en #sectionContext, y sus controles —flechas de navegación y selector de
+             período— viven en la barra superior (Nav.HERRAMIENTAS). Exportar baja al
+             final: se usa DESPUÉS de mirar el informe, no antes. -->
 
         <!-- Contenido exportable -->
         <div id="analysisExportArea">
@@ -1040,6 +1025,14 @@
           </div>
         </div>
         </div><!-- /analysisExportArea -->
+
+        <!-- Exportar: fuera del área capturada (si no, los botones saldrían en el
+             PDF) y al final, que es cuando se usa. -->
+        <div class="analysis-footer">
+          <span class="analysis-footer-label">Exportar informe</span>
+          <button class="btn-secondary btn-sm" id="analysisExportPdf" title="Exportar a PDF"><i class="ti ti-file-type-pdf"></i> PDF</button>
+          <button class="btn-secondary btn-sm" id="analysisExportImg" title="Exportar como imagen"><i class="ti ti-photo-down"></i> Imagen</button>
+        </div>
       </section>
 
       <!-- ═══ EXPERIMENTOS ═══════════════════════════════════════════════ -->

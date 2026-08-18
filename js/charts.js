@@ -104,22 +104,71 @@ const Charts = (() => {
   }
 
   // Selectores directos de mes / trimestre / año según el período
-  function renderPicker() {
-    const el = document.getElementById('analysisPeriodPicker')
+  // ── Controles en la barra superior (ago 2026) ────────────────────────────
+  // Antes Análisis tenía una fila propia dentro de la sección con las píldoras de
+  // período, las flechas y el picker. Todo eso vive ahora en la barra, como en
+  // Calendario y Disciplina: el período va a #sectionContext junto al título y el
+  // selector es un desplegable .per-filter.
+  const TIPOS = [
+    { k: 'month',   label: 'Mes' },
+    { k: 'quarter', label: 'Trimestre' },
+    { k: 'year',    label: 'Anual' },
+  ]
+  const tipoInfo = () => TIPOS.find(t => t.k === period) || TIPOS[0]
+
+  // El panel lleva los 3 tipos y, bajo un separador, el salto directo a un
+  // mes/trimestre/año concreto (si no, ir de agosto a marzo serían 5 clics).
+  function renderPeriodPicker() {
+    const el = document.getElementById('analysisPeriod')
     if (!el) return
+    const abierto = !!el.querySelector('.per-filter-panel:not(.hidden)')
+    const opts = TIPOS.map(t => `
+      <button type="button" class="per-filter-opt ${period === t.k ? 'on' : ''}" data-ptype="${t.k}">
+        <i class="ti ${period === t.k ? 'ti-check' : ''}"></i>${t.label}
+      </button>`).join('')
+
     const yearOpts = yearsRange().map(y => `<option value="${y}" ${y === curYear ? 'selected' : ''}>${y}</option>`).join('')
+    let salto = ''
     if (period === 'month') {
       const mOpts = MONTHS.map((m, i) => `<option value="${i + 1}" ${i + 1 === curMonth ? 'selected' : ''}>${m}</option>`).join('')
-      el.innerHTML = `<select id="pickMonth" class="period-pick">${mOpts}</select><select id="pickYear" class="period-pick">${yearOpts}</select>`
+      salto = `<select id="pickMonth" class="period-pick">${mOpts}</select><select id="pickYear" class="period-pick">${yearOpts}</select>`
     } else if (period === 'quarter') {
       const qOpts = [1,2,3,4].map(q => `<option value="${q}" ${q === curQ ? 'selected' : ''}>Q${q} (${MONTH_S[(q-1)*3]}–${MONTH_S[(q-1)*3+2]})</option>`).join('')
-      el.innerHTML = `<select id="pickQ" class="period-pick">${qOpts}</select><select id="pickYear" class="period-pick">${yearOpts}</select>`
+      salto = `<select id="pickQ" class="period-pick">${qOpts}</select><select id="pickYear" class="period-pick">${yearOpts}</select>`
     } else {
-      el.innerHTML = `<select id="pickYear" class="period-pick">${yearOpts}</select>`
+      salto = `<select id="pickYear" class="period-pick">${yearOpts}</select>`
     }
-    document.getElementById('pickYear')?.addEventListener('change', e => { curYear = parseInt(e.target.value); render() })
-    document.getElementById('pickMonth')?.addEventListener('change', e => { curMonth = parseInt(e.target.value); render() })
-    document.getElementById('pickQ')?.addEventListener('change', e => { curQ = parseInt(e.target.value); render() })
+
+    el.innerHTML = `
+      <button type="button" class="per-filter-btn" id="analysisPeriodBtn" title="Período del análisis: ${tipoInfo().label}">
+        <i class="ti ti-calendar-month"></i>
+        <span class="per-filter-text">${tipoInfo().label}</span>
+        <i class="ti ti-chevron-down"></i>
+      </button>
+      <div class="per-filter-panel ${abierto ? '' : 'hidden'}">
+        ${opts}
+        <div class="per-filter-sep"></div>
+        <div class="per-filter-jump">${salto}</div>
+      </div>`
+  }
+
+  function togglePeriodPanel(abrir) {
+    const p = document.querySelector('#analysisPeriod .per-filter-panel')
+    if (p) p.classList.toggle('hidden', abrir === undefined ? !p.classList.contains('hidden') : !abrir)
+  }
+
+  // Las flechas de la barra son compartidas: aquí solo se ajusta el rótulo.
+  function updateMonthNav() {
+    const txt = period === 'year' ? 'Año' : period === 'quarter' ? 'Trimestre' : 'Mes'
+    ;['prevMonth', 'nextMonth'].forEach((id, i) => {
+      const b = document.getElementById(id)
+      if (b) b.title = `${txt} ${i ? 'siguiente' : 'anterior'}`
+    })
+  }
+
+  // El período va al contexto de la barra superior (título único por pantalla).
+  function refreshTitle() {
+    if (typeof Nav !== 'undefined') Nav.setContexto('analysis', periodLabel())
   }
 
   // ── Sub-períodos para barras y tabla (Mes→semanas, Trim/Año→meses) ────────
@@ -436,7 +485,7 @@ const Charts = (() => {
 
   // ── Render principal ────────────────────────────────────────────────────
   function render() {
-    renderPicker()
+    refreshTitle()
 
     const filtered = AccountFilter.filter('analysis', allTrades)
     const { from, to } = periodRange()
@@ -465,19 +514,40 @@ const Charts = (() => {
       onChange: () => render(),
     })
     await AccountFilter.setAccounts('analysis', allTrades.map(t => t.account))
-    render()
+    renderPeriodPicker(); updateMonthNav(); render()
 
-    document.querySelectorAll('#analysisPeriodSel .period-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#analysisPeriodSel .period-btn').forEach(b => b.classList.remove('active'))
-        btn.classList.add('active')
-        period = btn.dataset.period
-        render()
-      })
+    // Desplegable de período: tipo (Mes/Trimestre/Anual) + salto directo.
+    // La marca `_enPeriodo` la lee el manejador de "clic fuera": al elegir un tipo
+    // se re-pinta el panel, y para cuando el evento llega a `document` el nodo
+    // pulsado ya está desconectado del DOM → su `closest()` daría null y el panel
+    // se cerraría solo, justo cuando toca elegir el mes concreto debajo.
+    document.getElementById('analysisPeriod')?.addEventListener('click', e => {
+      e._enPeriodo = true
+      if (e.target.closest('.per-filter-btn')) { togglePeriodPanel(); return }
+      const b = e.target.closest('[data-ptype]'); if (!b) return
+      period = b.dataset.ptype
+      renderPeriodPicker(); updateMonthNav(); render()
+    })
+    // Los `select` del salto directo emiten `change`, no `click`. No se re-pinta el
+    // panel: hacerlo lo cerraría en mitad de la interacción.
+    document.getElementById('analysisPeriod')?.addEventListener('change', e => {
+      const t = e.target
+      if (t.id === 'pickYear')  curYear  = parseInt(t.value)
+      else if (t.id === 'pickMonth') curMonth = parseInt(t.value)
+      else if (t.id === 'pickQ')     curQ     = parseInt(t.value)
+      else return
+      render()
+    })
+    // Clic fuera → se cierra.
+    document.addEventListener('click', e => {
+      if (e._enPeriodo || e.target.closest('#analysisPeriod')) return
+      togglePeriodPanel(false)
     })
 
-    document.getElementById('analysisPrevPeriod').addEventListener('click', () => { shift(-1); render() })
-    document.getElementById('analysisNextPeriod').addEventListener('click', () => { shift(1);  render() })
+    // Flechas de la barra superior, compartidas con Calendario y Disciplina.
+    const aqui = () => typeof Nav === 'undefined' || Nav.actual() === 'analysis'
+    document.getElementById('prevMonth')?.addEventListener('click', () => { if (aqui()) { shift(-1); renderPeriodPicker(); render() } })
+    document.getElementById('nextMonth')?.addEventListener('click', () => { if (aqui()) { shift(1);  renderPeriodPicker(); render() } })
 
     document.getElementById('analysisExportPdf')?.addEventListener('click', () => exportAnalysis('pdf'))
     document.getElementById('analysisExportImg')?.addEventListener('click', () => exportAnalysis('img'))
@@ -546,10 +616,13 @@ const Charts = (() => {
     }
   }
 
-  // Re-lee el capital (configurado en Datos) y re-renderiza
+  // Re-lee el capital (configurado en Datos) y re-renderiza. Las flechas de la
+  // barra son compartidas, así que al volver hay que reclamar su rótulo: puede
+  // haberlo dejado escrito Calendario o Disciplina.
   function refresh() {
     if (!allTrades.length) return
     capital = parseFloat(localStorage.getItem('annual_capital_inicial') || '0')
+    updateMonthNav()
     render()
   }
 

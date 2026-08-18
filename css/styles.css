@@ -339,7 +339,11 @@ small { font-size: 0.82em; }
 
 /* Filtro de cuentas dentro de la barra superior: alto de la barra y ancho contenido
    para no empujar al título fuera del centro. */
-.header-actions > .acct-filter-sm { margin-left: 0; max-width: 190px; min-width: 0; }
+/* `flex: 0 1 auto` anula el `flex: 1 0 100%` que .acct-filter-sm trae de cuando
+   vivía dentro de la sección (allí ocupar toda la fila en móvil era lo correcto).
+   En la barra ese `100%` con shrink 0 hacía que el filtro reclamara la columna
+   entera y expulsara al vecino —el selector de período de Análisis— encima del mes. */
+.header-actions > .acct-filter-sm { margin-left: 0; max-width: 190px; min-width: 0; flex: 0 1 auto; }
 .header-actions > .acct-filter-sm .acct-filter-btn { height: 30px; font-size: 0.78rem; }
 /* El NOMBRE de la cuenta no se oculta nunca: se recorta con puntos suspensivos.
    Ocultarlo dejaba un icono mudo que no decía qué era ni que estaba filtrando —
@@ -396,6 +400,29 @@ small { font-size: 0.82em; }
 .per-filter-opt:hover { background: rgba(255,255,255,0.05); color: var(--text); }
 .per-filter-opt.on { color: var(--accent); }
 .per-filter-opt .ti { font-size: 0.9rem; width: 14px; }
+
+/* Análisis es la única sección con DOS controles en la barra (período + cuenta).
+   A 375 px no caben junto al título y las dos flechas: la columna de la derecha se
+   desbordaba hacia la izquierda y se montaba encima del mes. Se aprieta SOLO aquí
+   (por eso el data-seccion; tocar la rejilla en general recortaba el mes en
+   Calendario y Disciplina, que sí caben).
+     · Fuera la palabra "Análisis" — en móvil ya la dice la barra de abajo.
+     · Fuera las flechas ‹ ›: el desplegable de período lleva el salto directo a
+       mes/año, así que navegar sigue siendo posible en un solo gesto.
+     · El botón de período se queda en icono; QUÉ período es se lee en el contexto
+       ("Agosto 2026" / "Q3 2026" / "2026"). */
+@media (max-width: 768px) {
+  .top-bar[data-seccion="analysis"] .header-title { display: none; }
+  .top-bar[data-seccion="analysis"] .hdr-nav { display: none; }
+  .top-bar[data-seccion="analysis"] #analysisPeriod .per-filter-text { display: none; }
+  .top-bar[data-seccion="analysis"] #analysisPeriod .per-filter-btn { padding: 0 7px; }
+}
+
+/* Salto directo a un mes/trimestre/año concreto, bajo los tipos de período
+   (Análisis). Sin esto, ir de agosto a marzo serían 5 clics en la flecha. */
+.per-filter-sep { height: 1px; background: var(--border); margin: 5px 2px; }
+.per-filter-jump { display: flex; gap: 6px; padding: 3px 2px 1px; }
+.per-filter-jump .period-pick { flex: 1; min-width: 0; font-size: 0.8rem; }
 
 /* Encabezado de grupo dentro de una fase (Comunes / IRI / Reingreso) */
 .dd-group-head {
@@ -1393,10 +1420,6 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .filter-select-sm { margin-left: auto; max-width: 150px; font-size: 0.82rem; padding: 6px 10px; }
 .acct-filter-sm { margin-left: auto; min-width: 190px; max-width: 220px; }
-.analysis-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-.analysis-right .filter-select-sm,
-.analysis-right .acct-filter-sm { margin-left: 0; }
-.period-picker { display: flex; align-items: center; gap: 6px; }
 .period-pick {
   background: var(--bg3); color: var(--text); border: 1px solid var(--border);
   border-radius: 7px; padding: 5px 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer;
@@ -1406,8 +1429,21 @@ textarea { resize: vertical; min-height: 80px; }
 @media (max-width: 768px) {
   .filter-select-sm { margin-left: 0; max-width: none; flex: 1 0 100%; }
   .acct-filter-sm { margin-left: 0; max-width: none; flex: 1 0 100%; }
-  .analysis-right { margin-left: 0; flex-wrap: wrap; }
 }
+/* Exportar: al final del informe y fuera del área capturada. Discreto — es una
+   acción de salida, no un control de lectura. */
+.analysis-footer {
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--border);
+}
+.analysis-footer-label {
+  margin-right: auto; font-size: 0.78rem; color: var(--text3);
+}
+@media (max-width: 768px) {
+  .analysis-footer { flex-wrap: wrap; }
+  .analysis-footer-label { flex: 1 0 100%; margin-right: 0; margin-bottom: 4px; }
+}
+
 #analysisKpiStrip { margin-bottom: 20px; }
 .analysis-kpi-row {
   display: flex; gap: 10px; flex-wrap: wrap;
@@ -1477,17 +1513,6 @@ textarea { resize: vertical; min-height: 80px; }
   transition: color 0.2s; vertical-align: middle; margin-left: 3px;
 }
 .help-btn-sm:hover { color: var(--accent); }
-
-/* ── Analysis month navigator ────────────────────────────────────────── */
-.analysis-month-nav {
-  display: flex; align-items: center; gap: 6px;
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 8px; padding: 3px 8px;
-}
-#analysisMonthLabel {
-  font-size: 0.88rem; font-weight: 600; color: var(--text);
-  min-width: 110px; text-align: center; white-space: nowrap;
-}
 
 /* ── Modal ───────────────────────────────────────────────────────────── */
 .modal-overlay {
