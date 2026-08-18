@@ -365,11 +365,14 @@ small { font-size: 0.82em; }
 }
 @media (max-width: 768px) {
   /* El botón se queda compacto y proporcionado. Lo que identifica una cuenta es
-     su FINAL (…-14 vs …-15), así que si no cabe se recorta por delante, no por
-     detrás: recortar por detrás dejaba "APEX-23…" en las dos y no se distinguían. */
+     su FINAL (…-14 vs …-15), y eso lo resuelve `labelBtn()` en JS acortando el
+     nombre a primer+último segmento (`APEX-232411-15` → `APEX-15`): así cabe
+     entero y no hace falta recortar nada.
+     ⚠️ Aquí hubo un `direction: rtl` para recortar por delante. NO volver a
+     ponerlo: no mueve solo los puntos suspensivos, cambia la dirección del
+     párrafo, y el algoritmo bidi reordena — "3 cuentas" se leía "cuentas 3". */
   .header-actions > .acct-filter-sm { max-width: none; }
   .header-actions > .acct-filter-sm .acct-filter-btn { font-size: 0.72rem; padding: 0 6px 0 8px; gap: 4px; }
-  .header-actions > .acct-filter-sm .acct-filter-text { direction: rtl; text-align: right; }
   /* Opciones a tamaño cómodo: es donde se lee el nombre completo. */
   .acct-filter-panel .acct-filter-opt { padding: 10px 10px; font-size: 0.88rem; }
 }

@@ -2212,6 +2212,34 @@ verificado por reflexión), con respaldo por nombre, y el bucle de suscripción 
 Se borraron las tres filas fantasma/huérfanas: `trades` #108, `apex_trades` #125 (−1.593,80)
 y `apex_trades` #140 (Sim101, 18-ago, NQ Long 29620,75 → 29671,75, +1.017,96).
 
+### El filtro de cuentas decía "ntas 3" en móvil
+
+Kris lo vio en el calendario del celular. El culpable era una línea de CSS puesta con buena
+intención: el botón del filtro es estrecho y lo que distingue una cuenta es su **final**
+(`…-14` vs `…-15`), así que se recortaba por delante con
+`direction: rtl; text-align: right`.
+
+Pero `direction: rtl` **no mueve solo los puntos suspensivos**: cambia la dirección del
+párrafo y el algoritmo bidireccional reordena los tramos. En `"3 cuentas"` el `3` es un
+número europeo y `cuentas` un tramo latino; el espacio entre ambos resuelve a la dirección
+del párrafo (RTL), y el resultado se reordena a **`"cuentas 3"`** — que recortado da
+`"ntas 3"`. Los nombres de cuenta, al ser un único tramo latino, no se reordenaban: por eso
+solo fallaba la etiqueta del plural.
+
+Comprobado en navegador antes de tocar nada, con una maqueta a 375 px que medía carácter a
+carácter qué queda dentro de la caja visible.
+
+**Arreglo:** se acorta el texto en JS en vez de recortarlo en CSS. `labelBtn()` de
+`account-filter.js` deja el primer y el último segmento —`APEX-232411-15` → `APEX-15`,
+`PA-APEX-232411-03` → `PA-03`— y `Todas las cuentas` → `Todas`. Así cabe entero y no hay
+nada que recortar. El nombre completo sigue en el desplegable y en el `title` del botón, y
+`AccountFilter.label()` sigue devolviendo el largo.
+
+Dos guardas: si dos cuentas colapsaran en la misma forma corta se muestran **enteras**
+(distinguirlas importa más que el ancho), y un nombre de menos de tres segmentos (`Sim101`)
+se deja como está. Verificado con el componente real: `APEX-15` · `3 cuentas` · `Todas` ·
+colisión → `APEX-999999-15` · `Sim101`.
+
 ---
 
 ## Checkpoint Ago 2026 (3) — Dashboard de Disciplina: el porqué de cada fallo (6 ago)

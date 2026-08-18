@@ -56,3 +56,21 @@ Estructura: `--sidebar-w` 220px · `--topbar-h` 56px · `--radius` 10px · `--sh
 3. **177 estilos inline** (66 en `index.html`, 111 en `js/`) escapan a este sistema.
 
 Ver `tasks/current.md`.
+
+## Trampa: `direction: rtl` para recortar por delante
+
+Recortar un texto **por delante** (para que se vea su final) con
+`direction: rtl; text-align: right` **no mueve solo los puntos suspensivos**: cambia la
+dirección del párrafo, y el algoritmo bidireccional **reordena** los tramos. Una etiqueta
+que empiece por número se rompe:
+
+```
+"3 cuentas"  →  se renderiza  "cuentas 3"   →  recortado:  "ntas 3"
+```
+
+Pasó en el filtro de cuentas de la barra superior (18 ago 2026). `unicode-bidi: plaintext`
+arregla el reorden pero devuelve el recorte al final, así que tampoco sirve.
+
+**La solución es acortar el texto en JS**, no recortarlo en CSS: `labelBtn()` de
+`account-filter.js` deja `APEX-232411-15` en `APEX-15` (primer + último segmento), que cabe
+entero. El nombre completo se queda en el desplegable y en el `title`.

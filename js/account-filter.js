@@ -65,9 +65,37 @@ const AccountFilter = (() => {
   }
 
   // ── Render ──────────────────────────────────────────────────────────────
+
+  // Etiqueta completa: va al `title` del botón y a la API pública.
   function label(st) {
     if (st.selected === null) return 'Todas las cuentas'
     if (st.selected.length === 1) return st.selected[0]
+    return `${st.selected.length} cuentas`
+  }
+
+  // Forma corta de un nombre de cuenta: PRIMER segmento (qué es) + ÚLTIMO (cuál
+  // es), que es lo que de verdad la distingue.
+  //   APEX-232411-15    → APEX-15
+  //   PA-APEX-232411-03 → PA-03
+  const abreviar = n => {
+    const p = String(n).split('-')
+    return p.length < 3 ? String(n) : `${p[0]}-${p[p.length - 1]}`
+  }
+
+  // Etiqueta del BOTÓN cerrado. En la barra superior el ancho útil en móvil son
+  // ~70 px y el nombre completo no cabe. Antes se recortaba por delante desde el
+  // CSS con `direction: rtl`, pero eso no mueve solo los puntos suspensivos:
+  // cambia la dirección del párrafo y el algoritmo bidi reordena el texto, así
+  // que "3 cuentas" se leía **"cuentas 3"** (18 ago 2026). Se acorta aquí.
+  // El nombre completo sigue en el desplegable y en el `title` del botón.
+  function labelBtn(st) {
+    if (st.selected === null) return 'Todas'
+    if (st.selected.length === 1) {
+      const n = st.selected[0], corto = abreviar(n)
+      // Si dos cuentas colapsaran en la misma forma corta (mismo prefijo y mismo
+      // final), se muestran enteras: distinguirlas importa más que el ancho.
+      return st.accounts.some(a => a !== n && abreviar(a) === corto) ? n : corto
+    }
     return `${st.selected.length} cuentas`
   }
 
@@ -75,7 +103,7 @@ const AccountFilter = (() => {
     const all = st.selected === null
     st.el.innerHTML = `
       <button type="button" class="acct-filter-btn" aria-expanded="false" title="Cuenta: ${esc(label(st))} — toca para cambiar">
-        <span class="acct-filter-text">${esc(label(st))}</span>
+        <span class="acct-filter-text">${esc(labelBtn(st))}</span>
         <i class="ti ti-chevron-down acct-filter-caret"></i>
       </button>
       <div class="acct-filter-panel hidden">
@@ -97,9 +125,8 @@ const AccountFilter = (() => {
 
   function updateLabel(st) {
     const t = st.el.querySelector('.acct-filter-text')
-    if (t) t.textContent = label(st)
-    // El botón puede quedar estrecho en móvil y mostrar solo el final del nombre;
-    // el title lleva siempre el nombre entero.
+    if (t) t.textContent = labelBtn(st)
+    // El botón muestra la forma corta; el title lleva siempre el nombre entero.
     st.el.querySelector('.acct-filter-btn')?.setAttribute('title', `Cuenta: ${label(st)} — toca para cambiar`)
   }
 
