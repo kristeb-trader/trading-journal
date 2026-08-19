@@ -114,21 +114,12 @@ const Disciplina = (() => {
     navM = (idx % 12) + 1
     updateMonthNav(); refreshTitle(); render()
   }
+  // La aritmética del rango vive en `rangoPeriodo` (db.js) desde el 19 ago: el
+  // comparador de Chaumer usa la misma, y dos copias de la misma cuenta de
+  // trimestres es como acaban significando cosas distintas en cada pantalla.
   function range() {
     ensureNav()
-    const m = navM, y = navY
-    if (period === 'all') return { from: '0000-00-00', to: '9999-99-99', label: 'Todo el histórico' }
-    if (period === 'year') return { from: `${y}-01-01`, to: `${y}-12-31`, label: `Año ${y}` }
-    if (period === 'quarter') {
-      const qStart = Math.floor((m - 1) / 3) * 3 + 1
-      const from = `${y}-${String(qStart).padStart(2,'0')}-01`
-      const endM = qStart + 2
-      const to = `${y}-${String(endM).padStart(2,'0')}-${String(new Date(y, endM, 0).getDate()).padStart(2,'0')}`
-      return { from, to, label: `Trimestre · ${MESES[qStart-1]}–${MESES[endM-1]} ${y}` }
-    }
-    const from = `${y}-${String(m).padStart(2,'0')}-01`
-    const to = `${y}-${String(m).padStart(2,'0')}-${String(new Date(y, m, 0).getDate()).padStart(2,'0')}`
-    return { from, to, label: `${MESES[m-1]} ${y}` }
+    return rangoPeriodo(period, navY, navM)
   }
   const inR = (d, r) => d >= r.from && d <= r.to
 

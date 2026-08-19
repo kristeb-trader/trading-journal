@@ -4,7 +4,7 @@
 |---|---|
 | **Versión** | v2 |
 | **Fecha** | 2026-08-19 |
-| **Estado** | 🟢 **APROBADO** (19 ago) — **Fases 1 y 2 implementadas y verificadas**. Fases 3-4 pendientes |
+| **Estado** | 🟢 **APROBADO** (19 ago) — **Fases 1, 2 y 3 implementadas y verificadas**. Fase 4 pendiente |
 | **Origen** | Petición de Kris (19 ago): «entré a su curso y tengo acceso a sus operativas; quiero un módulo donde almacene las suyas vs las mías, la pantalla partida en dos, y un dashboard de diferencias con filtro por mes/trimestre/año/todo, para ver si estoy fallando en algún punto» |
 | **Alcance** | Tabla nueva `chaumer_operativas` (1 migración), `index.html`, `css/styles.css`, `js/app.js`, `js/chaumer.js` (nuevo), `js/db.js`, `js/coach.js` (mueve un helper). **No toca** `sesiones` ni `trades` salvo un valor nuevo de vocabulario |
 
@@ -236,7 +236,7 @@ esto, cualquier porcentaje de abajo es un número sin denominador.
 |---|---|---|---|
 | **1** ✅ | **BD y capa de datos**: migración con RLS, `DB.getChaumer*` / `upsertChaumer`, y `horaEt` movido de `coach.js` a `db.js` | migración, `js/db.js`, `js/coach.js` | ✅ **Hecho** — medido, ver §5.1 |
 | **2** ✅ | **Sección + pestaña «Día»**: navegación, vista partida, alta/edición de su operativa, bloque de motivo en las Fugas | `index.html`, `js/chaumer.js`, `js/app.js`, `js/db.js`, `js/form.js`, `css/styles.css` | ✅ **Hecho** — medido, ver §5.2 |
-| **3** | **Pestaña «Diferencias»**: cobertura, 4 KPIs y 4 gráficas | `js/chaumer.js`, `css/styles.css` | Los KPIs cuadran con un `SELECT` de contraste; el filtro de período cambia los números; sin datos, estados vacíos honestos |
+| **3** ✅ | **Pestaña «Diferencias»**: cobertura, 4 KPIs y 4 gráficas | `js/chaumer.js`, `js/db.js`, `js/disciplina.js`, `index.html`, `js/app.js`, `css/styles.css` | ✅ **Hecho** — medido, ver §5.3 |
 | **4** | **«No lo vi»** en el vocabulario + documentación | `index.html`, `js/form.js`, `CLAUDE.md`, `docs/` | El botón guarda y recarga bien; docs actualizadas |
 
 Las fases 1 y 2 ya dan valor por sí solas: con ellas puedes cargar días y ver la comparación,
@@ -330,6 +330,58 @@ Un día con **mismo setup, mismo resultado y entrada a la vez, pero la mitad de 
 sale hoy como **«Igual»** — con un chip que avisa de los puntos. Es lo que dice el diseño
 (§3), pero puede que quieras que eso cuente como «Ejecución». Se ve en cuanto tengas
 días reales cargados; es una condición en `veredicto()`.
+
+### 5.3 Fase 3 — lo medido (19 ago)
+
+Se cargaron **6 días de agosto** cubriendo los seis estados y se comprobó **cada número
+contra un cálculo a mano** sobre los trades reales. No uno de muestra: todos.
+
+| KPI | En pantalla | A mano | |
+|---|---|---|---|
+| Coincidencia | 25 % (1 de 4) | Días suyos con setup: 12, 13, 17, 18 → 4. «Igual» solo el 18 | ✅ |
+| Fugas | 1 · **+28,5 pts** | El 17: él operó, yo no. Sus puntos, 28,5 | ✅ |
+| De más | 1 · **−30,5 pts** | El 14: yo operé, él no. Short 30.142 → 30.172,5 = −30,5 | ✅ |
+| Δ puntos | **−211,5** (él +134,5 · tú −77) | Él 40+28,5+31+35 = 134,5. Yo 20−30,5−24,25−42,25 = −77 | ✅ |
+| Δ hora | **−12,7 min** | (+3 −25 −16)/3 = −12,67. Las tres con `entry_time` convertido a ET | ✅ |
+| Cobertura | 6 de **13** días hábiles (46 %) | Agosto hasta hoy: 3,4,5,6,7,10,11,12,13,14,17,18,19 = 13 | ✅ |
+
+**La cobertura se acota a lo ya vivido.** En «Mes» el denominador llega al 19, no al 31: si
+contara el mes entero, hoy marcaría 19 % y parecería un abandono en vez de un mes a medias.
+
+| Período | Contexto | Cobertura |
+|---|---|---|
+| Mes | Agosto 2026 | 6 / 13 (46 %) |
+| Trimestre | Trimestre · Julio–Septiembre 2026 | 6 / 35 (17 %) |
+| Año | Año 2026 | — |
+| Todo | Todo el histórico | 6 / 138 (4 %) · **flechas ocultas** |
+
+**Aviso de cobertura floja:** por debajo del 60 % la banda pasa a rojo y añade «con esta
+cobertura los porcentajes de abajo dicen poco». Se comprobó activo al 46 %.
+
+**Las herramientas de la barra son por pestaña, no por sección.** En «Día» el período y las
+flechas se esconden (manda el selector de fecha del panel); en «Diferencias» reaparecen.
+Comprobado en los dos sentidos.
+
+**Un mes sin datos** (julio) da un estado vacío que dice qué hacer, no un dashboard de ceros.
+
+**Móvil (375 px):** sin desbordes, sin scroll horizontal, KPIs en 2×2 y las 4 tarjetas
+apiladas. Cero errores de JS.
+
+**La tabla quedó vacía.** Los 6 días de prueba se borraron.
+
+#### Reutilización, no copia
+
+`rangoPeriodo(period, y, m)` **sube a `db.js`** y **Disciplina pasa a usarla**: la cuenta de
+trimestres estaba a punto de existir por duplicado. Verificado que Disciplina sigue
+etiquetando igual — «Agosto 2026» y «Trimestre · Julio–Septiembre 2026» — y sigue pintando.
+
+#### Desviaciones respecto al diseño
+
+| # | Qué | Por qué |
+|---|---|---|
+| 1 | Las gráficas son **CSS, no Chart.js** | Son 5 series en pocas columnas y dos rankings horizontales. Chart.js añadía un `<canvas>` opaco para lectores de pantalla y peso, sin ganar nada |
+| 2 | «Por qué no entraste» incluye una fila **«Sin declarar»** | Las fugas sin motivo son la mayoría al principio. Ocultarlas haría creer que el ranking está completo |
+| 3 | El caché del dashboard **se invalida** al guardar, borrar o declarar un motivo | Si no, editar un día en «Día» dejaba el dashboard mostrando lo anterior sin avisar |
 
 ---
 

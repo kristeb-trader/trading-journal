@@ -505,6 +505,10 @@ const Nav = {
     analysis:   { filtro: ['analysisPeriod', 'accountFilterAnalysis'], navMes: true },
     trades:     { filtro: 'accountFilterTrades' },
     disciplina: { filtro: 'disciplinaPeriod', navMes: true },
+    // El período y las flechas solo tienen sentido en la pestaña "Diferencias";
+    // en "Día" manda su propio selector de fecha. Chaumer.showTab los muestra
+    // y los esconde según la pestaña abierta.
+    chaumer:    { filtro: 'chaumerPeriod', navMes: true },
     otros:      { conexion: true },
   },
 

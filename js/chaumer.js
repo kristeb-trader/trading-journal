@@ -297,6 +297,7 @@ const Chaumer = (() => {
         motivo_no_opero: document.getElementById('chOpMotivo').value || null,
       })
       document.getElementById('chOpModal').classList.add('hidden')
+      cacheDif = null   // el dashboard tiene que releer
       Toast.show('Operativa guardada', 'success')
       await cargar(fecha)
     } catch (err) {
@@ -309,6 +310,7 @@ const Chaumer = (() => {
     try {
       await DB.deleteChaumerOperativa(fecha)
       document.getElementById('chOpModal').classList.add('hidden')
+      cacheDif = null
       Toast.show('Operativa borrada', 'success')
       await cargar(fecha)
     } catch (err) {
@@ -319,10 +321,339 @@ const Chaumer = (() => {
   async function declararMotivo(motivo) {
     try {
       await DB.marcarSetupNoTomado(fecha, nombreVariante(datos.ch.setup_codigo), motivo)
+      cacheDif = null
       Toast.show('Motivo guardado en la sesión del día', 'success')
       await cargar(fecha)
     } catch (err) {
       Toast.show('Error al guardar el motivo: ' + err.message, 'error')
+    }
+  }
+
+  // ══ Pestaña "Diferencias" ═════════════════════════════════════════════════
+  // Mismo selector Mes/Trimestre/Año/Todo que Disciplina. La aritmética del
+  // rango es compartida (`rangoPeriodo` en db.js); aquí solo vive el estado.
+
+  const PERIODOS = [
+    { k: 'month',   label: 'Mes',       paso: 1 },
+    { k: 'quarter', label: 'Trimestre', paso: 3 },
+    { k: 'year',    label: 'Año',       paso: 12 },
+    { k: 'all',     label: 'Todo',      paso: 0 },
+  ]
+  let period = 'month'
+  let navY = null, navM = null
+  let cacheDif = null      // { trades, sesiones, chaumer, festivos }
+
+  const pInfo = () => PERIODOS.find(p => p.k === period) || PERIODOS[0]
+  const enDif = () => Nav.actual() === 'chaumer' &&
+    document.querySelector('#chaumerTabs .so-tab.active')?.dataset.tab === 'dif'
+
+  function ensureNav() {
+    if (navM != null) return
+    const d = new Date()
+    navM = d.getMonth() + 1
+    navY = d.getFullYear()
+  }
+  function rango() { ensureNav(); return rangoPeriodo(period, navY, navM) }
+
+  function navPeriodo(delta) {
+    const paso = pInfo().paso
+    if (!paso) return
+    ensureNav()
+    const idx = (navY * 12 + (navM - 1)) + delta * paso
+    navY = Math.floor(idx / 12)
+    navM = (idx % 12) + 1
+    renderPeriodPicker(); renderDif()
+  }
+
+  function renderPeriodPicker() {
+    const el = document.getElementById('chaumerPeriod')
+    if (!el) return
+    const abierto = !!el.querySelector('.per-filter-panel:not(.hidden)')
+    el.innerHTML = `
+      <button type="button" class="per-filter-btn" id="chaumerPeriodBtn" title="Período del dashboard">
+        <span class="per-filter-text">${pInfo().label}</span>
+        <i class="ti ti-chevron-down"></i>
+      </button>
+      <div class="per-filter-panel ${abierto ? '' : 'hidden'}">
+        ${PERIODOS.map(p => `
+          <button type="button" class="per-filter-opt ${period === p.k ? 'on' : ''}" data-period="${p.k}">
+            <i class="ti ${period === p.k ? 'ti-check' : ''}"></i>${p.label}
+          </button>`).join('')}
+      </div>`
+    // Las flechas son compartidas: en "Todo" no hay nada que navegar.
+    ;['prevMonth', 'nextMonth'].forEach((id, i) => {
+      const b = document.getElementById(id)
+      if (!b || !enDif()) return
+      b.classList.toggle('hidden', !pInfo().paso)
+      const t = period === 'year' ? 'Año' : period === 'quarter' ? 'Trimestre' : 'Mes'
+      b.title = `${t} ${i ? 'siguiente' : 'anterior'}`
+    })
+  }
+
+  // ── El cálculo ────────────────────────────────────────────────────────────
+  function computar(r) {
+    const { trades, sesiones, chaumer, festivos } = cacheDif
+    const enR = f => f >= r.from && f <= r.to
+    const hoy = hoyISO()
+
+    const porFecha = {}
+    const anota = (f, k, v) => { (porFecha[f] ||= {}).f = f; porFecha[f][k] = v }
+    chaumer.filter(c => enR(c.fecha)).forEach(c => anota(c.fecha, 'ch', c))
+    sesiones.filter(s => enR(s.sesion_date)).forEach(s => anota(s.sesion_date, 'ses', s))
+    trades.filter(t => enR(t.trade_date)).forEach(t => {
+      const d = (porFecha[t.trade_date] ||= { f: t.trade_date })
+      ;(d.tr ||= []).push(t)
+    })
+
+    // ── Cobertura ──
+    // Denominador: días hábiles no festivos del rango, acotados a lo ya vivido.
+    // Sin esto, "Año" contaría diciembre y el porcentaje sería una mentira.
+    const fest = new Set((festivos || []).filter(x => x.tipo === 'festivo').map(x => x.fecha))
+    const conDato = Object.keys(porFecha).sort()
+    const desde = r.from === '0000-00-00' ? (conDato[0] || hoy) : r.from
+    const hasta = r.to > hoy ? hoy : r.to
+    let habiles = 0
+    for (let d = new Date(`${desde}T12:00:00`); isoLocal(d) <= hasta; d.setDate(d.getDate() + 1)) {
+      const f = isoLocal(d)
+      if (esDiaHabil(f) && !fest.has(f)) habiles++
+    }
+    const cargados = chaumer.filter(c => enR(c.fecha) && c.fecha <= hasta).length
+
+    // ── Un veredicto por día ──
+    const dias = Object.values(porFecha)
+      .filter(d => d.ch)                       // sin su operativa no hay comparación
+      .map(d => {
+        const yo = miLadoDe(d.ses, d.tr || [], d.f)
+        return { f: d.f, ch: d.ch, ses: d.ses, yo, v: veredictoCon(d.ch, yo, d.f) }
+      })
+      .sort((a, b) => a.f.localeCompare(b.f))
+
+    const cuenta = k => dias.filter(d => d.v.k === k).length
+    const suyosOperados = dias.filter(d => d.ch.opero && d.ch.setup_codigo)
+    const fugas = dias.filter(d => d.v.k === 'fuga')
+    const deMas = dias.filter(d => d.v.k === 'de_mas')
+
+    const sum = (arr, fn) => Math.round(arr.reduce((a, x) => a + (fn(x) || 0), 0) * 100) / 100
+    const coincidencias = cuenta('igual')
+
+    // ── Motivos de no entrada, desde `sesiones` ──
+    const motivos = {}
+    fugas.forEach(d => {
+      const m = d.ses?.motivo_no_entrada || 'Sin declarar'
+      motivos[m] = (motivos[m] || 0) + 1
+    })
+
+    // ── Por setup: cuántas de las suyas se te escaparon ──
+    const porSetup = {}
+    suyosOperados.forEach(d => {
+      const n = nombreVariante(d.ch.setup_codigo)
+      const e = (porSetup[n] ||= { total: 0, fugas: 0 })
+      e.total++
+      if (d.v.k === 'fuga') e.fugas++
+    })
+
+    // ── Δ hora, solo en días en que ambos operaron ──
+    const deltas = dias
+      .filter(d => d.ch.opero && d.ch.hora_entrada && d.yo.hora_et)
+      .map(d => difMinutos(d.ch.hora_entrada, d.yo.hora_et))
+      .filter(n => n != null)
+    const deltaMedia = deltas.length
+      ? Math.round((deltas.reduce((a, b) => a + b, 0) / deltas.length) * 10) / 10
+      : null
+
+    // ── Por semana, para la evolución ──
+    const semanas = {}
+    dias.forEach(d => {
+      const k = semanaDe(d.f)
+      const s = (semanas[k] ||= { k, igual: 0, ejecucion: 0, otra_lectura: 0, fuga: 0, de_mas: 0, ambos_fuera: 0 })
+      s[d.v.k] = (s[d.v.k] || 0) + 1
+    })
+
+    return {
+      rango: r,
+      cobertura: { cargados, habiles, pct: habiles ? Math.round((cargados / habiles) * 100) : 0 },
+      totalComparables: suyosOperados.length,
+      coincidencia: { n: coincidencias, pct: suyosOperados.length ? Math.round((coincidencias / suyosOperados.length) * 100) : null },
+      fugas: { n: fugas.length, puntos: sum(fugas, d => d.ch.puntos) },
+      deMas: { n: deMas.length, puntos: sum(deMas, d => d.yo.puntos) },
+      puntos: { el: sum(dias, d => d.ch.puntos), yo: sum(dias, d => d.yo.puntos) },
+      estados: { igual: cuenta('igual'), ejecucion: cuenta('ejecucion'), otra_lectura: cuenta('otra_lectura'), fuga: fugas.length, de_mas: deMas.length, ambos_fuera: cuenta('ambos_fuera') },
+      motivos, porSetup, deltaMedia, nDeltas: deltas.length,
+      semanas: Object.values(semanas).sort((a, b) => a.k.localeCompare(b.k)),
+      nDias: dias.length,
+    }
+  }
+
+  // Lunes de la semana de `f`. El ancla al mediodía evita el salto de día por UTC.
+  function semanaDe(f) {
+    const d = new Date(`${f}T12:00:00`)
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+    return isoLocal(d)
+  }
+
+  // Variantes de `miLado` y `veredicto` que no dependen del día en pantalla.
+  function miLadoDe(sesion, trades, f) {
+    const opero = trades.length > 0
+    const pts = trades.map(t => puntosTrade(t)).filter(n => n != null)
+    return {
+      opero,
+      setup_codigo: sesion?.setup_codigo || null,
+      hora_et: opero ? horaEt(trades[0].entry_time, f) : null,
+      resultado: opero ? trades[0].resultado : null,
+      puntos: pts.length ? Math.round(pts.reduce((a, b) => a + b, 0) * 100) / 100 : null,
+    }
+  }
+  function veredictoCon(ch, yo, f) {
+    const guardado = fecha
+    fecha = f
+    const v = veredicto(ch, yo)
+    fecha = guardado
+    return v
+  }
+
+  // ── Pintado del dashboard ─────────────────────────────────────────────────
+  const barra = (n, max, cls) => `<span class="ch-bar"><span class="ch-bar-fill ${cls}" style="width:${max ? Math.round((n / max) * 100) : 0}%"></span></span>`
+
+  function renderDif() {
+    const cont = document.getElementById('chaumerDif')
+    if (!cont || !cacheDif) return
+    const r = rango()
+    const d = computar(r)
+    Nav.setContexto('chaumer', r.label)
+
+    if (!d.nDias) {
+      cont.innerHTML = `
+        <p class="catalog-empty">
+          No hay ninguna operativa suya cargada en ${esc(r.label.toLowerCase())}.<br>
+          Cárgalas desde la pestaña <strong>Día</strong> y este panel se llena solo.
+        </p>`
+      return
+    }
+
+    const cobFlaca = d.cobertura.pct < 60
+    const maxMotivo = Math.max(1, ...Object.values(d.motivos))
+    const maxSem = Math.max(1, ...d.semanas.map(s => s.igual + s.ejecucion + s.otra_lectura + s.fuga + s.de_mas))
+
+    cont.innerHTML = `
+      <div class="ch-cob ${cobFlaca ? 'flaca' : ''}">
+        <i class="ti ti-${cobFlaca ? 'alert-triangle' : 'checkbox'}"></i>
+        Cobertura: <strong>${d.cobertura.cargados} de ${d.cobertura.habiles}</strong> días hábiles cargados
+        (${d.cobertura.pct} %).${cobFlaca ? ' Con esta cobertura los porcentajes de abajo dicen poco.' : ''}
+      </div>
+
+      <div class="ch-kpis">
+        <div class="ch-kpi">
+          <span class="ch-kpi-lab">Coincidencia</span>
+          <span class="ch-kpi-n ok">${d.coincidencia.pct == null ? '—' : d.coincidencia.pct + '%'}</span>
+          <span class="ch-kpi-sub">${d.coincidencia.n} de ${d.totalComparables} días suyos</span>
+        </div>
+        <div class="ch-kpi">
+          <span class="ch-kpi-lab">Fugas</span>
+          <span class="ch-kpi-n mal">${d.fugas.n}</span>
+          <span class="ch-kpi-sub">${fmtPts(d.fugas.puntos)} que dejaste pasar</span>
+        </div>
+        <div class="ch-kpi">
+          <span class="ch-kpi-lab">De más</span>
+          <span class="ch-kpi-n mal">${d.deMas.n}</span>
+          <span class="ch-kpi-sub">${fmtPts(d.deMas.puntos)} en esos días</span>
+        </div>
+        <div class="ch-kpi">
+          <span class="ch-kpi-lab">Δ puntos</span>
+          <span class="ch-kpi-n ${d.puntos.yo - d.puntos.el >= 0 ? 'ok' : 'mal'}">${fmtPts(Math.round((d.puntos.yo - d.puntos.el) * 100) / 100)}</span>
+          <span class="ch-kpi-sub">él ${fmtPts(d.puntos.el)} · tú ${fmtPts(d.puntos.yo)}</span>
+        </div>
+      </div>
+
+      <div class="ch-graficas">
+        <div class="ch-card">
+          <div class="ch-card-tit">Cómo evoluciona, por semana</div>
+          <div class="ch-sem">
+            ${d.semanas.map(s => {
+              const tot = s.igual + s.ejecucion + s.otra_lectura + s.fuga + s.de_mas
+              const h = n => (tot ? Math.round((n / tot) * 84 * (tot / maxSem)) : 0)
+              return `
+                <div class="ch-sem-col" title="Semana del ${esc(s.k)}">
+                  <div class="ch-sem-pila">
+                    ${s.de_mas ? `<span class="ch-seg s-demas" style="height:${h(s.de_mas)}px"></span>` : ''}
+                    ${s.fuga ? `<span class="ch-seg s-fuga" style="height:${h(s.fuga)}px"></span>` : ''}
+                    ${s.otra_lectura ? `<span class="ch-seg s-otra" style="height:${h(s.otra_lectura)}px"></span>` : ''}
+                    ${s.ejecucion ? `<span class="ch-seg s-ejec" style="height:${h(s.ejecucion)}px"></span>` : ''}
+                    ${s.igual ? `<span class="ch-seg s-igual" style="height:${h(s.igual)}px"></span>` : ''}
+                  </div>
+                  <span class="ch-sem-lab">${esc(s.k.slice(8))}/${esc(s.k.slice(5, 7))}</span>
+                </div>`
+            }).join('')}
+          </div>
+          <div class="ch-leyenda">
+            <span><i class="ch-pt s-igual"></i>Igual</span>
+            <span><i class="ch-pt s-ejec"></i>Ejecución</span>
+            <span><i class="ch-pt s-otra"></i>Otra lectura</span>
+            <span><i class="ch-pt s-fuga"></i>Fuga</span>
+            <span><i class="ch-pt s-demas"></i>De más</span>
+          </div>
+        </div>
+
+        <div class="ch-card">
+          <div class="ch-card-tit">Por qué no entraste</div>
+          ${Object.keys(d.motivos).length ? `
+            <div class="ch-lista">
+              ${Object.entries(d.motivos).sort((a, b) => b[1] - a[1]).map(([m, n]) => `
+                <div class="ch-fila">
+                  <span class="ch-fila-nom">${esc(m)}</span>
+                  ${barra(n, maxMotivo, m === 'Sin declarar' ? 'gris' : 'rojo')}
+                  <span class="ch-fila-n">${n}</span>
+                </div>`).join('')}
+            </div>
+            <p class="ch-card-pie">Sale de <code>sesiones.motivo_no_entrada</code>, el campo que rellenas en el Diario y en las fugas de aquí.</p>
+          ` : '<p class="ch-card-pie">Ninguna fuga en este período.</p>'}
+        </div>
+
+        <div class="ch-card">
+          <div class="ch-card-tit">Dónde te pierdes, por setup</div>
+          ${Object.keys(d.porSetup).length ? `
+            <div class="ch-lista">
+              ${Object.entries(d.porSetup).sort((a, b) => (b[1].fugas / b[1].total) - (a[1].fugas / a[1].total)).map(([n, e]) => {
+                const pct = e.total ? e.fugas / e.total : 0
+                return `
+                  <div class="ch-fila">
+                    <span class="ch-fila-nom" title="${esc(n)}">${esc(n)}</span>
+                    ${barra(e.fugas, e.total, pct >= 0.5 ? 'rojo' : pct > 0 ? 'violeta' : 'verde')}
+                    <span class="ch-fila-n">${e.fugas}/${e.total}</span>
+                  </div>`
+              }).join('')}
+            </div>
+            <p class="ch-card-pie">Fugas sobre las operativas suyas de cada setup.</p>
+          ` : '<p class="ch-card-pie">Sin operativas suyas con setup en este período.</p>'}
+        </div>
+
+        <div class="ch-card">
+          <div class="ch-card-tit">Δ hora de entrada</div>
+          ${d.deltaMedia == null ? '<p class="ch-card-pie">Ningún día con hora en los dos lados.</p>' : `
+            <div class="ch-delta">
+              <span class="ch-delta-n ${Math.abs(d.deltaMedia) > 5 ? 'mal' : 'ok'}">${d.deltaMedia > 0 ? '+' : ''}${String(d.deltaMedia).replace('.', ',')}</span>
+              <span class="ch-delta-lab">minutos de media${d.deltaMedia > 0 ? ' más tarde que él' : d.deltaMedia < 0 ? ' antes que él' : ''}</span>
+            </div>
+            <p class="ch-card-pie">Sobre ${d.nDeltas} día${d.nDeltas === 1 ? '' : 's'} en que ambos operaron. Las dos horas en ET: tu <code>entry_time</code> viene en hora Colombia y se convierte antes de restar.</p>
+          `}
+        </div>
+      </div>`
+  }
+
+  async function cargarDif() {
+    const cont = document.getElementById('chaumerDif')
+    if (!cont) return
+    if (!cacheDif) cont.innerHTML = '<p class="catalog-empty">Cargando…</p>'
+    try {
+      const [trades, sesiones, chaumer, festivos] = await Promise.all([
+        DB.getTrades(),
+        DB.getSesiones(),
+        DB.getChaumerOperativas({}),
+        DB.getFechasEspeciales().catch(() => []),
+      ])
+      cacheDif = { trades: trades || [], sesiones: sesiones || [], chaumer: chaumer || [], festivos: festivos || [] }
+      renderDif()
+    } catch (err) {
+      cont.innerHTML = `<p class="catalog-empty">No se pudo cargar: ${esc(err.message)}</p>`
     }
   }
 
@@ -338,12 +669,29 @@ const Chaumer = (() => {
     // Pestañas: mismo componente que Sesión Operativa y Datos.
     document.getElementById('chaumerTabs')?.addEventListener('click', e => {
       const btn = e.target.closest('.so-tab')
-      if (!btn) return
-      document.querySelectorAll('#chaumerTabs .so-tab').forEach(b => b.classList.toggle('active', b === btn))
-      document.querySelectorAll('#section-chaumer .so-panel').forEach(p => {
-        p.classList.toggle('active', p.id === `chaumer-panel-${btn.dataset.tab}`)
-      })
+      if (btn) showTab(btn.dataset.tab)
     })
+
+    // Selector de período y flechas de mes, solo activos en "Diferencias".
+    document.getElementById('chaumerPeriod')?.addEventListener('click', e => {
+      if (e.target.closest('#chaumerPeriodBtn')) {
+        const p = document.querySelector('#chaumerPeriod .per-filter-panel')
+        p?.classList.toggle('hidden')
+        return
+      }
+      const k = e.target.closest('.per-filter-opt')?.dataset.period
+      if (!k) return
+      period = k
+      document.querySelector('#chaumerPeriod .per-filter-panel')?.classList.add('hidden')
+      renderPeriodPicker(); renderDif()
+    })
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#chaumerPeriod')) {
+        document.querySelector('#chaumerPeriod .per-filter-panel')?.classList.add('hidden')
+      }
+    })
+    document.getElementById('prevMonth')?.addEventListener('click', () => { if (enDif()) navPeriodo(-1) })
+    document.getElementById('nextMonth')?.addEventListener('click', () => { if (enDif()) navPeriodo(1) })
 
     document.getElementById('chDatePrev')?.addEventListener('click', () => mueveDia(-1))
     document.getElementById('chDateNext')?.addEventListener('click', () => mueveDia(1))
@@ -375,10 +723,32 @@ const Chaumer = (() => {
       }
     })
 
+    renderPeriodPicker()
+    showTab('dia')
     await cargar(hoyISO())
   }
 
-  function reload() { if (iniciado && fecha) cargar(fecha) }
+  // Las herramientas de la barra superior (período + flechas) pertenecen a
+  // "Diferencias". En "Día" manda el selector de fecha del propio panel, así que
+  // se esconden: Nav las enciende por sección y aquí se afinan por pestaña.
+  function showTab(tab) {
+    document.querySelectorAll('#chaumerTabs .so-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab))
+    document.querySelectorAll('#section-chaumer .so-panel').forEach(p => {
+      p.classList.toggle('active', p.id === `chaumer-panel-${tab}`)
+    })
+    const dif = tab === 'dif'
+    document.getElementById('chaumerPeriod')?.classList.toggle('hidden', !dif)
+    document.querySelectorAll('.header-info .hdr-nav').forEach(el => el.classList.toggle('hidden', !dif || !pInfo().paso))
+    if (dif) { renderPeriodPicker(); cargarDif() }
+    else if (fecha) Nav.setContexto('chaumer', fmtFechaLarga(fecha))
+  }
+
+  function reload() {
+    if (!iniciado) return
+    const tab = document.querySelector('#chaumerTabs .so-tab.active')?.dataset.tab || 'dia'
+    showTab(tab)
+    if (tab === 'dia' && fecha) cargar(fecha)
+  }
 
   return { init, reload }
 })()

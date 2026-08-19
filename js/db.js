@@ -178,6 +178,31 @@ function difMinutos(a, b) {
   return (Number.isFinite(ma) && Number.isFinite(mb)) ? mb - ma : null
 }
 
+// ── Rango de un período de dashboard ────────────────────────────────────────
+// Mes / Trimestre / Año / Todo, a partir del mes y año que se esté navegando.
+// Lo usan Disciplina y el comparador de Chaumer: la aritmética vive aquí para
+// que "trimestre" signifique lo mismo en las dos pantallas y un arreglo valga
+// para ambas. Cada pantalla mantiene su propio desplegable y su propio estado.
+//
+// Devuelve { from, to, label } con las fechas en 'YYYY-MM-DD' inclusive.
+const MESES_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+function rangoPeriodo(period, y, m) {
+  if (period === 'all') return { from: '0000-00-00', to: '9999-99-99', label: 'Todo el histórico' }
+  if (period === 'year') return { from: `${y}-01-01`, to: `${y}-12-31`, label: `Año ${y}` }
+  if (period === 'quarter') {
+    const qStart = Math.floor((m - 1) / 3) * 3 + 1
+    const endM = qStart + 2
+    const from = `${y}-${String(qStart).padStart(2, '0')}-01`
+    const to = `${y}-${String(endM).padStart(2, '0')}-${String(new Date(y, endM, 0).getDate()).padStart(2, '0')}`
+    return { from, to, label: `Trimestre · ${MESES_ES[qStart - 1]}–${MESES_ES[endM - 1]} ${y}` }
+  }
+  const from = `${y}-${String(m).padStart(2, '0')}-01`
+  const to = `${y}-${String(m).padStart(2, '0')}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`
+  return { from, to, label: `${MESES_ES[m - 1]} ${y}` }
+}
+
 // ── Puntos de un trade ──────────────────────────────────────────────────────
 // El resultado en PUNTOS, con signo. Es la unidad con la que se compara contra
 // Chaumer: el dinero depende del número de contratos y del multiplicador de la

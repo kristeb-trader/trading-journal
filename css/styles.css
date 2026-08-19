@@ -4532,10 +4532,94 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .ch-op-acciones { display: flex; gap: 8px; margin-top: 6px; }
 .ch-op-acciones .btn-primary { flex: 1; justify-content: center; }
 
+/* ── Pestaña "Diferencias" ─────────────────────────────────────────────────── */
+/* La cobertura va arriba del todo y siempre: sin denominador, cualquier
+   porcentaje de abajo es un número sin significado. */
+.ch-cob {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 0.82rem; color: var(--text2);
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 13px; margin-bottom: 14px;
+}
+.ch-cob i { font-size: 1rem; color: var(--accent-txt); }
+.ch-cob.flaca { background: rgba(226,75,74,0.07); border-color: rgba(226,75,74,0.3); color: var(--red-txt); }
+.ch-cob.flaca i { color: var(--red-txt); }
+
+.ch-kpis {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px; margin-bottom: 16px;
+}
+.ch-kpi {
+  display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  background: var(--card); border-radius: 10px; padding: 13px 15px;
+}
+.ch-kpi-lab { font-size: 0.72rem; color: var(--text3); }
+.ch-kpi-n { font-size: 1.6rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.ch-kpi-n.ok  { color: var(--accent-txt); }
+.ch-kpi-n.mal { color: var(--red-txt); }
+.ch-kpi-sub { font-size: 0.72rem; color: var(--text3); }
+
+.ch-graficas {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+}
+.ch-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 15px; min-width: 0;
+}
+.ch-card-tit { font-size: 0.85rem; font-weight: 600; margin-bottom: 14px; }
+.ch-card-pie {
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border);
+  font-size: 0.72rem; color: var(--text3); line-height: 1.5;
+}
+.ch-card-pie code { font-size: 0.95em; color: var(--text2); }
+
+/* Barras apiladas por semana, en CSS: son 5 series y pocas columnas; Chart.js
+   aquí solo añadiría peso y un canvas que no se puede leer con lector. */
+.ch-sem { display: flex; align-items: flex-end; gap: 8px; min-height: 96px; }
+.ch-sem-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.ch-sem-pila { width: 100%; display: flex; flex-direction: column; justify-content: flex-end; }
+.ch-seg { display: block; width: 100%; }
+.ch-seg:first-child { border-radius: 3px 3px 0 0; }
+.ch-seg:last-child  { border-radius: 0 0 3px 3px; }
+.ch-sem-lab { font-size: 0.65rem; color: var(--text3); white-space: nowrap; }
+
+.s-igual { background: var(--accent); }
+.s-ejec  { background: var(--violet); }
+.s-otra  { background: var(--text3); }
+.s-fuga  { background: var(--red); }
+.s-demas { background: #8b3a39; }   /* rojo apagado: hermano de la fuga, pero distinto */
+
+.ch-leyenda { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; font-size: 0.7rem; color: var(--text3); }
+.ch-leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+.ch-pt { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+.ch-lista { display: flex; flex-direction: column; gap: 10px; }
+.ch-fila { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; }
+.ch-fila-nom {
+  flex: 1 1 auto; min-width: 0; color: var(--text2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ch-fila-n { flex: 0 0 42px; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+.ch-bar { flex: 0 0 88px; height: 6px; border-radius: 3px; background: var(--bg3); overflow: hidden; }
+.ch-bar-fill { display: block; height: 100%; border-radius: 3px; }
+.ch-bar-fill.rojo    { background: var(--red); }
+.ch-bar-fill.violeta { background: var(--violet); }
+.ch-bar-fill.verde   { background: var(--accent); }
+.ch-bar-fill.gris    { background: var(--text3); }
+
+.ch-delta { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.ch-delta-n { font-size: 1.9rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.ch-delta-n.ok  { color: var(--accent-txt); }
+.ch-delta-n.mal { color: var(--violet-txt); }
+.ch-delta-lab { font-size: 0.78rem; color: var(--text3); }
+
 @media (max-width: 620px) {
   .ch-img { height: 120px; }
   .ch-campos dt { width: 45%; }
   .ch-campos dd { width: 53%; }
+  .ch-kpi-n { font-size: 1.35rem; }
+  .ch-bar { flex: 0 0 60px; }
 }
 
 /* ── Fechas Especiales ────────────────────────────────────────────────────── */
