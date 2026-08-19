@@ -198,6 +198,7 @@ const DataManager = (() => {
   async function loadCasuisticas() {
     const items = await DB.getCatalogoCasuisticas()
     renderList(items, 'catalogoCasuisticasList')
+    setCount('errores', activos(items), 'activos')
   }
 
   // ── Emociones ─────────────────────────────────────────────────────────────
@@ -293,6 +294,7 @@ const DataManager = (() => {
       .order('orden', { ascending: true })
     if (error) throw error
     renderEmocionesList(data)
+    setCount('emociones', activos(data), 'activas')
   }
 
   async function initCuentaPrincipal() {
@@ -371,6 +373,8 @@ const DataManager = (() => {
       DB.getSetupVariantes({ force: true, soloActivos: false }),
     ])
     renderSetups(familias, variantes)
+    const nf = activos(familias)
+    setCount('setups', nf, nf === 1 ? 'familia' : 'familias')
   }
 
   function wireSetups() {
@@ -420,9 +424,63 @@ const DataManager = (() => {
     })
   }
 
+  // ── Pestañas ──────────────────────────────────────────────────────────────
+  // Un catálogo a la vez, a ancho completo. Reutiliza .so-tabs/.so-panel de
+  // Sesión Operativa: aquí solo vive el estado (cuál está abierta) y el contador.
+  // Que cada catálogo tenga el ancho entero es lo que impide de raíz que la fila
+  // de Tipo/Fase se vuelva a desbordar.
+  const TAB_LABEL = {
+    setups: 'Setups', errores: 'Errores', emociones: 'Emociones',
+    experimentos: 'Experimentos', recomendaciones: 'Recomendaciones',
+  }
+  const TAB_DEFECTO = 'setups'
+
+  function showTab(tab) {
+    if (!TAB_LABEL[tab]) tab = TAB_DEFECTO
+    document.querySelectorAll('#dataTabs .so-tab').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tab)
+    })
+    document.querySelectorAll('#section-data .so-panel').forEach(p => {
+      p.classList.toggle('active', p.id === `data-panel-${tab}`)
+    })
+    // El dato variable va a la barra superior — "Datos · Errores". Las secciones
+    // no llevan título propio (invariante de un solo título por pantalla).
+    Nav.setContexto('data', TAB_LABEL[tab])
+    try { localStorage.setItem('datos.tab', tab) } catch (_) {}
+  }
+
+  function wireTabs() {
+    document.getElementById('dataTabs')?.addEventListener('click', e => {
+      const btn = e.target.closest('.so-tab')
+      if (btn) showTab(btn.dataset.tab)
+    })
+    let guardada = TAB_DEFECTO
+    try { guardada = localStorage.getItem('datos.tab') || TAB_DEFECTO } catch (_) {}
+    showTab(guardada)
+  }
+
+  // Contador de la pestaña + chip en la cabecera del panel. El chip se crea la
+  // primera vez y luego se reutiliza, así que renderizar la lista no lo duplica.
+  function setCount(tab, n, sufijo) {
+    const chip = document.querySelector(`#dataTabs [data-count="${tab}"]`)
+    if (chip) chip.textContent = n
+    const h3 = document.querySelector(`#data-panel-${tab} .catalog-header h3`)
+    if (!h3) return
+    let tot = h3.querySelector('.catalog-head-count')
+    if (!tot) {
+      tot = document.createElement('span')
+      tot.className = 'chip-soft catalog-head-count'
+      h3.appendChild(tot)
+    }
+    tot.textContent = `${n} ${sufijo}`
+  }
+
+  const activos = items => items.filter(i => i.activa !== false && i.activo !== false).length
+
   async function init() {
     await Promise.all([loadCasuisticas(), loadEmociones(), loadRecomendaciones(), loadSetups()])
     wireSetups()
+    wireTabs()
 
     // El checklist de disciplina se gestiona ahora desde Reglas y Estrategia
     // (rulebook `reglas`, capa proceso con es_checklist). Ya no se edita aquí.
@@ -560,6 +618,7 @@ const DataManager = (() => {
   async function loadExperimentos() {
     const items = await DB.getCatalogoExperimentos()
     renderExperimentosList(items)
+    setCount('experimentos', activos(items), 'activos')
   }
 
   function renderRecomendacionesList(items) {
@@ -605,6 +664,7 @@ const DataManager = (() => {
   async function loadRecomendaciones() {
     const items = await DB.getCatalogoRecomendaciones()
     renderRecomendacionesList(items)
+    setCount('recomendaciones', activos(items), 'activas')
   }
 
   return { init }

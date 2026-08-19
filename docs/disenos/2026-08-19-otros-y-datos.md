@@ -320,7 +320,7 @@ de deuda al cerrar la última fase.
 | Fase | Qué | Archivos | Cómo se verifica |
 |---|---|---|---|
 | **1** ✅ | **Arreglo estructural de Datos**, sin rediseño: las 4 reglas de §3.2 | `css/styles.css`, `js/data.js` | ✅ **Hecho** — medido, ver §5.1 |
-| **2** | **Pestañas en Datos** + `.data-hero` + cabeceras con contador | `index.html`, `js/data.js`, `js/app.js`, `css/styles.css` | Las 5 pestañas abren; la barra superior dice «Datos · Errores»; **alta, edición, borrado, toggle y arrastre siguen funcionando en cada catálogo**; recargar vuelve a la pestaña guardada |
+| **2** ✅ | **Pestañas en Datos** + `.data-hero` + cabeceras con contador | `index.html`, `js/data.js`, `css/styles.css` | ✅ **Hecho** — medido, ver §5.2 |
 | **3** | **Otros: tokens, rejilla, tarjetas y Ajustes** (aún sin contadores) | `css/styles.css`, `index.html`, `js/app.js` | Las 6 tarjetas navegan a su sección; hover / foco / pulsación; 1440 / 1024 / 390 px; el chevron de volver funciona |
 | **4** | **Otros: contadores en vivo** | `js/db.js`, `js/app.js` | `SELECT` de contraste contra Supabase: los 6 números de pantalla **coinciden** con la consulta; cortar la red y comprobar que las tarjetas pintan `—` y **siguen navegando** |
 
@@ -354,8 +354,39 @@ Con las reglas viejas reinyectadas a la fuerza, `.catalog-item-meta` medía 246 
 | 3 | **Bug preexistente encontrado en el camino:** `setupDragDrop` construía la lista de orden con `querySelectorAll('[data-id]')`, que recoge también el checkbox, los selects y los botones de dentro de cada fila — 6 entradas por fila en vez de 1, y el `orden` guardado salían múltiplos (6, 12, 18…) | `':scope > [data-id]'`. Se sostenía por accidente porque todas las filas aportaban el mismo número de nodos; al reestructurar las filas dejaba de ser seguro |
 
 **Lo que no se pudo verificar:** nada que exija estar autenticado. El login pide contraseña
-y no la introduzco, así que las filas son inyectadas, no traídas de Supabase. El alta, la
-edición y el arrastre reales **se prueban en la Fase 2**, donde además toca moverlos.
+y no la introduzco, así que las filas son inyectadas, no traídas de Supabase.
+
+### 5.2 Fase 2 — lo medido (19 ago)
+
+| Qué | Resultado |
+|---|---|
+| Las 5 pestañas existen y conmutan | ✅ `setups · errores · emociones · experimentos · recomendaciones`; **exactamente un panel visible** en cada momento |
+| Barra superior | ✅ Título «Datos» + contexto «Errores» / «Recomendaciones» según la pestaña |
+| Persistencia | ✅ Se abre `recomendaciones` tras recargar habiéndola dejado abierta (`localStorage['datos.tab']`) |
+| **Ancho del catálogo de Errores** a 1280 px | **1.012 px** — era 491 px con la rejilla de 2 columnas, y 306 px con la rejilla rota |
+| Desbordamientos a 1280 px y a 375 px | **0** |
+| Scroll horizontal de página en móvil | **Ninguno** (`scrollWidth` = 375 = viewport). La barra de pestañas hace su propio scroll, heredado de `.so-tabs` |
+| Errores de JS en consola | Ninguno |
+
+#### Desviaciones respecto al diseño
+
+| # | Qué | Por qué |
+|---|---|---|
+| 1 | **`--content-max` se adelanta de la Fase 3 a la Fase 2** | Lo necesita `#section-data`, no solo Otros. Dejarlo para después habría dejado Datos sin límite de ancho en monitor grande justo en la fase que lo reorganiza |
+| 2 | Se retiran dos reglas que quedaron muertas: `.catalog-card-wide` y el `@media` de `.data-catalogs` | La rejilla de 2 columnas a la que pertenecían ya no existe |
+| 3 | El contador del panel se inyecta desde JS dentro del `<h3>` en vez de ir en el markup | Cinco ediciones de `index.html` para el mismo `<span>`; el `<h3>` pasa a `flex` y el chip va con `margin-left: auto` |
+
+#### Lo que sigue sin verificarse, y es de verdad
+
+**El alta, la edición, el borrado, el toggle y el arrastre reales contra Supabase.** Sin
+sesión iniciada las seis lecturas de catálogo devuelven **401** (comprobado: son las
+llamadas a `/rest/v1/catalogo_*`, no un fallo del cambio), así que las listas salen vacías
+y las filas que mido son inyectadas a mano en el DOM.
+
+El markup de cada fila y todos los `id` se conservan sin renombrar, y el cableado de
+eventos no se ha tocado — pero eso es un argumento, no una comprobación. **Le toca a Kris
+entrar con su clave y probar en cada pestaña: agregar, renombrar, borrar, activar/desactivar
+y arrastrar para reordenar.** Es el único punto de la Fase 2 que no puedo cerrar yo.
 
 Presupuesto estimado: **8–12 llamadas por fase**. Ninguna pasa del umbral de 25.
 

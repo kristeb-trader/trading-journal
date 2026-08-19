@@ -29,6 +29,9 @@
   --text3: #6B6B60;
   --sidebar-w: 220px;
   --topbar-h: 56px;
+  /* Ancho máximo de una pantalla de configuración/índice. Sustituye a los
+     `max-width: 860px` sueltos que había repetidos sin nombre. */
+  --content-max: 1180px;
   --radius: 10px;
   --shadow: 0 2px 12px rgba(0,0,0,0.35);
   --transition: 150ms ease;
@@ -861,7 +864,6 @@ small { font-size: 0.82em; }
 .phase-hint i { color: var(--warning); font-size: 1rem; flex-shrink: 0; }
 
 /* ── Datos → Setups operativos (familias + variantes) ─────────────────────── */
-.catalog-card-wide { grid-column: 1 / -1; }
 .setups-list { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
 .setup-fam {
   border: 1px solid var(--border); border-radius: 10px;
@@ -1923,18 +1925,17 @@ body.modal-open { overflow: hidden; }
 .spin { animation: spin 0.8s linear infinite; display: inline-block; }
 
 /* ── Data Manager ────────────────────────────────────────────────────── */
-.data-catalogs {
-  /* minmax(0, 1fr), no 1fr: una columna cuyo contenido no encoge CRECE por encima
-     de 1fr y descuadra la rejilla entera. Era la causa de "todo desproporcionado". */
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+/* La rejilla de 2 columnas de los catálogos desapareció al pasar a pestañas
+   (19 ago): cada catálogo ocupa el ancho completo de su panel, que es lo que
+   impide de raíz que la fila de Tipo/Fase vuelva a desbordarse. */
+#section-data { max-width: var(--content-max); }
+.data-hero {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px; margin-bottom: 18px;
 }
-.data-top-cards {
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px; margin-bottom: 16px; max-width: 860px;
-}
-@media (max-width: 640px) { .data-top-cards { grid-template-columns: 1fr; } }
+/* Sin esto, 1fr vuelve a poder desbordarse: `1fr` es `minmax(auto, 1fr)` y el
+   `auto` lo fija el contenido, no la columna. */
+.data-hero > * { min-width: 0; }
 .catalog-card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -1942,11 +1943,22 @@ body.modal-open { overflow: hidden; }
   padding: 20px;
 }
 .catalog-header { margin-bottom: 16px; }
-.catalog-header h3 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+.catalog-header h3 {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 1.05rem; font-weight: 600; margin-bottom: 4px;
+}
+/* Contador del catálogo, empujado al extremo derecho del título. */
+.catalog-head-count { margin-left: auto; font-weight: 400; flex: 0 0 auto; }
 .catalog-sub { font-size: 0.78rem; color: var(--text3); }
 /* `flex-wrap` + `min-width: 0` en el input: sin las dos, los 2 selects y el botón
    suman ~330 px rígidos y la fila se sale de la tarjeta. */
-.catalog-add { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+/* Bloque propio, con borde discontinuo: crear y listar compartían superficie y
+   se confundían. El discontinuo como afordancia de "añadir" ya se usa en .md2-clean. */
+.catalog-add {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+  background: var(--bg2); border: 1px dashed var(--border);
+  border-radius: 10px; padding: 12px;
+}
 .catalog-add input { flex: 1 1 240px; min-width: 0; }
 .catalog-add .btn-primary { flex: 0 0 auto; margin-left: auto; }
 .catalog-list { display: flex; flex-direction: column; gap: 6px; }
@@ -2120,10 +2132,6 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 }
 .catalog-toggle input:checked + .toggle-track { background: var(--accent-dim); border-color: var(--accent); }
 .catalog-toggle input:checked + .toggle-track::after { left: 16px; background: var(--accent); }
-
-@media (max-width: 768px) {
-  .data-catalogs { grid-template-columns: 1fr; }
-}
 
 /* ── Casuísticas ─────────────────────────────────────────────────────── */
 .cas-input-row {

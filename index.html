@@ -793,7 +793,7 @@
       <!-- ═══ 5. DATOS ════════════════════════════════════════════════════ -->
       <section class="section" id="section-data">
 
-        <div class="data-top-cards">
+        <div class="data-hero">
           <!-- Cuenta principal (la que se lleva en el journal: calendario, análisis, Coach) -->
           <div class="catalog-card">
             <div class="catalog-header">
@@ -819,12 +819,33 @@
           </div>
         </div>
 
-        <div class="data-catalogs">
+        <!-- Pestañas: un catálogo a la vez y a ancho completo. Reutiliza el
+             componente .so-tabs de Sesión Operativa — mismo CSS, mismo scroll
+             horizontal en móvil. El contador de cada pestaña lo rellena data.js. -->
+        <div class="so-tabs" id="dataTabs">
+          <button type="button" class="so-tab active" data-tab="setups">
+            <i class="ti ti-chart-dots-3"></i> Setups <span class="chip-soft" data-count="setups"></span>
+          </button>
+          <button type="button" class="so-tab" data-tab="errores">
+            <i class="ti ti-alert-triangle"></i> Errores <span class="chip-soft" data-count="errores"></span>
+          </button>
+          <button type="button" class="so-tab" data-tab="emociones">
+            <i class="ti ti-mood-smile"></i> Emociones <span class="chip-soft" data-count="emociones"></span>
+          </button>
+          <button type="button" class="so-tab" data-tab="experimentos">
+            <i class="ti ti-flask"></i> Experimentos <span class="chip-soft" data-count="experimentos"></span>
+          </button>
+          <button type="button" class="so-tab" data-tab="recomendaciones">
+            <i class="ti ti-bulb"></i> Recomendaciones <span class="chip-soft" data-count="recomendaciones"></span>
+          </button>
+        </div>
+
+        <div class="so-panel active" id="data-panel-setups">
 
           <!-- Setups operativos: familias (IRI, Reingreso…) y sus variantes.
                Lo que se cree aquí aparece solo en Registrar Sesión, en las
                reglas de Fase 2, en el Coach, en Telegram y en el AddOn NT8. -->
-          <div class="catalog-card catalog-card-wide">
+          <div class="catalog-card">
             <div class="catalog-header">
               <h3><i class="ti ti-chart-dots-3" style="color:var(--accent)"></i> Setups operativos</h3>
               <span class="catalog-sub">Familias y sus variantes. Las reglas de Fase 2 se asignan a una familia desde Estrategia.</span>
@@ -836,6 +857,9 @@
             <div id="setupsList" class="setups-list"></div>
           </div>
 
+        </div>
+
+        <div class="so-panel" id="data-panel-errores">
           <!-- Errores -->
           <div class="catalog-card">
             <div class="catalog-header">
@@ -862,6 +886,9 @@
             <div id="catalogoCasuisticasList" class="catalog-list"></div>
           </div>
 
+        </div>
+
+        <div class="so-panel" id="data-panel-emociones">
           <!-- Emociones -->
           <div class="catalog-card">
             <div class="catalog-header">
@@ -876,6 +903,9 @@
             <div id="catalogoEmocionesList" class="catalog-list"></div>
           </div>
 
+        </div>
+
+        <div class="so-panel" id="data-panel-experimentos">
           <!-- Experimentos -->
           <div class="catalog-card">
             <div class="catalog-header">
@@ -889,6 +919,9 @@
             <div id="catalogoExperimentosList" class="catalog-list"></div>
           </div>
 
+        </div>
+
+        <div class="so-panel" id="data-panel-recomendaciones">
           <!-- Recomendaciones -->
           <div class="catalog-card">
             <div class="catalog-header">
@@ -908,7 +941,6 @@
             </div>
             <div id="catalogoRecomendacionesList" class="catalog-list"></div>
           </div>
-
         </div>
       </section>
 
