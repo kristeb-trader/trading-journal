@@ -1,4 +1,10 @@
 *.local.json
+
+# Modo local de desarrollo: js/dev.local.js arranca la app en localhost sin
+# sesión de Supabase, con datos de prueba, para poder verificar pantallas sin
+# escribir ninguna contraseña. Nunca se despliega ni se comparte.
+*.local.js
+
 .DS_Store
 Thumbs.db
 

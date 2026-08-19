@@ -63,6 +63,31 @@ Nunca "debería funcionar". En orden:
 4. Si se tocó `NinjaTrader/*.cs`: avisar a Kris de que hay que **recompilar en NT8** — no
    basta con el push.
 
+### El preview no pide contraseña: modo local
+
+`js/dev.local.js` (gitignoreado, **no se commitea**) arranca la app en `localhost` sin
+sesión de Supabase, con datos de prueba. Existe para que verificar una pantalla no dependa
+de que nadie escriba una clave.
+
+| Situación | Qué arranca |
+|---|---|
+| Hay sesión de Supabase en ese navegador | La app real, con datos reales. **La sesión manda siempre sobre el fixture** |
+| No hay sesión y existe `dev.local.js` | Modo local, con banda ámbar `MODO LOCAL` arriba |
+| No hay sesión y no existe el archivo | Login normal (es lo que pasa en producción) |
+| `?login` en la URL | Fuerza la pantalla de login. Es la única forma de iniciar sesión si el modo local está disponible |
+
+En producción el `hostname` es `kristeb-trader.github.io`, así que la rama que carga el
+archivo **nunca se ejecuta**, y el archivo tampoco está en el repo. Dos cierres.
+
+⚠️ **Los datos del modo local son inventados, y sus contadores son distintos de los reales
+a propósito.** Sirven para maquetación, interacción y "esta pantalla no revienta". **No
+sirven para dar por bueno un número**: para eso, el punto 3 — un `SELECT` contra Supabase,
+que no necesita login porque va por el MCP.
+
+Si una pantalla sale vacía, la consola dice exactamente qué falta
+(`[dev.local] sin fixture: DB.getX()`): se añade esa entrada a `FIXTURES` y ya. Si el
+archivo se pierde, se regenera leyendo las formas de las tablas con el MCP.
+
 El bot de Telegram **se despliega solo** al hacer push a `main` que toque
 `TelegramBot/**` (GitHub Actions). No hace falta `wrangler deploy` a mano.
 

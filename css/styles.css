@@ -302,6 +302,19 @@ small { font-size: 0.82em; }
 .status-dot i.spin { font-size: 1rem; }
 .status-dot.connected { color: var(--accent-txt); }
 .status-dot.disconnected { color: var(--red-txt); }
+/* Modo local: ni verde ni rojo. No es que falle la conexión, es que no hay
+   conexión que valga — lo que se ve son datos de prueba. */
+.status-dot.modo-local { color: var(--warning-txt); }
+/* Y una banda que no se puede pasar por alto, porque el punto de arriba SOLO se
+   muestra en Otros: sin esto se podría revisar cualquier otra pantalla creyendo
+   que los datos son de Supabase. Solo existe en localhost con dev.local.js. */
+body[data-modo-local]::before {
+  content: 'MODO LOCAL · datos de prueba, no Supabase';
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
+  background: var(--warning); color: var(--bg);
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em;
+  text-align: center; padding: 2px 0; pointer-events: none;
+}
 
 /* Icono de la app en la barra superior, a la izquierda — SOLO en móvil (se
    enciende en el bloque de ≤768px). Ahí el `.sidebar-header`, que es donde vive el

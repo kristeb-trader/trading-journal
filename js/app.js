@@ -637,11 +637,45 @@ function showLoginGate() {
   })
 }
 
+// ── Modo local de desarrollo ────────────────────────────────────────────────
+// Carga `js/dev.local.js` (gitignoreado) para poder abrir la app en localhost
+// SIN sesión de Supabase, con datos de prueba. Sirve para verificar pantallas
+// sin que nadie tenga que escribir una contraseña.
+//
+// Dos cierres, no uno: el archivo no está en el repo —así que en producción no
+// existe— y además el `hostname` corta la rama antes de intentar cargarlo. En
+// kristeb-trader.github.io esto es código muerto.
+async function cargarModoLocal() {
+  if (!['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) return null
+  try {
+    await import(new URL('js/dev.local.js', document.baseURI).href)
+    return window.__DEV_LOCAL__ || null
+  } catch (_) {
+    return null   // no existe → arranque normal, con su login
+  }
+}
+
 async function boot() {
   // ── Gate de autenticación: sin sesión → solo login, no arranca la app ──
+  //
+  // El orden importa: la sesión REAL manda siempre. El modo local solo entra si
+  // no hay ninguna, así que en cuanto alguien inicia sesión en este navegador
+  // los fixtures quedan dormidos y se ven los datos de verdad. Si la sesión
+  // caduca, en vez de quedarse bloqueado se cae al modo local.
+  //
+  // `?login` fuerza la pantalla de login aunque haya modo local disponible —
+  // sin esto no habría forma de llegar a ella para iniciar sesión la primera vez.
   let session = null
+  let modoLocal = null
   try { session = await DB.getSession() } catch (_) {}
-  if (!session) { showLoginGate(); return }
+
+  if (!session) {
+    const forzarLogin = new URLSearchParams(location.search).has('login')
+    modoLocal = forzarLogin ? null : await cargarModoLocal()
+    if (!modoLocal) { showLoginGate(); return }
+    session = { user: { email: modoLocal.email } }
+    document.body.dataset.modoLocal = '1'   // dispara la banda de aviso (styles.css)
+  }
   // El logout vive en Otros › Ajustes desde que se retiró el pie del sidebar,
   // que estaba oculto en móvil y dejaba al journal sin forma de cerrar sesión.
   document.getElementById('logoutBtn')?.addEventListener('click', async () => {
@@ -666,7 +700,18 @@ async function boot() {
   }
   dot.addEventListener('click', () => Toast.show(dot._detalle, dot._ok ? 'success' : 'error'))
 
-  try {
+  if (modoLocal) {
+    // En modo local no se sondea nada: no hay sesión y la sonda daría 401. El
+    // punto se pone en ámbar para que NUNCA se confunda un dato de prueba con
+    // uno real — es la única señal en pantalla de que no estás mirando Supabase.
+    dot.innerHTML = '<i class="ti ti-circle-filled"></i>'
+    dot.classList.remove('connected', 'disconnected')
+    dot.classList.add('modo-local')
+    dot.title = 'Modo local — datos de prueba, no Supabase'
+    dot.setAttribute('aria-label', dot.title)
+    dot._detalle = dot.title
+    dot._ok = false
+  } else try {
     const { error } = await supa.from('trades').select('trade_number').limit(1)
     if (error) throw error
     setDot(true, 'Conectado a Supabase')
