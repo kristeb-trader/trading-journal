@@ -21,6 +21,21 @@ Detalle y cómo cazarlos en la BD: `.claude/rules/ninjatrader.md` § Anti-replay
 > El refresco de cuenta principal cada 5 min (pendiente anterior) **ya está recompilado**
 > y funcionando: el trade de hoy de la Apex-15 entró directo a `trades`.
 
+### 🔵 Probar Otros y Datos con la sesión iniciada (19 ago)
+
+El rediseño está implementado y verificado en lo que se puede medir sin contraseña
+(anchos, desbordes, degradación, y los números contrastados con un `SELECT`). Lo que
+**no** se pudo probar es todo lo que exige estar autenticado — sin login las lecturas
+devuelven 401:
+
+- **En cada pestaña de Datos:** agregar, renombrar, borrar, activar/desactivar y
+  **arrastrar para reordenar**.
+- **Los 6 contadores de Otros** llegando solos al abrir la pantalla.
+- Que el **orden** que se guarda al arrastrar sea `1, 2, 3…` y no múltiplos de 6 — había un
+  bug ahí desde antes, arreglado en la Fase 1.
+
+Diseño y detalle de lo medido: `docs/disenos/2026-08-19-otros-y-datos.md` (v2) § 6.1.
+
 ### 👀 Revisar a ojo la UI del 16 ago
 
 Dos cambios que **no se pudieron medir** (la pantalla de login altera el shell y el panel
