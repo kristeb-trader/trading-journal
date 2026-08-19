@@ -1127,7 +1127,9 @@
            una rejilla fija que genera app.js desde OTROS_ITEMS, así que añadir
            una opción nueva es una entrada más en ese array — ni HTML ni CSS. -->
       <section class="section" id="section-otros">
-        <div class="otros-grid" id="otrosGrid"></div>
+        <!-- Contenedor a secas: app.js pinta dentro un .otros-eyebrow + .otros-grid
+             por cada grupo (Consultar / Configurar) leyendo Otros.ITEMS. -->
+        <div id="otrosGrid"></div>
 
         <!-- Ajustes. "Claves y objetivos" abre el #settingsModal de siempre, sin
              tocar su markup ni su lógica: solo cambia quién lo dispara (antes, la
@@ -1145,6 +1147,15 @@
             <i class="ti ti-chevron-right ajustes-row-go"></i>
           </button>
 
+          <button type="button" class="ajustes-row" id="ajustesSeguridad">
+            <i class="ti ti-lock"></i>
+            <span class="ajustes-row-txt">
+              <span class="ajustes-row-name">Seguridad</span>
+              <span class="ajustes-row-sub">Cambiar la contraseña de acceso</span>
+            </span>
+            <i class="ti ti-chevron-right ajustes-row-go"></i>
+          </button>
+
           <!-- Inerte a propósito: no es un botón, es un recordatorio. El tema
                claro no se construye hasta consolidar el color (ver §7 del diseño). -->
           <div class="ajustes-row ajustes-row-off">
@@ -1156,14 +1167,7 @@
             <span class="ajustes-row-tag">Pendiente</span>
           </div>
 
-          <button type="button" class="ajustes-row" id="ajustesSeguridad">
-            <i class="ti ti-lock"></i>
-            <span class="ajustes-row-txt">
-              <span class="ajustes-row-name">Seguridad</span>
-              <span class="ajustes-row-sub">Cambiar la contraseña de acceso</span>
-            </span>
-            <i class="ti ti-chevron-right ajustes-row-go"></i>
-          </button>
+          <div class="ajustes-sep"></div>
 
           <button type="button" class="ajustes-row ajustes-row-danger" id="logoutBtn">
             <i class="ti ti-logout"></i>

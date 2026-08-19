@@ -321,7 +321,7 @@ de deuda al cerrar la última fase.
 |---|---|---|---|
 | **1** ✅ | **Arreglo estructural de Datos**, sin rediseño: las 4 reglas de §3.2 | `css/styles.css`, `js/data.js` | ✅ **Hecho** — medido, ver §5.1 |
 | **2** ✅ | **Pestañas en Datos** + `.data-hero` + cabeceras con contador | `index.html`, `js/data.js`, `css/styles.css` | ✅ **Hecho** — medido, ver §5.2 |
-| **3** | **Otros: tokens, rejilla, tarjetas y Ajustes** (aún sin contadores) | `css/styles.css`, `index.html`, `js/app.js` | Las 6 tarjetas navegan a su sección; hover / foco / pulsación; 1440 / 1024 / 390 px; el chevron de volver funciona |
+| **3** ✅ | **Otros: tokens, rejilla, tarjetas y Ajustes** (aún sin contadores) | `css/styles.css`, `index.html`, `js/app.js` | ✅ **Hecho** — medido, ver §5.3 |
 | **4** | **Otros: contadores en vivo** | `js/db.js`, `js/app.js` | `SELECT` de contraste contra Supabase: los 6 números de pantalla **coinciden** con la consulta; cortar la red y comprobar que las tarjetas pintan `—` y **siguen navegando** |
 
 **La Fase 1 es autónoma.** Si se decide parar ahí, el desbordamiento ya está arreglado sin
@@ -387,6 +387,27 @@ El markup de cada fila y todos los `id` se conservan sin renombrar, y el cablead
 eventos no se ha tocado — pero eso es un argumento, no una comprobación. **Le toca a Kris
 entrar con su clave y probar en cada pestaña: agregar, renombrar, borrar, activar/desactivar
 y arrastrar para reordenar.** Es el único punto de la Fase 2 que no puedo cerrar yo.
+
+### 5.3 Fase 3 — lo medido (19 ago)
+
+| Qué | Resultado |
+|---|---|
+| Grupos | ✅ `Consultar` y `Configurar`, 3 tarjetas cada uno |
+| Rejilla a 1440 px | `381,3 · 381,3 · 381,3 · 0px` — **tres columnas reales y la cuarta colapsada**, que es exactamente lo que hace `auto-fit`. Las 6 tarjetas miden lo mismo |
+| Los 6 colores | ✅ Distintos y resueltos desde token: `#3FE0A6` · `#AFA9EC` · `#8FBDE8` · `#E0A33B` · `#A8A89B` · `#F2706F` |
+| Hairline superior | ✅ `::before` con `content:""`, `height: 2px`, `background: rgb(63,224,166)` en Trades |
+| Orden de Ajustes | ✅ Claves · Seguridad · Tema · separador · Cerrar sesión |
+| Móvil (375 px) | ✅ 2 columnas de 173,5 px, descripción oculta, número a 19,6 px (1,4 rem), sin scroll horizontal |
+| Navegación | ✅ Pulsar «Fechas Especiales» abre la sección, el título cambia, **el botón de Otros sigue encendido** (`Nav.PADRE`) y aparece el chevron de volver |
+| Errores de JS | Ninguno (solo los 401 de Supabase por no haber sesión) |
+
+#### Decisiones de implementación
+
+| # | Qué | Por qué |
+|---|---|---|
+| 1 | **`Otros.ITEMS` sigue siendo un array plano**, con un campo `grupo` nuevo | El invariante del `CLAUDE.md` dice «una sección nueva = una entrada más en ese array». Partirlo en `GRUPOS` habría dejado esa frase mintiendo |
+| 2 | La tarjeta de Datos va sin modificador de color (`color: ''`) | Es la neutra del reparto; hereda el `--c: var(--text2)` por defecto de `.otros-card` |
+| 3 | El contador nace como `··` con la clase `.cargando` y `min-height: 1em` | Evita el salto de layout cuando la Fase 4 sustituya el marcador por el número |
 
 Presupuesto estimado: **8–12 llamadas por fase**. Ninguna pasa del umbral de 25.
 

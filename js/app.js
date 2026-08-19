@@ -366,26 +366,45 @@ const SesionOperativa = {
 // pantalla). Estas 6 secciones siguen existiendo igual: solo cambia por dónde
 // se llega a ellas. Añadir una opción nueva = una entrada más en este array.
 
+// `grupo` separa lo que se CONSULTA de lo que se CONFIGURA: antes las seis
+// tarjetas pesaban igual y la pantalla se leía como un menú de sistema.
+// `color` elige el par --c/--c-dim de la tarjeta (ver .oc-* en styles.css);
+// sin él, la tarjeta es neutra. `unidad` es el rótulo bajo el contador.
 const Otros = {
   ITEMS: [
-    { id: 'experimentos', icon: 'ti-flask',          name: 'Experimentos',      desc: 'Qué estás probando y si funciona' },
-    { id: 'trades',       icon: 'ti-list-details',   name: 'Trades',            desc: 'Todas tus operaciones, una a una' },
-    { id: 'gallery',      icon: 'ti-photo',          name: 'Imágenes',          desc: 'Los gráficos de cada día' },
-    { id: 'estrategia',   icon: 'ti-book-2',         name: 'Estrategia',        desc: 'Tus reglas y setups' },
-    { id: 'data',         icon: 'ti-database',       name: 'Datos',             desc: 'Cuentas, catálogos e importación' },
-    { id: 'fechas',       icon: 'ti-calendar-star',  name: 'Fechas Especiales', desc: 'Festivos, FOMC y días marcados' },
+    { id: 'trades',       grupo: 'Consultar',  color: 'accent',  icon: 'ti-list-details',  name: 'Trades',            desc: 'Todas tus operaciones, una a una',  unidad: 'operaciones' },
+    { id: 'gallery',      grupo: 'Consultar',  color: 'violet',  icon: 'ti-photo',         name: 'Imágenes',          desc: 'Los gráficos de cada día',          unidad: 'gráficos' },
+    { id: 'experimentos', grupo: 'Consultar',  color: 'blue',    icon: 'ti-flask',         name: 'Experimentos',      desc: 'Qué estás probando y si funciona',  unidad: 'en prueba' },
+    { id: 'estrategia',   grupo: 'Configurar', color: 'warning', icon: 'ti-book-2',        name: 'Estrategia',        desc: 'Tus reglas y setups',               unidad: 'reglas activas' },
+    { id: 'data',         grupo: 'Configurar', color: '',        icon: 'ti-database',      name: 'Datos',             desc: 'Cuentas, catálogos e importación',  unidad: 'ítems en catálogo' },
+    { id: 'fechas',       grupo: 'Configurar', color: 'red',     icon: 'ti-calendar-star', name: 'Fechas Especiales', desc: 'Festivos, FOMC y días marcados',    unidad: 'en 2026' },
   ],
 
-  init() {
-    const grid = document.getElementById('otrosGrid')
-    if (!grid) return
-    grid.innerHTML = this.ITEMS.map(it => `
-      <button type="button" class="otros-card" data-goto="${it.id}">
-        <i class="ti ${it.icon}"></i>
+  _card(it) {
+    return `
+      <button type="button" class="otros-card ${it.color ? 'oc-' + it.color : ''}" data-goto="${it.id}">
+        <span class="otros-card-top">
+          <span class="otros-card-ico"><i class="ti ${it.icon}"></i></span>
+          <i class="ti ti-chevron-right otros-card-go"></i>
+        </span>
+        <span class="otros-card-n cargando" data-n="${it.id}">··</span>
+        <span class="otros-card-u">${it.unidad}</span>
         <span class="otros-card-name">${it.name}</span>
         <span class="otros-card-desc">${it.desc}</span>
-      </button>`).join('')
-    grid.addEventListener('click', e => {
+        <span class="otros-card-meta hidden" data-meta="${it.id}"></span>
+      </button>`
+  },
+
+  init() {
+    const cont = document.getElementById('otrosGrid')
+    if (!cont) return
+    const grupos = [...new Set(this.ITEMS.map(it => it.grupo))]
+    cont.innerHTML = grupos.map(g => `
+      <p class="otros-eyebrow">${g}</p>
+      <div class="otros-grid">
+        ${this.ITEMS.filter(it => it.grupo === g).map(it => this._card(it)).join('')}
+      </div>`).join('')
+    cont.addEventListener('click', e => {
       const card = e.target.closest('.otros-card')
       if (card) Nav.go(card.dataset.goto)
     })

@@ -20,8 +20,10 @@
   --warning-dim: rgba(186,117,23,0.15);
   --warning-txt: #E0A33B;
   --blue: #5B94C9;
+  --blue-dim: rgba(91,148,201,0.15);
   --blue-txt: #8FBDE8;
   --violet: #7C6CF3;
+  --violet-dim: rgba(124,108,243,0.15);
   --violet-txt: #AFA9EC;
 
   --text: #F4F3EF;
@@ -1968,28 +1970,80 @@ body.modal-open { overflow: hidden; }
 /* Hereda la superficie de .catalog-card (mismo fondo, borde y radio). Lo que
    añade es lo que allí no hace falta: es un destino de navegación, así que
    necesita hover, pulsación y foco visibles. */
-.otros-grid {
-  /* 240px con max-width 860 da 3 columnas: las 6 tarjetas caen en 2 filas
-     iguales. Con 180px salían 4+2 y la última fila quedaba coja. */
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px; max-width: 860px;
+/* Rótulo de grupo (Consultar / Configurar). NO es un <h2>: el título de la
+   pantalla es el de la barra superior — un solo título por pantalla. */
+.otros-eyebrow {
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.11em;
+  text-transform: uppercase; color: var(--text3); margin-bottom: 10px;
 }
+.otros-eyebrow:not(:first-child) { margin-top: 24px; }
+.otros-grid {
+  /* auto-FIT, no auto-fill: con 3 tarjetas por grupo, las pistas sobrantes se
+     colapsan y las tres se reparten todo el ancho. Con auto-fill quedaban
+     pegadas a la izquierda y medio metro de vacío a la derecha. */
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px; max-width: var(--content-max);
+}
+/* El color no se repite seis veces: cada tarjeta declara --c / --c-dim y el
+   resto del bloque las consume. Sin modificador, la tarjeta es neutra. */
 .otros-card {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  --c: var(--text2);
+  --c-dim: rgba(255,255,255,0.06);
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; align-items: flex-start;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px 16px;
+  border-radius: 14px;
+  padding: 16px 15px;
   text-align: left;
   color: var(--text);
-  transition: background var(--transition), border-color var(--transition), transform var(--transition);
+  transition: background var(--transition), border-color var(--transition),
+              transform var(--transition), box-shadow var(--transition);
 }
-.otros-card i { font-size: 1.5rem; color: var(--accent-txt); margin-bottom: 2px; }
-.otros-card-name { font-size: 0.98rem; font-weight: 600; }
-.otros-card-desc { font-size: 0.78rem; color: var(--text3); line-height: 1.45; }
-.otros-card:hover { background: var(--bg3); border-color: var(--accent); }
-.otros-card:active { transform: scale(0.98); }
-.otros-card:focus-visible { outline: 2px solid var(--accent-txt); outline-offset: 2px; }
+.otros-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--c);
+}
+.oc-accent  { --c: var(--accent-txt);  --c-dim: var(--accent-dim); }
+.oc-blue    { --c: var(--blue-txt);    --c-dim: var(--blue-dim); }
+.oc-violet  { --c: var(--violet-txt);  --c-dim: var(--violet-dim); }
+.oc-warning { --c: var(--warning-txt); --c-dim: var(--warning-dim); }
+.oc-red     { --c: var(--red-txt);     --c-dim: var(--red-dim); }
+
+.otros-card-top { display: flex; align-items: flex-start; width: 100%; }
+.otros-card-ico {
+  width: 38px; height: 38px; border-radius: 11px; flex: 0 0 auto;
+  background: var(--c-dim); color: var(--c);
+  display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
+}
+.otros-card-go {
+  margin-left: auto; font-size: 1rem; color: var(--text3);
+  transition: transform var(--transition), color var(--transition);
+}
+/* `min-height` fija el alto antes de que llegue el dato: sin él, las tarjetas
+   dan un salto cuando el contador sustituye al marcador de carga. */
+.otros-card-n {
+  font-size: 1.75rem; font-weight: 800; line-height: 1; margin-top: 12px;
+  min-height: 1em; font-variant-numeric: tabular-nums;
+}
+.otros-card-n.cargando { color: var(--text3); }
+.otros-card-u { font-size: 0.72rem; color: var(--text3); margin-top: 5px; }
+.otros-card-name { font-size: 1rem; font-weight: 600; margin-top: 12px; }
+.otros-card-desc { font-size: 0.78rem; color: var(--text3); line-height: 1.45; margin-top: 3px; }
+.otros-card-meta {
+  width: 100%; margin-top: 10px; padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem; color: var(--text3);
+}
+.otros-card:hover {
+  border-color: var(--c);
+  background: linear-gradient(160deg, var(--c-dim), var(--card) 55%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.otros-card:hover .otros-card-go { color: var(--c); transform: translateX(3px); }
+.otros-card:active { transform: translateY(0) scale(0.99); }
+.otros-card:focus-visible { outline: 2px solid var(--c); outline-offset: 2px; }
 
 /* Ajustes, dentro de Otros. Filas, no tarjetas: son acciones de una línea, y
    una rejilla de tarjetas las haría parecer secciones más de la app. */
@@ -1997,7 +2051,7 @@ body.modal-open { overflow: hidden; }
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  margin-top: 28px; max-width: 860px; overflow: hidden;
+  margin-top: 28px; max-width: var(--content-max); overflow: hidden;
 }
 .ajustes-title {
   display: flex; align-items: center; gap: 8px;
@@ -2012,7 +2066,17 @@ body.modal-open { overflow: hidden; }
   transition: background var(--transition);
 }
 .ajustes-row:last-child { border-bottom: none; }
-.ajustes-row > i:first-child { font-size: 1.15rem; color: var(--text2); flex-shrink: 0; }
+/* Pastilla, no icono suelto: es el mismo gesto que en las tarjetas de arriba. */
+.ajustes-row > i:first-child {
+  width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+  background: var(--bg3); color: var(--text2);
+  display: flex; align-items: center; justify-content: center; font-size: 1.05rem;
+}
+/* Separa "Cerrar sesión" del resto: es la única fila destructiva y no puede
+   pesar lo mismo que un recordatorio inerte como "Tema · Pendiente". */
+.ajustes-sep { height: 8px; background: var(--bg); }
+.ajustes-row-danger { background: var(--bg2); }
+.ajustes-row-danger > i:first-child { background: var(--red-dim); color: var(--red-txt); }
 .ajustes-row-txt { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .ajustes-row-name { font-size: 0.92rem; font-weight: 500; }
 .ajustes-row-sub { font-size: 0.76rem; color: var(--text3); }
@@ -2035,9 +2099,16 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 
 @media (max-width: 640px) {
   /* Dos columnas, no una: con una sola, seis tarjetas obligan a deslizar en la
-     pantalla cuyo motivo de existir es precisamente no deslizar. */
-  .otros-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .otros-card { padding: 14px 12px; }
+     pantalla cuyo motivo de existir es precisamente no deslizar. El `auto-fit`
+     bajaría a una columna por su cuenta, así que aquí se fuerza. */
+  .otros-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .otros-card { padding: 14px 12px; border-radius: 12px; }
+  /* En dos columnas de ~170 px la descripción no cabe sin romper la tarjeta en
+     cuatro líneas; el nombre y el número ya dicen lo necesario. */
+  .otros-card-desc { display: none; }
+  .otros-card-n { font-size: 1.4rem; margin-top: 10px; }
+  .otros-card-ico { width: 32px; height: 32px; border-radius: 9px; font-size: 1.1rem; }
+  .otros-card-name { font-size: 0.92rem; margin-top: 10px; }
   .ajustes-row { padding: 13px 14px; gap: 12px; }
 }
 /* Rejilla, no flex: con flex la fila no tiene forma de partirse en dos líneas y
