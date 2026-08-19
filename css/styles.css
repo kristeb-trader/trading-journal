@@ -309,7 +309,7 @@ small { font-size: 0.82em; }
    muestra en Otros: sin esto se podría revisar cualquier otra pantalla creyendo
    que los datos son de Supabase. Solo existe en localhost con dev.local.js. */
 body[data-modo-local]::before {
-  content: 'MODO LOCAL · datos de prueba, no Supabase';
+  content: 'COPIA LOCAL · datos del ' attr(data-modo-local) ' · no es Supabase en vivo';
   position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
   background: var(--warning); color: var(--bg);
   font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em;

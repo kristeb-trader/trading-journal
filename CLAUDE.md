@@ -65,28 +65,35 @@ Nunca "debería funcionar". En orden:
 
 ### El preview no pide contraseña: modo local
 
-`js/dev.local.js` (gitignoreado, **no se commitea**) arranca la app en `localhost` sin
-sesión de Supabase, con datos de prueba. Existe para que verificar una pantalla no dependa
-de que nadie escriba una clave.
+**Nunca hay que pedirle la contraseña a Kris para verificar.** Hay dos capas, y entre las
+dos siempre queda una en pie:
 
 | Situación | Qué arranca |
 |---|---|
-| Hay sesión de Supabase en ese navegador | La app real, con datos reales. **La sesión manda siempre sobre el fixture** |
-| No hay sesión y existe `dev.local.js` | Modo local, con banda ámbar `MODO LOCAL` arriba |
-| No hay sesión y no existe el archivo | Login normal (es lo que pasa en producción) |
-| `?login` en la URL | Fuerza la pantalla de login. Es la única forma de iniciar sesión si el modo local está disponible |
+| Hay sesión de Supabase en ese navegador | La app real, con datos en vivo. **La sesión manda siempre** |
+| No hay sesión y existe `js/dev.local.js` | Copia local, con banda ámbar arriba |
+| No hay sesión y no existe el archivo | Login normal (lo que pasa en producción) |
+| `?login` en la URL | Fuerza la pantalla de login — la única forma de entrar si la copia local está disponible |
+
+`js/dev.local.js` está **gitignoreado y no se commitea**. Contiene una copia de datos
+reales tomada con el MCP (trades, sesiones, catálogos, checklist, fechas), y sus escrituras
+mutan esos arrays en memoria, así que agregar/renombrar/borrar también se puede probar.
 
 En producción el `hostname` es `kristeb-trader.github.io`, así que la rama que carga el
 archivo **nunca se ejecuta**, y el archivo tampoco está en el repo. Dos cierres.
 
-⚠️ **Los datos del modo local son inventados, y sus contadores son distintos de los reales
-a propósito.** Sirven para maquetación, interacción y "esta pantalla no revienta". **No
-sirven para dar por bueno un número**: para eso, el punto 3 — un `SELECT` contra Supabase,
-que no necesita login porque va por el MCP.
+⚠️ **La copia local es una foto, no un espejo**: refleja la BD del día que se tomó, no la
+de hoy. Sirve para maquetación, interacción y "esta pantalla aguanta datos reales". Para
+afirmar que un número **es** el correcto hoy, el punto 3 — un `SELECT` por el MCP, que lee
+lo vivo y tampoco necesita login.
 
-Si una pantalla sale vacía, la consola dice exactamente qué falta
-(`[dev.local] sin fixture: DB.getX()`): se añade esa entrada a `FIXTURES` y ya. Si el
-archivo se pierde, se regenera leyendo las formas de las tablas con el MCP.
+Si una pantalla sale vacía, la consola dice qué falta (`[dev.local] sin fixture: DB.getX()`):
+se añade esa entrada y ya. Si el archivo se pierde o la foto envejece, se regenera pidiendo
+las tablas por el MCP.
+
+**Si la sesión del navegador caduca, NO se le pide login a Kris**: se cae solo a la copia
+local y se sigue trabajando. Solo se le menciona si lo que hay que comprobar exige datos
+frescos en pantalla y el `SELECT` por MCP no basta.
 
 El bot de Telegram **se despliega solo** al hacer push a `main` que toque
 `TelegramBot/**` (GitHub Actions). No hace falta `wrangler deploy` a mano.

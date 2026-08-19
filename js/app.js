@@ -674,7 +674,8 @@ async function boot() {
     modoLocal = forzarLogin ? null : await cargarModoLocal()
     if (!modoLocal) { showLoginGate(); return }
     session = { user: { email: modoLocal.email } }
-    document.body.dataset.modoLocal = '1'   // dispara la banda de aviso (styles.css)
+    // El valor es la fecha de la copia: la banda de aviso lo lee con attr().
+    document.body.dataset.modoLocal = modoLocal.tomadoEl || 'sin fecha'
   }
   // El logout vive en Otros › Ajustes desde que se retiró el pie del sidebar,
   // que estaba oculto en móvil y dejaba al journal sin forma de cerrar sesión.
@@ -707,7 +708,7 @@ async function boot() {
     dot.innerHTML = '<i class="ti ti-circle-filled"></i>'
     dot.classList.remove('connected', 'disconnected')
     dot.classList.add('modo-local')
-    dot.title = 'Modo local — datos de prueba, no Supabase'
+    dot.title = `Copia local del ${modoLocal.tomadoEl} — no es Supabase en vivo`
     dot.setAttribute('aria-label', dot.title)
     dot._detalle = dot.title
     dot._ok = false
