@@ -892,9 +892,9 @@ small { font-size: 0.82em; }
   display: flex; align-items: center; padding: 2px; border-radius: 4px;
 }
 .setup-var-tog:hover { color: var(--accent); background: var(--accent-dim); }
-.setup-var-add { display: flex; gap: 8px; align-items: center; }
-.setup-var-add input { flex: 1 1 auto; min-width: 0; }
-.setup-var-add select { flex: 0 0 auto; width: auto; }
+.setup-var-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.setup-var-add input { flex: 1 1 200px; min-width: 0; }
+.setup-var-add select { flex: 0 1 auto; width: auto; min-width: 0; }
 
 /* Selectores de Fase / Setup en el editor de reglas */
 .rb-efields { display: flex; gap: 12px; margin: 10px 0 4px; flex-wrap: wrap; }
@@ -1924,8 +1924,10 @@ body.modal-open { overflow: hidden; }
 
 /* ── Data Manager ────────────────────────────────────────────────────── */
 .data-catalogs {
+  /* minmax(0, 1fr), no 1fr: una columna cuyo contenido no encoge CRECE por encima
+     de 1fr y descuadra la rejilla entera. Era la causa de "todo desproporcionado". */
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
 }
 .data-top-cards {
@@ -1942,8 +1944,11 @@ body.modal-open { overflow: hidden; }
 .catalog-header { margin-bottom: 16px; }
 .catalog-header h3 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
 .catalog-sub { font-size: 0.78rem; color: var(--text3); }
-.catalog-add { display: flex; gap: 8px; margin-bottom: 14px; }
-.catalog-add input { flex: 1; }
+/* `flex-wrap` + `min-width: 0` en el input: sin las dos, los 2 selects y el botón
+   suman ~330 px rígidos y la fila se sale de la tarjeta. */
+.catalog-add { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.catalog-add input { flex: 1 1 240px; min-width: 0; }
+.catalog-add .btn-primary { flex: 0 0 auto; margin-left: auto; }
 .catalog-list { display: flex; flex-direction: column; gap: 6px; }
 .catalog-empty { font-size: 0.85rem; color: var(--text3); text-align: center; padding: 20px 0; }
 
@@ -2023,12 +2028,38 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
   .otros-card { padding: 14px 12px; }
   .ajustes-row { padding: 13px 14px; gap: 12px; }
 }
+/* Rejilla, no flex: con flex la fila no tiene forma de partirse en dos líneas y
+   los selects la empujaban fuera de la tarjeta. Las 5 celdas son siempre las
+   mismas — `meta` y `acts` van vacías en los catálogos que no las usan. */
 .catalog-item {
-  display: flex; align-items: center; gap: 10px;
+  display: grid;
+  grid-template-columns: auto 32px minmax(0, 1fr) auto auto;
+  gap: 8px 10px; align-items: center;
   padding: 8px 12px; border-radius: 8px;
   background: var(--bg3); transition: opacity var(--transition);
 }
 .catalog-item-inactive { opacity: 0.45; }
+.catalog-item-main { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.catalog-item-meta { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.catalog-item-acts { display: flex; align-items: center; gap: 2px; }
+.catalog-item-meta:empty, .catalog-item-acts:empty { display: none; }
+
+@media (max-width: 760px) {
+  /* Los selects bajan enteros a una segunda línea. `order` los coloca detrás de
+     los botones pese a ir antes en el DOM, que es el orden correcto en ancho. */
+  .catalog-item { grid-template-columns: auto 32px minmax(0, 1fr) auto; }
+  .catalog-item-meta {
+    order: 1; grid-column: 1 / -1;
+    /* `min(140px, 100%)`: un suelo de 140px pelado es MAYOR que el hueco
+       disponible en pantallas estrechas y vuelve a desbordar. El min() lo
+       ata al contenedor. */
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+  }
+  .catalog-item-meta > select { max-width: 100%; }
+  /* El botón de añadir a ancho completo: "Agregar familia" mide más que el hueco
+     que queda a la derecha del input y desbordaba la tarjeta. */
+  .catalog-add .btn-primary { flex: 1 1 100%; margin-left: 0; justify-content: center; }
+}
 
 /* Drag & Drop reorder */
 .drag-handle {
@@ -2047,7 +2078,13 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
   box-shadow: 0 2px 0 var(--accent);
   border-radius: 0 0 var(--radius) var(--radius);
 }
-.catalog-nombre { flex: 1; font-size: 0.85rem; }
+.catalog-nombre {
+  flex: 1 1 auto; min-width: 0; font-size: 0.85rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* `flex-shrink: 0` + ancho mínimo marcado por la opción más larga
+   ("Fase 1 · Pre-sesión", ~150 px) era lo que impedía que NADA cediera.
+   Con `min-width: 0` el control nativo ya puede recortar su propio texto. */
 .catalog-tipo-select {
   font-size: 0.78rem;
   padding: 4px 8px;
@@ -2055,8 +2092,10 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
   background: var(--card);
   border: 1px solid var(--border);
   color: var(--text2);
-  flex-shrink: 0;
-  max-width: 150px;
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
 }
 .btn-edit-catalog, .btn-del-catalog {
   color: var(--text3); font-size: 1rem; padding: 3px 5px;

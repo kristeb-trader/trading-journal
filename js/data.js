@@ -37,19 +37,23 @@ const DataManager = (() => {
           <input type="checkbox" class="tog-activa" data-id="${item.id}" ${item.activa ? 'checked' : ''}>
           <span class="toggle-track"></span>
         </label>
-        <span class="catalog-nombre">${item.nombre}</span>
-        <select class="catalog-tipo-select tipo-select" data-id="${item.id}" title="Tipo de error">
-          ${tipoOptions(item.tipo)}
-        </select>
-        <select class="catalog-tipo-select fase-select" data-id="${item.id}" title="Fase del proceso">
-          ${faseOptions(item.fase)}
-        </select>
-        <button class="btn-edit-catalog" data-id="${item.id}" data-nombre="${item.nombre}" title="Editar nombre">
-          <i class="ti ti-pencil"></i>
-        </button>
-        <button class="btn-del-catalog" data-id="${item.id}" title="Eliminar">
-          <i class="ti ti-trash"></i>
-        </button>
+        <span class="catalog-item-main"><span class="catalog-nombre">${item.nombre}</span></span>
+        <span class="catalog-item-meta">
+          <select class="catalog-tipo-select tipo-select" data-id="${item.id}" title="Tipo de error">
+            ${tipoOptions(item.tipo)}
+          </select>
+          <select class="catalog-tipo-select fase-select" data-id="${item.id}" title="Fase del proceso">
+            ${faseOptions(item.fase)}
+          </select>
+        </span>
+        <span class="catalog-item-acts">
+          <button class="btn-edit-catalog" data-id="${item.id}" data-nombre="${item.nombre}" title="Editar nombre">
+            <i class="ti ti-pencil"></i>
+          </button>
+          <button class="btn-del-catalog" data-id="${item.id}" title="Eliminar">
+            <i class="ti ti-trash"></i>
+          </button>
+        </span>
       </div>`).join('')
 
     // ── Tipo (taxonomía de error) ────────────────────────────────────────────
@@ -172,7 +176,11 @@ const DataManager = (() => {
         target.after(dragged)
       }
 
-      const ids = [...container.querySelectorAll('[data-id]')].map(el => parseInt(el.dataset.id))
+      // `:scope >` — solo las FILAS. Sin él entran también el checkbox, los selects
+      // y los botones de dentro, que llevan su propio data-id: la lista salía con 6
+      // entradas por fila y el `orden` guardado eran múltiplos (6, 12, 18…). Se
+      // sostenía de milagro, porque todas las filas aportaban el mismo número.
+      const ids = [...container.querySelectorAll(':scope > [data-id]')].map(el => parseInt(el.dataset.id))
       try {
         await saveFn(ids)
         Toast.show('Orden guardado', 'success')
@@ -208,14 +216,19 @@ const DataManager = (() => {
           <input type="checkbox" class="tog-emocion" data-id="${item.id}" ${item.activa ? 'checked' : ''}>
           <span class="toggle-track"></span>
         </label>
-        <span class="catalog-emoji">${item.emoji || '😐'}</span>
-        <span class="catalog-nombre">${item.nombre}</span>
-        <button class="btn-edit-catalog" data-id="${item.id}" data-nombre="${item.nombre}" data-emoji="${item.emoji || '😐'}" title="Editar">
-          <i class="ti ti-pencil"></i>
-        </button>
-        <button class="btn-del-catalog" data-id="${item.id}" title="Eliminar">
-          <i class="ti ti-trash"></i>
-        </button>
+        <span class="catalog-item-main">
+          <span class="catalog-emoji">${item.emoji || '😐'}</span>
+          <span class="catalog-nombre">${item.nombre}</span>
+        </span>
+        <span class="catalog-item-meta"></span>
+        <span class="catalog-item-acts">
+          <button class="btn-edit-catalog" data-id="${item.id}" data-nombre="${item.nombre}" data-emoji="${item.emoji || '😐'}" title="Editar">
+            <i class="ti ti-pencil"></i>
+          </button>
+          <button class="btn-del-catalog" data-id="${item.id}" title="Eliminar">
+            <i class="ti ti-trash"></i>
+          </button>
+        </span>
       </div>`).join('')
 
     // Toggles
@@ -523,8 +536,11 @@ const DataManager = (() => {
           <input type="checkbox" class="tog-exp" data-id="${item.id}" ${item.activo ? 'checked' : ''}>
           <span class="toggle-track"></span>
         </label>
-        <span class="catalog-nombre">${item.nombre}</span>
-        <button class="btn-del-catalog" data-id="${item.id}" title="Eliminar"><i class="ti ti-trash"></i></button>
+        <span class="catalog-item-main"><span class="catalog-nombre">${item.nombre}</span></span>
+        <span class="catalog-item-meta"></span>
+        <span class="catalog-item-acts">
+          <button class="btn-del-catalog" data-id="${item.id}" title="Eliminar"><i class="ti ti-trash"></i></button>
+        </span>
       </div>`).join('')
 
     el.querySelectorAll('.tog-exp').forEach(chk => {
@@ -557,10 +573,13 @@ const DataManager = (() => {
           <input type="checkbox" class="tog-rec" data-id="${item.id}" ${item.activa ? 'checked' : ''}>
           <span class="toggle-track"></span>
         </label>
-        <span class="catalog-nombre">${item.nombre}</span>
-        <select class="catalog-tipo-select tipo-select-rec" data-id="${item.id}" title="Tipo">
-          ${tipoOptions(item.tipo)}
-        </select>
+        <span class="catalog-item-main"><span class="catalog-nombre">${item.nombre}</span></span>
+        <span class="catalog-item-meta">
+          <select class="catalog-tipo-select tipo-select-rec" data-id="${item.id}" title="Tipo">
+            ${tipoOptions(item.tipo)}
+          </select>
+        </span>
+        <span class="catalog-item-acts"></span>
       </div>`).join('')
 
     el.querySelectorAll('.tog-rec').forEach(chk => {
