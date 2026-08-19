@@ -4420,6 +4420,17 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
    decisión de Kris (19 ago). Ver docs/disenos/2026-08-19-chaumer-vs-yo.md §4.0 */
 #section-chaumer { max-width: var(--content-max); }
 
+/* Pestañas y fecha en la misma fila: la fecha en su propia franja se comía ~60 px
+   de alto, que en esta pantalla hacen falta para las dos columnas. */
+.ch-topbar {
+  display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border); margin-bottom: 18px;
+}
+.ch-topbar .so-tabs { border-bottom: none; margin-bottom: 0; flex: 1 1 auto; min-width: 0; }
+.ch-datenav { flex: 0 0 auto; padding-bottom: 7px; }
+.ch-datenav input[type="date"] { width: 150px; flex: 0 0 auto; }
+.ch-datenav .btn-icon { width: 32px; height: 32px; flex: 0 0 auto; border: 1px solid var(--border); }
+
 .ch-veredicto {
   display: inline-flex; align-items: center; gap: 8px;
   font-size: 0.85rem; font-weight: 600;
@@ -4620,6 +4631,11 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
   .ch-campos dd { width: 53%; }
   .ch-kpi-n { font-size: 1.35rem; }
   .ch-bar { flex: 0 0 60px; }
+  /* La fecha baja a su propia línea, pero a ancho completo: al lado de las
+     pestañas dejaría el input en ~70 px y no cabe una fecha. */
+  .ch-topbar { gap: 8px; }
+  .ch-datenav { flex: 1 1 100%; padding-bottom: 8px; }
+  .ch-datenav input[type="date"] { flex: 1 1 auto; width: auto; min-width: 0; }
 }
 
 /* ── Fechas Especiales ────────────────────────────────────────────────────── */

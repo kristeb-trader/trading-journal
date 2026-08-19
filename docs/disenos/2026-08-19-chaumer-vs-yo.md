@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Versión** | v3 |
+| **Versión** | v4 |
 | **Fecha** | 2026-08-19 |
 | **Estado** | ✅ **IMPLEMENTADO** (19 ago) — las 4 fases cerradas y verificadas. Lo que falta es cargar días, no código |
 | **Origen** | Petición de Kris (19 ago): «entré a su curso y tengo acceso a sus operativas; quiero un módulo donde almacene las suyas vs las mías, la pantalla partida en dos, y un dashboard de diferencias con filtro por mes/trimestre/año/todo, para ver si estoy fallando en algún punto» |
@@ -426,6 +426,27 @@ resultado o solo se avisa.
 
 ---
 
+### 5.5 Ajustes tras el primer uso (19 ago)
+
+Dos peticiones de Kris nada más empezar a cargar días:
+
+| Qué pidió | Qué se hizo |
+|---|---|
+| «Los días sin setup también deben mostrar la imagen» | El gráfico es el **del día**, no el de la operación: existe igual cuando no hubo setup, y son justo los días en que verlo explica por qué no lo hubo. Ahora se pinta en los dos lados aunque no se operara |
+| «La fecha al lado derecho de las pestañas, para dar más espacio» | La fecha sube a la misma fila que las pestañas. El contenido arranca a **65 px** del inicio de la sección en vez de ~125 px |
+
+**Medido** con la sesión real, en el 19 de agosto (día en que ni Chaumer ni Kris operaron):
+las dos imágenes se pintan (`<img>` de 150 px por lado), la fecha queda a la derecha y en la
+misma fila, se oculta al pasar a *Diferencias* —donde manda el selector de período— y vuelve
+al volver a *Día*. En móvil (375 px) baja a su propia línea a ancho completo, sin desbordes
+ni scroll horizontal, y sin errores de consola.
+
+**De propina:** el lado de Kris muestra ahora el motivo del día junto a «No operé»
+(«No operé · FOMC»), que sale de `sesiones.motivo_no_opero`. En un día sin operación era lo
+único que faltaba para que el gráfico se entendiera solo.
+
+---
+
 ## 6. Lo que este diseño NO toca
 
 - El criterio de disciplina, el P&L neto, el riesgo en puntos, las fechas locales.
@@ -454,5 +475,6 @@ resultado o solo se avisa.
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 2026-08-19 | Documento inicial. Recoge las 4 decisiones de Kris |
+| v4 | 2026-08-19 | Ajustes tras el primer uso: la imagen se muestra también en los días sin setup, y la fecha sube a la fila de las pestañas. Detalle en §5.5 |
 | v3 | 2026-08-19 | Fases 3 y 4 cerradas. Se añaden §5.3 y §5.4 con lo medido, y el hallazgo del signo de los puntos que salió del uso real |
 | v2 | 2026-08-19 | **Chaumer pasa de dorado a azul** y tú al verde: a Kris no le convencía el dorado como texto. Se corrigen dos choques que salieron de ahí — «Ejecución» y «Otra lectura» compartían violeta, y el azul ya lo usaba la tarjeta de Experimentos en Otros. Detalle en §3 y §4.0 |

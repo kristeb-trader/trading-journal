@@ -1133,27 +1133,31 @@
            duplica. El veredicto no se guarda: se calcula. Ver js/chaumer.js. -->
       <section class="section" id="section-chaumer">
 
-        <div class="so-tabs" id="chaumerTabs">
-          <button type="button" class="so-tab active" data-tab="dia">
-            <i class="ti ti-columns-2"></i> Día
-          </button>
-          <button type="button" class="so-tab" data-tab="dif">
-            <i class="ti ti-chart-bar"></i> Diferencias
-          </button>
+        <!-- La fecha va en la MISMA fila que las pestañas: en su propia franja
+             comía ~60 px de alto que hacen falta para las dos columnas. Solo se
+             muestra en la pestaña "Día" — la de Diferencias usa el selector de
+             período de la barra superior. Lo alterna Chaumer.showTab. -->
+        <div class="ch-topbar">
+          <div class="so-tabs" id="chaumerTabs">
+            <button type="button" class="so-tab active" data-tab="dia">
+              <i class="ti ti-columns-2"></i> Día
+            </button>
+            <button type="button" class="so-tab" data-tab="dif">
+              <i class="ti ti-chart-bar"></i> Diferencias
+            </button>
+          </div>
+          <div class="date-stepper ch-datenav" id="chDateNav">
+            <button type="button" class="btn-icon" id="chDatePrev" title="Día anterior">
+              <i class="ti ti-chevron-left"></i>
+            </button>
+            <input type="date" id="chDate">
+            <button type="button" class="btn-icon" id="chDateNext" title="Día siguiente">
+              <i class="ti ti-chevron-right"></i>
+            </button>
+          </div>
         </div>
 
         <div class="so-panel active" id="chaumer-panel-dia">
-          <div class="so-head">
-            <div class="date-stepper">
-              <button type="button" class="btn-icon" id="chDatePrev" title="Día anterior">
-                <i class="ti ti-chevron-left"></i>
-              </button>
-              <input type="date" id="chDate">
-              <button type="button" class="btn-icon" id="chDateNext" title="Día siguiente">
-                <i class="ti ti-chevron-right"></i>
-              </button>
-            </div>
-          </div>
           <div id="chaumerDia"></div>
         </div>
 

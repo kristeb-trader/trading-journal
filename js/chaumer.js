@@ -56,6 +56,9 @@ const Chaumer = (() => {
       confianza: sesion?.nivel_confianza || null,
       notas: sesion?.analisis_trader || null,
       imagen: sesion?.imagen_url || null,
+      // El "por qué no operé" del día ("Sin setup", "Noticia roja"…). En un día
+      // sin operación es lo único que explica el gráfico que se está mirando.
+      motivoNoOpero: sesion?.motivo_no_opero || null,
       nTrades: trades.length,
     }
   }
@@ -100,6 +103,15 @@ const Chaumer = (() => {
   }
 
   // ── Pintado ───────────────────────────────────────────────────────────────
+  // El gráfico es el del DÍA, no el de la operación: existe igual en los días en
+  // que no hubo setup, y son justo los días en que ver el gráfico explica por qué
+  // no lo hubo. Por eso se pinta también cuando no se operó.
+  function imgBloque(url, alt) {
+    return url
+      ? `<img class="ch-img" src="${esc(url)}" alt="${esc(alt)}" data-act="zoom">`
+      : `<div class="ch-img ch-img-off"><i class="ti ti-photo-off"></i></div>`
+  }
+
   function ladoChaumer(ch) {
     if (!ch) {
       return `
@@ -116,16 +128,16 @@ const Chaumer = (() => {
       return `
         <div class="ch-lado ch-lado-el">
           <div class="ch-lado-tit">Chaumer <button type="button" class="ch-edit" data-act="editar" title="Editar"><i class="ti ti-pencil"></i></button></div>
+          ${imgBloque(ch.imagen_url, 'Gráfico de Chaumer')}
           <div class="ch-nooper"><i class="ti ti-minus"></i> No operó</div>
           ${ch.motivo_no_opero ? `<p class="ch-notas">${esc(ch.motivo_no_opero)}</p>` : ''}
+          ${ch.notas ? `<p class="ch-notas">${esc(ch.notas)}</p>` : ''}
         </div>`
     }
     return `
       <div class="ch-lado ch-lado-el">
         <div class="ch-lado-tit">Chaumer <button type="button" class="ch-edit" data-act="editar" title="Editar"><i class="ti ti-pencil"></i></button></div>
-        ${ch.imagen_url
-          ? `<img class="ch-img" src="${esc(ch.imagen_url)}" alt="Gráfico de Chaumer" data-act="zoom">`
-          : `<div class="ch-img ch-img-off"><i class="ti ti-photo-off"></i></div>`}
+        ${imgBloque(ch.imagen_url, 'Gráfico de Chaumer')}
         <div class="ch-setup">${esc(nombreVariante(ch.setup_codigo))}</div>
         <dl class="ch-campos">
           <dt>Resultado</dt><dd class="${ch.puntos > 0 ? 'pos' : ch.puntos < 0 ? 'neg' : ''}">${RESULTADOS[ch.resultado] || '—'} · ${fmtPts(ch.puntos)}</dd>
@@ -141,16 +153,15 @@ const Chaumer = (() => {
       return `
         <div class="ch-lado ch-lado-yo">
           <div class="ch-lado-tit">Yo</div>
-          <div class="ch-nooper"><i class="ti ti-minus"></i> No operé</div>
+          ${imgBloque(yo.imagen, 'Mi gráfico')}
+          <div class="ch-nooper"><i class="ti ti-minus"></i> No operé${yo.motivoNoOpero ? ` · ${esc(yo.motivoNoOpero)}` : ''}</div>
           ${yo.notas ? `<p class="ch-notas">${esc(yo.notas)}</p>` : ''}
         </div>`
     }
     return `
       <div class="ch-lado ch-lado-yo">
         <div class="ch-lado-tit">Yo</div>
-        ${yo.imagen
-          ? `<img class="ch-img" src="${esc(yo.imagen)}" alt="Mi gráfico" data-act="zoom">`
-          : `<div class="ch-img ch-img-off"><i class="ti ti-photo-off"></i></div>`}
+        ${imgBloque(yo.imagen, 'Mi gráfico')}
         <div class="ch-setup">${esc(nombreVariante(yo.setup_codigo))}</div>
         <dl class="ch-campos">
           <dt>Resultado</dt><dd class="${yo.puntos > 0 ? 'pos' : yo.puntos < 0 ? 'neg' : ''}">${RESULTADOS[yo.resultado] || '—'} · ${fmtPts(yo.puntos)}</dd>
@@ -737,6 +748,7 @@ const Chaumer = (() => {
       p.classList.toggle('active', p.id === `chaumer-panel-${tab}`)
     })
     const dif = tab === 'dif'
+    document.getElementById('chDateNav')?.classList.toggle('hidden', dif)
     document.getElementById('chaumerPeriod')?.classList.toggle('hidden', !dif)
     document.querySelectorAll('.header-info .hdr-nav').forEach(el => el.classList.toggle('hidden', !dif || !pInfo().paso))
     if (dif) { renderPeriodPicker(); cargarDif() }
