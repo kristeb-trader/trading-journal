@@ -21,7 +21,34 @@ Detalle y cómo cazarlos en la BD: `.claude/rules/ninjatrader.md` § Anti-replay
 > El refresco de cuenta principal cada 5 min (pendiente anterior) **ya está recompilado**
 > y funcionando: el trade de hoy de la Apex-15 entró directo a `trades`.
 
-### 🔵 Probar Otros y Datos con la sesión iniciada (19 ago)
+### 🟢 Empezar a cargar las operativas de Chaumer (19 ago)
+
+El comparador está **terminado y verificado** — las 4 fases. Lo que falta no es código: son
+datos. Kris ya cargó los dos primeros días (18 y 19 de agosto) el mismo día que se entregó;
+el dashboard de Diferencias irá diciendo más a medida que se acumulen.
+
+Se registra desde **Otros › Chaumer › Día**, un día a la vez: setup, hora en ET, resultado,
+puntos y la captura. Los días en que él **no operó** también cuentan — son los que permiten
+medir «entré donde él no veía nada».
+
+> ⚠️ **El signo de los puntos.** `puntos` va **con signo**: un stop es negativo. En el día
+> 18 quedó cargado un *stop* con `+20,50`, que infla sus puntos en el KPI de Δ. El
+> formulario no lo impide hoy — **pendiente de decidir** si lo pone automático según el
+> resultado (stop → negativo) o solo avisa.
+
+> ⚠️ **El módulo vive de la constancia.** Con el 30 % de los días cargados, el dashboard no
+> dice dónde fallas: dice dónde te acordaste de apuntar. Por eso la cobertura va arriba del
+> todo y se pone en rojo por debajo del 60 %. Si el alta resulta pesada, decirlo y se
+> recorta antes de que se llene de huecos.
+
+**Una cosa a decidir con datos reales:** un día con mismo setup, mismo resultado y entrada
+a la vez, pero la mitad de sus puntos, hoy sale como **«Igual»** con un chip que avisa.
+Puede que Kris prefiera que cuente como «Ejecución» — es una condición en `veredicto()`
+(`js/chaumer.js`).
+
+Diseño y lo medido en cada fase: `docs/disenos/2026-08-19-chaumer-vs-yo.md` (v2).
+
+### 🔵 Probar Datos con la sesión iniciada (19 ago)
 
 El rediseño está implementado y verificado en lo que se puede medir sin contraseña
 (anchos, desbordes, degradación, y los números contrastados con un `SELECT`). Lo que

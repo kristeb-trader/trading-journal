@@ -65,35 +65,13 @@ Nunca "debería funcionar". En orden:
 
 ### El preview no pide contraseña: modo local
 
-**Nunca hay que pedirle la contraseña a Kris para verificar.** Hay dos capas, y entre las
-dos siempre queda una en pie:
+**Nunca se le pide la contraseña a Kris para verificar**, ni siquiera si la sesión caduca:
+se cae solo a la copia local y se sigue. Manda la sesión real si la hay; si no, arranca
+`js/dev.local.js` (gitignoreado, con banda ámbar); `?login` fuerza el login.
 
-| Situación | Qué arranca |
-|---|---|
-| Hay sesión de Supabase en ese navegador | La app real, con datos en vivo. **La sesión manda siempre** |
-| No hay sesión y existe `js/dev.local.js` | Copia local, con banda ámbar arriba |
-| No hay sesión y no existe el archivo | Login normal (lo que pasa en producción) |
-| `?login` en la URL | Fuerza la pantalla de login — la única forma de entrar si la copia local está disponible |
-
-`js/dev.local.js` está **gitignoreado y no se commitea**. Contiene una copia de datos
-reales tomada con el MCP (trades, sesiones, catálogos, checklist, fechas), y sus escrituras
-mutan esos arrays en memoria, así que agregar/renombrar/borrar también se puede probar.
-
-En producción el `hostname` es `kristeb-trader.github.io`, así que la rama que carga el
-archivo **nunca se ejecuta**, y el archivo tampoco está en el repo. Dos cierres.
-
-⚠️ **La copia local es una foto, no un espejo**: refleja la BD del día que se tomó, no la
-de hoy. Sirve para maquetación, interacción y "esta pantalla aguanta datos reales". Para
-afirmar que un número **es** el correcto hoy, el punto 3 — un `SELECT` por el MCP, que lee
-lo vivo y tampoco necesita login.
-
-Si una pantalla sale vacía, la consola dice qué falta (`[dev.local] sin fixture: DB.getX()`):
-se añade esa entrada y ya. Si el archivo se pierde o la foto envejece, se regenera pidiendo
-las tablas por el MCP.
-
-**Si la sesión del navegador caduca, NO se le pide login a Kris**: se cae solo a la copia
-local y se sigue trabajando. Solo se le menciona si lo que hay que comprobar exige datos
-frescos en pantalla y el `SELECT` por MCP no basta.
+⚠️ **La copia local es una foto, no un espejo.** Vale para maquetación e interacción; para
+afirmar que un número es correcto **hoy**, el punto 3 — un `SELECT` por el MCP, que tampoco
+necesita login. Detalle: `.claude/rules/modo-local.md`.
 
 El bot de Telegram **se despliega solo** al hacer push a `main` que toque
 `TelegramBot/**` (GitHub Actions). No hace falta `wrangler deploy` a mano.
@@ -127,6 +105,7 @@ Lo que el esquema no cuenta y hay que saber:
 | `diagnostico_errores` | `regla_codigo` = la regla que ese error contradice → la disciplina la cuenta incumplida **aunque la casilla esté marcada**. NULL = psicológico, no toca el checklist |
 | `sesion_noticias` | UNIQUE (fecha, hora): una noticia por hora. El CPI publica 4 cifras a las 7:30 pero es **un** evento con **una** ventana (±5 min sobre la entrada) |
 | `objetivos` | Fila única. `cuenta_principal` es la cuenta que alimenta P&L/Análisis/Coach; se elige en Datos y la lee el indicador NT8 al arrancar. `limite_perdida_dia` está **obsoleto** (el riesgo se mide en puntos) |
+| `chaumer_operativas` | Comparador. **Solo el lado de Chaumer**: el de Kris se LEE de `sesiones`+`trades`, nunca se copia aquí. `hora_entrada` va en **ET**, a diferencia de `trades.entry_time` (hora Colombia) — convertir con `horaEt()` antes de restarlas. `puntos` en **PUNTOS**, no en dólares. El veredicto del día no se guarda: se calcula |
 | `sesiones` | `setup` (texto) y `setup_codigo` los sincroniza el trigger `fn_sync_setup_codigo`, escriba quien escriba. La columna `noticias` se retiró de la UI el 16 ago y su contenido se migró a `sesion_noticias`; **la columna sigue existiendo** |
 
 ## Lenguaje visual
@@ -172,6 +151,7 @@ js/calendar.js    Calendario mensual · js/metrics.js  KPIs
 js/charts.js      Sección Análisis · js/disciplina.js  Dashboard de Disciplina
 js/apex.js        Apex Tracker · js/experimentos.js  Laboratorio
 js/estrategia.js  Editor del rulebook · js/fechas.js  Fechas Especiales
+js/chaumer.js     Comparador Chaumer vs yo (pestañas Día y Diferencias)
 js/account-filter.js  Filtro de cuentas compartido (nombre COMPLETO)
 css/styles.css    Dark mode + responsive
 NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) ·
@@ -186,9 +166,10 @@ su pestaña — no romperlos.
 ## Estado
 
 Todas las secciones funcionando. **El menú son 6 botones** — Calendario · Disciplina ·
-Análisis · Sesión · Apex · **Otros** —, y las otras 6 secciones (Experimentos · Trades ·
-Imágenes · Estrategia · Datos · Fechas Especiales) se abren desde las tarjetas de **Otros**,
-donde vive también **Ajustes** (claves y objetivos, tema, seguridad, cerrar sesión).
+Análisis · Sesión · Apex · **Otros** —, y las otras 7 secciones se abren desde las tarjetas
+de **Otros**, repartidas en dos grupos: *Consultar* (Trades · Imágenes · Experimentos ·
+Chaumer) y *Configurar* (Estrategia · Datos · Fechas Especiales). Ahí vive también
+**Ajustes** (claves y objetivos, tema, seguridad, cerrar sesión).
 
 **Qué está en marcha y qué falta: `tasks/current.md`.**
 

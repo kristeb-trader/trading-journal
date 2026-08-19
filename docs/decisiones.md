@@ -10,6 +10,53 @@
 
 ---
 
+## D-012 — El comparador de Chaumer mide en PUNTOS, no en dinero
+
+**Decisión.** El eje de comparación entre las operativas de Chaumer y las de Kris son los
+**puntos**. El dinero aparece solo del lado de Kris y como dato secundario; nunca se
+comparan importes.
+
+**Motivo.** No operan el mismo tamaño ni la misma cuenta. «Él hizo $600 y tú $77» no dice
+si Kris lo hizo bien: dice que llevaba menos contratos. La misma operativa da importes
+distintos según el número de contratos y el multiplicador, mientras que los puntos son la
+misma unidad para los dos. El proyecto ya tenía este criterio para el riesgo (el stop se
+mide en puntos, invariante del `CLAUDE.md`); esto lo extiende al resultado.
+
+Los puntos de un trade se calculan en `puntosTrade()` (`db.js`) desde `entry_price` /
+`exit_price` según la dirección. Comprobado contra el trade 107: 20 puntos × 2 contratos
+MNQ × $2 − $2,04 de comisión = $77,96, exactamente el `profit` neto guardado.
+
+**Alternativa descartada.** Normalizar el dinero a «por contrato». Sigue dependiendo del
+multiplicador de cada cuenta y añade una división que hay que explicar cada vez.
+
+**Fecha.** 2026-08-19.
+
+---
+
+## D-011 — Del comparador solo se guarda el lado de Chaumer; el veredicto se calcula
+
+**Decisión.** `chaumer_operativas` guarda **únicamente** las operativas de Chaumer. El lado
+de Kris se lee de `sesiones` + `trades`. Y el veredicto de cada día
+(Igual / Ejecución / Otra lectura / Fuga / De más / Ambos fuera / Sin cargar) **no se
+persiste**: se recalcula al pintar. El «por qué no entré» se escribe en
+`sesiones.motivo_no_entrada`, el campo que ya rellena el Diario.
+
+**Motivo.** Duplicar la operativa de Kris habría creado dos copias del mismo hecho que se
+desincronizan — el problema que este proyecto ya sufrió con el criterio de disciplina
+replicado en cuatro sitios. Y un veredicto guardado se queda obsoleto en cuanto cambia
+cualquiera de sus tres fuentes, sin dar ningún error: seguiría diciendo «Igual» sobre un
+día que ya no lo es.
+
+**Alternativas descartadas.**
+- *Guardar el veredicto* para ahorrar cálculo. El cálculo es trivial y el coste de un
+  número silenciosamente falso es alto.
+- *Un campo propio para el motivo de no entrada*. Habría partido en dos el mismo dato y
+  dejado al Coach y a Disciplina leyendo solo la mitad.
+
+**Fecha.** 2026-08-19.
+
+---
+
 ## D-010 — El tema claro se aplaza; en Ajustes solo queda la fila, marcada "Pendiente"
 
 **Decisión.** No se construye el tema claro. La fila **Tema** existe en Otros › Ajustes

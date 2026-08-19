@@ -130,6 +130,11 @@ Los números son los **medidos hoy contra Supabase** (19 ago 2026), no inventado
 | **Datos** | neutro | **87** | ítems en catálogo | `cuenta principal · APEX-15` | suma de los 5 catálogos + `objetivos` (ya cacheado) |
 | **Fechas Especiales** | `red` | **26** | en 2026 | `próxima · 19 ago` | `catalogo_fechas` activas del año + `min(fecha) ≥ hoy` |
 
+> ⚠️ **Superado el mismo día.** Al entrar la tarjeta de **Chaumer** en este grupo, el azul
+> pasó a ser suyo y **Experimentos se quedó el ámbar** (`warning`). El reparto vigente está
+> en `docs/disenos/2026-08-19-chaumer-vs-yo.md` §4.0 y en `.claude/rules/estilos.md`. Lo de
+> abajo se conserva como registro de por qué se movió el violeta, no como estado actual.
+
 > Experimentos usa `--blue` y no `--violet` porque **Imágenes** se queda el violeta: el
 > violeta es el color con el que Kris ya asocia el laboratorio, pero aquí manda la
 > distinción entre las tres tarjetas del grupo. Si prefieres al revés, es una línea.

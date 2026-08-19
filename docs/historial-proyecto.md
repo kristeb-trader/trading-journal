@@ -1,9 +1,10 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-08-18
+**Última actualización:** 2026-08-19
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-08-19 | Otros y Datos rediseñados, modo local y comparador de Chaumer |
 | 2026-08-18 | Trades fantasma: el replay de ejecuciones de NinjaTrader |
 | 2026-08-16d | Cuenta Apex-15, importes con miles y vista del día |
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
@@ -2131,6 +2132,71 @@ quitaron de Análisis y Trades.
 
 Migración: `2026-08-14-mover-trade-apex15-a-trades.sql` (aplicada vía MCP).
 Commits: `d3e31ef` · `de45a1b` · `4794a77` · `3e97402`.
+
+---
+
+## Checkpoint 2026-08-19 — Otros y Datos rediseñados, modo local, y el comparador de Chaumer
+
+Tres cosas en un día, encadenadas: Kris dijo que **Otros parecía una pantalla de los 90** y
+que **Datos se salía de la ventana**; de arreglarlo salió el **modo local** que quita el
+login del medio para verificar; y encima se construyó el **comparador Chaumer vs yo**.
+
+### 1. Datos ya no se desborda ni se descuadra
+
+Los selects de Tipo y Fase se salían de la tarjeta de Errores. La causa eran dos reglas
+juntas: `.catalog-add` era un flex **sin `flex-wrap`**, y `.catalog-tipo-select` llevaba
+`flex-shrink: 0` con el ancho mínimo marcado por la opción «Fase 1 · Pre-sesión» (~150 px).
+Con dos selects y un botón, ~330 px rígidos en una columna de ~340 px: nada podía ceder.
+
+Y la rejilla usaba `repeat(2, 1fr)` en vez de `minmax(0, 1fr)`, así que la columna que no
+encogía **crecía por encima de 1fr** y descuadraba el resto. Medido a 1024 px, las cuatro
+tarjetas pasan de **441/306/441/306** a **363 las cuatro**.
+
+Además, Datos se reorganizó en **pestañas**: cada catálogo ocupa el ancho completo
+(de 491 px a 1.012 px medidos a 1280), que es lo que impide de raíz que el desbordamiento
+vuelva.
+
+**Bug preexistente que salió por el camino:** `setupDragDrop` construía la lista de orden
+con `querySelectorAll('[data-id]')`, que recoge también el checkbox, los selects y los
+botones de cada fila — 6 entradas por fila, y el `orden` guardado salían múltiplos. Se
+sostenía por accidente porque todas las filas aportaban el mismo número de nodos. Ahora es
+`':scope > [data-id]'`.
+
+### 2. Otros deja de ser un menú de sistema
+
+Dos grupos (*Consultar* / *Configurar*), color e icono propios por tarjeta, y **cada una
+con su número real**: trades, imágenes, experimentos, reglas activas, ítems de catálogo y
+fechas del año. Los contadores salen de `DB.getResumenOtros()`, que hace los conteos con
+`head: true` — Supabase devuelve el total y **cero filas** — en paralelo y cacheados 5 min.
+Si una consulta falla, esa tarjeta pinta `—` y sigue navegando.
+
+### 3. Modo local: se acabó pedir la contraseña
+
+Kris pidió «una solución definitiva» para no tener que iniciar sesión cada vez. El `.env`
+que había propuesto antes no podía funcionar —el journal es un sitio estático sin build,
+nadie inyectaría ese archivo, y lo que falta no es configuración sino una **sesión**— pero
+el objetivo sí era alcanzable: `js/dev.local.js`, gitignoreado, arranca la app en localhost
+con una copia de datos reales. **La sesión real manda sobre el fixture**, así que en cuanto
+Kris entra una vez se ven datos en vivo, y si caduca se cae al modo local en vez de
+bloquearse. Detalle: `.claude/rules/modo-local.md`.
+
+### 4. Comparador Chaumer vs yo
+
+Kris entró a su curso y tiene acceso a sus operativas. Nueva sección con dos pestañas:
+**Día** (la vista partida, su operativa contra la de Kris) y **Diferencias** (cobertura,
+4 KPIs y 4 gráficas, con filtro Mes/Trimestre/Año/Todo).
+
+Dos trampas se detectaron **antes** de escribir código, y las dos habrían dado números
+creíbles y falsos:
+
+- **Las horas no eran comparables.** `trades.entry_time` viene de NinjaTrader en hora de
+  Colombia; las operativas de Chaumer se ven en ET. Restarlas a pelo da 60 min de error en
+  verano. `horaEt()` subió de `coach.js` a `db.js` y las dos horas se comparan en ET.
+- **El dinero no dice nada.** No operan el mismo tamaño. El eje son los **puntos**.
+
+El porqué de las decisiones de modelo está en `docs/decisiones.md` (D-011 y D-012); el
+diseño completo con lo medido en cada fase, en
+`docs/disenos/2026-08-19-chaumer-vs-yo.md`.
 
 ---
 

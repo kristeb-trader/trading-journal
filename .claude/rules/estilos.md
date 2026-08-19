@@ -19,10 +19,17 @@ transiciones 150ms. Iconos: Tabler Icons (CDN). Gráficas: Chart.js (CDN).
 | info / Fase 3 | `--blue` #5B94C9 | `--blue-txt` #8FBDE8 | `--blue-dim` |
 | violeta | `--violet` #7C6CF3 | `--violet-txt` #AFA9EC | `--violet-dim` |
 
-El violeta era «el color de Experimentos». Desde el rediseño de Otros (19 ago) esa tarjeta
-usa `--blue` y el violeta se lo queda **Imágenes**: dentro de un mismo grupo pesa más
-distinguir las tres tarjetas que conservar la asociación. La sección Experimentos en sí
-sigue en violeta.
+El violeta era «el color de Experimentos», pero en las tarjetas de **Otros** manda que las
+del mismo grupo se distingan entre sí, no la asociación histórica. Reparto vigente
+(19 ago), tras entrar Chaumer:
+
+| Grupo | Tarjetas |
+|---|---|
+| Consultar | Trades `accent` · Imágenes `violet` · Experimentos `warning` · Chaumer `blue` |
+| Configurar | Estrategia `warning` · Datos neutro · Fechas `red` |
+
+Dentro de un grupo no se repite ningún color; entre grupos sí puede. **La sección
+Experimentos en sí sigue en violeta** — lo que cambió es su tarjeta, no la pantalla.
 
 La `base` **no contrasta lo suficiente como texto**. Usarla en un `color:` es el error
 típico: se ve apagada sobre `--bg`. Para texto, la variante `-txt`.

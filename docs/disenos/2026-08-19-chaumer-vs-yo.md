@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| **Versión** | v2 |
+| **Versión** | v3 |
 | **Fecha** | 2026-08-19 |
-| **Estado** | 🟢 **APROBADO** (19 ago) — **Fases 1, 2 y 3 implementadas y verificadas**. Fase 4 pendiente |
+| **Estado** | ✅ **IMPLEMENTADO** (19 ago) — las 4 fases cerradas y verificadas. Lo que falta es cargar días, no código |
 | **Origen** | Petición de Kris (19 ago): «entré a su curso y tengo acceso a sus operativas; quiero un módulo donde almacene las suyas vs las mías, la pantalla partida en dos, y un dashboard de diferencias con filtro por mes/trimestre/año/todo, para ver si estoy fallando en algún punto» |
 | **Alcance** | Tabla nueva `chaumer_operativas` (1 migración), `index.html`, `css/styles.css`, `js/app.js`, `js/chaumer.js` (nuevo), `js/db.js`, `js/coach.js` (mueve un helper). **No toca** `sesiones` ni `trades` salvo un valor nuevo de vocabulario |
 
@@ -237,7 +237,7 @@ esto, cualquier porcentaje de abajo es un número sin denominador.
 | **1** ✅ | **BD y capa de datos**: migración con RLS, `DB.getChaumer*` / `upsertChaumer`, y `horaEt` movido de `coach.js` a `db.js` | migración, `js/db.js`, `js/coach.js` | ✅ **Hecho** — medido, ver §5.1 |
 | **2** ✅ | **Sección + pestaña «Día»**: navegación, vista partida, alta/edición de su operativa, bloque de motivo en las Fugas | `index.html`, `js/chaumer.js`, `js/app.js`, `js/db.js`, `js/form.js`, `css/styles.css` | ✅ **Hecho** — medido, ver §5.2 |
 | **3** ✅ | **Pestaña «Diferencias»**: cobertura, 4 KPIs y 4 gráficas | `js/chaumer.js`, `js/db.js`, `js/disciplina.js`, `index.html`, `js/app.js`, `css/styles.css` | ✅ **Hecho** — medido, ver §5.3 |
-| **4** | **«No lo vi»** en el vocabulario + documentación | `index.html`, `js/form.js`, `CLAUDE.md`, `docs/` | El botón guarda y recarga bien; docs actualizadas |
+| **4** ✅ | **«No lo vi»** en el vocabulario + documentación | `index.html`, `CLAUDE.md`, `.claude/rules/`, `docs/` | ✅ **Hecho** — ver §5.4 |
 
 Las fases 1 y 2 ya dan valor por sí solas: con ellas puedes cargar días y ver la comparación,
 aunque el dashboard llegue después.
@@ -385,6 +385,47 @@ etiquetando igual — «Agosto 2026» y «Trimestre · Julio–Septiembre 2026»
 
 ---
 
+### 5.4 Fase 4 — lo hecho (19 ago)
+
+**El vocabulario ya estaba** — «No lo vi» se adelantó en la Fase 2. Lo que quedaba era
+comprobarlo en el Diario y cerrar la documentación.
+
+| Qué | Resultado |
+|---|---|
+| «No lo vi» en el Diario | ✅ Los 6 botones presentes; al pulsarlo escribe `No lo vi` en el hidden y se marca activo; al elegir otro, queda **uno solo** activo. `setupBtnGroupHidden` es genérico, así que no hizo falta tocar `form.js` |
+
+**Dónde fue cada cosa** (criterio del skill `documentacion`):
+
+| Qué | Dónde | Por qué ahí |
+|---|---|---|
+| Qué no dice el esquema de `chaumer_operativas` (solo su lado · hora en ET · puntos) | `CLAUDE.md` § Datos, una fila | Se consulta a menudo y sigue siendo verdad mañana |
+| El porqué de puntos-no-dinero y de no duplicar | `docs/decisiones.md` **D-011** y **D-012** | Se busca por la decisión, no buceando en el historial |
+| Qué pasó el 19 de agosto | `docs/historial-proyecto.md` § Checkpoint 2026-08-19 | Ya pasó |
+| El reparto de colores de las tarjetas de Otros | `.claude/rules/estilos.md` | Cambia con el CSS: carga solo al abrir `css/**` |
+| El modo local | `.claude/rules/modo-local.md` (nuevo) | Estaba inflando el `CLAUDE.md`; ahora una línea allí y el detalle bajo demanda |
+
+**`CLAUDE.md` volvió a caber:** estaba en **210 líneas**, por encima del límite de 200 que
+se carga entera en cada sesión. Comprimiendo el bloque del modo local a un puntero quedó en
+**191**, con el módulo nuevo ya documentado dentro.
+
+**Una contradicción resuelta.** `docs/disenos/2026-08-19-otros-y-datos.md` seguía diciendo
+que la tarjeta de Experimentos es azul. No se reescribió —es un diseño ya implementado—
+sino que se le añadió el aviso de que quedó superado el mismo día, con el puntero al
+reparto vigente.
+
+#### Lo que se encontró al cerrar
+
+**Kris ya está usando el módulo.** La tabla tenía 2 filas suyas (18 y 19 de agosto, con
+imagen), cargadas mientras se documentaba. No se tocaron.
+
+Y con ellas apareció algo que solo se ve con uso real: el día 18 quedó un **stop con
+`+20,50` puntos**. La columna va con signo, así que un stop debería ser negativo; tal como
+está, infla los puntos de Chaumer en el KPI de Δ. **El formulario no lo impide** — queda
+anotado en `tasks/current.md` para decidir si el signo se pone automático según el
+resultado o solo se avisa.
+
+---
+
 ## 6. Lo que este diseño NO toca
 
 - El criterio de disciplina, el P&L neto, el riesgo en puntos, las fechas locales.
@@ -413,4 +454,5 @@ etiquetando igual — «Agosto 2026» y «Trimestre · Julio–Septiembre 2026»
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 2026-08-19 | Documento inicial. Recoge las 4 decisiones de Kris |
+| v3 | 2026-08-19 | Fases 3 y 4 cerradas. Se añaden §5.3 y §5.4 con lo medido, y el hallazgo del signo de los puntos que salió del uso real |
 | v2 | 2026-08-19 | **Chaumer pasa de dorado a azul** y tú al verde: a Kris no le convencía el dorado como texto. Se corrigen dos choques que salieron de ahí — «Ejecución» y «Otra lectura» compartían violeta, y el azul ya lo usaba la tarjeta de Experimentos en Otros. Detalle en §3 y §4.0 |
