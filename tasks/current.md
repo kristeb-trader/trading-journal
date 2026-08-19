@@ -28,11 +28,12 @@ El rediseño está implementado y verificado en lo que se puede medir sin contra
 **no** se pudo probar es todo lo que exige estar autenticado — sin login las lecturas
 devuelven 401:
 
-- **En cada pestaña de Datos:** agregar, renombrar, borrar, activar/desactivar y
-  **arrastrar para reordenar**.
-- **Los 6 contadores de Otros** llegando solos al abrir la pantalla.
-- Que el **orden** que se guarda al arrastrar sea `1, 2, 3…` y no múltiplos de 6 — había un
-  bug ahí desde antes, arreglado en la Fase 1.
+- ✅ **Los 6 contadores de Otros** llegando solos — comprobado el 19 ago con la sesión de
+  Kris ya iniciada en el preview: 99 · 127 · 19 · 28 · 87 · 26, los reales.
+- ⬜ **En cada pestaña de Datos:** agregar, renombrar, borrar, activar/desactivar y
+  **arrastrar para reordenar**. No se probó para no tocar datos de producción sin permiso.
+- ⬜ Que el **orden** que se guarda al arrastrar sea `1, 2, 3…` y no múltiplos de 6 — había
+  un bug ahí desde antes, arreglado en la Fase 1.
 
 Diseño y detalle de lo medido: `docs/disenos/2026-08-19-otros-y-datos.md` (v2) § 6.1.
 
