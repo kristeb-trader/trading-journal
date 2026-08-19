@@ -377,8 +377,22 @@ const Otros = {
     { id: 'experimentos', grupo: 'Consultar',  color: 'blue',    icon: 'ti-flask',         name: 'Experimentos',      desc: 'Qué estás probando y si funciona',  unidad: 'en prueba' },
     { id: 'estrategia',   grupo: 'Configurar', color: 'warning', icon: 'ti-book-2',        name: 'Estrategia',        desc: 'Tus reglas y setups',               unidad: 'reglas activas' },
     { id: 'data',         grupo: 'Configurar', color: '',        icon: 'ti-database',      name: 'Datos',             desc: 'Cuentas, catálogos e importación',  unidad: 'ítems en catálogo' },
-    { id: 'fechas',       grupo: 'Configurar', color: 'red',     icon: 'ti-calendar-star', name: 'Fechas Especiales', desc: 'Festivos, FOMC y días marcados',    unidad: 'en 2026' },
+    { id: 'fechas',       grupo: 'Configurar', color: 'red',     icon: 'ti-calendar-star', name: 'Fechas Especiales', desc: 'Festivos, FOMC y días marcados',    unidad: 'este año' },
   ],
+
+  // Línea inferior de la tarjeta. Solo la tienen tres; en las demás el bloque
+  // ni se pinta, para no dejar un separador colgando de nada.
+  META: {
+    trades: d => (d.ultimo  ? `última · ${Otros._fecha(d.ultimo)}` : ''),
+    data:   d => (d.cuenta  ? `principal · ${AccountFilter.corto(d.cuenta)}` : ''),
+    fechas: d => (d.proxima ? `próxima · ${Otros._fecha(d.proxima)}` : ''),
+  },
+
+  // Ancla al mediodía a propósito: sobre una fecha YA anclada, pasar por Date es
+  // seguro. Lo que rompe es sacar el día del instante actual, que se va a UTC.
+  _fecha(iso) {
+    return new Date(`${iso}T12:00:00`).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+  },
 
   _card(it) {
     return `
@@ -407,6 +421,32 @@ const Otros = {
     cont.addEventListener('click', e => {
       const card = e.target.closest('.otros-card')
       if (card) Nav.go(card.dataset.goto)
+    })
+    this.cargarResumen()   // sin await: la rejilla se pinta ya, los números llegan después
+  },
+
+  // Rellena los contadores. Cada tarjeta se resuelve por su cuenta: si su dato
+  // vino `null` (esa consulta falló) pinta "—" y sigue siendo navegable.
+  async cargarResumen() {
+    let datos = null
+    try { datos = await DB.getResumenOtros() } catch { datos = null }
+
+    this.ITEMS.forEach(it => {
+      const d = datos && datos[it.id]
+      const n = d && d.n != null ? d.n : null
+
+      const nEl = document.querySelector(`[data-n="${it.id}"]`)
+      if (nEl) {
+        nEl.textContent = n == null ? '—' : fmtMiles(n)
+        nEl.classList.toggle('cargando', n == null)
+      }
+
+      const metaEl = document.querySelector(`[data-meta="${it.id}"]`)
+      if (metaEl) {
+        const txt = d && this.META[it.id] ? this.META[it.id](d) : ''
+        metaEl.textContent = txt
+        metaEl.classList.toggle('hidden', !txt)
+      }
     })
   },
 }
@@ -546,6 +586,10 @@ const Nav = {
       SessionForm.onShow()
     } else if (sectionId === 'fechas') {
       Fechas.reload()
+    } else if (sectionId === 'otros') {
+      // Refresca los contadores al volver. El TTL de 5 min de getResumenOtros
+      // evita que entrar y salir dispare consultas cada vez.
+      Otros.cargarResumen()
     }
 
     // Si se pidió una pestaña concreta (alias coach/historial), se abre; si no,

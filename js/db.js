@@ -23,6 +23,10 @@ let _cuentaPrincipalCache = 'PA-APEX-232411-03'  // fallback histórico hasta le
 let _setupsCache = null     // [{ codigo, nombre, descripcion, orden, activo }]
 let _variantesCache = null  // [{ codigo, setup_codigo, nombre, subtipo, direccion }]
 
+// Contadores de la pantalla Otros. { t: instante, datos: {...} }, TTL 5 min.
+let _resumenOtros = null
+const RESUMEN_OTROS_TTL = 5 * 60 * 1000
+
 // Fallback por prefijo: solo se usa si el catálogo aún no cargó (arranque en
 // frío o sin conexión). Mantiene el comportamiento histórico.
 function _setupFamilyFallback(texto) {
@@ -1089,6 +1093,73 @@ const DB = {
   // Cuenta principal del journal (P&L, análisis, Coach). Cacheada tras la 1ª
   // lectura de objetivos; fallback a la PA histórica si aún no se ha configurado.
   cuentaPrincipal() { return _cuentaPrincipalCache },
+
+  // ── Contadores de la pantalla Otros ──────────────────────────────────────
+  // Cada conteo va con `head: true`: Supabase devuelve el total en la cabecera
+  // Content-Range y CERO filas, así que el payload no crece con la tabla. Todos
+  // en paralelo y el resultado cacheado 5 min, para que entrar y salir de Otros
+  // no repita nada.
+  //
+  // Ninguna consulta puede tumbar la pantalla: la que falle devuelve `null` y su
+  // tarjeta pinta "—". Devuelve datos EN CRUDO — el texto lo compone `Otros`,
+  // que es quien sabe cómo se escribe cada tarjeta.
+  async getResumenOtros({ force = false } = {}) {
+    if (!force && _resumenOtros && Date.now() - _resumenOtros.t < RESUMEN_OTROS_TTL) {
+      return _resumenOtros.datos
+    }
+
+    const cuenta = (tabla, filtro) => {
+      let q = supa.from(tabla).select('*', { count: 'exact', head: true })
+      if (filtro) q = filtro(q)
+      return q.then(({ count, error }) => (error ? null : count)).catch(() => null)
+    }
+    const primero = (tabla, col, filtro) => {
+      let q = supa.from(tabla).select(col)
+      if (filtro) q = filtro(q)
+      return q.limit(1)
+        .then(({ data, error }) => (error || !data || !data.length ? null : data[0][col]))
+        .catch(() => null)
+    }
+    // El año, en LOCAL. `getFullYear` sí es seguro: lo que rompe es sacar el día
+    // de `toISOString()` sobre el instante actual, no leer el año del Date local.
+    const anio = new Date().getFullYear()
+
+    const [
+      trades, ultimo, imagenes, experimentos, reglas,
+      errores, emociones, recomendaciones, setups, variantes,
+      fechas, proxima,
+    ] = await Promise.all([
+      cuenta('trades'),
+      primero('trades', 'trade_date', q => q.order('trade_date', { ascending: false })),
+      cuenta('sesiones', q => q.not('imagen_url', 'is', null)),
+      cuenta('catalogo_experimentos', q => q.eq('activo', true)),
+      cuenta('catalogo_reglas', q => q.eq('activa', true)),
+      cuenta('catalogo_errores', q => q.eq('activa', true)),
+      cuenta('catalogo_emociones', q => q.eq('activa', true)),
+      cuenta('catalogo_recomendaciones', q => q.eq('activa', true)),
+      cuenta('catalogo_setups', q => q.eq('activo', true)),
+      cuenta('catalogo_setup_variantes', q => q.eq('activo', true)),
+      cuenta('catalogo_fechas', q => q.eq('activa', true).gte('fecha', `${anio}-01-01`).lte('fecha', `${anio}-12-31`)),
+      primero('catalogo_fechas', 'fecha', q => q.eq('activa', true).gte('fecha', hoyISO()).order('fecha', { ascending: true })),
+    ])
+
+    // La tarjeta de Datos cuenta los ítems de los cinco catálogos que se editan
+    // ahí dentro. Si falta alguno la suma sale `null`: mejor "—" que un total
+    // que parece completo y no lo es.
+    const partes = [errores, emociones, experimentos, recomendaciones, setups, variantes]
+    const catalogos = partes.some(p => p == null) ? null : partes.reduce((a, b) => a + b, 0)
+
+    const datos = {
+      trades:       { n: trades, ultimo },
+      gallery:      { n: imagenes },
+      experimentos: { n: experimentos },
+      estrategia:   { n: reglas },
+      data:         { n: catalogos, cuenta: _cuentaPrincipalCache },
+      fechas:       { n: fechas, proxima },
+    }
+    _resumenOtros = { t: Date.now(), datos }
+    return datos
+  },
   async fetchCuentaPrincipal() {
     try { const o = await this.getObjetivos(); return o?.cuenta_principal || _cuentaPrincipalCache }
     catch { return _cuentaPrincipalCache }

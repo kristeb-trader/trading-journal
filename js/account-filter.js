@@ -233,5 +233,7 @@ const AccountFilter = (() => {
   document.addEventListener('click', e => { if (!e.target.closest('.acct-filter')) closeAll() })
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll() })
 
-  return { create, setAccounts, selected, isAll, matches, filter, slug, label: id => inst[id] ? label(inst[id]) : '' }
+  // `corto` se expone para que otras pantallas (las tarjetas de Otros) acorten
+  // un nombre de cuenta con el MISMO criterio que el filtro, en vez de copiarlo.
+  return { create, setAccounts, selected, isAll, matches, filter, slug, corto: abreviar, label: id => inst[id] ? label(inst[id]) : '' }
 })()

@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| **Versión** | v1 |
+| **Versión** | v2 |
 | **Fecha** | 2026-08-19 |
-| **Estado** | 🟢 **APROBADO** (19 ago) — **Fase 1 implementada y verificada**. Fases 2-4 pendientes |
+| **Estado** | ✅ **IMPLEMENTADO** (19 ago) — las 4 fases cerradas y verificadas. Queda una comprobación que solo puede hacer Kris: ver §6.1 |
 | **Origen** | Petición de Kris (19 ago): «en Otros el diseño parece una pantalla de los años 90»; «al ingresar a Datos todo se ve desproporcionado, las cajas para escoger lo de fase se salen de la ventana» |
 | **Alcance** | `index.html`, `css/styles.css`, `js/app.js`, `js/data.js`, `js/db.js`. **Cero migraciones, cero cambios de esquema, cero escrituras nuevas** — solo lecturas de conteo |
 
@@ -322,7 +322,7 @@ de deuda al cerrar la última fase.
 | **1** ✅ | **Arreglo estructural de Datos**, sin rediseño: las 4 reglas de §3.2 | `css/styles.css`, `js/data.js` | ✅ **Hecho** — medido, ver §5.1 |
 | **2** ✅ | **Pestañas en Datos** + `.data-hero` + cabeceras con contador | `index.html`, `js/data.js`, `css/styles.css` | ✅ **Hecho** — medido, ver §5.2 |
 | **3** ✅ | **Otros: tokens, rejilla, tarjetas y Ajustes** (aún sin contadores) | `css/styles.css`, `index.html`, `js/app.js` | ✅ **Hecho** — medido, ver §5.3 |
-| **4** | **Otros: contadores en vivo** | `js/db.js`, `js/app.js` | `SELECT` de contraste contra Supabase: los 6 números de pantalla **coinciden** con la consulta; cortar la red y comprobar que las tarjetas pintan `—` y **siguen navegando** |
+| **4** ✅ | **Otros: contadores en vivo** | `js/db.js`, `js/app.js`, `js/account-filter.js` | ✅ **Hecho** — medido, ver §5.4 |
 
 **La Fase 1 es autónoma.** Si se decide parar ahí, el desbordamiento ya está arreglado sin
 haber movido una sola línea de markup.
@@ -409,7 +409,63 @@ y arrastrar para reordenar.** Es el único punto de la Fase 2 que no puedo cerra
 | 2 | La tarjeta de Datos va sin modificador de color (`color: ''`) | Es la neutra del reparto; hereda el `--c: var(--text2)` por defecto de `.otros-card` |
 | 3 | El contador nace como `··` con la clase `.cargando` y `min-height: 1em` | Evita el salto de layout cuando la Fase 4 sustituya el marcador por el número |
 
+### 5.4 Fase 4 — lo medido (19 ago)
+
+**Los números de pantalla contra la base de datos.** El `SELECT` replicando los filtros
+exactos de `getResumenOtros` devuelve lo mismo que pinta la tarjeta:
+
+| Tarjeta | Consulta | Pantalla |
+|---|---|---|
+| Trades | 99 · último `2026-08-18` | `99` · «última · 18 ago» |
+| Imágenes | 127 | `127` |
+| Experimentos | 19 | `19` |
+| Estrategia | 28 | `28` |
+| Datos | 87 · `APEX-232411-15` | `87` · «principal · APEX-15» |
+| Fechas Especiales | 26 · próxima `2026-08-19` | `26` · «próxima · 19 ago» |
+
+**Degradación**, forzada en el navegador:
+
+| Escenario | Resultado |
+|---|---|
+| La consulta entera revienta | Las 6 tarjetas pintan `—` |
+| Solo falla el conteo de un catálogo | Solo Datos pinta `—`; las otras 5 conservan su número |
+| Navegar con los contadores caídos | ✅ Pulsar Trades abre `section-trades` |
+| Separador de miles | `1204` → **`1.204`** vía `fmtMiles`, como manda el invariante |
+
+Las tres tarjetas sin meta (Imágenes, Experimentos, Estrategia) **ocultan la línea entera**,
+no dejan el separador colgando de un texto vacío.
+
+#### Desviaciones respecto al diseño
+
+| # | Qué | Por qué |
+|---|---|---|
+| 1 | **Son 12 peticiones, no 6** | La tarjeta de Datos suma *cinco* catálogos (errores, emociones, experimentos, recomendaciones, setups + variantes), y hacen falta dos `select … limit 1` para el último trade y la próxima fecha. Siguen siendo todas `head: true` — cero filas — y van en un solo `Promise.all`, pero el diseño decía «6 conteos» y son 12 peticiones |
+| 2 | La unidad de Fechas es **«este año»**, no «en 2026» | Un año escrito a mano caduca el 1 de enero. El conteo sí usa el año local (`getFullYear`, seguro: lo que rompe es sacar el día del instante actual en UTC) |
+| 3 | `getResumenOtros` devuelve datos **en crudo**; el texto lo compone `Otros.META` | `db.js` no debe saber cómo se redacta una tarjeta |
+| 4 | `abreviar` se exporta desde `AccountFilter` como **`corto`** | «APEX-232411-15 → APEX-15» ya estaba resuelto ahí. Copiarlo habría sido un segundo criterio de abreviatura suelto |
+
+#### Lo que sigue sin verificarse
+
+**El camino real cliente → Supabase de estos contadores.** Sin sesión iniciada las lecturas
+dan 401, así que lo comprobado es (a) que las consultas SQL devuelven los números correctos
+y (b) que el pintado, el formato y las tres rutas de degradación funcionan con esos datos
+inyectados. Falta ver los 6 números llegar solos al abrir Otros con la sesión de Kris.
+
 Presupuesto estimado: **8–12 llamadas por fase**. Ninguna pasa del umbral de 25.
+
+---
+
+## 6.1 Lo que le toca probar a Kris
+
+Todo lo que exige sesión iniciada. El login pide contraseña y no la introduzco, así que
+estas tres cosas quedan sin comprobar **de verdad**:
+
+1. **En cada pestaña de Datos:** agregar, renombrar, borrar, activar/desactivar y
+   **arrastrar para reordenar**. Los `id` y el cableado de eventos no se han tocado, pero
+   eso es un argumento, no una prueba.
+2. **Los 6 contadores de Otros llegando solos** al abrir la pantalla.
+3. Que el **orden** guardado al arrastrar sea ahora `1, 2, 3…` y no múltiplos de 6
+   (§5.1, desviación 3).
 
 ---
 
@@ -441,3 +497,4 @@ Presupuesto estimado: **8–12 llamadas por fase**. Ninguna pasa del umbral de 2
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 2026-08-19 | Documento inicial. Recoge las 2 decisiones de Kris (contadores en vivo, pestañas en Datos) |
+| v2 | 2026-08-19 | Aprobado e implementado. Se añaden §5.1–§5.4 con lo medido en cada fase y sus desviaciones, y §6.1 con lo que solo puede probar Kris |
