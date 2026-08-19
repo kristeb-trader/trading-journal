@@ -409,13 +409,24 @@ small { font-size: 0.82em; }
    desbordaba hacia la izquierda y se montaba encima del mes. Se aprieta SOLO aquí
    (por eso el data-seccion; tocar la rejilla en general recortaba el mes en
    Calendario y Disciplina, que sí caben).
-     · Fuera la palabra "Análisis" — en móvil ya la dice la barra de abajo.
      · Fuera las flechas ‹ ›: el desplegable de período lleva el salto directo a
        mes/año, así que navegar sigue siendo posible en un solo gesto.
      · El botón de período se queda en icono; QUÉ período es se lee en el contexto
-       ("Agosto 2026" / "Q3 2026" / "2026"). */
+       ("Ago 2026" / "Q3 2026" / "2026").
+   El título SÍ se muestra: ocultarlo (18 ago) dejaba la pantalla sin decir dónde
+   estabas. El hueco sale de abreviar el mes en `refreshTitle()`, igual que hace el
+   Calendario en metrics.js — abreviado sigue siendo exacto; recortado con puntos
+   suspensivos, no. */
 @media (max-width: 768px) {
-  .top-bar[data-seccion="analysis"] .header-title { display: none; }
+  /* Los laterales se dimensionan por su contenido y el centro se queda con el
+     resto. Con `1fr` a ambos lados el reparto es simétrico (103 px cada uno),
+     pero la izquierda solo necesita ~73 y la derecha 124: sobraban 30 px a un
+     lado mientras al otro se recortaba el nombre de la cuenta a "APE…" —
+     precisamente lo que oculta que hay un filtro activo. Aplica a TODA la barra:
+     el Calendario recortaba igual su mes y su cuenta.
+     Ojo, no confundir con `minmax(0, auto)` en la columna CENTRAL: eso se probó
+     y era peor, porque encogía el título en vez de repartir los laterales. */
+  .top-bar { grid-template-columns: auto minmax(0, 1fr) auto; }
   .top-bar[data-seccion="analysis"] .hdr-nav { display: none; }
   .top-bar[data-seccion="analysis"] #analysisPeriod .per-filter-text { display: none; }
   .top-bar[data-seccion="analysis"] #analysisPeriod .per-filter-btn { padding: 0 7px; }

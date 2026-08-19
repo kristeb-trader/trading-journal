@@ -90,8 +90,10 @@ const Charts = (() => {
     return { from: `${curYear}-01-01`, to: `${curYear}-12-31` }
   }
 
-  function periodLabel() {
-    if (period === 'month')   return `${MONTHS[curMonth - 1]} ${curYear}`
+  // `corto` abrevia el mes (Ago en vez de Agosto) para la barra superior en móvil.
+  // Trimestre y año ya son cortos de por sí.
+  function periodLabel(corto = false) {
+    if (period === 'month')   return `${(corto ? MONTH_S : MONTHS)[curMonth - 1]} ${curYear}`
     if (period === 'quarter') return `Q${curQ} ${curYear}`
     return `${curYear}`
   }
@@ -167,8 +169,13 @@ const Charts = (() => {
   }
 
   // El período va al contexto de la barra superior (título único por pantalla).
+  // En móvil la barra lleva título + período + selector + cuenta, y en 375 px no
+  // caben con el mes entero: se abrevia, igual que el Calendario en metrics.js.
+  // Abreviado sigue siendo exacto; recortado con puntos suspensivos, no.
   function refreshTitle() {
-    if (typeof Nav !== 'undefined') Nav.setContexto('analysis', periodLabel())
+    if (typeof Nav === 'undefined') return
+    const estrecho = window.matchMedia('(max-width: 768px)').matches
+    Nav.setContexto('analysis', periodLabel(estrecho))
   }
 
   // ── Sub-períodos para barras y tabla (Mes→semanas, Trim/Año→meses) ────────
