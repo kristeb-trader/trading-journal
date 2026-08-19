@@ -89,6 +89,7 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-08-14-mover-trade-apex15-a-trades.sql` | ⚠️ sin registro | mover trade apex15 a trades |
 | `2026-08-16-checklist-sin-materializar-en-true.sql` | ✅ MCP | checklist sin materializar en true |
 | `2026-08-16-migrar-noticias-texto.sql` | ⚠️ sin registro | migrar noticias texto |
+| `2026-08-19-chaumer-operativas.sql` | ✅ MCP | tabla `chaumer_operativas` para el comparador Chaumer vs yo (`20260819151243`) |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.

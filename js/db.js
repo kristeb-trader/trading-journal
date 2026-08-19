@@ -143,6 +143,41 @@ function isoLocal(d) {
 }
 function hoyISO() { return isoLocal(new Date()) }
 
+// ── Hora Colombia → hora de Nueva York (ET) ─────────────────────────────────
+// Los `entry_time` / `exit_time` de `trades` vienen de NinjaTrader en hora de
+// COLOMBIA. Todo razonamiento sobre sesión (RTH 09:30–16:00 ET, premercado) y
+// toda comparación con una hora ajena tiene que convertirse antes: Colombia no
+// tiene horario de verano y Nueva York sí, así que el desfase es de 1 h entre
+// marzo y noviembre y de 0 el resto del año. Restar a pelo da 60 min de error.
+//
+// Vivía en coach.js; se subió aquí el 19 ago, cuando el comparador de Chaumer
+// necesitó la misma conversión. Una sola implementación de una regla que ya
+// causó 2 bugs (ver `.claude/rules/ninjatrader.md`).
+//
+// Devuelve 'HH:MM' en ET, o la hora original si no se puede convertir.
+function horaEt(hhmmss, fechaISO) {
+  if (!hhmmss) return null
+  const hhmm = String(hhmmss).slice(0, 5)
+  if (!fechaISO) return hhmm
+  const d = new Date(`${fechaISO}T${String(hhmmss).slice(0, 8)}-05:00`)  // Colombia = UTC-5 fijo
+  if (isNaN(d)) return hhmm
+  try {
+    return d.toLocaleTimeString('en-GB', {
+      timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false,
+    })
+  } catch (_) { return hhmm }
+}
+
+// Diferencia en MINUTOS entre dos 'HH:MM' del mismo día. Positivo = `b` es más
+// tarde que `a`. Se usa para el Δ de hora de entrada del comparador, siempre
+// sobre horas YA convertidas a ET por las dos partes.
+function difMinutos(a, b) {
+  if (!a || !b) return null
+  const min = h => { const [hh, mm] = String(h).slice(0, 5).split(':').map(Number); return hh * 60 + mm }
+  const ma = min(a), mb = min(b)
+  return (Number.isFinite(ma) && Number.isFinite(mb)) ? mb - ma : null
+}
+
 // ── Día hábil: sábados y domingos NUNCA cuentan para estadísticas ────────────
 // El mercado no se opera en fin de semana. El calendario solo pinta Lun–Vie, pero
 // pueden existir filas de `sesiones` de sábado/domingo: el AddOn de NT8 crea la fila
@@ -1242,6 +1277,61 @@ const DB = {
   },
 
   // ── Autenticación (Supabase Auth) ──────────────────────────────────────────
+  // ── Chaumer: sus operativas (comparador) ─────────────────────────────────
+  // Solo SU lado. El de Kris se lee de `sesiones` + `trades`: duplicarlo aquí
+  // daría dos copias que se desincronizan.
+  //
+  // `hora_entrada` va en ET, no en hora Colombia como `trades.entry_time`.
+  // `puntos` va en PUNTOS con signo, nunca en dólares.
+
+  // Whitelist de columnas. `upsertSesion` ya enseñó que una clave que no sea
+  // columna revienta el guardado entero con PGRST204, así que el payload se
+  // filtra en vez de mandarse tal cual.
+  CHAUMER_COLS: ['fecha', 'opero', 'setup_codigo', 'hora_entrada', 'resultado',
+                 'puntos', 'contexto', 'imagen_url', 'notas', 'motivo_no_opero'],
+
+  async getChaumerOperativa(fecha) {
+    const { data, error } = await supa
+      .from('chaumer_operativas').select('*').eq('fecha', fecha).maybeSingle()
+    if (error) throw error
+    return data
+  },
+
+  async getChaumerOperativas({ from = null, to = null } = {}) {
+    let q = supa.from('chaumer_operativas').select('*')
+    if (from) q = q.gte('fecha', from)
+    if (to) q = q.lte('fecha', to)
+    const { data, error } = await q.order('fecha', { ascending: false })
+    if (error) throw error
+    return data || []
+  },
+
+  async upsertChaumerOperativa(payload) {
+    const fila = { updated_at: new Date().toISOString() }
+    this.CHAUMER_COLS.forEach(c => { if (c in payload) fila[c] = payload[c] })
+    if (!fila.fecha) throw new Error('Falta la fecha de la operativa')
+
+    // La BD tiene dos CHECK que impiden mezclar los dos casos. Se normaliza aquí
+    // en vez de dejar que reviente: al pasar un día de "operó" a "no operó", los
+    // datos de la edición anterior seguirían en el payload.
+    if (fila.opero === false) {
+      fila.setup_codigo = null; fila.hora_entrada = null
+      fila.resultado = null;    fila.puntos = null
+    } else if (fila.opero === true) {
+      fila.motivo_no_opero = null
+    }
+
+    const { data, error } = await supa
+      .from('chaumer_operativas').upsert(fila, { onConflict: 'fecha' }).select().single()
+    if (error) throw error
+    return data
+  },
+
+  async deleteChaumerOperativa(fecha) {
+    const { error } = await supa.from('chaumer_operativas').delete().eq('fecha', fecha)
+    if (error) throw error
+  },
+
   async getSession() {
     const { data } = await supa.auth.getSession()
     return data.session

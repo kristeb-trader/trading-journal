@@ -19,22 +19,9 @@ const Coach = (() => {
   // principal, guardada en objetivos.cuenta_principal). Las demás se ignoran.
   const cuentaAnalisis = () => DB.cuentaPrincipal()
 
-  // Las horas de los trades vienen de NinjaTrader en hora COLOMBIA (UTC-5, la zona
-  // configurada en NT). El análisis razona en hora de Nueva York (RTH 9:30-16:00 ET),
-  // así que se convierten antes de mandarlas al prompt — si no, el Coach cree que un
-  // trade de las 08:36 Colombia (= 09:36 ET, en RTH) fue "premercado".
-  function horaEt(hhmmss, fechaISO) {
-    if (!hhmmss) return null
-    const hhmm = String(hhmmss).slice(0, 5)
-    if (!fechaISO) return hhmm
-    const d = new Date(`${fechaISO}T${String(hhmmss).slice(0, 8)}-05:00`)  // Colombia = UTC-5 fijo
-    if (isNaN(d)) return hhmm
-    try {
-      return d.toLocaleTimeString('en-GB', {
-        timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false,
-      })
-    } catch (_) { return hhmm }
-  }
+  // `horaEt` vive en db.js desde el 19 ago: el comparador de Chaumer necesita la
+  // misma conversión y dos implementaciones de una regla horaria que ya causó 2
+  // bugs es exactamente como se vuelve a romper.
   // "09:36 → 09:38 ET (08:36 → 08:38 hora Colombia)"
   function fmtHoraTrade(entry, exit, fechaISO) {
     if (!entry && !exit) return 'sin hora'

@@ -4,7 +4,7 @@
 |---|---|
 | **Versión** | v2 |
 | **Fecha** | 2026-08-19 |
-| **Estado** | 🟡 **PROPUESTO** — pendiente de aprobación de Kris |
+| **Estado** | 🟢 **APROBADO** (19 ago) — **Fase 1 implementada y verificada**. Fases 2-4 pendientes |
 | **Origen** | Petición de Kris (19 ago): «entré a su curso y tengo acceso a sus operativas; quiero un módulo donde almacene las suyas vs las mías, la pantalla partida en dos, y un dashboard de diferencias con filtro por mes/trimestre/año/todo, para ver si estoy fallando en algún punto» |
 | **Alcance** | Tabla nueva `chaumer_operativas` (1 migración), `index.html`, `css/styles.css`, `js/app.js`, `js/chaumer.js` (nuevo), `js/db.js`, `js/coach.js` (mueve un helper). **No toca** `sesiones` ni `trades` salvo un valor nuevo de vocabulario |
 
@@ -80,7 +80,7 @@ cobertura (§4.1) para que nunca se lea un porcentaje sin saber sobre cuántos d
 
 ```sql
 create table public.chaumer_operativas (
-  id              bigserial primary key,
+  id              bigint generated always as identity primary key,
   fecha           date        not null unique,
   opero           boolean     not null default true,
   setup_codigo    text        references catalogo_setup_variantes(codigo),
@@ -102,8 +102,12 @@ create table public.chaumer_operativas (
 - `setup_codigo` apunta al **mismo catálogo que tus setups**. Es lo que permite comparar
   «mismo setup» sin cotejar cadenas de texto.
 - **RLS activo** + política `auth_all` para `authenticated` + grants a `service_role`,
-  como las otras 18 tablas. Migración `2026-08-??-chaumer-operativas.sql`, aplicada con
+  como las otras 18 tablas. Migración `2026-08-19-chaumer-operativas.sql`, aplicada con
   `apply_migration` del MCP.
+- **Dos `CHECK` de coherencia**, añadidos al implementar: un día con `opero = false` no
+  puede traer setup, hora, resultado ni puntos, y uno con `opero = true` no puede traer
+  motivo. Sin ellos, un día editado dos veces podría contar como «operó» en el cálculo del
+  veredicto arrastrando datos viejos.
 
 **Nada de tu operativa se guarda aquí.** Ni una columna.
 
@@ -230,13 +234,46 @@ esto, cualquier porcentaje de abajo es un número sin denominador.
 
 | Fase | Qué | Archivos | Cómo se verifica |
 |---|---|---|---|
-| **1** | **BD y capa de datos**: migración con RLS, `DB.getChaumer*` / `upsertChaumer`, y `horaEt` movido de `coach.js` a `db.js` | migración, `js/db.js`, `js/coach.js` | `apply_migration` + `SELECT` que confirme tabla, RLS y política; `node --check`; el Coach sigue mostrando bien las horas |
+| **1** ✅ | **BD y capa de datos**: migración con RLS, `DB.getChaumer*` / `upsertChaumer`, y `horaEt` movido de `coach.js` a `db.js` | migración, `js/db.js`, `js/coach.js` | ✅ **Hecho** — medido, ver §5.1 |
 | **2** | **Sección + pestaña «Día»**: navegación, vista partida, alta/edición de su operativa, bloque de motivo en las Fugas | `index.html`, `js/chaumer.js`, `js/app.js`, `css/styles.css` | Alta de un día real; el veredicto sale correcto en los 6 estados; declarar un motivo escribe en `sesiones` (comprobado con `SELECT`) |
 | **3** | **Pestaña «Diferencias»**: cobertura, 4 KPIs y 4 gráficas | `js/chaumer.js`, `css/styles.css` | Los KPIs cuadran con un `SELECT` de contraste; el filtro de período cambia los números; sin datos, estados vacíos honestos |
 | **4** | **«No lo vi»** en el vocabulario + documentación | `index.html`, `js/form.js`, `CLAUDE.md`, `docs/` | El botón guarda y recarga bien; docs actualizadas |
 
 Las fases 1 y 2 ya dan valor por sí solas: con ellas puedes cargar días y ver la comparación,
 aunque el dashboard llegue después.
+
+### 5.1 Fase 1 — lo medido (19 ago)
+
+Migración `2026-08-19-chaumer-operativas` aplicada con `apply_migration`; consta en
+`supabase_migrations.schema_migrations` como `20260819151243`.
+
+| Qué | Resultado |
+|---|---|
+| Tabla y tipos | ✅ 13 columnas; `fecha date not null unique`, `puntos numeric`, `hora_entrada time` |
+| RLS | ✅ Activo. Política `auth_all` para `authenticated`, `ALL` |
+| Grants | ✅ `authenticated` y `service_role` con SELECT/INSERT/UPDATE/DELETE. **`anon` sin acceso a datos** — solo REFERENCES/TRIGGER/TRUNCATE, igual que `catalogo_setups` y `catalogo_fechas` |
+| FK | ✅ `setup_codigo → catalogo_setup_variantes(codigo)` |
+| CHECK `chaumer_no_opero_vacio` | ✅ **Probado**: insertar `opero=false` con setup y puntos es rechazado con `23514` |
+| Alta, lectura, rango, borrado | ✅ Viaje completo contra la BD real desde el navegador |
+| Filtro anti-PGRST204 | ✅ Una clave que no es columna se descarta en vez de reventar el guardado |
+| Paso a «no operó» | ✅ Limpia setup, hora, resultado y puntos; conserva el motivo |
+
+**La conversión horaria, que era la trampa nº 1:**
+
+| Entrada | Salida | Correcto |
+|---|---|---|
+| `horaEt('08:36', '2026-08-18')` — verano, EDT | **09:36 ET** | +1 h ✅ |
+| `horaEt('08:36', '2026-01-15')` — invierno, EST | **08:36 ET** | +0 h ✅ |
+
+El DST lo resuelve solo, sin tabla de fechas. `difMinutos('10:55','10:58')` → `3`.
+
+`horaEt` queda **solo en `db.js`** (`db.js:158`); `coach.js` la consume como global y
+`db.js` se carga antes ([index.html:1464](../../index.html) vs 1477).
+
+**Añadido no previsto:** los cuatro métodos y las operativas de ejemplo se replicaron en
+`js/dev.local.js`, para que la Fase 2 se pueda verificar también sin sesión.
+
+**Se dejó la tabla vacía** (0 filas): las pruebas usaron `2999-01-01` y se borraron.
 
 ---
 
