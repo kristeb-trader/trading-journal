@@ -31,10 +31,9 @@ Se registra desde **Otros › Chaumer › Día**, un día a la vez: setup, hora 
 puntos y la captura. Los días en que él **no operó** también cuentan — son los que permiten
 medir «entré donde él no veía nada».
 
-> ⚠️ **El signo de los puntos.** `puntos` va **con signo**: un stop es negativo. En el día
-> 18 quedó cargado un *stop* con `+20,50`, que infla sus puntos en el KPI de Δ. El
-> formulario no lo impide hoy — **pendiente de decidir** si lo pone automático según el
-> resultado (stop → negativo) o solo avisa.
+> ✅ **El signo de los puntos ya se pone solo** (19 ago): `stop` fuerza negativo, `target`
+> positivo, y `be`/`parcial` respetan lo que escribas. La fila del 18 se corrigió de
+> `+20,50` a `−20,50`. Detalle: `docs/disenos/2026-08-19-chaumer-vs-yo.md` §5.6.
 
 > ⚠️ **El módulo vive de la constancia.** Con el 30 % de los días cargados, el dashboard no
 > dice dónde fallas: dice dónde te acordaste de apuntar. Por eso la cobertura va arriba del

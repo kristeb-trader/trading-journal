@@ -281,6 +281,34 @@ const Chaumer = (() => {
     document.getElementById('chOpModal').classList.remove('hidden')
   }
 
+  // ── El signo de los puntos ────────────────────────────────────────────────
+  // `puntos` va CON SIGNO, y el signo lo manda el resultado: un stop resta.
+  // Escribirlo a mano se olvida —pasó el primer día de uso: un stop quedó como
+  // +20,50 e inflaba sus puntos en el KPI de Δ—, así que se deriva.
+  //
+  // OJO: se deriva de SU resultado (`#chOpResultado`), no del de Kris. Este
+  // formulario es la operativa de Chaumer entera; el lado de Kris no se escribe
+  // aquí, se calcula desde `trades` con `puntosTrade()`.
+  //
+  // Solo se fuerza en target y stop, que son inequívocos. Un `parcial` puede
+  // cerrar arriba o abajo y un `be` puede dejar un residuo de cualquier signo:
+  // en esos dos manda lo que escriba Kris.
+  function signoPuntos(valor, resultado) {
+    const n = parseFloat(String(valor).replace(',', '.'))
+    if (!Number.isFinite(n)) return null
+    if (resultado === 'stop')   return -Math.abs(n)
+    if (resultado === 'target') return Math.abs(n)
+    return n
+  }
+
+  // Reescribe el input para que el signo se VEA antes de guardar, no después.
+  function normalizaPuntosInput() {
+    const inp = document.getElementById('chOpPuntos')
+    if (!inp || inp.value === '') return
+    const n = signoPuntos(inp.value, document.getElementById('chOpResultado').value)
+    if (n != null && String(n) !== inp.value) inp.value = n
+  }
+
   // Un día sin operativa no pide setup ni resultado — y la BD lo rechazaría.
   function sincOpero() {
     const opero = document.getElementById('chOpOpero').checked
@@ -293,6 +321,7 @@ const Chaumer = (() => {
     const setup = document.getElementById('chOpSetup').value
     if (opero && !setup) { Toast.show('Elige el setup que operó', 'warning'); return }
 
+    const resultado = document.getElementById('chOpResultado').value
     const pts = document.getElementById('chOpPuntos').value
     try {
       await DB.upsertChaumerOperativa({
@@ -300,8 +329,8 @@ const Chaumer = (() => {
         opero,
         setup_codigo: setup || null,
         hora_entrada: document.getElementById('chOpHora').value || null,
-        resultado: document.getElementById('chOpResultado').value || null,
-        puntos: pts === '' ? null : parseFloat(String(pts).replace(',', '.')),
+        resultado: resultado || null,
+        puntos: pts === '' ? null : signoPuntos(pts, resultado),
         contexto: document.getElementById('chOpContexto').value || null,
         imagen_url: document.getElementById('chOpImagenUrl').value || null,
         notas: document.getElementById('chOpNotas').value || null,
@@ -718,6 +747,10 @@ const Chaumer = (() => {
     })
 
     document.getElementById('chOpOpero')?.addEventListener('change', sincOpero)
+    // El signo se ajusta al elegir resultado y al salir del campo de puntos, para
+    // que se vea antes de guardar y no sorprenda después.
+    document.getElementById('chOpResultado')?.addEventListener('change', normalizaPuntosInput)
+    document.getElementById('chOpPuntos')?.addEventListener('blur', normalizaPuntosInput)
     document.getElementById('chOpGuardar')?.addEventListener('click', guardar)
     document.getElementById('chOpBorrar')?.addEventListener('click', borrar)
     document.getElementById('closeChOpModal')?.addEventListener('click', () => {

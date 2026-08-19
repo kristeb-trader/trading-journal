@@ -1181,18 +1181,22 @@
             </label>
 
             <!-- Si operó -->
+            <!-- Todo lo de este formulario es la operativa de CHAUMER. El lado de
+                 Kris no se escribe aquí: se lee de `sesiones` + `trades`. Por eso
+                 los rótulos dicen "su", y por eso el signo de los puntos lo manda
+                 SU resultado. -->
             <div id="chOpSiOpero">
               <div class="form-group">
-                <label>Setup</label>
+                <label>Su setup</label>
                 <select id="chOpSetup"></select>
               </div>
               <div class="form-row">
                 <div class="form-group">
-                  <label>Hora de entrada <span class="ch-hint">(ET)</span></label>
+                  <label>Su hora de entrada <span class="ch-hint">(ET)</span></label>
                   <input type="time" id="chOpHora">
                 </div>
                 <div class="form-group">
-                  <label>Resultado</label>
+                  <label>Su resultado</label>
                   <select id="chOpResultado">
                     <option value="">—</option>
                     <option value="target">Target</option>
@@ -1204,11 +1208,11 @@
               </div>
               <div class="form-row">
                 <div class="form-group">
-                  <label>Puntos <span class="ch-hint">(+/−, no dólares)</span></label>
+                  <label>Sus puntos <span class="ch-hint">(el signo lo pone su resultado)</span></label>
                   <input type="number" id="chOpPuntos" step="0.25" placeholder="40">
                 </div>
                 <div class="form-group">
-                  <label>Contexto</label>
+                  <label>Su contexto</label>
                   <select id="chOpContexto">
                     <option value="">—</option>
                     <option value="Alcista">Alcista</option>
@@ -1228,7 +1232,7 @@
             </div>
 
             <div class="form-group">
-              <label>La operativa <span class="ch-hint">(lo que explicó)</span></label>
+              <label>Su operativa <span class="ch-hint">(lo que explicó)</span></label>
               <textarea id="chOpNotas" rows="3" placeholder="Rompe la zona lateral y genera el IRI por debajo del soporte…"></textarea>
             </div>
 

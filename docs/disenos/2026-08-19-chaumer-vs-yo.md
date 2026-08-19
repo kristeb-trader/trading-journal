@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Versión** | v4 |
+| **Versión** | v5 |
 | **Fecha** | 2026-08-19 |
 | **Estado** | ✅ **IMPLEMENTADO** (19 ago) — las 4 fases cerradas y verificadas. Lo que falta es cargar días, no código |
 | **Origen** | Petición de Kris (19 ago): «entré a su curso y tengo acceso a sus operativas; quiero un módulo donde almacene las suyas vs las mías, la pantalla partida en dos, y un dashboard de diferencias con filtro por mes/trimestre/año/todo, para ver si estoy fallando en algún punto» |
@@ -445,6 +445,38 @@ ni scroll horizontal, y sin errores de consola.
 («No operé · FOMC»), que sale de `sesiones.motivo_no_opero`. En un día sin operación era lo
 único que faltaba para que el gráfico se entendiera solo.
 
+### 5.6 El signo de los puntos se deriva del resultado (19 ago)
+
+El primer día de uso real dejó un **stop cargado como `+20,50`**. `puntos` va con signo, así
+que eso sumaba a favor de Chaumer: el KPI decía **él +20,5 · tú +20 → Δ −0,5**, cuando ese
+día Kris le había sacado 40 puntos. Un número creíble y falso, que es lo peor que puede dar
+un dashboard.
+
+**El signo lo pone ahora el resultado**, en `signoPuntos()`:
+
+| Resultado | Qué hace |
+|---|---|
+| `stop` | Fuerza negativo |
+| `target` | Fuerza positivo |
+| `be` · `parcial` | **Respeta lo escrito** — un parcial puede cerrar arriba o abajo y un break-even puede dejar residuo de cualquier signo |
+
+Se aplica en dos sitios a propósito: al **cambiar el resultado o salir del campo**, para que
+el signo se vea antes de guardar; y otra vez **al guardar**, porque un pegado directo seguido
+de «Guardar» no dispara ningún evento de campo.
+
+⚠️ **El signo sale de SU resultado (`#chOpResultado`), no del de Kris.** Todo ese formulario
+es la operativa de Chaumer; el lado de Kris no se escribe ahí, se calcula desde `trades` con
+`puntosTrade()`. Para que no quede duda al rellenarlo, los rótulos del modal pasan a decir
+**«Su setup»**, «Su hora de entrada», «Su resultado», «Sus puntos», «Su contexto».
+
+**Medido:** `stop` con 20,5 y con −20,5 dan −20,5; `target` con 40 y con −40 dan 40; `be` −2
+y `parcial` −7,5 se respetan. Guardar con el signo mal escrito y sin disparar eventos lo
+corrige igual, **sin tocar ningún otro campo de la fila**. Y el KPI pasa a leer
+**él −20,5 · tú +20 → Δ +40,5**.
+
+**Dato corregido:** la fila del 18 de agosto pasó de `+20,50` a `−20,50`
+(`update … where resultado = 'stop' and puntos > 0`, 1 fila). Era la única incoherente.
+
 ---
 
 ## 6. Lo que este diseño NO toca
@@ -475,6 +507,7 @@ ni scroll horizontal, y sin errores de consola.
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 2026-08-19 | Documento inicial. Recoge las 4 decisiones de Kris |
+| v5 | 2026-08-19 | El signo de los puntos se deriva del resultado de Chaumer, y el modal deja claro que todo lo suyo es suyo. Corregida la fila del 18. Detalle en §5.6 |
 | v4 | 2026-08-19 | Ajustes tras el primer uso: la imagen se muestra también en los días sin setup, y la fecha sube a la fila de las pestañas. Detalle en §5.5 |
 | v3 | 2026-08-19 | Fases 3 y 4 cerradas. Se añaden §5.3 y §5.4 con lo medido, y el hallazgo del signo de los puntos que salió del uso real |
 | v2 | 2026-08-19 | **Chaumer pasa de dorado a azul** y tú al verde: a Kris no le convencía el dorado como texto. Se corrigen dos choques que salieron de ahí — «Ejecución» y «Otra lectura» compartían violeta, y el azul ya lo usaba la tarjeta de Experimentos en Otros. Detalle en §3 y §4.0 |
