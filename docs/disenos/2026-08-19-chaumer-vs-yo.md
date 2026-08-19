@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Versión** | v1 |
+| **Versión** | v2 |
 | **Fecha** | 2026-08-19 |
 | **Estado** | 🟡 **PROPUESTO** — pendiente de aprobación de Kris |
 | **Origen** | Petición de Kris (19 ago): «entré a su curso y tengo acceso a sus operativas; quiero un módulo donde almacene las suyas vs las mías, la pantalla partida en dos, y un dashboard de diferencias con filtro por mes/trimestre/año/todo, para ver si estoy fallando en algún punto» |
@@ -125,12 +125,22 @@ Un día puede estar en uno de seis estados. Se derivan de `chaumer_operativas` +
 
 | Estado | Condición | Color |
 |---|---|---|
-| ✅ **Igual** | Ambos operaron · mismo `setup_codigo` · mismo resultado · Δhora ≤ 5 min | `accent` |
-| 🟡 **Ejecución** | Mismo setup, pero distinto resultado o Δhora > 5 min | `warning` |
-| 🟠 **Otra lectura** | Ambos operaron, **distinto** setup | `blue` |
-| 🔴 **Fuga** | Él operó, tú no | `red` |
-| 🟣 **De más** | Tú operaste, él no | `violet` |
-| ⚪ **Ambos fuera** | Ninguno operó | neutro |
+| ✅ **Igual** | Ambos operaron · mismo `setup_codigo` · mismo resultado · Δhora ≤ 5 min | `--accent-txt` |
+| **Ejecución** | Mismo setup, pero distinto resultado o Δhora > 5 min | `--violet-txt` |
+| **Otra lectura** | Ambos operaron, **distinto** setup | `--text2` (neutro) |
+| **Fuga** | Él operó, tú no | `--red-txt` |
+| **De más** | Tú operaste, él no | `--red-txt` sobre fondo tenue, icono distinto |
+| **Ambos fuera** | Ninguno operó | `--text3` |
+
+Cuatro tonos para seis estados, no seis. La paleta tiene 5 colores semánticos y forzar uno
+por estado obliga a inventar tonos que no existen. Los dos pares se distinguen por **icono
+y etiqueta**, no por matiz:
+
+- **Otra lectura va en gris a propósito.** El §7 de este mismo diseño dice que no es un
+  error por definición y que no cuenta como fallo; pintarla de color la haría parecer una
+  alarma.
+- **«De más» comparte el rojo con «Fuga».** Son hermanas: las dos son desviaciones que
+  cuestan dinero, una por defecto y otra por exceso. Se diferencian por icono.
 
 **Fuga** es el estado caro y el que justifica el módulo. En esos días el comparador pide el
 motivo y lo escribe **en `sesiones`** (`setup_valido_no_tomado = true`,
@@ -144,6 +154,30 @@ el Coach IA y el dashboard de Disciplina, que ya leen esos campos, se enteran so
 Sección `chaumer` (`section-chaumer`), a la que se llega desde una **tarjeta nueva en Otros**,
 grupo «Consultar» — que pasa de 3 a 4 tarjetas. `Otros.ITEMS` gana una entrada y `Nav.PADRE`
 otra: **la barra sigue con 6 botones**, el invariante se respeta.
+
+### 4.0 Identidad de color (decidido con Kris, 19 ago)
+
+**Chaumer va en azul `--blue-txt`; tú, en verde `--accent-txt`.** El azul se lee como
+«referencia», que es lo que él es aquí. El dorado `--warning-txt` **queda fuera del módulo**:
+a Kris no le convence como color de texto.
+
+⚠️ **No se toca el token `--warning-txt` en el `:root`.** Lo usan Disciplina, los chips y
+las estrellas de confianza, y cambiarlo repintaría pantallas que están bien. Lo que cambia
+es qué token usa este módulo.
+
+**Efecto colateral en Otros:** la tarjeta de Experimentos ya es azul desde el rediseño del
+19 ago, y dos tarjetas azules seguidas en el grupo «Consultar» se leen como un error.
+**Experimentos pasa a `warning`** y Chaumer se queda el azul. Es un valor en `Otros.ITEMS`,
+y deja los cuatro colores del grupo distintos entre sí:
+
+| Grupo | Tarjetas y color |
+|---|---|
+| Consultar | Trades `accent` · Imágenes `violet` · Experimentos `warning` · **Chaumer `blue`** |
+| Configurar | Estrategia `warning` · Datos neutro · Fechas `red` |
+
+`warning` sale una vez por grupo, separados por su rótulo; dentro de un grupo no se repite
+ningún color. Hay que actualizar la nota de `.claude/rules/estilos.md` sobre a qué tarjeta
+pertenece cada color.
 
 Dos pestañas, reutilizando `.so-tabs`:
 
@@ -234,3 +268,4 @@ aunque el dashboard llegue después.
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 2026-08-19 | Documento inicial. Recoge las 4 decisiones de Kris |
+| v2 | 2026-08-19 | **Chaumer pasa de dorado a azul** y tú al verde: a Kris no le convencía el dorado como texto. Se corrigen dos choques que salieron de ahí — «Ejecución» y «Otra lectura» compartían violeta, y el azul ya lo usaba la tarjeta de Experimentos en Otros. Detalle en §3 y §4.0 |
