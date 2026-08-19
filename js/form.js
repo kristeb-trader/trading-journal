@@ -612,16 +612,11 @@ const SessionForm = (() => {
     }
   }
 
+  // La parte de red vive en `subirACloudinary` (db.js) desde el 19 ago: el
+  // comparador de Chaumer sube igual y no tiene sentido tener dos.
   async function uploadToCloudinary(file) {
-    const fd = new FormData()
-    fd.append('file', file)
-    fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET)
     try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-        method: 'POST', body: fd
-      })
-      const json = await res.json()
-      document.getElementById('imagenUrl').value = json.secure_url
+      document.getElementById('imagenUrl').value = await subirACloudinary(file)
       Toast.show('Imagen subida correctamente', 'success')
     } catch {
       Toast.show('Error al subir imagen a Cloudinary', 'error')

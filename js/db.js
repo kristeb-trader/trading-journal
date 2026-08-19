@@ -178,6 +178,38 @@ function difMinutos(a, b) {
   return (Number.isFinite(ma) && Number.isFinite(mb)) ? mb - ma : null
 }
 
+// ── Puntos de un trade ──────────────────────────────────────────────────────
+// El resultado en PUNTOS, con signo. Es la unidad con la que se compara contra
+// Chaumer: el dinero depende del número de contratos y del multiplicador de la
+// cuenta, así que dos operativas idénticas dan importes distintos.
+//
+// Comprobado contra el trade 107 (18 ago): Short 29546,5 → 29526,5 = 20 puntos;
+// 20 pts × 2 contratos MNQ × $2 = $80 bruto − $2,04 de comisión = $77,96, que es
+// exactamente el `profit` neto guardado.
+function puntosTrade(t) {
+  if (!t || t.entry_price == null || t.exit_price == null) return null
+  const d = String(t.market_pos).toLowerCase() === 'short'
+    ? t.entry_price - t.exit_price
+    : t.exit_price - t.entry_price
+  return Math.round(d * 100) / 100
+}
+
+// ── Subida a Cloudinary ─────────────────────────────────────────────────────
+// Solo la parte de red: quien llama se ocupa de su propio DOM y sus avisos.
+// Vive aquí para que el Diario y el comparador de Chaumer suban igual.
+async function subirACloudinary(file) {
+  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) throw new Error('Cloudinary no configurado')
+  const fd = new FormData()
+  fd.append('file', file)
+  fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET)
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+    method: 'POST', body: fd,
+  })
+  const json = await res.json()
+  if (!res.ok || !json.secure_url) throw new Error(json?.error?.message || 'Cloudinary no devolvió una URL')
+  return json.secure_url
+}
+
 // ── Día hábil: sábados y domingos NUNCA cuentan para estadísticas ────────────
 // El mercado no se opera en fin de semana. El calendario solo pinta Lun–Vie, pero
 // pueden existir filas de `sesiones` de sábado/domingo: el AddOn de NT8 crea la fila
@@ -1162,7 +1194,7 @@ const DB = {
     const [
       trades, ultimo, imagenes, experimentos, reglas,
       errores, emociones, recomendaciones, setups, variantes,
-      fechas, proxima,
+      fechas, proxima, chaumerDias,
     ] = await Promise.all([
       cuenta('trades'),
       primero('trades', 'trade_date', q => q.order('trade_date', { ascending: false })),
@@ -1176,6 +1208,7 @@ const DB = {
       cuenta('catalogo_setup_variantes', q => q.eq('activo', true)),
       cuenta('catalogo_fechas', q => q.eq('activa', true).gte('fecha', `${anio}-01-01`).lte('fecha', `${anio}-12-31`)),
       primero('catalogo_fechas', 'fecha', q => q.eq('activa', true).gte('fecha', hoyISO()).order('fecha', { ascending: true })),
+      cuenta('chaumer_operativas'),
     ])
 
     // La tarjeta de Datos cuenta los ítems de los cinco catálogos que se editan
@@ -1191,6 +1224,7 @@ const DB = {
       estrategia:   { n: reglas },
       data:         { n: catalogos, cuenta: _cuentaPrincipalCache },
       fechas:       { n: fechas, proxima },
+      chaumer:      { n: chaumerDias },
     }
     _resumenOtros = { t: Date.now(), datos }
     return datos
@@ -1329,6 +1363,27 @@ const DB = {
 
   async deleteChaumerOperativa(fecha) {
     const { error } = await supa.from('chaumer_operativas').delete().eq('fecha', fecha)
+    if (error) throw error
+  },
+
+  // Declara "vi un setup válido y no entré" desde el comparador. Escribe en
+  // `sesiones`, en los campos que ya existen y que rellena el Diario — no en una
+  // tabla nueva —, así que el Coach y Disciplina se enteran solos.
+  //
+  // `setup_observado` guarda el NOMBRE de la variante, no su código: es lo que
+  // hace el Diario (form.js pone `value="${v.nombre}"` en el <option>).
+  //
+  // Ojo: esto NO pasa por el Worker `/api/session` como `upsertSesion`. Es
+  // deliberado — aquel manda el payload completo y escribe todas sus claves como
+  // columnas; para tocar tres campos, un upsert dirigido de PostgREST solo altera
+  // esos tres y no puede vaciar el resto de la fila por descuido.
+  async marcarSetupNoTomado(fecha, setupNombre, motivo) {
+    const { error } = await supa.from('sesiones').upsert({
+      sesion_date: fecha,
+      setup_valido_no_tomado: true,
+      setup_observado: setupNombre || null,
+      motivo_no_entrada: motivo || null,
+    }, { onConflict: 'sesion_date' })
     if (error) throw error
   },
 

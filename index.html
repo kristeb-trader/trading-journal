@@ -420,6 +420,10 @@
                 </select>
                 <label style="margin-top:10px;margin-bottom:6px;display:block">Motivo por el que no entraste</label>
                 <div class="btn-group" id="motivoNoEntradaGroup">
+                  <!-- "No lo vi" se adelantó de la Fase 4 el 19 ago: el comparador
+                       de Chaumer ya lo ofrece, y dejar el Diario con un vocabulario
+                       distinto habría partido en dos el mismo campo. -->
+                  <button type="button" class="btn-option" data-value="No lo vi">No lo vi</button>
                   <button type="button" class="btn-option" data-value="Duda">Duda</button>
                   <button type="button" class="btn-option" data-value="Miedo">Miedo</button>
                   <button type="button" class="btn-option" data-value="Zona naranja">Zona naranja</button>
@@ -1122,6 +1126,121 @@
         <div id="fechasContent"></div>
       </section>
 
+      <!-- ═══ CHAUMER ═════════════════════════════════════════════════════ -->
+      <!-- Comparador: su operativa frente a la mía, día a día. Su lado sale de
+           `chaumer_operativas`; el mío se LEE de `sesiones` + `trades`, nunca se
+           duplica. El veredicto no se guarda: se calcula. Ver js/chaumer.js. -->
+      <section class="section" id="section-chaumer">
+
+        <div class="so-tabs" id="chaumerTabs">
+          <button type="button" class="so-tab active" data-tab="dia">
+            <i class="ti ti-columns-2"></i> Día
+          </button>
+          <button type="button" class="so-tab" data-tab="dif">
+            <i class="ti ti-chart-bar"></i> Diferencias
+          </button>
+        </div>
+
+        <div class="so-panel active" id="chaumer-panel-dia">
+          <div class="so-head">
+            <div class="date-stepper">
+              <button type="button" class="btn-icon" id="chDatePrev" title="Día anterior">
+                <i class="ti ti-chevron-left"></i>
+              </button>
+              <input type="date" id="chDate">
+              <button type="button" class="btn-icon" id="chDateNext" title="Día siguiente">
+                <i class="ti ti-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+          <div id="chaumerDia"></div>
+        </div>
+
+        <div class="so-panel" id="chaumer-panel-dif">
+          <p class="catalog-empty">El dashboard de diferencias llega en la Fase 3.</p>
+        </div>
+      </section>
+
+      <!-- Modal: la operativa de Chaumer de un día -->
+      <div class="modal-overlay hidden" id="chOpModal">
+        <div class="modal" style="max-width:480px">
+          <div class="modal-header">
+            <h3 id="chOpModalTitle"><i class="ti ti-arrows-diff"></i> Operativa de Chaumer</h3>
+            <button class="btn-icon" id="closeChOpModal"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="modal-content" style="padding:16px 20px 20px">
+
+            <label class="ch-op-toggle">
+              <input type="checkbox" id="chOpOpero" checked>
+              <span>Operó este día</span>
+            </label>
+
+            <!-- Si operó -->
+            <div id="chOpSiOpero">
+              <div class="form-group">
+                <label>Setup</label>
+                <select id="chOpSetup"></select>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Hora de entrada <span class="ch-hint">(ET)</span></label>
+                  <input type="time" id="chOpHora">
+                </div>
+                <div class="form-group">
+                  <label>Resultado</label>
+                  <select id="chOpResultado">
+                    <option value="">—</option>
+                    <option value="target">Target</option>
+                    <option value="stop">Stop</option>
+                    <option value="be">Break-even</option>
+                    <option value="parcial">Parcial</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Puntos <span class="ch-hint">(+/−, no dólares)</span></label>
+                  <input type="number" id="chOpPuntos" step="0.25" placeholder="40">
+                </div>
+                <div class="form-group">
+                  <label>Contexto</label>
+                  <select id="chOpContexto">
+                    <option value="">—</option>
+                    <option value="Alcista">Alcista</option>
+                    <option value="Bajista">Bajista</option>
+                    <option value="Mixto">Mixto</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Si no operó -->
+            <div id="chOpNoOpero" class="hidden">
+              <div class="form-group">
+                <label>¿Por qué no operó?</label>
+                <input type="text" id="chOpMotivo" placeholder="Sin estructura clara en la apertura">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>La operativa <span class="ch-hint">(lo que explicó)</span></label>
+              <textarea id="chOpNotas" rows="3" placeholder="Rompe la zona lateral y genera el IRI por debajo del soporte…"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Su gráfico</label>
+              <input type="file" id="chOpImagen" accept="image/*">
+              <input type="hidden" id="chOpImagenUrl">
+            </div>
+
+            <div class="ch-op-acciones">
+              <button class="btn-secondary hidden" id="chOpBorrar"><i class="ti ti-trash"></i> Borrar</button>
+              <button class="btn-primary" id="chOpGuardar"><i class="ti ti-device-floppy"></i> Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ═══ OTROS ═══════════════════════════════════════════════════════ -->
       <!-- Índice de las secciones que salieron del menú. No muestra datos: es
            una rejilla fija que genera app.js desde OTROS_ITEMS, así que añadir
@@ -1476,6 +1595,7 @@
   <script src="js/disciplina.js"></script>
   <script src="js/coach.js"></script>
   <script src="js/fechas.js"></script>
+  <script src="js/chaumer.js"></script>
   <script src="js/app.js"></script>
 
   <!-- Registro del Service Worker (PWA) -->

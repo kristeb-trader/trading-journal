@@ -4,7 +4,7 @@
 |---|---|
 | **Versión** | v2 |
 | **Fecha** | 2026-08-19 |
-| **Estado** | 🟢 **APROBADO** (19 ago) — **Fase 1 implementada y verificada**. Fases 2-4 pendientes |
+| **Estado** | 🟢 **APROBADO** (19 ago) — **Fases 1 y 2 implementadas y verificadas**. Fases 3-4 pendientes |
 | **Origen** | Petición de Kris (19 ago): «entré a su curso y tengo acceso a sus operativas; quiero un módulo donde almacene las suyas vs las mías, la pantalla partida en dos, y un dashboard de diferencias con filtro por mes/trimestre/año/todo, para ver si estoy fallando en algún punto» |
 | **Alcance** | Tabla nueva `chaumer_operativas` (1 migración), `index.html`, `css/styles.css`, `js/app.js`, `js/chaumer.js` (nuevo), `js/db.js`, `js/coach.js` (mueve un helper). **No toca** `sesiones` ni `trades` salvo un valor nuevo de vocabulario |
 
@@ -235,7 +235,7 @@ esto, cualquier porcentaje de abajo es un número sin denominador.
 | Fase | Qué | Archivos | Cómo se verifica |
 |---|---|---|---|
 | **1** ✅ | **BD y capa de datos**: migración con RLS, `DB.getChaumer*` / `upsertChaumer`, y `horaEt` movido de `coach.js` a `db.js` | migración, `js/db.js`, `js/coach.js` | ✅ **Hecho** — medido, ver §5.1 |
-| **2** | **Sección + pestaña «Día»**: navegación, vista partida, alta/edición de su operativa, bloque de motivo en las Fugas | `index.html`, `js/chaumer.js`, `js/app.js`, `css/styles.css` | Alta de un día real; el veredicto sale correcto en los 6 estados; declarar un motivo escribe en `sesiones` (comprobado con `SELECT`) |
+| **2** ✅ | **Sección + pestaña «Día»**: navegación, vista partida, alta/edición de su operativa, bloque de motivo en las Fugas | `index.html`, `js/chaumer.js`, `js/app.js`, `js/db.js`, `js/form.js`, `css/styles.css` | ✅ **Hecho** — medido, ver §5.2 |
 | **3** | **Pestaña «Diferencias»**: cobertura, 4 KPIs y 4 gráficas | `js/chaumer.js`, `css/styles.css` | Los KPIs cuadran con un `SELECT` de contraste; el filtro de período cambia los números; sin datos, estados vacíos honestos |
 | **4** | **«No lo vi»** en el vocabulario + documentación | `index.html`, `js/form.js`, `CLAUDE.md`, `docs/` | El botón guarda y recarga bien; docs actualizadas |
 
@@ -274,6 +274,62 @@ El DST lo resuelve solo, sin tabla de fechas. `difMinutos('10:55','10:58')` → 
 `js/dev.local.js`, para que la Fase 2 se pueda verificar también sin sesión.
 
 **Se dejó la tabla vacía** (0 filas): las pruebas usaron `2999-01-01` y se borraron.
+
+### 5.2 Fase 2 — lo medido (19 ago)
+
+Probado **con datos reales**, con la sesión de Kris iniciada en el preview.
+
+**Los siete estados, uno a uno:**
+
+| Estado | Cómo se provocó | Salió |
+|---|---|---|
+| Sin cargar | Día sin fila suya | ✅ Estado vacío con botón de registrar |
+| Igual | 18 ago: mismo setup, ambos Target, Δ3 min | ✅ «Igual» |
+| Ejecución | Mismo día, él a Stop | ✅ «Mismo setup · ejecución» |
+| Otra lectura | 13 ago: él Reingreso Bajista, yo IRI Apertura Alcista | ✅ «Otra lectura» |
+| Fuga | 17 ago: él operó, yo no | ✅ «Fuga · él operó, tú no» |
+| De más | 14 ago: yo operé, él no | ✅ «De más · tú operaste, él no» |
+| Ambos fuera | 19 ago: ninguno operó | ✅ «Ninguno operó» |
+
+**Los dos cálculos que podían mentir, contra un trade real (nº 107, 18 ago):**
+
+| Qué | Resultado |
+|---|---|
+| Puntos de mi lado | **+20 pts** — Short 29.546,5 → 29.526,5. Cuadra con el `profit` neto: 20 × 2 contratos × $2 − $2,04 = **$77,96** |
+| Hora en ET | `entry_time` 09:58:41 Colombia → **10:58 ET**. Contra sus 10:55 ET, **+3 min** |
+
+Si las horas se hubieran restado sin convertir, ese día habría salido «−57 min».
+
+**El flujo de Fuga escribe donde debe.** Pulsar «No lo vi» dejó en `sesiones` del 17 ago:
+`setup_valido_no_tomado = true`, `setup_observado = 'Reingreso Alcista'`,
+`motivo_no_entrada = 'No lo vi'`. Comprobado con `SELECT`, y **revertido después** a sus
+valores originales (`false` / `null` / `null`).
+
+**Navegación:** la tarjeta sale en «Consultar» con `--c: #8FBDE8`, Experimentos pasó a
+`#E0A33B`, los 4 colores del grupo son distintos, el botón de Otros sigue encendido y el
+título dice «Chaumer · miércoles, 19 de agosto».
+
+**Móvil (375 px):** sin desbordes, sin scroll horizontal de página, las dos columnas se
+apilan a 359 px cada una, cero errores de JS.
+
+**La tabla quedó vacía** (0 filas). Todas las operativas de prueba se borraron.
+
+#### Desviaciones respecto al diseño
+
+| # | Qué | Por qué |
+|---|---|---|
+| 1 | **Séptimo estado: «Sin cargar»** | El diseño listaba 6, pero la ausencia de fila no es «ninguno operó»: es que aún no lo has metido. Confundirlos haría que un día sin cargar contase como día sin operativa y sesgara el dashboard de la Fase 3 |
+| 2 | **«No lo vi» se adelanta de la Fase 4** | El comparador ya lo ofrece; dejar el Diario con otro vocabulario habría partido en dos el mismo campo |
+| 3 | `subirACloudinary` se sube a `db.js` y `form.js` pasa a usarla | Igual que con `horaEt`: una sola implementación. `form.js` conserva su envoltorio de DOM y avisos |
+| 4 | `marcarSetupNoTomado` **no pasa por el Worker** `/api/session` | `upsertSesion` manda el payload completo y escribe cada clave como columna; para tocar tres campos, un upsert dirigido de PostgREST solo altera esos tres y no puede vaciar el resto de la fila |
+| 5 | La tarjeta muestra **«N días cargados»**, no «% coincidencia» | El porcentaje necesita el cálculo del dashboard, que es la Fase 3. Se sube a coincidencia entonces |
+
+#### Una cosa a decidir cuando lo uses
+
+Un día con **mismo setup, mismo resultado y entrada a la vez, pero la mitad de sus puntos**
+sale hoy como **«Igual»** — con un chip que avisa de los puntos. Es lo que dice el diseño
+(§3), pero puede que quieras que eso cuente como «Ejecución». Se ve en cuanto tengas
+días reales cargados; es una condición en `veredicto()`.
 
 ---
 
