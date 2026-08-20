@@ -24,10 +24,10 @@ const Charts = (() => {
     kpiDisc:    { title: 'Disciplina Total', text: 'Adherencia al checklist por fase (% de ítems cumplidos). No penaliza reglas sin registrar. Mismo cálculo que el calendario y el dashboard.' },
     kpiCons:    { title: 'Consistencia', text: 'Sub-períodos positivos: en Mes cuenta semanas, en Trimestre/Año cuenta meses.' },
     kpiPf:      { title: 'Profit Factor', text: 'Ganancia bruta ÷ pérdida bruta. >1.5 sólido, >1 rentable, <1 negativo.' },
-    equity:     { title: 'Curva de Equity', text: 'P&L acumulado a lo largo del período (por día en Mes/Trimestre, por mes en Anual). La banda roja es el drawdown desde el pico.' },
+    equity:     { title: 'Curva de Equity', text: 'P&L acumulado a lo largo del período (por día en Mes/Trimestre, por mes en Anual). El relleno se tiñe de verde sobre cero y de rojo bajo cero. En la cabecera, "máx. caída" es el mayor retroceso desde un pico anterior.' },
     pnlBars:    { title: 'P&L por sub-período', text: 'P&L de cada semana (Mes) o mes (Trimestre/Anual).' },
     pnlByDay:   { title: 'P&L por día de semana', text: 'P&L promedio agrupado por día (Lun–Vie).' },
-    pnlByHour:  { title: 'P&L por hora (ET)', text: 'P&L promedio por franjas de 30 min, 9:30–15:00 ET.' },
+    pnlByHour:  { title: 'P&L medio por franja', text: 'P&L medio por trade en franjas de 30 min, en HORA LOCAL (Colombia), que es la que exporta NinjaTrader. Solo se muestran las franjas en las que operaste: un eje lleno de huecos parece que faltan datos cuando lo que pasa es que ahí no operas.' },
     results:    { title: 'Distribución de resultados', text: 'Proporción de Target / Stop / Break Even / Otro.' },
   }
 
@@ -231,6 +231,34 @@ const Charts = (() => {
     }
   }
 
+  // ── Período anterior ──────────────────────────────────────────────────────
+  // Para la variación de los KPIs. No usa `shift()` porque ese muta el estado
+  // del módulo: aquí solo hace falta el rango, sin mover la vista.
+  function prevPeriodRange() {
+    if (period === 'month') {
+      let y = curYear, m = curMonth - 1
+      if (m < 1) { m = 12; y-- }
+      return { from: `${y}-${p2(m)}-01`, to: `${y}-${p2(m)}-${p2(new Date(y, m, 0).getDate())}` }
+    }
+    if (period === 'quarter') {
+      let y = curYear, q = curQ - 1
+      if (q < 1) { q = 4; y-- }
+      const m1 = (q - 1) * 3 + 1, m3 = m1 + 2
+      return { from: `${y}-${p2(m1)}-01`, to: `${y}-${p2(m3)}-${p2(new Date(y, m3, 0).getDate())}` }
+    }
+    return { from: `${curYear - 1}-01-01`, to: `${curYear - 1}-12-31` }
+  }
+
+  const NOMBRE_PREV = () => period === 'month' ? 'mes ant.' : period === 'quarter' ? 'trim. ant.' : 'año ant.'
+
+  // Formato compacto para ejes y celdas estrechas: $1,2k. Los importes completos
+  // siguen en los KPI y en los tooltips, que es donde se leen de verdad.
+  function fmtCorto(v) {
+    const a = Math.abs(v)
+    if (a >= 1000) return `${v < 0 ? '-' : ''}$${(a / 1000).toFixed(a >= 10000 ? 0 : 1).replace('.', ',')}k`
+    return `${v < 0 ? '-' : ''}$${Math.round(a)}`
+  }
+
   // ── KPIs ──────────────────────────────────────────────────────────────────
   function renderKpis(trades, sesiones, casByDate, subs) {
     const s = statsOf(trades)
@@ -247,32 +275,57 @@ const Charts = (() => {
     const consPct = activeSub ? Math.round(posSub / activeSub * 100) : 0
     const rent = capital > 0 ? `${(s.pnl / capital * 100).toFixed(2)}%` : '—'
 
+    // Mismo cálculo sobre el período anterior, para la variación.
+    const pr = prevPeriodRange()
+    const prevTrades = AccountFilter.filter('analysis', allTrades)
+      .filter(t => (t.trade_date || '') >= pr.from && (t.trade_date || '') <= pr.to && esDiaHabil(t.trade_date))
+    const p = statsOf(prevTrades)
+
     const pfStr = s.pf == null ? '—' : s.pf === Infinity ? '∞' : s.pf.toFixed(2)
-    const pfCls = s.pf == null ? 'kpi-neutral' : (s.pf === Infinity || s.pf >= 1.5) ? 'kpi-green' : s.pf >= 1 ? 'kpi-neutral' : 'kpi-red'
     const winV = s.winRate != null ? s.winRate.toFixed(1) : '0.0'
-    const efecV = s.efec != null ? s.efec.toFixed(1) : '—'
 
-    const chip = (label, val, cls, key) => `
-      <div class="analysis-kpi">
-        <span class="analysis-kpi-label">${label}
-          ${key ? `<button class="help-btn-sm" data-help="${key}" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>` : ''}
-        </span>
-        <span class="analysis-kpi-value ${cls}">${val}</span>
+    // Variación: absoluta para el dinero, en puntos porcentuales para los %.
+    // Sin período anterior con datos no se inventa un 0% — se dice que no hay con qué comparar.
+    const delta = (actual, previo, tipo) => {
+      if (previo == null || actual == null || !prevTrades.length) return `<span class="an-kpi-delta">sin ${NOMBRE_PREV()}</span>`
+      const d = actual - previo
+      if (Math.abs(d) < 0.05) return `<span class="an-kpi-delta">= que el ${NOMBRE_PREV()}</span>`
+      const cls = d > 0 ? 'up' : 'down'
+      const txt = tipo === 'money' ? fmtCorto(Math.abs(d))
+        : tipo === 'pp' ? `${Math.abs(d).toFixed(1)} pp`
+        : Math.abs(d).toFixed(2)
+      return `<span class="an-kpi-delta"><span class="${cls}">${d > 0 ? '↑' : '↓'} ${txt}</span> vs ${NOMBRE_PREV()}</span>`
+    }
+
+    const kpi = (label, val, tono, deltaHtml, key) => `
+      <div class="an-kpi an-kpi-${tono}">
+        <span class="an-kpi-label">${label}${key ? `<button class="help-btn-sm" data-help="${key}" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>` : ''}</span>
+        <span class="an-kpi-value">${val}</span>
+        ${deltaHtml}
       </div>`
 
-    document.getElementById('analysisKpiStrip').innerHTML = `
-      <div class="analysis-kpi-row">
-        ${chip('P&L Neto', fmtDinero(s.pnl), s.pnl>=0?'kpi-green':'kpi-red', 'kpiPnl')}
-        ${chip('Win Rate', `${winV}%`, parseFloat(winV)>=50?'kpi-green':'kpi-red', 'kpiWin')}
-        ${chip('Rentabilidad', rent, capital>0 ? (s.pnl>=0?'kpi-green':'kpi-red') : 'kpi-neutral', 'kpiRent')}
-        ${chip('Disciplina', disc!=null?`${disc}%`:'—', disc==null?'kpi-neutral':disc>=80?'kpi-green':disc>=55?'kpi-neutral':'kpi-red', 'kpiDisc')}
-        ${chip('Consistencia', activeSub?`${posSub}/${activeSub} · ${consPct}%`:'—', consPct>=60?'kpi-green':consPct>=40?'kpi-neutral':'kpi-red', 'kpiCons')}
-        ${chip('Profit Factor', pfStr, pfCls, 'kpiPf')}
-        ${chip('Total Trades', `${s.nonBE}`, 'kpi-neutral', 'kpiTrades')}
-      </div>`
+    const tono = (v, bueno, malo) => v == null ? 'flat' : v >= bueno ? 'up' : v < malo ? 'down' : 'flat'
+
+    document.getElementById('analysisKpiStrip').className = 'an-kpis'
+    document.getElementById('analysisKpiStrip').innerHTML = [
+      kpi('P&L Neto', fmtDinero(s.pnl), s.pnl > 0 ? 'up' : s.pnl < 0 ? 'down' : 'flat',
+          delta(s.pnl, p.pnl, 'money'), 'kpiPnl'),
+      kpi('Win Rate', `${winV}%`, tono(s.winRate, 50, 50),
+          delta(s.winRate, p.winRate, 'pp'), 'kpiWin'),
+      kpi('Rentabilidad', rent, capital > 0 ? (s.pnl >= 0 ? 'up' : 'down') : 'flat',
+          '<span class="an-kpi-delta">sobre capital inicial</span>', 'kpiRent'),
+      kpi('Disciplina', disc != null ? `${disc}%` : '—', tono(disc, 80, 55),
+          '<span class="an-kpi-delta">del proceso, no de la cuenta</span>', 'kpiDisc'),
+      kpi('Consistencia', activeSub ? `${consPct}%` : '—', tono(consPct, 60, 40),
+          `<span class="an-kpi-delta">${activeSub ? `${posSub} de ${activeSub} en positivo` : 'sin sub-períodos'}</span>`, 'kpiCons'),
+      kpi('Profit Factor', pfStr, s.pf == null ? 'flat' : (s.pf === Infinity || s.pf >= 1.5) ? 'up' : s.pf >= 1 ? 'flat' : 'down',
+          delta(s.pf === Infinity ? null : s.pf, p.pf === Infinity ? null : p.pf, 'num'), 'kpiPf'),
+      kpi('Total Trades', `${s.nonBE}`, 'flat',
+          `<span class="an-kpi-delta">${s.beCount ? `+${s.beCount} en break-even` : 'sin break-even'}</span>`, 'kpiTrades'),
+    ].join('')
   }
 
-  // ── Equity adaptativa ───────────────────────────────────────────────────
+  // ── Equity a ancho completo ─────────────────────────────────────────────
   function renderEquity(trades) {
     destroy('equity')
     // Granularidad: día en Mes/Trimestre, mes en Anual
@@ -282,45 +335,132 @@ const Charts = (() => {
     const keys = Object.keys(byKey).sort()
     let cum = 0
     const equity = keys.map(k => { cum += byKey[k]; return parseFloat(cum.toFixed(2)) })
+    const diario = keys.map(k => parseFloat(byKey[k].toFixed(2)))
     const labels = keys.map(k => period === 'year' ? MONTH_S[parseInt(k.slice(5, 7)) - 1] : k.slice(5))
     const last = equity[equity.length - 1] || 0
 
+    // Drawdown máximo desde el pico: es el dato que de verdad duele en futuros.
+    let pico = 0, ddMax = 0
+    equity.forEach(v => { if (v > pico) pico = v; if (pico - v > ddMax) ddMax = pico - v })
+
+    // En Anual cada punto es un MES, no un día: la unidad tiene que decirlo o el
+    // aviso de muestra corta miente sobre qué se está contando.
+    const uni = n => period === 'year' ? (n === 1 ? 'mes' : 'meses') : (n === 1 ? 'día' : 'días')
+
+    const nEl = document.getElementById('equityN')
+    if (nEl) nEl.textContent = keys.length
+      ? `${keys.length} ${uni(keys.length)} · máx. caída ${fmtCorto(ddMax)}`
+      : ''
+
+    const nota = document.getElementById('equityNota')
+    if (nota) {
+      nota.className = 'an-note'
+      nota.innerHTML = keys.length === 0
+        ? '<i class="ti ti-info-circle"></i> Sin operaciones en el período.'
+        : keys.length < 3
+          ? `<i class="ti ti-alert-triangle"></i> Solo ${keys.length} ${uni(keys.length)} con operaciones: la curva no describe una tendencia todavía.`
+          : ''
+      if (keys.length < 3 && keys.length > 0) nota.classList.add('an-note-warn')
+    }
+    if (!keys.length) return
+
     const ctx = document.getElementById('equityChart').getContext('2d')
-    // Color por signo: verde sobre cero, rojo bajo cero (por segmento y relleno)
     const segColor = c => (c.p0.parsed.y < 0 || c.p1.parsed.y < 0) ? COLORS.red : COLORS.accent
+
     instances.equity = new Chart(ctx, {
       type: 'line',
-      data: { labels, datasets: [
-        { label:'P&L Acumulado', data:equity, borderColor: last>=0?COLORS.accent:COLORS.red, borderWidth:3,
-          segment: { borderColor: segColor },
-          pointRadius:keys.length>30?2:4, pointHoverRadius:7, pointBorderWidth:2,
-          pointBackgroundColor: equity.map(v => v < 0 ? COLORS.red : COLORS.accent),
-          pointBorderColor:     equity.map(v => v < 0 ? COLORS.red : COLORS.accent),
-          tension:0.3, fill:true,
-          backgroundColor: c => {
-            const { chart } = c
-            const { ctx: cx, chartArea } = chart
-            if (!chartArea) return 'rgba(29,158,117,0.15)'
-            // Gradiente que parte del cero: verde arriba, rojo abajo
-            const yScale = chart.scales.y
-            const zeroY = yScale.getPixelForValue(0)
-            const top = chartArea.top, bottom = chartArea.bottom
-            const g = cx.createLinearGradient(0, top, 0, bottom)
-            const zeroStop = Math.max(0, Math.min(1, (zeroY - top) / (bottom - top)))
-            g.addColorStop(0, 'rgba(29,158,117,0.5)')
-            g.addColorStop(Math.max(0, zeroStop - 0.001), 'rgba(29,158,117,0.04)')
-            g.addColorStop(Math.min(1, zeroStop + 0.001), 'rgba(226,75,74,0.04)')
-            g.addColorStop(1, 'rgba(226,75,74,0.45)')
-            return g
-          },
+      data: { labels, datasets: [{
+        label: 'P&L Acumulado', data: equity,
+        borderColor: last >= 0 ? COLORS.accent : COLORS.red, borderWidth: 2.5,
+        segment: { borderColor: segColor },
+        // Solo el último punto visible: los intermedios ensucian y el tooltip ya
+        // los alcanza por índice.
+        pointRadius: c => c.dataIndex === equity.length - 1 ? 5 : 0,
+        pointHoverRadius: 6,
+        pointBackgroundColor: last >= 0 ? COLORS.accent : COLORS.red,
+        pointBorderColor: '#1a1a18', pointBorderWidth: 2.5,
+        tension: 0.35, fill: true, clip: 8,
+        backgroundColor: c => {
+          const { chart } = c
+          const { ctx: cx, chartArea } = chart
+          if (!chartArea) return 'rgba(29,158,117,0.15)'
+          const zeroY = chart.scales.y.getPixelForValue(0)
+          const top = chartArea.top, bottom = chartArea.bottom
+          // Si el lienzo aún no tiene alto (render con la sección oculta), la escala
+          // devuelve NaN y `addColorStop` lanza. Se cae al relleno plano.
+          if (!Number.isFinite(zeroY) || bottom - top <= 0) return 'rgba(29,158,117,0.15)'
+          const g = cx.createLinearGradient(0, top, 0, bottom)
+          const z = Math.max(0, Math.min(1, (zeroY - top) / (bottom - top)))
+          g.addColorStop(0, 'rgba(29,158,117,0.42)')
+          g.addColorStop(Math.max(0, z - 0.001), 'rgba(29,158,117,0.02)')
+          g.addColorStop(Math.min(1, z + 0.001), 'rgba(226,75,74,0.02)')
+          g.addColorStop(1, 'rgba(226,75,74,0.38)')
+          return g
         },
-      ]},
-      options: { ...baseOptions, interaction:{ mode:'index', intersect:false },
-        layout: { padding: { left: 12, right: 12, top: 8, bottom: 2 } },
-        plugins: { ...baseOptions.plugins,
-          legend:{ display:false },
-          tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => ` P&L acumulado: ${c.raw>=0?'+':''}$${c.raw}` } } } },
+      }] },
+      options: {
+        ...baseOptions,
+        interaction: { mode: 'index', intersect: false },
+        layout: { padding: { left: 4, right: 12, top: 12, bottom: 2 } },
+        plugins: {
+          ...baseOptions.plugins,
+          legend: { display: false },
+          tooltip: { enabled: false, external: tipEquity(labels, diario, equity) },
+        },
+        scales: {
+          x: { ...baseOptions.scales.x, grid: { display: false },
+               ticks: { color: COLORS.text, maxRotation: 0, autoSkip: true, maxTicksLimit: 10, font: { size: 11 } } },
+          y: { ...baseOptions.scales.y, border: { display: false },
+               grid: { color: 'rgba(255,255,255,0.04)' },
+               ticks: { color: COLORS.text, font: { size: 11 }, maxTicksLimit: 6, callback: v => fmtCorto(v) } },
+        },
+      },
+      plugins: [lineaCero],
     })
+  }
+
+  // Tooltip HTML propio: el de Chart.js no permite esta jerarquía (fecha arriba,
+  // el P&L del día grande y el acumulado debajo).
+  function tipEquity(labels, diario, equity) {
+    return ctx => {
+      const { chart, tooltip } = ctx
+      let el = chart.canvas.parentNode.querySelector('.an-tip')
+      if (!el) {
+        el = document.createElement('div')
+        el.className = 'an-tip'
+        chart.canvas.parentNode.appendChild(el)
+      }
+      if (tooltip.opacity === 0) { el.style.opacity = 0; return }
+      const i = tooltip.dataPoints?.[0]?.dataIndex
+      if (i == null) return
+      const d = diario[i], acc = equity[i]
+      el.innerHTML = `
+        <div class="an-tip-fecha">${labels[i]}</div>
+        <div class="an-tip-row ${d >= 0 ? 'an-tip-pos' : 'an-tip-neg'}"><span>Del día</span><b>${fmtDinero(d)}</b></div>
+        <div class="an-tip-row"><span>Acumulado</span><b style="color:var(--text)">${fmtDinero(acc)}</b></div>`
+      // Se ancla dentro del contenedor y se voltea si se sale por la derecha.
+      const w = el.offsetWidth
+      const x = tooltip.caretX + w + 16 > chart.width ? tooltip.caretX - w - 12 : tooltip.caretX + 12
+      el.style.opacity = 1
+      el.style.left = `${Math.max(0, x)}px`
+      el.style.top = `${Math.max(0, tooltip.caretY - 10)}px`
+    }
+  }
+
+  // Línea del cero: sin ella no se ve de un vistazo si la curva está en positivo.
+  const lineaCero = {
+    id: 'lineaCero',
+    beforeDatasetsDraw(chart) {
+      const y = chart.scales.y
+      if (!y || y.min > 0 || y.max < 0) return
+      const { ctx, chartArea } = chart
+      const py = y.getPixelForValue(0)
+      ctx.save()
+      ctx.beginPath(); ctx.setLineDash([4, 4]); ctx.lineWidth = 1
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)'
+      ctx.moveTo(chartArea.left, py); ctx.lineTo(chartArea.right, py); ctx.stroke()
+      ctx.restore()
+    },
   }
 
   // ── Barras P&L por sub-período ──────────────────────────────────────────
@@ -333,47 +473,95 @@ const Charts = (() => {
     const data = subs.map(sp => parseFloat(trades
       .filter(t => (t.trade_date || '') >= sp.from && (t.trade_date || '') <= sp.to)
       .reduce((a, t) => a + (parseFloat(t.profit) || 0), 0).toFixed(2)))
+
     instances.pnlBars = new Chart(document.getElementById('pnlBarsChart'), {
       type: 'bar',
-      data: { labels: subs.map(s => s.label), datasets: [{ label:'P&L',
-        data, backgroundColor: data.map(v => v>=0?'rgba(29,158,117,0.65)':'rgba(226,75,74,0.65)'),
-        borderColor: data.map(v => v>=0?'rgba(29,158,117,1)':'rgba(226,75,74,1)'), borderWidth:1, borderRadius:4,
-        maxBarThickness: 64, categoryPercentage: 0.8, barPercentage: 0.9 }] },
-      options: { ...baseOptions, layout: { padding: { right: 18, left: 2 } },
-        plugins: { ...baseOptions.plugins, legend:{ display:false },
-        tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => ` P&L: ${c.parsed.y>=0?'+':''}$${c.parsed.y.toFixed(2)}` } } },
-        scales: { ...baseOptions.scales,
-          x:{ ...baseOptions.scales.x, ticks:{ color:COLORS.text, maxRotation:0, autoSkip:false } },
-          y:{ ...baseOptions.scales.y, ticks:{ color:COLORS.text, callback:v=>`$${v}` } } } },
+      data: { labels: subs.map(s => s.label), datasets: [{
+        label: 'P&L', data,
+        backgroundColor: data.map(v => v >= 0 ? 'rgba(29,158,117,0.55)' : 'rgba(226,75,74,0.55)'),
+        hoverBackgroundColor: data.map(v => v >= 0 ? 'rgba(29,158,117,0.85)' : 'rgba(226,75,74,0.85)'),
+        borderColor: data.map(v => v >= 0 ? COLORS.accent : COLORS.red), borderWidth: 1.5,
+        borderRadius: 6, borderSkipped: false,
+        maxBarThickness: 46, categoryPercentage: 0.8, barPercentage: 0.9,
+      }] },
+      options: {
+        ...baseOptions, layout: { padding: { top: 20, right: 6, left: 2 } },
+        plugins: { ...baseOptions.plugins, legend: { display: false },
+          tooltip: { ...baseOptions.plugins.tooltip, displayColors: false,
+            callbacks: { label: c => ` ${fmtDinero(c.parsed.y)}` } } },
+        scales: {
+          x: { ...baseOptions.scales.x, grid: { display: false },
+               ticks: { color: COLORS.text, maxRotation: 0, autoSkip: false, font: { size: 11 } } },
+          y: { ...baseOptions.scales.y, border: { display: false },
+               grid: { color: 'rgba(255,255,255,0.04)' },
+               ticks: { color: COLORS.text, font: { size: 11 }, maxTicksLimit: 5, callback: v => fmtCorto(v) } },
+        },
+      },
+      plugins: [barValueLabels, lineaCero],
     })
   }
 
-  // ── P&L por hora (hora local) ───────────────────────────────────────────
+  // ── P&L medio por franja horaria ────────────────────────────────────────
   function renderPnlByHour(trades) {
     destroy('pnlByHour')
-    // Primeras 2 horas de la apertura de NY en hora local (08:30 a 10:30)
-    const slots = { '08:30':[], '09:00':[], '09:30':[], '10:00':[], '10:30':[] }
+    // El eje se recorta a las franjas CON datos. Antes iba fijo de 08:30 a 10:30
+    // y dos tercios del gráfico eran aire: un eje lleno de huecos hace parecer
+    // que faltan datos cuando lo que pasa es que ahí no se opera.
+    const slots = {}
     trades.forEach(t => {
       if (!t.entry_time) return
-      const [h,m] = t.entry_time.split(':').map(Number)
-      const sm = m<30?0:30
-      const key = `${p2(h)}:${sm===0?'00':'30'}`
-      if (slots[key] !== undefined) slots[key].push(parseFloat(t.profit) || 0)
+      const [h, m] = t.entry_time.split(':').map(Number)
+      const key = `${p2(h)}:${m < 30 ? '00' : '30'}`
+      ;(slots[key] ||= []).push(parseFloat(t.profit) || 0)
     })
-    const labels = Object.keys(slots)
-    const avgs = labels.map(k => slots[k].length ? parseFloat((slots[k].reduce((a,b)=>a+b,0)/slots[k].length).toFixed(2)) : null)
+    const labels = Object.keys(slots).sort()
+    const avgs = labels.map(k => parseFloat((slots[k].reduce((a, b) => a + b, 0) / slots[k].length).toFixed(2)))
+    const ns = labels.map(k => slots[k].length)
+
+    const nEl = document.getElementById('pnlByHourN')
+    if (nEl) nEl.textContent = labels.length ? `${labels.length} franja${labels.length > 1 ? 's' : ''}` : ''
+
+    // El promedio de una franja con 1-2 trades se dibuja igual de sólido que uno
+    // con 40. Se dice cuáles son.
+    const flojas = labels.filter((_, i) => ns[i] < 3)
+    const nota = document.getElementById('pnlByHourNota')
+    if (nota) {
+      nota.className = 'an-note'
+      if (!labels.length) nota.innerHTML = '<i class="ti ti-info-circle"></i> Sin operaciones en el período.'
+      else if (flojas.length) {
+        nota.classList.add('an-note-warn')
+        nota.innerHTML = `<i class="ti ti-alert-triangle"></i> ${flojas.join(', ')} ${flojas.length > 1 ? 'tienen' : 'tiene'} menos de 3 trades: su media aún no dice nada.`
+      } else nota.innerHTML = '<i class="ti ti-info-circle"></i> Hora local (Colombia). Solo se muestran las franjas con operaciones.'
+    }
+    if (!labels.length) return
+
     instances.pnlByHour = new Chart(document.getElementById('pnlByHourChart'), {
       type: 'bar',
-      data: { labels, datasets:[{ label:'P&L promedio/trade', data:avgs,
-        backgroundColor: avgs.map(v=>v===null?'rgba(255,255,255,0.05)':v>=0?COLORS.accent:COLORS.red),
-        borderRadius:6, borderSkipped:false, maxBarThickness:40, categoryPercentage:0.7, barPercentage:0.85 }] },
-      options: { ...baseOptions, layout:{ padding:{ top:22, bottom:2 } },
-        plugins: { ...baseOptions.plugins, legend:{ display:false },
-          tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => c.raw===null?'Sin trades':` ${c.raw>=0?'+':''}$${c.raw}` } } },
-        scales: { ...baseOptions.scales,
-          x:{ ...baseOptions.scales.x, grid:{ display:false }, ticks:{ color:COLORS.text, maxRotation:0 } },
-          y:{ ...baseOptions.scales.y, ticks:{ color:COLORS.text, callback:v=>`$${v}` } } } },
-      plugins: [ barValueLabels ],
+      data: { labels, datasets: [{
+        label: 'P&L medio', data: avgs,
+        backgroundColor: avgs.map(v => v >= 0 ? 'rgba(29,158,117,0.55)' : 'rgba(226,75,74,0.55)'),
+        hoverBackgroundColor: avgs.map(v => v >= 0 ? 'rgba(29,158,117,0.85)' : 'rgba(226,75,74,0.85)'),
+        borderColor: avgs.map(v => v >= 0 ? COLORS.accent : COLORS.red), borderWidth: 1.5,
+        borderRadius: 6, borderSkipped: false,
+        maxBarThickness: 40, categoryPercentage: 0.75, barPercentage: 0.85,
+      }] },
+      options: {
+        ...baseOptions, layout: { padding: { top: 20, bottom: 2 } },
+        plugins: { ...baseOptions.plugins, legend: { display: false },
+          tooltip: { ...baseOptions.plugins.tooltip, displayColors: false,
+            callbacks: {
+              label: c => ` Media ${fmtDinero(c.raw)}`,
+              afterLabel: c => `Sobre ${ns[c.dataIndex]} trade${ns[c.dataIndex] > 1 ? 's' : ''}`,
+            } } },
+        scales: {
+          x: { ...baseOptions.scales.x, grid: { display: false },
+               ticks: { color: COLORS.text, maxRotation: 0, font: { size: 11 } } },
+          y: { ...baseOptions.scales.y, border: { display: false },
+               grid: { color: 'rgba(255,255,255,0.04)' },
+               ticks: { color: COLORS.text, font: { size: 11 }, maxTicksLimit: 5, callback: v => fmtCorto(v) } },
+        },
+      },
+      plugins: [barValueLabels, lineaCero],
     })
   }
 
@@ -382,58 +570,82 @@ const Charts = (() => {
     destroy('results')
     const targets = trades.filter(isWinTrade).length
     const stops   = trades.filter(isLossTrade).length
-    const tot = targets + stops
-    const winRate = tot ? Math.round(targets / tot * 100) : 0
+    const be      = trades.filter(t => BE(t)).length
+    const tot     = targets + stops
+    const partes  = [
+      { label: 'Target', n: targets, color: COLORS.accent },
+      { label: 'Stop',   n: stops,   color: COLORS.red },
+    ]
+    if (be) partes.push({ label: 'Break-even', n: be, color: 'rgba(255,255,255,0.22)' })
+
+    const centro = document.getElementById('resultsCentro')
+    const leyenda = document.getElementById('resultsLeyenda')
+    if (centro) centro.innerHTML = tot
+      ? `<span class="an-donut-big">${Math.round(targets / tot * 100)}%</span><span class="an-donut-sub">acierto</span>`
+      : `<span class="an-donut-sub">sin datos</span>`
+    // La leyenda lleva SOLO el nombre y su color: el % ya está dentro del
+    // segmento y el conteo en el tooltip. Cada dato en un sitio.
+    if (leyenda) leyenda.innerHTML = tot
+      ? partes.filter(p => p.n).map(p =>
+          `<span class="an-legend-item"><span class="an-legend-dot" style="background:${p.color}"></span>${p.label}</span>`).join('')
+      : ''
+    if (!tot && !be) return
+
     instances.results = new Chart(document.getElementById('resultsChart'), {
       type: 'doughnut',
-      data: { labels:['Target','Stop'], datasets:[{ data:[targets,stops],
-        backgroundColor:[COLORS.accent, COLORS.red], borderWidth:0,
-        spacing:3, borderRadius:6, hoverOffset:8 }] },
-      options: { ...baseOptions, cutout:'70%', scales:{}, layout:{ padding:6 },
-        plugins: { ...baseOptions.plugins,
-          legend:{ display:true, position:'bottom',
-            labels:{ color:'#F4F3EF', usePointStyle:true, pointStyle:'circle', padding:18, font:{ size:13 },
-              generateLabels: chart => {
-                const ds = chart.data.datasets[0]
-                return chart.data.labels.map((l, i) => ({
-                  text: `${l}  ·  ${ds.data[i]} (${tot ? Math.round(ds.data[i] / tot * 100) : 0}%)`,
-                  fillStyle: ds.backgroundColor[i], strokeStyle: 'transparent', pointStyle: 'circle',
-                  fontColor: '#F4F3EF', index: i,
-                }))
-              } } },
-          tooltip:{ ...baseOptions.plugins.tooltip, callbacks:{ label: c => {
-            const pct = tot ? Math.round(c.parsed / tot * 100) : 0
-            return ` ${c.label}: ${c.parsed} (${pct}%)`
-          } } } } },
-      plugins: [{
-        id: 'resultsCenter',
-        afterDraw(chart) {
-          const { ctx } = chart
-          const meta = chart.getDatasetMeta(0)
-          if (!meta.data.length) return
-          const { x, y } = meta.data[0]   // centro del doughnut
-          ctx.save()
-          ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-          ctx.fillStyle = tot ? (winRate >= 50 ? COLORS.accent : COLORS.red) : COLORS.text
-          ctx.font = '700 28px system-ui, sans-serif'
-          ctx.fillText(tot ? `${winRate}%` : '—', x, y - 9)
-          ctx.fillStyle = COLORS.text
-          ctx.font = '500 11px system-ui, sans-serif'
-          ctx.fillText('Acierto', x, y + 13)
-          if (tot) ctx.fillText(`${tot} trades`, x, y + 28)
-          ctx.restore()
-        }
-      }],
+      data: { labels: partes.map(p => p.label), datasets: [{
+        data: partes.map(p => p.n), backgroundColor: partes.map(p => p.color),
+        borderWidth: 0, spacing: 3, borderRadius: 6, hoverOffset: 6,
+      }] },
+      options: {
+        ...baseOptions, cutout: '72%', scales: {}, layout: { padding: 4 },
+        plugins: { ...baseOptions.plugins, legend: { display: false },
+          tooltip: { ...baseOptions.plugins.tooltip, displayColors: false,
+            callbacks: { label: c => {
+              const total = partes.reduce((a, x) => a + x.n, 0)
+              return ` ${c.label}: ${c.raw} de ${total} (${Math.round(c.raw / total * 100)}%)`
+            } } } },
+      },
+      plugins: [pctDentro],
     })
   }
 
-  // ── Tabla resumen adaptativa ────────────────────────────────────────────
+  // Porcentaje DENTRO de cada segmento (solo los ≥8%, si no se amontonan).
+  const pctDentro = {
+    id: 'pctDentro',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart
+      const meta = chart.getDatasetMeta(0)
+      const data = chart.data.datasets[0].data
+      const total = data.reduce((a, b) => a + b, 0)
+      if (!total) return
+      ctx.save()
+      ctx.font = '700 11px system-ui, sans-serif'
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+      meta.data.forEach((arc, i) => {
+        const pct = data[i] / total
+        if (pct < 0.08) return
+        const { x, y } = arc.tooltipPosition()
+        ctx.fillStyle = '#0f0f0e'
+        ctx.fillText(`${Math.round(pct * 100)}%`, x, y)
+      })
+      ctx.restore()
+    },
+  }
+
+  // ── Tabla resumen ───────────────────────────────────────────────────────
   function renderTabla(trades, sesiones, casByDate, subs) {
     document.getElementById('analysisTablaTitle').textContent =
       period === 'month'   ? 'Resumen por semana del mes'
       : period === 'quarter' ? 'Resumen por mes del trimestre'
       : 'Resumen por mes del año'
     document.getElementById('analysisTablaCol1').textContent = period === 'month' ? 'Semana' : 'Mes'
+
+    // Escala común de la barra inline: el mayor |P&L| del período. Así las barras
+    // de dos filas son comparables entre sí, que es todo el propósito.
+    const maxAbs = Math.max(...subs.map(sp => Math.abs(trades
+      .filter(t => (t.trade_date || '') >= sp.from && (t.trade_date || '') <= sp.to)
+      .reduce((a, t) => a + (parseFloat(t.profit) || 0), 0))), 1)
 
     let cum = 0
     const rows = subs.map(sp => {
@@ -444,25 +656,27 @@ const Charts = (() => {
       const disc = calcDiscipline(ss)
       const hasData = tt.length > 0 || ss.filter(s => !s.no_opero).length > 0
       if (!hasData) {
-        return `<tr class="annual-row-empty"><td class="annual-month-name">${sp.label}</td><td colspan="7" class="annual-empty-cell">— sin actividad —</td></tr>`
+        return `<tr class="an-t-vacia"><td class="an-t-name">${sp.label}</td><td colspan="7">— sin actividad —</td></tr>`
       }
       const rent = capital > 0 ? `${(st.pnl / capital * 100).toFixed(2)}%` : '—'
       const efec = st.efec != null ? `${st.efec.toFixed(1)}%` : '—'
-      const efecCls = st.efec == null ? '' : st.efec >= 50 ? 'annual-pos' : st.efec >= 40 ? 'annual-warn' : 'annual-neg'
+      const efecCls = st.efec == null ? 'an-t-neutral' : st.efec >= 50 ? 'an-t-pos' : st.efec >= 40 ? '' : 'an-t-neg'
       const discStr = disc != null ? `${disc}%` : '—'
-      const discCls = disc == null ? '' : disc >= 80 ? 'annual-pos' : disc >= 55 ? 'annual-warn' : 'annual-neg'
-      const estado = st.pnl > 0 ? '<span class="annual-badge annual-badge-pos">▲ Positivo</span>'
-        : st.pnl < 0 ? '<span class="annual-badge annual-badge-neg">▼ Negativo</span>'
-        : '<span class="annual-badge annual-badge-be">— Neutro</span>'
+      const discCls = disc == null ? 'an-t-neutral' : disc >= 80 ? 'an-t-pos' : disc >= 55 ? '' : 'an-t-neg'
+      const estado = st.pnl > 0 ? '<span class="an-pill an-pill-pos"><i class="ti ti-trending-up"></i>Positivo</span>'
+        : st.pnl < 0 ? '<span class="an-pill an-pill-neg"><i class="ti ti-trending-down"></i>Negativo</span>'
+        : '<span class="an-pill an-pill-be"><i class="ti ti-minus"></i>Neutro</span>'
+      const w = Math.round(Math.abs(st.pnl) / maxAbs * 100)
+      const bc = st.pnl >= 0 ? 'var(--accent)' : 'var(--red)'
       return `
-        <tr class="annual-row${st.pnl>0?' annual-row-pos':st.pnl<0?' annual-row-neg':''}">
-          <td class="annual-month-name">${sp.label}</td>
-          <td class="${st.pnl>0?'annual-pos':st.pnl<0?'annual-neg':''} fw-600">${fmtDinero(st.pnl)}</td>
-          <td class="${cum>=0?'annual-pos':'annual-neg'}">${fmtDinero(cum)}</td>
-          <td>${rent}</td>
-          <td class="${efecCls}">${efec}</td>
-          <td class="${discCls}">${discStr}</td>
-          <td>${st.total || '—'}</td>
+        <tr>
+          <td class="an-t-name">${sp.label}</td>
+          <td class="num an-t-bar ${st.pnl > 0 ? 'an-t-pos' : st.pnl < 0 ? 'an-t-neg' : ''}" style="--w:${w}%;--bc:${bc}">${fmtDinero(st.pnl)}</td>
+          <td class="num ${cum >= 0 ? 'an-t-pos' : 'an-t-neg'}">${fmtDinero(cum)}</td>
+          <td class="num">${rent}</td>
+          <td class="num ${efecCls}">${efec}</td>
+          <td class="num ${discCls}">${discStr}</td>
+          <td class="num">${st.total || '—'}</td>
           <td>${estado}</td>
         </tr>`
     }).join('')
@@ -471,21 +685,23 @@ const Charts = (() => {
     const totDisc = calcDiscipline(sesiones)
     const totRent = capital > 0 ? `${(tot.pnl / capital * 100).toFixed(2)}%` : '—'
     const totEfec = tot.efec != null ? `${tot.efec.toFixed(1)}%` : '—'
+    const totEstado = tot.pnl > 0 ? '<span class="an-pill an-pill-pos"><i class="ti ti-trending-up"></i>Positivo</span>'
+      : tot.pnl < 0 ? '<span class="an-pill an-pill-neg"><i class="ti ti-trending-down"></i>Negativo</span>'
+      : '<span class="an-pill an-pill-be"><i class="ti ti-minus"></i>Neutro</span>'
 
-    const totEstado = tot.pnl > 0 ? '<span class="annual-badge annual-badge-pos">▲ Positivo</span>'
-      : tot.pnl < 0 ? '<span class="annual-badge annual-badge-neg">▼ Negativo</span>'
-      : '<span class="annual-badge annual-badge-be">— Neutro</span>'
+    const nEl = document.getElementById('analysisTablaN')
+    if (nEl) nEl.textContent = `${tot.total} trade${tot.total === 1 ? '' : 's'}`
 
     document.getElementById('analysisTablaBody').innerHTML = rows
     document.getElementById('analysisTablaFoot').innerHTML = `
-      <tr class="annual-totals-row">
-        <td class="annual-totals-label">Total ${periodLabel()}</td>
-        <td class="${tot.pnl>=0?'annual-totals-pos':'annual-totals-neg'}">${fmtDinero(tot.pnl)}</td>
-        <td class="${tot.pnl>=0?'annual-totals-pos':'annual-totals-neg'}">${fmtDinero(tot.pnl)}</td>
-        <td class="${capital<=0?'annual-totals-neutral':tot.pnl>=0?'annual-totals-pos':'annual-totals-neg'}">${totRent}</td>
-        <td class="${tot.efec==null?'annual-totals-neutral':tot.efec>=50?'annual-totals-pos':tot.efec>=40?'annual-totals-warn':'annual-totals-neg'}">${totEfec}</td>
-        <td class="${totDisc==null?'annual-totals-neutral':totDisc>=80?'annual-totals-pos':totDisc>=55?'annual-totals-warn':'annual-totals-neg'}">${totDisc!=null?totDisc+'%':'—'}</td>
-        <td class="annual-totals-neutral">${tot.total}</td>
+      <tr>
+        <td class="an-t-name">Total ${periodLabel()}</td>
+        <td class="num ${tot.pnl >= 0 ? 'an-t-pos' : 'an-t-neg'}">${fmtDinero(tot.pnl)}</td>
+        <td class="num ${tot.pnl >= 0 ? 'an-t-pos' : 'an-t-neg'}">${fmtDinero(tot.pnl)}</td>
+        <td class="num">${totRent}</td>
+        <td class="num">${totEfec}</td>
+        <td class="num">${totDisc != null ? totDisc + '%' : '—'}</td>
+        <td class="num">${tot.total}</td>
         <td>${totEstado}</td>
       </tr>`
   }

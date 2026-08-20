@@ -998,43 +998,30 @@
         <!-- Contenido exportable -->
         <div id="analysisExportArea">
 
-        <!-- KPI Strip -->
+        <!-- 1 · KPIs — los 7 al mismo peso; la jerarquía va DENTRO de cada tarjeta
+             (etiqueta pequeña · número grande · variación), no entre ellas. -->
         <div id="analysisKpiStrip"></div>
 
-        <!-- Equity + P&L por período (una fila) -->
-        <div class="annual-charts-row">
-          <div class="card">
-            <div class="chart-header">
-              <h3><i class="ti ti-trending-up"></i> Curva de Equity — P&amp;L Acumulado</h3>
-              <button class="help-btn" data-help="equity" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-            </div>
-            <canvas id="equityChart" height="110"></canvas>
-          </div>
-          <div class="card">
-            <div class="chart-header">
-              <h3><i class="ti ti-chart-bar"></i> <span id="pnlBarsTitle">P&amp;L por semana</span></h3>
-              <button class="help-btn" data-help="pnlBars" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-            </div>
-            <canvas id="pnlBarsChart" height="110"></canvas>
-          </div>
-        </div>
-
-        <!-- Tabla resumen adaptativa -->
-        <div class="card annual-table-card">
-          <div class="chart-header">
+        <!-- 2 · Resumen: es lo que responde "¿cómo fue el período?" fila a fila.
+             Se queda como <table> de verdad: la alineación de columnas está
+             garantizada por construcción, que es justo lo que una tabla falsa de
+             divs con flex no puede prometer. -->
+        <div class="an-card">
+          <div class="an-card-head">
             <h3><i class="ti ti-table"></i> <span id="analysisTablaTitle">Resumen por semana</span></h3>
+            <span class="an-card-n" id="analysisTablaN"></span>
           </div>
-          <div class="annual-table-wrap">
-            <table class="annual-table">
+          <div class="an-table-wrap">
+            <table class="an-table">
               <thead>
                 <tr>
                   <th id="analysisTablaCol1">Semana</th>
-                  <th>P&amp;L Neto</th>
-                  <th>Acumulado</th>
-                  <th>Rentabilidad</th>
-                  <th>Efectividad</th>
-                  <th>Disciplina</th>
-                  <th>Trades</th>
+                  <th class="num">P&amp;L Neto</th>
+                  <th class="num">Acumulado</th>
+                  <th class="num">Rentab.</th>
+                  <th class="num">Efectiv.</th>
+                  <th class="num">Discip.</th>
+                  <th class="num">Trades</th>
                   <th>Estado</th>
                 </tr>
               </thead>
@@ -1044,21 +1031,49 @@
           </div>
         </div>
 
-        <!-- Gráficas operativas -->
-        <div class="charts-grid">
-          <div class="chart-card">
-            <div class="chart-header">
-              <h3><i class="ti ti-clock"></i> P&amp;L promedio por franja horaria</h3>
-              <button class="help-btn" data-help="pnlByHour" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+        <!-- 3 · Curva de Equity a ancho completo -->
+        <div class="an-card">
+          <div class="an-card-head">
+            <h3><i class="ti ti-trending-up"></i> Curva de Equity</h3>
+            <div class="an-head-right">
+              <span class="an-card-n" id="equityN"></span>
+              <button class="help-btn" data-help="equity" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
             </div>
-            <canvas id="pnlByHourChart"></canvas>
           </div>
-          <div class="chart-card">
-            <div class="chart-header">
+          <div class="an-chart an-chart-tall"><canvas id="equityChart"></canvas></div>
+          <div class="an-note" id="equityNota"></div>
+        </div>
+
+        <!-- 4 · Las tres tarjetas -->
+        <div class="an-charts-3">
+          <div class="an-card">
+            <div class="an-card-head">
+              <h3><i class="ti ti-chart-bar"></i> <span id="pnlBarsTitle">P&amp;L por semana</span></h3>
+              <button class="help-btn" data-help="pnlBars" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
+            <div class="an-chart"><canvas id="pnlBarsChart"></canvas></div>
+          </div>
+          <div class="an-card">
+            <div class="an-card-head">
+              <h3><i class="ti ti-clock"></i> P&amp;L medio por franja</h3>
+              <div class="an-head-right">
+                <span class="an-card-n" id="pnlByHourN"></span>
+                <button class="help-btn" data-help="pnlByHour" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+              </div>
+            </div>
+            <div class="an-chart"><canvas id="pnlByHourChart"></canvas></div>
+            <div class="an-note" id="pnlByHourNota"></div>
+          </div>
+          <div class="an-card">
+            <div class="an-card-head">
               <h3><i class="ti ti-chart-donut"></i> Distribución de resultados</h3>
               <button class="help-btn" data-help="results" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
             </div>
-            <canvas id="resultsChart"></canvas>
+            <div class="an-chart an-chart-donut">
+              <canvas id="resultsChart"></canvas>
+              <div class="an-donut-center" id="resultsCentro"></div>
+            </div>
+            <div class="an-legend" id="resultsLeyenda"></div>
           </div>
         </div>
         </div><!-- /analysisExportArea -->
