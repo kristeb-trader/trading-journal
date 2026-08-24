@@ -573,6 +573,7 @@ const Metrics = (() => {
         value: `<span class="ts-t">${targets}</span><span class="ts-sep">/</span><span class="ts-s">${stops}</span>`,
         icon: 'ti-scale',
         color: 'neutral',
+        tono: targets > stops ? 'green' : stops > targets ? 'red' : 'neutral',
         sub: `Ratio T/S: ${ratioTS}`,
       },
       {
@@ -584,8 +585,11 @@ const Metrics = (() => {
       },
     ]
 
+    // `tono` pinta el filete superior de la tarjeta. Por defecto es el color del
+    // valor, pero puede ir aparte: en Targets/Stops el valor no lleva un color
+    // único (cada cifra tiene el suyo) y el filete sí debe decir quién manda.
     document.getElementById('metricsGrid').innerHTML = cards.map(c => `
-      <div class="metric-card${c.clickable ? ' clickable' : ''}" ${c.action ? `data-action="${c.action}"` : ''}>
+      <div class="metric-card${c.clickable ? ' clickable' : ''}" data-tono="${c.tono || c.color}" ${c.action ? `data-action="${c.action}"` : ''}>
         <div class="metric-icon color-${c.color}">
           <i class="ti ${c.icon}"></i>
         </div>

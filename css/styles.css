@@ -678,21 +678,33 @@ body[data-modo-local]::before {
    rápida, así que el dato manda y se centra. El icono y el `sub` se ocultan en
    todos los anchos, no solo en móvil. */
 .metrics-grid-compact { grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 10px; margin-bottom: 44px; }
+/* Mismo componente visual que los KPI de Análisis (`.an-kpi`): filete de 2 px
+   arriba con el color del resultado, servido por una variable local `--c`, para
+   que el estado se lea antes que el número. Se replica el patrón, no se
+   reutiliza la clase, porque estas tarjetas son `.metric-card` y las de Análisis
+   se generan aparte — pero si algún día se unifican, este es el bloque a borrar. */
 .metrics-grid-compact .metric-card {
-  padding: 13px 10px 14px; gap: 0;
+  --c: var(--text3);
+  position: relative; overflow: hidden;
+  padding: 14px 10px 14px; gap: 0;
   flex-direction: column; align-items: center; text-align: center;
   border-radius: 14px;
-  /* Degradado muy corto: da volumen sin inventar un color nuevo */
-  background: linear-gradient(180deg, var(--bg3) 0%, var(--card) 60%);
-  border-color: rgba(255,255,255,0.055);
+  background: var(--card);
   transition: border-color var(--transition), transform var(--transition);
 }
+.metrics-grid-compact .metric-card::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--c);
+}
+.metrics-grid-compact .metric-card[data-tono="green"]   { --c: var(--accent-txt); }
+.metrics-grid-compact .metric-card[data-tono="red"]     { --c: var(--red-txt); }
+.metrics-grid-compact .metric-card[data-tono="warning"] { --c: var(--warning-txt); }
 .metrics-grid-compact .metric-card:hover { transform: translateY(-1px); }
 .metrics-grid-compact .metric-icon { display: none; }
 .metrics-grid-compact .metric-body { width: 100%; }
 .metrics-grid-compact .metric-label {
-  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em;
-  font-weight: 600; color: var(--text3); margin-bottom: 7px;
+  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.07em;
+  font-weight: 700; color: var(--text3); margin-bottom: 7px;
   display: flex; align-items: center; justify-content: center; gap: 3px;
 }
 .metrics-grid-compact .metric-value {

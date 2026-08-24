@@ -2143,10 +2143,17 @@ Dos cambios de forma, ninguno de cálculo.
 
 ### Las tarjetas KPI
 
-Etiqueta y valor **centrados**, número de `1.05rem` a **`1.6rem`**, radio 14 px y un
-degradado corto (`--bg3` → `--card`) que da volumen sin inventar un color. El valor pasa a
-las variantes **`-txt`** de cada familia: en esta rejilla es texto sobre fondo oscuro y la
-base se veía apagada — el error típico que avisa `.claude/rules/estilos.md`.
+Etiqueta y valor **centrados**, número de `1.05rem` a **`1.6rem`**, y el valor pasa a las
+variantes **`-txt`** de cada familia: en esta rejilla es texto sobre fondo oscuro y la base
+se veía apagada — el error típico que avisa `.claude/rules/estilos.md`.
+
+Y se adopta el **mismo componente visual que los KPI de Análisis** (`.an-kpi`, 19 ago):
+fondo plano `--card`, radio 14 px y un **filete de 2 px arriba** con el color del resultado,
+servido por una variable local `--c`. El tono va en `data-tono` sobre la tarjeta, separado
+del color del valor: Targets/Stops no tiene un color de valor único —cada cifra lleva el
+suyo— pero su filete sí debe decir quién manda. Se replicó el patrón en vez de reutilizar la
+clase porque estas son `.metric-card` y las de Análisis se generan aparte; si algún día se
+unifican, el bloque de `.metrics-grid-compact` es lo que se borra.
 
 **Targets / Stops lleva un color por cifra**, no uno por tarjeta: `<span class="ts-t">` en
 verde y `<span class="ts-s">` en rojo, con la barra en `--text3`. Pintar la tarjeta entera
