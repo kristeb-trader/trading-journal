@@ -261,44 +261,6 @@ const Metrics = (() => {
     return { total: r.total, ok: r.ok, pct: r.pct ?? 0 }
   }
 
-  // Modal "Dejé de ganar"
-  function openDejeGanarModal(s) {
-    setModalTitle('ti-mood-sad', 'Dejé de ganar')
-    if (!s.total) {
-      document.getElementById('disciplineModalContent').innerHTML =
-        '<p style="padding:20px;color:var(--accent)">✅ Sin setups perdidos en el período.</p>'
-      document.getElementById('disciplineModal').classList.remove('hidden')
-      return
-    }
-    const rows = s.items.map(c => {
-      const dow = DAYS[new Date(c.sesion_date + 'T12:00:00').getDay()]
-      const resClass = c.resultado === 'T' ? 'cas-badge-t' : 'cas-badge-s'
-      const tipo = { psicologico:'🧠', analitico:'📐', operativo:'⚙️', marcado:'🗺️' }[c.tipo] || '•'
-      return `
-        <div class="disc-fail-day">
-          <div class="disc-fail-day-header">
-            <span class="disc-date-dow">${dow}</span>
-            <span class="disc-date-val">${c.sesion_date}</span>
-            <span class="${resClass}">${c.resultado}</span>
-          </div>
-          <div class="disc-fail-tags">
-            <span class="disc-fail-tag">${tipo} ${c.casuistica}</span>
-          </div>
-        </div>`
-    }).join('')
-
-    document.getElementById('disciplineModalContent').innerHTML = `
-      <div style="padding:16px 20px 20px">
-        <div style="display:flex;gap:16px;margin-bottom:14px">
-          <span style="color:var(--accent);font-size:0.85rem"><strong>${s.targets}</strong> targets dejados pasar</span>
-          <span style="color:var(--red);font-size:0.85rem"><strong>${s.stops}</strong> stops evitados</span>
-        </div>
-        <p class="disc-section-title">Detalle por día</p>
-        ${rows}
-      </div>`
-    document.getElementById('disciplineModal').classList.remove('hidden')
-  }
-
   // Modal "Experimentos"
   function openExperimentosModal(stats, minMuestras, baseWinRate = null) {
     setModalTitle('ti-flask', 'Experimentos')
@@ -523,24 +485,6 @@ const Metrics = (() => {
       fechasConError: [...fechasConError],
     }
 
-    // ── Dejé de ganar (setups que NO tomaste: solo días no operados) ──────
-    // Restringido a días con no_opero o setup_valido_no_tomado; en días operados
-    // el T/S de un error mezcla conceptos (sí entraste), así que no cuentan aquí.
-    const noOperoDates = new Set(
-      activeSesiones.filter(s => s.no_opero || s.setup_valido_no_tomado).map(s => s.sesion_date)
-    )
-    const dgCas    = periodCasuisticas.filter(c => noOperoDates.has(c.sesion_date))
-    const perdidas = dgCas.filter(c => c.resultado === 'T')
-    const ganadas  = dgCas.filter(c => c.resultado === 'S')
-    const dejeGanarStat = {
-      total: perdidas.length + ganadas.length,
-      targets: perdidas.length,
-      stops: ganadas.length,
-      items: dgCas
-        .filter(c => c.resultado === 'T' || c.resultado === 'S')
-        .sort((a, b) => b.sesion_date.localeCompare(a.sesion_date)),
-    }
-
     // ── Impacto $ de errores: P&L medio día limpio vs con error + costo en stops ──
     const pnlDia = d => (tradesByDate[d] || []).reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
     const diasOpConError = Object.keys(tradesByDate).filter(d => fechasConError.has(d))
@@ -610,18 +554,30 @@ const Metrics = (() => {
     const MIN_MUESTRAS = 20
     const expConSugerencia = expStats.filter(e => e.conRes >= MIN_MUESTRAS)
 
+    // Totales de operaciones con resultado (el break-even no es ni target ni stop).
+    const beTrades = trades.length - nonBETrades.length
+    const ratioTS  = stops > 0 ? (targets / stops).toFixed(2) : targets > 0 ? '∞' : '—'
+
     const cards = [
       { label: 'P&L Neto', value: fmtDinero(netPnl), icon: 'ti-currency-dollar', color: netPnl >= 0 ? 'green' : 'red', sub: `Promedio: ${fmtDinero(avgPnl)}/día` },
-      { label: 'Acierto', value: `${winRate}%`, icon: 'ti-target', color: parseFloat(winRate) >= 50 ? 'green' : 'red', sub: `${targets} targets / ${stops} stops` },
       { label: 'Disciplina', value: `${disciplinaProceso}%`, icon: 'ti-checkup-list', color: disciplinaProceso >= 80 ? 'green' : disciplinaProceso >= 50 ? 'warning' : 'red', sub: chkItemsTotal > 0 ? `${chkItemsOk}/${chkItemsTotal} ítems de checklist${trendDisc}` : 'Sin días operados', clickable: true, action: 'disc-detail' },
       { label: 'Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días${costoErrores > 0 ? ` · ≈ <span style="color:var(--red)">-$${fmtMiles(costoErrores)}</span>` : ''}${trendErr}` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
-      { label: 'Dejé de ganar', value: dejeGanarStat.targets > 0 ? `${dejeGanarStat.targets} ⚠️` : '0 ✅', icon: 'ti-mood-sad', color: dejeGanarStat.targets === 0 ? 'green' : dejeGanarStat.targets <= 2 ? 'warning' : 'red', sub: dejeGanarStat.total > 0 ? `${dejeGanarStat.targets}T · ${dejeGanarStat.stops}S dejados pasar` : 'Sin setups perdidos', clickable: dejeGanarStat.total > 0, action: 'deje-ganar' },
+      // El desglose T/S vive ahora en su propia tarjeta, así que aquí va el tamaño
+      // de la muestra: un 60% sobre 5 operaciones no dice lo mismo que sobre 80.
+      { label: 'Acierto', value: `${winRate}%`, icon: 'ti-target', color: parseFloat(winRate) >= 50 ? 'green' : 'red', sub: nonBETrades.length > 0 ? `sobre ${nonBETrades.length} operaciones${beTrades > 0 ? ` · ${beTrades} en B.E.` : ''}` : 'Sin operaciones' },
+      {
+        label: 'Targets / Stops',
+        value: `${targets} / ${stops}`,
+        icon: 'ti-scale',
+        color: targets > stops ? 'green' : stops > targets ? 'red' : 'neutral',
+        sub: `Ratio T/S: ${ratioTS}`,
+      },
       {
         label: 'Días conectados',
         value: `${desglose.trabajo}`,
         icon: 'ti-calendar-check',
         color: 'neutral',
-        sub: `Ratio T/S: ${desglose.stops > 0 ? (desglose.targets / desglose.stops).toFixed(2) : desglose.targets > 0 ? '∞' : '—'}`,
+        sub: `de ${desglose.totalHabiles} días hábiles`,
       },
     ]
 
@@ -643,9 +599,6 @@ const Metrics = (() => {
     })
     document.querySelector('[data-action="disc-errors"]')?.addEventListener('click', () => {
       if (typeof Nav !== 'undefined') Nav.go('disciplina')
-    })
-    document.querySelector('[data-action="deje-ganar"]')?.addEventListener('click', () => {
-      openDejeGanarModal(dejeGanarStat)
     })
     document.querySelector('[data-action="experimentos"]')?.addEventListener('click', () => {
       openExperimentosModal(expStats, MIN_MUESTRAS, nonBETrades.length > 0 ? parseFloat(winRate) : null)
@@ -785,8 +738,7 @@ const Metrics = (() => {
       if (!dm.classList.contains('hidden')) dm.classList.add('hidden')
     })
 
-    // Clic en una fecha dentro de un modal de disciplina (p. ej. "Dejé de ganar")
-    // → abre el detalle del día.
+    // Clic en una fecha dentro de un modal de disciplina → abre el detalle del día.
     document.getElementById('disciplineModalContent').addEventListener('click', async e => {
       const dayEl = e.target.closest('.disc-fail-day[data-date]')
       if (!dayEl) return

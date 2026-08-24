@@ -2308,6 +2308,28 @@ colisión → `APEX-999999-15` · `Sim101`.
 
 ---
 
+### Tarjetas del Calendario: fuera "Dejé de ganar", entran Targets/Stops
+
+Orden nuevo de `#metricsGrid`: **P&L Neto · Disciplina · Errores · Acierto · Targets /
+Stops · Días conectados**.
+
+- **Fuera "Dejé de ganar"** — con la tarjeta se fue todo lo que colgaba de ella y quedaba
+  inalcanzable: `openDejeGanarModal()` (36 líneas), el cálculo de `dejeGanarStat` sobre
+  `setup_valido_no_tomado` (18 líneas) y su handler de clic.
+- **Nueva "Targets / Stops"** — valor `T / S` sobre los trades del período sin break-even,
+  color según cuál domina, `sub` con el ratio.
+- **`Acierto`** ya no repite `12 targets / 5 stops` en su `sub` (ahora es una tarjeta): pasa
+  a decir el tamaño de la muestra, que es lo que le falta a un porcentaje suelto.
+- **`Días conectados`** ya no lleva un `Ratio T/S` calculado sobre **días** —dos ratios
+  distintos con el mismo nombre en la misma fila— sino `de N días hábiles`.
+
+> **Ojo:** esta rejilla es `metrics-grid-compact`, que oculta `.metric-icon` y `.metric-sub`
+> **en todos los anchos**. Así que en Calendario solo se ven etiqueta y valor: los `sub` de
+> arriba están en el DOM pero no se pintan, y el icono de una tarjeta nueva da igual cuál
+> sea. Verificado en la copia local: las 6 tarjetas en orden, consola limpia.
+
+---
+
 ## Checkpoint Ago 2026 (3) — Dashboard de Disciplina: el porqué de cada fallo (6 ago)
 
 Sesión sobre el tablero por fase. Kris preguntó por qué "Target sin zonas en contra"
