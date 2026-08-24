@@ -566,10 +566,13 @@ const Metrics = (() => {
       // de la muestra: un 60% sobre 5 operaciones no dice lo mismo que sobre 80.
       { label: 'Acierto', value: `${winRate}%`, icon: 'ti-target', color: parseFloat(winRate) >= 50 ? 'green' : 'red', sub: nonBETrades.length > 0 ? `sobre ${nonBETrades.length} operaciones${beTrades > 0 ? ` · ${beTrades} en B.E.` : ''}` : 'Sin operaciones' },
       {
+        // Cada cifra con el color de SU resultado: el 4 en verde y el 7 en rojo.
+        // Pintar la tarjeta entera de un color decía "vas bien/mal", que es lo
+        // que ya dice Acierto — aquí lo que importa es el reparto.
         label: 'Targets / Stops',
-        value: `${targets} / ${stops}`,
+        value: `<span class="ts-t">${targets}</span><span class="ts-sep">/</span><span class="ts-s">${stops}</span>`,
         icon: 'ti-scale',
-        color: targets > stops ? 'green' : stops > targets ? 'red' : 'neutral',
+        color: 'neutral',
         sub: `Ratio T/S: ${ratioTS}`,
       },
       {
@@ -680,31 +683,97 @@ const Metrics = (() => {
     const dates = Object.keys(byDate).sort()
     let cum = 0
     const data = dates.map(d => { cum += byDate[d]; return parseFloat(cum.toFixed(2)) })
-    const UP = '#1D9E75', DOWN = '#E24B4A'
+    // Un solo color para la serie, el del resultado con el que se cierra el mes.
+    // Antes la línea cambiaba de color tramo a tramo y con puntos gordos en cada
+    // día: mucho ruido para una curva que solo tiene que contar una trayectoria.
+    // Un mes sin trades sigue pintando los ejes vacíos, como hacía antes: dejar
+    // el lienzo en blanco bajo un título parece que algo se rompió.
+    const positivo = !data.length || data[data.length - 1] >= 0
+    const LINEA = positivo ? '#3FE0A6' : '#F2706F'
+    const RGB   = positivo ? '63,224,166' : '242,112,111'
+
+    // El degradado se calcula en cada pintada porque depende del alto real del
+    // área de dibujo, que no existe hasta que Chart.js la mide.
+    const relleno = c => {
+      const area = c.chart.chartArea
+      if (!area) return 'transparent'
+      const g = c.chart.ctx.createLinearGradient(0, area.top, 0, area.bottom)
+      g.addColorStop(0, `rgba(${RGB},0.26)`)
+      g.addColorStop(1, `rgba(${RGB},0)`)
+      return g
+    }
+
+    // Guía vertical al pasar por encima: ubica el día sin necesidad de rejilla.
+    const guia = {
+      id: 'guiaVertical',
+      afterDatasetsDraw(chart) {
+        const act = chart.tooltip?.getActiveElements?.() || []
+        if (!act.length) return
+        const x = act[0].element.x
+        const c = chart.ctx
+        c.save()
+        c.beginPath()
+        c.moveTo(x, chart.chartArea.top)
+        c.lineTo(x, chart.chartArea.bottom)
+        c.lineWidth = 1
+        c.setLineDash([3, 4])
+        c.strokeStyle = 'rgba(255,255,255,0.22)'
+        c.stroke()
+        c.restore()
+      },
+    }
+
+    const money = v => `${v < 0 ? '−' : '+'}$${fmtMiles(v)}`
+
     calEquityInst = new Chart(ctx, {
       type: 'line',
       data: { labels: dates.map(d => d.slice(5)), datasets: [{
         label: 'P&L Acumulado', data,
-        borderColor: UP,
-        // Verde por encima de 0, rojo por debajo: relleno partido en y=0 y
-        // segmentos de línea coloreados según el signo del tramo.
-        fill: { target: { value: 0 }, above: 'rgba(29,158,117,0.18)', below: 'rgba(226,75,74,0.18)' },
-        segment: { borderColor: c => (c.p0.parsed.y < 0 || c.p1.parsed.y < 0) ? DOWN : UP },
-        borderWidth: 3, pointRadius: dates.length > 25 ? 2 : 4, pointHoverRadius: 7,
-        pointBackgroundColor: data.map(v => v < 0 ? DOWN : UP),
-        pointBorderColor: data.map(v => v < 0 ? DOWN : UP),
-        tension: 0.3,
+        borderColor: LINEA,
+        borderWidth: 2,
+        borderCapStyle: 'round', borderJoinStyle: 'round',
+        fill: 'origin', backgroundColor: relleno,
+        // Solo se dibuja el último punto: es el dato que se busca al mirar.
+        pointRadius: data.map((_, i) => (i === data.length - 1 ? 4 : 0)),
+        pointHoverRadius: 5,
+        pointBackgroundColor: LINEA,
+        pointBorderColor: '#1a1a18',
+        pointBorderWidth: 2,
+        tension: 0.35,
       }]},
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false },
-          tooltip: { backgroundColor:'#2a2a28', titleColor:'#F4F3EF', bodyColor:'#9B9B8E',
-            callbacks: { label: c => ` P&L acumulado: ${c.raw>=0?'+':''}$${c.raw}` } } },
+        layout: { padding: { top: 8, right: 6 } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#2e2e2b', titleColor: '#F4F3EF', bodyColor: '#A8A89B',
+            borderColor: 'rgba(255,255,255,0.09)', borderWidth: 1,
+            padding: 10, cornerRadius: 8, displayColors: false,
+            titleFont: { size: 11 }, bodyFont: { size: 13, weight: '600' },
+            callbacks: { label: c => money(c.raw) },
+          },
+        },
         scales: {
-          x: { ticks:{ color:'#9B9B8E', maxRotation:45 }, grid:{ color:'rgba(255,255,255,0.06)' } },
-          y: { ticks:{ color:'#9B9B8E', callback:v=>`$${v}` }, grid:{ color:'rgba(255,255,255,0.06)' } },
+          // Sin rejilla vertical ni bordes de eje: la guía del hover ya sitúa el día.
+          x: {
+            grid: { display: false }, border: { display: false },
+            ticks: { color: '#6B6B60', font: { size: 10 }, maxRotation: 0,
+                     autoSkip: true, maxTicksLimit: 6 },
+          },
+          y: {
+            border: { display: false },
+            grid: {
+              // El cero se marca; el resto de líneas casi no se ven.
+              color: c => (c.tick.value === 0 ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.035)'),
+            },
+            ticks: { color: '#6B6B60', font: { size: 10 }, maxTicksLimit: 5, padding: 6,
+                     callback: v => `${v < 0 ? '−' : ''}$${fmtMiles(v)}` },
+          },
         },
       },
+      plugins: [guia],
     })
   }
 

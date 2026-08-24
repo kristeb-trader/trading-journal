@@ -1,9 +1,10 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-08-19
+**Última actualización:** 2026-08-23
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-08-23 | Tarjetas KPI y curva de equity del Calendario |
 | 2026-08-19 | Otros y Datos rediseñados, modo local y comparador de Chaumer |
 | 2026-08-18 | Trades fantasma: el replay de ejecuciones de NinjaTrader |
 | 2026-08-16d | Cuenta Apex-15, importes con miles y vista del día |
@@ -2135,6 +2136,48 @@ Commits: `d3e31ef` · `de45a1b` · `4794a77` · `3e97402`.
 
 ---
 
+
+## Checkpoint 2026-08-23 — Tarjetas KPI y curva de equity del Calendario
+
+Dos cambios de forma, ninguno de cálculo.
+
+### Las tarjetas KPI
+
+Etiqueta y valor **centrados**, número de `1.05rem` a **`1.6rem`**, radio 14 px y un
+degradado corto (`--bg3` → `--card`) que da volumen sin inventar un color. El valor pasa a
+las variantes **`-txt`** de cada familia: en esta rejilla es texto sobre fondo oscuro y la
+base se veía apagada — el error típico que avisa `.claude/rules/estilos.md`.
+
+**Targets / Stops lleva un color por cifra**, no uno por tarjeta: `<span class="ts-t">` en
+verde y `<span class="ts-s">` en rojo, con la barra en `--text3`. Pintar la tarjeta entera
+de un color decía "vas bien o mal", que es justo lo que ya dice Acierto; aquí lo que
+importa es el reparto.
+
+### La curva de equity
+
+Era una línea de 3 px que cambiaba de color tramo a tramo, con un punto de 4 px en **cada**
+día y rejilla completa en los dos ejes. Ahora:
+
+- **2 px, un solo color** — el del resultado con el que cierra el mes.
+- **Un único punto visible, el último**, que es el dato que se busca al mirar.
+- **Relleno en degradado** hacia transparente, recalculado en cada pintada porque depende
+  del alto real del área de dibujo (`chartArea`), que no existe hasta que Chart.js la mide.
+- **Sin rejilla vertical ni bordes de eje.** En la Y solo se marca el **cero**; el resto de
+  líneas quedan casi invisibles. Las cifras usan `fmtMiles` (`−$2.000`, no `-2000`).
+- **Guía vertical punteada al pasar por encima** (plugin `guiaVertical`) + tooltip sin
+  cuadro de color.
+
+> Un mes sin trades **sigue pintando los ejes vacíos**. La primera versión salía antes de
+> crear la gráfica y dejaba el lienzo en blanco bajo un título, que parece que algo se
+> rompió. Detectado al verificar julio en la copia local.
+
+Verificado en la copia local con los 10 trades de agosto: acumulado correcto
+(−292,60 → −2.133,60), `pointRadius` `[0,0,0,0,0,0,0,0,0,4]`, ticks `−$3.000 … $1.000`,
+consola limpia. La banda clara que parecía haber a la derecha del gráfico **no existe**:
+los perfiles de opacidad al 60 %, 90 % y 97 % son iguales y el relleno solo baja más donde
+la curva está más abajo — era aliasing de la captura reducida.
+
+---
 ## Checkpoint 2026-08-19 — Otros y Datos rediseñados, modo local, y el comparador de Chaumer
 
 Tres cosas en un día, encadenadas: Kris dijo que **Otros parecía una pantalla de los 90** y
