@@ -155,7 +155,8 @@ js/chaumer.js     Comparador Chaumer vs yo (pestañas Día y Diferencias)
 js/account-filter.js  Filtro de cuentas compartido (nombre COMPLETO)
 css/styles.css    Dark mode + responsive
 NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) ·
-                  ChecklistChaumer (checklist en el gráfico)
+                  ChecklistChaumer (checklist en el gráfico) ·
+                  RR (herramienta de dibujo: Risk Reward en PUNTOS, clon de @RiskReward)
 TelegramBot/      Bot (Cloudflare Worker). Se despliega solo al hacer push
 ```
 
