@@ -5,6 +5,8 @@ const TradesTable = (() => {
   let allCasuisticas = []
   let allRows        = []  // unified: trades + no-opero sessions
   let casByDate      = {}  // { 'YYYY-MM-DD': ['Error A', 'Error B'] }
+  let setupPorFecha  = {}  // { 'YYYY-MM-DD': 'iri_apertura_alcista' }
+  let variantes      = []  // catalogo_setup_variantes, solo para los nombres
   let filtered    = []
   let page = 0
   const PAGE_SIZE = 20
@@ -86,11 +88,56 @@ const TradesTable = (() => {
     return AccountFilter.setAccounts('trades', allTrades.map(t => t.account))
   }
 
+  // ── Setup de cada fila ────────────────────────────────────────────────────
+  // Un trade NO guarda su setup: el setup es del DÍA y vive en la sesión
+  // (`sesiones.setup_codigo`). Así que se indexa por fecha y se resuelve al
+  // filtrar. Consecuencia: dos trades del mismo día comparten setup, y un día
+  // sin setup en la sesión deja sus trades como "sin asignar".
+  function buildSetupPorFecha() {
+    setupPorFecha = {}
+    allSesiones.forEach(s => {
+      if (s.setup_codigo) setupPorFecha[s.sesion_date] = s.setup_codigo
+    })
+  }
+
+  const setupDe = fecha => setupPorFecha[fecha] || null
+
+  // El desplegable se construye desde los DATOS, no desde el catálogo entero:
+  // un setup que nunca se ha operado solo sería una opción que no filtra nada.
+  // El nombre sí sale del catálogo; si faltara, se cae al código.
+  function buildSetupFilter() {
+    const sel = document.getElementById('tradeSetupFilter')
+    if (!sel) return
+    const previo = sel.value
+    const usados = new Set(allRows.map(r => setupDe(r.date)).filter(Boolean))
+    const orden = new Map(variantes.map((v, i) => [v.codigo, i]))
+    const opciones = [...usados].sort((a, b) => (orden.get(a) ?? 999) - (orden.get(b) ?? 999))
+    const nombre = c => variantes.find(v => v.codigo === c)?.nombre || c
+    const haySin = allRows.some(r => !setupDe(r.date))
+
+    sel.innerHTML =
+      '<option value="all">Todos los setups</option>' +
+      opciones.map(c => `<option value="${c}">${nombre(c)}</option>`).join('') +
+      (haySin ? '<option value="__sin">Sin setup asignado</option>' : '')
+    if (previo) sel.value = previo
+    if (!sel.value) sel.value = 'all'
+  }
+
   function applyFilter() {
     const search    = document.getElementById('tradeSearch').value.toLowerCase()
     const filterVal = document.getElementById('tradeFilter').value
+    const setupVal  = document.getElementById('tradeSetupFilter')?.value || 'all'
+
+    // El setup se mira ANTES que nada: aplica igual a los trades y a los días
+    // sin operar, que también tienen (o no) setup en su sesión.
+    const pasaSetup = row => {
+      if (setupVal === 'all') return true
+      const s = setupDe(row.date)
+      return setupVal === '__sin' ? !s : s === setupVal
+    }
 
     filtered = allRows.filter(row => {
+      if (!pasaSetup(row)) return false
       if (row.type === 'session') {
         const isSinSetup = row.data.motivo_no_opero === 'Sin setup'
         if (filterVal === 'sin_setup') return isSinSetup
@@ -218,9 +265,14 @@ const TradesTable = (() => {
   }
 
   async function init() {
-    ;[allTrades, allSesiones, allCasuisticas] = await Promise.all([DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas()])
+    ;[allTrades, allSesiones, allCasuisticas, variantes] = await Promise.all([
+      DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(),
+      DB.getSetupVariantes({ soloActivos: false }).catch(() => []),
+    ])
     buildRows()
     buildCasByDate()
+    buildSetupPorFecha()
+    buildSetupFilter()
 
     AccountFilter.create('trades', {
       mountId: 'accountFilterTrades',
@@ -232,6 +284,7 @@ const TradesTable = (() => {
 
     document.getElementById('tradeSearch').addEventListener('input', applyFilter)
     document.getElementById('tradeFilter').addEventListener('change', applyFilter)
+    document.getElementById('tradeSetupFilter')?.addEventListener('change', applyFilter)
   }
 
   return { init, reload: init }

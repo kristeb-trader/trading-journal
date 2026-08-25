@@ -223,6 +223,12 @@
               <option value="stop">Stop</option>
               <option value="sin_setup">Sin entradas válidas</option>
             </select>
+            <!-- Filtro por setup. El trade NO tiene setup propio: es el de la
+                 SESIÓN de su fecha (`sesiones.setup_codigo`), así que las opciones
+                 se construyen desde los datos en table.js, no aquí. -->
+            <select class="filter-select" id="tradeSetupFilter">
+              <option value="all">Todos los setups</option>
+            </select>
           </div>
         </div>
 
