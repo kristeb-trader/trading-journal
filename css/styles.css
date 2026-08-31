@@ -4606,6 +4606,89 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .ch-cob.flaca { background: rgba(226,75,74,0.07); border-color: rgba(226,75,74,0.3); color: var(--red-txt); }
 .ch-cob.flaca i { color: var(--red-txt); }
 
+/* La brecha, arriba y grande. Es la respuesta a "¿cómo voy?", y antes había que
+   deducirla de cuatro KPIs sueltos. */
+.ch-brecha {
+  background: var(--card); border: 1px solid var(--border);
+  border-left: 3px solid var(--text3);
+  padding: 15px 18px; margin-bottom: 8px;
+}
+.ch-brecha.mal { border-left-color: var(--red); }
+.ch-brecha.ok  { border-left-color: var(--accent); }
+.ch-brecha-lab {
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text3); margin-bottom: 8px;
+}
+.ch-brecha-cifra { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.ch-brecha-n { font-size: 2.2rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.ch-brecha.mal .ch-brecha-n { color: var(--red-txt); }
+.ch-brecha.ok  .ch-brecha-n { color: var(--accent-txt); }
+.ch-brecha-txt { font-size: 0.88rem; color: var(--text2); }
+.ch-brecha-pie { font-size: 0.75rem; color: var(--text3); margin-top: 8px; }
+
+/* La conclusión en palabras. Sin esto el panel enseña números y deja el trabajo
+   de interpretarlos a quien mira. */
+.ch-conclusion {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: rgba(29,158,117,0.08); border: 1px solid rgba(29,158,117,0.3);
+  border-radius: 10px; padding: 13px 15px; margin-bottom: 16px;
+}
+.ch-conclusion i { color: var(--accent-txt); font-size: 1.05rem; flex-shrink: 0; margin-top: 1px; }
+.ch-conclusion p { font-size: 0.86rem; line-height: 1.6; color: var(--text); margin: 0; }
+.ch-conclusion strong.ok  { color: var(--accent-txt); }
+.ch-conclusion strong.mal { color: var(--red-txt); }
+
+/* Desglose de la brecha: barras divergentes desde el centro. Un eje único con
+   cero en medio deja ver de un vistazo qué resta y qué suma. */
+.ch-causas { display: flex; flex-direction: column; gap: 14px; }
+.ch-causa-top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; margin-bottom: 5px; font-size: 0.82rem;
+}
+.ch-causa-lab { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ch-causa-dias { color: var(--text3); font-size: 0.74rem; }
+.ch-causa-n { flex: 0 0 auto; font-variant-numeric: tabular-nums; font-weight: 600; }
+.ch-causa-n.mal { color: var(--red-txt); }
+.ch-causa-n.ok  { color: var(--accent-txt); }
+.ch-carril { position: relative; height: 20px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+.ch-carril-barra { position: absolute; top: 0; bottom: 0; }
+.ch-carril-barra.neg { background: var(--red); border-radius: 4px 0 0 4px; }
+.ch-carril-barra.pos { background: var(--accent); border-radius: 0 4px 4px 0; }
+.ch-carril-cero { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--text3); }
+.ch-carril-ejes {
+  display: flex; justify-content: space-between;
+  font-size: 0.65rem; color: var(--text3);
+  margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border);
+}
+
+.ch-card-sub { font-size: 0.72rem; color: var(--text3); margin: -10px 0 14px; line-height: 1.45; }
+.ch-card-sem { margin-top: 12px; }
+
+/* Los días concretos. El dato agregado no convence; el día con su fecha, sí. */
+.ch-dias { display: flex; flex-direction: column; gap: 8px; }
+.ch-dia {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: var(--bg3); border-radius: 8px; padding: 10px 12px;
+  font-size: 0.8rem; color: var(--text); text-align: left;
+  transition: background var(--transition);
+}
+.ch-dia:hover { background: var(--bg2); }
+.ch-dia.ok { background: rgba(29,158,117,0.08); }
+.ch-dia.ok:hover { background: rgba(29,158,117,0.14); }
+.ch-dia-f { flex: 0 0 56px; }
+.ch-dia-c { flex: 1; min-width: 0; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ch-dia-n { flex: 0 0 56px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.ch-dia.mal .ch-dia-n { color: var(--red-txt); }
+.ch-dia.ok  .ch-dia-n { color: var(--accent-txt); }
+
+.ch-motivo-top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; margin-bottom: 5px; font-size: 0.8rem;
+}
+.ch-motivo-n { flex: 0 0 auto; color: var(--text3); font-size: 0.74rem; }
+.ch-motivo-n strong { color: var(--red-txt); font-variant-numeric: tabular-nums; }
+.ch-motivo .ch-bar { flex: none; display: block; width: 100%; }
+
 .ch-kpis {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px; margin-bottom: 16px;

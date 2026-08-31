@@ -16,14 +16,17 @@ const Chaumer = (() => {
 
   // Los seis estados del diseño §3, más "sin cargar" — que no es un estado del
   // día sino la ausencia del dato, y se ve distinto a propósito.
+  // «Fuga», «De más» y «Otra lectura» son nombres internos y se quedan en el
+  // código y en el diseño. En pantalla se dice lo que pasó, con palabras: Kris
+  // no tiene por qué recordar cinco definiciones para leer un gráfico.
   const ESTADOS = {
-    igual:        { label: 'Igual',                     cls: 'ch-v-igual',   icon: 'ti-check' },
-    ejecucion:    { label: 'Mismo setup · ejecución',   cls: 'ch-v-ejec',    icon: 'ti-clock-exclamation' },
-    otra_lectura: { label: 'Otra lectura',              cls: 'ch-v-otra',    icon: 'ti-arrows-split' },
-    fuga:         { label: 'Fuga · él operó, tú no',    cls: 'ch-v-fuga',    icon: 'ti-arrow-down-right' },
-    de_mas:       { label: 'De más · tú operaste, él no', cls: 'ch-v-demas', icon: 'ti-arrow-up-right' },
-    ambos_fuera:  { label: 'Ninguno operó',             cls: 'ch-v-nada',    icon: 'ti-minus' },
-    sin_cargar:   { label: 'Sin cargar su operativa',   cls: 'ch-v-sin',     icon: 'ti-help-circle' },
+    igual:        { label: 'Misma operativa que él',       corto: 'Misma operativa',      cls: 'ch-v-igual', icon: 'ti-check' },
+    ejecucion:    { label: 'Mismo setup, distinta salida', corto: 'Distinta salida',      cls: 'ch-v-ejec',  icon: 'ti-clock-exclamation' },
+    otra_lectura: { label: 'Cada uno vio un setup',        corto: 'Otro setup',           cls: 'ch-v-otra',  icon: 'ti-arrows-split' },
+    fuga:         { label: 'Él entró, tú no',              corto: 'Él entró, yo no',      cls: 'ch-v-fuga',  icon: 'ti-arrow-down-right' },
+    de_mas:       { label: 'Tú entraste, él no',           corto: 'Yo entré, él no',      cls: 'ch-v-demas', icon: 'ti-arrow-up-right' },
+    ambos_fuera:  { label: 'Ninguno operó',                corto: 'Ninguno operó',        cls: 'ch-v-nada',  icon: 'ti-minus' },
+    sin_cargar:   { label: 'Sin cargar su operativa',      corto: 'Sin cargar',           cls: 'ch-v-sin',   icon: 'ti-help-circle' },
   }
 
   const MOTIVOS = ['No lo vi', 'Duda', 'Miedo', 'Zona naranja', 'Desconfianza', 'Otro']
@@ -470,11 +473,16 @@ const Chaumer = (() => {
     const cargados = chaumer.filter(c => enR(c.fecha) && c.fecha <= hasta).length
 
     // ── Un veredicto por día ──
+    // `delta` = lo que ese día te separó de él, en PUNTOS. Es la unidad de todo
+    // el panel: la brecha total es su suma, y el desglose por causa es esa misma
+    // suma agrupada. Quien no operó cuenta 0, no null: no haber entrado no es
+    // "sin dato", es cero puntos.
     const dias = Object.values(porFecha)
       .filter(d => d.ch)                       // sin su operativa no hay comparación
       .map(d => {
         const yo = miLadoDe(d.ses, d.tr || [], d.f)
-        return { f: d.f, ch: d.ch, ses: d.ses, yo, v: veredictoCon(d.ch, yo, d.f) }
+        const delta = Math.round(((yo.puntos ?? 0) - (d.ch.puntos ?? 0)) * 100) / 100
+        return { f: d.f, ch: d.ch, ses: d.ses, yo, delta, v: veredictoCon(d.ch, yo, d.f) }
       })
       .sort((a, b) => a.f.localeCompare(b.f))
 
@@ -487,11 +495,48 @@ const Chaumer = (() => {
     const coincidencias = cuenta('igual')
 
     // ── Motivos de no entrada, desde `sesiones` ──
+    // Se cuentan los días Y lo que costaron. Ordenar por veces engaña: dudar una
+    // sola vez puede costar más que tres días de zona naranja.
     const motivos = {}
     fugas.forEach(d => {
       const m = d.ses?.motivo_no_entrada || 'Sin declarar'
-      motivos[m] = (motivos[m] || 0) + 1
+      const e = (motivos[m] ||= { dias: 0, puntos: 0 })
+      e.dias++
+      e.puntos = Math.round((e.puntos + d.delta) * 100) / 100
     })
+
+    // ── De dónde sale la brecha ──
+    // El desglose por causa, en puntos. Es la respuesta a "¿dónde pierdo más?",
+    // así que se ordena por lo que cuesta, no por número de días.
+    // `ambos_fuera` queda fuera: siempre aporta 0 y solo añadiría ruido.
+    const CAUSAS = {
+      fuga:         'Él entró, yo no',
+      de_mas:       'Yo entré, él no',
+      otra_lectura: 'Cada uno vio un setup',
+      ejecucion:    'Mismo setup, distinta salida',
+      igual:        'Misma operativa que él',
+    }
+    const causas = Object.keys(CAUSAS)
+      .map(k => {
+        const ds = dias.filter(d => d.v.k === k)
+        return { k, label: CAUSAS[k], dias: ds.length, delta: Math.round(ds.reduce((a, d) => a + d.delta, 0) * 100) / 100 }
+      })
+      .filter(c => c.dias)
+      .sort((a, b) => a.delta - b.delta)
+
+    const brecha = Math.round(dias.reduce((a, d) => a + d.delta, 0) * 100) / 100
+
+    // Días suyos cargados SIN puntos. Cuentan como 0 en la brecha, que es lo
+    // único honesto que se puede hacer con un dato que falta — pero hay que
+    // decirlo: si no, un día que costó 60 puntos pasa por un día que costó nada.
+    const sinPuntos = dias.filter(d => d.ch.opero && d.ch.setup_codigo && d.ch.puntos == null).length
+
+    // Los días que más pesaron, en cualquier dirección: los que explican la brecha.
+    const diasClave = [...dias]
+      .filter(d => Math.abs(d.delta) >= 0.5)
+      .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+      .slice(0, 5)
+      .sort((a, b) => a.delta - b.delta)
 
     // ── Por setup: cuántas de las suyas se te escaparon ──
     const porSetup = {}
@@ -528,6 +573,13 @@ const Chaumer = (() => {
       deMas: { n: deMas.length, puntos: sum(deMas, d => d.yo.puntos) },
       puntos: { el: sum(dias, d => d.ch.puntos), yo: sum(dias, d => d.yo.puntos) },
       estados: { igual: cuenta('igual'), ejecucion: cuenta('ejecucion'), otra_lectura: cuenta('otra_lectura'), fuga: fugas.length, de_mas: deMas.length, ambos_fuera: cuenta('ambos_fuera') },
+      brecha, causas, diasClave, sinPuntos,
+      // Cuánto te aporta entrar en SU mismo setup, que es la comparación limpia.
+      mismoSetup: {
+        dias: cuenta('igual') + cuenta('ejecucion'),
+        delta: Math.round(dias.filter(d => ['igual', 'ejecucion'].includes(d.v.k))
+          .reduce((a, d) => a + d.delta, 0) * 100) / 100,
+      },
       motivos, porSetup, deltaMedia, nDeltas: deltas.length,
       semanas: Object.values(semanas).sort((a, b) => a.k.localeCompare(b.k)),
       nDias: dias.length,
@@ -562,6 +614,27 @@ const Chaumer = (() => {
   }
 
   // ── Pintado del dashboard ─────────────────────────────────────────────────
+  // La frase que faltaba. Un panel que solo enseña métricas obliga a sacar la
+  // conclusión a mano cada vez; esto la dice. Se construye desde los datos, no
+  // es un texto fijo: si el patrón cambia, la frase cambia.
+  function conclusion(d) {
+    const peor = d.causas.find(c => c.delta < 0)   // ya vienen de peor a mejor
+    const ms = d.mismoSetup
+    const partes = []
+
+    if (ms.dias && ms.delta > 0) {
+      partes.push(`Cuando entras <strong class="ok">al mismo setup que él, le sacas ventaja</strong>: ${fmtPts(ms.delta)} en ${ms.dias} día${ms.dias === 1 ? '' : 's'}.`)
+    } else if (ms.dias && ms.delta < 0) {
+      partes.push(`Incluso entrando a su mismo setup vas <strong class="mal">por detrás</strong>: ${fmtPts(ms.delta)} en ${ms.dias} día${ms.dias === 1 ? '' : 's'}.`)
+    }
+    if (peor) {
+      partes.push(`Lo que más te cuesta es <strong class="mal">«${esc(peor.label.toLowerCase())}»</strong>: ${peor.dias} día${peor.dias === 1 ? '' : 's'}, ${fmtPts(peor.delta)}.`)
+    } else if (d.brecha > 0) {
+      partes.push('No hay ninguna causa que te reste en este período.')
+    }
+    return partes.join(' ')
+  }
+
   const barra = (n, max, cls) => `<span class="ch-bar"><span class="ch-bar-fill ${cls}" style="width:${max ? Math.round((n / max) * 100) : 0}%"></span></span>`
 
   function renderDif() {
@@ -581,41 +654,127 @@ const Chaumer = (() => {
     }
 
     const cobFlaca = d.cobertura.pct < 60
-    const maxMotivo = Math.max(1, ...Object.values(d.motivos))
+    const maxMotivo = Math.max(1, ...Object.values(d.motivos).map(m => Math.abs(m.puntos)))
+    const maxCausa = Math.max(1, ...d.causas.map(c => Math.abs(c.delta)))
     const maxSem = Math.max(1, ...d.semanas.map(s => s.igual + s.ejecucion + s.otra_lectura + s.fuga + s.de_mas))
+    const fechaCorta = f => new Date(`${f}T12:00:00`).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 
     cont.innerHTML = `
       <div class="ch-cob ${cobFlaca ? 'flaca' : ''}">
         <i class="ti ti-${cobFlaca ? 'alert-triangle' : 'checkbox'}"></i>
         Cobertura: <strong>${d.cobertura.cargados} de ${d.cobertura.habiles}</strong> días hábiles cargados
-        (${d.cobertura.pct} %).${cobFlaca ? ' Con esta cobertura los porcentajes de abajo dicen poco.' : ''}
+        (${d.cobertura.pct} %).${cobFlaca ? ' Con esta cobertura lo de abajo dice poco.' : ''}
       </div>
 
-      <div class="ch-kpis">
-        <div class="ch-kpi">
-          <span class="ch-kpi-lab">Coincidencia</span>
-          <span class="ch-kpi-n ok">${d.coincidencia.pct == null ? '—' : d.coincidencia.pct + '%'}</span>
-          <span class="ch-kpi-sub">${d.coincidencia.n} de ${d.totalComparables} días suyos</span>
+      ${d.sinPuntos ? `
+        <div class="ch-cob flaca">
+          <i class="ti ti-alert-triangle"></i>
+          ${d.sinPuntos} día${d.sinPuntos === 1 ? '' : 's'} suyo${d.sinPuntos === 1 ? '' : 's'} sin puntos rellenados:
+          cuenta${d.sinPuntos === 1 ? '' : 'n'} como 0 en la brecha, así que la diferencia real puede ser mayor.
+        </div>` : ''}
+
+      <div class="ch-brecha ${d.brecha < 0 ? 'mal' : 'ok'}">
+        <div class="ch-brecha-lab">La brecha</div>
+        <div class="ch-brecha-cifra">
+          <span class="ch-brecha-n">${d.brecha > 0 ? '+' : ''}${String(d.brecha).replace('.', ',')}</span>
+          <span class="ch-brecha-txt">puntos ${d.brecha < 0 ? 'por detrás de él' : d.brecha > 0 ? 'por delante de él' : '— empatados'}</span>
         </div>
-        <div class="ch-kpi">
-          <span class="ch-kpi-lab">Fugas</span>
-          <span class="ch-kpi-n mal">${d.fugas.n}</span>
-          <span class="ch-kpi-sub">${fmtPts(d.fugas.puntos)} que dejaste pasar</span>
+        <div class="ch-brecha-pie">
+          él ${fmtPts(d.puntos.el)} · tú ${fmtPts(d.puntos.yo)} · ${d.nDias} día${d.nDias === 1 ? '' : 's'} comparables
         </div>
-        <div class="ch-kpi">
-          <span class="ch-kpi-lab">De más</span>
-          <span class="ch-kpi-n mal">${d.deMas.n}</span>
-          <span class="ch-kpi-sub">${fmtPts(d.deMas.puntos)} en esos días</span>
+      </div>
+
+      ${conclusion(d) ? `<div class="ch-conclusion"><i class="ti ti-bulb"></i><p>${conclusion(d)}</p></div>` : ''}
+
+      <div class="ch-card">
+        <div class="ch-card-tit">De dónde sale la brecha</div>
+        <div class="ch-card-sub">Cada causa, con lo que te suma o te resta en puntos. Ordenado por lo que más cuesta.</div>
+        <div class="ch-causas">
+          ${d.causas.map(c => {
+            const pct = (Math.abs(c.delta) / maxCausa) * 50
+            const neg = c.delta < 0
+            return `
+              <div class="ch-causa">
+                <div class="ch-causa-top">
+                  <span class="ch-causa-lab">${esc(c.label)} <span class="ch-causa-dias">· ${c.dias} día${c.dias === 1 ? '' : 's'}</span></span>
+                  <span class="ch-causa-n ${neg ? 'mal' : 'ok'}">${c.delta > 0 ? '+' : ''}${String(c.delta).replace('.', ',')}</span>
+                </div>
+                <div class="ch-carril">
+                  <span class="ch-carril-cero"></span>
+                  <span class="ch-carril-barra ${neg ? 'neg' : 'pos'}" style="${neg ? 'right' : 'left'}:50%;width:${pct}%"></span>
+                </div>
+              </div>`
+          }).join('')}
         </div>
-        <div class="ch-kpi">
-          <span class="ch-kpi-lab">Δ puntos</span>
-          <span class="ch-kpi-n ${d.puntos.yo - d.puntos.el >= 0 ? 'ok' : 'mal'}">${fmtPts(Math.round((d.puntos.yo - d.puntos.el) * 100) / 100)}</span>
-          <span class="ch-kpi-sub">él ${fmtPts(d.puntos.el)} · tú ${fmtPts(d.puntos.yo)}</span>
-        </div>
+        <div class="ch-carril-ejes"><span>te resta</span><span>0</span><span>te suma</span></div>
       </div>
 
       <div class="ch-graficas">
         <div class="ch-card">
+          <div class="ch-card-tit">Los días que más pesaron</div>
+          <div class="ch-card-sub">Pulsa uno para abrirlo en la pestaña Día.</div>
+          ${d.diasClave.length ? `
+            <div class="ch-dias">
+              ${d.diasClave.map(x => `
+                <button type="button" class="ch-dia ${x.delta < 0 ? 'mal' : 'ok'}" data-ir="${x.f}">
+                  <span class="ch-dia-f">${esc(fechaCorta(x.f))}</span>
+                  <span class="ch-dia-c">${esc(ESTADOS[x.v.k]?.corto || '')}${x.v.k === 'fuga' && x.ses?.motivo_no_entrada ? ' · ' + esc(x.ses.motivo_no_entrada) : ''}</span>
+                  <span class="ch-dia-n">${x.delta > 0 ? '+' : ''}${String(x.delta).replace('.', ',')}</span>
+                </button>`).join('')}
+            </div>
+          ` : '<p class="ch-card-pie">Ningún día con diferencia de puntos todavía.</p>'}
+        </div>
+
+        <div class="ch-card">
+          <div class="ch-card-tit">Por qué no entraste</div>
+          <div class="ch-card-sub">Ordenado por lo que costó, no por cuántas veces pasó.</div>
+          ${Object.keys(d.motivos).length ? `
+            <div class="ch-lista">
+              ${Object.entries(d.motivos).sort((a, b) => a[1].puntos - b[1].puntos).map(([m, e]) => `
+                <div class="ch-motivo">
+                  <div class="ch-motivo-top">
+                    <span class="ch-fila-nom">${esc(m)}</span>
+                    <span class="ch-motivo-n">${e.dias} día${e.dias === 1 ? '' : 's'} · <strong>${fmtPts(e.puntos)}</strong></span>
+                  </div>
+                  <span class="ch-bar"><span class="ch-bar-fill ${m === 'Sin declarar' ? 'gris' : 'rojo'}" style="width:${Math.round((Math.abs(e.puntos) / maxMotivo) * 100)}%"></span></span>
+                </div>`).join('')}
+            </div>
+            <p class="ch-card-pie">Sale de <code>sesiones.motivo_no_entrada</code>, el campo que rellenas en el Diario y en las fugas de la pestaña Día.</p>
+          ` : '<p class="ch-card-pie">Ninguna fuga en este período.</p>'}
+        </div>
+
+        <div class="ch-card">
+          <div class="ch-card-tit">Dónde te pierdes, por setup</div>
+          <div class="ch-card-sub">Fugas sobre las operativas suyas de cada setup.</div>
+          ${Object.keys(d.porSetup).length ? `
+            <div class="ch-lista">
+              ${Object.entries(d.porSetup).sort((a, b) => (b[1].fugas / b[1].total) - (a[1].fugas / a[1].total)).map(([n, e]) => {
+                const pct = e.total ? e.fugas / e.total : 0
+                return `
+                  <div class="ch-fila">
+                    <span class="ch-fila-nom" title="${esc(n)}">${esc(n)}</span>
+                    ${barra(e.fugas, e.total, pct >= 0.5 ? 'rojo' : pct > 0 ? 'violeta' : 'verde')}
+                    <span class="ch-fila-n">${e.fugas}/${e.total}</span>
+                  </div>`
+              }).join('')}
+            </div>
+          ` : '<p class="ch-card-pie">Sin operativas suyas con setup en este período.</p>'}
+        </div>
+
+        <div class="ch-card">
+          <div class="ch-card-tit">Δ hora de entrada</div>
+          ${d.deltaMedia == null ? '<p class="ch-card-pie">Ningún día con hora en los dos lados.</p>' : `
+            <div class="ch-delta">
+              <span class="ch-delta-n ${Math.abs(d.deltaMedia) > 5 ? 'mal' : 'ok'}">${d.deltaMedia > 0 ? '+' : ''}${String(d.deltaMedia).replace('.', ',')}</span>
+              <span class="ch-delta-lab">minutos de media${d.deltaMedia > 0 ? ' más tarde que él' : d.deltaMedia < 0 ? ' antes que él' : ''}</span>
+            </div>
+            <p class="ch-card-pie">Sobre ${d.nDeltas} día${d.nDeltas === 1 ? '' : 's'} en que ambos operaron. Las dos horas en ET: tu <code>entry_time</code> viene en hora Colombia y se convierte antes de restar.</p>
+          `}
+        </div>
+      </div>
+
+      ${d.semanas.length >= 6 ? `
+        <div class="ch-card ch-card-sem">
           <div class="ch-card-tit">Cómo evoluciona, por semana</div>
           <div class="ch-sem">
             ${d.semanas.map(s => {
@@ -636,57 +795,13 @@ const Chaumer = (() => {
           </div>
           <div class="ch-leyenda">
             <span><i class="ch-pt s-igual"></i>Igual</span>
-            <span><i class="ch-pt s-ejec"></i>Ejecución</span>
-            <span><i class="ch-pt s-otra"></i>Otra lectura</span>
-            <span><i class="ch-pt s-fuga"></i>Fuga</span>
-            <span><i class="ch-pt s-demas"></i>De más</span>
+            <span><i class="ch-pt s-ejec"></i>Distinta salida</span>
+            <span><i class="ch-pt s-otra"></i>Otro setup</span>
+            <span><i class="ch-pt s-fuga"></i>Él sí, yo no</span>
+            <span><i class="ch-pt s-demas"></i>Yo sí, él no</span>
           </div>
-        </div>
-
-        <div class="ch-card">
-          <div class="ch-card-tit">Por qué no entraste</div>
-          ${Object.keys(d.motivos).length ? `
-            <div class="ch-lista">
-              ${Object.entries(d.motivos).sort((a, b) => b[1] - a[1]).map(([m, n]) => `
-                <div class="ch-fila">
-                  <span class="ch-fila-nom">${esc(m)}</span>
-                  ${barra(n, maxMotivo, m === 'Sin declarar' ? 'gris' : 'rojo')}
-                  <span class="ch-fila-n">${n}</span>
-                </div>`).join('')}
-            </div>
-            <p class="ch-card-pie">Sale de <code>sesiones.motivo_no_entrada</code>, el campo que rellenas en el Diario y en las fugas de aquí.</p>
-          ` : '<p class="ch-card-pie">Ninguna fuga en este período.</p>'}
-        </div>
-
-        <div class="ch-card">
-          <div class="ch-card-tit">Dónde te pierdes, por setup</div>
-          ${Object.keys(d.porSetup).length ? `
-            <div class="ch-lista">
-              ${Object.entries(d.porSetup).sort((a, b) => (b[1].fugas / b[1].total) - (a[1].fugas / a[1].total)).map(([n, e]) => {
-                const pct = e.total ? e.fugas / e.total : 0
-                return `
-                  <div class="ch-fila">
-                    <span class="ch-fila-nom" title="${esc(n)}">${esc(n)}</span>
-                    ${barra(e.fugas, e.total, pct >= 0.5 ? 'rojo' : pct > 0 ? 'violeta' : 'verde')}
-                    <span class="ch-fila-n">${e.fugas}/${e.total}</span>
-                  </div>`
-              }).join('')}
-            </div>
-            <p class="ch-card-pie">Fugas sobre las operativas suyas de cada setup.</p>
-          ` : '<p class="ch-card-pie">Sin operativas suyas con setup en este período.</p>'}
-        </div>
-
-        <div class="ch-card">
-          <div class="ch-card-tit">Δ hora de entrada</div>
-          ${d.deltaMedia == null ? '<p class="ch-card-pie">Ningún día con hora en los dos lados.</p>' : `
-            <div class="ch-delta">
-              <span class="ch-delta-n ${Math.abs(d.deltaMedia) > 5 ? 'mal' : 'ok'}">${d.deltaMedia > 0 ? '+' : ''}${String(d.deltaMedia).replace('.', ',')}</span>
-              <span class="ch-delta-lab">minutos de media${d.deltaMedia > 0 ? ' más tarde que él' : d.deltaMedia < 0 ? ' antes que él' : ''}</span>
-            </div>
-            <p class="ch-card-pie">Sobre ${d.nDeltas} día${d.nDeltas === 1 ? '' : 's'} en que ambos operaron. Las dos horas en ET: tu <code>entry_time</code> viene en hora Colombia y se convierte antes de restar.</p>
-          `}
-        </div>
-      </div>`
+        </div>` : ''}
+    `
   }
 
   async function cargarDif() {
@@ -740,6 +855,14 @@ const Chaumer = (() => {
         document.querySelector('#chaumerPeriod .per-filter-panel')?.classList.add('hidden')
       }
     })
+    // Desde el dashboard se salta al día concreto: el número lleva a la prueba.
+    document.getElementById('chaumerDif')?.addEventListener('click', e => {
+      const f = e.target.closest('[data-ir]')?.dataset.ir
+      if (!f) return
+      showTab('dia')
+      cargar(f)
+    })
+
     document.getElementById('prevMonth')?.addEventListener('click', () => { if (enDif()) navPeriodo(-1) })
     document.getElementById('nextMonth')?.addEventListener('click', () => { if (enDif()) navPeriodo(1) })
 

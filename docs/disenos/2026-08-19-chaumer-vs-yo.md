@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Versión** | v5 |
+| **Versión** | v6 |
 | **Fecha** | 2026-08-19 |
 | **Estado** | ✅ **IMPLEMENTADO** (19 ago) — las 4 fases cerradas y verificadas. Lo que falta es cargar días, no código |
 | **Origen** | Petición de Kris (19 ago): «entré a su curso y tengo acceso a sus operativas; quiero un módulo donde almacene las suyas vs las mías, la pantalla partida en dos, y un dashboard de diferencias con filtro por mes/trimestre/año/todo, para ver si estoy fallando en algún punto» |
@@ -479,6 +479,57 @@ corrige igual, **sin tocar ningún otro campo de la fila**. Y el KPI pasa a leer
 
 ---
 
+### 5.7 «Diferencias», rehecho para que se entienda (31 ago)
+
+Kris: *«no me dice mucho, no entiendo nada de lo que muestra esa ventana; quiero ver dónde
+están las diferencias entre él y yo»*. Con 9 días cargados, así que **no era falta de
+datos**: era el panel.
+
+**Los tres motivos, y qué se hizo con cada uno:**
+
+| Problema | Arreglo |
+|---|---|
+| Daba métricas sueltas y dejaba la conclusión al lector | **La brecha en puntos, arriba y grande**, y debajo una **frase generada desde los datos** que dice qué significa |
+| Cuatro KPIs sin jerarquía no respondían «¿dónde pierdo más?» | Se retiran. En su lugar, **«De dónde sale la brecha»**: barras divergentes por causa, en puntos, **ordenadas por lo que cuestan** |
+| «Cómo evoluciona, por semana» no puede decir nada con 2 semanas | **Se oculta hasta que haya 6 semanas.** Vuelve sola |
+| El vocabulario era mío, no suyo | «Fuga», «De más» y «Otra lectura» **desaparecen de la pantalla**: ahora dice «Él entró, tú no», «Tú entraste, él no», «Cada uno vio un setup». Los nombres internos siguen en el código |
+
+**Dos añadidos que salieron del propio análisis:**
+
+- **«Los días que más pesaron»** — los 5 días que explican la brecha, **pulsables** para
+  abrirlos en la pestaña Día. El agregado no convence; el día con su fecha, sí.
+- **«Por qué no entraste» pasa a ordenarse por puntos perdidos**, no por número de veces.
+  Con los datos de Kris el cambio importa: dudó **una sola vez** y le costó 60 puntos, más
+  que ninguna otra causa.
+
+#### Verificado contra sus datos reales
+
+Se inyectaron sus 10 filas de agosto (traídas por el MCP) y se comparó con el cálculo hecho
+a mano desde SQL. **Coincide en todo:**
+
+| | Esperado | En pantalla |
+|---|---|---|
+| Brecha | −74,75 | **−74,75** |
+| Suyos / míos | +195 / +120,25 | **+195 / +120,25** |
+| Él entró, yo no | 3 días, −95 | **3 días, −95** |
+| Cada uno vio un setup | 1 día, −37,25 | **1 día, −37,25** |
+| Misma operativa | 2 días, +17 | **2 días, +17** |
+| Mismo setup, distinta salida | 1 día, +40,5 | **1 día, +40,5** |
+| Entrando a su mismo setup | +57,5 en 3 días | **+57,5 en 3 días** |
+
+Y el hallazgo que el panel viejo escondía: **cuando Kris entra al mismo setup que Chaumer,
+le gana**. Toda su desventaja sale de los días que no entra.
+
+**Un caso que apareció al verificar:** el 31 de agosto tiene la operativa suya cargada como
+*target* pero **sin puntos**. Cuenta como 0 en la brecha —lo único honesto con un dato que
+falta—, así que ahora **se avisa arriba**: «1 día suyo sin puntos rellenados… la diferencia
+real puede ser mayor». Sin ese aviso, un día que costó puntos pasaría por un día que no
+costó nada.
+
+**Móvil (375 px):** sin desbordes ni scroll horizontal, 5 tarjetas apiladas, consola limpia.
+
+---
+
 ## 6. Lo que este diseño NO toca
 
 - El criterio de disciplina, el P&L neto, el riesgo en puntos, las fechas locales.
@@ -507,6 +558,7 @@ corrige igual, **sin tocar ningún otro campo de la fila**. Y el KPI pasa a leer
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 2026-08-19 | Documento inicial. Recoge las 4 decisiones de Kris |
+| v6 | 2026-08-31 | «Diferencias» rehecho: la brecha en puntos arriba, el desglose por causa ordenado por lo que cuesta, los días clave pulsables, y fuera la jerga y la gráfica semanal. Detalle en §5.7 |
 | v5 | 2026-08-19 | El signo de los puntos se deriva del resultado de Chaumer, y el modal deja claro que todo lo suyo es suyo. Corregida la fila del 18. Detalle en §5.6 |
 | v4 | 2026-08-19 | Ajustes tras el primer uso: la imagen se muestra también en los días sin setup, y la fecha sube a la fila de las pestañas. Detalle en §5.5 |
 | v3 | 2026-08-19 | Fases 3 y 4 cerradas. Se añaden §5.3 y §5.4 con lo medido, y el hallazgo del signo de los puntos que salió del uso real |
