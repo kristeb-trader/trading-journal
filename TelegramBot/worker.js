@@ -42,13 +42,6 @@ function parseNum(text) {
   return isNaN(n) ? NaN : n;  // NaN => entrada inválida (re-preguntar)
 }
 
-// Parsea una lista de números separados por coma (líneas naranjas). [] si /skip.
-function parseNumList(text) {
-  const t = (text || '').trim().toLowerCase();
-  if (!t || t === '/skip' || t === 'skip' || t === '-') return [];
-  return t.split(/[,;]+/).map(s => parseFloat(s.trim().replace(',', '.'))).filter(n => !isNaN(n));
-}
-
 // Escapa < > & para insertar texto (títulos de reglas, notas del usuario) en
 // mensajes con parse_mode 'HTML'. Sin esto, un título con esos caracteres hace
 // que Telegram rechace el mensaje (400) y el flujo se queda pegado.
@@ -77,15 +70,6 @@ const SETUPS_FALLBACK = [
 
 // (El checklist ya no se llena en el bot; lo maneja el Add-On ChecklistChaumer de
 // NinjaTrader, que escribe directo en sesiones.checklist.)
-
-// Prompts del flujo de premercado (todos opcionales: /skip para omitir)
-const PREMKT_PROMPTS = {
-  // Todos los niveles de precio (cierre/apertura, OHLC de ayer y overnight) los
-  // calcula el indicador SupabaseDailyLevels; el bot solo pide lo cualitativo.
-  pre_soportes: '🟠 <b>Soportes (líneas naranjas)</b>\n\nSepara por comas, ej: <code>30669, 30700</code>\n<i>(o /skip)</i>',
-  pre_resist:   '🟠 <b>Resistencias (líneas naranjas)</b>\n\nSepara por comas, ej: <code>30810, 30850</code>\n<i>(o /skip)</i>',
-  pre_noticias: '📰 <b>Noticias del día</b>\n\nej: <code>9:00am → ISM Services PMI</code>\n<i>(o /skip)</i>',
-};
 
 // ── Helpers de Telegram API ─────────────────────────────────────────────────
 async function tg(token, method, body) {
@@ -205,18 +189,8 @@ function setupKeyboard(setups) {
   return { inline_keyboard: rows };
 }
 
-// Resumen del premercado (solo líneas con dato)
-function premktResumen(d) {
-  const lines = [];
-  if (d.soportes_naranja && d.soportes_naranja.length)         lines.push(`🟠 Soportes: ${d.soportes_naranja.join(', ')}`);
-  if (d.resistencias_naranja && d.resistencias_naranja.length) lines.push(`🟠 Resist: ${d.resistencias_naranja.join(', ')}`);
-  if (d.noticias) lines.push(`📰 ${escHtml(d.noticias)}`);
-  return lines.length ? `🌅 <b>Premercado:</b>\n${lines.map(l => '  ' + l).join('\n')}\n\n` : '';
-}
-
 // ── Resumen completo de la sesión ───────────────────────────────────────────
 function buildResumen(data) {
-  const premkt = premktResumen(data);
 
   // Caso 2: me conecté a analizar pero no hubo setup válido
   if (data.no_opero) {
@@ -224,7 +198,6 @@ function buildResumen(data) {
       `✅ <b>Sesión guardada</b>\n\n` +
       `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
       `🔌 Me conecté a analizar (sin setup válido)\n\n` +
-      premkt +
       `✍️ <b>Análisis del día:</b>\n${escHtml(data.analisis_trader || '—')}`
     );
   }
@@ -235,7 +208,6 @@ function buildResumen(data) {
     `✅ <b>Sesión guardada</b>\n\n` +
     `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
     (stars ? `⭐ <b>Confianza entrada:</b> ${stars}\n` : '') +
-    premkt +
     `📊 <b>Contexto:</b> ${data.contexto}\n` +
     `🔢 <b>Corrida:</b> ${data.num_corrida}ª\n` +
     `🕯️ <b>Velas:</b> ${data.velas_corrida}\n` +
@@ -269,8 +241,9 @@ async function saveSession(data, env) {
     // overnight precio_max_pre/min_pre) — los escribe el indicador
     // SupabaseDailyLevels. Mandarlos aquí (en null) los borraría.
     se_conecto:            data.se_conecto            ?? true,
-    soportes_naranja:      data.soportes_naranja      ?? [],
-    resistencias_naranja:  data.resistencias_naranja  ?? [],
+    // OJO: NO se incluyen soportes_naranja / resistencias_naranja - los escribe el
+    // AddOn ChecklistChaumer en premercado. Mandarlos aqui (en []) los BORRARIA,
+    // exactamente igual que pasaria con los niveles de precio.
     noticias:              data.noticias              ?? null,
   };
 
@@ -445,13 +418,17 @@ async function handleCallback(cbq, env) {
 
   // ── Flujo principal ───────────────────────────────────────────────────────
   switch (action) {
-    case 'opero_si':
+    // Las zonas naranjas ya NO se piden aqui (ago 2026): las escribe el AddOn
+    // ChecklistChaumer en premercado, en el momento de marcarlas en el grafico.
+    case 'opero_si': {
       state.data.no_opero = false;
       state.data.se_conecto = true;
-      state.step = STEPS.PRE_SOPORTES;
+      state.step = STEPS.EMOCION;
       await saveState(env.KV, chatId, state);
-      await editMessage(token, chatId, msgId, PREMKT_PROMPTS.pre_soportes);
+      const emociones = await fetchEmociones(env);
+      await editMessage(token, chatId, msgId, '😊 <b>Estado emocional</b>\n\n¿Cómo llegas a la sesión de hoy?', emociones.length ? emocionKeyboard(emociones) : { inline_keyboard: [[{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]] });
       break;
+    }
 
     case 'opero_no':
       state.data.no_opero = true;
@@ -468,9 +445,9 @@ async function handleCallback(cbq, env) {
 
     case 'conecto_si':
       state.data.se_conecto = true;
-      state.step = STEPS.PRE_SOPORTES;
+      state.step = STEPS.REFLEXION;
       await saveState(env.KV, chatId, state);
-      await editMessage(token, chatId, msgId, PREMKT_PROMPTS.pre_soportes);
+      await editMessage(token, chatId, msgId, '✍️ <b>Análisis del día</b>\n\nEscribe tu análisis de la sesión (no hubo setup válido):');
       break;
 
     case 'conecto_no':
@@ -555,55 +532,23 @@ async function handleText(msg, env) {
       break;
     }
 
-    // ── Premercado ──
-    // Los niveles de precio (cierre/apertura/OHLC ayer y overnight ONH/ONL) los
-    // escribe el indicador SupabaseDailyLevels. El bot solo captura lo cualitativo:
-    // soportes/resistencias naranja y noticias.
+    // ── Premercado (flujo viejo) ──
+    // El bot ya NO pregunta zonas naranjas ni noticias: las escribe el AddOn
+    // ChecklistChaumer mientras se marcan en el grafico. Estos 3 pasos se
+    // conservan SOLO por si quedo un estado a medias en KV: no preguntan nada,
+    // solo dejan avanzar para que la sesion se pueda cerrar.
     case STEPS.PRE_SOPORTES:
-      state.data.soportes_naranja = parseNumList(text);
-      state.step = STEPS.PRE_RESIST;
-      await saveState(env.KV, chatId, state);
-      await sendMessage(token, chatId, PREMKT_PROMPTS.pre_resist);
-      break;
-    case STEPS.PRE_RESIST: {
-      state.data.resistencias_naranja = parseNumList(text);
-      // Las noticias ya NO se piden aquí (ago 2026): las registra el AddOn
-      // `ChecklistChaumer` en `sesion_noticias`, con hora y nombre de cada una.
-      // Preguntarlas otra vez duplicaba el dato y alargaba el flujo del bot.
-      if (state.data.no_opero) {
-        state.step = STEPS.REFLEXION;
-        await saveState(env.KV, chatId, state);
-        await sendMessage(token, chatId, '✍️ <b>Análisis del día</b>\n\nEscribe tu análisis de la sesión (no hubo setup válido):');
-      } else {
-        state.step = STEPS.EMOCION;
-        await saveState(env.KV, chatId, state);
-        const emociones = await fetchEmociones(env);
-        await sendMessage(token, chatId,
-          '😊 <b>Estado emocional</b>\n\n¿Cómo llegas a la sesión de hoy?',
-          emociones.length ? emocionKeyboard(emociones) : { inline_keyboard: [[{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]] }
-        );
-      }
-      break;
-    }
-    // Se conserva por si algún estado quedó guardado en KV a mitad del flujo viejo:
-    // no vuelve a preguntar, solo deja avanzar.
+    case STEPS.PRE_RESIST:
     case STEPS.PRE_NOTICIAS: {
-      const t = text.toLowerCase();
-      state.data.noticias = (t === '/skip' || t === 'skip' || t === '-') ? null : text;
       if (state.data.no_opero) {
-        // Caso 2: me conecté sin setup → directo a la reflexión
         state.step = STEPS.REFLEXION;
         await saveState(env.KV, chatId, state);
         await sendMessage(token, chatId, '✍️ <b>Análisis del día</b>\n\nEscribe tu análisis de la sesión (no hubo setup válido):');
       } else {
-        // Día operado → continúa con emoción
         state.step = STEPS.EMOCION;
         await saveState(env.KV, chatId, state);
         const emociones = await fetchEmociones(env);
-        await sendMessage(token, chatId,
-          '😊 <b>Estado emocional</b>\n\n¿Cómo llegas a la sesión de hoy?',
-          emociones.length ? emocionKeyboard(emociones) : { inline_keyboard: [[{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]] }
-        );
+        await sendMessage(token, chatId, '😊 <b>Estado emocional</b>\n\n¿Cómo llegas a la sesión de hoy?', emociones.length ? emocionKeyboard(emociones) : { inline_keyboard: [[{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]] });
       }
       break;
     }
