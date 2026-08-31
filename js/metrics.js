@@ -425,11 +425,11 @@ const Metrics = (() => {
         else                         desglose.sinResultado++  // no entré, o B.E.
       } else {
         // ── Día sin operar ──
-        // FOMC ya NO es una rama de esta partición. Un FOMC no cierra el mercado:
-        // es una razón para no operar, no para que no haya sesión. Al ponerlo aquí,
-        // un FOMC que sí seguiste conectado caía en "días conectados" y el contador
-        // marcaba 0 aunque el mes tuviera dos (agosto: 19 y 28). Ahora se cuenta
-        // aparte, como contexto del mes, y esta columna vuelve a sumar de verdad.
+        // FOMC no reparte aquí. La fila FOMC del desglose sigue en su sitio, pero
+        // muestra `fomcMes` (TODOS los del mes): antes contaba solo los días FOMC
+        // que además no se habían conectado, y como agosto siguió los dos conectado
+        // el contador marcaba 0 teniendo dos. Los FOMC sin conexión caen aquí en
+        // `noConectados`, que es lo que de verdad fueron.
         desglose.sinOperar++
         if      (fechasEspByDate.festivo?.has(fecha)) desglose.festivos++
         else if (sesionesByDate[fecha])               desglose.noConectados++
@@ -682,18 +682,10 @@ const Metrics = (() => {
         </div>
         ${fila('ti-user-off',       'No conectados', d.noConectados, 'c-off',     'No abriste la plataforma ese día')}
         ${fila('ti-building-bank',  'Festivos',      d.festivos,     'c-holiday', 'Mercado cerrado')}
+        ${fila('ti-chart-candle',   'FOMC',          d.fomcMes,      'c-fomc',
+               `Días FOMC del mes${d.fomcConectado > 0 ? ` · ${d.fomcConectado} los seguiste conectado, así que ya cuentan en la columna de la izquierda` : ''}`)}
         ${d.sinRegistro > 0 ? fila('ti-help-circle', 'Sin registro', d.sinRegistro, 'c-none', 'Días hábiles sin sesión registrada y sin fecha especial') : ''}
-      </div>
-
-      ${d.fomcMes > 0 ? `
-        <div class="dd-nota" title="Un FOMC no cierra el mercado: es una razón para no operar, no para que no haya sesión. Por eso se cuenta aparte y no dentro de ninguna de las dos columnas.">
-          <span class="dd-dot c-fomc"><i class="ti ti-chart-candle"></i></span>
-          <span><strong>${d.fomcMes}</strong> ${d.fomcMes === 1 ? 'día FOMC' : 'días FOMC'} este mes${
-            d.fomcConectado > 0
-              ? ` · ${d.fomcConectado === d.fomcMes ? (d.fomcMes === 1 ? 'lo seguiste conectado' : 'los seguiste conectado') : `${d.fomcConectado} conectado`}`
-              : ' · ninguno conectado'
-          }</span>
-        </div>` : ''}`
+      </div>`
   }
 
   // Curva de equity del mes seleccionado (sección Calendario)

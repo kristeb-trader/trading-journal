@@ -246,9 +246,13 @@ const Calendar = (() => {
         // también al futuro.
         let statusBadge = ''
         if (!isFuture && sesion?.no_opero) {
-          if (sesion.motivo_no_opero === 'Setup válido no tomado') {
-            statusBadge = `<div class="cal-status-badge badge-sinsetup">⚠️ Setup válido — no entré</div>`
-          } else if (sesion.motivo_no_opero === 'Sin setup') {
+          // "Sin entradas" cubre los dos: no hubo setup, y hubo setup válido que no
+          // se tomó. La bandera `setup_valido_no_tomado` manda sobre el motivo — es
+          // el dato específico, y puede quedar desalineada con él (el 25 ago tenía
+          // motivo "Otro" con la bandera y el setup observado rellenos).
+          if (sesion.motivo_no_opero === 'Setup válido no tomado' ||
+              sesion.motivo_no_opero === 'Sin setup' ||
+              sesion.setup_valido_no_tomado === true) {
             statusBadge = `<div class="cal-status-badge badge-sinsetup"><i class="ti ti-eye-off"></i> Sin entradas</div>`
           } else if (sesion.motivo_no_opero === 'FOMC') {
             statusBadge = `<div class="cal-status-badge badge-fomc"><i class="ti ti-chart-candle"></i> FOMC</div>`

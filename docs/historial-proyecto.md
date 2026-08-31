@@ -4,6 +4,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-08-31 | Motivos sin cubrir, FOMC del desglose y P&L de la celda |
 | 2026-08-23 | Tarjetas KPI y curva de equity del Calendario |
 | 2026-08-19 | Otros y Datos rediseñados, modo local y comparador de Chaumer |
 | 2026-08-18 | Trades fantasma: el replay de ejecuciones de NinjaTrader |
@@ -2137,6 +2138,72 @@ Commits: `d3e31ef` · `de45a1b` · `4794a77` · `3e97402`.
 ---
 
 
+
+## Checkpoint 2026-08-31 — Motivos sin cubrir, FOMC del desglose y P&L de la celda
+
+### Tres motivos que se pintaban como "no me conecté"
+
+El selector de `motivo_no_opero` ofrece **7 opciones** y `calendar.js` solo contemplaba 4:
+`Noticia roja`, `Personal` y `Otro` caían en el `else` final y se pintaban con
+`badge-noopero` y el icono de usuario tachado — el de **no haberse conectado**. Kris lo vio
+en el 25-ago, que tiene motivo `Otro`.
+
+Ahora el color lo decide **`se_conecto`**, no una lista de motivos:
+
+```js
+if (sesion.motivo_no_opero === 'FOMC')    return 'fomc'
+if (sesion.motivo_no_opero === 'Festivo') return 'festivo'
+if (sesion.se_conecto !== false) return 'sin-setup'   // conectado y sin operar
+return 'no-trade'
+```
+
+Así un motivo nuevo no vuelve a romperlo. El badge **"No operé" pasó a "No me conecté"** y
+queda reservado a `se_conecto === false`: antes la misma etiqueta valía para las dos cosas.
+
+### "Sin entradas" cubre también el setup válido no tomado
+
+Por petición de Kris, `Setup válido no tomado` deja de tener badge propio
+("⚠️ Setup válido — no entré") y muestra **"Sin entradas"**, igual que `Sin setup`.
+
+Y **la bandera `setup_valido_no_tomado` manda sobre el motivo**, porque pueden estar
+desalineados: el 25-ago tenía `motivo_no_opero = 'Otro'` con `setup_valido_no_tomado = true`
+y `setup_observado = 'IRI Continuación Bajista'` rellenos. El dato específico gana.
+
+> El matiz no se pierde donde importa: `setup_valido_no_tomado` y `setup_observado` siguen
+> en la BD y la disciplina los sigue usando. Lo que se unificó es la **etiqueta del
+> calendario**.
+
+### El contador de FOMC marcaba 0 con dos FOMC en el mes
+
+Agosto tuvo dos (19, *FOMC Minutes*; 28, *Jackson Hole*) y la fila decía 0. La fila contaba
+los días FOMC **de la rama "sin operar"**, que solo recoge días **no conectados** — y Kris
+siguió los dos conectado, así que caían en "días conectados" y nunca llegaban al contador.
+
+La fila **se queda donde estaba** (Kris pidió no moverla) pero ahora muestra `fomcMes`: los
+días FOMC del mes, se conectara o no. Los FOMC sin conexión caen en `noConectados`, que es
+lo que de verdad fueron. El tooltip avisa de cuántos ya cuentan en la columna de la
+izquierda, para que no parezca doble conteo.
+
+> Se probó antes sacar la fila a una nota a pie del bloque. **Se descartó**: Kris la quiere
+> donde estaba.
+
+### El P&L de la celda
+
+Toma el hueco libre con `flex: 1` y se centra en él — `1.15rem` en escritorio, `0.95` en
+tablet, `0.8` en móvil, frente a `0.88 / 0.72 / 0.65`. **La celda no cambia de alto**: solo
+se reparte mejor el espacio que ya tenía. Colores a las variantes `-txt`.
+
+### Verificación
+
+Inyectando en la copia local los casos reales de la BD: `Otro` + bandera, `Setup válido no
+tomado`, `Sin setup` y `Noticia roja` dan todos día conectado; solo `se_conecto = false` da
+"No me conecté". Consola limpia.
+
+> ⚠️ Estos cambios entraron en el commit `ae4746d` de **otra sesión** que hizo `git add -A`
+> mientras se trabajaba en el mismo directorio, así que su mensaje solo habla de `RR.cs`.
+> Dos agentes sobre el mismo árbol: commitear por archivo, no con `-A`.
+
+---
 ## Checkpoint 2026-08-23 — Tarjetas KPI y curva de equity del Calendario
 
 Dos cambios de forma, ninguno de cálculo.

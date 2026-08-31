@@ -4758,17 +4758,6 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .dd-total.muted  { color: var(--text3); }
 .dd-pct { font-size: 0.72rem; font-weight: 600; color: var(--text3); }
 
-/* Contexto del mes, fuera de las dos ramas: cruza todo el ancho para que se lea
-   como nota y no como una tercera columna que debería sumar. */
-.dd-nota {
-  grid-column: 1 / -1;
-  display: flex; align-items: center; gap: 9px;
-  padding: 9px 14px; border: 1px solid var(--border); border-radius: 10px;
-  background: rgba(255,255,255,0.02);
-  font-size: 0.76rem; color: var(--text3);
-}
-.dd-nota strong { color: var(--text2); font-weight: 700; font-variant-numeric: tabular-nums; }
-
 /* Filas de detalle: icono · etiqueta · barra de proporción · valor */
 .dd-row {
   display: grid; grid-template-columns: 22px 1fr minmax(48px, 84px) 30px;
