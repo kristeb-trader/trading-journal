@@ -5137,3 +5137,27 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .an-kpi-value { font-size: 25px; }
 .an-pill { font-size: 12px; }
 @media (max-width: 640px) { .an-kpi-value { font-size: 19px; } }
+
+/* ── Corrección de especificidad (19 ago, 3ª pasada) ────────────────────────
+   `.an-table td` (0,1,1) fija `color: var(--text2)` y GANABA a `.an-t-pos`
+   (0,1,0): las clases de color estaban en el HTML pero el gris se imponía y la
+   tabla salía entera en gris. Se califican con `td` para empatar y ganar por
+   orden. Comprobar el color COMPUTADO, no que la clase esté puesta. */
+.an-table td.an-t-name    { color: var(--text); font-weight: 600; }
+.an-table td.an-t-pos     { color: var(--accent-txt); font-weight: 700; }
+.an-table td.an-t-neg     { color: var(--red-txt);    font-weight: 700; }
+.an-table td.an-t-warn    { color: var(--warning-txt); font-weight: 700; }
+.an-table td.an-t-neutral { color: var(--text3); }
+.an-table tfoot td.an-t-pos     { color: var(--accent-txt); }
+.an-table tfoot td.an-t-neg     { color: var(--red-txt); }
+.an-table tfoot td.an-t-warn    { color: var(--warning-txt); }
+.an-table tfoot td.an-t-neutral { color: var(--text3); }
+
+/* Fuera la barra bajo el P&L: se comía ancho de la columna sin aportar nada que
+   el número no diga ya. */
+.an-t-bar::after { content: none; }
+
+/* Los KPI se leen centrados: la etiqueta arriba y el número debajo, ambos al
+   mismo eje. Alineados a la izquierda el número quedaba descolgado. */
+.an-kpi { align-items: center; text-align: center; }
+.an-kpi-label { justify-content: center; }

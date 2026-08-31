@@ -178,3 +178,44 @@ total, así que las filas suman 100%.
 meses para juzgar las gráficas con volumen. Eje de equity: `−$1.000 · $0 · $1.000 · $2.000`.
 Distribución: 55% de acierto, 36 ganadores / 30 perdedores. Móvil 375px sin scroll
 horizontal ni valores recortados. Consola limpia.
+
+---
+
+# v1.2 — correcciones (19 ago 2026)
+
+## El fallo de fondo: los colores de la tabla nunca se pintaron
+
+`.an-table td` fija `color: var(--text2)` y tiene especificidad **(0,1,1)**;
+`.an-t-pos` / `.an-t-neg` la tienen **(0,1,0)**. El gris ganaba siempre. Las clases
+**sí estaban** en el HTML —por eso la verificación de la v1.1 las dio por buenas— pero el
+color no llegaba y la tabla salía entera en gris.
+
+> **Regla que sale de aquí: comprobar el color COMPUTADO, no que la clase esté puesta.**
+> `getComputedStyle(td).color`, no `td.className`. Una comprobación que solo mira el
+> marcado no distingue "pintado" de "escrito pero pisado".
+
+Corregido calificando con `td` (`.an-table td.an-t-pos`) para empatar en especificidad y
+ganar por orden. Se añade un tercer tono, `an-t-warn` (ámbar), para el tramo intermedio de
+Efectividad y Disciplina: antes iba sin clase y se confundía con "sin dato".
+
+## Resto de cambios pedidos
+
+| Pedido | Hecho |
+|---|---|
+| Quitar la barra bajo el P&L | Se comía ancho de columna sin decir nada que el número no diga |
+| Devolver la columna Trades | Restaurada en filas y en totales |
+| Quitar el contador "13 trades" de la cabecera | Ya está en el KPI "Total Trades" |
+| Centrar los valores de los KPI | `align-items: center` + `text-align: center` |
+| Quitar la leyenda "Exportar informe" | Los dos botones se explican solos |
+
+## La etiqueta que se montaba sobre "Sem 3"
+
+La barra más negativa llega al fondo de la escala, así que su etiqueta caía justo encima de
+las etiquetas del eje X. Dos medidas:
+
+- **`grace: '18%'`** en la escala Y: estira el rango y reserva el aire (con −1.454 la escala
+  baja a −2.000, no a −1.454).
+- **Sujeción dentro del área de dibujo** en el plugin, como cinturón por si aun así no cabe.
+
+Verificado reproduciendo el caso exacto: barra en y=137, etiqueta en y=144, eje X en y=163
+→ **19px libres**, sin solape.

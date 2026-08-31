@@ -63,11 +63,19 @@ const Charts = (() => {
       ctx.font = '700 11px system-ui, sans-serif'
       ctx.textAlign = 'center'
       ctx.fillStyle = '#F4F3EF'   // --text; el canvas no resuelve variables CSS
+      const { top, bottom } = chart.chartArea
       meta.data.forEach((bar, i) => {
         const v = data[i]
         if (v == null || !destacar.has(i)) return
+        // La etiqueta se sujeta DENTRO del área de dibujo. La barra más negativa
+        // llega al fondo de la escala, así que su etiqueta caía sobre las
+        // etiquetas del eje X ("-$1.454" encima de "Sem 3"). El `grace` de la
+        // escala reserva el aire; esto es el cinturón por si aun así no cabe.
         ctx.textBaseline = v >= 0 ? 'bottom' : 'top'
-        ctx.fillText(fmtDinero(v), bar.x, bar.y + (v >= 0 ? -7 : 7))
+        const y = v >= 0
+          ? Math.max(top + 11, bar.y - 7)
+          : Math.min(bottom - 13, bar.y + 7)
+        ctx.fillText(fmtDinero(v), bar.x, y)
       })
       ctx.restore()
     },
@@ -448,7 +456,7 @@ const Charts = (() => {
         scales: {
           x: { ...baseOptions.scales.x, grid: { display: false },
                ticks: { color: COLORS.text, maxRotation: 0, autoSkip: false, font: { size: 11 } } },
-          y: { ...baseOptions.scales.y, border: { display: false },
+          y: { ...baseOptions.scales.y, border: { display: false }, grace: '18%',
                grid: { color: 'rgba(255,255,255,0.04)' },
                ticks: { color: COLORS.text, font: { size: 11 }, maxTicksLimit: 5, callback: v => fmtDinero(v, { masEnPositivo: false }) } },
         },
@@ -522,12 +530,6 @@ const Charts = (() => {
       : 'Resumen por mes del año'
     document.getElementById('analysisTablaCol1').textContent = period === 'month' ? 'Semana' : 'Mes'
 
-    // Escala común de la barra inline: el mayor |P&L| del período. Así las barras
-    // de dos filas son comparables entre sí, que es todo el propósito.
-    const maxAbs = Math.max(...subs.map(sp => Math.abs(trades
-      .filter(t => (t.trade_date || '') >= sp.from && (t.trade_date || '') <= sp.to)
-      .reduce((a, t) => a + (parseFloat(t.profit) || 0), 0))), 1)
-
     let cum = 0
     const rows = subs.map(sp => {
       const tt = trades.filter(t => (t.trade_date || '') >= sp.from && (t.trade_date || '') <= sp.to)
@@ -537,26 +539,27 @@ const Charts = (() => {
       const disc = calcDiscipline(ss)
       const hasData = tt.length > 0 || ss.filter(s => !s.no_opero).length > 0
       if (!hasData) {
-        return `<tr class="an-t-vacia"><td class="an-t-name">${sp.label}</td><td colspan="6">— sin actividad —</td></tr>`
+        return `<tr class="an-t-vacia"><td class="an-t-name">${sp.label}</td><td colspan="7">— sin actividad —</td></tr>`
       }
       const rent = capital > 0 ? `${(st.pnl / capital * 100).toFixed(2)}%` : '—'
       const efec = st.efec != null ? `${st.efec.toFixed(1)}%` : '—'
-      const efecCls = st.efec == null ? 'an-t-neutral' : st.efec >= 50 ? 'an-t-pos' : st.efec >= 40 ? '' : 'an-t-neg'
+      // Semáforo de 3 tramos: bien / regular / mal. El tramo del medio va en
+      // ámbar y no en gris, que se confundía con "sin dato".
+      const efecCls = st.efec == null ? 'an-t-neutral' : st.efec >= 50 ? 'an-t-pos' : st.efec >= 40 ? 'an-t-warn' : 'an-t-neg'
       const discStr = disc != null ? `${disc}%` : '—'
-      const discCls = disc == null ? 'an-t-neutral' : disc >= 80 ? 'an-t-pos' : disc >= 55 ? '' : 'an-t-neg'
+      const discCls = disc == null ? 'an-t-neutral' : disc >= 80 ? 'an-t-pos' : disc >= 55 ? 'an-t-warn' : 'an-t-neg'
       const estado = st.pnl > 0 ? '<span class="an-pill an-pill-pos"><i class="ti ti-trending-up"></i>Positivo</span>'
         : st.pnl < 0 ? '<span class="an-pill an-pill-neg"><i class="ti ti-trending-down"></i>Negativo</span>'
         : '<span class="an-pill an-pill-be"><i class="ti ti-minus"></i>Neutro</span>'
-      const w = Math.round(Math.abs(st.pnl) / maxAbs * 100)
-      const bc = st.pnl >= 0 ? 'var(--accent)' : 'var(--red)'
       return `
         <tr>
           <td class="an-t-name">${sp.label}</td>
-          <td class="num an-t-pnl an-t-bar ${st.pnl > 0 ? 'an-t-pos' : st.pnl < 0 ? 'an-t-neg' : ''}" style="--w:${w}%;--bc:${bc}">${fmtDinero(st.pnl)}</td>
+          <td class="num an-t-pnl ${st.pnl > 0 ? 'an-t-pos' : st.pnl < 0 ? 'an-t-neg' : ''}">${fmtDinero(st.pnl)}</td>
           <td class="num ${cum >= 0 ? 'an-t-pos' : 'an-t-neg'}">${fmtDinero(cum)}</td>
           <td class="num">${rent}</td>
           <td class="num ${efecCls}">${efec}</td>
           <td class="num ${discCls}">${discStr}</td>
+          <td class="num">${st.total || '—'}</td>
           <td>${estado}</td>
         </tr>`
     }).join('')
@@ -574,8 +577,8 @@ const Charts = (() => {
 
     // La fila de totales lleva los MISMOS colores que las filas: es lo primero que
     // busca quien audita sus números, y en gris no se distingue de una fila más.
-    const totEfecCls = tot.efec == null ? 'an-t-neutral' : tot.efec >= 50 ? 'an-t-pos' : tot.efec >= 40 ? '' : 'an-t-neg'
-    const totDiscCls = totDisc == null ? 'an-t-neutral' : totDisc >= 80 ? 'an-t-pos' : totDisc >= 55 ? '' : 'an-t-neg'
+    const totEfecCls = tot.efec == null ? 'an-t-neutral' : tot.efec >= 50 ? 'an-t-pos' : tot.efec >= 40 ? 'an-t-warn' : 'an-t-neg'
+    const totDiscCls = totDisc == null ? 'an-t-neutral' : totDisc >= 80 ? 'an-t-pos' : totDisc >= 55 ? 'an-t-warn' : 'an-t-neg'
     const totRentCls = capital > 0 ? (tot.pnl >= 0 ? 'an-t-pos' : 'an-t-neg') : 'an-t-neutral'
 
     document.getElementById('analysisTablaBody').innerHTML = rows
@@ -587,6 +590,7 @@ const Charts = (() => {
         <td class="num ${totRentCls}">${totRent}</td>
         <td class="num ${totEfecCls}">${totEfec}</td>
         <td class="num ${totDiscCls}">${totDisc != null ? totDisc + '%' : '—'}</td>
+        <td class="num">${tot.total}</td>
         <td>${totEstado}</td>
       </tr>`
   }
