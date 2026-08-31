@@ -497,7 +497,7 @@ const Charts = (() => {
       <div class="an-dist-row">
         <span class="an-dist-dot an-dist-seg-${cls}"></span>
         <span class="an-dist-lbl">${label}</span>
-        <span class="an-dist-n">${n}</span>
+        <span class="an-dist-n an-dist-n-${cls}">${n}</span>
         <span class="an-dist-pct">${pct(n)}%</span>
       </div>` : ''
 
@@ -530,6 +530,10 @@ const Charts = (() => {
       : 'Resumen por mes del año'
     document.getElementById('analysisTablaCol1').textContent = period === 'month' ? 'Semana' : 'Mes'
 
+    // Los sub-períodos sin actividad se agrupan en UNA fila. En vista Anual eran
+    // 5 filas de "— sin actividad —" (Ene y Sep–Dic) ocupando 215px para no decir
+    // nada; agrupadas dicen lo mismo en 40.
+    const vacios = []
     let cum = 0
     const rows = subs.map(sp => {
       const tt = trades.filter(t => (t.trade_date || '') >= sp.from && (t.trade_date || '') <= sp.to)
@@ -539,7 +543,8 @@ const Charts = (() => {
       const disc = calcDiscipline(ss)
       const hasData = tt.length > 0 || ss.filter(s => !s.no_opero).length > 0
       if (!hasData) {
-        return `<tr class="an-t-vacia"><td class="an-t-name">${sp.label}</td><td colspan="7">— sin actividad —</td></tr>`
+        vacios.push(sp.label)
+        return ''
       }
       const rent = capital > 0 ? `${(st.pnl / capital * 100).toFixed(2)}%` : '—'
       const efec = st.efec != null ? `${st.efec.toFixed(1)}%` : '—'
@@ -555,7 +560,7 @@ const Charts = (() => {
         <tr>
           <td class="an-t-name">${sp.label}</td>
           <td class="num an-t-pnl ${st.pnl > 0 ? 'an-t-pos' : st.pnl < 0 ? 'an-t-neg' : ''}">${fmtDinero(st.pnl)}</td>
-          <td class="num ${cum >= 0 ? 'an-t-pos' : 'an-t-neg'}">${fmtDinero(cum)}</td>
+          <td class="num">${fmtDinero(cum)}</td>
           <td class="num">${rent}</td>
           <td class="num ${efecCls}">${efec}</td>
           <td class="num ${discCls}">${discStr}</td>
@@ -579,15 +584,18 @@ const Charts = (() => {
     // busca quien audita sus números, y en gris no se distingue de una fila más.
     const totEfecCls = tot.efec == null ? 'an-t-neutral' : tot.efec >= 50 ? 'an-t-pos' : tot.efec >= 40 ? 'an-t-warn' : 'an-t-neg'
     const totDiscCls = totDisc == null ? 'an-t-neutral' : totDisc >= 80 ? 'an-t-pos' : totDisc >= 55 ? 'an-t-warn' : 'an-t-neg'
-    const totRentCls = capital > 0 ? (tot.pnl >= 0 ? 'an-t-pos' : 'an-t-neg') : 'an-t-neutral'
 
-    document.getElementById('analysisTablaBody').innerHTML = rows
+    const filaVacios = vacios.length
+      ? `<tr class="an-t-vacia"><td class="an-t-name">${vacios.join(' · ')}</td><td colspan="7">— sin actividad —</td></tr>`
+      : ''
+
+    document.getElementById('analysisTablaBody').innerHTML = rows + filaVacios
     document.getElementById('analysisTablaFoot').innerHTML = `
       <tr>
         <td class="an-t-name">Total ${periodLabel()}</td>
         <td class="num an-t-pnl ${tot.pnl >= 0 ? 'an-t-pos' : 'an-t-neg'}">${fmtDinero(tot.pnl)}</td>
-        <td class="num ${tot.pnl >= 0 ? 'an-t-pos' : 'an-t-neg'}">${fmtDinero(tot.pnl)}</td>
-        <td class="num ${totRentCls}">${totRent}</td>
+        <td class="num">${fmtDinero(tot.pnl)}</td>
+        <td class="num">${totRent}</td>
         <td class="num ${totEfecCls}">${totEfec}</td>
         <td class="num ${totDiscCls}">${totDisc != null ? totDisc + '%' : '—'}</td>
         <td class="num">${tot.total}</td>

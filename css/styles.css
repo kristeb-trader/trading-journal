@@ -5161,3 +5161,34 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
    mismo eje. Alineados a la izquierda el número quedaba descolgado. */
 .an-kpi { align-items: center; text-align: center; }
 .an-kpi-label { justify-content: center; }
+
+/* ── Compactación (19 ago, 4ª pasada) ──────────────────────────────────────
+   La pantalla medía 1.502px de alto contra 744 útiles en una ventana de 800:
+   obligaba a hacer scroll para ver las gráficas. Se recupera alto sin bajar el
+   tamaño de letra, que es justo lo que Kris pidió subir. */
+
+/* El P&L vuelve al tamaño del resto de columnas: ya destaca por el color. */
+.an-table td.an-t-pnl { font-size: 15px; }
+.an-table tfoot td.an-t-pnl { font-size: 16px; }
+
+/* Filas más juntas: 43px por fila × 12 meses eran 516 solo de cuerpo. */
+.an-table td { padding: 7px 12px; }
+.an-table th { padding: 0 12px 7px; }
+.an-table tfoot td { padding: 10px 12px; }
+
+/* Tarjetas y gráficas: menos aire muerto arriba y abajo. */
+.an-card { padding: 12px 16px 11px; margin-bottom: 11px; }
+.an-card-head { margin-bottom: 10px; }
+.an-chart { height: 168px; }
+.an-chart-tall { height: 240px; }
+@media (max-width: 768px) { .an-chart-tall { height: 210px; } }
+.an-charts-2 { gap: 11px; }
+.an-kpis { gap: 9px; margin-bottom: 11px; }
+.an-kpi { padding: 9px 12px 8px; gap: 2px; }
+.analysis-footer { margin-top: 12px; padding-top: 10px; }
+
+/* Los conteos de la distribución, en el color de su tramo. */
+.an-dist { gap: 11px; }
+.an-dist-n-pos { color: var(--accent-txt); }
+.an-dist-n-neg { color: var(--red-txt); }
+.an-dist-n-be  { color: var(--text2); }
