@@ -4949,15 +4949,6 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .an-kpi-down .an-kpi-value { color: var(--red-txt); }
 .an-kpi-flat .an-kpi-value { color: var(--text); }
 
-/* Variación contra el período anterior: sin ella el número no dice si vas
-   mejor o peor, que es justo la pregunta que trae el usuario. */
-.an-kpi-delta {
-  font-size: 0.68rem; font-weight: 600; color: var(--text3);
-  font-variant-numeric: tabular-nums; white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis;
-}
-.an-kpi-delta .up   { color: var(--accent-txt); font-weight: 700; }
-.an-kpi-delta .down { color: var(--red-txt);    font-weight: 700; }
 @media (max-width: 640px) {
   .an-kpi-value { font-size: 1.12rem; }
   .an-kpi { padding: 10px 11px 9px; }
@@ -5013,31 +5004,6 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .an-chart-tall { height: 300px; }
 @media (max-width: 768px) { .an-chart-tall { height: 230px; } }
 
-/* Donut: el total al centro ahorra tener que buscarlo en otro sitio. */
-.an-chart-donut { height: 168px; }
-.an-donut-center {
-  position: absolute; inset: 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; pointer-events: none; gap: 1px;
-}
-.an-donut-big {
-  font-size: 1.28rem; font-weight: 700; color: var(--text);
-  font-variant-numeric: tabular-nums; line-height: 1;
-}
-.an-donut-sub {
-  font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.07em; color: var(--text3);
-}
-/* Leyenda propia: solo nombre y color. El % ya va DENTRO del segmento y el
-   conteo en la cabecera — cada dato vive en un sitio, no en dos. */
-.an-legend {
-  display: flex; justify-content: center; flex-wrap: wrap;
-  gap: 6px 16px; margin-top: 10px;
-}
-.an-legend-item {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 0.75rem; color: var(--text2);
-}
-.an-legend-dot { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 auto; }
 
 /* Tooltip propio de la equity: el de Chart.js no admite esta jerarquía. */
 .an-tip {
@@ -5061,9 +5027,113 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .an-tip-neg b { color: var(--red-txt); }
 
 /* ── 4 · Las tres tarjetas ──────────────────────────────────────────────── */
-.an-charts-3 {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px;
+
+/* ══ ANÁLISIS — ajustes 19 ago 2026 (2ª pasada) ════════════════════════════
+   Cambios pedidos por Kris tras ver la primera versión, más lo que corrige el
+   catálogo de anti-patrones de visualización:
+     · Los KPI pierden la línea de contexto y el Profit Factor → 6 tarjetas.
+     · La tabla se lee: tipografía mayor, P&L destacado y barra de totales.
+     · La dona sale (un ratio único no es un pastel de 2 porciones).
+   Estas reglas van DESPUÉS del bloque original y lo pisan a propósito.        */
+
+/* ── KPIs: 6, sin línea de contexto ─────────────────────────────────────── */
+.an-kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .an-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px)  { .an-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.an-kpi { padding: 13px 14px 12px; gap: 5px; }
+.an-kpi-label { font-size: 0.66rem; }
+.an-kpi-value { font-size: 1.5rem; }
+@media (max-width: 640px) { .an-kpi-value { font-size: 1.2rem; } }
+
+/* ── Títulos de tarjeta: que se note que son títulos ────────────────────── */
+.an-card-head h3 { font-size: 1.02rem; font-weight: 700; }
+.an-card-head h3 .ti { font-size: 1.15rem; }
+
+/* ── Tabla: legible ─────────────────────────────────────────────────────── */
+/* La primera versión iba a 0.62rem en cabecera y 0.82rem en celda: exacto y
+   diminuto. Un informe que cuesta leer no se lee. */
+.an-table th {
+  font-size: 0.76rem; font-weight: 700; text-transform: none;
+  letter-spacing: 0.01em; color: var(--text2); padding: 0 12px 10px;
 }
-.an-charts-3 .an-card { margin-bottom: 0; }
-@media (max-width: 1100px) { .an-charts-3 { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 700px)  { .an-charts-3 { grid-template-columns: 1fr; } }
+.an-table td { font-size: 0.95rem; padding: 11px 12px; }
+.an-t-name { font-size: 1rem; }
+/* El P&L es la columna que se mira primero: va un punto por encima del resto. */
+.an-table td.an-t-pnl { font-size: 1.12rem; font-weight: 700; letter-spacing: -0.01em; }
+
+/* Barra de totales: se separa de las filas y pesa como un bloque, no como
+   una fila más. */
+.an-table tfoot td {
+  font-size: 1.06rem; padding: 14px 12px;
+  background: var(--bg2); border-top: 2px solid var(--border);
+}
+.an-table tfoot td.an-t-pnl { font-size: 1.24rem; }
+.an-table tfoot td:first-child { border-radius: 9px 0 0 9px; }
+.an-table tfoot td:last-child  { border-radius: 0 9px 9px 0; }
+.an-table tfoot .an-t-name { color: var(--text); font-size: 1rem; }
+
+.an-pill { font-size: 0.74rem; padding: 3px 10px; }
+.an-pill .ti { font-size: 0.88rem; }
+
+/* ── Distribución: cifra + medidor, no una dona ─────────────────────────── */
+.an-dist { display: flex; flex-direction: column; gap: 14px; padding: 4px 0 2px; }
+.an-dist-hero { display: flex; align-items: baseline; gap: 9px; }
+.an-dist-big {
+  font-size: 2.6rem; font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.03em;
+  color: var(--text);
+}
+.an-dist-sub { font-size: 0.84rem; color: var(--text2); }
+/* Medidor part-to-whole. Los dos tramos se separan con un HUECO del color de la
+   superficie (2px), no con un borde: el borde añade tinta que no es dato. */
+.an-dist-bar {
+  display: flex; gap: 2px; height: 12px; border-radius: 6px; overflow: hidden;
+  background: var(--bg3);
+}
+.an-dist-seg { height: 100%; }
+.an-dist-seg-pos { background: var(--accent); }
+.an-dist-seg-neg { background: var(--red); }
+.an-dist-seg-be  { background: var(--text3); }
+/* Las cifras que pidió Kris: cuántos ganadores y cuántos perdedores. El texto
+   va en tinta, nunca en el color de la serie; el color lo lleva el punto. */
+.an-dist-rows { display: flex; flex-direction: column; gap: 8px; }
+.an-dist-row {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 0.92rem; color: var(--text2);
+}
+.an-dist-dot { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.an-dist-lbl { flex: 1; }
+.an-dist-n {
+  font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums;
+  font-size: 1.02rem;
+}
+.an-dist-pct {
+  color: var(--text3); font-variant-numeric: tabular-nums;
+  min-width: 42px; text-align: right;
+}
+.an-dist-vacio { color: var(--text3); font-size: 0.86rem; padding: 18px 0; text-align: center; }
+
+/* ── Fila de dos tarjetas (se fue la de franja horaria) ─────────────────── */
+.an-charts-2 {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;
+}
+.an-charts-2 .an-card { margin-bottom: 0; }
+@media (max-width: 860px) { .an-charts-2 { grid-template-columns: 1fr; } }
+
+/* Recalibrado de tamaños: la raíz del documento son 14px, no 16, así que cada
+   `rem` sale un 12% más pequeño de lo que aparenta al escribirlo. Era la causa
+   de que la tabla se leyera diminuta pese a haberla "subido". Valores en px
+   donde el tamaño exacto es el requisito. */
+.an-card-head h3 { font-size: 17px; }
+.an-card-head h3 .ti { font-size: 19px; }
+.an-table th { font-size: 12.5px; }
+.an-table td { font-size: 15px; }
+.an-t-name { font-size: 15.5px; }
+.an-table td.an-t-pnl { font-size: 19px; }
+.an-table tfoot td { font-size: 16px; }
+.an-table tfoot td.an-t-pnl { font-size: 21px; }
+.an-table tfoot .an-t-name { font-size: 16px; }
+.an-kpi-label { font-size: 11px; }
+.an-kpi-value { font-size: 25px; }
+.an-pill { font-size: 12px; }
+@media (max-width: 640px) { .an-kpi-value { font-size: 19px; } }

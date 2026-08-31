@@ -23,11 +23,8 @@ const Charts = (() => {
     kpiEfec:    { title: 'Efectividad', text: 'Tasa de acierto pura: Targets ÷ (Targets + Stops).' },
     kpiDisc:    { title: 'Disciplina Total', text: 'Adherencia al checklist por fase (% de ítems cumplidos). No penaliza reglas sin registrar. Mismo cálculo que el calendario y el dashboard.' },
     kpiCons:    { title: 'Consistencia', text: 'Sub-períodos positivos: en Mes cuenta semanas, en Trimestre/Año cuenta meses.' },
-    kpiPf:      { title: 'Profit Factor', text: 'Ganancia bruta ÷ pérdida bruta. >1.5 sólido, >1 rentable, <1 negativo.' },
     equity:     { title: 'Curva de Equity', text: 'P&L acumulado a lo largo del período (por día en Mes/Trimestre, por mes en Anual). El relleno se tiñe de verde sobre cero y de rojo bajo cero. En la cabecera, "máx. caída" es el mayor retroceso desde un pico anterior.' },
     pnlBars:    { title: 'P&L por sub-período', text: 'P&L de cada semana (Mes) o mes (Trimestre/Anual).' },
-    pnlByDay:   { title: 'P&L por día de semana', text: 'P&L promedio agrupado por día (Lun–Vie).' },
-    pnlByHour:  { title: 'P&L medio por franja', text: 'P&L medio por trade en franjas de 30 min, en HORA LOCAL (Colombia), que es la que exporta NinjaTrader. Solo se muestran las franjas en las que operaste: un eje lleno de huecos parece que faltan datos cuando lo que pasa es que ahí no operas.' },
     results:    { title: 'Distribución de resultados', text: 'Proporción de Target / Stop / Break Even / Otro.' },
   }
 
@@ -45,21 +42,32 @@ const Charts = (() => {
   }
 
   // Plugin: etiqueta de valor ($) encima/debajo de cada barra
+  // Etiquetas SELECTIVAS: solo el mejor y el peor sub-período. Un número sobre
+  // cada barra convierte el gráfico en un muro de cifras que nadie lee y que se
+  // pisan entre sí con 12 meses — era lo que hacía que se viera desordenado.
+  // El resto de valores los cargan el eje y el tooltip.
+  // El texto va en tinta, nunca en el color de la serie: el color ya lo lleva la
+  // barra que hay debajo.
   const barValueLabels = {
     id: 'barValueLabels',
     afterDatasetsDraw(chart) {
       const { ctx } = chart
       const meta = chart.getDatasetMeta(0)
       const data = chart.data.datasets[0].data
+      const reales = data.map((v, i) => ({ v, i })).filter(x => typeof x.v === 'number' && x.v !== 0)
+      if (!reales.length) return
+      const destacar = new Set()
+      destacar.add(reales.reduce((a, b) => (b.v > a.v ? b : a)).i)
+      destacar.add(reales.reduce((a, b) => (b.v < a.v ? b : a)).i)
       ctx.save()
-      ctx.font = '600 11px system-ui, sans-serif'
+      ctx.font = '700 11px system-ui, sans-serif'
       ctx.textAlign = 'center'
+      ctx.fillStyle = '#F4F3EF'   // --text; el canvas no resuelve variables CSS
       meta.data.forEach((bar, i) => {
         const v = data[i]
-        if (v === null || v === undefined) return
-        ctx.fillStyle = v >= 0 ? COLORS.accent : COLORS.red
+        if (v == null || !destacar.has(i)) return
         ctx.textBaseline = v >= 0 ? 'bottom' : 'top'
-        ctx.fillText(`${v >= 0 ? '+' : ''}$${Math.round(v)}`, bar.x, bar.y + (v >= 0 ? -6 : 6))
+        ctx.fillText(fmtDinero(v), bar.x, bar.y + (v >= 0 ? -7 : 7))
       })
       ctx.restore()
     },
@@ -231,33 +239,6 @@ const Charts = (() => {
     }
   }
 
-  // ── Período anterior ──────────────────────────────────────────────────────
-  // Para la variación de los KPIs. No usa `shift()` porque ese muta el estado
-  // del módulo: aquí solo hace falta el rango, sin mover la vista.
-  function prevPeriodRange() {
-    if (period === 'month') {
-      let y = curYear, m = curMonth - 1
-      if (m < 1) { m = 12; y-- }
-      return { from: `${y}-${p2(m)}-01`, to: `${y}-${p2(m)}-${p2(new Date(y, m, 0).getDate())}` }
-    }
-    if (period === 'quarter') {
-      let y = curYear, q = curQ - 1
-      if (q < 1) { q = 4; y-- }
-      const m1 = (q - 1) * 3 + 1, m3 = m1 + 2
-      return { from: `${y}-${p2(m1)}-01`, to: `${y}-${p2(m3)}-${p2(new Date(y, m3, 0).getDate())}` }
-    }
-    return { from: `${curYear - 1}-01-01`, to: `${curYear - 1}-12-31` }
-  }
-
-  const NOMBRE_PREV = () => period === 'month' ? 'mes ant.' : period === 'quarter' ? 'trim. ant.' : 'año ant.'
-
-  // Formato compacto para ejes y celdas estrechas: $1,2k. Los importes completos
-  // siguen en los KPI y en los tooltips, que es donde se leen de verdad.
-  function fmtCorto(v) {
-    const a = Math.abs(v)
-    if (a >= 1000) return `${v < 0 ? '-' : ''}$${(a / 1000).toFixed(a >= 10000 ? 0 : 1).replace('.', ',')}k`
-    return `${v < 0 ? '-' : ''}$${Math.round(a)}`
-  }
 
   // ── KPIs ──────────────────────────────────────────────────────────────────
   function renderKpis(trades, sesiones, casByDate, subs) {
@@ -275,53 +256,27 @@ const Charts = (() => {
     const consPct = activeSub ? Math.round(posSub / activeSub * 100) : 0
     const rent = capital > 0 ? `${(s.pnl / capital * 100).toFixed(2)}%` : '—'
 
-    // Mismo cálculo sobre el período anterior, para la variación.
-    const pr = prevPeriodRange()
-    const prevTrades = AccountFilter.filter('analysis', allTrades)
-      .filter(t => (t.trade_date || '') >= pr.from && (t.trade_date || '') <= pr.to && esDiaHabil(t.trade_date))
-    const p = statsOf(prevTrades)
-
-    const pfStr = s.pf == null ? '—' : s.pf === Infinity ? '∞' : s.pf.toFixed(2)
     const winV = s.winRate != null ? s.winRate.toFixed(1) : '0.0'
 
-    // Variación: absoluta para el dinero, en puntos porcentuales para los %.
-    // Sin período anterior con datos no se inventa un 0% — se dice que no hay con qué comparar.
-    const delta = (actual, previo, tipo) => {
-      if (previo == null || actual == null || !prevTrades.length) return `<span class="an-kpi-delta">sin ${NOMBRE_PREV()}</span>`
-      const d = actual - previo
-      if (Math.abs(d) < 0.05) return `<span class="an-kpi-delta">= que el ${NOMBRE_PREV()}</span>`
-      const cls = d > 0 ? 'up' : 'down'
-      const txt = tipo === 'money' ? fmtCorto(Math.abs(d))
-        : tipo === 'pp' ? `${Math.abs(d).toFixed(1)} pp`
-        : Math.abs(d).toFixed(2)
-      return `<span class="an-kpi-delta"><span class="${cls}">${d > 0 ? '↑' : '↓'} ${txt}</span> vs ${NOMBRE_PREV()}</span>`
-    }
-
-    const kpi = (label, val, tono, deltaHtml, key) => `
+    // Sin línea de contexto bajo el número (Kris, 19 ago): la etiqueta y el valor
+    // ya lo dicen todo, y siete pies de texto convertían la fila en un párrafo.
+    // El "por qué" de cada métrica sigue disponible en el `?` de su etiqueta.
+    const kpi = (label, val, tono, key) => `
       <div class="an-kpi an-kpi-${tono}">
         <span class="an-kpi-label">${label}${key ? `<button class="help-btn-sm" data-help="${key}" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>` : ''}</span>
         <span class="an-kpi-value">${val}</span>
-        ${deltaHtml}
       </div>`
 
     const tono = (v, bueno, malo) => v == null ? 'flat' : v >= bueno ? 'up' : v < malo ? 'down' : 'flat'
 
     document.getElementById('analysisKpiStrip').className = 'an-kpis'
     document.getElementById('analysisKpiStrip').innerHTML = [
-      kpi('P&L Neto', fmtDinero(s.pnl), s.pnl > 0 ? 'up' : s.pnl < 0 ? 'down' : 'flat',
-          delta(s.pnl, p.pnl, 'money'), 'kpiPnl'),
-      kpi('Win Rate', `${winV}%`, tono(s.winRate, 50, 50),
-          delta(s.winRate, p.winRate, 'pp'), 'kpiWin'),
-      kpi('Rentabilidad', rent, capital > 0 ? (s.pnl >= 0 ? 'up' : 'down') : 'flat',
-          '<span class="an-kpi-delta">sobre capital inicial</span>', 'kpiRent'),
-      kpi('Disciplina', disc != null ? `${disc}%` : '—', tono(disc, 80, 55),
-          '<span class="an-kpi-delta">del proceso, no de la cuenta</span>', 'kpiDisc'),
-      kpi('Consistencia', activeSub ? `${consPct}%` : '—', tono(consPct, 60, 40),
-          `<span class="an-kpi-delta">${activeSub ? `${posSub} de ${activeSub} en positivo` : 'sin sub-períodos'}</span>`, 'kpiCons'),
-      kpi('Profit Factor', pfStr, s.pf == null ? 'flat' : (s.pf === Infinity || s.pf >= 1.5) ? 'up' : s.pf >= 1 ? 'flat' : 'down',
-          delta(s.pf === Infinity ? null : s.pf, p.pf === Infinity ? null : p.pf, 'num'), 'kpiPf'),
-      kpi('Total Trades', `${s.nonBE}`, 'flat',
-          `<span class="an-kpi-delta">${s.beCount ? `+${s.beCount} en break-even` : 'sin break-even'}</span>`, 'kpiTrades'),
+      kpi('P&L Neto', fmtDinero(s.pnl), s.pnl > 0 ? 'up' : s.pnl < 0 ? 'down' : 'flat', 'kpiPnl'),
+      kpi('Win Rate', `${winV}%`, tono(s.winRate, 50, 50), 'kpiWin'),
+      kpi('Rentabilidad', rent, capital > 0 ? (s.pnl >= 0 ? 'up' : 'down') : 'flat', 'kpiRent'),
+      kpi('Disciplina', disc != null ? `${disc}%` : '—', tono(disc, 80, 55), 'kpiDisc'),
+      kpi('Consistencia', activeSub ? `${consPct}%` : '—', tono(consPct, 60, 40), 'kpiCons'),
+      kpi('Total Trades', `${s.nonBE}`, 'flat', 'kpiTrades'),
     ].join('')
   }
 
@@ -339,18 +294,9 @@ const Charts = (() => {
     const labels = keys.map(k => period === 'year' ? MONTH_S[parseInt(k.slice(5, 7)) - 1] : k.slice(5))
     const last = equity[equity.length - 1] || 0
 
-    // Drawdown máximo desde el pico: es el dato que de verdad duele en futuros.
-    let pico = 0, ddMax = 0
-    equity.forEach(v => { if (v > pico) pico = v; if (pico - v > ddMax) ddMax = pico - v })
-
     // En Anual cada punto es un MES, no un día: la unidad tiene que decirlo o el
     // aviso de muestra corta miente sobre qué se está contando.
     const uni = n => period === 'year' ? (n === 1 ? 'mes' : 'meses') : (n === 1 ? 'día' : 'días')
-
-    const nEl = document.getElementById('equityN')
-    if (nEl) nEl.textContent = keys.length
-      ? `${keys.length} ${uni(keys.length)} · máx. caída ${fmtCorto(ddMax)}`
-      : ''
 
     const nota = document.getElementById('equityNota')
     if (nota) {
@@ -410,9 +356,13 @@ const Charts = (() => {
         scales: {
           x: { ...baseOptions.scales.x, grid: { display: false },
                ticks: { color: COLORS.text, maxRotation: 0, autoSkip: true, maxTicksLimit: 10, font: { size: 11 } } },
+          // Importes completos con separador de miles ($1.500), no abreviados a
+          // "1,5k": el eje carga los valores que no llevan etiqueta directa, así
+          // que tiene que poder leerse sin traducir.
           y: { ...baseOptions.scales.y, border: { display: false },
                grid: { color: 'rgba(255,255,255,0.04)' },
-               ticks: { color: COLORS.text, font: { size: 11 }, maxTicksLimit: 6, callback: v => fmtCorto(v) } },
+               ticks: { color: COLORS.text, font: { size: 11 }, maxTicksLimit: 6,
+                        callback: v => fmtDinero(v, { masEnPositivo: false }) } },
         },
       },
       plugins: [lineaCero],
@@ -455,9 +405,11 @@ const Charts = (() => {
       if (!y || y.min > 0 || y.max < 0) return
       const { ctx, chartArea } = chart
       const py = y.getPixelForValue(0)
+      // Sólida y de un pelo, no punteada: el punteado añade ruido visual y se
+      // lee como "dato provisional" cuando solo es una referencia.
       ctx.save()
-      ctx.beginPath(); ctx.setLineDash([4, 4]); ctx.lineWidth = 1
-      ctx.strokeStyle = 'rgba(255,255,255,0.18)'
+      ctx.beginPath(); ctx.lineWidth = 1
+      ctx.strokeStyle = 'rgba(255,255,255,0.16)'
       ctx.moveTo(chartArea.left, py); ctx.lineTo(chartArea.right, py); ctx.stroke()
       ctx.restore()
     },
@@ -476,16 +428,20 @@ const Charts = (() => {
 
     instances.pnlBars = new Chart(document.getElementById('pnlBarsChart'), {
       type: 'bar',
+      // Marcas finas y sin borde: el borde añade tinta que no es dato, y los
+      // bloques gruesos saturados son lo que hacía que el gráfico se leyera
+      // tosco. La separación entre barras la hace el aire de la banda, no un
+      // trazo. Extremo redondeado 4px, escuadrado contra la línea base.
       data: { labels: subs.map(s => s.label), datasets: [{
         label: 'P&L', data,
-        backgroundColor: data.map(v => v >= 0 ? 'rgba(29,158,117,0.55)' : 'rgba(226,75,74,0.55)'),
-        hoverBackgroundColor: data.map(v => v >= 0 ? 'rgba(29,158,117,0.85)' : 'rgba(226,75,74,0.85)'),
-        borderColor: data.map(v => v >= 0 ? COLORS.accent : COLORS.red), borderWidth: 1.5,
-        borderRadius: 6, borderSkipped: false,
-        maxBarThickness: 46, categoryPercentage: 0.8, barPercentage: 0.9,
+        backgroundColor: data.map(v => v >= 0 ? COLORS.accent : COLORS.red),
+        hoverBackgroundColor: data.map(v => v >= 0 ? '#25C08F' : '#EE6463'),
+        borderWidth: 0,
+        borderRadius: 4, borderSkipped: 'middle',
+        maxBarThickness: 22, categoryPercentage: 0.72, barPercentage: 0.82,
       }] },
       options: {
-        ...baseOptions, layout: { padding: { top: 20, right: 6, left: 2 } },
+        ...baseOptions, layout: { padding: { top: 22, right: 8, left: 2 } },
         plugins: { ...baseOptions.plugins, legend: { display: false },
           tooltip: { ...baseOptions.plugins.tooltip, displayColors: false,
             callbacks: { label: c => ` ${fmtDinero(c.parsed.y)}` } } },
@@ -494,71 +450,7 @@ const Charts = (() => {
                ticks: { color: COLORS.text, maxRotation: 0, autoSkip: false, font: { size: 11 } } },
           y: { ...baseOptions.scales.y, border: { display: false },
                grid: { color: 'rgba(255,255,255,0.04)' },
-               ticks: { color: COLORS.text, font: { size: 11 }, maxTicksLimit: 5, callback: v => fmtCorto(v) } },
-        },
-      },
-      plugins: [barValueLabels, lineaCero],
-    })
-  }
-
-  // ── P&L medio por franja horaria ────────────────────────────────────────
-  function renderPnlByHour(trades) {
-    destroy('pnlByHour')
-    // El eje se recorta a las franjas CON datos. Antes iba fijo de 08:30 a 10:30
-    // y dos tercios del gráfico eran aire: un eje lleno de huecos hace parecer
-    // que faltan datos cuando lo que pasa es que ahí no se opera.
-    const slots = {}
-    trades.forEach(t => {
-      if (!t.entry_time) return
-      const [h, m] = t.entry_time.split(':').map(Number)
-      const key = `${p2(h)}:${m < 30 ? '00' : '30'}`
-      ;(slots[key] ||= []).push(parseFloat(t.profit) || 0)
-    })
-    const labels = Object.keys(slots).sort()
-    const avgs = labels.map(k => parseFloat((slots[k].reduce((a, b) => a + b, 0) / slots[k].length).toFixed(2)))
-    const ns = labels.map(k => slots[k].length)
-
-    const nEl = document.getElementById('pnlByHourN')
-    if (nEl) nEl.textContent = labels.length ? `${labels.length} franja${labels.length > 1 ? 's' : ''}` : ''
-
-    // El promedio de una franja con 1-2 trades se dibuja igual de sólido que uno
-    // con 40. Se dice cuáles son.
-    const flojas = labels.filter((_, i) => ns[i] < 3)
-    const nota = document.getElementById('pnlByHourNota')
-    if (nota) {
-      nota.className = 'an-note'
-      if (!labels.length) nota.innerHTML = '<i class="ti ti-info-circle"></i> Sin operaciones en el período.'
-      else if (flojas.length) {
-        nota.classList.add('an-note-warn')
-        nota.innerHTML = `<i class="ti ti-alert-triangle"></i> ${flojas.join(', ')} ${flojas.length > 1 ? 'tienen' : 'tiene'} menos de 3 trades: su media aún no dice nada.`
-      } else nota.innerHTML = '<i class="ti ti-info-circle"></i> Hora local (Colombia). Solo se muestran las franjas con operaciones.'
-    }
-    if (!labels.length) return
-
-    instances.pnlByHour = new Chart(document.getElementById('pnlByHourChart'), {
-      type: 'bar',
-      data: { labels, datasets: [{
-        label: 'P&L medio', data: avgs,
-        backgroundColor: avgs.map(v => v >= 0 ? 'rgba(29,158,117,0.55)' : 'rgba(226,75,74,0.55)'),
-        hoverBackgroundColor: avgs.map(v => v >= 0 ? 'rgba(29,158,117,0.85)' : 'rgba(226,75,74,0.85)'),
-        borderColor: avgs.map(v => v >= 0 ? COLORS.accent : COLORS.red), borderWidth: 1.5,
-        borderRadius: 6, borderSkipped: false,
-        maxBarThickness: 40, categoryPercentage: 0.75, barPercentage: 0.85,
-      }] },
-      options: {
-        ...baseOptions, layout: { padding: { top: 20, bottom: 2 } },
-        plugins: { ...baseOptions.plugins, legend: { display: false },
-          tooltip: { ...baseOptions.plugins.tooltip, displayColors: false,
-            callbacks: {
-              label: c => ` Media ${fmtDinero(c.raw)}`,
-              afterLabel: c => `Sobre ${ns[c.dataIndex]} trade${ns[c.dataIndex] > 1 ? 's' : ''}`,
-            } } },
-        scales: {
-          x: { ...baseOptions.scales.x, grid: { display: false },
-               ticks: { color: COLORS.text, maxRotation: 0, font: { size: 11 } } },
-          y: { ...baseOptions.scales.y, border: { display: false },
-               grid: { color: 'rgba(255,255,255,0.04)' },
-               ticks: { color: COLORS.text, font: { size: 11 }, maxTicksLimit: 5, callback: v => fmtCorto(v) } },
+               ticks: { color: COLORS.text, font: { size: 11 }, maxTicksLimit: 5, callback: v => fmtDinero(v, { masEnPositivo: false }) } },
         },
       },
       plugins: [barValueLabels, lineaCero],
@@ -566,71 +458,60 @@ const Charts = (() => {
   }
 
   // ── Distribución de resultados ──────────────────────────────────────────
+  // NO es una dona. El catálogo de anti-patrones de visualización es explícito:
+  // "un pastel de 2 porciones → usa una tarjeta de dato: el número ES el gráfico",
+  // y "una dona para comparar valores cercanos → una barra, o los números".
+  // Además obligaba a escribir el % DENTRO del color, que es ilegible (y el texto
+  // nunca debe vestir el color de la serie: la identidad la da la marca de al lado).
+  //
+  // Forma elegida: cifra protagonista (acierto) + medidor part-to-whole + el
+  // recuento explícito de ganadores y perdedores, que es lo que pidió Kris.
   function renderResults(trades) {
     destroy('results')
+    const panel = document.getElementById('resultsPanel')
+    if (!panel) return
+
     const targets = trades.filter(isWinTrade).length
     const stops   = trades.filter(isLossTrade).length
     const be      = trades.filter(t => BE(t)).length
-    const tot     = targets + stops
-    const partes  = [
-      { label: 'Target', n: targets, color: COLORS.accent },
-      { label: 'Stop',   n: stops,   color: COLORS.red },
-    ]
-    if (be) partes.push({ label: 'Break-even', n: be, color: 'rgba(255,255,255,0.22)' })
+    const tot     = targets + stops + be
 
-    const centro = document.getElementById('resultsCentro')
-    const leyenda = document.getElementById('resultsLeyenda')
-    if (centro) centro.innerHTML = tot
-      ? `<span class="an-donut-big">${Math.round(targets / tot * 100)}%</span><span class="an-donut-sub">acierto</span>`
-      : `<span class="an-donut-sub">sin datos</span>`
-    // La leyenda lleva SOLO el nombre y su color: el % ya está dentro del
-    // segmento y el conteo en el tooltip. Cada dato en un sitio.
-    if (leyenda) leyenda.innerHTML = tot
-      ? partes.filter(p => p.n).map(p =>
-          `<span class="an-legend-item"><span class="an-legend-dot" style="background:${p.color}"></span>${p.label}</span>`).join('')
-      : ''
-    if (!tot && !be) return
+    if (!tot) {
+      panel.innerHTML = '<div class="an-dist-vacio">Sin operaciones en el período.</div>'
+      return
+    }
 
-    instances.results = new Chart(document.getElementById('resultsChart'), {
-      type: 'doughnut',
-      data: { labels: partes.map(p => p.label), datasets: [{
-        data: partes.map(p => p.n), backgroundColor: partes.map(p => p.color),
-        borderWidth: 0, spacing: 3, borderRadius: 6, hoverOffset: 6,
-      }] },
-      options: {
-        ...baseOptions, cutout: '72%', scales: {}, layout: { padding: 4 },
-        plugins: { ...baseOptions.plugins, legend: { display: false },
-          tooltip: { ...baseOptions.plugins.tooltip, displayColors: false,
-            callbacks: { label: c => {
-              const total = partes.reduce((a, x) => a + x.n, 0)
-              return ` ${c.label}: ${c.raw} de ${total} (${Math.round(c.raw / total * 100)}%)`
-            } } } },
-      },
-      plugins: [pctDentro],
-    })
-  }
+    const decisivos = targets + stops          // el acierto se mide sin break-even
+    const acierto   = decisivos ? Math.round(targets / decisivos * 100) : null
+    const pct = n => tot ? Math.round(n / tot * 100) : 0
 
-  // Porcentaje DENTRO de cada segmento (solo los ≥8%, si no se amontonan).
-  const pctDentro = {
-    id: 'pctDentro',
-    afterDatasetsDraw(chart) {
-      const { ctx } = chart
-      const meta = chart.getDatasetMeta(0)
-      const data = chart.data.datasets[0].data
-      const total = data.reduce((a, b) => a + b, 0)
-      if (!total) return
-      ctx.save()
-      ctx.font = '700 11px system-ui, sans-serif'
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-      meta.data.forEach((arc, i) => {
-        const pct = data[i] / total
-        if (pct < 0.08) return
-        const { x, y } = arc.tooltipPosition()
-        ctx.fillStyle = '#0f0f0e'
-        ctx.fillText(`${Math.round(pct * 100)}%`, x, y)
-      })
-      ctx.restore()
-    },
+    const fila = (cls, label, n) => n ? `
+      <div class="an-dist-row">
+        <span class="an-dist-dot an-dist-seg-${cls}"></span>
+        <span class="an-dist-lbl">${label}</span>
+        <span class="an-dist-n">${n}</span>
+        <span class="an-dist-pct">${pct(n)}%</span>
+      </div>` : ''
+
+    // El medidor reparte sobre el TOTAL (incluye break-even si lo hubo), así que
+    // los tramos suman el 100% de lo que se ve en las filas de abajo.
+    const seg = (cls, n) => n ? `<span class="an-dist-seg an-dist-seg-${cls}" style="flex:${n}"></span>` : ''
+
+    panel.innerHTML = `
+      <div class="an-dist">
+        <div class="an-dist-hero">
+          <span class="an-dist-big">${acierto != null ? acierto + '%' : '—'}</span>
+          <span class="an-dist-sub">de acierto${decisivos ? ` · ${decisivos} decisivos` : ''}</span>
+        </div>
+        <div class="an-dist-bar">
+          ${seg('pos', targets)}${seg('neg', stops)}${seg('be', be)}
+        </div>
+        <div class="an-dist-rows">
+          ${fila('pos', 'Ganadores', targets)}
+          ${fila('neg', 'Perdedores', stops)}
+          ${fila('be',  'Break-even', be)}
+        </div>
+      </div>`
   }
 
   // ── Tabla resumen ───────────────────────────────────────────────────────
@@ -656,7 +537,7 @@ const Charts = (() => {
       const disc = calcDiscipline(ss)
       const hasData = tt.length > 0 || ss.filter(s => !s.no_opero).length > 0
       if (!hasData) {
-        return `<tr class="an-t-vacia"><td class="an-t-name">${sp.label}</td><td colspan="7">— sin actividad —</td></tr>`
+        return `<tr class="an-t-vacia"><td class="an-t-name">${sp.label}</td><td colspan="6">— sin actividad —</td></tr>`
       }
       const rent = capital > 0 ? `${(st.pnl / capital * 100).toFixed(2)}%` : '—'
       const efec = st.efec != null ? `${st.efec.toFixed(1)}%` : '—'
@@ -671,12 +552,11 @@ const Charts = (() => {
       return `
         <tr>
           <td class="an-t-name">${sp.label}</td>
-          <td class="num an-t-bar ${st.pnl > 0 ? 'an-t-pos' : st.pnl < 0 ? 'an-t-neg' : ''}" style="--w:${w}%;--bc:${bc}">${fmtDinero(st.pnl)}</td>
+          <td class="num an-t-pnl an-t-bar ${st.pnl > 0 ? 'an-t-pos' : st.pnl < 0 ? 'an-t-neg' : ''}" style="--w:${w}%;--bc:${bc}">${fmtDinero(st.pnl)}</td>
           <td class="num ${cum >= 0 ? 'an-t-pos' : 'an-t-neg'}">${fmtDinero(cum)}</td>
           <td class="num">${rent}</td>
           <td class="num ${efecCls}">${efec}</td>
           <td class="num ${discCls}">${discStr}</td>
-          <td class="num">${st.total || '—'}</td>
           <td>${estado}</td>
         </tr>`
     }).join('')
@@ -692,16 +572,21 @@ const Charts = (() => {
     const nEl = document.getElementById('analysisTablaN')
     if (nEl) nEl.textContent = `${tot.total} trade${tot.total === 1 ? '' : 's'}`
 
+    // La fila de totales lleva los MISMOS colores que las filas: es lo primero que
+    // busca quien audita sus números, y en gris no se distingue de una fila más.
+    const totEfecCls = tot.efec == null ? 'an-t-neutral' : tot.efec >= 50 ? 'an-t-pos' : tot.efec >= 40 ? '' : 'an-t-neg'
+    const totDiscCls = totDisc == null ? 'an-t-neutral' : totDisc >= 80 ? 'an-t-pos' : totDisc >= 55 ? '' : 'an-t-neg'
+    const totRentCls = capital > 0 ? (tot.pnl >= 0 ? 'an-t-pos' : 'an-t-neg') : 'an-t-neutral'
+
     document.getElementById('analysisTablaBody').innerHTML = rows
     document.getElementById('analysisTablaFoot').innerHTML = `
       <tr>
         <td class="an-t-name">Total ${periodLabel()}</td>
+        <td class="num an-t-pnl ${tot.pnl >= 0 ? 'an-t-pos' : 'an-t-neg'}">${fmtDinero(tot.pnl)}</td>
         <td class="num ${tot.pnl >= 0 ? 'an-t-pos' : 'an-t-neg'}">${fmtDinero(tot.pnl)}</td>
-        <td class="num ${tot.pnl >= 0 ? 'an-t-pos' : 'an-t-neg'}">${fmtDinero(tot.pnl)}</td>
-        <td class="num">${totRent}</td>
-        <td class="num">${totEfec}</td>
-        <td class="num">${totDisc != null ? totDisc + '%' : '—'}</td>
-        <td class="num">${tot.total}</td>
+        <td class="num ${totRentCls}">${totRent}</td>
+        <td class="num ${totEfecCls}">${totEfec}</td>
+        <td class="num ${totDiscCls}">${totDisc != null ? totDisc + '%' : '—'}</td>
         <td>${totEstado}</td>
       </tr>`
   }
@@ -722,7 +607,6 @@ const Charts = (() => {
     renderKpis(trades, sesiones, casByDate, subs)
     renderEquity(trades)
     renderPnlBars(trades, subs)
-    renderPnlByHour(trades)
     renderResults(trades)
     renderTabla(trades, sesiones, casByDate, subs)
   }

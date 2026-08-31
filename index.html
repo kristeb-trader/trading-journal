@@ -1024,10 +1024,9 @@
                   <th id="analysisTablaCol1">Semana</th>
                   <th class="num">P&amp;L Neto</th>
                   <th class="num">Acumulado</th>
-                  <th class="num">Rentab.</th>
-                  <th class="num">Efectiv.</th>
-                  <th class="num">Discip.</th>
-                  <th class="num">Trades</th>
+                  <th class="num">Rentabilidad</th>
+                  <th class="num">Efectividad</th>
+                  <th class="num">Disciplina</th>
                   <th>Estado</th>
                 </tr>
               </thead>
@@ -1041,17 +1040,14 @@
         <div class="an-card">
           <div class="an-card-head">
             <h3><i class="ti ti-trending-up"></i> Curva de Equity</h3>
-            <div class="an-head-right">
-              <span class="an-card-n" id="equityN"></span>
-              <button class="help-btn" data-help="equity" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-            </div>
+            <button class="help-btn" data-help="equity" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
           </div>
           <div class="an-chart an-chart-tall"><canvas id="equityChart"></canvas></div>
           <div class="an-note" id="equityNota"></div>
         </div>
 
         <!-- 4 · Las tres tarjetas -->
-        <div class="an-charts-3">
+        <div class="an-charts-2">
           <div class="an-card">
             <div class="an-card-head">
               <h3><i class="ti ti-chart-bar"></i> <span id="pnlBarsTitle">P&amp;L por semana</span></h3>
@@ -1059,27 +1055,15 @@
             </div>
             <div class="an-chart"><canvas id="pnlBarsChart"></canvas></div>
           </div>
+          <!-- Distribución: NO es una dona. Un ratio único contra un total se lee
+               como cifra + medidor; un pastel de 2 porciones es un anti-patrón
+               reconocido (y obligaba a meter texto dentro del color, ilegible). -->
           <div class="an-card">
             <div class="an-card-head">
-              <h3><i class="ti ti-clock"></i> P&amp;L medio por franja</h3>
-              <div class="an-head-right">
-                <span class="an-card-n" id="pnlByHourN"></span>
-                <button class="help-btn" data-help="pnlByHour" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-              </div>
-            </div>
-            <div class="an-chart"><canvas id="pnlByHourChart"></canvas></div>
-            <div class="an-note" id="pnlByHourNota"></div>
-          </div>
-          <div class="an-card">
-            <div class="an-card-head">
-              <h3><i class="ti ti-chart-donut"></i> Distribución de resultados</h3>
+              <h3><i class="ti ti-target-arrow"></i> Distribución de resultados</h3>
               <button class="help-btn" data-help="results" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
             </div>
-            <div class="an-chart an-chart-donut">
-              <canvas id="resultsChart"></canvas>
-              <div class="an-donut-center" id="resultsCentro"></div>
-            </div>
-            <div class="an-legend" id="resultsLeyenda"></div>
+            <div id="resultsPanel"></div>
           </div>
         </div>
         </div><!-- /analysisExportArea -->

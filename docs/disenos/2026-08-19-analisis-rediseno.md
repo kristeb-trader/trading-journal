@@ -102,3 +102,79 @@ Contra la BD real (SQL por MCP) y en el preview:
 
 Los cálculos. Es un rediseño de presentación: `statsOf`, `calcDiscipline` y el resto siguen
 igual, y los números se contrastaron contra la BD antes de cerrar.
+
+---
+
+# v1.1 — ajustes tras la primera revisión (19 ago 2026)
+
+Kris revisó la v1.0 y pidió los cambios de abajo. Varios coinciden con entradas del
+catálogo de anti-patrones del skill `dataviz`, que se consultó a petición suya
+("busca un skill de UI/UX para mejorar esa gráfica").
+
+## KPIs
+
+- **Fuera la línea de contexto** bajo cada número (`↓ $1,1k vs mes ant.`, `sobre capital
+  inicial`, `1 de 4 en positivo`…). Siete pies de texto convertían la fila en un párrafo.
+  El "por qué" de cada métrica sigue en el `?` de su etiqueta.
+- **Fuera Profit Factor** → quedan 6 KPIs (rejilla 6 → 3 → 2).
+
+## Tabla
+
+- **Fuera la columna Trades**: ya está en el KPI "Total Trades".
+- **Nombres completos** en las cabeceras (`Rentabilidad`, no `Rentab.`), en negrita y
+  mayores: se tienen que leer como títulos.
+- **Todo más grande.** El P&L Neto sube a 19px en las filas y 21px en el total, un escalón
+  por encima del resto porque es la columna que se mira primero.
+- **Colores por resultado** en P&L Neto, Efectividad, Disciplina y Estado — también en la
+  fila de totales, que antes iba en gris.
+- **Barra de totales**: fondo propio, esquinas redondeadas y borde superior grueso. Es lo
+  primero que busca quien audita sus números; en gris se confundía con una fila más.
+
+> ⚠️ **La raíz del documento son 14px, no 16.** Cada `rem` sale un 12% más pequeño de lo
+> que aparenta al escribirlo, y esa era la causa real de que la tabla se leyera diminuta
+> pese a haberla "subido" en la v1.0. Los tamaños críticos de esta pantalla van en **px**.
+
+## Gráfica de barras — "parecía hecha por un niño"
+
+El catálogo lo nombra igual: *"bloques gruesos saturados, rejilla pesada, sin aire — se lee
+ruidoso, incluso infantil"*. Corregido con las specs del skill:
+
+- Barras de **22px máximo** (antes 46), sin borde — el borde añade tinta que no es dato — y
+  extremo redondeado de 4px escuadrado contra la base.
+- **Etiquetas selectivas**: solo el mejor y el peor sub-período, no un número sobre cada
+  barra. Con 12 meses eso era un muro de cifras que se pisaban entre sí.
+- El texto de las etiquetas va en **tinta**, nunca en el color de la serie.
+- **Línea de cero sólida**, no punteada (el punteado es ruido y se lee como "provisional").
+
+## Distribución de resultados — deja de ser una dona
+
+Dos anti-patrones a la vez: *"un pastel de 2 porciones → usa una tarjeta de dato: el número
+ES el gráfico"* y *"una dona para comparar valores cercanos → una barra, o los números"*.
+Además obligaba a escribir el % **dentro** del color, ilegible, cuando la regla es que el
+texto nunca viste el color de la serie.
+
+Forma nueva: **cifra protagonista** (% de acierto, 2.6rem) + **medidor part-to-whole**
+(tramos separados por un hueco de 2px del color de la superficie, no por un borde) + el
+**recuento explícito de ganadores y perdedores** con su porcentaje, que es lo que faltaba.
+El acierto se calcula sobre los decisivos (sin break-even) y el medidor reparte sobre el
+total, así que las filas suman 100%.
+
+## Curva de Equity
+
+- Eje Y con **importes completos y separador de miles** (`$1.500`), no `1,5k`: el eje carga
+  los valores que no llevan etiqueta directa, así que tiene que leerse sin traducir.
+- **Fuera la leyenda** "7 meses · máx. caída $4,3k" de la cabecera.
+
+## Eliminado
+
+- La gráfica **P&L medio por franja horaria**, con su renderizador, su texto de ayuda y sus
+  avisos. La fila baja de tres tarjetas a dos (`.an-charts-2`).
+- Código muerto que arrastraba: `prevPeriodRange`, `NOMBRE_PREV`, `fmtCorto` y el plugin
+  `pctDentro` de la dona.
+
+## Verificación
+
+13/13 comprobaciones sobre los puntos pedidos, con 66 trades sintéticos repartidos en 7
+meses para juzgar las gráficas con volumen. Eje de equity: `−$1.000 · $0 · $1.000 · $2.000`.
+Distribución: 55% de acierto, 36 ganadores / 30 perdedores. Móvil 375px sin scroll
+horizontal ni valores recortados. Consola limpia.
