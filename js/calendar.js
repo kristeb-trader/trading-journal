@@ -74,8 +74,11 @@ const Calendar = (() => {
     if (sesion?.no_opero) {
       if (sesion.motivo_no_opero === 'FOMC')      return 'fomc'
       if (sesion.motivo_no_opero === 'Festivo')   return 'festivo'
-      if (sesion.motivo_no_opero === 'Sin setup')             return 'sin-setup'
-      if (sesion.motivo_no_opero === 'Setup válido no tomado') return 'sin-setup'
+      // El resto se decide por CONEXIÓN, no enumerando motivos. El selector
+      // ofrece 7 y aquí solo se contemplaban 4: "Noticia roja", "Personal" y
+      // "Otro" caían en `no-trade` y el día se pintaba como si no te hubieras
+      // conectado (25 ago). Con `se_conecto` un motivo nuevo no vuelve a romperlo.
+      if (sesion.se_conecto !== false) return 'sin-setup'
       return 'no-trade'
     }
     if (!trades || trades.length === 0) {
@@ -251,8 +254,16 @@ const Calendar = (() => {
             statusBadge = `<div class="cal-status-badge badge-fomc"><i class="ti ti-chart-candle"></i> FOMC</div>`
           } else if (sesion.motivo_no_opero === 'Festivo') {
             statusBadge = `<div class="cal-status-badge badge-festivo"><i class="ti ti-building-bank"></i> Festivo</div>`
+          } else if (sesion.motivo_no_opero === 'Noticia roja') {
+            statusBadge = `<div class="cal-status-badge badge-sinsetup"><i class="ti ti-alert-triangle"></i> Noticia roja</div>`
+          } else if (sesion.se_conecto === false) {
+            // El único caso de ausencia real. Antes decía "No operé", que también
+            // se le ponía a días conectados y hacía indistinguibles las dos cosas.
+            statusBadge = `<div class="cal-status-badge badge-noopero"><i class="ti ti-user-off"></i> No me conecté</div>`
           } else {
-            statusBadge = `<div class="cal-status-badge badge-noopero"><i class="ti ti-user-off"></i> No operé</div>`
+            // Conectado y sin operar por "Personal", "Otro" o sin motivo elegido.
+            const txt = sesion.motivo_no_opero === 'Personal' ? 'Motivo personal' : 'No operé'
+            statusBadge = `<div class="cal-status-badge badge-sinsetup"><i class="ti ti-eye-off"></i> ${txt}</div>`
           }
         } else if (!isFuture && trades.length > 0 && trades.every(t => isBreakEven(t.profit))) {
           statusBadge = `<div class="cal-status-badge badge-be"><i class="ti ti-scale"></i> B.E.</div>`

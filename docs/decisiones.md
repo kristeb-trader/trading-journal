@@ -10,6 +10,86 @@
 
 ---
 
+## D-015 — Las zonas naranjas se capturan en el AddOn, y el bot deja de mandarlas
+
+**Decisión.** Los soportes y resistencias naranjas se escriben en el AddOn
+`ChecklistChaumer`, en premercado. El bot de Telegram deja de preguntarlos **y deja de
+enviar `soportes_naranja` / `resistencias_naranja` en su payload**. La web los conserva.
+
+**Motivo.** Las zonas se marcan en el gráfico antes de la apertura; escribirlas ahí mismo,
+con el gráfico delante, es más fiable que reconstruirlas de memoria por la noche. Y llegan
+mejores al Coach IA, que las cruza con PDH/PDL y el premercado.
+
+Lo segundo no es cosmético: el bot enviaba `data.soportes_naranja ?? []` en **cada**
+guardado. Quitarle las preguntas sin quitarle las claves habría convertido el registro
+nocturno en un borrado silencioso de lo escrito por la mañana. Es el mismo motivo por el
+que el bot ya no manda los niveles de precio, y por el que la web sí puede seguir
+mandándolos: la web **carga** la sesión antes de guardar (`form.js`), así que hace ida y
+vuelta; el bot construye el payload desde cero.
+
+**Alternativa descartada.** Dejar las dos vías abiertas "por si acaso". Garantiza el
+borrado silencioso: el dato correcto existe, se guarda por otra vía, y desaparece sin
+ningún error.
+
+**Fecha.** 2026-08-31.
+
+---
+
+## D-014 — RR es un clon de la herramienta de NinjaTrader, no una modificación
+
+**Decisión.** La herramienta que mide el riesgo en puntos es un archivo **nuevo**
+(`NinjaTrader/RR.cs`) con su propia clase, su propio enum y sus propios métodos `Draw`.
+`@RiskReward.cs` no se toca ni una línea.
+
+**Motivo.** Dos razones independientes, cada una suficiente:
+
+1. NinjaTrader **sobrescribe** los archivos que empiezan por `@` en cada actualización. Un
+   cambio ahí no es que sea arriesgado: es que se pierde solo.
+2. La propiedad de unidades es de tipo `ValueUnit`, un enum **compilado dentro de las DLL de
+   NinjaTrader** (Price · Percent · Ticks · Currency · Pips). No admite un valor nuevo, así
+   que "añadir Points" no era una opción ni tocando el original. `RR` declara `RRUnit`, con
+   solo las dos unidades que se usan.
+
+**Alternativas descartadas.** Modificar el original (se pierde en la siguiente
+actualización). Usar `Cbi.PerformanceUnit`, que sí incluye `Points`: obligaría a mostrar
+también Percent, Pips y Ticks en el desplegable, justo lo que se quería quitar. Y el
+`AdvancedRiskRewardBrunoMezaV3` que ya estaba instalado: se distribuye solo compilado, con
+licencia, y no mide en puntos (0 apariciones de "puntos" en el DLL).
+
+**Fecha.** 2026-08-25. Sombreado de las zonas de stop y target: 2026-08-31.
+
+---
+
+## D-013 — La sesión nace con el checklist vacío: sin fila = N/A
+
+**Decisión.** Se eliminan los dos triggers que materializaban el checklist
+(`trg_materializar_checklist` y `trg_backfill_regla`). Una sesión nueva no crea ninguna
+fila en `sesion_checklist`: las filas aparecen cuando el trader marca. Una casilla que no
+se marca **no se da por cumplida**. El histórico ya escrito no se toca.
+
+**Motivo.** El diseño "todo `true` por defecto" (jul 2026) tenía un efecto que no se vio
+venir: `SupabaseDailyLevels` crea la fila de `sesiones` al abrir el RTH, el trigger
+materializaba las 18 reglas en `true`, y el AddOn —que hace poll cada 5 s— **aparecía con
+todo marcado al abrir el mercado** y luego lo persistía como si lo hubiera marcado el
+trader. La disciplina de esos días salía al 100 % sin que nadie tocara una casilla.
+
+"Sin fila = N/A" no es un invento nuevo: es como ya leían el checklist
+`calcDisciplinaStats` y `_checklistDia`. Los triggers estaban peleados con el resto del
+sistema.
+
+**Alternativas descartadas.** Parchear solo el AddOn para que "reclamase" la sesión antes de
+que llegara el indicador: deja la causa viva para cualquier otro escritor (bot, web) y
+depende de quién gane la carrera. Cambiar el default del trigger a `false`: convertiría en
+incumplido un día que simplemente no se registró, que es la otra forma de mentir.
+
+**Nota.** No contradice la decisión del 24 de julio sobre feb–may: aquella habla de filas de
+relleno **ya escritas**, que siguen intactas. Esta habla de las que se crean a partir de
+ahora.
+
+**Fecha.** 2026-08-16.
+
+---
+
 ## D-012 — El comparador de Chaumer mide en PUNTOS, no en dinero
 
 **Decisión.** El eje de comparación entre las operativas de Chaumer y las de Kris son los

@@ -397,16 +397,23 @@ const Metrics = (() => {
 
     const desglose = {
       trabajo: 0, targets: 0, stops: 0, sinResultado: 0,
-      sinOperar: 0, festivos: 0, fomc: 0, noConectados: 0, sinRegistro: 0,
+      sinOperar: 0, festivos: 0, noConectados: 0, sinRegistro: 0,
+      // Fuera de la partición: cuántos FOMC tuvo el mes y en cuántos te conectaste.
+      fomcMes: 0, fomcConectado: 0,
       totalHabiles: 0,
     }
     const hoy = hoyISO()
     const { from, to } = periodBounds(period)
     for (const fecha of diasHabilesEntre(from, to > hoy ? hoy : to)) {
       desglose.totalHabiles++
+      // Se cuenta sobre TODOS los días hábiles, conectados o no: es el contexto
+      // del mes ("hubo 2 FOMC"), no una rama de la partición.
+      const esFomc = !!fechasEspByDate.fomc?.has(fecha)
+      if (esFomc) desglose.fomcMes++
       if (conectadasSet.has(fecha)) {
         // ── Día de trabajo: se conectó (haya operado o no) ──
         desglose.trabajo++
+        if (esFomc) desglose.fomcConectado++
         const nonBE = (tradesByDate[fecha] || []).filter(t => !isBreakEven(t))
         const tg = nonBE.filter(isWinTrade).length
         const sl = nonBE.filter(isLossTrade).length
@@ -418,9 +425,13 @@ const Metrics = (() => {
         else                         desglose.sinResultado++  // no entré, o B.E.
       } else {
         // ── Día sin operar ──
+        // FOMC ya NO es una rama de esta partición. Un FOMC no cierra el mercado:
+        // es una razón para no operar, no para que no haya sesión. Al ponerlo aquí,
+        // un FOMC que sí seguiste conectado caía en "días conectados" y el contador
+        // marcaba 0 aunque el mes tuviera dos (agosto: 19 y 28). Ahora se cuenta
+        // aparte, como contexto del mes, y esta columna vuelve a sumar de verdad.
         desglose.sinOperar++
         if      (fechasEspByDate.festivo?.has(fecha)) desglose.festivos++
-        else if (fechasEspByDate.fomc?.has(fecha))    desglose.fomc++
         else if (sesionesByDate[fecha])               desglose.noConectados++
         else                                          desglose.sinRegistro++
       }
@@ -671,9 +682,18 @@ const Metrics = (() => {
         </div>
         ${fila('ti-user-off',       'No conectados', d.noConectados, 'c-off',     'No abriste la plataforma ese día')}
         ${fila('ti-building-bank',  'Festivos',      d.festivos,     'c-holiday', 'Mercado cerrado')}
-        ${fila('ti-chart-candle',   'FOMC',          d.fomc,         'c-fomc',    'Días FOMC en los que NO operaste (si operaste, cuenta como día de trabajo)')}
         ${d.sinRegistro > 0 ? fila('ti-help-circle', 'Sin registro', d.sinRegistro, 'c-none', 'Días hábiles sin sesión registrada y sin fecha especial') : ''}
-      </div>`
+      </div>
+
+      ${d.fomcMes > 0 ? `
+        <div class="dd-nota" title="Un FOMC no cierra el mercado: es una razón para no operar, no para que no haya sesión. Por eso se cuenta aparte y no dentro de ninguna de las dos columnas.">
+          <span class="dd-dot c-fomc"><i class="ti ti-chart-candle"></i></span>
+          <span><strong>${d.fomcMes}</strong> ${d.fomcMes === 1 ? 'día FOMC' : 'días FOMC'} este mes${
+            d.fomcConectado > 0
+              ? ` · ${d.fomcConectado === d.fomcMes ? (d.fomcMes === 1 ? 'lo seguiste conectado' : 'los seguiste conectado') : `${d.fomcConectado} conectado`}`
+              : ' · ninguno conectado'
+          }</span>
+        </div>` : ''}`
   }
 
   // Curva de equity del mes seleccionado (sección Calendario)

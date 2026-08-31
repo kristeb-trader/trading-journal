@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-08-23
+**Última actualización:** 2026-08-31
 
 | Fecha | Checkpoint |
 |---|---|
@@ -2446,6 +2446,96 @@ reales de agosto y julio:
 | Móvil 375px | sin solape título/botón, panel dentro de pantalla, sin scroll horizontal ✓ |
 
 Commits: `a729522` (modal de reglas) · este.
+
+---
+
+## Checkpoint 2026-08-31 — El checklist dejó de marcarse solo · zonas naranjas al AddOn · RR en puntos
+
+Tres cosas, todas en la frontera entre NinjaTrader y la BD. La primera se arregló el 16 de
+agosto y se quedó sin documentar; se recoge aquí.
+
+### 1. El checklist se marcaba solo al abrir el mercado (16 ago)
+
+**El síntoma.** El AddOn aparecía con **todas** las casillas marcadas justo al abrir el
+mercado, sin haber tocado nada.
+
+**La cadena**, reconstruida con datos reales del 14 de agosto:
+
+1. `SupabaseDailyLevels` hace UPSERT a `sesiones` al detectar la apertura del RTH
+   (09:31 ET). Si la fila del día no existía, es un **INSERT**.
+2. El trigger `trg_materializar_checklist` insertaba las 18 reglas con `cumplido = true`.
+3. El AddOn hace poll cada 5 s y copia BD → casillas: se marcaban solas. Y el siguiente
+   guardado las persistía **como si las hubiera marcado el trader** → disciplina inflada al
+   100 % en los días que no se corrigieran a mano.
+
+**La huella que lo delató.** `rr_1a1` es la única regla con `activa = false`, así que ni el
+AddOn ni la web la escriben — pero el trigger no filtraba por `activa`. Su `updated_at` del
+14 ago quedó sellado a las **08:31:00.247 hora Colombia = 09:31 ET**, el instante de la
+apertura, junto a la fila de `sesiones` con su `precio_apertura`. Mismo sello el 5 y el 10
+de agosto, ambos cerrados 18/18 en `true`.
+
+**El arreglo.** Migración `2026-08-16-checklist-sin-materializar-en-true.sql`: fuera
+`trg_materializar_checklist` y `trg_backfill_regla`. **Sin fila = N/A**, que es como ya lo
+leían `calcDisciplinaStats` (`db.js`) y `_checklistDia` (`app.js`). En el AddOn, el reset de
+sesión dejó de guardar: escribía las 18 reglas en `false` sin haber tocado nada. Ninguna
+fila existente se tocó — el histórico se conserva por decisión expresa de Kris. Porqué
+completo: **D-013**.
+
+**Verificado.** Ningún trigger de materialización vivo; una sesión insertada a mano (fecha
+ficticia, borrada después) crea **0 filas** de checklist; 2068 filas de histórico intactas.
+Y en vivo el 31 de agosto: la sesión del día tiene **17 filas, no 18** — falta justo
+`rr_1a1` —, escritas de una vez cuando Kris marcó.
+
+### 2. Las zonas naranjas se escriben en el AddOn, no en Telegram (31 ago)
+
+Dos casillas nuevas en `ChecklistChaumer` ("Sop." y "Res."), debajo de las noticias rojas:
+precios separados por comas, el mismo formato que pedía el bot. Se escriben en premercado,
+al marcarlas en el gráfico, junto a la regla `chk_zonas` que ya vivía en la Fase 1.
+
+Mismo mecanismo ya probado con las noticias: debounce de 900 ms, guarda anti-pisado de 3 s
+frente al poll de 5 s, cajas vacías en sesión nueva, y bloqueo en fin de semana. Se parsea
+en **cultura invariante**: la coma es el separador de la lista, así que los decimales van
+con punto.
+
+**Lo que no era opcional.** El bot mandaba `soportes_naranja: data.soportes_naranja ?? []`
+en cada guardado. Quitarle las preguntas sin quitarle esas dos claves habría hecho que el
+registro de la noche **borrara** las zonas escritas por la mañana — el mismo motivo por el
+que el bot ya no manda los niveles de precio. Porqué completo: **D-014**.
+
+De paso caen `parseNumList`, `PREMKT_PROMPTS` y `premktResumen`, sin uso. **Ojo:** el primer
+intento de esa limpieza se llevó por delante `escHtml`, `CONTEXTOS` y `SETUPS_FALLBACK`, que
+sí se usan; `node --check` no lo vio porque seguía siendo sintaxis válida. Se cazó revisando
+el diff. Lección: en una limpieza de código muerto, **revisar qué se borró**, no solo que
+compile.
+
+**Verificado end-to-end el 31 ago.** Kris escribió las zonas en el AddOn (`[29384]` /
+`[29486]`), registró la sesión completa por el bot (setup, emoción, confianza, análisis) y
+las zonas **siguieron intactas**. Los niveles de `SupabaseDailyLevels` tampoco se tocaron.
+
+### 3. RR — herramienta de dibujo que mide el riesgo en PUNTOS (25 y 31 ago)
+
+El Risk Reward de NinjaTrader mide en precio, porcentaje, ticks, dinero o pips. **En puntos
+no**, que es la unidad en la que está escrito todo este proyecto. `RR.cs` es un clon suyo
+con enum propio (`RRUnit`), solo dos unidades —Puntos, por defecto siempre, y Valor— y los
+colores de Kris de fábrica. Por qué un clon y no una modificación: **D-015**.
+
+Los puntos se formatean con la **misma fórmula que usa NinjaTrader** para su propia unidad
+`Points` (`@NetChangeDisplay.cs:123`), así que los decimales los decide el tick del
+instrumento y funciona igual en NQ que en MNQ.
+
+El 31 de agosto se le añadió el **sombreado de las zonas de stop y target**, cada una con el
+color de su línea y opacidad configurable (`AreaOpacity`, 20 por defecto, 0 lo apaga). Se
+pinta antes de las líneas para que queden encima, y **no** durante el hit test — mismo
+criterio que las figuras de NinjaTrader: así el área no se traga los clics de lo que haya
+debajo.
+
+**Verificado.** `RR.cs` compila con `csc.exe` contra las DLL reales de NinjaTrader con **0
+errores**, igual que los otros tres archivos de `NinjaTrader/`. El diff contra el original
+está acotado a los cambios pactados.
+
+### Pendiente
+
+- **Recompilar `RR` en NT8** para ver el sombreado (el AddOn ya está recompilado).
 
 ---
 

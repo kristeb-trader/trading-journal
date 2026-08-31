@@ -108,6 +108,13 @@ namespace NinjaTrader.NinjaScript.DrawingTools
 		[Display(ResourceType = typeof(Custom.Resource), Name = "NinjaScriptDrawingToolRulerYValueDisplayUnit", GroupName = "NinjaScriptGeneral", Order = 3)]
 		public RRUnit					DisplayUnit 		{ get; set; }
 
+		// Sombreado de las zonas de stop y target. 0 = sin sombrear. Se usa la clave
+		// de recurso de NinjaTrader para que la etiqueta salga igual que en el resto
+		// de herramientas ("Area opacity").
+		[Range(0, 100)]
+		[Display(ResourceType = typeof(Custom.Resource), Name = "NinjaScriptDrawingToolAreaOpacity", GroupName = "NinjaScriptGeneral", Order = 4)]
+		public int						AreaOpacity			{ get; set; }
+
 		public override bool SupportsAlerts => true;
 
 		private void DrawPriceText(ChartAnchor anchor, Point point, double price, ChartControl chartControl, ChartPanel chartPanel, ChartScale chartScale)
@@ -258,6 +265,31 @@ namespace NinjaTrader.NinjaScript.DrawingTools
 					Vector	targetToEntryVector	= targetPoint - entryAnchorPixelPoint;
 					return MathHelper.IsPointAlongVector(point, entryAnchorPixelPoint, targetToEntryVector, cursorSensitivity) ? IsLocked ? Cursors.Arrow : Cursors.SizeAll : null;
 			}
+		}
+
+		// Rellena la banda entre dos precios con el color de SU linea, atenuado a
+		// AreaOpacity. Se reutiliza el BrushDX de la propia linea en vez de guardar
+		// una copia: asi, al cambiar el color de la linea en Propiedades, el area
+		// cambia con ella sin ningun trabajo de invalidacion. La opacidad se deja
+		// como estaba al terminar, porque ese mismo brush pinta la linea despues.
+		private void FillZona(Stroke stroke, float x, float w, double yA, double yB)
+		{
+			if (stroke == null || w <= 0)
+				return;
+
+			stroke.RenderTarget = RenderTarget;
+			if (stroke.BrushDX == null)
+				return;
+
+			float top = (float)Math.Min(yA, yB);
+			float h   = (float)Math.Abs(yA - yB);
+			if (h <= 0)
+				return;
+
+			float opacidadPrevia	= stroke.BrushDX.Opacity;
+			stroke.BrushDX.Opacity	= AreaOpacity / 100f;
+			RenderTarget.FillRectangle(new SharpDX.RectangleF(x, top, w, h), stroke.BrushDX);
+			stroke.BrushDX.Opacity	= opacidadPrevia;
 		}
 
 		private string GetPriceString(double price, ChartBars chartBars)
@@ -533,6 +565,19 @@ namespace NinjaTrader.NinjaScript.DrawingTools
 			SharpDX.Vector2 stopStartVector		= new((float)lineStartX, (float)stopPoint.Y);
 			SharpDX.Vector2 stopEndVector		= new((float)lineEndX, (float)stopPoint.Y);
 			
+			// Sombreado de las zonas: la banda entre la entrada y cada linea, con el
+			// color de esa linea. Va ANTES de dibujarlas para que queden por encima.
+			// En el hit test NO se pinta, mismo criterio que las figuras de NinjaTrader:
+			// asi el area no se traga los clics de lo que haya debajo.
+			if (!IsInHitTest && AreaOpacity > 0)
+			{
+				float areaX = (float)lineStartX;
+				float areaW = (float)(lineEndX - lineStartX);
+				if (DrawTarget)
+					FillZona(TargetLineStroke, areaX, areaW, entryPoint.Y, targetPoint.Y);
+				FillZona(StopLineStroke, areaX, areaW, entryPoint.Y, stopPoint.Y);
+			}
+
 			// don't try and draw the target stuff until we have calculated the target
 			SharpDX.Direct2D1.Brush tmpBrush = IsInHitTest ? chartControl.SelectionBrush : AnchorLineStroke.BrushDX;
 			if (DrawTarget)
@@ -566,6 +611,7 @@ namespace NinjaTrader.NinjaScript.DrawingTools
 				Name						= "RR";
 				Ratio						= 1;						// 1:1, la regla rr_1a1 de la metodologia
 				DisplayUnit					= RRUnit.Points;			// SIEMPRE arranca en puntos
+				AreaOpacity					= 20;						// sombreado de las zonas; 0 lo apaga
 				AnchorLineStroke 			= new Stroke(Brushes.DarkGray,	DashStyleHelper.Solid, 1f, 50);
 				EntryLineStroke 			= new Stroke(Brushes.Cyan,		DashStyleHelper.Solid, 2f);
 				StopLineStroke 				= new Stroke(Brushes.Red,		DashStyleHelper.Solid, 2f);
