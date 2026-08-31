@@ -252,10 +252,20 @@ const Chaumer = (() => {
     }
   }
 
+  // Sábados y domingos no son operables, así que las flechas los saltan: sin
+  // esto, retroceder desde un lunes daba dos pantallas vacías garantizadas.
   function mueveDia(delta) {
     const d = new Date(`${fecha}T12:00:00`)
-    d.setDate(d.getDate() + delta)
+    do { d.setDate(d.getDate() + delta) } while (!esDiaHabil(isoLocal(d)))
     cargar(isoLocal(d))
+  }
+
+  // Retrocede hasta el último día hábil. Se usa al abrir la pantalla en fin de
+  // semana y al elegir un sábado o domingo a mano en el selector.
+  function ultimoHabil(f) {
+    const d = new Date(`${f}T12:00:00`)
+    while (!esDiaHabil(isoLocal(d))) d.setDate(d.getDate() - 1)
+    return isoLocal(d)
   }
 
   // ── Modal de su operativa ─────────────────────────────────────────────────
@@ -735,7 +745,14 @@ const Chaumer = (() => {
 
     document.getElementById('chDatePrev')?.addEventListener('click', () => mueveDia(-1))
     document.getElementById('chDateNext')?.addEventListener('click', () => mueveDia(1))
-    document.getElementById('chDate')?.addEventListener('change', e => { if (e.target.value) cargar(e.target.value) })
+    document.getElementById('chDate')?.addEventListener('change', e => {
+      if (!e.target.value) return
+      // Elegir un sábado o domingo a mano cae al viernes anterior en vez de
+      // abrir un día que nunca va a tener nada.
+      const f = ultimoHabil(e.target.value)
+      if (f !== e.target.value) Toast.show('Sábados y domingos no son operables — te llevo al viernes', 'warning')
+      cargar(f)
+    })
 
     // Delegación: el contenido se repinta entero en cada carga.
     document.getElementById('chaumerDia')?.addEventListener('click', e => {
@@ -769,7 +786,7 @@ const Chaumer = (() => {
 
     renderPeriodPicker()
     showTab('dia')
-    await cargar(hoyISO())
+    await cargar(ultimoHabil(hoyISO()))
   }
 
   // Las herramientas de la barra superior (período + flechas) pertenecen a
