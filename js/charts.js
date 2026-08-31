@@ -530,10 +530,6 @@ const Charts = (() => {
       : 'Resumen por mes del año'
     document.getElementById('analysisTablaCol1').textContent = period === 'month' ? 'Semana' : 'Mes'
 
-    // Los sub-períodos sin actividad se agrupan en UNA fila. En vista Anual eran
-    // 5 filas de "— sin actividad —" (Ene y Sep–Dic) ocupando 215px para no decir
-    // nada; agrupadas dicen lo mismo en 40.
-    const vacios = []
     let cum = 0
     const rows = subs.map(sp => {
       const tt = trades.filter(t => (t.trade_date || '') >= sp.from && (t.trade_date || '') <= sp.to)
@@ -543,8 +539,10 @@ const Charts = (() => {
       const disc = calcDiscipline(ss)
       const hasData = tt.length > 0 || ss.filter(s => !s.no_opero).length > 0
       if (!hasData) {
-        vacios.push(sp.label)
-        return ''
+        // Una fila por sub-período sin actividad. Se probó agruparlas en una sola
+        // para ganar alto (19 ago) y quedaba demasiado apretado: el calendario del
+        // año se lee mejor con sus doce meses a la vista, aunque estén vacíos.
+        return `<tr class="an-t-vacia"><td class="an-t-name">${sp.label}</td><td colspan="7">— sin actividad —</td></tr>`
       }
       const rent = capital > 0 ? `${(st.pnl / capital * 100).toFixed(2)}%` : '—'
       const efec = st.efec != null ? `${st.efec.toFixed(1)}%` : '—'
@@ -585,11 +583,7 @@ const Charts = (() => {
     const totEfecCls = tot.efec == null ? 'an-t-neutral' : tot.efec >= 50 ? 'an-t-pos' : tot.efec >= 40 ? 'an-t-warn' : 'an-t-neg'
     const totDiscCls = totDisc == null ? 'an-t-neutral' : totDisc >= 80 ? 'an-t-pos' : totDisc >= 55 ? 'an-t-warn' : 'an-t-neg'
 
-    const filaVacios = vacios.length
-      ? `<tr class="an-t-vacia"><td class="an-t-name">${vacios.join(' · ')}</td><td colspan="7">— sin actividad —</td></tr>`
-      : ''
-
-    document.getElementById('analysisTablaBody').innerHTML = rows + filaVacios
+    document.getElementById('analysisTablaBody').innerHTML = rows
     document.getElementById('analysisTablaFoot').innerHTML = `
       <tr>
         <td class="an-t-name">Total ${periodLabel()}</td>

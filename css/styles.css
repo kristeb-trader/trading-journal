@@ -5192,3 +5192,24 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .an-dist-n-pos { color: var(--accent-txt); }
 .an-dist-n-neg { color: var(--red-txt); }
 .an-dist-n-be  { color: var(--text2); }
+
+/* ── Se recupera el aire (19 ago, 5ª pasada) ────────────────────────────────
+   La compactación anterior dejó la pantalla demasiado apretada y, con los meses
+   sin actividad de vuelta a una fila cada uno, sobraba hueco igualmente. Se
+   devuelven los espaciados originales. Lo que NO se revierte: el P&L al mismo
+   tamaño que el resto de columnas y los conteos de la distribución en color,
+   que son cambios pedidos aparte. */
+.an-table td { padding: 11px 12px; }
+.an-table th { padding: 0 12px 10px; }
+.an-table tfoot td { padding: 14px 12px; }
+.an-card { padding: 16px 18px 14px; margin-bottom: 14px; }
+.an-card-head { margin-bottom: 14px; }
+.an-chart { height: 190px; }
+.an-chart-tall { height: 290px; }
+@media (max-width: 768px) { .an-chart-tall { height: 225px; } }
+.an-charts-2 { gap: 14px; }
+.an-charts-2 .an-card { margin-bottom: 0; }
+.an-kpis { gap: 10px; margin-bottom: 14px; }
+.an-kpi { padding: 13px 14px 12px; gap: 4px; }
+.analysis-footer { margin-top: 18px; padding-top: 14px; }
+.an-dist { gap: 14px; }
