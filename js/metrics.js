@@ -666,7 +666,7 @@ const Metrics = (() => {
         </div>
         ${fila('ti-trending-up',   'Targets',       d.targets,      'c-target', 'Días que cerraron en positivo')}
         ${fila('ti-trending-down', 'Stops',         d.stops,        'c-stop',   'Días que cerraron en negativo')}
-        ${fila('ti-minus',         'Sin resultado', d.sinResultado, 'c-flat',   'Te conectaste pero el día no acabó en target ni en stop: analizaste y no entraste, o cerró en break even')}
+        ${fila('ti-minus',         'Sin entradas',  d.sinResultado, 'c-flat',   'Te conectaste pero el día no acabó en target ni en stop: analizaste y no entraste, o entraste y cerró en break even')}
       </div>
 
       <div class="dd-col">
