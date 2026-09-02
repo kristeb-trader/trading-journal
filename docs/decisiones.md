@@ -10,6 +10,45 @@
 
 ---
 
+## D-016 — La cuenta principal pasa a ser Sim101; las Apex solo alimentan el Tracker
+
+**Decisión.** Desde el 2 de septiembre de 2026, `objetivos.cuenta_principal = 'Sim101'`. El
+Journal —P&L, Análisis, Coach y las notificaciones de Telegram— se alimenta de la operativa
+en simulador. Las cuentas de evaluación Apex que no sean la principal van solo a
+`apex_trades` y se ven en el Apex Tracker, con su balance y su drawdown. Se opera **en
+espejo**: el mismo trade se ejecuta en las dos cuentas.
+
+**Motivo.** Kris va a operar unos **3 meses en Sim101** mientras abre una cuenta real. Sigue
+operando Apex en paralelo, pero lo que quiere medir como proceso —disciplina, setups,
+diagnóstico del Coach— es la operativa completa, y la evaluación Apex ya tiene su propio
+tablero donde lo que importa es el drawdown consumido.
+
+**Consecuencia asumida.** El P&L del Journal pasa a ser **dinero simulado**. Mientras el
+tamaño de las dos cuentas coincida las cifras son equivalentes, pero si divergen, el número
+que se ve al abrir el dashboard deja de ser el dinero real; el real solo estará en el
+Tracker. El filtro de cuentas permite separarlos, pero el valor por defecto y el Coach ya no
+distinguen.
+
+**Alternativa descartada.** Dejar la Apex como principal y registrar los días de Sim a mano,
+como se hizo el 1 de septiembre. Funciona pero depende de acordarse cada día, y el Coach
+seguiría analizando una cuenta que ya no es donde se está trabajando el proceso.
+
+**Nota operativa — no basta con cambiar la cuenta principal.** El indicador
+`SupabaseAutoExport` excluye las cuentas de simulación cuando **"Registrar todas las cuentas
+conectadas" está ON** (`if (RegistrarTodas && EsCuentaSimulada(acc)) continue;`), y esa
+decisión se toma **al suscribirse a las cuentas**, antes incluso de haber leído cuál es la
+principal —esa lectura es asíncrona—. Para que Sim101 se registre hay que dejar esa casilla
+**OFF** y ponerla en un slot `Cuenta N`: ahí la intención es explícita y el indicador sí la
+monitoriza. Cambiar la casilla **no requiere recompilar**: NinjaTrader recarga el indicador
+al tocar una propiedad.
+
+**Revisar** cuando se abra la cuenta real: probablemente esta decisión se sustituya por otra
+que devuelva la principal a una cuenta con dinero.
+
+**Fecha.** 2026-09-02.
+
+---
+
 ## D-015 — Las zonas naranjas se capturan en el AddOn, y el bot deja de mandarlas
 
 **Decisión.** Los soportes y resistencias naranjas se escriben en el AddOn
