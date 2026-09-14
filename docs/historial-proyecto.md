@@ -2606,6 +2606,34 @@ está acotado a los cambios pactados.
 
 ---
 
+## Checkpoint 2026-09-14 — Apex-15 renovada: dos tarjetas con el mismo número
+
+La `APEX-232411-15` se quemó el 8-sep (−1.324,08 ese día, balance 47.805,06 bajo el piso
+de 48.000). Kris la renovó el viernes 11-sep y **Apex conserva el número de cuenta**, así
+que NT8 exporta las dos etapas con el mismo `AccountName`.
+
+El Tracker asignaba trades a cada tarjeta **solo por número**: una segunda tarjeta habría
+cogido los 21 trades y nacido quemada. Ahora **cada tarjeta es un periodo**: desde su
+`fecha_inicio` hasta el día antes de que empiece otra con el mismo número (`periodoDe` en
+`js/apex.js`). El límite se deduce, no se guarda: cero cambios de esquema, y la próxima
+renovación es solo crear otra tarjeta. El formulario exige fecha de inicio si el número ya
+lo usa otra tarjeta.
+
+| Tarjeta | Periodo | Trades | Balance |
+|---|---|---|---|
+| Apex-15 (quemada, id 6) | 12-ago → 10-sep | 19 | 47.805,06 |
+| Apex-15 · 2ª (id 7) | 11-sep → | 2 | 49.895,96 |
+
+Verificado con `SELECT` y en el preview (copia local ampliada con la Apex-15). Ninguna otra
+cuenta tenía trades anteriores a su `fecha_inicio`, así que las demás tarjetas no cambian.
+Migración `2026-09-14-apex15-renovada.sql`. Diseño:
+`docs/disenos/2026-09-14-apex-cuenta-renovada.md`.
+
+> ⚠️ Queda al backlog: el filtro de cuentas de Calendario/Trades/Análisis sigue mezclando
+> las dos etapas, porque filtra por nombre de NT8 y no por tarjeta.
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo

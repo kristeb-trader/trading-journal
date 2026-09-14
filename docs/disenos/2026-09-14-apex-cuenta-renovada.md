@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| **Versión** | v1 |
+| **Versión** | v2 |
 | **Fecha** | 2026-09-14 |
-| **Estado** | 🔵 **APROBADO** (14 sep) — en implementación: fase 1 ✅ |
+| **Estado** | ✅ **IMPLEMENTADO** (14 sep) — las 3 fases cerradas y verificadas |
 | **Origen** | Kris (14 sep): quemó la `APEX-232411-15` el 8-sep, la renovó el viernes 11-sep con el mismo número y quiere una tarjeta nueva con las estadísticas desde cero, empezando por los 2 trades de hoy |
 | **Alcance** | `js/apex.js` + una fila nueva en `apex_cuentas`. **Cero cambios de esquema** |
 
@@ -25,7 +25,7 @@ Datos a 14-sep (verificado con `SELECT`):
 | | Apex-15 (quemada) | Apex-15 · 2ª |
 |---|---|---|
 | Periodo | 12-ago → 8-sep | 11-sep → |
-| Trades | 21 (15 en `apex_trades`, 6 en `trades`) | 2 en `apex_trades` (14-sep) |
+| Trades | 19 (13 en `apex_trades`, 6 en `trades`) | 2 en `apex_trades` (14-sep) |
 | P&L | −2.194,94 → balance **47.805,06** | −104,04 → balance **49.895,96** |
 
 ## 2. La regla nueva: cada tarjeta es un periodo
@@ -101,3 +101,4 @@ Commit + push al cerrar cada fase.
 ## Registro de versiones
 
 - **v1** (14 sep) — propuesta inicial. Parámetros y nombre confirmados por Kris.
+- **v2** (14 sep) — implementado. Corregido el recuento de la etapa quemada: 19 trades, no 21 (los 15 de `apex_trades` incluían los 2 del 14-sep). Medido: id 6 → 19 trades, 47.805,06; id 7 → 2 trades, 49.895,96 (`SELECT` y preview). Migración aplicada como `20260914152212`.

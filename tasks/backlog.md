@@ -2,6 +2,16 @@
 
 > Ideas sin fecha ni compromiso. Cuando una se activa, pasa a `current.md`.
 
+## Apex Tracker
+
+- **El filtro de cuentas no distingue una cuenta renovada.** Calendario, Trades y Análisis
+  filtran por nombre de cuenta de NT8, así que "APEX-15" mezcla la etapa quemada (12-ago →
+  8-sep) con la renovada (desde 11-sep). El Tracker sí las separa (por periodo, 14 sep).
+- **El P&L negativo de las tarjetas no lleva signo.** `js/apex.js` ~l. 491 pinta
+  `fmt$(Math.abs(...))` con `+` solo si es positivo: −104 sale como `$104` en rojo. El
+  detalle sí lo pone (`−$104`). Y el Tracker entero formatea en `en-US` (`$49,896`), no con
+  `fmtDinero` como pide el invariante de importes.
+
 ## Tema claro
 
 Pedido y **aplazado a sabiendas** (D-010). La fila ya existe en Otros › Ajustes, inerte y
