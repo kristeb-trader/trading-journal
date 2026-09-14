@@ -488,7 +488,7 @@ const Apex = (() => {
             </div>
             <div class="axm-metric">
               <span class="axm-m-label">P&L total</span>
-              <span class="axm-m-val" style="color:${pnlColor}">${s.pnlTotal >= 0 ? '+' : ''}${fmt$(Math.abs(s.pnlTotal))}</span>
+              <span class="axm-m-val" style="color:${pnlColor}">${s.pnlTotal >= 0 ? '+' : ''}${fmt$(s.pnlTotal)}</span>
             </div>
           </div>
           <div class="axm-prog-head"><span>${progLabel}</span><span>${progRight}</span></div>
