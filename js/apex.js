@@ -238,6 +238,21 @@ const Apex = (() => {
     return tradesPorCuenta[cuentaId] || []
   }
 
+  // Periodo de una tarjeta: una cuenta renovada conserva su número en NT8, así que
+  // cada tarjeta coge sus trades desde su fecha_inicio hasta el día anterior a que
+  // empiece otra tarjeta con el mismo número. El "hasta" se deduce, no se guarda.
+  // Fechas ISO (YYYY-MM-DD): se comparan como cadenas.
+  function periodoDe(cta) {
+    const desde = cta.fecha_inicio || null
+    const siguientes = cuentas
+      .filter(c => c.id !== cta.id && c.numero_cuenta === cta.numero_cuenta && c.fecha_inicio && (!desde || c.fecha_inicio > desde))
+      .map(c => c.fecha_inicio)
+      .sort()
+    // `hasta` es exclusivo: la fecha_inicio de la siguiente tarjeta
+    return { desde, hasta: siguientes[0] || null }
+  }
+  const enPeriodo = (fecha, p) => (!p.desde || fecha >= p.desde) && (!p.hasta || fecha < p.hasta)
+
   // Construye, por cuenta, la serie de días combinando los días manuales
   // (apex_trades tipo='dia') con los derivados de los trades auto-exportados.
   // Recalcula balance y threshold trailing (HWM desde MFE) sobre la serie unificada.
@@ -255,7 +270,9 @@ const Apex = (() => {
       // La PA real vive en la tabla `trades` (journal); las cuentas de
       // evaluación viven en `apex_trades`. Como cada cuenta solo existe en una
       // de las dos tablas, concatenar ambas fuentes nunca duplica.
-      const ctaTrades = [...trades, ...mainTrades].filter(t => t.account === cta.numero_cuenta)
+      // Una cuenta renovada comparte número: se reparte por periodo (periodoDe).
+      const periodo = periodoDe(cta)
+      const ctaTrades = [...trades, ...mainTrades].filter(t => t.account === cta.numero_cuenta && enPeriodo(t.trade_date, periodo))
       tradesPorCuenta[cta.id] = ctaTrades
 
       // Días auto: agrupar trades por fecha
@@ -268,7 +285,7 @@ const Apex = (() => {
 
       // Días manuales (tipo='dia'): por fecha, emparejados por número de cuenta
       const manualPorFecha = {}
-      registros.filter(r => r.account === cta.numero_cuenta).forEach(r => { manualPorFecha[r.trade_date] = r })
+      registros.filter(r => r.account === cta.numero_cuenta && enPeriodo(r.trade_date, periodo)).forEach(r => { manualPorFecha[r.trade_date] = r })
 
       // Unión de fechas, orden cronológico
       const fechas = [...new Set([...Object.keys(autoPorFecha), ...Object.keys(manualPorFecha)])].sort()
@@ -838,6 +855,12 @@ const Apex = (() => {
     }
     const id = document.getElementById('apexCtaId').value
     if (id) payload.id = parseInt(id)
+    // Sin fecha de inicio no hay forma de repartir los trades entre dos tarjetas
+    // que comparten número (cuenta renovada): ver periodoDe.
+    const gemela = payload.numero_cuenta && cuentas.some(c => c.numero_cuenta === payload.numero_cuenta && c.id !== payload.id)
+    if (gemela && !payload.fecha_inicio) {
+      Toast.show('Hay otra cuenta con este número: indica la fecha de inicio para separarlas', 'warning'); return
+    }
     try {
       await DB.saveApexCuenta(payload)
       document.getElementById('apexCuentaModal').classList.add('hidden')
