@@ -620,6 +620,9 @@ significado: **verde = mismo setup, rojo = setup distinto**.
 - **Móvil / pantallas estrechas:** la tabla (mín. 900 px) se desplaza en horizontal dentro
   de su caja con la columna Fecha fija; la página no se ensancha.
 - El título es un `div`, no un `h2`: el único título de pantalla es el de la barra.
+- **Franja, corregida por Kris (17 sep):** verde = **misma operación** (mismo setup, o
+  ninguno de los dos operó); rojo = **diferente** (setups distintos, o uno operó y el otro
+  no). Sin franja solo si su operativa no está cargada. Sustituye la regla de arriba.
 - **Ajuste posterior (17 sep):** la tabla sube **arriba del todo** (tras los avisos) y los
   KPIs, la conclusión y las tarjetas quedan debajo. La leyenda se queda solo con los dos
   colores de la franja.

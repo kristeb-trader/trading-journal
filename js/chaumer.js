@@ -652,12 +652,15 @@ const Chaumer = (() => {
 
   // ── La tabla día a día ──
   // Columnas de verdad (no leyendas): resultado · hora · puntos por cada lado.
-  // La franja de la izquierda dice UNA sola cosa: verde = los dos operaron el
-  // mismo setup, rojo = setups distintos. Si alguno no operó, no hay franja: no
-  // hay dos setups que comparar.
+  // La franja de la izquierda dice UNA sola cosa: si hicimos lo mismo.
+  //   verde = misma operación: el mismo setup, o ninguno de los dos operó.
+  //   rojo  = diferente: setups distintos, o uno operó y el otro no.
+  // Sin franja solo cuando su operativa no está cargada: no hay con qué comparar.
   function franjaSetup(x) {
+    if (!x.ch) return ''
     const el = ladoDeEl(x.ch)
-    if (!x.yo.opero || !el.opero) return ''
+    if (!x.yo.opero && !el.opero) return 'mismo'
+    if (x.yo.opero !== el.opero) return 'distinto'
     return x.yo.setup_codigo && x.yo.setup_codigo === x.ch.setup_codigo ? 'mismo' : 'distinto'
   }
 
@@ -747,8 +750,8 @@ const Chaumer = (() => {
         </table>
       </div>
       <div class="ch-dd-leyenda">
-        <span><i class="ch-dd-sw fr-mismo"></i>Mismo setup que él</span>
-        <span><i class="ch-dd-sw fr-distinto"></i>Setup distinto</span>
+        <span><i class="ch-dd-sw fr-mismo"></i>Misma operación que él</span>
+        <span><i class="ch-dd-sw fr-distinto"></i>Operación diferente</span>
       </div>`
   }
 
