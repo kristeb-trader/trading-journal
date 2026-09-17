@@ -624,6 +624,13 @@ significado: **verde = mismo setup, rojo = setup distinto**.
   no entraste» y «Sus setups que se te escapan», y la frase de conclusión. Diferencias queda
   en: avisos · tabla «Día a día» · los 5 KPIs. El motivo de no entrada se sigue declarando
   en Registrar y se ve en el modal.
+- **Tarjetas, rehechas (17 sep):** quedan 4 — La brecha · Yo · Chaumer · **Misma operación
+  que él**. Fuera la de hora de entrada y los textos bajo la brecha y bajo mismo setup.
+  Títulos a 0,92 rem en mayúscula con icono, cifra a 2,2 rem, targets en pastilla verde y
+  stops en roja. 4 columnas; 2 por debajo de 900 px.
+  **Misma operación** usa el criterio de la franja verde (mismo setup, o ninguno operó)
+  sobre los días con su fila cargada: septiembre da **4 / 12** (10, 11, 14 y 17), igual que
+  las filas verdes. Antes contaba mismo setup sobre días en que operaron los dos (3 / 8).
 - **Franja, corregida por Kris (17 sep):** verde = **misma operación** (mismo setup, o
   ninguno de los dos operó); rojo = **diferente** (setups distintos, o uno operó y el otro
   no). Sin franja solo si su operativa no está cargada. Sustituye la regla de arriba.

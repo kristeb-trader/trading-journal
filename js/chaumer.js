@@ -491,7 +491,6 @@ const Chaumer = (() => {
       })
       .sort((a, b) => a.f.localeCompare(b.f))
 
-    const cuenta = k => dias.filter(d => d.v.k === k).length
 
     const sum = (arr, fn) => Math.round(arr.reduce((a, x) => a + (fn(x) || 0), 0) * 100) / 100
 
@@ -501,18 +500,6 @@ const Chaumer = (() => {
     // único honesto que se puede hacer con un dato que falta — pero hay que
     // decirlo: si no, un día que costó 60 puntos pasa por un día que costó nada.
     const sinPuntos = dias.filter(d => d.ch.opero && d.ch.setup_codigo && d.ch.puntos == null).length
-
-    // ── Δ hora, solo en días en que ambos operaron EL MISMO setup ──
-    // Con setups distintos las dos entradas no son la misma operación y restarlas
-    // no dice nada (llegó a dar "+14 min" con tres días de 0 min reales).
-    // Las dos en hora Colombia: se restan sin convertir.
-    const deltas = dias
-      .filter(d => d.ch.opero && d.ch.hora_entrada && d.yo.hora && d.ch.setup_codigo === d.yo.setup_codigo)
-      .map(d => difMinutos(d.ch.hora_entrada, d.yo.hora))
-      .filter(n => n != null)
-    const deltaMedia = deltas.length
-      ? Math.round((deltas.reduce((a, b) => a + b, 0) / deltas.length) * 10) / 10
-      : null
 
     // ── Targets y stops de cada uno, sobre los mismos días ──
     const conteo = lados => {
@@ -543,14 +530,10 @@ const Chaumer = (() => {
       puntos: { el: sum(dias, d => d.ch.puntos), yo: sum(dias, d => d.yo.puntos) },
       resultados: { el: conteo(dias.map(d => ladoDeEl(d.ch))), yo: conteo(dias.map(d => d.yo)) },
       brecha, sinPuntos,
-      // Cuánto te aporta entrar en SU mismo setup, que es la comparación limpia.
-      mismoSetup: {
-        dias: cuenta('igual') + cuenta('ejecucion'),
-        ambos: dias.filter(d => d.yo.opero && d.ch.opero && d.ch.setup_codigo).length,
-        delta: Math.round(dias.filter(d => ['igual', 'ejecucion'].includes(d.v.k))
-          .reduce((a, d) => a + d.delta, 0) * 100) / 100,
-      },
-      deltaMedia, nDeltas: deltas.length,
+      // Días en que hicimos lo mismo, con el MISMO criterio que la franja verde de
+      // la tabla (mismo setup, o ninguno operó), sobre los días con su fila
+      // cargada. Así la tarjeta y la tabla no pueden contar distinto.
+      mismaOperacion: dias.filter(d => franjaSetup(d) === 'mismo').length,
       filas,
       nDias: dias.length,
     }
@@ -691,9 +674,13 @@ const Chaumer = (() => {
       </div>`
   }
 
+  // Targets en verde y stops en rojo, cada uno en su pastilla.
   function kpiResultados(c) {
-    return [c.target && `${c.target} T`, c.stop && `${c.stop} S`, c.otro && `${c.otro} otros`, c.nada && `${c.nada} sin operar`]
-      .filter(Boolean).join(' · ') || '—'
+    return `
+      <span class="ch-kpi-chip ok"><b>${c.target}</b> Target${c.target === 1 ? '' : 's'}</span>
+      <span class="ch-kpi-chip mal"><b>${c.stop}</b> Stop${c.stop === 1 ? '' : 's'}</span>
+      ${c.otro ? `<span class="ch-kpi-chip"><b>${c.otro}</b> BE/parcial</span>` : ''}
+      ${c.nada ? `<span class="ch-kpi-chip nada"><b>${c.nada}</b> sin operar</span>` : ''}`
   }
 
   let filasVista = []   // la lista en pantalla, para ← → dentro del modal
@@ -716,7 +703,8 @@ const Chaumer = (() => {
     }
 
     const cobFlaca = d.cobertura.pct < 60
-    const ms = d.mismoSetup
+    const mo = d.mismaOperacion
+    const moPct = d.nDias ? Math.round((mo / d.nDias) * 100) : 0
 
     cont.innerHTML = `
       ${cobFlaca || d.sinPuntos ? `
@@ -735,30 +723,23 @@ const Chaumer = (() => {
 
       <div class="ch-kpis">
         <div class="ch-kpi ch-kpi-brecha ${d.brecha < 0 ? 'mal' : 'ok'}">
-          <span class="ch-kpi-lab">La brecha</span>
-          <span class="ch-kpi-n ${d.brecha < 0 ? 'mal' : d.brecha > 0 ? 'ok' : ''}">${num(d.brecha)}</span>
-          <span class="ch-kpi-sub">puntos ${d.brecha < 0 ? 'por detrás de él' : d.brecha > 0 ? 'por delante de él' : '— empatados'} · ${plural(d.nDias, 'día')}</span>
+          <span class="ch-kpi-lab"><i class="ti ti-scale"></i> La brecha</span>
+          <span class="ch-kpi-n ${d.brecha < 0 ? 'mal' : d.brecha > 0 ? 'ok' : ''}">${num(d.brecha)}<small> pts</small></span>
         </div>
         <div class="ch-kpi ch-kpi-yo">
-          <span class="ch-kpi-lab">Yo</span>
-          <span class="ch-kpi-n">${num(d.puntos.yo)}</span>
-          <span class="ch-kpi-sub">${kpiResultados(d.resultados.yo)}</span>
+          <span class="ch-kpi-lab"><i class="ti ti-user"></i> Yo</span>
+          <span class="ch-kpi-n">${num(d.puntos.yo)}<small> pts</small></span>
+          <span class="ch-kpi-chips">${kpiResultados(d.resultados.yo)}</span>
         </div>
         <div class="ch-kpi ch-kpi-el">
-          <span class="ch-kpi-lab">Chaumer</span>
-          <span class="ch-kpi-n">${num(d.puntos.el)}</span>
-          <span class="ch-kpi-sub">${kpiResultados(d.resultados.el)}</span>
+          <span class="ch-kpi-lab"><i class="ti ti-user-star"></i> Chaumer</span>
+          <span class="ch-kpi-n">${num(d.puntos.el)}<small> pts</small></span>
+          <span class="ch-kpi-chips">${kpiResultados(d.resultados.el)}</span>
         </div>
-        <div class="ch-kpi">
-          <span class="ch-kpi-lab">Mismo setup que él</span>
-          <span class="ch-kpi-n">${ms.dias}<small> / ${ms.ambos}</small></span>
-          <span class="ch-kpi-sub">días en que operaron los dos${ms.dias ? ` · ${fmtPts(ms.delta)}` : ''}</span>
-        </div>
-        <div class="ch-kpi">
-          <span class="ch-kpi-lab">Hora de entrada</span>
-          <span class="ch-kpi-n ${d.deltaMedia != null && Math.abs(d.deltaMedia) > TOLERANCIA_MIN ? 'mal' : ''}">${d.deltaMedia == null ? '—' : `${num(d.deltaMedia)}<small> min</small>`}</span>
-          <span class="ch-kpi-sub">${d.deltaMedia == null ? 'ningún día con el mismo setup y hora en los dos lados'
-            : `${d.deltaMedia > 0 ? 'de media después' : d.deltaMedia < 0 ? 'de media antes' : 'entras a la vez'} que él ·${plural(d.nDeltas, 'día')} con el mismo setup`}</span>
+        <div class="ch-kpi ch-kpi-igual">
+          <span class="ch-kpi-lab"><i class="ti ti-equal"></i> Misma operación que él</span>
+          <span class="ch-kpi-n">${mo}<small> / ${d.nDias}</small></span>
+          <span class="ch-kpi-prog" title="${moPct} %"><span style="width:${moPct}%"></span></span>
         </div>
       </div>
     `

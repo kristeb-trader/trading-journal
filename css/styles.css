@@ -4611,27 +4611,52 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .ch-cob.flaca i { color: var(--red-txt); }
 
 
+/* Tarjetas de resumen: 4 en fila (2 en móvil). El color de cada una va en la
+   franja superior y en un degradado muy suave desde arriba. */
 .ch-kpis {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px; margin-bottom: 16px;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px; margin-bottom: 16px;
 }
 .ch-kpi {
-  display: flex; flex-direction: column; gap: 4px; min-width: 0;
-  background: var(--card); border-radius: 10px; padding: 13px 15px;
+  --kc: var(--text3);
+  display: flex; flex-direction: column; gap: 10px; min-width: 0;
+  padding: 18px 20px; border-radius: 14px;
+  border: 1px solid var(--border); border-top: 3px solid var(--kc);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--kc) 10%, var(--card)) 0%, var(--card) 70%);
 }
-.ch-kpi-lab { font-size: 0.72rem; color: var(--text3); }
-.ch-kpi-n { font-size: 1.6rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.ch-kpi-brecha.mal { --kc: var(--red); }
+.ch-kpi-brecha.ok  { --kc: var(--accent); }
+.ch-kpi-yo    { --kc: var(--accent); }
+.ch-kpi-el    { --kc: var(--blue); }
+.ch-kpi-igual { --kc: var(--accent); }
+.ch-kpi-lab {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.92rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text2);
+}
+.ch-kpi-lab i { font-size: 1.15rem; color: var(--kc); }
+.ch-kpi-yo .ch-kpi-lab { color: var(--accent-txt); }
+.ch-kpi-el .ch-kpi-lab { color: var(--blue-txt); }
+.ch-kpi-n { font-size: 2.2rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 .ch-kpi-n.ok  { color: var(--accent-txt); }
 .ch-kpi-n.mal { color: var(--red-txt); }
-.ch-kpi-sub { font-size: 0.72rem; color: var(--text3); line-height: 1.4; }
-.ch-kpi-n small { font-size: 0.55em; font-weight: 600; color: var(--text3); }
-.ch-kpi { border: 1px solid var(--border); border-top: 2px solid var(--border); }
-.ch-kpi-brecha.mal { border-top-color: var(--red); }
-.ch-kpi-brecha.ok  { border-top-color: var(--accent); }
-.ch-kpi-yo { border-top-color: var(--accent); }
-.ch-kpi-yo .ch-kpi-lab { color: var(--accent-txt); }
-.ch-kpi-el { border-top-color: var(--blue); }
-.ch-kpi-el .ch-kpi-lab { color: var(--blue-txt); }
+.ch-kpi-n small { font-size: 0.45em; font-weight: 600; color: var(--text3); }
+
+.ch-kpi-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ch-kpi-chip {
+  font-size: 0.78rem; color: var(--text2);
+  background: var(--bg3); border-radius: 999px; padding: 3px 10px;
+}
+.ch-kpi-chip b { font-size: 0.95rem; font-weight: 800; margin-right: 2px; }
+.ch-kpi-chip.ok  { background: var(--accent-dim); color: var(--accent-txt); }
+.ch-kpi-chip.mal { background: var(--red-dim);    color: var(--red-txt); }
+.ch-kpi-chip.nada { color: var(--text3); }
+
+.ch-kpi-prog { display: block; height: 8px; border-radius: 4px; background: var(--bg3); overflow: hidden; margin-top: auto; }
+.ch-kpi-prog span { display: block; height: 100%; border-radius: 4px; background: var(--accent); }
+@media (max-width: 900px) {
+  .ch-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 /* ── Tabla «Día a día» ──────────────────────────────────────────────────────
    Una tabla de verdad: cada dato en su columna, los dos lados agrupados bajo su
@@ -4775,7 +4800,10 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
   .ch-cmp-body { padding: 12px; }
   .ch-cmp .ch-split { grid-template-columns: 1fr; }
   .ch-cmp-acc #chCmpEditar span { display: none; }
-  .ch-kpi-n { font-size: 1.35rem; }
+  .ch-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .ch-kpi { padding: 14px; }
+  .ch-kpi-lab { font-size: 0.78rem; }
+  .ch-kpi-n { font-size: 1.7rem; }
   /* La fecha baja a su propia línea, pero a ancho completo: al lado de las
      pestañas dejaría el input en ~70 px y no cabe una fecha. */
   .ch-topbar { gap: 8px; }
