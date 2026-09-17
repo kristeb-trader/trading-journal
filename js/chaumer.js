@@ -749,7 +749,6 @@ const Chaumer = (() => {
       <div class="ch-dd-leyenda">
         <span><i class="ch-dd-sw fr-mismo"></i>Mismo setup que él</span>
         <span><i class="ch-dd-sw fr-distinto"></i>Setup distinto</span>
-        <span>Sin franja: alguno de los dos no operó · Horas en hora Colombia · Pulsa un día para ver las dos gráficas</span>
       </div>`
   }
 
@@ -791,6 +790,12 @@ const Chaumer = (() => {
           ${d.sinPuntos ? `<div class="ch-cob flaca"><i class="ti ti-alert-triangle"></i>
             ${plural(d.sinPuntos, 'día suyo', 'días suyos')} sin puntos: cuenta${d.sinPuntos === 1 ? '' : 'n'} como 0, así que la brecha real puede ser mayor.</div>` : ''}
         </div>` : ''}
+
+      <!-- La tabla va primero: es lo que Kris viene a mirar. Las tarjetas, debajo. -->
+      <div class="ch-card ch-tabla">
+        <div class="ch-dd-titulo">Día a día</div>
+        ${tablaDias(d.filas)}
+      </div>
 
       <div class="ch-kpis">
         <div class="ch-kpi ch-kpi-brecha ${d.brecha < 0 ? 'mal' : 'ok'}">
@@ -885,10 +890,6 @@ const Chaumer = (() => {
         </div>
       </div>
 
-      <div class="ch-card ch-tabla">
-        <div class="ch-dd-titulo">Día a día</div>
-        ${tablaDias(d.filas)}
-      </div>
     `
   }
 

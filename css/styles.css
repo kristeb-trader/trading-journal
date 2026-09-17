@@ -4683,7 +4683,7 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
    La franja de la fecha dice solo una cosa: verde = mismo setup, rojo = distinto.
    Con 9 columnas no cabe en un móvil: la tabla se desplaza en horizontal DENTRO de
    su caja, con la fecha fija, y la página no se ensancha. */
-.ch-tabla { margin-top: 16px; padding: 20px; }
+.ch-tabla { margin-bottom: 16px; padding: 20px; }
 .ch-dd-titulo {
   text-align: center; text-transform: uppercase;
   font-size: 1.35rem; font-weight: 800; letter-spacing: 0.16em;

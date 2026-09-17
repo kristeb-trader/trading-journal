@@ -620,6 +620,9 @@ significado: **verde = mismo setup, rojo = setup distinto**.
 - **Móvil / pantallas estrechas:** la tabla (mín. 900 px) se desplaza en horizontal dentro
   de su caja con la columna Fecha fija; la página no se ensancha.
 - El título es un `div`, no un `h2`: el único título de pantalla es el de la barra.
+- **Ajuste posterior (17 sep):** la tabla sube **arriba del todo** (tras los avisos) y los
+  KPIs, la conclusión y las tarjetas quedan debajo. La leyenda se queda solo con los dos
+  colores de la franja.
 
 **Las horas las revisa Kris a mano** si ve alguna diferencia; el código no toca más filas.
 
@@ -668,7 +671,7 @@ abre con «siguiente» desactivado. 660 px y 375 px sin desbordar la página; co
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 2026-08-19 | Documento inicial. Recoge las 4 decisiones de Kris |
-| v8 | 2026-09-17 | La lista «Día a día» pasa a ser una tabla: columnas para resultado, hora y puntos de cada lado, orden ascendente, fila de totales con efectividad, y la franja solo dice mismo setup / setup distinto. Detalle en §5.9 |
+| v8 | 2026-09-17 | La tabla «Día a día» va arriba y las tarjetas debajo. La lista pasa a ser una tabla: columnas para resultado, hora y puntos de cada lado, orden ascendente, fila de totales con efectividad, y la franja solo dice mismo setup / setup distinto. Detalle en §5.9 |
 | v7 | 2026-09-17 | Diferencias pasa a ser la pestaña principal: dashboard arriba y la **lista día a día** abajo, con un modal de las dos gráficas. «Día» pasa a llamarse **Registrar**. Todas las horas en **hora Colombia**. Detalle en §5.8 |
 | v6 | 2026-08-31 | «Diferencias» rehecho: la brecha en puntos arriba, el desglose por causa ordenado por lo que cuesta, los días clave pulsables, y fuera la jerga y la gráfica semanal. Detalle en §5.7 |
 | v5 | 2026-08-19 | El signo de los puntos se deriva del resultado de Chaumer, y el modal deja claro que todo lo suyo es suyo. Corregida la fila del 18. Detalle en §5.6 |
