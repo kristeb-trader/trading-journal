@@ -1139,18 +1139,19 @@
 
         <!-- La fecha va en la MISMA fila que las pestañas: en su propia franja
              comía ~60 px de alto que hacen falta para las dos columnas. Solo se
-             muestra en la pestaña "Día" — la de Diferencias usa el selector de
-             período de la barra superior. Lo alterna Chaumer.showTab. -->
+             muestra en la pestaña "Registrar" — Diferencias, la principal, usa el
+             selector de período de la barra superior. Lo alterna Chaumer.showTab.
+             El data-tab "dia" se conserva: es el id interno de Registrar. -->
         <div class="ch-topbar">
           <div class="so-tabs" id="chaumerTabs">
-            <button type="button" class="so-tab active" data-tab="dia">
-              <i class="ti ti-columns-2"></i> Día
-            </button>
-            <button type="button" class="so-tab" data-tab="dif">
+            <button type="button" class="so-tab active" data-tab="dif">
               <i class="ti ti-chart-bar"></i> Diferencias
             </button>
+            <button type="button" class="so-tab" data-tab="dia">
+              <i class="ti ti-pencil"></i> Registrar
+            </button>
           </div>
-          <div class="date-stepper ch-datenav" id="chDateNav">
+          <div class="date-stepper ch-datenav hidden" id="chDateNav">
             <button type="button" class="btn-icon" id="chDatePrev" title="Día anterior">
               <i class="ti ti-chevron-left"></i>
             </button>
@@ -1161,14 +1162,35 @@
           </div>
         </div>
 
-        <div class="so-panel active" id="chaumer-panel-dia">
-          <div id="chaumerDia"></div>
-        </div>
-
-        <div class="so-panel" id="chaumer-panel-dif">
+        <div class="so-panel active" id="chaumer-panel-dif">
           <div id="chaumerDif"></div>
         </div>
+
+        <div class="so-panel" id="chaumer-panel-dia">
+          <div id="chaumerDia"></div>
+        </div>
       </section>
+
+      <!-- Modal: las dos gráficas de un día, la mía y la suya. Se abre desde la
+           lista de Diferencias; Esc / X / clic fuera lo cierran y ← → cambian de
+           día. Lo pinta Chaumer.abrirComparacion. -->
+      <div class="modal-overlay hidden" id="chCmpModal">
+        <div class="modal ch-cmp" role="dialog" aria-modal="true" aria-labelledby="chCmpTitulo">
+          <div class="modal-header ch-cmp-head">
+            <div class="ch-cmp-tit">
+              <h3 id="chCmpTitulo"></h3>
+              <span id="chCmpVeredicto"></span>
+            </div>
+            <div class="ch-cmp-acc">
+              <button type="button" class="btn-icon" id="chCmpPrev" title="Día anterior (←)"><i class="ti ti-chevron-left"></i></button>
+              <button type="button" class="btn-icon" id="chCmpNext" title="Día siguiente (→)"><i class="ti ti-chevron-right"></i></button>
+              <button type="button" class="btn-secondary btn-sm" id="chCmpEditar" title="Abrir este día en Registrar"><i class="ti ti-pencil"></i><span> Editar su operativa</span></button>
+              <button type="button" class="btn-icon" id="chCmpCerrar" title="Cerrar (Esc)"><i class="ti ti-x"></i></button>
+            </div>
+          </div>
+          <div class="modal-content ch-cmp-body" id="chCmpCuerpo"></div>
+        </div>
+      </div>
 
       <!-- Modal: la operativa de Chaumer de un día -->
       <div class="modal-overlay hidden" id="chOpModal">
@@ -1196,7 +1218,7 @@
               </div>
               <div class="form-row">
                 <div class="form-group">
-                  <label>Su hora de entrada <span class="ch-hint">(ET)</span></label>
+                  <label>Su hora de entrada <span class="ch-hint">(hora Colombia)</span></label>
                   <input type="time" id="chOpHora">
                 </div>
                 <div class="form-group">

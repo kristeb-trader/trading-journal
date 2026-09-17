@@ -1,4 +1,4 @@
-// Comparador Chaumer vs yo — pestaña "Día"
+// Comparador Chaumer vs yo — pestañas "Diferencias" (la principal) y "Registrar"
 //
 // Su lado sale de `chaumer_operativas`; el mío, de `sesiones` + `trades`. Aquí
 // no se guarda nada mío: se lee.
@@ -6,11 +6,12 @@
 // El veredicto del día NO se persiste — se calcula cada vez cruzando las tres
 // fuentes, así que no puede quedarse obsoleto cuando cambia cualquiera de ellas.
 //
-// Las dos horas se comparan en ET. `trades.entry_time` viene de NinjaTrader en
-// hora de Colombia y pasa por `horaEt()` antes de restar; su `hora_entrada` ya
-// se guarda en ET. Restarlas a pelo daría 60 min de error medio año.
+// Las dos horas van en hora de COLOMBIA y se comparan tal cual: `trades.entry_time`
+// llega así de NinjaTrader, y su `hora_entrada` se guarda así desde el 17 sep 2026
+// (antes era ET y Kris la escribía a veces en una y a veces en otra). Aquí NO se
+// usa `horaEt()`: convertir solo uno de los dos lados daría 60 min de error.
 //
-// Diseño: docs/disenos/2026-08-19-chaumer-vs-yo.md (v2), Fase 2 de 4.
+// Diseño: docs/disenos/2026-08-19-chaumer-vs-yo.md (v7).
 
 const Chaumer = (() => {
 
@@ -41,6 +42,8 @@ const Chaumer = (() => {
 
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
   const nombreVariante = cod => variantes.find(v => v.codigo === cod)?.nombre || cod || '—'
+  // hh:mm en hora Colombia, sin conversión. Ver la cabecera.
+  const horaCol = h => (h ? String(h).slice(0, 5) : null)
   const fmtPts = n => (n == null ? '—' : `${n > 0 ? '+' : ''}${String(n).replace('.', ',')} pts`)
 
   // ── Mi lado, normalizado ──────────────────────────────────────────────────
@@ -52,7 +55,7 @@ const Chaumer = (() => {
     return {
       opero,
       setup_codigo: sesion?.setup_codigo || null,
-      hora_et: opero ? horaEt(trades[0].entry_time, fecha) : null,
+      hora: opero ? horaCol(trades[0].entry_time) : null,
       resultado: opero ? trades[0].resultado : null,
       puntos: pts.length ? Math.round(pts.reduce((a, b) => a + b, 0) * 100) / 100 : null,
       dinero: opero ? trades.reduce((a, t) => a + (parseFloat(t.profit) || 0), 0) : null,
@@ -75,7 +78,7 @@ const Chaumer = (() => {
     if (!elOpero && yo.opero)  return { k: 'de_mas', diffs: [] }
 
     const diffs = []
-    const dMin = difMinutos(ch.hora_entrada, yo.hora_et)
+    const dMin = difMinutos(ch.hora_entrada, yo.hora)
 
     if (ch.setup_codigo !== yo.setup_codigo) {
       diffs.push({ mal: true, txt: `Él ${nombreVariante(ch.setup_codigo)} · tú ${nombreVariante(yo.setup_codigo)}` })
@@ -144,7 +147,7 @@ const Chaumer = (() => {
         <div class="ch-setup">${esc(nombreVariante(ch.setup_codigo))}</div>
         <dl class="ch-campos">
           <dt>Resultado</dt><dd class="${ch.puntos > 0 ? 'pos' : ch.puntos < 0 ? 'neg' : ''}">${RESULTADOS[ch.resultado] || '—'} · ${fmtPts(ch.puntos)}</dd>
-          <dt>Entrada</dt><dd>${ch.hora_entrada ? esc(String(ch.hora_entrada).slice(0, 5)) + ' ET' : '—'}</dd>
+          <dt>Entrada</dt><dd>${esc(horaCol(ch.hora_entrada) || '—')}</dd>
           <dt>Contexto</dt><dd>${esc(ch.contexto || '—')}</dd>
         </dl>
         ${ch.notas ? `<p class="ch-notas">${esc(ch.notas)}</p>` : ''}
@@ -168,7 +171,7 @@ const Chaumer = (() => {
         <div class="ch-setup">${esc(nombreVariante(yo.setup_codigo))}</div>
         <dl class="ch-campos">
           <dt>Resultado</dt><dd class="${yo.puntos > 0 ? 'pos' : yo.puntos < 0 ? 'neg' : ''}">${RESULTADOS[yo.resultado] || '—'} · ${fmtPts(yo.puntos)}</dd>
-          <dt>Entrada</dt><dd>${yo.hora_et ? esc(yo.hora_et) + ' ET' : '—'}</dd>
+          <dt>Entrada</dt><dd>${esc(yo.hora || '—')}</dd>
           <dt>Confianza</dt><dd>${yo.confianza ? '★'.repeat(yo.confianza) + '☆'.repeat(5 - yo.confianza) : '—'}</dd>
         </dl>
         ${yo.notas ? `<p class="ch-notas">${esc(yo.notas)}</p>` : ''}
@@ -204,7 +207,9 @@ const Chaumer = (() => {
     const v = veredicto(ch, yo)
     const e = ESTADOS[v.k]
 
-    Nav.setContexto('chaumer', fmtFechaLarga(fecha))
+    // Registrar se carga también estando en Diferencias (para tenerla lista), y
+    // entonces el título es el período, no la fecha.
+    if (!enDif()) Nav.setContexto('chaumer', fmtFechaLarga(fecha))
 
     cont.innerHTML = `
       <div class="ch-veredicto ${e.cls}">
@@ -212,8 +217,8 @@ const Chaumer = (() => {
       </div>
 
       <div class="ch-split">
-        ${ladoChaumer(ch)}
         ${ladoYo(yo)}
+        ${ladoChaumer(ch)}
       </div>
 
       ${v.diffs.length ? `
@@ -480,19 +485,17 @@ const Chaumer = (() => {
     const dias = Object.values(porFecha)
       .filter(d => d.ch)                       // sin su operativa no hay comparación
       .map(d => {
-        const yo = miLadoDe(d.ses, d.tr || [], d.f)
+        const yo = miLado(d.ses, d.tr || [])
         const delta = Math.round(((yo.puntos ?? 0) - (d.ch.puntos ?? 0)) * 100) / 100
-        return { f: d.f, ch: d.ch, ses: d.ses, yo, delta, v: veredictoCon(d.ch, yo, d.f) }
+        return { f: d.f, ch: d.ch, ses: d.ses, yo, delta, v: veredicto(d.ch, yo) }
       })
       .sort((a, b) => a.f.localeCompare(b.f))
 
     const cuenta = k => dias.filter(d => d.v.k === k).length
     const suyosOperados = dias.filter(d => d.ch.opero && d.ch.setup_codigo)
     const fugas = dias.filter(d => d.v.k === 'fuga')
-    const deMas = dias.filter(d => d.v.k === 'de_mas')
 
     const sum = (arr, fn) => Math.round(arr.reduce((a, x) => a + (fn(x) || 0), 0) * 100) / 100
-    const coincidencias = cuenta('igual')
 
     // ── Motivos de no entrada, desde `sesiones` ──
     // Se cuentan los días Y lo que costaron. Ordenar por veces engaña: dudar una
@@ -531,13 +534,6 @@ const Chaumer = (() => {
     // decirlo: si no, un día que costó 60 puntos pasa por un día que costó nada.
     const sinPuntos = dias.filter(d => d.ch.opero && d.ch.setup_codigo && d.ch.puntos == null).length
 
-    // Los días que más pesaron, en cualquier dirección: los que explican la brecha.
-    const diasClave = [...dias]
-      .filter(d => Math.abs(d.delta) >= 0.5)
-      .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
-      .slice(0, 5)
-      .sort((a, b) => a.delta - b.delta)
-
     // ── Por setup: cuántas de las suyas se te escaparon ──
     const porSetup = {}
     suyosOperados.forEach(d => {
@@ -547,70 +543,64 @@ const Chaumer = (() => {
       if (d.v.k === 'fuga') e.fugas++
     })
 
-    // ── Δ hora, solo en días en que ambos operaron ──
+    // ── Δ hora, solo en días en que ambos operaron EL MISMO setup ──
+    // Con setups distintos las dos entradas no son la misma operación y restarlas
+    // no dice nada (llegó a dar "+14 min" con tres días de 0 min reales).
+    // Las dos en hora Colombia: se restan sin convertir.
     const deltas = dias
-      .filter(d => d.ch.opero && d.ch.hora_entrada && d.yo.hora_et)
-      .map(d => difMinutos(d.ch.hora_entrada, d.yo.hora_et))
+      .filter(d => d.ch.opero && d.ch.hora_entrada && d.yo.hora && d.ch.setup_codigo === d.yo.setup_codigo)
+      .map(d => difMinutos(d.ch.hora_entrada, d.yo.hora))
       .filter(n => n != null)
     const deltaMedia = deltas.length
       ? Math.round((deltas.reduce((a, b) => a + b, 0) / deltas.length) * 10) / 10
       : null
 
-    // ── Por semana, para la evolución ──
-    const semanas = {}
-    dias.forEach(d => {
-      const k = semanaDe(d.f)
-      const s = (semanas[k] ||= { k, igual: 0, ejecucion: 0, otra_lectura: 0, fuga: 0, de_mas: 0, ambos_fuera: 0 })
-      s[d.v.k] = (s[d.v.k] || 0) + 1
-    })
+    // ── Targets y stops de cada uno, sobre los mismos días ──
+    const conteo = lados => {
+      const c = { target: 0, stop: 0, otro: 0, nada: 0 }
+      lados.forEach(l => {
+        if (!l.opero) c.nada++
+        else if (l.resultado === 'target' || l.resultado === 'stop') c[l.resultado]++
+        else c.otro++
+      })
+      return c
+    }
+
+    // ── La lista: un día por fila ──
+    // Entra todo día con dato en cualquiera de los dos lados. Un día en que yo
+    // operé y su operativa no está cargada también sale, marcado "Sin cargar":
+    // esconderlo haría creer que ese día no existe.
+    const filas = Object.values(porFecha)
+      .filter(d => d.ch || d.tr?.length)
+      .map(d => dias.find(x => x.f === d.f) || {
+        f: d.f, ch: null, ses: d.ses, yo: miLado(d.ses, d.tr || []), delta: null, v: { k: 'sin_cargar', diffs: [] },
+      })
+      .sort((a, b) => b.f.localeCompare(a.f))
 
     return {
       rango: r,
       cobertura: { cargados, habiles, pct: habiles ? Math.round((cargados / habiles) * 100) : 0 },
       totalComparables: suyosOperados.length,
-      coincidencia: { n: coincidencias, pct: suyosOperados.length ? Math.round((coincidencias / suyosOperados.length) * 100) : null },
-      fugas: { n: fugas.length, puntos: sum(fugas, d => d.ch.puntos) },
-      deMas: { n: deMas.length, puntos: sum(deMas, d => d.yo.puntos) },
       puntos: { el: sum(dias, d => d.ch.puntos), yo: sum(dias, d => d.yo.puntos) },
-      estados: { igual: cuenta('igual'), ejecucion: cuenta('ejecucion'), otra_lectura: cuenta('otra_lectura'), fuga: fugas.length, de_mas: deMas.length, ambos_fuera: cuenta('ambos_fuera') },
-      brecha, causas, diasClave, sinPuntos,
+      resultados: { el: conteo(dias.map(d => ladoDeEl(d.ch))), yo: conteo(dias.map(d => d.yo)) },
+      brecha, causas, sinPuntos,
       // Cuánto te aporta entrar en SU mismo setup, que es la comparación limpia.
       mismoSetup: {
         dias: cuenta('igual') + cuenta('ejecucion'),
+        ambos: dias.filter(d => d.yo.opero && d.ch.opero && d.ch.setup_codigo).length,
         delta: Math.round(dias.filter(d => ['igual', 'ejecucion'].includes(d.v.k))
           .reduce((a, d) => a + d.delta, 0) * 100) / 100,
       },
       motivos, porSetup, deltaMedia, nDeltas: deltas.length,
-      semanas: Object.values(semanas).sort((a, b) => a.k.localeCompare(b.k)),
+      filas,
       nDias: dias.length,
     }
   }
 
-  // Lunes de la semana de `f`. El ancla al mediodía evita el salto de día por UTC.
-  function semanaDe(f) {
-    const d = new Date(`${f}T12:00:00`)
-    d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
-    return isoLocal(d)
-  }
-
-  // Variantes de `miLado` y `veredicto` que no dependen del día en pantalla.
-  function miLadoDe(sesion, trades, f) {
-    const opero = trades.length > 0
-    const pts = trades.map(t => puntosTrade(t)).filter(n => n != null)
-    return {
-      opero,
-      setup_codigo: sesion?.setup_codigo || null,
-      hora_et: opero ? horaEt(trades[0].entry_time, f) : null,
-      resultado: opero ? trades[0].resultado : null,
-      puntos: pts.length ? Math.round(pts.reduce((a, b) => a + b, 0) * 100) / 100 : null,
-    }
-  }
-  function veredictoCon(ch, yo, f) {
-    const guardado = fecha
-    fecha = f
-    const v = veredicto(ch, yo)
-    fecha = guardado
-    return v
+  // Su fila, con la misma forma que `miLado` para poder tratarlas igual.
+  function ladoDeEl(ch) {
+    const opero = !!(ch?.opero && ch?.setup_codigo)
+    return { opero, resultado: opero ? ch.resultado : null, puntos: opero ? ch.puntos : null }
   }
 
   // ── Pintado del dashboard ─────────────────────────────────────────────────
@@ -636,19 +626,66 @@ const Chaumer = (() => {
   }
 
   const barra = (n, max, cls) => `<span class="ch-bar"><span class="ch-bar-fill ${cls}" style="width:${max ? Math.round((n / max) * 100) : 0}%"></span></span>`
+  const num = n => `${n > 0 ? '+' : ''}${String(n).replace('.', ',')}`
+  const plural = (n, s, p = s + 's') => `${n} ${n === 1 ? s : p}`
+  const fechaFila = f => new Date(`${f}T12:00:00`)
+    .toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
+    .replace(/[.,]/g, '').replace(/\bsept\b/, 'sep')
+
+  // Target / Stop / Sin operativa, con su color. `lado` = miLado o ladoDeEl.
+  // El resultado de mi trade puede venir vacío: entonces lo dice el signo.
+  function resultadoDe(lado) {
+    if (!lado.opero) return null
+    if (lado.resultado) return lado.resultado
+    if (lado.puntos > 0) return 'target'
+    if (lado.puntos < 0) return 'stop'
+    return null
+  }
+  function badge(lado, sinCargar) {
+    if (sinCargar) return '<span class="ch-res ch-res-sin">Sin cargar</span>'
+    if (!lado.opero) return '<span class="ch-res ch-res-nada">Sin operativa</span>'
+    const r = resultadoDe(lado)
+    const cls = r === 'target' ? 'ok' : r === 'stop' ? 'mal' : 'neutro'
+    return `<span class="ch-res ch-res-${cls}">${RESULTADOS[r] || 'Operó'}</span>`
+  }
+
+  function filaLista(x) {
+    const el = ladoDeEl(x.ch)
+    const metaYo = x.yo.opero ? [x.yo.hora, fmtPts(x.yo.puntos)].filter(Boolean).join(' · ') : ''
+    const metaEl = el.opero ? [horaCol(x.ch.hora_entrada), fmtPts(x.ch.puntos)].filter(Boolean).join(' · ') : ''
+    const dCls = x.delta == null ? '' : x.delta < 0 ? 'mal' : x.delta > 0 ? 'ok' : 'igual'
+    return `
+      <button type="button" class="ch-row ${dCls}" data-cmp="${x.f}">
+        <span class="ch-row-f">${esc(fechaFila(x.f))}</span>
+        <span class="ch-row-lado">${badge(x.yo)}<span class="ch-row-meta">${esc(metaYo)}</span></span>
+        <span class="ch-row-lado">${badge(el, !x.ch)}<span class="ch-row-meta">${esc(metaEl)}</span></span>
+        <span class="ch-row-d">
+          <span class="ch-row-n">${x.delta == null ? '—' : x.delta === 0 ? '=' : num(x.delta)}</span>
+          <span class="ch-row-v">${esc(ESTADOS[x.v.k]?.corto || '')}</span>
+        </span>
+      </button>`
+  }
+
+  function kpiResultados(c) {
+    return [c.target && `${c.target} T`, c.stop && `${c.stop} S`, c.otro && `${c.otro} otros`, c.nada && `${c.nada} sin operar`]
+      .filter(Boolean).join(' · ') || '—'
+  }
+
+  let filasVista = []   // la lista en pantalla, para ← → dentro del modal
 
   function renderDif() {
     const cont = document.getElementById('chaumerDif')
     if (!cont || !cacheDif) return
     const r = rango()
     const d = computar(r)
+    filasVista = d.filas
     Nav.setContexto('chaumer', r.label)
 
-    if (!d.nDias) {
+    if (!d.filas.length) {
       cont.innerHTML = `
         <p class="catalog-empty">
-          No hay ninguna operativa suya cargada en ${esc(r.label.toLowerCase())}.<br>
-          Cárgalas desde la pestaña <strong>Día</strong> y este panel se llena solo.
+          No hay ninguna operativa en ${esc(r.label.toLowerCase())}.<br>
+          Carga las suyas desde la pestaña <strong>Registrar</strong> y este panel se llena solo.
         </p>`
       return
     }
@@ -656,96 +693,95 @@ const Chaumer = (() => {
     const cobFlaca = d.cobertura.pct < 60
     const maxMotivo = Math.max(1, ...Object.values(d.motivos).map(m => Math.abs(m.puntos)))
     const maxCausa = Math.max(1, ...d.causas.map(c => Math.abs(c.delta)))
-    const maxSem = Math.max(1, ...d.semanas.map(s => s.igual + s.ejecucion + s.otra_lectura + s.fuga + s.de_mas))
-    const fechaCorta = f => new Date(`${f}T12:00:00`).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+    const ms = d.mismoSetup
+    const txtConclusion = conclusion(d)
 
     cont.innerHTML = `
-      <div class="ch-cob ${cobFlaca ? 'flaca' : ''}">
-        <i class="ti ti-${cobFlaca ? 'alert-triangle' : 'checkbox'}"></i>
-        Cobertura: <strong>${d.cobertura.cargados} de ${d.cobertura.habiles}</strong> días hábiles cargados
-        (${d.cobertura.pct} %).${cobFlaca ? ' Con esta cobertura lo de abajo dice poco.' : ''}
-      </div>
-
-      ${d.sinPuntos ? `
-        <div class="ch-cob flaca">
-          <i class="ti ti-alert-triangle"></i>
-          ${d.sinPuntos} día${d.sinPuntos === 1 ? '' : 's'} suyo${d.sinPuntos === 1 ? '' : 's'} sin puntos rellenados:
-          cuenta${d.sinPuntos === 1 ? '' : 'n'} como 0 en la brecha, así que la diferencia real puede ser mayor.
+      ${cobFlaca || d.sinPuntos ? `
+        <div class="ch-avisos">
+          ${cobFlaca ? `<div class="ch-cob flaca"><i class="ti ti-alert-triangle"></i>
+            Solo ${d.cobertura.cargados} de ${d.cobertura.habiles} días hábiles tienen su operativa cargada: las cifras dicen poco todavía.</div>` : ''}
+          ${d.sinPuntos ? `<div class="ch-cob flaca"><i class="ti ti-alert-triangle"></i>
+            ${plural(d.sinPuntos, 'día suyo', 'días suyos')} sin puntos: cuenta${d.sinPuntos === 1 ? '' : 'n'} como 0, así que la brecha real puede ser mayor.</div>` : ''}
         </div>` : ''}
 
-      <div class="ch-brecha ${d.brecha < 0 ? 'mal' : 'ok'}">
-        <div class="ch-brecha-lab">La brecha</div>
-        <div class="ch-brecha-cifra">
-          <span class="ch-brecha-n">${d.brecha > 0 ? '+' : ''}${String(d.brecha).replace('.', ',')}</span>
-          <span class="ch-brecha-txt">puntos ${d.brecha < 0 ? 'por detrás de él' : d.brecha > 0 ? 'por delante de él' : '— empatados'}</span>
+      <div class="ch-kpis">
+        <div class="ch-kpi ch-kpi-brecha ${d.brecha < 0 ? 'mal' : 'ok'}">
+          <span class="ch-kpi-lab">La brecha</span>
+          <span class="ch-kpi-n ${d.brecha < 0 ? 'mal' : d.brecha > 0 ? 'ok' : ''}">${num(d.brecha)}</span>
+          <span class="ch-kpi-sub">puntos ${d.brecha < 0 ? 'por detrás de él' : d.brecha > 0 ? 'por delante de él' : '— empatados'} · ${plural(d.nDias, 'día')}</span>
         </div>
-        <div class="ch-brecha-pie">
-          él ${fmtPts(d.puntos.el)} · tú ${fmtPts(d.puntos.yo)} · ${d.nDias} día${d.nDias === 1 ? '' : 's'} comparables
+        <div class="ch-kpi ch-kpi-yo">
+          <span class="ch-kpi-lab">Yo</span>
+          <span class="ch-kpi-n">${num(d.puntos.yo)}</span>
+          <span class="ch-kpi-sub">${kpiResultados(d.resultados.yo)}</span>
+        </div>
+        <div class="ch-kpi ch-kpi-el">
+          <span class="ch-kpi-lab">Chaumer</span>
+          <span class="ch-kpi-n">${num(d.puntos.el)}</span>
+          <span class="ch-kpi-sub">${kpiResultados(d.resultados.el)}</span>
+        </div>
+        <div class="ch-kpi">
+          <span class="ch-kpi-lab">Mismo setup que él</span>
+          <span class="ch-kpi-n">${ms.dias}<small> / ${ms.ambos}</small></span>
+          <span class="ch-kpi-sub">días en que operaron los dos${ms.dias ? ` · ${fmtPts(ms.delta)}` : ''}</span>
+        </div>
+        <div class="ch-kpi">
+          <span class="ch-kpi-lab">Hora de entrada</span>
+          <span class="ch-kpi-n ${d.deltaMedia != null && Math.abs(d.deltaMedia) > TOLERANCIA_MIN ? 'mal' : ''}">${d.deltaMedia == null ? '—' : `${num(d.deltaMedia)}<small> min</small>`}</span>
+          <span class="ch-kpi-sub">${d.deltaMedia == null ? 'ningún día con el mismo setup y hora en los dos lados'
+            : `${d.deltaMedia > 0 ? 'de media después' : d.deltaMedia < 0 ? 'de media antes' : 'entras a la vez'} que él ·${plural(d.nDeltas, 'día')} con el mismo setup`}</span>
         </div>
       </div>
 
-      ${conclusion(d) ? `<div class="ch-conclusion"><i class="ti ti-bulb"></i><p>${conclusion(d)}</p></div>` : ''}
-
-      <div class="ch-card">
-        <div class="ch-card-tit">De dónde sale la brecha</div>
-        <div class="ch-card-sub">Cada causa, con lo que te suma o te resta en puntos. Ordenado por lo que más cuesta.</div>
-        <div class="ch-causas">
-          ${d.causas.map(c => {
-            const pct = (Math.abs(c.delta) / maxCausa) * 50
-            const neg = c.delta < 0
-            return `
-              <div class="ch-causa">
-                <div class="ch-causa-top">
-                  <span class="ch-causa-lab">${esc(c.label)} <span class="ch-causa-dias">· ${c.dias} día${c.dias === 1 ? '' : 's'}</span></span>
-                  <span class="ch-causa-n ${neg ? 'mal' : 'ok'}">${c.delta > 0 ? '+' : ''}${String(c.delta).replace('.', ',')}</span>
-                </div>
-                <div class="ch-carril">
-                  <span class="ch-carril-cero"></span>
-                  <span class="ch-carril-barra ${neg ? 'neg' : 'pos'}" style="${neg ? 'right' : 'left'}:50%;width:${pct}%"></span>
-                </div>
-              </div>`
-          }).join('')}
-        </div>
-        <div class="ch-carril-ejes"><span>te resta</span><span>0</span><span>te suma</span></div>
-      </div>
+      ${txtConclusion ? `<div class="ch-conclusion"><i class="ti ti-bulb"></i><p>${txtConclusion}</p></div>` : ''}
 
       <div class="ch-graficas">
         <div class="ch-card">
-          <div class="ch-card-tit">Los días que más pesaron</div>
-          <div class="ch-card-sub">Pulsa uno para abrirlo en la pestaña Día.</div>
-          ${d.diasClave.length ? `
-            <div class="ch-dias">
-              ${d.diasClave.map(x => `
-                <button type="button" class="ch-dia ${x.delta < 0 ? 'mal' : 'ok'}" data-ir="${x.f}">
-                  <span class="ch-dia-f">${esc(fechaCorta(x.f))}</span>
-                  <span class="ch-dia-c">${esc(ESTADOS[x.v.k]?.corto || '')}${x.v.k === 'fuga' && x.ses?.motivo_no_entrada ? ' · ' + esc(x.ses.motivo_no_entrada) : ''}</span>
-                  <span class="ch-dia-n">${x.delta > 0 ? '+' : ''}${String(x.delta).replace('.', ',')}</span>
-                </button>`).join('')}
-            </div>
-          ` : '<p class="ch-card-pie">Ningún día con diferencia de puntos todavía.</p>'}
+          <div class="ch-card-tit">De dónde sale la brecha</div>
+          <div class="ch-card-sub">Lo que cada causa te suma o te resta, en puntos.</div>
+          ${d.causas.length ? `
+          <div class="ch-causas">
+            ${d.causas.map(c => {
+              const pct = (Math.abs(c.delta) / maxCausa) * 50
+              const neg = c.delta < 0
+              return `
+                <div class="ch-causa">
+                  <div class="ch-causa-top">
+                    <span class="ch-causa-lab">${esc(c.label)} <span class="ch-causa-dias">· ${plural(c.dias, 'día')}</span></span>
+                    <span class="ch-causa-n ${neg ? 'mal' : 'ok'}">${num(c.delta)}</span>
+                  </div>
+                  <div class="ch-carril">
+                    <span class="ch-carril-cero"></span>
+                    <span class="ch-carril-barra ${neg ? 'neg' : 'pos'}" style="${neg ? 'right' : 'left'}:50%;width:${pct}%"></span>
+                  </div>
+                </div>`
+            }).join('')}
+          </div>
+          <div class="ch-carril-ejes"><span>te resta</span><span>0</span><span>te suma</span></div>
+          ` : '<p class="ch-card-pie">Ningún día con diferencia todavía.</p>'}
         </div>
 
         <div class="ch-card">
           <div class="ch-card-tit">Por qué no entraste</div>
-          <div class="ch-card-sub">Ordenado por lo que costó, no por cuántas veces pasó.</div>
+          <div class="ch-card-sub">Los días en que él entró y tú no, por lo que costaron.</div>
           ${Object.keys(d.motivos).length ? `
             <div class="ch-lista">
               ${Object.entries(d.motivos).sort((a, b) => a[1].puntos - b[1].puntos).map(([m, e]) => `
                 <div class="ch-motivo">
                   <div class="ch-motivo-top">
                     <span class="ch-fila-nom">${esc(m)}</span>
-                    <span class="ch-motivo-n">${e.dias} día${e.dias === 1 ? '' : 's'} · <strong>${fmtPts(e.puntos)}</strong></span>
+                    <span class="ch-motivo-n">${plural(e.dias, 'día')} · <strong>${fmtPts(e.puntos)}</strong></span>
                   </div>
                   <span class="ch-bar"><span class="ch-bar-fill ${m === 'Sin declarar' ? 'gris' : 'rojo'}" style="width:${Math.round((Math.abs(e.puntos) / maxMotivo) * 100)}%"></span></span>
                 </div>`).join('')}
             </div>
-            <p class="ch-card-pie">Sale de <code>sesiones.motivo_no_entrada</code>, el campo que rellenas en el Diario y en las fugas de la pestaña Día.</p>
-          ` : '<p class="ch-card-pie">Ninguna fuga en este período.</p>'}
+          ` : '<p class="ch-card-pie">Ningún día en que él entrara y tú no.</p>'}
         </div>
 
         <div class="ch-card">
-          <div class="ch-card-tit">Dónde te pierdes, por setup</div>
-          <div class="ch-card-sub">Fugas sobre las operativas suyas de cada setup.</div>
+          <div class="ch-card-tit">Sus setups que se te escapan</div>
+          <div class="ch-card-sub">De las veces que él operó cada setup, en cuántas no entraste.</div>
           ${Object.keys(d.porSetup).length ? `
             <div class="ch-lista">
               ${Object.entries(d.porSetup).sort((a, b) => (b[1].fugas / b[1].total) - (a[1].fugas / a[1].total)).map(([n, e]) => {
@@ -760,48 +796,74 @@ const Chaumer = (() => {
             </div>
           ` : '<p class="ch-card-pie">Sin operativas suyas con setup en este período.</p>'}
         </div>
-
-        <div class="ch-card">
-          <div class="ch-card-tit">Δ hora de entrada</div>
-          ${d.deltaMedia == null ? '<p class="ch-card-pie">Ningún día con hora en los dos lados.</p>' : `
-            <div class="ch-delta">
-              <span class="ch-delta-n ${Math.abs(d.deltaMedia) > 5 ? 'mal' : 'ok'}">${d.deltaMedia > 0 ? '+' : ''}${String(d.deltaMedia).replace('.', ',')}</span>
-              <span class="ch-delta-lab">minutos de media${d.deltaMedia > 0 ? ' más tarde que él' : d.deltaMedia < 0 ? ' antes que él' : ''}</span>
-            </div>
-            <p class="ch-card-pie">Sobre ${d.nDeltas} día${d.nDeltas === 1 ? '' : 's'} en que ambos operaron. Las dos horas en ET: tu <code>entry_time</code> viene en hora Colombia y se convierte antes de restar.</p>
-          `}
-        </div>
       </div>
 
-      ${d.semanas.length >= 6 ? `
-        <div class="ch-card ch-card-sem">
-          <div class="ch-card-tit">Cómo evoluciona, por semana</div>
-          <div class="ch-sem">
-            ${d.semanas.map(s => {
-              const tot = s.igual + s.ejecucion + s.otra_lectura + s.fuga + s.de_mas
-              const h = n => (tot ? Math.round((n / tot) * 84 * (tot / maxSem)) : 0)
-              return `
-                <div class="ch-sem-col" title="Semana del ${esc(s.k)}">
-                  <div class="ch-sem-pila">
-                    ${s.de_mas ? `<span class="ch-seg s-demas" style="height:${h(s.de_mas)}px"></span>` : ''}
-                    ${s.fuga ? `<span class="ch-seg s-fuga" style="height:${h(s.fuga)}px"></span>` : ''}
-                    ${s.otra_lectura ? `<span class="ch-seg s-otra" style="height:${h(s.otra_lectura)}px"></span>` : ''}
-                    ${s.ejecucion ? `<span class="ch-seg s-ejec" style="height:${h(s.ejecucion)}px"></span>` : ''}
-                    ${s.igual ? `<span class="ch-seg s-igual" style="height:${h(s.igual)}px"></span>` : ''}
-                  </div>
-                  <span class="ch-sem-lab">${esc(s.k.slice(8))}/${esc(s.k.slice(5, 7))}</span>
-                </div>`
-            }).join('')}
-          </div>
-          <div class="ch-leyenda">
-            <span><i class="ch-pt s-igual"></i>Igual</span>
-            <span><i class="ch-pt s-ejec"></i>Distinta salida</span>
-            <span><i class="ch-pt s-otra"></i>Otro setup</span>
-            <span><i class="ch-pt s-fuga"></i>Él sí, yo no</span>
-            <span><i class="ch-pt s-demas"></i>Yo sí, él no</span>
+      <div class="ch-card ch-tabla">
+        <div class="ch-card-tit">Día a día <span class="ch-card-cnt">${d.filas.length}</span></div>
+        <div class="ch-card-sub">Pulsa un día para ver las dos gráficas. Horas en hora Colombia.</div>
+        <div class="ch-row ch-row-head" aria-hidden="true">
+          <span class="ch-row-f">Fecha</span>
+          <span class="ch-row-lado">Yo</span>
+          <span class="ch-row-lado">Chaumer</span>
+          <span class="ch-row-d">Δ pts</span>
+        </div>
+        ${d.filas.map(filaLista).join('')}
+      </div>
+    `
+  }
+
+  // ── Modal de comparación: las dos gráficas grandes ────────────────────────
+  let cmpFecha = null
+
+  function abrirComparacion(f) {
+    const x = filasVista.find(r => r.f === f)
+    if (!x) return
+    cmpFecha = f
+    const e = ESTADOS[x.v.k]
+    const idx = filasVista.indexOf(x)
+    // La lista va de más reciente a más antiguo: "anterior" es el siguiente índice.
+    const hayAnt = idx < filasVista.length - 1
+    const haySig = idx > 0
+
+    document.getElementById('chCmpTitulo').textContent = fmtFechaLarga(f)
+    document.getElementById('chCmpVeredicto').className = `ch-veredicto ch-cmp-v ${e.cls}`
+    document.getElementById('chCmpVeredicto').innerHTML = `<i class="ti ${e.icon}"></i> ${esc(e.label)}${x.delta ? ` · ${num(x.delta)} pts` : ''}`
+    document.getElementById('chCmpPrev').disabled = !hayAnt
+    document.getElementById('chCmpNext').disabled = !haySig
+
+    document.getElementById('chCmpCuerpo').innerHTML = `
+      <div class="ch-split">
+        ${ladoYo(x.yo)}
+        ${ladoChaumer(x.ch)}
+      </div>
+      ${x.v.diffs.length ? `
+        <div class="ch-diffs">
+          <div class="ch-diffs-tit">En qué se diferencian</div>
+          <div class="ch-diffs-chips">
+            ${x.v.diffs.map(dd => `<span class="ch-chip ${dd.mal ? 'mal' : 'bien'}">${esc(dd.txt)}</span>`).join('')}
           </div>
         </div>` : ''}
+      ${x.v.k === 'fuga' && x.ses?.motivo_no_entrada ? `
+        <div class="ch-fuga ch-fuga-ok"><i class="ti ti-info-circle"></i>
+          Por qué no entraste: <strong>${esc(x.ses.motivo_no_entrada)}</strong></div>` : ''}
     `
+    const m = document.getElementById('chCmpModal')
+    if (m.classList.contains('hidden')) {
+      m.classList.remove('hidden')
+      document.body.classList.add('modal-open')
+    }
+  }
+
+  function cerrarComparacion() {
+    document.getElementById('chCmpModal')?.classList.add('hidden')
+    document.body.classList.remove('modal-open')
+    cmpFecha = null
+  }
+
+  function moverComparacion(paso) {
+    const idx = filasVista.findIndex(r => r.f === cmpFecha)
+    const x = filasVista[idx + paso]
+    if (x) abrirComparacion(x.f)
   }
 
   async function cargarDif() {
@@ -855,12 +917,37 @@ const Chaumer = (() => {
         document.querySelector('#chaumerPeriod .per-filter-panel')?.classList.add('hidden')
       }
     })
-    // Desde el dashboard se salta al día concreto: el número lleva a la prueba.
+    // Cada fila de la lista abre las dos gráficas del día.
     document.getElementById('chaumerDif')?.addEventListener('click', e => {
-      const f = e.target.closest('[data-ir]')?.dataset.ir
-      if (!f) return
-      showTab('dia')
-      cargar(f)
+      const f = e.target.closest('[data-cmp]')?.dataset.cmp
+      if (f) abrirComparacion(f)
+    })
+
+    // Modal de comparación. Se cierra con Esc, con la X o pulsando fuera; ← → pasan
+    // de día sin cerrarlo. Si el Lightbox está abierto encima, las teclas son suyas.
+    const cmp = document.getElementById('chCmpModal')
+    cmp?.addEventListener('click', e => {
+      if (e.target === cmp || e.target.closest('#chCmpCerrar')) return cerrarComparacion()
+      if (e.target.closest('#chCmpPrev')) return moverComparacion(1)
+      if (e.target.closest('#chCmpNext')) return moverComparacion(-1)
+      const act = e.target.closest('[data-act]')?.dataset.act
+      if (act === 'zoom') {
+        const urls = [...cmp.querySelectorAll('img.ch-img')].map(i => i.src)
+        return Lightbox.open(e.target.src, urls, urls.indexOf(e.target.src))
+      }
+      // Editar su operativa se hace en Registrar, en ese mismo día.
+      if (act === 'editar' || e.target.closest('#chCmpEditar')) {
+        const f = cmpFecha
+        cerrarComparacion()
+        showTab('dia')
+        cargar(f).then(() => { if (e.target.closest('[data-act="editar"]')) abrirModal() })
+      }
+    })
+    document.addEventListener('keydown', e => {
+      if (!cmpFecha || document.getElementById('lightbox')) return
+      if (e.key === 'Escape') cerrarComparacion()
+      else if (e.key === 'ArrowLeft') moverComparacion(1)
+      else if (e.key === 'ArrowRight') moverComparacion(-1)
     })
 
     document.getElementById('prevMonth')?.addEventListener('click', () => { if (enDif()) navPeriodo(-1) })
@@ -907,13 +994,15 @@ const Chaumer = (() => {
       }
     })
 
+    // Diferencias es la pestaña principal. Registrar se deja cargada en el
+    // último día hábil para cuando se cambie a ella.
     renderPeriodPicker()
-    showTab('dia')
+    showTab('dif')
     await cargar(ultimoHabil(hoyISO()))
   }
 
   // Las herramientas de la barra superior (período + flechas) pertenecen a
-  // "Diferencias". En "Día" manda el selector de fecha del propio panel, así que
+  // "Diferencias". En "Registrar" manda el selector de fecha del propio panel, así que
   // se esconden: Nav las enciende por sección y aquí se afinan por pestaña.
   function showTab(tab) {
     document.querySelectorAll('#chaumerTabs .so-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab))
@@ -930,7 +1019,7 @@ const Chaumer = (() => {
 
   function reload() {
     if (!iniciado) return
-    const tab = document.querySelector('#chaumerTabs .so-tab.active')?.dataset.tab || 'dia'
+    const tab = document.querySelector('#chaumerTabs .so-tab.active')?.dataset.tab || 'dif'
     showTab(tab)
     if (tab === 'dia' && fecha) cargar(fecha)
   }

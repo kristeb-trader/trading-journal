@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| **Versión** | v6 |
+| **Versión** | v7 |
 | **Fecha** | 2026-08-19 |
-| **Estado** | ✅ **IMPLEMENTADO** (19 ago) — las 4 fases cerradas y verificadas. Lo que falta es cargar días, no código |
+| **Estado** | ✅ **IMPLEMENTADO** (19 ago) · v7 implementada el 17 sep (§5.8) |
 | **Origen** | Petición de Kris (19 ago): «entré a su curso y tengo acceso a sus operativas; quiero un módulo donde almacene las suyas vs las mías, la pantalla partida en dos, y un dashboard de diferencias con filtro por mes/trimestre/año/todo, para ver si estoy fallando en algún punto» |
 | **Alcance** | Tabla nueva `chaumer_operativas` (1 migración), `index.html`, `css/styles.css`, `js/app.js`, `js/chaumer.js` (nuevo), `js/db.js`, `js/coach.js` (mueve un helper). **No toca** `sesiones` ni `trades` salvo un valor nuevo de vocabulario |
 
@@ -54,6 +54,9 @@ Una tabla, una vista partida, un dashboard. Poco más.
 **hora de Colombia** (invariante documentado; ya causó 2 bugs). Las operativas de Chaumer
 las verás en **ET**. Restar una de otra da un error de 60 minutos en verano — justo la
 magnitud que haría parecer que entras tardísimo cuando entras a la vez.
+
+> ⚠️ **Sustituido el 17 sep (v7, §5.8):** las dos horas van ahora en **hora Colombia** y
+> se comparan sin convertir. Lo que sigue es el razonamiento original.
 
 **Las dos horas se guardan y se muestran en ET.** Ya existe el conversor correcto,
 `horaEt()` en [coach.js:26](../../js/coach.js), que trata el dato como `America/Bogota` y
@@ -528,6 +531,68 @@ costó nada.
 
 **Móvil (375 px):** sin desbordes ni scroll horizontal, 5 tarjetas apiladas, consola limpia.
 
+### 5.8 v7 — La lista día a día y la hora Colombia (17 sep)
+
+**Petición de Kris:** «aún no me es claro las diferencias». Quiere Diferencias como pestaña
+principal, un dashboard arriba y abajo **una lista con fecha, mi resultado y el suyo**
+(Target / Stop / Sin operativa); al pulsar una fila, un modal grande con **las dos
+gráficas**, que se cierra con Esc. Y todas las horas en **hora Colombia**: «su hora está
+adelantada».
+
+**Pestañas.** `Diferencias` (por defecto) · `Registrar` (la antigua «Día», intacta; su
+`data-tab` interno sigue siendo `dia`). Registrar se deja cargada en el último día hábil.
+
+**Dashboard.** 5 KPIs — la brecha · Yo (puntos, T/S/sin operar) · Chaumer (ídem) · mismo
+setup que él (días / días en que operaron los dos, con su Δ) · hora de entrada (Δ medio) —,
+la frase de conclusión y 3 tarjetas: de dónde sale la brecha, por qué no entraste, sus
+setups que se te escapan. **Fuera** los «días clave» (la lista los sustituye) y la gráfica
+semanal.
+
+**La lista.** Una fila por día con dato en cualquiera de los dos lados, del más reciente al
+más antiguo: fecha · mi resultado (+ hora y puntos) · el suyo · Δ puntos y el veredicto en
+corto. Borde rojo si ese día me restó, verde si me sumó. Un día en que operé sin su fila
+cargada sale como **«Sin cargar»**, no se esconde. En móvil la fila pasa a dos líneas.
+
+**El modal.** Casi pantalla completa; yo a la izquierda, él a la derecha (en móvil, uno
+encima de otro); las imágenes sin recortar. Cabecera con fecha, veredicto y Δ; **← →**
+cambian de día, **Esc** / X / clic fuera cierran. Si el Lightbox está abierto encima, Esc
+cierra solo el Lightbox. «Editar su operativa» y el lápiz llevan a Registrar en ese día (el
+lápiz abre además el formulario).
+
+**La vista partida de Registrar también pasa a Yo | Chaumer**, para que las dos pantallas
+tengan el mismo orden.
+
+**Hora Colombia.** Diagnóstico: la columna se documentaba en ET, pero Kris la rellenaba a
+veces en ET y a veces en hora Colombia. Se unifica en **hora Colombia** (D-017):
+
+| Filas | Qué se hizo |
+|---|---|
+| 18 ago, 21 ago, 24 ago, 10 sep, 14 sep — en ET sin duda (mismo setup y +1 h exacta, o IRI de apertura a las 9:3x) | −1 h. Migración `2026-09-17-chaumer-hora-colombia`, respaldo en `_bak_20260917_chaumer_horas` |
+| 2, 3, 4, 8 y 17 sep — ya en hora Colombia (en ET serían antes de la apertura) | Nada |
+| 25 ago, 27 ago, 31 ago, 1 sep, 16 sep — dudosas | Se quedan: Kris decidió tratarlas como hora Colombia |
+| 28 ago, 21:52 — imposible en las dos | Se queda; pendiente de que Kris la corrija |
+
+En el código: `horaEt()` ya no se usa en `chaumer.js`; las dos horas se muestran como
+`hh:mm` sin sufijo y el formulario dice «(hora Colombia)». **El Δ de hora solo se calcula en
+días con el mismo setup**: con setups distintos restaba dos operaciones que no son la misma
+y dio «+14 min» en septiembre cuando los tres días comparables eran de 0 min.
+
+**Verificado** con las 12 filas reales de septiembre inyectadas en el preview (modo local),
+contra el cálculo a mano:
+
+| Qué | Pantalla | A mano |
+|---|---|---|
+| La brecha | **−17,5** | (−79,5) − (−62) ✅ |
+| Yo / Chaumer | −79,5 · 4 T 6 S 2 sin operar / −62 · 4 T 5 S 3 sin operar | ✅ |
+| Mismo setup | 3 / 8 · −5,75 | 10 sep −5,5 · 14 sep −0,25 · 17 sep 0 ✅ |
+| Causas | yo entré, él no −53 (2) · él entró, yo no −24 (1) · misma operativa −5,75 (3) · cada uno un setup +65,25 (5) | ✅ suman −17,5 |
+| Hora | 0 min en 3 días | 08:39/08:39 · 08:56/08:56 · 08:37/08:37 ✅ |
+| Lista | 12 filas, 17 sep arriba | ✅ |
+
+Modal: ← → recorren 14 → 11 → 15 sep; Esc con el Lightbox abierto cierra solo el Lightbox;
+«Editar» deja Registrar en el 10 sep con la hora 08:39 en el formulario. Móvil 375 px sin
+scroll horizontal, consola sin errores.
+
 ---
 
 ## 6. Lo que este diseño NO toca
@@ -546,7 +611,7 @@ costó nada.
 | Riesgo | Mitigación |
 |---|---|
 | **Días sin cargar sesgan el dashboard** | La cobertura va arriba del todo y siempre visible. Un período con menos del 60 % cargado se marca en ámbar |
-| **Comparar horas de zonas distintas** | Las dos en ET vía `horaEt()`, con la hora Colombia entre paréntesis como referencia (§1.3) |
+| **Comparar horas de zonas distintas** | Desde v7, las dos en **hora Colombia**, sin convertir: su hora se escribe así y la tuya llega así de NinjaTrader (§5.8) |
 | **Comparar dinero en vez de puntos** | El eje es puntos. El dinero solo aparece en tu lado y como dato secundario |
 | **Que el alta dé pereza y el módulo muera** | Formulario corto, en la misma pantalla, con el setup desde catálogo y la imagen por el flujo de Cloudinary que ya existe |
 | **Sobreajuste: copiarle sin entender** | El módulo mide diferencias, no dicta. «Otra lectura» no es un error por definición y no se cuenta como fallo |
@@ -558,6 +623,7 @@ costó nada.
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 2026-08-19 | Documento inicial. Recoge las 4 decisiones de Kris |
+| v7 | 2026-09-17 | Diferencias pasa a ser la pestaña principal: dashboard arriba y la **lista día a día** abajo, con un modal de las dos gráficas. «Día» pasa a llamarse **Registrar**. Todas las horas en **hora Colombia**. Detalle en §5.8 |
 | v6 | 2026-08-31 | «Diferencias» rehecho: la brecha en puntos arriba, el desglose por causa ordenado por lo que cuesta, los días clave pulsables, y fuera la jerga y la gráfica semanal. Detalle en §5.7 |
 | v5 | 2026-08-19 | El signo de los puntos se deriva del resultado de Chaumer, y el modal deja claro que todo lo suyo es suyo. Corregida la fila del 18. Detalle en §5.6 |
 | v4 | 2026-08-19 | Ajustes tras el primer uso: la imagen se muestra también en los días sin setup, y la fecha sube a la fila de las pestañas. Detalle en §5.5 |

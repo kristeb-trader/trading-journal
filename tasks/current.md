@@ -27,7 +27,8 @@ El comparador está **terminado y verificado** — las 4 fases. Lo que falta no 
 datos. Kris ya cargó los dos primeros días (18 y 19 de agosto) el mismo día que se entregó;
 el dashboard de Diferencias irá diciendo más a medida que se acumulen.
 
-Se registra desde **Otros › Chaumer › Día**, un día a la vez: setup, hora en ET, resultado,
+Se registra desde **Otros › Chaumer › Registrar**, un día a la vez: setup, hora **en hora
+Colombia** (desde el 17 sep; D-017), resultado,
 puntos y la captura. Los días en que él **no operó** también cuentan — son los que permiten
 medir «entré donde él no veía nada».
 
@@ -45,7 +46,10 @@ a la vez, pero la mitad de sus puntos, hoy sale como **«Igual»** con un chip q
 Puede que Kris prefiera que cuente como «Ejecución» — es una condición en `veredicto()`
 (`js/chaumer.js`).
 
-Diseño y lo medido en cada fase: `docs/disenos/2026-08-19-chaumer-vs-yo.md` (v2).
+> ⚠️ **Hora del 28 ago mal cargada** (21:52, imposible en cualquier zona): Kris debe
+> corregirla en Registrar.
+
+Diseño y lo medido en cada fase: `docs/disenos/2026-08-19-chaumer-vs-yo.md` (v7).
 
 ### 🔵 Probar Datos con la sesión iniciada (19 ago)
 

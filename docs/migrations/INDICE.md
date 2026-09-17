@@ -91,6 +91,7 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-08-16-migrar-noticias-texto.sql` | ⚠️ sin registro | migrar noticias texto |
 | `2026-08-19-chaumer-operativas.sql` | ✅ MCP | tabla `chaumer_operativas` para el comparador Chaumer vs yo (`20260819151243`) |
 | `2026-09-14-apex15-renovada.sql` | ✅ MCP | tarjeta «Apex-15 · 2ª» en `apex_cuentas`: la Apex-15 renovada con el mismo número (`20260914152212`) |
+| `2026-09-17-chaumer-hora-colombia.sql` | ✅ MCP | `chaumer_operativas.hora_entrada` pasa de ET a hora Colombia: −1 h en las 5 filas que estaban en ET; respaldo en `_bak_20260917_chaumer_horas` |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.

@@ -4534,12 +4534,14 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
   color: var(--text3); font-size: 1.6rem; cursor: default;
 }
 .ch-setup { font-size: 0.95rem; font-weight: 600; margin-bottom: 10px; }
-.ch-campos { display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem; margin: 0; }
-.ch-campos dt { color: var(--text3); float: left; }
-.ch-campos dd { margin: 0 0 0 auto; text-align: right; }
-.ch-campos dt, .ch-campos dd { display: inline-block; }
-.ch-campos dt { width: 40%; }
-.ch-campos dd { width: 58%; font-variant-numeric: tabular-nums; }
+/* Rejilla etiqueta | valor: con floats e inline-block el valor saltaba a la
+   línea siguiente en cuanto la columna era ancha (el modal de comparación). */
+.ch-campos {
+  display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: 6px 12px; font-size: 0.82rem; margin: 0;
+}
+.ch-campos dt { color: var(--text3); }
+.ch-campos dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
 .ch-campos dd.pos { color: var(--accent-txt); }
 .ch-campos dd.neg { color: var(--red-txt); }
 .ch-notas {
@@ -4594,8 +4596,10 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .ch-op-acciones .btn-primary { flex: 1; justify-content: center; }
 
 /* ── Pestaña "Diferencias" ─────────────────────────────────────────────────── */
-/* La cobertura va arriba del todo y siempre: sin denominador, cualquier
-   porcentaje de abajo es un número sin significado. */
+/* Los avisos (poca cobertura, días sin puntos) van arriba y solo cuando hay algo
+   que avisar: sin denominador, cualquier número de abajo miente. */
+.ch-avisos { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.ch-avisos .ch-cob { margin-bottom: 0; }
 .ch-cob {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   font-size: 0.82rem; color: var(--text2);
@@ -4605,26 +4609,6 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .ch-cob i { font-size: 1rem; color: var(--accent-txt); }
 .ch-cob.flaca { background: rgba(226,75,74,0.07); border-color: rgba(226,75,74,0.3); color: var(--red-txt); }
 .ch-cob.flaca i { color: var(--red-txt); }
-
-/* La brecha, arriba y grande. Es la respuesta a "¿cómo voy?", y antes había que
-   deducirla de cuatro KPIs sueltos. */
-.ch-brecha {
-  background: var(--card); border: 1px solid var(--border);
-  border-left: 3px solid var(--text3);
-  padding: 15px 18px; margin-bottom: 8px;
-}
-.ch-brecha.mal { border-left-color: var(--red); }
-.ch-brecha.ok  { border-left-color: var(--accent); }
-.ch-brecha-lab {
-  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--text3); margin-bottom: 8px;
-}
-.ch-brecha-cifra { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-.ch-brecha-n { font-size: 2.2rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
-.ch-brecha.mal .ch-brecha-n { color: var(--red-txt); }
-.ch-brecha.ok  .ch-brecha-n { color: var(--accent-txt); }
-.ch-brecha-txt { font-size: 0.88rem; color: var(--text2); }
-.ch-brecha-pie { font-size: 0.75rem; color: var(--text3); margin-top: 8px; }
 
 /* La conclusión en palabras. Sin esto el panel enseña números y deja el trabajo
    de interpretarlos a quien mira. */
@@ -4662,25 +4646,6 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 }
 
 .ch-card-sub { font-size: 0.72rem; color: var(--text3); margin: -10px 0 14px; line-height: 1.45; }
-.ch-card-sem { margin-top: 12px; }
-
-/* Los días concretos. El dato agregado no convence; el día con su fecha, sí. */
-.ch-dias { display: flex; flex-direction: column; gap: 8px; }
-.ch-dia {
-  display: flex; align-items: center; gap: 10px; width: 100%;
-  background: var(--bg3); border-radius: 8px; padding: 10px 12px;
-  font-size: 0.8rem; color: var(--text); text-align: left;
-  transition: background var(--transition);
-}
-.ch-dia:hover { background: var(--bg2); }
-.ch-dia.ok { background: rgba(29,158,117,0.08); }
-.ch-dia.ok:hover { background: rgba(29,158,117,0.14); }
-.ch-dia-f { flex: 0 0 56px; }
-.ch-dia-c { flex: 1; min-width: 0; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ch-dia-n { flex: 0 0 56px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
-.ch-dia.mal .ch-dia-n { color: var(--red-txt); }
-.ch-dia.ok  .ch-dia-n { color: var(--accent-txt); }
-
 .ch-motivo-top {
   display: flex; align-items: baseline; justify-content: space-between;
   gap: 10px; margin-bottom: 5px; font-size: 0.8rem;
@@ -4701,7 +4666,73 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .ch-kpi-n { font-size: 1.6rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 .ch-kpi-n.ok  { color: var(--accent-txt); }
 .ch-kpi-n.mal { color: var(--red-txt); }
-.ch-kpi-sub { font-size: 0.72rem; color: var(--text3); }
+.ch-kpi-sub { font-size: 0.72rem; color: var(--text3); line-height: 1.4; }
+.ch-kpi-n small { font-size: 0.55em; font-weight: 600; color: var(--text3); }
+.ch-kpi { border: 1px solid var(--border); border-top: 2px solid var(--border); }
+.ch-kpi-brecha.mal { border-top-color: var(--red); }
+.ch-kpi-brecha.ok  { border-top-color: var(--accent); }
+.ch-kpi-yo { border-top-color: var(--accent); }
+.ch-kpi-yo .ch-kpi-lab { color: var(--accent-txt); }
+.ch-kpi-el { border-top-color: var(--blue); }
+.ch-kpi-el .ch-kpi-lab { color: var(--blue-txt); }
+.ch-conclusion + .ch-graficas, .ch-kpis + .ch-graficas { margin-top: 0; }
+
+/* La lista día a día. Cuatro columnas fijas: fecha · yo · él · Δ. Cada fila es un
+   botón porque abre el modal con las dos gráficas. */
+.ch-tabla { margin-top: 12px; padding-bottom: 6px; }
+.ch-card-cnt {
+  font-size: 0.7rem; font-weight: 600; color: var(--text3);
+  background: var(--bg3); border-radius: 999px; padding: 1px 8px; margin-left: 6px;
+}
+.ch-row {
+  display: grid; grid-template-columns: 110px 1fr 1fr 110px; align-items: center;
+  gap: 12px; width: 100%; padding: 10px 10px; text-align: left;
+  border-top: 1px solid var(--border); border-left: 3px solid transparent;
+  font-size: 0.82rem; color: var(--text);
+  transition: background var(--transition);
+}
+.ch-row:hover { background: var(--bg3); }
+.ch-row.mal { border-left-color: var(--red); }
+.ch-row.ok  { border-left-color: var(--accent); }
+.ch-row-head {
+  border-top: none; padding-top: 0; padding-bottom: 8px; cursor: default;
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text3);
+}
+.ch-row-head:hover { background: none; }
+.ch-row-f { font-weight: 600; text-transform: capitalize; font-variant-numeric: tabular-nums; }
+.ch-row-lado { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+.ch-row-meta { color: var(--text3); font-size: 0.74rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ch-row-d { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+.ch-row-n { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text2); }
+.ch-row.mal .ch-row-n { color: var(--red-txt); }
+.ch-row.ok  .ch-row-n { color: var(--accent-txt); }
+.ch-row-v { font-size: 0.68rem; color: var(--text3); white-space: nowrap; }
+.ch-row-head .ch-row-d { display: block; }
+
+.ch-res {
+  display: inline-block; font-size: 0.72rem; font-weight: 600;
+  border-radius: 999px; padding: 2px 10px; border: 1px solid transparent; white-space: nowrap;
+}
+.ch-res-ok     { background: var(--accent-dim); color: var(--accent-txt); }
+.ch-res-mal    { background: var(--red-dim); color: var(--red-txt); }
+.ch-res-neutro { background: var(--violet-dim); color: var(--violet-txt); }
+.ch-res-nada   { background: var(--bg3); color: var(--text3); }
+.ch-res-sin    { color: var(--text3); border-color: var(--border); border-style: dashed; }
+
+/* Modal de comparación: casi pantalla completa, porque lo que se viene a ver son
+   las dos gráficas. Las imágenes dejan de recortarse (contain) y crecen. */
+.modal.ch-cmp { max-width: 1400px; width: 96vw; max-height: 94vh; }
+.ch-cmp-head { gap: 12px; }
+.ch-cmp-tit { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-width: 0; }
+.ch-cmp-tit h3::first-letter { text-transform: uppercase; }
+.ch-cmp-v { margin: 0; padding: 4px 11px; font-size: 0.78rem; }
+.ch-cmp-acc { display: flex; align-items: center; gap: 6px; margin-left: auto; flex: 0 0 auto; }
+.ch-cmp-acc .btn-icon:disabled { opacity: 0.35; cursor: default; }
+.ch-cmp-body { padding: 16px 20px 20px; }
+.ch-cmp .ch-img { height: auto; max-height: 62vh; object-fit: contain; }
+.ch-cmp .ch-img-off { height: 200px; }
+.ch-cmp .ch-split { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
 
 .ch-graficas {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -4718,26 +4749,6 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 }
 .ch-card-pie code { font-size: 0.95em; color: var(--text2); }
 
-/* Barras apiladas por semana, en CSS: son 5 series y pocas columnas; Chart.js
-   aquí solo añadiría peso y un canvas que no se puede leer con lector. */
-.ch-sem { display: flex; align-items: flex-end; gap: 8px; min-height: 96px; }
-.ch-sem-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.ch-sem-pila { width: 100%; display: flex; flex-direction: column; justify-content: flex-end; }
-.ch-seg { display: block; width: 100%; }
-.ch-seg:first-child { border-radius: 3px 3px 0 0; }
-.ch-seg:last-child  { border-radius: 0 0 3px 3px; }
-.ch-sem-lab { font-size: 0.65rem; color: var(--text3); white-space: nowrap; }
-
-.s-igual { background: var(--accent); }
-.s-ejec  { background: var(--violet); }
-.s-otra  { background: var(--text3); }
-.s-fuga  { background: var(--red); }
-.s-demas { background: #8b3a39; }   /* rojo apagado: hermano de la fuga, pero distinto */
-
-.ch-leyenda { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; font-size: 0.7rem; color: var(--text3); }
-.ch-leyenda span { display: inline-flex; align-items: center; gap: 5px; }
-.ch-pt { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
-
 .ch-lista { display: flex; flex-direction: column; gap: 10px; }
 .ch-fila { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; }
 .ch-fila-nom {
@@ -4752,16 +4763,22 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .ch-bar-fill.verde   { background: var(--accent); }
 .ch-bar-fill.gris    { background: var(--text3); }
 
-.ch-delta { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
-.ch-delta-n { font-size: 1.9rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
-.ch-delta-n.ok  { color: var(--accent-txt); }
-.ch-delta-n.mal { color: var(--violet-txt); }
-.ch-delta-lab { font-size: 0.78rem; color: var(--text3); }
-
 @media (max-width: 620px) {
   .ch-img { height: 120px; }
-  .ch-campos dt { width: 45%; }
-  .ch-campos dd { width: 53%; }
+  /* La fila pasa a dos líneas: fecha y Δ arriba, los dos resultados debajo. */
+  .ch-row { grid-template-columns: 1fr 1fr; row-gap: 6px; column-gap: 10px; padding: 10px 8px; }
+  .ch-row-f { grid-column: 1; grid-row: 1; }
+  .ch-row-d { grid-column: 2; grid-row: 1; flex-direction: row; align-items: baseline; justify-content: flex-end; gap: 8px; }
+  .ch-row-lado { grid-row: 2; flex-direction: column; align-items: flex-start; gap: 3px; }
+  .ch-row-head { display: none; }
+  .ch-row-lado::before { font-size: 0.62rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .ch-row-lado:nth-of-type(2)::before { content: "Yo"; color: var(--accent-txt); }
+  .ch-row-lado:nth-of-type(3)::before { content: "Chaumer"; color: var(--blue-txt); }
+  .modal.ch-cmp { width: 100vw; max-height: 100vh; height: 100vh; border-radius: 0; }
+  .modal-overlay:has(.ch-cmp) { padding: 0; }
+  .ch-cmp-body { padding: 12px; }
+  .ch-cmp .ch-split { grid-template-columns: 1fr; }
+  .ch-cmp-acc #chCmpEditar span { display: none; }
   .ch-kpi-n { font-size: 1.35rem; }
   .ch-bar { flex: 0 0 60px; }
   /* La fecha baja a su propia línea, pero a ancho completo: al lado de las

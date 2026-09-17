@@ -10,6 +10,29 @@
 
 ---
 
+## D-017 — Las horas del comparador de Chaumer van en hora Colombia, no en ET
+
+**Decisión.** Desde el 17 de septiembre de 2026, `chaumer_operativas.hora_entrada` se guarda
+y se muestra en **hora de Colombia**, igual que `trades.entry_time`, y las dos se restan
+sin convertir. **Sustituye** la parte de horas del diseño del comparador (§1.3), que las
+llevaba a ET con `horaEt()`.
+
+**Motivo.** Kris registra su operativa en hora Colombia y la de Chaumer la veía
+«adelantada». Al revisar las 22 filas estaban **mezcladas**: 5 en ET, 5 en hora Colombia y 5
+que podían ser cualquiera de las dos. Pedirle que convierta cada vez a ET es justo lo que
+falló; escribir la hora que ve en su reloj no falla.
+
+**Alternativa descartada.** Mantener ET y convertir la hora de Kris al mostrarla. Es lo que
+había, y es lo que produjo los datos mezclados: el formulario decía «(ET)» y aun así la
+mitad de las filas llegaron en hora local.
+
+**Coste asumido.** 5 filas dudosas se quedan como hora Colombia sin poder confirmarlo
+(decisión de Kris), y la del 28 ago (21:52) es errónea en cualquiera de las dos zonas. Las 5
+seguras se corrigieron con la migración `2026-09-17-chaumer-hora-colombia` (respaldo en
+`_bak_20260917_chaumer_horas`). *(17 sep 2026)*
+
+---
+
 ## D-016 — La cuenta principal pasa a ser Sim101; las Apex solo alimentan el Tracker
 
 **Decisión.** Desde el 2 de septiembre de 2026, `objetivos.cuenta_principal = 'Sim101'`. El

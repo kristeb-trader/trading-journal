@@ -105,7 +105,7 @@ Lo que el esquema no cuenta y hay que saber:
 | `diagnostico_errores` | `regla_codigo` = la regla que ese error contradice → la disciplina la cuenta incumplida **aunque la casilla esté marcada**. NULL = psicológico, no toca el checklist |
 | `sesion_noticias` | UNIQUE (fecha, hora): una noticia por hora. El CPI publica 4 cifras a las 7:30 pero es **un** evento con **una** ventana (±5 min sobre la entrada) |
 | `objetivos` | Fila única. `cuenta_principal` es la cuenta que alimenta P&L/Análisis/Coach; se elige en Datos y la lee el indicador NT8 al arrancar. `limite_perdida_dia` está **obsoleto** (el riesgo se mide en puntos) |
-| `chaumer_operativas` | Comparador. **Solo el lado de Chaumer**: el de Kris se LEE de `sesiones`+`trades`, nunca se copia aquí. `hora_entrada` va en **ET**, a diferencia de `trades.entry_time` (hora Colombia) — convertir con `horaEt()` antes de restarlas. `puntos` en **PUNTOS**, no en dólares. El veredicto del día no se guarda: se calcula |
+| `chaumer_operativas` | Comparador. **Solo el lado de Chaumer**: el de Kris se LEE de `sesiones`+`trades`, nunca se copia aquí. `hora_entrada` va en **hora Colombia**, igual que `trades.entry_time`: se restan tal cual, **sin** `horaEt()` (era ET hasta el 17 sep; D-017). `puntos` en **PUNTOS**, no en dólares. El veredicto del día no se guarda: se calcula |
 | `sesiones` | `setup` (texto) y `setup_codigo` los sincroniza el trigger `fn_sync_setup_codigo`, escriba quien escriba. La columna `noticias` se retiró de la UI el 16 ago y su contenido se migró a `sesion_noticias`; **la columna sigue existiendo**. `soportes_naranja` / `resistencias_naranja` (jsonb) las escribe el **AddOn** en premercado desde el 16 ago: el bot ya NO las manda: si las mandara (en `[]`) las **borraría** por la noche, igual que pasaría con los niveles de precio |
 
 ## Lenguaje visual
@@ -151,7 +151,7 @@ js/calendar.js    Calendario mensual · js/metrics.js  KPIs
 js/charts.js      Sección Análisis · js/disciplina.js  Dashboard de Disciplina
 js/apex.js        Apex Tracker · js/experimentos.js  Laboratorio
 js/estrategia.js  Editor del rulebook · js/fechas.js  Fechas Especiales
-js/chaumer.js     Comparador Chaumer vs yo (pestañas Día y Diferencias)
+js/chaumer.js     Comparador Chaumer vs yo (pestañas Diferencias y Registrar)
 js/account-filter.js  Filtro de cuentas compartido (nombre COMPLETO)
 css/styles.css    Dark mode + responsive
 NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) ·

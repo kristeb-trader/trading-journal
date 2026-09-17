@@ -2634,6 +2634,22 @@ Migración `2026-09-14-apex15-renovada.sql`. Diseño:
 
 ---
 
+## Checkpoint 2026-09-17 — Chaumer: la lista día a día y la hora Colombia
+
+- **Diferencias pasa a ser la pestaña principal** del comparador; «Día» se renombra
+  **Registrar**. Dashboard de 5 KPIs + 3 tarjetas arriba, y abajo la **lista día a día**
+  (fecha · mi resultado · el suyo · Δ puntos). Cada fila abre un **modal con las dos
+  gráficas** (Esc para salir, ← → para cambiar de día).
+- **Horas en hora Colombia** (D-017). Las filas estaban mezcladas ET / Colombia: 5 seguras
+  en ET corregidas con `2026-09-17-chaumer-hora-colombia` (respaldo
+  `_bak_20260917_chaumer_horas`); las dudosas se quedan por decisión de Kris. El Δ de hora
+  pasa a medirse solo en días con el mismo setup.
+- Verificado con las 12 filas reales de septiembre: brecha −17,5 = (−79,5) − (−62).
+  Detalle: `docs/disenos/2026-08-19-chaumer-vs-yo.md` §5.8.
+- **Pendiente:** la hora del 28 ago (21:52) está mal cargada.
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo
