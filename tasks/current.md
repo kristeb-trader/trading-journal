@@ -46,10 +46,10 @@ a la vez, pero la mitad de sus puntos, hoy sale como **«Igual»** con un chip q
 Puede que Kris prefiera que cuente como «Ejecución» — es una condición en `veredicto()`
 (`js/chaumer.js`).
 
-> ⚠️ **Hora del 28 ago mal cargada** (21:52, imposible en cualquier zona): Kris debe
-> corregirla en Registrar.
+> ℹ️ **Las horas las revisa Kris a mano** en Registrar si ve diferencias (17 sep). La del
+> 28 ago (21:52) está entre ellas.
 
-Diseño y lo medido en cada fase: `docs/disenos/2026-08-19-chaumer-vs-yo.md` (v7).
+Diseño y lo medido en cada fase: `docs/disenos/2026-08-19-chaumer-vs-yo.md` (v8).
 
 ### 🔵 Probar Datos con la sesión iniciada (19 ago)
 

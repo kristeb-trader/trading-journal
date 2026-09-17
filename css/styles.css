@@ -4677,42 +4677,109 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .ch-kpi-el .ch-kpi-lab { color: var(--blue-txt); }
 .ch-conclusion + .ch-graficas, .ch-kpis + .ch-graficas { margin-top: 0; }
 
-/* La lista día a día. Cuatro columnas fijas: fecha · yo · él · Δ. Cada fila es un
-   botón porque abre el modal con las dos gráficas. */
-.ch-tabla { margin-top: 12px; padding-bottom: 6px; }
-.ch-card-cnt {
-  font-size: 0.7rem; font-weight: 600; color: var(--text3);
-  background: var(--bg3); border-radius: 999px; padding: 1px 8px; margin-left: 6px;
+/* ── Tabla «Día a día» ──────────────────────────────────────────────────────
+   Una tabla de verdad: cada dato en su columna, los dos lados agrupados bajo su
+   rótulo y con su tinte (verde yo, azul él), y una fila de totales al pie.
+   La franja de la fecha dice solo una cosa: verde = mismo setup, rojo = distinto.
+   Con 9 columnas no cabe en un móvil: la tabla se desplaza en horizontal DENTRO de
+   su caja, con la fecha fija, y la página no se ensancha. */
+.ch-tabla { margin-top: 16px; padding: 20px; }
+.ch-dd-titulo {
+  text-align: center; text-transform: uppercase;
+  font-size: 1.35rem; font-weight: 800; letter-spacing: 0.16em;
+  margin: 2px 0 18px;
 }
-.ch-row {
-  display: grid; grid-template-columns: 110px 1fr 1fr 110px; align-items: center;
-  gap: 12px; width: 100%; padding: 10px 10px; text-align: left;
-  border-top: 1px solid var(--border); border-left: 3px solid transparent;
-  font-size: 0.82rem; color: var(--text);
-  transition: background var(--transition);
+.ch-dd-wrap {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border); border-radius: 10px;
 }
-.ch-row:hover { background: var(--bg3); }
-.ch-row.mal { border-left-color: var(--red); }
-.ch-row.ok  { border-left-color: var(--accent); }
-.ch-row-head {
-  border-top: none; padding-top: 0; padding-bottom: 8px; cursor: default;
-  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--text3);
+.ch-dd {
+  width: 100%; min-width: 900px;
+  border-collapse: separate; border-spacing: 0;
+  font-size: 0.95rem; font-variant-numeric: tabular-nums;
 }
-.ch-row-head:hover { background: none; }
-.ch-row-f { font-weight: 600; text-transform: capitalize; font-variant-numeric: tabular-nums; }
-.ch-row-lado { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
-.ch-row-meta { color: var(--text3); font-size: 0.74rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ch-row-d { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
-.ch-row-n { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text2); }
-.ch-row.mal .ch-row-n { color: var(--red-txt); }
-.ch-row.ok  .ch-row-n { color: var(--accent-txt); }
-.ch-row-v { font-size: 0.68rem; color: var(--text3); white-space: nowrap; }
-.ch-row-head .ch-row-d { display: block; }
+.ch-dd th, .ch-dd td { text-align: center; vertical-align: middle; }
+
+.ch-dd th {
+  text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em;
+  background: var(--bg3); color: var(--text2);
+}
+.ch-dd-grupos th { font-size: 0.78rem; padding: 12px 10px; }
+.ch-dd-grupos th.g-tit { font-size: 1rem; letter-spacing: 0.14em; }
+.ch-dd-grupos th.g-yo { color: var(--accent-txt); background: var(--accent-dim); box-shadow: inset 0 -2px 0 var(--accent); }
+.ch-dd-grupos th.g-el { color: var(--blue-txt);   background: var(--blue-dim);   box-shadow: inset 0 -2px 0 var(--blue); }
+.ch-dd-cols th {
+  font-size: 0.7rem; padding: 8px 10px; color: var(--text2);
+  border-bottom: 1px solid var(--border);
+}
+.ch-dd-grupos th[rowspan] { border-bottom: 1px solid var(--border); }
+
+.ch-dd td { padding: 14px 12px; border-bottom: 1px solid var(--border); }
+.ch-dd tbody tr { cursor: pointer; }
+.ch-dd tbody tr:hover td, .ch-dd tbody tr:focus-visible td { background: var(--bg3); }
+.ch-dd tbody tr:focus-visible { outline: none; }
+.ch-dd tbody tr:last-child td { border-bottom: none; }
+
+/* Tinte suave por lado y separador entre grupos. */
+.ch-dd td.g-yo { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.ch-dd td.g-el { background: color-mix(in srgb, var(--blue) 6%, transparent); }
+.ch-dd .ch-dd-res, .ch-dd-grupos th.g-tit, .ch-dd-cols th:first-child,
+.ch-dd-cols th:nth-child(4), .ch-dd .ch-dd-delta { border-left: 2px solid var(--border); }
+
+.ch-dd .ch-dd-fecha {
+  position: sticky; left: 0; z-index: 1;
+  text-align: left; white-space: nowrap; font-weight: 700;
+  padding-left: 20px; background: var(--card);
+}
+.ch-dd th.ch-dd-fecha { background: var(--bg3); z-index: 2; }
+.ch-dd-fila.fr-mismo    .ch-dd-fecha { box-shadow: inset 5px 0 0 var(--accent); }
+.ch-dd-fila.fr-distinto .ch-dd-fecha { box-shadow: inset 5px 0 0 var(--red); }
+
+.ch-dd-hora { color: var(--text2); }
+.ch-dd-pts { font-weight: 700; }
+.ch-dd .pos { color: var(--accent-txt); }
+.ch-dd .neg { color: var(--red-txt); }
+.ch-dd-vacio { color: var(--text3); font-weight: 400; }
+
+.ch-dd-dn {
+  display: inline-block; min-width: 72px; padding: 5px 10px;
+  border-radius: 8px; font-weight: 800; background: var(--bg3); color: var(--text2);
+}
+.ch-dd .ch-dd-dn.pos { background: var(--accent-dim); color: var(--accent-txt); }
+.ch-dd .ch-dd-dn.neg { background: var(--red-dim);    color: var(--red-txt); }
+.ch-dd-que { text-align: left !important; white-space: nowrap; color: var(--text2); font-size: 0.86rem; }
+
+/* Totales */
+.ch-dd tfoot td {
+  background: var(--bg3); font-weight: 700; padding: 16px 12px;
+  border-top: 2px solid var(--text3); border-bottom: none;
+}
+.ch-dd tfoot .ch-dd-fecha { background: var(--bg3); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.85rem; }
+.ch-dd tfoot td.g-yo { background: color-mix(in srgb, var(--accent) 12%, var(--bg3)); }
+.ch-dd tfoot td.g-el { background: color-mix(in srgb, var(--blue) 12%, var(--bg3)); }
+.ch-dd-tot-ts { display: block; font-size: 1rem; color: var(--text2); }
+.ch-dd-tot-ts b { font-size: 1.15rem; }
+.ch-dd-ef { display: block; margin-top: 4px; font-size: 1.35rem; font-weight: 800; }
+.ch-dd-ef small {
+  font-size: 0.62rem; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.ch-dd tfoot .ch-dd-pts { font-size: 1.3rem; font-weight: 800; }
+.ch-dd tfoot .ch-dd-dn { font-size: 1.1rem; }
+
+.ch-dd-leyenda {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px;
+  margin-top: 14px; font-size: 0.8rem; color: var(--text3);
+}
+.ch-dd-leyenda span { display: inline-flex; align-items: center; gap: 7px; }
+.ch-dd-sw { display: inline-block; width: 5px; height: 16px; border-radius: 2px; }
+.ch-dd-sw.fr-mismo    { background: var(--accent); }
+.ch-dd-sw.fr-distinto { background: var(--red); }
 
 .ch-res {
-  display: inline-block; font-size: 0.72rem; font-weight: 600;
-  border-radius: 999px; padding: 2px 10px; border: 1px solid transparent; white-space: nowrap;
+  display: inline-block; min-width: 104px; text-align: center;
+  font-size: 0.82rem; font-weight: 700; letter-spacing: 0.02em;
+  border-radius: 999px; padding: 5px 14px; border: 1px solid transparent; white-space: nowrap;
 }
 .ch-res-ok     { background: var(--accent-dim); color: var(--accent-txt); }
 .ch-res-mal    { background: var(--red-dim); color: var(--red-txt); }
@@ -4765,15 +4832,11 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 
 @media (max-width: 620px) {
   .ch-img { height: 120px; }
-  /* La fila pasa a dos líneas: fecha y Δ arriba, los dos resultados debajo. */
-  .ch-row { grid-template-columns: 1fr 1fr; row-gap: 6px; column-gap: 10px; padding: 10px 8px; }
-  .ch-row-f { grid-column: 1; grid-row: 1; }
-  .ch-row-d { grid-column: 2; grid-row: 1; flex-direction: row; align-items: baseline; justify-content: flex-end; gap: 8px; }
-  .ch-row-lado { grid-row: 2; flex-direction: column; align-items: flex-start; gap: 3px; }
-  .ch-row-head { display: none; }
-  .ch-row-lado::before { font-size: 0.62rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
-  .ch-row-lado:nth-of-type(2)::before { content: "Yo"; color: var(--accent-txt); }
-  .ch-row-lado:nth-of-type(3)::before { content: "Chaumer"; color: var(--blue-txt); }
+  .ch-tabla { padding: 14px 10px; }
+  .ch-dd-titulo { font-size: 1.1rem; margin-bottom: 14px; }
+  .ch-dd { font-size: 0.88rem; min-width: 820px; }
+  .ch-dd td { padding: 12px 9px; }
+  .ch-dd .ch-dd-fecha { padding-left: 14px; }
   .modal.ch-cmp { width: 100vw; max-height: 100vh; height: 100vh; border-radius: 0; }
   .modal-overlay:has(.ch-cmp) { padding: 0; }
   .ch-cmp-body { padding: 12px; }

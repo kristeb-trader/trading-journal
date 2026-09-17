@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| **Versión** | v7 |
+| **Versión** | v8 |
 | **Fecha** | 2026-08-19 |
-| **Estado** | ✅ **IMPLEMENTADO** (19 ago) · v7 implementada el 17 sep (§5.8) |
+| **Estado** | ✅ **IMPLEMENTADO** (19 ago) · v7 y v8 implementadas el 17 sep (§5.8, §5.9) |
 | **Origen** | Petición de Kris (19 ago): «entré a su curso y tengo acceso a sus operativas; quiero un módulo donde almacene las suyas vs las mías, la pantalla partida en dos, y un dashboard de diferencias con filtro por mes/trimestre/año/todo, para ver si estoy fallando en algún punto» |
 | **Alcance** | Tabla nueva `chaumer_operativas` (1 migración), `index.html`, `css/styles.css`, `js/app.js`, `js/chaumer.js` (nuevo), `js/db.js`, `js/coach.js` (mueve un helper). **No toca** `sesiones` ni `trades` salvo un valor nuevo de vocabulario |
 
@@ -593,6 +593,51 @@ Modal: ← → recorren 14 → 11 → 15 sep; Esc con el Lightbox abierto cierra
 «Editar» deja Registrar en el 10 sep con la hora 08:39 en el formulario. Móvil 375 px sin
 scroll horizontal, consola sin errores.
 
+### 5.9 v8 — La lista, rehecha como tabla (17 sep)
+
+**Petición de Kris:** la lista «se ve todo muy pequeño»; título «Día a día» más grande, en
+mayúscula y centrado; títulos de columna centrados y en mayúscula; fechas en orden
+**ascendente**; hora y puntos **en columnas**, no como leyenda; una **fila de totales** con
+targets, stops, % de efectividad y puntos de cada uno; y la franja de color con un único
+significado: **verde = mismo setup, rojo = setup distinto**.
+
+**La tabla** (`tablaDias()` en `chaumer.js`):
+
+| Fecha | YO: Resultado · Hora · Puntos | CHAUMER: Resultado · Hora · Puntos | Δ Puntos | Qué pasó |
+|---|---|---|---|---|
+
+- Cabecera a dos niveles: «YO» (verde) y «CHAUMER» (azul) agrupan sus tres columnas; cada
+  grupo lleva un tinte suave en todas sus celdas y un separador a la izquierda.
+- Letra a 0,95 rem (antes 0,74–0,82), filas de ~56 px, resultado en píldora de 104 px.
+- Puntos coloreados por signo; Δ en una pastilla verde / roja / gris.
+- **Franja de la fecha:** verde si los dos operaron el mismo setup, roja si operaron setups
+  distintos, **ninguna** si alguno no operó (no hay dos setups que comparar). El setup de
+  cada uno sale al pasar el ratón por la fila. Leyenda al pie.
+- **Totales** (`totalesLista()`): por lado, `T · S`, **efectividad = T / (T + S)** —
+  break-even y parciales no entran— y la suma de puntos; en Δ, la brecha.
+- Orden ascendente; las flechas del modal siguen ese orden (← anterior, → siguiente).
+  Las filas son enfocables y se abren también con Enter.
+- **Móvil / pantallas estrechas:** la tabla (mín. 900 px) se desplaza en horizontal dentro
+  de su caja con la columna Fecha fija; la página no se ensancha.
+- El título es un `div`, no un `h2`: el único título de pantalla es el de la barra.
+
+**Las horas las revisa Kris a mano** si ve alguna diferencia; el código no toca más filas.
+
+**Verificado** con las 12 filas reales de septiembre:
+
+| Qué | Pantalla | Esperado |
+|---|---|---|
+| Orden | 1 sep → 17 sep | ✅ |
+| Franja verde | 10, 14, 17 sep | mismo setup ✅ |
+| Franja roja | 1, 2, 3, 4, 8 sep | setup distinto ✅ |
+| Sin franja | 9, 11, 15, 16 sep | alguno no operó ✅ |
+| Total yo | 4 T · 6 S · **40 %** · −79,5 | 4/10 ✅ |
+| Total Chaumer | 4 T · 5 S · **44 %** · −62 | 4/9 = 44,4 ✅ |
+| Total Δ | −17,5 | = brecha ✅ |
+
+Modal: desde el 1 sep «anterior» está desactivado y → lleva al 2; Enter sobre el 17 lo
+abre con «siguiente» desactivado. 660 px y 375 px sin desbordar la página; consola limpia.
+
 ---
 
 ## 6. Lo que este diseño NO toca
@@ -623,6 +668,7 @@ scroll horizontal, consola sin errores.
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 2026-08-19 | Documento inicial. Recoge las 4 decisiones de Kris |
+| v8 | 2026-09-17 | La lista «Día a día» pasa a ser una tabla: columnas para resultado, hora y puntos de cada lado, orden ascendente, fila de totales con efectividad, y la franja solo dice mismo setup / setup distinto. Detalle en §5.9 |
 | v7 | 2026-09-17 | Diferencias pasa a ser la pestaña principal: dashboard arriba y la **lista día a día** abajo, con un modal de las dos gráficas. «Día» pasa a llamarse **Registrar**. Todas las horas en **hora Colombia**. Detalle en §5.8 |
 | v6 | 2026-08-31 | «Diferencias» rehecho: la brecha en puntos arriba, el desglose por causa ordenado por lo que cuesta, los días clave pulsables, y fuera la jerga y la gráfica semanal. Detalle en §5.7 |
 | v5 | 2026-08-19 | El signo de los puntos se deriva del resultado de Chaumer, y el modal deja claro que todo lo suyo es suyo. Corregida la fila del 18. Detalle en §5.6 |

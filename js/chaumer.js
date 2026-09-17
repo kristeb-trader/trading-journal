@@ -11,7 +11,7 @@
 // (antes era ET y Kris la escribía a veces en una y a veces en otra). Aquí NO se
 // usa `horaEt()`: convertir solo uno de los dos lados daría 60 min de error.
 //
-// Diseño: docs/disenos/2026-08-19-chaumer-vs-yo.md (v7).
+// Diseño: docs/disenos/2026-08-19-chaumer-vs-yo.md (v8).
 
 const Chaumer = (() => {
 
@@ -567,6 +567,7 @@ const Chaumer = (() => {
     }
 
     // ── La lista: un día por fila ──
+    // Del más antiguo al más reciente, como se lee un diario (lo pidió Kris).
     // Entra todo día con dato en cualquiera de los dos lados. Un día en que yo
     // operé y su operativa no está cargada también sale, marcado "Sin cargar":
     // esconderlo haría creer que ese día no existe.
@@ -575,7 +576,7 @@ const Chaumer = (() => {
       .map(d => dias.find(x => x.f === d.f) || {
         f: d.f, ch: null, ses: d.ses, yo: miLado(d.ses, d.tr || []), delta: null, v: { k: 'sin_cargar', diffs: [] },
       })
-      .sort((a, b) => b.f.localeCompare(a.f))
+      .sort((a, b) => a.f.localeCompare(b.f))
 
     return {
       rango: r,
@@ -649,21 +650,107 @@ const Chaumer = (() => {
     return `<span class="ch-res ch-res-${cls}">${RESULTADOS[r] || 'Operó'}</span>`
   }
 
+  // ── La tabla día a día ──
+  // Columnas de verdad (no leyendas): resultado · hora · puntos por cada lado.
+  // La franja de la izquierda dice UNA sola cosa: verde = los dos operaron el
+  // mismo setup, rojo = setups distintos. Si alguno no operó, no hay franja: no
+  // hay dos setups que comparar.
+  function franjaSetup(x) {
+    const el = ladoDeEl(x.ch)
+    if (!x.yo.opero || !el.opero) return ''
+    return x.yo.setup_codigo && x.yo.setup_codigo === x.ch.setup_codigo ? 'mismo' : 'distinto'
+  }
+
+  const celdaPts = n => n == null
+    ? '<td class="ch-dd-pts ch-dd-vacio">—</td>'
+    : `<td class="ch-dd-pts ${n > 0 ? 'pos' : n < 0 ? 'neg' : ''}">${num(n)}</td>`
+
   function filaLista(x) {
     const el = ladoDeEl(x.ch)
-    const metaYo = x.yo.opero ? [x.yo.hora, fmtPts(x.yo.puntos)].filter(Boolean).join(' · ') : ''
-    const metaEl = el.opero ? [horaCol(x.ch.hora_entrada), fmtPts(x.ch.puntos)].filter(Boolean).join(' · ') : ''
-    const dCls = x.delta == null ? '' : x.delta < 0 ? 'mal' : x.delta > 0 ? 'ok' : 'igual'
+    const franja = franjaSetup(x)
+    const dCls = x.delta == null ? '' : x.delta < 0 ? 'neg' : x.delta > 0 ? 'pos' : 'cero'
+    const setupYo = x.yo.opero ? nombreVariante(x.yo.setup_codigo) : ''
+    const setupEl = el.opero ? nombreVariante(x.ch.setup_codigo) : ''
     return `
-      <button type="button" class="ch-row ${dCls}" data-cmp="${x.f}">
-        <span class="ch-row-f">${esc(fechaFila(x.f))}</span>
-        <span class="ch-row-lado">${badge(x.yo)}<span class="ch-row-meta">${esc(metaYo)}</span></span>
-        <span class="ch-row-lado">${badge(el, !x.ch)}<span class="ch-row-meta">${esc(metaEl)}</span></span>
-        <span class="ch-row-d">
-          <span class="ch-row-n">${x.delta == null ? '—' : x.delta === 0 ? '=' : num(x.delta)}</span>
-          <span class="ch-row-v">${esc(ESTADOS[x.v.k]?.corto || '')}</span>
-        </span>
-      </button>`
+      <tr class="ch-dd-fila ${franja ? 'fr-' + franja : ''}" data-cmp="${x.f}" tabindex="0"
+          title="Ver las dos gráficas${setupYo || setupEl ? ` · Yo: ${esc(setupYo || '—')} · Él: ${esc(setupEl || '—')}` : ''}">
+        <td class="ch-dd-fecha">${esc(fechaFila(x.f))}</td>
+        <td class="ch-dd-res g-yo">${badge(x.yo)}</td>
+        <td class="ch-dd-hora g-yo">${esc(x.yo.hora || '—')}</td>
+        ${celdaPts(x.yo.opero ? x.yo.puntos : null).replace('class="', 'class="g-yo ')}
+        <td class="ch-dd-res g-el">${badge(el, !x.ch)}</td>
+        <td class="ch-dd-hora g-el">${esc(el.opero ? (horaCol(x.ch.hora_entrada) || '—') : '—')}</td>
+        ${celdaPts(el.opero ? x.ch.puntos : null).replace('class="', 'class="g-el ')}
+        <td class="ch-dd-delta"><span class="ch-dd-dn ${dCls}">${x.delta == null ? '—' : x.delta === 0 ? '0' : num(x.delta)}</span></td>
+        <td class="ch-dd-que">${esc(ESTADOS[x.v.k]?.corto || '')}</td>
+      </tr>`
+  }
+
+  // Totales de la tabla: targets, stops, % de efectividad y puntos, por lado.
+  // Efectividad = targets / (targets + stops); break-even y parciales no entran.
+  function totalesLista(filas) {
+    const lado = lados => {
+      let t = 0, st = 0, pts = 0
+      lados.forEach(l => {
+        if (!l.opero) return
+        const r = resultadoDe(l)
+        if (r === 'target') t++
+        else if (r === 'stop') st++
+        pts += l.puntos || 0
+      })
+      return { t, st, pts: Math.round(pts * 100) / 100, ef: (t + st) ? Math.round((t / (t + st)) * 100) : null }
+    }
+    return {
+      yo: lado(filas.map(x => x.yo)),
+      el: lado(filas.map(x => ladoDeEl(x.ch))),
+      delta: Math.round(filas.reduce((a, x) => a + (x.delta || 0), 0) * 100) / 100,
+    }
+  }
+
+  function celdasTotal(t, g) {
+    return `
+      <td class="ch-dd-res g-${g}" colspan="2">
+        <span class="ch-dd-tot-ts"><b class="pos">${t.t}</b> T · <b class="neg">${t.st}</b> S</span>
+        <span class="ch-dd-ef ${t.ef == null ? '' : t.ef >= 50 ? 'pos' : 'neg'}">${t.ef == null ? '—' : t.ef + ' %'} <small>efectividad</small></span>
+      </td>
+      <td class="ch-dd-pts g-${g} ${t.pts > 0 ? 'pos' : t.pts < 0 ? 'neg' : ''}">${num(t.pts)}</td>`
+  }
+
+  function tablaDias(filas) {
+    const tot = totalesLista(filas)
+    return `
+      <div class="ch-dd-wrap">
+        <table class="ch-dd">
+          <thead>
+            <tr class="ch-dd-grupos">
+              <th rowspan="2" class="ch-dd-fecha">Fecha</th>
+              <th colspan="3" class="g-yo g-tit">Yo</th>
+              <th colspan="3" class="g-el g-tit">Chaumer</th>
+              <th rowspan="2" class="ch-dd-delta">Δ Puntos</th>
+              <th rowspan="2" class="ch-dd-que">Qué pasó</th>
+            </tr>
+            <tr class="ch-dd-cols">
+              <th class="g-yo">Resultado</th><th class="g-yo">Hora</th><th class="g-yo">Puntos</th>
+              <th class="g-el">Resultado</th><th class="g-el">Hora</th><th class="g-el">Puntos</th>
+            </tr>
+          </thead>
+          <tbody>${filas.map(filaLista).join('')}</tbody>
+          <tfoot>
+            <tr>
+              <td class="ch-dd-fecha">Total · ${plural(filas.length, 'día')}</td>
+              ${celdasTotal(tot.yo, 'yo')}
+              ${celdasTotal(tot.el, 'el')}
+              <td class="ch-dd-delta"><span class="ch-dd-dn ${tot.delta < 0 ? 'neg' : tot.delta > 0 ? 'pos' : 'cero'}">${num(tot.delta)}</span></td>
+              <td class="ch-dd-que">${tot.delta < 0 ? 'por detrás de él' : tot.delta > 0 ? 'por delante de él' : 'empatados'}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="ch-dd-leyenda">
+        <span><i class="ch-dd-sw fr-mismo"></i>Mismo setup que él</span>
+        <span><i class="ch-dd-sw fr-distinto"></i>Setup distinto</span>
+        <span>Sin franja: alguno de los dos no operó · Horas en hora Colombia · Pulsa un día para ver las dos gráficas</span>
+      </div>`
   }
 
   function kpiResultados(c) {
@@ -799,15 +886,8 @@ const Chaumer = (() => {
       </div>
 
       <div class="ch-card ch-tabla">
-        <div class="ch-card-tit">Día a día <span class="ch-card-cnt">${d.filas.length}</span></div>
-        <div class="ch-card-sub">Pulsa un día para ver las dos gráficas. Horas en hora Colombia.</div>
-        <div class="ch-row ch-row-head" aria-hidden="true">
-          <span class="ch-row-f">Fecha</span>
-          <span class="ch-row-lado">Yo</span>
-          <span class="ch-row-lado">Chaumer</span>
-          <span class="ch-row-d">Δ pts</span>
-        </div>
-        ${d.filas.map(filaLista).join('')}
+        <div class="ch-dd-titulo">Día a día</div>
+        ${tablaDias(d.filas)}
       </div>
     `
   }
@@ -821,9 +901,9 @@ const Chaumer = (() => {
     cmpFecha = f
     const e = ESTADOS[x.v.k]
     const idx = filasVista.indexOf(x)
-    // La lista va de más reciente a más antiguo: "anterior" es el siguiente índice.
-    const hayAnt = idx < filasVista.length - 1
-    const haySig = idx > 0
+    // La lista va del más antiguo al más reciente, igual que las flechas.
+    const hayAnt = idx > 0
+    const haySig = idx < filasVista.length - 1
 
     document.getElementById('chCmpTitulo').textContent = fmtFechaLarga(f)
     document.getElementById('chCmpVeredicto').className = `ch-veredicto ch-cmp-v ${e.cls}`
@@ -928,8 +1008,8 @@ const Chaumer = (() => {
     const cmp = document.getElementById('chCmpModal')
     cmp?.addEventListener('click', e => {
       if (e.target === cmp || e.target.closest('#chCmpCerrar')) return cerrarComparacion()
-      if (e.target.closest('#chCmpPrev')) return moverComparacion(1)
-      if (e.target.closest('#chCmpNext')) return moverComparacion(-1)
+      if (e.target.closest('#chCmpPrev')) return moverComparacion(-1)
+      if (e.target.closest('#chCmpNext')) return moverComparacion(1)
       const act = e.target.closest('[data-act]')?.dataset.act
       if (act === 'zoom') {
         const urls = [...cmp.querySelectorAll('img.ch-img')].map(i => i.src)
@@ -943,11 +1023,15 @@ const Chaumer = (() => {
         cargar(f).then(() => { if (e.target.closest('[data-act="editar"]')) abrirModal() })
       }
     })
+    document.getElementById('chaumerDif')?.addEventListener('keydown', e => {
+      const f = e.key === 'Enter' && e.target.closest?.('[data-cmp]')?.dataset.cmp
+      if (f) abrirComparacion(f)
+    })
     document.addEventListener('keydown', e => {
       if (!cmpFecha || document.getElementById('lightbox')) return
       if (e.key === 'Escape') cerrarComparacion()
-      else if (e.key === 'ArrowLeft') moverComparacion(1)
-      else if (e.key === 'ArrowRight') moverComparacion(-1)
+      else if (e.key === 'ArrowLeft') moverComparacion(-1)
+      else if (e.key === 'ArrowRight') moverComparacion(1)
     })
 
     document.getElementById('prevMonth')?.addEventListener('click', () => { if (enDif()) navPeriodo(-1) })

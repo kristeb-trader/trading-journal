@@ -2646,7 +2646,10 @@ Migración `2026-09-14-apex15-renovada.sql`. Diseño:
   pasa a medirse solo en días con el mismo setup.
 - Verificado con las 12 filas reales de septiembre: brecha −17,5 = (−79,5) − (−62).
   Detalle: `docs/disenos/2026-08-19-chaumer-vs-yo.md` §5.8.
-- **Pendiente:** la hora del 28 ago (21:52) está mal cargada.
+- **v8, mismo día:** la lista pasa a ser una tabla con columnas (resultado · hora · puntos
+  por lado), orden ascendente, fila de totales con % de efectividad, y la franja solo
+  distingue mismo setup (verde) / setup distinto (rojo). §5.9.
+- Las horas dudosas y la del 28 ago (21:52) las revisa Kris a mano.
 
 ---
 
