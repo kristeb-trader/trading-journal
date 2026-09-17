@@ -492,40 +492,8 @@ const Chaumer = (() => {
       .sort((a, b) => a.f.localeCompare(b.f))
 
     const cuenta = k => dias.filter(d => d.v.k === k).length
-    const suyosOperados = dias.filter(d => d.ch.opero && d.ch.setup_codigo)
-    const fugas = dias.filter(d => d.v.k === 'fuga')
 
     const sum = (arr, fn) => Math.round(arr.reduce((a, x) => a + (fn(x) || 0), 0) * 100) / 100
-
-    // ── Motivos de no entrada, desde `sesiones` ──
-    // Se cuentan los días Y lo que costaron. Ordenar por veces engaña: dudar una
-    // sola vez puede costar más que tres días de zona naranja.
-    const motivos = {}
-    fugas.forEach(d => {
-      const m = d.ses?.motivo_no_entrada || 'Sin declarar'
-      const e = (motivos[m] ||= { dias: 0, puntos: 0 })
-      e.dias++
-      e.puntos = Math.round((e.puntos + d.delta) * 100) / 100
-    })
-
-    // ── De dónde sale la brecha ──
-    // El desglose por causa, en puntos. Es la respuesta a "¿dónde pierdo más?",
-    // así que se ordena por lo que cuesta, no por número de días.
-    // `ambos_fuera` queda fuera: siempre aporta 0 y solo añadiría ruido.
-    const CAUSAS = {
-      fuga:         'Él entró, yo no',
-      de_mas:       'Yo entré, él no',
-      otra_lectura: 'Cada uno vio un setup',
-      ejecucion:    'Mismo setup, distinta salida',
-      igual:        'Misma operativa que él',
-    }
-    const causas = Object.keys(CAUSAS)
-      .map(k => {
-        const ds = dias.filter(d => d.v.k === k)
-        return { k, label: CAUSAS[k], dias: ds.length, delta: Math.round(ds.reduce((a, d) => a + d.delta, 0) * 100) / 100 }
-      })
-      .filter(c => c.dias)
-      .sort((a, b) => a.delta - b.delta)
 
     const brecha = Math.round(dias.reduce((a, d) => a + d.delta, 0) * 100) / 100
 
@@ -533,15 +501,6 @@ const Chaumer = (() => {
     // único honesto que se puede hacer con un dato que falta — pero hay que
     // decirlo: si no, un día que costó 60 puntos pasa por un día que costó nada.
     const sinPuntos = dias.filter(d => d.ch.opero && d.ch.setup_codigo && d.ch.puntos == null).length
-
-    // ── Por setup: cuántas de las suyas se te escaparon ──
-    const porSetup = {}
-    suyosOperados.forEach(d => {
-      const n = nombreVariante(d.ch.setup_codigo)
-      const e = (porSetup[n] ||= { total: 0, fugas: 0 })
-      e.total++
-      if (d.v.k === 'fuga') e.fugas++
-    })
 
     // ── Δ hora, solo en días en que ambos operaron EL MISMO setup ──
     // Con setups distintos las dos entradas no son la misma operación y restarlas
@@ -581,10 +540,9 @@ const Chaumer = (() => {
     return {
       rango: r,
       cobertura: { cargados, habiles, pct: habiles ? Math.round((cargados / habiles) * 100) : 0 },
-      totalComparables: suyosOperados.length,
       puntos: { el: sum(dias, d => d.ch.puntos), yo: sum(dias, d => d.yo.puntos) },
       resultados: { el: conteo(dias.map(d => ladoDeEl(d.ch))), yo: conteo(dias.map(d => d.yo)) },
-      brecha, causas, sinPuntos,
+      brecha, sinPuntos,
       // Cuánto te aporta entrar en SU mismo setup, que es la comparación limpia.
       mismoSetup: {
         dias: cuenta('igual') + cuenta('ejecucion'),
@@ -592,7 +550,7 @@ const Chaumer = (() => {
         delta: Math.round(dias.filter(d => ['igual', 'ejecucion'].includes(d.v.k))
           .reduce((a, d) => a + d.delta, 0) * 100) / 100,
       },
-      motivos, porSetup, deltaMedia, nDeltas: deltas.length,
+      deltaMedia, nDeltas: deltas.length,
       filas,
       nDias: dias.length,
     }
@@ -605,28 +563,6 @@ const Chaumer = (() => {
   }
 
   // ── Pintado del dashboard ─────────────────────────────────────────────────
-  // La frase que faltaba. Un panel que solo enseña métricas obliga a sacar la
-  // conclusión a mano cada vez; esto la dice. Se construye desde los datos, no
-  // es un texto fijo: si el patrón cambia, la frase cambia.
-  function conclusion(d) {
-    const peor = d.causas.find(c => c.delta < 0)   // ya vienen de peor a mejor
-    const ms = d.mismoSetup
-    const partes = []
-
-    if (ms.dias && ms.delta > 0) {
-      partes.push(`Cuando entras <strong class="ok">al mismo setup que él, le sacas ventaja</strong>: ${fmtPts(ms.delta)} en ${ms.dias} día${ms.dias === 1 ? '' : 's'}.`)
-    } else if (ms.dias && ms.delta < 0) {
-      partes.push(`Incluso entrando a su mismo setup vas <strong class="mal">por detrás</strong>: ${fmtPts(ms.delta)} en ${ms.dias} día${ms.dias === 1 ? '' : 's'}.`)
-    }
-    if (peor) {
-      partes.push(`Lo que más te cuesta es <strong class="mal">«${esc(peor.label.toLowerCase())}»</strong>: ${peor.dias} día${peor.dias === 1 ? '' : 's'}, ${fmtPts(peor.delta)}.`)
-    } else if (d.brecha > 0) {
-      partes.push('No hay ninguna causa que te reste en este período.')
-    }
-    return partes.join(' ')
-  }
-
-  const barra = (n, max, cls) => `<span class="ch-bar"><span class="ch-bar-fill ${cls}" style="width:${max ? Math.round((n / max) * 100) : 0}%"></span></span>`
   const num = n => `${n > 0 ? '+' : ''}${String(n).replace('.', ',')}`
   const plural = (n, s, p = s + 's') => `${n} ${n === 1 ? s : p}`
   const fechaFila = f => new Date(`${f}T12:00:00`)
@@ -780,10 +716,7 @@ const Chaumer = (() => {
     }
 
     const cobFlaca = d.cobertura.pct < 60
-    const maxMotivo = Math.max(1, ...Object.values(d.motivos).map(m => Math.abs(m.puntos)))
-    const maxCausa = Math.max(1, ...d.causas.map(c => Math.abs(c.delta)))
     const ms = d.mismoSetup
-    const txtConclusion = conclusion(d)
 
     cont.innerHTML = `
       ${cobFlaca || d.sinPuntos ? `
@@ -828,71 +761,6 @@ const Chaumer = (() => {
             : `${d.deltaMedia > 0 ? 'de media después' : d.deltaMedia < 0 ? 'de media antes' : 'entras a la vez'} que él ·${plural(d.nDeltas, 'día')} con el mismo setup`}</span>
         </div>
       </div>
-
-      ${txtConclusion ? `<div class="ch-conclusion"><i class="ti ti-bulb"></i><p>${txtConclusion}</p></div>` : ''}
-
-      <div class="ch-graficas">
-        <div class="ch-card">
-          <div class="ch-card-tit">De dónde sale la brecha</div>
-          <div class="ch-card-sub">Lo que cada causa te suma o te resta, en puntos.</div>
-          ${d.causas.length ? `
-          <div class="ch-causas">
-            ${d.causas.map(c => {
-              const pct = (Math.abs(c.delta) / maxCausa) * 50
-              const neg = c.delta < 0
-              return `
-                <div class="ch-causa">
-                  <div class="ch-causa-top">
-                    <span class="ch-causa-lab">${esc(c.label)} <span class="ch-causa-dias">· ${plural(c.dias, 'día')}</span></span>
-                    <span class="ch-causa-n ${neg ? 'mal' : 'ok'}">${num(c.delta)}</span>
-                  </div>
-                  <div class="ch-carril">
-                    <span class="ch-carril-cero"></span>
-                    <span class="ch-carril-barra ${neg ? 'neg' : 'pos'}" style="${neg ? 'right' : 'left'}:50%;width:${pct}%"></span>
-                  </div>
-                </div>`
-            }).join('')}
-          </div>
-          <div class="ch-carril-ejes"><span>te resta</span><span>0</span><span>te suma</span></div>
-          ` : '<p class="ch-card-pie">Ningún día con diferencia todavía.</p>'}
-        </div>
-
-        <div class="ch-card">
-          <div class="ch-card-tit">Por qué no entraste</div>
-          <div class="ch-card-sub">Los días en que él entró y tú no, por lo que costaron.</div>
-          ${Object.keys(d.motivos).length ? `
-            <div class="ch-lista">
-              ${Object.entries(d.motivos).sort((a, b) => a[1].puntos - b[1].puntos).map(([m, e]) => `
-                <div class="ch-motivo">
-                  <div class="ch-motivo-top">
-                    <span class="ch-fila-nom">${esc(m)}</span>
-                    <span class="ch-motivo-n">${plural(e.dias, 'día')} · <strong>${fmtPts(e.puntos)}</strong></span>
-                  </div>
-                  <span class="ch-bar"><span class="ch-bar-fill ${m === 'Sin declarar' ? 'gris' : 'rojo'}" style="width:${Math.round((Math.abs(e.puntos) / maxMotivo) * 100)}%"></span></span>
-                </div>`).join('')}
-            </div>
-          ` : '<p class="ch-card-pie">Ningún día en que él entrara y tú no.</p>'}
-        </div>
-
-        <div class="ch-card">
-          <div class="ch-card-tit">Sus setups que se te escapan</div>
-          <div class="ch-card-sub">De las veces que él operó cada setup, en cuántas no entraste.</div>
-          ${Object.keys(d.porSetup).length ? `
-            <div class="ch-lista">
-              ${Object.entries(d.porSetup).sort((a, b) => (b[1].fugas / b[1].total) - (a[1].fugas / a[1].total)).map(([n, e]) => {
-                const pct = e.total ? e.fugas / e.total : 0
-                return `
-                  <div class="ch-fila">
-                    <span class="ch-fila-nom" title="${esc(n)}">${esc(n)}</span>
-                    ${barra(e.fugas, e.total, pct >= 0.5 ? 'rojo' : pct > 0 ? 'violeta' : 'verde')}
-                    <span class="ch-fila-n">${e.fugas}/${e.total}</span>
-                  </div>`
-              }).join('')}
-            </div>
-          ` : '<p class="ch-card-pie">Sin operativas suyas con setup en este período.</p>'}
-        </div>
-      </div>
-
     `
   }
 
