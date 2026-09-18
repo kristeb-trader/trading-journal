@@ -10,6 +10,51 @@
 
 ---
 
+## D-018 — `trades` es el journal de UNA cuenta; `apex_trades` tiene todas las de Apex
+
+**Decisión.** Desde el 18 de septiembre de 2026, `trades` guarda **solo la operativa de la
+cuenta principal** bajo una única etiqueta (`Sim101`), con la cuenta real conservada en la
+columna nueva `cuenta_origen`; y `apex_trades` guarda **todas** las cuentas de Apex con su
+nombre real. **`apex.js` deja de leer `trades`.**
+
+**Sustituye** al invariante anterior *"un trade vive en UNA tabla, nunca en las dos"*. Ese
+invariante existía porque `apex.js` concatenaba ambas tablas y filtraba por cuenta, así que
+una fila repetida se contaba dos veces. Al dejar de concatenar, la razón desaparece — pero
+nace una regla nueva: **si `apex.js` vuelve a leer `trades`, el drawdown consumido se
+infla**, que es lo que decide si una cuenta se quema.
+
+**Motivo.** El histórico estaba partido en cuatro cuentas que se sucedieron en el tiempo
+(PA-03 → Apex-14 → Apex-15 → Sim101), porque cada una fue la principal durante un tramo. No
+se solapan: es una línea continua de operativa a la que solo le cambiaba la etiqueta, pero
+Calendario y Análisis la mostraban troceada y había que ir eligiendo cuenta en el filtro
+para ver el año entero. Con una sola etiqueta, el año se lee seguido.
+
+**Alternativas descartadas.**
+
+- **Copiar `apex_trades` → `trades`** para "ver todo junto". Es lo que parecía pedir el
+  caso, y habría sido un error: de los 21 días de `apex_trades`, **20 ya existían en
+  `trades`** — la misma operativa replicada en dos cuentas con distinto número de contratos
+  (18-sep: +$86,96 en `trades` frente a +$1.067,96 en `apex_trades`). Habría contado esos
+  días dos veces mezclando tamaños.
+- **Renombrar en `trades` sin copiar a `apex_trades`.** Dejaba vacías las tarjetas PA-03
+  (80 trades), Apex-14 (12) y Apex-15 (6), que leían su operativa de `trades`.
+- **Dejarlo todo igual y usar "Todas las cuentas"** en el filtro. Funciona, pero el default
+  es la cuenta principal y hay que cambiarlo en cada visita.
+
+**Coste asumido.** El mismo trade existe en las dos tablas cuando se operó en una cuenta de
+Apex que era la principal. Es deliberado: son dos contabilidades distintas, no una copia por
+descuido. La integridad depende de que `apex.js` no vuelva a leer `trades`, y eso está
+escrito en el propio `apex.js`, en `CLAUDE.md` y aquí.
+
+**Pendiente.** Cuando la cuenta real sea la principal **y** esté dada de alta en
+`apex_cuentas`, sus trades irán a `trades` por el routing de NT8 y el Apex Tracker no los
+verá. Se resuelve con un trigger `after insert` en `trades`, sin recompilar NinjaTrader.
+Mientras la principal sea `Sim101` —que no es cuenta de Apex— no hace falta.
+
+**Fecha.** 18 sep 2026 · Diseño: `docs/disenos/2026-09-18-cuenta-unica-en-trades.md`
+
+---
+
 ## D-017 — Las horas del comparador de Chaumer van en hora Colombia, no en ET
 
 **Decisión.** Desde el 17 de septiembre de 2026, `chaumer_operativas.hora_entrada` se guarda

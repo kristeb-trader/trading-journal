@@ -42,10 +42,13 @@ al abrir el archivo afectado.
 - **Importes: `fmtMiles` / `fmtDinero` de `db.js`, nunca `toFixed(0)`.** Sin decimales y
   con separador de miles (2212 → `2.212`). Se agrupa a mano porque `toLocaleString('es-ES')`
   **no agrupa los números de 4 dígitos** (CLDR del español) y devolvía `"2212"`.
-- **Un trade vive en UNA tabla: `trades` o `apex_trades`, nunca en las dos.** `apex.js`
-  concatena ambas y filtra por cuenta; duplicar infla el **drawdown consumido** de Apex, que
-  es lo que decide si la cuenta se quema. La cuenta principal se ve en las dos vistas
-  estando solo en `trades`.
+- **Cada tabla de trades tiene UN rol (18 sep):** `trades` es el journal de la **cuenta
+  principal**, con una sola etiqueta (`Sim101`; la real guardada en `cuenta_origen`);
+  `apex_trades` es la contabilidad de **todas** las cuentas de Apex, con su nombre real.
+  Una operación hecha en una cuenta de Apex mientras era la principal está en las dos, con
+  roles distintos. **`apex.js` NO lee `trades`** — si vuelve a concatenarla, esos trades se
+  cuentan dos veces y se infla el **drawdown consumido**, que es lo que decide si la cuenta
+  se quema. Diseño: `docs/disenos/2026-09-18-cuenta-unica-en-trades.md`.
 - **Cerrado y no se reabre (24 jul)** — las 6 reglas con filas de relleno en feb–may
   (`rei_zona`, `chk_contexto`, `chk_no_mover`, `rr_1a1`, `stop_max_puntos`,
   `target_sin_zonas`) se quedan como están. Limpiarlas bajaría la disciplina global de

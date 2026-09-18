@@ -4,8 +4,7 @@
 const Apex = (() => {
   let cuentas   = []
   let registros = []   // días manuales: apex_trades tipo='dia', orden fecha asc
-  let trades    = []   // apex_trades (auto-export NT8 de cuentas de evaluación)
-  let mainTrades = []  // tabla `trades` (journal): de aquí derivan los días de la PA
+  let trades    = []   // apex_trades: TODAS las cuentas de Apex (evaluación y fondeo)
   let seriesPorCuenta = {}  // cuentaId → serie de días combinada (manual + derivada)
   let tradesPorCuenta = {}  // cuentaId → trades individuales de esa cuenta
 
@@ -267,12 +266,14 @@ const Apex = (() => {
       const piso   = cta.piso_congelado    != null ? parseFloat(cta.piso_congelado)    : null
 
       // Trades de esta cuenta (match por número de cuenta = AccountName de NT).
-      // La PA real vive en la tabla `trades` (journal); las cuentas de
-      // evaluación viven en `apex_trades`. Como cada cuenta solo existe en una
-      // de las dos tablas, concatenar ambas fuentes nunca duplica.
+      // ⚠️ SOLO `apex_trades`. Desde el 18 sep TODAS las cuentas de Apex viven ahí,
+      // y `trades` es el journal de la cuenta principal bajo una etiqueta única.
+      // Una operación hecha en una cuenta de Apex mientras era la principal está en
+      // las DOS tablas con roles distintos: volver a concatenar `trades` aquí
+      // contaría esos trades dos veces e inflaría el drawdown consumido.
       // Una cuenta renovada comparte número: se reparte por periodo (periodoDe).
       const periodo = periodoDe(cta)
-      const ctaTrades = [...trades, ...mainTrades].filter(t => t.account === cta.numero_cuenta && enPeriodo(t.trade_date, periodo))
+      const ctaTrades = trades.filter(t => t.account === cta.numero_cuenta && enPeriodo(t.trade_date, periodo))
       tradesPorCuenta[cta.id] = ctaTrades
 
       // Días auto: agrupar trades por fecha
@@ -931,10 +932,11 @@ const Apex = (() => {
 
   async function loadData() {
     let apexRows
-    ;[cuentas, apexRows, mainTrades] = await Promise.all([
+    // Ya NO se lee `trades`: esa tabla es el journal de la cuenta principal, con
+    // una etiqueta única, y aquí haría doble conteo. Ver el comentario de buildSeries.
+    ;[cuentas, apexRows] = await Promise.all([
       DB.getApexCuentas(),
       DB.getApexTrades().catch(() => []),      // tabla única: filas tipo 'trade' y 'dia'
-      DB.getTrades().catch(() => []),          // journal: días recientes de la PA
     ])
     trades    = (apexRows || []).filter(r => r.tipo !== 'dia')
     registros = (apexRows || []).filter(r => r.tipo === 'dia')   // días manuales (unificados)
