@@ -10,6 +10,39 @@
 
 ---
 
+## D-021 — El NQ del journal pasa a MNQ; en `apex_trades` se queda
+
+**Decisión.** El único trade en NQ de `trades` (24-jun-2026, `trade_number` 86) se convierte
+a **MNQ** respetando el valor del punto: los **−32,5 puntos** que se movió el precio no
+cambian, solo el multiplicador ($20 → $2). Pasa de **−$653,80 a −$66,30**.
+
+**Sustituye** la parte de [D-020] que dejaba ese trade sin regularizar por ser irreducible.
+El otro irreducible, el **6-feb** (−$194,30 con 1 contrato), sigue como estaba: ahí el
+problema no es el instrumento ni el tamaño, sino un stop que se dejó correr **96,5 puntos**
+por encima del límite de 80. Es la única fila del journal fuera de ±160, y se queda así a
+propósito.
+
+**Motivo.** Con un solo contrato de NQ no había forma de entrar en el rango de ±$160 bajando
+tamaño: el micro es el contrato más pequeño que existe. Convertirlo es la única vía, y es
+coherente con el resto del journal, que es 100 % MNQ.
+
+**Qué se recalculó.** `instrument`, `profit`, `commission` ($1,30 round-trip, la de los demás
+MNQ 09-26 de 1 contrato de esas fechas), `mae` ($525 → $52,50), `mfe` ($70 → $7,00) y `etd`.
+Dirección, precios y contratos **no se tocan**.
+
+**`apex_trades` no se toca, y esto importa.** Ahí hay **17 trades en NQ** de las cuentas de
+evaluación. En esas cuentas el NQ se operó de verdad y consumió drawdown a $20/punto — y el
+drawdown es lo que decide si una cuenta se quema. Convertirlos daría un Apex Tracker que
+miente sobre por qué se quemó cada cuenta. Journal regularizado, Apex real: la misma
+separación de D-019.
+
+**Verificado.** Puntos: −32,50 antes y después. **MAE en puntos: 26,25 antes y después**, así
+que la disciplina da idéntico. P&L del journal: −$2.488,58 → **−$1.901,08**.
+
+**Fecha.** 19 sep 2026 · Migración: `docs/migrations/2026-09-19-nq-a-mnq-en-el-journal.sql`
+
+---
+
 ## D-020 — El journal se regulariza a ±$160 por trade; `apex_trades` guarda la verdad
 
 **Decisión.** El 19 de septiembre de 2026, los **20 trades de `trades` que superaban ±$160
@@ -36,6 +69,9 @@ realmente se ejecutó**. No es una corrección de datos falsos (como los trades 
 - **La disciplina no se mueve.** `mae` y `qty` se escalan a la vez, así que el **MAE en
   puntos** —lo que evalúa la regla del stop máximo— da idéntico. Verificado: 0 de 20 con el
   MAE o el MFE en puntos distinto, 0 cambios de signo.
+
+> ⚠️ **Parcialmente sustituida por D-021 (19 sep):** el NQ del 24-jun acabó convertido a
+> MNQ, así que el journal queda en −$1.901,08 y solo el 6-feb sigue fuera de ±160.
 
 **Los dos que no se tocaron.** Ya estaban en **un solo contrato** y aun así pasaban de 160;
 bajar contratos no era posible y Kris eligió dejarlos:
