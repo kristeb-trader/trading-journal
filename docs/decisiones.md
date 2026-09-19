@@ -10,7 +10,51 @@
 
 ---
 
-## D-018 — `trades` es el journal de UNA cuenta; `apex_trades` tiene todas las de Apex
+## D-020 — El journal se regulariza a ±$160 por trade; `apex_trades` guarda la verdad
+
+**Decisión.** El 19 de septiembre de 2026, los **20 trades de `trades` que superaban ±$160
+por haber operado con más contratos** se ajustaron bajando el número de contratos hasta
+entrar en rango. Se recalcularon `qty`, `profit`, `commission`, `mae`, `mfe` y `etd`; los
+precios de entrada y salida **no se tocaron**, porque los puntos que se movió el precio son
+los que son. P&L del journal: **−$4.526,50 → −$2.488,58**.
+
+**Motivo.** Kris quiere un histórico que refleje la operativa con el tamaño que considera
+correcto, para leer su criterio sin que lo tape el tamaño. La simulación previa mostró que
+**la mitad de la pérdida del año venía del tamaño, no del criterio**, y que agosto —−$2.160
+reales— habría sido −$131 con un contrato.
+
+**Lo que esto cuesta, y se asume a sabiendas.** El journal **deja de ser fiel a lo que
+realmente se ejecutó**. No es una corrección de datos falsos (como los trades fantasma del
+18-ago): el dato era verdadero y pasa a no serlo. Se acepta porque:
+
+- **`apex_trades` conserva la verdad.** Las copias de esos mismos trades siguen con sus
+  contratos reales, así que el Apex Tracker sigue mostrando el drawdown que de verdad se
+  consumió. Las dos tablas divergen **a propósito**: journal regularizado, Apex real. Es la
+  continuación natural de la D-019.
+- **Hay respaldo completo** en `_bak_20260919_trades_regularizacion`, y la reversión es un
+  `UPDATE ... FROM` por `trade_number`.
+- **La disciplina no se mueve.** `mae` y `qty` se escalan a la vez, así que el **MAE en
+  puntos** —lo que evalúa la regla del stop máximo— da idéntico. Verificado: 0 de 20 con el
+  MAE o el MFE en puntos distinto, 0 cambios de signo.
+
+**Los dos que no se tocaron.** Ya estaban en **un solo contrato** y aun así pasaban de 160;
+bajar contratos no era posible y Kris eligió dejarlos:
+
+- **2026-02-06** · MNQ · 1 contrato · −$194,30 · **−96,5 puntos**. No es un problema de
+  tamaño: es un stop que se dejó correr por encima del límite de 80 puntos. Regularizarlo
+  habría borrado precisamente la señal que hace útil ese trade.
+- **2026-06-24** · **NQ** · 1 contrato · −$653,80 · −32,5 puntos. Único NQ del histórico:
+  $20/punto en vez de $2.
+
+**Alternativas descartadas.** Convertir el NQ a un micro (falsea el instrumento, no solo el
+tamaño) y recortar el P&L a −160 sin tocar contratos (dejaría la fila incoherente: el
+profit no cuadraría con precios × contratos).
+
+**Fecha.** 19 sep 2026 · Migración: `docs/migrations/2026-09-19-regularizar-trades-a-160.sql`
+
+---
+
+## D-019 — `trades` es el journal de UNA cuenta; `apex_trades` tiene todas las de Apex
 
 **Decisión.** Desde el 18 de septiembre de 2026, `trades` guarda **solo la operativa de la
 cuenta principal** bajo una única etiqueta (`Sim101`), con la cuenta real conservada en la

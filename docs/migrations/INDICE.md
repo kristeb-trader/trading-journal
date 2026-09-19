@@ -94,6 +94,7 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-09-18-setups-continuacion-reingreso.sql` | ✅ MCP | Los setups pasan a 2 familias (`continuacion`, `reingreso`) y 4 variantes: las aperturas se funden en continuación. Respaldos en `_bak_20260918_*` |
 | `2026-09-17-chaumer-hora-colombia.sql` | ✅ MCP | `chaumer_operativas.hora_entrada` pasa de ET a hora Colombia: −1 h en las 5 filas que estaban en ET; respaldo en `_bak_20260917_chaumer_horas` |
 | `2026-09-18-cuenta-unica-en-trades.sql` | ✅ MCP | `trades` pasa a una sola cuenta (`Sim101`), la real queda en `cuenta_origen`; las 98 filas de cuentas Apex se copian a `apex_trades` |
+| `2026-09-19-regularizar-trades-a-160.sql` | ✅ MCP | los 20 trades que pasaban de ±$160 por tamaño bajan de contratos hasta entrar en rango; respaldo en `_bak_20260919_trades_regularizacion` |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.
