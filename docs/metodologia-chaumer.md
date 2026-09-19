@@ -36,8 +36,8 @@ de Telegram y el indicador `ChecklistChaumer` de NT8.
 
 | Tabla | Qué es | Ejemplo |
 |---|---|---|
-| `catalogo_setups` | La **familia**. Es lo que agrupa las reglas de Fase 2 | `iri`, `reingreso` |
-| `catalogo_setup_variantes` | La **variante operativa** concreta | `iri_continuacion_alcista` → "IRI Continuación Alcista" |
+| `catalogo_setups` | La **familia**. Es lo que agrupa las reglas de Fase 2 | `continuacion`, `reingreso` |
+| `catalogo_setup_variantes` | La **variante operativa** concreta | `continuacion_alcista` → "Continuación Alcista" |
 | `sesion_checklist` | El estado diario: 1 fila = sesión × regla | — |
 
 Las variantes alimentan los desplegables de la web, el teclado del bot y el AddOn de NT8.
@@ -46,14 +46,18 @@ Las variantes alimentan los desplegables de la web, el teclado del bot y el AddO
 
 ## La estrategia
 
-**6 setups.** IRI Apertura Alcista/Bajista · IRI Continuación Alcista/Bajista · Reingreso
-Alcista/Bajista.
+**4 setups.** Continuación Alcista/Bajista · Reingreso Alcista/Bajista.
 
-**IRI = Impulso – Retroceso – Impulso.** Los cuatro IRI comparten reglas; solo cambia el
-momento (apertura = ventana de ~20 min **o** 1ª–2ª corrida; continuación = 3ª en adelante) y
+**La continuación es un IRI: Impulso – Retroceso – Impulso.** Comparten reglas; solo cambia
 la dirección.
 
-### Reglas IRI (Fase 2, `setup='iri'`)
+> **Desde el 18 sep 2026 la apertura no se distingue** (D-018). Antes había 6 setups —IRI
+> Apertura y IRI Continuación, cada uno en sus dos direcciones—, pero las reglas eran las
+> mismas y el momento no cambiaba la operativa: las dos se fundieron en Continuación, y el
+> histórico se migró. Las reglas siguen nombrando la mecánica **IRI**, que es lo que
+> describen.
+
+### Reglas de Continuación (Fase 2, `setup='continuacion'`)
 
 - Contexto y tendencia a favor.
 - Estructura I-R-I fluida.

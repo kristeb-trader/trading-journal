@@ -17,8 +17,8 @@ let _checklistCache = null  // catálogo cacheado tras la primera carga
 let _cuentaPrincipalCache = 'PA-APEX-232411-03'  // fallback histórico hasta leer objetivos
 
 // ── Setups paramétricos (catalogo_setups + catalogo_setup_variantes) ────────
-// La FAMILIA del setup ('iri'|'reingreso'|…) es la que agrupa las reglas de
-// Fase 2. Antes se deducía con startsWith('iri') repetido en 5 archivos; ahora
+// La FAMILIA del setup ('continuacion'|'reingreso'|…) es la que agrupa las
+// reglas de Fase 2. Antes se deducía con startsWith repetido en 5 archivos; ahora
 // sale del catálogo, así un setup nuevo solo requiere insertar filas en BD.
 let _setupsCache = null     // [{ codigo, nombre, descripcion, orden, activo }]
 let _variantesCache = null  // [{ codigo, setup_codigo, nombre, subtipo, direccion }]
@@ -31,7 +31,11 @@ const RESUMEN_OTROS_TTL = 5 * 60 * 1000
 // frío o sin conexión). Mantiene el comportamiento histórico.
 function _setupFamilyFallback(texto) {
   const v = (texto || '').toLowerCase()
-  if (v.startsWith('iri')) return 'iri'
+  if (v.startsWith('continuacion') || v.startsWith('continuación')) return 'continuacion'
+  // Los setups IRI pasaron a Continuación el 18 sep 2026 (D-018) y no queda
+  // ninguno en la BD, pero un texto viejo en caché o en un export sigue cayendo
+  // donde debe en vez de quedarse sin familia.
+  if (v.startsWith('iri')) return 'continuacion'
   if (v.startsWith('reingreso')) return 'reingreso'
   return null
 }
@@ -578,7 +582,7 @@ const DB = {
   },
 
   // ── Setups paramétricos ──────────────────────────────────────────────────
-  // Familias (iri, reingreso, …). Cachea; `force` recarga tras editar el catálogo.
+  // Familias (continuacion, reingreso, …). Cachea; `force` recarga tras editar el catálogo.
   async getSetups({ force = false, soloActivos = true } = {}) {
     if (!_setupsCache || force) {
       const { data, error } = await supa
@@ -590,7 +594,7 @@ const DB = {
     return soloActivos ? _setupsCache.filter(s => s.activo !== false) : _setupsCache
   },
 
-  // Variantes operativas (IRI Apertura Alcista, …). `setup` filtra por familia.
+  // Variantes operativas (Continuación Alcista, …). `setup` filtra por familia.
   async getSetupVariantes({ force = false, soloActivos = true, setup = null } = {}) {
     if (!_variantesCache || force) {
       const { data, error } = await supa
@@ -608,10 +612,10 @@ const DB = {
   setupsSync() { return (_setupsCache || []).filter(s => s.activo !== false) },
   setupVariantesSync() { return (_variantesCache || []).filter(v => v.activo !== false) },
 
-  // Familia ('iri'|'reingreso'|null) del setup de una sesión. Fuente única.
+  // Familia ('continuacion'|'reingreso'|null) del setup de una sesión. Fuente única.
   setupFamily(sesion) { return setupFamilyOf(sesion) },
 
-  // Etiqueta visible de una familia ('iri' → 'IRI'). Cae al propio código.
+  // Etiqueta visible de una familia ('continuacion' → 'Continuación'). Cae al código.
   setupLabel(codigo) {
     const s = (_setupsCache || []).find(x => x.codigo === codigo)
     return s ? s.nombre : (codigo || '')

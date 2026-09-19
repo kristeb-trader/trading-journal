@@ -1103,7 +1103,7 @@ const SessionForm = (() => {
       goToDate(habil)
     })
 
-    // Cambiar el setup del día re-filtra el checklist (IRI / Reingreso / universales)
+    // Cambiar el setup del día re-filtra el checklist (Continuación / Reingreso / universales)
     document.getElementById('setup')?.addEventListener('change', renderChecklist)
 
     // Auto-invalidar checklist de 5 velas si velas > 5

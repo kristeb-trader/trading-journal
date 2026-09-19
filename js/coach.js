@@ -109,7 +109,7 @@ const Coach = (() => {
       DB.getFechasEspeciales().catch(() => []),   // para la regla "día FOMC"
       DB.getObjetivos().catch(() => null),        // stop máximo en puntos
     ])
-    // Familia del setup operado ese día (iri | reingreso | null). Si no se operó
+    // Familia del setup operado ese día (continuacion | reingreso | null). Si no se operó
     // pero se identificó un setup válido que no se tomó, se usa ese.
     const familiaDia = DB.setupFamily(sesion) ||
       DB.setupFamily({ setup: sesion?.setup_observado || null })
@@ -178,7 +178,7 @@ const Coach = (() => {
 
     // Checklist (catálogo dinámico, agrupado por fase). Solo los ítems APLICABLES
     // al setup del día: si no se filtra, en un día de Reingreso se le mandaban al
-    // Coach las reglas de IRI y las reportaba como incumplidas.
+    // Coach las reglas de Continuación y las reportaba como incumplidas.
     // Contexto para resolver las reglas automáticas de este día (ago 2026): el
     // sistema las verifica con los datos, no con la casilla del trader.
     // `trades` sin filtrar por cuenta: la disciplina es del proceso del trader,
@@ -600,7 +600,7 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
   // el `codigo` queda al final solo como referencia interna. Se incluye la fase
   // para que la validación pueda agruparse por fase del proceso.
   // Se excluyen las reglas de OTROS setups: en un día de Reingreso el Coach
-  // llegaba a reportar como incumplidas las reglas de IRI (y al revés).
+  // llegaba a reportar como incumplidas las reglas de Continuación (y al revés).
   function fmtReglasDuras(reglas, familia) {
     const duras = reglas.filter(r => r.tipo === 'dura' && reglaAplica(r, familia))
     if (!duras.length) return '  (Sin reglas duras definidas.)'

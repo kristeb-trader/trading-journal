@@ -2653,6 +2653,23 @@ Migración `2026-09-14-apex15-renovada.sql`. Diseño:
 
 ---
 
+## Checkpoint 2026-09-18 — Dos setups: Continuación y Reingreso
+
+- **De 6 setups a 4** (D-018). Las dos variantes de apertura se funden en las de
+  continuación y la familia `iri` pasa a `continuacion`. Migración
+  `2026-09-18-setups-continuacion-reingreso`, respaldos en `_bak_20260918_*`.
+- Migrado: 86 sesiones (50 Continuación Alcista + 36 Bajista), 6 operativas de Chaumer,
+  3 `setup_observado`, 4 reglas de Fase 2. La apertura ya no se distingue en el histórico.
+- Código: fallback por prefijo en `db.js`, lista de respaldo del bot y del AddOn
+  `ChecklistChaumer` (**hay que recompilarlo en NT8**), y comentarios en 6 archivos.
+- Verificado en el preview: selector del Diario, checklist de Fase 2, Disciplina
+  (agrupa bajo «Continuación»), Datos › Catálogos, filtro de Trades y Chaumer.
+- De paso, arreglada la copia local (`dev.local.js`): anulaba `setupFamily`,
+  `setupLabel` y `setupsSync` por empezar por "set", y la Fase 2 mostraba
+  «[object Promise]».
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo

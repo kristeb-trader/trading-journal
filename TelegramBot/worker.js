@@ -60,12 +60,10 @@ const CONTEXTOS = [
 // Fallback si no se puede leer `catalogo_setup_variantes` (sin red / error).
 // La lista viva está en BD: los setups nuevos aparecen aquí sin tocar el bot.
 const SETUPS_FALLBACK = [
-  { codigo: 'iri_apertura_alcista',     nombre: 'IRI Apertura Alcista' },
-  { codigo: 'iri_apertura_bajista',     nombre: 'IRI Apertura Bajista' },
-  { codigo: 'iri_continuacion_alcista', nombre: 'IRI Continuación Alcista' },
-  { codigo: 'iri_continuacion_bajista', nombre: 'IRI Continuación Bajista' },
-  { codigo: 'reingreso_alcista',        nombre: 'Reingreso Alcista' },
-  { codigo: 'reingreso_bajista',        nombre: 'Reingreso Bajista' },
+  { codigo: 'continuacion_alcista', nombre: 'Continuación Alcista' },
+  { codigo: 'continuacion_bajista', nombre: 'Continuación Bajista' },
+  { codigo: 'reingreso_alcista',    nombre: 'Reingreso Alcista' },
+  { codigo: 'reingreso_bajista',    nombre: 'Reingreso Bajista' },
 ];
 
 // (El checklist ya no se llena en el bot; lo maneja el Add-On ChecklistChaumer de

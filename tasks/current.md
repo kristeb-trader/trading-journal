@@ -6,6 +6,13 @@
 
 ## Ahora
 
+### 🔴 Recompilar `ChecklistChaumer` en NT8 (setups Continuación / Reingreso)
+
+Los setups pasaron a **Continuación** y **Reingreso** el 18 sep (D-018). El AddOn lee las
+familias de `catalogo_setups`, así que el selector ya sale bien **si hay red**; lo que
+falta recompilar es su lista de respaldo, que aún dice `iri` / IRI. Si el AddOn arranca sin
+poder leer la tabla, el botón del checklist de Fase 2 no casaría con ninguna regla.
+
 ### 🔴 Recompilar `SupabaseAutoExport` en NT8 (anti-replay + Sim101)
 
 El indicador ya no procesa el **replay de ejecuciones** que NinjaTrader entrega al

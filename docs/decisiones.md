@@ -55,6 +55,36 @@ Mientras la principal sea `Sim101` —que no es cuenta de Apex— no hace falta.
 
 ---
 
+## D-018 — Dos setups: Continuación y Reingreso; la apertura deja de distinguirse
+
+**Decisión.** Desde el 18 de septiembre de 2026 la estrategia tiene **dos familias**
+—`continuacion` y `reingreso`— y **cuatro variantes** (cada una en sus dos direcciones).
+Los cuatro setups IRI se funden así: *IRI Apertura Alcista* y *IRI Continuación Alcista* →
+**Continuación Alcista**; lo mismo en bajista. Los reingresos no cambian.
+
+**Motivo.** Petición de Kris: simplificar. Apertura y continuación **compartían las cuatro
+reglas de Fase 2**; lo único que las separaba era el momento de la sesión, que no cambiaba
+ni la lectura ni la ejecución. Dos etiquetas para la misma operativa solo repartían el
+histórico en dos montones más pequeños y hacían más difícil ver un patrón.
+
+**Alcance.** Migración `2026-09-18-setups-continuacion-reingreso`: renombra la familia
+`iri` → `continuacion` y sus dos variantes de continuación (las claves foráneas son
+`ON UPDATE CASCADE`), mueve las 23 filas de apertura (19 sesiones + 4 operativas de
+Chaumer), borra las dos variantes de apertura y pasa las 4 reglas de Fase 2 a la familia
+nueva. Respaldos en `_bak_20260918_*`. En código: el fallback por prefijo de `db.js`, la
+lista de respaldo del bot de Telegram y la del AddOn `ChecklistChaumer` de NT8.
+
+**Coste asumido.** En el histórico ya **no se puede separar** una apertura de una
+continuación: 19 sesiones y 4 operativas de Chaumer quedaron fundidas. Kris lo aceptó
+sabiéndolo; la vuelta atrás solo es posible desde los respaldos.
+
+**Lo que NO se tocó.** Los textos de las reglas siguen diciendo *IRI* y *estructura I-R-I*:
+describen la mecánica Impulso-Retroceso-Impulso, no el nombre del setup. Tampoco
+`diagnosticos_diarios.setups_json`, que es la prosa que el Coach escribió cada día.
+*(18 sep 2026)*
+
+---
+
 ## D-017 — Las horas del comparador de Chaumer van en hora Colombia, no en ET
 
 **Decisión.** Desde el 17 de septiembre de 2026, `chaumer_operativas.hora_entrada` se guarda

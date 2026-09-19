@@ -7,7 +7,7 @@
 //  - Ventana flotante independiente (NTWindow): mover, redimensionar, always-on-top.
 //  - Persiste posición/tamaño/topmost/setup en archivo local.
 //  - Ítems traídos del catálogo `catalogo_reglas` (es_checklist=true), agrupados por fase
-//    en tarjetas. Selector IRI | Reingreso: Fase 2 muestra los ítems comunes +
+//    en tarjetas. Selector Continuación | Reingreso: Fase 2 muestra los comunes +
 //    los del setup elegido (mismas claves JSONB; cambiar de setup no borra marcas).
 //  - Botón GO: se habilita con el 100% de los ítems VISIBLES; al pulsarlo sella la hora en BD.
 //  - Reset automático a las 09:00 ET (30 min antes de la apertura RTH; DST automático).
@@ -178,14 +178,16 @@ namespace NinjaTrader.NinjaScript.AddOns
         private readonly List<Noticia> noticias = new List<Noticia>();
 
         // Familias de setup: se leen de catalogo_setups, así un setup nuevo sale
-        // solo (antes eran dos botones fijos IRI/REINGRESO en el código).
+        // solo (antes eran dos botones fijos en el código). Desde el 18 sep 2026
+        // las familias son CONTINUACIÓN y REINGRESO (antes IRI y REINGRESO).
         private class SetupDef { public string Codigo; public string Nombre; }
         private readonly List<SetupDef> setups = new List<SetupDef>();
         private static readonly List<SetupDef> SETUPS_FALLBACK = new List<SetupDef> {
-            new SetupDef { Codigo = "iri",       Nombre = "IRI" },
+            new SetupDef { Codigo = "continuacion", Nombre = "CONTINUACIÓN" },
             new SetupDef { Codigo = "reingreso", Nombre = "REINGRESO" },
         };
-        private string selectedSetup = "iri";       // código de la familia (persistido en config local)
+        private string selectedSetup = "continuacion";  // familia (persistida en config local; si el
+                                                        // guardado ya no existe, cae al primero del catálogo)
         private string currentDate;                 // sesion_date en uso (fecha ET)
         private DateTime lastLocalChangeUtc = DateTime.MinValue;
         private DateTime lastHoraChangeUtc = DateTime.MinValue;
@@ -895,7 +897,7 @@ namespace NinjaTrader.NinjaScript.AddOns
 
         // ═══ Red (Supabase REST) ═════════════════════════════════════════════
         // Familias de setup (catalogo_setups). Si falla, se conserva lo que haya
-        // (fallback IRI/REINGRESO) para no dejar la ventana sin selector.
+        // (fallback CONTINUACIÓN/REINGRESO) para no dejar la ventana sin selector.
         private async Task LoadSetupsAsync()
         {
             try

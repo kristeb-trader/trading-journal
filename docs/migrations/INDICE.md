@@ -91,6 +91,7 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-08-16-migrar-noticias-texto.sql` | ⚠️ sin registro | migrar noticias texto |
 | `2026-08-19-chaumer-operativas.sql` | ✅ MCP | tabla `chaumer_operativas` para el comparador Chaumer vs yo (`20260819151243`) |
 | `2026-09-14-apex15-renovada.sql` | ✅ MCP | tarjeta «Apex-15 · 2ª» en `apex_cuentas`: la Apex-15 renovada con el mismo número (`20260914152212`) |
+| `2026-09-18-setups-continuacion-reingreso.sql` | ✅ MCP | Los setups pasan a 2 familias (`continuacion`, `reingreso`) y 4 variantes: las aperturas se funden en continuación. Respaldos en `_bak_20260918_*` |
 | `2026-09-17-chaumer-hora-colombia.sql` | ✅ MCP | `chaumer_operativas.hora_entrada` pasa de ET a hora Colombia: −1 h en las 5 filas que estaban en ET; respaldo en `_bak_20260917_chaumer_horas` |
 | `2026-09-18-cuenta-unica-en-trades.sql` | ✅ MCP | `trades` pasa a una sola cuenta (`Sim101`), la real queda en `cuenta_origen`; las 98 filas de cuentas Apex se copian a `apex_trades` |
 

@@ -97,7 +97,7 @@ const Estrategia = (() => {
 
   function editHtml(r) {
     // Fase y Setup son editables: sin esto, una regla nueva quedaba siempre
-    // común y había que ir a SQL para hacerla propia de IRI o Reingreso.
+    // común y había que ir a SQL para hacerla propia de Continuación o Reingreso.
     const faseOpts = [['', 'Sin fase'], [1, 'Fase 1 · Pre-sesión'], [2, 'Fase 2 · Lectura del setup'], [3, 'Fase 3 · Ejecución']]
       .map(([v, l]) => `<option value="${v}"${String(r.fase || '') === String(v) ? ' selected' : ''}>${l}</option>`).join('')
     const setupOpts = [`<option value=""${!r.setup ? ' selected' : ''}>Común (todos los setups)</option>`]
@@ -120,7 +120,7 @@ const Estrategia = (() => {
       </div>`
   }
 
-  // Fase 2: separar en subgrupos por setup (IRI / Reingreso / General)
+  // Fase 2: separar en subgrupos por setup (Continuación / Reingreso / General)
   function faseHtml(f) {
     const list = capaReglas('proceso', f)
     if (!list.length) return `<p class="rb-empty-sm">Sin reglas en esta fase.</p>`

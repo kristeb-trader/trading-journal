@@ -5,7 +5,7 @@ const TradesTable = (() => {
   let allCasuisticas = []
   let allRows        = []  // unified: trades + no-opero sessions
   let casByDate      = {}  // { 'YYYY-MM-DD': ['Error A', 'Error B'] }
-  let setupPorFecha  = {}  // { 'YYYY-MM-DD': 'iri_apertura_alcista' }
+  let setupPorFecha  = {}  // { 'YYYY-MM-DD': 'continuacion_alcista' }
   let variantes      = []  // catalogo_setup_variantes, solo para los nombres
   let filtered    = []
   let page = 0

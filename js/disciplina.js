@@ -351,7 +351,7 @@ const Disciplina = (() => {
           </div>`
       }
       // Las reglas de un setup solo aplican a ese setup, así que mezclarlas en una
-      // lista única hacía leer "sin datos" en las 4 del Reingreso cada día de IRI.
+      // lista única hacía leer "sin datos" en las 4 del Reingreso cada día de Continuación.
       // Con una sola familia presente no se parte nada (Fases 1 y 3).
       const rows = agruparPorSetup(p.factores).map(g => {
         const cuerpo = g.factores.map(fila).join('')
