@@ -23,3 +23,6 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           workingDirectory: TelegramBot
+          # Fijado a la 4: la acción instalaba la 3.90, ya desfasada (avisaba en
+          # cada despliegue). La 4 empaqueta este bot sin cambios en wrangler.toml.
+          wranglerVersion: "4"

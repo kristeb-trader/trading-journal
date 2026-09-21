@@ -5,7 +5,7 @@ echo ============================================
 echo  Desplegando el bot de Telegram a Cloudflare
 echo ============================================
 echo.
-call npx --yes wrangler deploy
+call npx --yes wrangler@4 deploy
 echo.
 echo ============================================
 echo  Listo. Puedes cerrar esta ventana.

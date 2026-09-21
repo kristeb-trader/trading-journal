@@ -3,7 +3,7 @@
   "private": true,
   "description": "Bot de Telegram (Cloudflare Worker) del Trading Journal",
   "scripts": {
-    "deploy": "npx --yes wrangler deploy",
-    "logs": "npx --yes wrangler tail"
+    "deploy": "npx --yes wrangler@4 deploy",
+    "logs": "npx --yes wrangler@4 tail"
   }
 }
