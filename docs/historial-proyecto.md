@@ -2661,7 +2661,9 @@ Migración `2026-09-14-apex15-renovada.sql`. Diseño:
 - Migrado: 86 sesiones (50 Continuación Alcista + 36 Bajista), 6 operativas de Chaumer,
   3 `setup_observado`, 4 reglas de Fase 2. La apertura ya no se distingue en el histórico.
 - Código: fallback por prefijo en `db.js`, lista de respaldo del bot y del AddOn
-  `ChecklistChaumer` (**hay que recompilarlo en NT8**), y comentarios en 6 archivos.
+  `ChecklistChaumer` (recompilado en NT8 el 21 sep), y comentarios en 6 archivos.
+- El despliegue del bot falló por token de Cloudflare inválido (`code: 10000`): Kris lo
+  regeneró, y el workflow pasó a Wrangler 4 (`bcedaf5`). Desplegado en verde.
 - Verificado en el preview: selector del Diario, checklist de Fase 2, Disciplina
   (agrupa bajo «Continuación»), Datos › Catálogos, filtro de Trades y Chaumer.
 - De paso, arreglada la copia local (`dev.local.js`): anulaba `setupFamily`,
