@@ -2664,6 +2664,9 @@ Migración `2026-09-14-apex15-renovada.sql`. Diseño:
   `ChecklistChaumer` (recompilado en NT8 el 21 sep), y comentarios en 6 archivos.
 - El despliegue del bot falló por token de Cloudflare inválido (`code: 10000`): Kris lo
   regeneró, y el workflow pasó a Wrangler 4 (`bcedaf5`). Desplegado en verde.
+- `SupabaseAutoExport` recompilado en NT8 el 21 sep: quedan activos el anti-replay y la
+  exclusión de simulación/playback. Comprobado: 0 trades con `exit_time < entry_time` en
+  `trades` y `apex_trades`.
 - Verificado en el preview: selector del Diario, checklist de Fase 2, Disciplina
   (agrupa bajo «Continuación»), Datos › Catálogos, filtro de Trades y Chaumer.
 - De paso, arreglada la copia local (`dev.local.js`): anulaba `setupFamily`,
