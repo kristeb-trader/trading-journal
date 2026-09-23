@@ -770,9 +770,11 @@ const DB = {
     const from = `${year}-${String(month).padStart(2, '0')}-01`
     const lastDay = new Date(year, month, 0).getDate()
     const to = `${year}-${String(month).padStart(2, '0')}-${lastDay}`
+    // El nombre del error va para el tooltip del día del calendario. Solo el
+    // nombre: la descripción es el resumen largo y ahí no se quiere.
     const { data, error } = await supa
       .from('diagnostico_errores')
-      .select('sesion_date')
+      .select('sesion_date, casuistica:error')
       .gte('sesion_date', from)
       .lte('sesion_date', to)
     if (error) throw error

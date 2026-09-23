@@ -4,7 +4,7 @@ const Calendar = (() => {
   let currentMonth = new Date().getMonth() + 1 // 1-based
   let tradesCache = {}      // date → [trades]
   let sesionesCache = {}    // date → sesion
-  let casuisticasCache = {} // date → true (has errors)
+  let casuisticasCache = {} // date → [nombres de error] (solo existe si hay alguno)
   let allTradesRaw = []     // sin filtrar por cuenta
   let cmeHolidays     = {}        // date → { name, emoji } festivos (de catalogo_fechas)
   let fomcDates       = {}        // date → { name, emoji } días FOMC del año
@@ -141,7 +141,12 @@ const Calendar = (() => {
     })
 
     casuisticasCache = {}
-    casuisticas.forEach(c => { casuisticasCache[c.sesion_date] = true })
+    casuisticas.forEach(c => {
+      // `casuistica` es el alias de la columna `error`; la copia local puede
+      // traer la fila cruda, de ahí el respaldo.
+      const nombre = c.casuistica || c.error || 'Error sin nombre'
+      ;(casuisticasCache[c.sesion_date] ||= []).push(nombre)
+    })
 
     allTradesRaw = trades
     const filteredTrades = AccountFilter.filter('calendar', trades)
@@ -160,7 +165,110 @@ const Calendar = (() => {
     render()
   }
 
+  // ── Tooltip del día (solo con ratón) ─────────────────────────────────────
+  // Resumen rápido al pasar por encima: setup, puntos y errores. El clic sigue
+  // abriendo la vista del día; esto es para no tener que abrirla solo para ver
+  // qué pasó. En pantallas táctiles no se monta: no hay "pasar por encima".
+  const conRaton = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches
+  const DIAS_TIP = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+  const MES_TIP  = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+  const escTip = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+
+  // Puntos de un trade por el movimiento del PRECIO, no por el P&L: es la medida
+  // de riesgo del proyecto, y no depende de cuántos contratos se usaron.
+  const puntosTrade = t => {
+    const e = parseFloat(t.entry_price), s = parseFloat(t.exit_price)
+    if (isNaN(e) || isNaN(s)) return null
+    return t.market_pos === 'Short' ? e - s : s - e
+  }
+  const fmtPts = p => {
+    const n = Number(Math.abs(p).toFixed(2)).toString().replace('.', ',')
+    return `${p > 0 ? '+' : p < 0 ? '−' : ''}${n}`
+  }
+
+  function tipHtml(dateStr) {
+    const trades = tradesCache[dateStr] || []
+    const ses    = sesionesCache[dateStr]
+    const errs   = casuisticasCache[dateStr] || []
+    if (!trades.length && !ses && !errs.length) return null   // nada que contar
+
+    const f = new Date(dateStr + 'T12:00:00')
+    const fecha = `${DIAS_TIP[f.getDay()]} ${f.getDate()} ${MES_TIP[f.getMonth()]}`
+
+    // Setup: el declarado en la sesión. Sin trades, lo que cuenta es por qué.
+    let setup
+    if (ses?.setup) setup = escTip(ses.setup)
+    else if (!trades.length && ses?.no_opero) setup = '<span class="cal-tip-muted">No operé</span>'
+    else setup = '<span class="cal-tip-muted">Sin declarar</span>'
+
+    // Puntos: suma del día, con el número de trades si hubo más de uno.
+    let puntos = '<span class="cal-tip-muted">Sin trades</span>'
+    const pts = trades.map(puntosTrade).filter(p => p != null)
+    if (pts.length) {
+      const total = pts.reduce((a, b) => a + b, 0)
+      const cls = total > 0 ? 'pos' : total < 0 ? 'neg' : ''
+      puntos = `<span class="${cls}">${fmtPts(total)} pts</span>` +
+        (trades.length > 1 ? ` <span class="cal-tip-muted">· ${trades.length} trades</span>` : '')
+    }
+
+    // Errores: solo el nombre, sin resumen. Repetidos se agrupan con su cuenta.
+    let errores
+    if (errs.length) {
+      const cuenta = {}
+      errs.forEach(n => { cuenta[n] = (cuenta[n] || 0) + 1 })
+      errores = `<ul class="cal-tip-errs">${Object.entries(cuenta).map(([n, k]) =>
+        `<li>${escTip(n)}${k > 1 ? ` <span class="cal-tip-muted">×${k}</span>` : ''}</li>`).join('')}</ul>`
+    } else {
+      errores = '<div class="cal-tip-ok"><i class="ti ti-circle-check"></i> Sin errores</div>'
+    }
+
+    return `
+      <div class="cal-tip-fecha">${fecha}</div>
+      <div class="cal-tip-fila"><span class="cal-tip-lab">Setup</span><span class="cal-tip-val">${setup}</span></div>
+      <div class="cal-tip-fila"><span class="cal-tip-lab">Puntos</span><span class="cal-tip-val">${puntos}</span></div>
+      <div class="cal-tip-sep"></div>
+      <div class="cal-tip-lab">Errores</div>
+      ${errores}`
+  }
+
+  function tipEl() {
+    let el = document.getElementById('calTip')
+    if (!el) {
+      el = document.createElement('div')
+      el.id = 'calTip'
+      el.className = 'cal-tip'
+      el.setAttribute('role', 'tooltip')
+      document.body.appendChild(el)
+      // Cualquier scroll (de la página o de un contenedor) lo deja mal colocado.
+      window.addEventListener('scroll', ocultarTip, { passive: true, capture: true })
+    }
+    return el
+  }
+
+  function mostrarTip(cell) {
+    const html = tipHtml(cell.dataset.date)
+    if (!html) return
+    const el = tipEl()
+    el.innerHTML = html
+    el.classList.add('visible')
+    // Encima de la celda y centrado; debajo si no cabe; siempre dentro de la ventana.
+    const r = cell.getBoundingClientRect()
+    const w = el.offsetWidth, h = el.offsetHeight, m = 8
+    let x = r.left + r.width / 2 - w / 2
+    x = Math.max(m, Math.min(x, window.innerWidth - w - m))
+    let y = r.top - h - 8
+    if (y < m) y = r.bottom + 8
+    el.style.left = `${Math.round(x)}px`
+    el.style.top  = `${Math.round(y)}px`
+  }
+
+  function ocultarTip() {
+    document.getElementById('calTip')?.classList.remove('visible')
+  }
+
   function render() {
+    ocultarTip()
     const grid = document.getElementById('calendarGrid')
     const title = document.getElementById('calendarTitle')
     if (title) title.textContent = `${MONTHS_ES[currentMonth - 1]} ${currentYear}`
@@ -351,8 +459,14 @@ const Calendar = (() => {
       </div>`
 
     grid.innerHTML = html
+    const hoy = hoyISO()
     grid.querySelectorAll('[data-date]').forEach(cell => {
-      cell.addEventListener('click', () => openDayModal(cell.dataset.date))
+      cell.addEventListener('click', () => { ocultarTip(); openDayModal(cell.dataset.date) })
+      // Solo días ya vividos: un día futuro con fecha especial no tiene setup ni puntos.
+      if (conRaton && cell.dataset.date <= hoy) {
+        cell.addEventListener('mouseenter', () => mostrarTip(cell))
+        cell.addEventListener('mouseleave', ocultarTip)
+      }
     })
   }
 

@@ -699,25 +699,89 @@ const Metrics = (() => {
     const dates = Object.keys(byDate).sort()
     let cum = 0
     const data = dates.map(d => { cum += byDate[d]; return parseFloat(cum.toFixed(2)) })
-    // Un solo color para la serie, el del resultado con el que se cierra el mes.
-    // Antes la línea cambiaba de color tramo a tramo y con puntos gordos en cada
-    // día: mucho ruido para una curva que solo tiene que contar una trayectoria.
-    // Un mes sin trades sigue pintando los ejes vacíos, como hacía antes: dejar
-    // el lienzo en blanco bajo un título parece que algo se rompió.
-    const positivo = !data.length || data[data.length - 1] >= 0
-    const LINEA = positivo ? '#3FE0A6' : '#F2706F'
-    const RGB   = positivo ? '63,224,166' : '242,112,111'
+    // Un mes sin trades sigue pintando los ejes vacíos: dejar el lienzo en blanco
+    // bajo un título parece que algo se rompió.
 
-    // El degradado se calcula en cada pintada porque depende del alto real del
-    // área de dibujo, que no existe hasta que Chart.js la mide.
-    const relleno = c => {
-      const area = c.chart.chartArea
-      if (!area) return 'transparent'
-      const g = c.chart.ctx.createLinearGradient(0, area.top, 0, area.bottom)
-      g.addColorStop(0, `rgba(${RGB},0.26)`)
-      g.addColorStop(1, `rgba(${RGB},0)`)
+    // Colores de los tokens, no hex sueltos: Chart.js pinta en canvas y no lee
+    // CSS, así que se resuelven aquí una vez por render.
+    const css   = getComputedStyle(document.documentElement)
+    const tok   = (n, def) => css.getPropertyValue(n).trim() || def
+    const VERDE = tok('--accent-txt', '#3FE0A6')
+    const ROJO  = tok('--red-txt',    '#F2706F')
+    const TINTA = tok('--text',       '#F4F3EF')
+    const TINTA2 = tok('--text2',     '#A8A89B')
+    const TINTA3 = tok('--text3',     '#6B6B60')
+    const FONDO = tok('--bg',         '#1a1a18')
+    const SUPERF = tok('--bg3',       '#2e2e2b')
+    const rgba = (hex, a) => {
+      const h = hex.replace('#', '')
+      const n = parseInt(h.length === 3 ? h.split('').map(x => x + x).join('') : h, 16)
+      return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`
+    }
+    const colorDe = v => (v >= 0 ? VERDE : ROJO)
+
+    // Verde por encima de cero, rojo por debajo. En vez de colorear tramo a tramo
+    // (un tramo que cruza el cero sale entero de un color), se usa un degradado
+    // vertical con un CORTE DURO justo en el píxel del cero: la línea cambia de
+    // color exactamente donde lo cruza, aunque sea a mitad de un tramo.
+    // Se recalcula en cada pintada porque depende del alto real del área, que no
+    // existe hasta que Chart.js la mide.
+    const corteCero = chart => {
+      const a = chart.chartArea, y = chart.scales.y
+      if (!a || !y) return null
+      const z = (y.getPixelForValue(0) - a.top) / (a.bottom - a.top)
+      return Math.min(1, Math.max(0, z))
+    }
+    const linea = c => {
+      const ch = c.chart, z = corteCero(ch)
+      if (z == null) return VERDE
+      const g = ch.ctx.createLinearGradient(0, ch.chartArea.top, 0, ch.chartArea.bottom)
+      g.addColorStop(0, VERDE); g.addColorStop(z, VERDE)
+      g.addColorStop(z, ROJO);  g.addColorStop(1, ROJO)
       return g
     }
+    // El relleno va entre la curva y el cero, y es más intenso lejos del cero:
+    // la zona verde se aviva hacia arriba y la roja hacia abajo, y las dos se
+    // apagan al tocar la línea del cero.
+    const relleno = c => {
+      const ch = c.chart, z = corteCero(ch)
+      if (z == null) return 'transparent'
+      const g = ch.ctx.createLinearGradient(0, ch.chartArea.top, 0, ch.chartArea.bottom)
+      g.addColorStop(0, rgba(VERDE, 0.24)); g.addColorStop(z, rgba(VERDE, 0.02))
+      g.addColorStop(z, rgba(ROJO, 0.02));  g.addColorStop(1, rgba(ROJO, 0.24))
+      return g
+    }
+
+    // Etiqueta con el acumulado al final de la curva: es el número que se busca
+    // al mirar, y así no hay que pasar el ratón para leerlo.
+    const etiquetaFinal = {
+      id: 'etiquetaFinal',
+      afterDatasetsDraw(chart) {
+        const meta = chart.getDatasetMeta(0)
+        const pt = meta.data[meta.data.length - 1]
+        if (!pt) return
+        const v = chart.data.datasets[0].data.at(-1)
+        const col = colorDe(v)
+        const txt = money(v)
+        const a = chart.chartArea, c = chart.ctx
+        c.save()
+        c.font = '600 11px "Segoe UI", system-ui, sans-serif'
+        const w = c.measureText(txt).width + 16, h = 21
+        const x = Math.max(a.left, Math.min(pt.x - w / 2, a.right - w))
+        let y = pt.y - h - 10                       // encima del punto…
+        if (y < a.top) y = pt.y + 10                // …o debajo si no cabe
+        c.beginPath()
+        if (c.roundRect) c.roundRect(x, y, w, h, 6); else c.rect(x, y, w, h)
+        c.fillStyle = rgba(col, 0.14); c.fill()
+        c.lineWidth = 1; c.strokeStyle = rgba(col, 0.4); c.stroke()
+        c.fillStyle = col; c.textBaseline = 'middle'
+        c.fillText(txt, x + 8, y + h / 2 + 0.5)
+        c.restore()
+      },
+    }
+
+    const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+    const etiquetaDia = d => `${parseInt(d.slice(8))} ${MES[parseInt(d.slice(5, 7)) - 1]}`
 
     // Guía vertical al pasar por encima: ubica el día sin necesidad de rejilla.
     const guia = {
@@ -743,53 +807,71 @@ const Metrics = (() => {
 
     calEquityInst = new Chart(ctx, {
       type: 'line',
-      data: { labels: dates.map(d => d.slice(5)), datasets: [{
+      data: { labels: dates.map(etiquetaDia), datasets: [{
         label: 'P&L Acumulado', data,
-        borderColor: LINEA,
-        borderWidth: 2,
+        borderColor: linea,
+        borderWidth: 2.25,
         borderCapStyle: 'round', borderJoinStyle: 'round',
         fill: 'origin', backgroundColor: relleno,
         // Solo se dibuja el último punto: es el dato que se busca al mirar.
         pointRadius: data.map((_, i) => (i === data.length - 1 ? 4 : 0)),
         pointHoverRadius: 5,
-        pointBackgroundColor: LINEA,
-        pointBorderColor: '#1a1a18',
+        // Cada punto con el color de SU lado del cero, también al pasar el ratón.
+        pointBackgroundColor: c => colorDe(c.raw),
+        pointHoverBackgroundColor: c => colorDe(c.raw),
+        pointBorderColor: FONDO,
+        pointHoverBorderColor: FONDO,
         pointBorderWidth: 2,
+        pointHoverBorderWidth: 2,
         tension: 0.35,
       }]},
       options: {
         responsive: true, maintainAspectRatio: false,
-        layout: { padding: { top: 8, right: 6 } },
+        // Aire arriba para la etiqueta del acumulado cuando el último punto es el máximo.
+        layout: { padding: { top: 14, right: 6 } },
         interaction: { mode: 'index', intersect: false },
+        animation: { duration: 500, easing: 'easeOutQuart' },
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#2e2e2b', titleColor: '#F4F3EF', bodyColor: '#A8A89B',
+            backgroundColor: SUPERF, titleColor: TINTA3, bodyColor: TINTA,
             borderColor: 'rgba(255,255,255,0.09)', borderWidth: 1,
-            padding: 10, cornerRadius: 8, displayColors: false,
-            titleFont: { size: 11 }, bodyFont: { size: 13, weight: '600' },
-            callbacks: { label: c => money(c.raw) },
+            padding: { x: 12, y: 10 }, cornerRadius: 10, displayColors: false,
+            titleFont: { size: 10, weight: '600' }, bodyFont: { size: 13, weight: '600' },
+            footerColor: TINTA2, footerFont: { size: 11, weight: '500' }, footerMarginTop: 4,
+            callbacks: {
+              title: items => items[0]?.label?.toUpperCase() || '',
+              label: c => `Acumulado  ${money(c.raw)}`,
+              labelTextColor: c => colorDe(c.raw),
+              footer: items => {
+                const i = items[0]?.dataIndex
+                return i == null ? '' : `Del día  ${money(byDate[dates[i]])}`
+              },
+            },
           },
         },
         scales: {
           // Sin rejilla vertical ni bordes de eje: la guía del hover ya sitúa el día.
           x: {
             grid: { display: false }, border: { display: false },
-            ticks: { color: '#6B6B60', font: { size: 10 }, maxRotation: 0,
+            ticks: { color: TINTA3, font: { size: 10 }, maxRotation: 0,
                      autoSkip: true, maxTicksLimit: 6 },
           },
           y: {
+            // El cero siempre visible: es la frontera entre verde y rojo, y sin él
+            // un mes entero en positivo (o en negativo) no tendría referencia.
+            beginAtZero: true,
             border: { display: false },
             grid: {
               // El cero se marca; el resto de líneas casi no se ven.
-              color: c => (c.tick.value === 0 ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.035)'),
+              color: c => (c.tick.value === 0 ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.035)'),
             },
-            ticks: { color: '#6B6B60', font: { size: 10 }, maxTicksLimit: 5, padding: 6,
+            ticks: { color: TINTA3, font: { size: 10 }, maxTicksLimit: 5, padding: 6,
                      callback: v => `${v < 0 ? '−' : ''}$${fmtMiles(v)}` },
           },
         },
       },
-      plugins: [guia],
+      plugins: [guia, etiquetaFinal],
     })
   }
 
