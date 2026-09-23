@@ -90,6 +90,18 @@ Diseño aprobado: `docs/disenos/2026-08-16-reestructuracion.md` (v3).
 
 ## Siguiente
 
+### Trigger para cuando la cuenta real sea la principal
+
+Desde el 18-sep, `apex.js` **no lee `trades`** (D-019). Si un día la cuenta principal es una
+cuenta **dada de alta en `apex_cuentas`**, NinjaTrader mandará sus trades a `trades` y el
+Apex Tracker no los verá.
+
+Hacerlo **antes** de ese cambio: un trigger `after insert` en `trades` que replique la fila a
+`apex_trades` cuando `account` esté en `apex_cuentas`, guarde el nombre real en
+`cuenta_origen` y deje la etiqueta del journal. Sin recompilar NinjaTrader. Mientras la
+principal sea `Sim101` no hace falta. Detalle: Fase 4 de
+`docs/disenos/2026-09-18-cuenta-unica-en-trades.md`.
+
 ### Cerrar la deuda del doble lenguaje visual
 
 El lenguaje nuevo (16 ago) solo está en la pestaña **Diario**. Faltan **Coach IA**, **Días

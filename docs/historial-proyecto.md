@@ -1,10 +1,16 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-08-31
+**Última actualización:** 2026-09-23
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-09-23 | Curva de equity verde/roja y tooltip del día |
+| 2026-09-19 | El journal: una sola cuenta, regularizado a ±$160 |
+| 2026-09-18 | Dos setups: Continuación y Reingreso |
+| 2026-09-17 | Chaumer: la lista día a día y la hora Colombia |
+| 2026-09-14 | Apex-15 renovada: dos tarjetas con el mismo número |
 | 2026-08-31 | Motivos sin cubrir, FOMC del desglose y P&L de la celda |
+| 2026-08-31 | El checklist dejó de marcarse solo · zonas naranjas al AddOn · RR en puntos |
 | 2026-08-23 | Tarjetas KPI y curva de equity del Calendario |
 | 2026-08-19 | Otros y Datos rediseñados, modo local y comparador de Chaumer |
 | 2026-08-18 | Trades fantasma: el replay de ejecuciones de NinjaTrader |
@@ -2193,6 +2199,12 @@ Toma el hueco libre con `flex: 1` y se centra en él — `1.15rem` en escritorio
 tablet, `0.8` en móvil, frente a `0.88 / 0.72 / 0.65`. **La celda no cambia de alto**: solo
 se reparte mejor el espacio que ya tenía. Colores a las variantes `-txt`.
 
+### "Sin resultado" pasa a "Sin entradas" en el desglose
+
+La fila de la columna "Días conectados" usa ya la misma etiqueta que la celda del
+calendario. Cubre dos casos —conectado sin entrar, y entrada que cerró en break-even— y el
+tooltip lo dice; Kris prefirió no separarlos (`a65579a`).
+
 ### Verificación
 
 Inyectando en la copia local los casos reales de la BD: `Otro` + bandera, `Setup válido no
@@ -2672,6 +2684,138 @@ Migración `2026-09-14-apex15-renovada.sql`. Diseño:
 - De paso, arreglada la copia local (`dev.local.js`): anulaba `setupFamily`,
   `setupLabel` y `setupsSync` por empezar por "set", y la Fase 2 mostraba
   «[object Promise]».
+
+---
+
+## Checkpoint 2026-09-19 — El journal: una sola cuenta, regularizado a ±$160
+
+### Una sola cuenta en `trades`, todas las de Apex en `apex_trades` (D-019)
+
+El histórico de `trades` estaba partido en **cuatro cuentas que se sucedieron** porque cada
+una fue la principal durante un tramo, y el Calendario y Análisis lo mostraban troceado:
+
+| Cuenta | Desde → hasta | Trades | P&L |
+|---|---|---|---|
+| `PA-APEX-232411-03` | 3 feb → 16 jul | 80 | −$2.729,10 |
+| `APEX-232411-14` | 22 jul → 13 ago | 12 | −$1.257,66 |
+| `APEX-232411-15` | 14 ago → 31 ago | 6 | −$382,32 |
+| `Sim101` | 1 sep → 18 sep | 11 | −$157,42 |
+
+Cada tabla pasa a tener **un rol**: `trades` es el journal de la cuenta principal bajo una
+sola etiqueta (`Sim101`), con la cuenta real en la columna nueva `cuenta_origen`; y
+`apex_trades` tiene **todas** las cuentas de Apex con su nombre real. Las 98 filas de cuentas
+Apex se copiaron a `apex_trades` (0 solapamientos por cuenta+fecha+hora), y **`apex.js` dejó
+de leer `trades`**.
+
+Eso **sustituye** el invariante "un trade vive en UNA tabla". Existía porque `apex.js`
+concatenaba las dos; al dejar de hacerlo, nace la regla nueva: *si `apex.js` vuelve a leer
+`trades`, el drawdown consumido se infla*. Escrito en `apex.js`, `CLAUDE.md` y D-019.
+
+**No se copió nada de `apex_trades` hacia `trades`.** Era lo que parecía pedir el caso, y
+habría sido un error: de sus 21 días, **20 ya estaban en `trades`** — la misma operativa
+replicada en dos cuentas con distinto número de contratos (18-sep: +$86,96 en `trades`
+frente a +$1.067,96 en `apex_trades`). Se habrían contado dos veces.
+
+Verificado por SQL replicando el reparto por periodo del front: las **7 tarjetas** de Apex
+conservan exactamente sus trades y su P&L (Apex-15 primera: 13 propios + 6 que venían de
+`trades` = 19).
+
+### La simulación a un contrato
+
+Antes de regularizar, se simuló el año con `profit ÷ qty` (exacto en bruto y comisión):
+**la mitad de la pérdida era tamaño, no criterio** (−$4.527 real frente a −$2.261). Agosto,
+−$2.160, habría sido −$131. Y el tamaño subía justo al perder: **1,82 contratos de media en
+los ganadores, 2,10 en los perdedores**, con el máximo en 5 frente a 10.
+
+### Regularización a ±$160 por trade (D-020)
+
+Los **20 trades** que pasaban de ±$160 por tamaño bajaron de contratos hasta entrar en rango.
+Se recalcularon `qty`, `profit`, `commission`, `mae`, `mfe` y `etd`; **los precios no se
+tocaron**. Journal: **−$4.526,50 → −$2.488,58**.
+
+**La disciplina no se movió**: `mae` y `qty` se escalan juntos, así que el MAE en **puntos**
+—lo que evalúa el stop máximo— da idéntico. Verificado en los 20: 0 con MAE o MFE en puntos
+distinto, 0 cambios de signo. Respaldo en `_bak_20260919_trades_regularizacion`.
+
+> ⚠️ **El journal deja de ser fiel a lo que se ejecutó**, a sabiendas. `apex_trades` conserva
+> los contratos reales, así que el Apex Tracker sigue mostrando el drawdown verdadero: las
+> dos tablas divergen **a propósito**.
+
+### El NQ del journal pasa a MNQ (D-021)
+
+El único NQ de `trades` (24-jun, 1 contrato) no se podía bajar de tamaño: con $20/punto,
+32,5 puntos ya eran −$653,80. Se convirtió a MNQ **manteniendo los −32,5 puntos**, solo con el
+multiplicador: **−$653,80 → −$66,30**. Journal: **−$1.901,08**.
+
+Los **17 NQ de `apex_trades` no se tocaron**: ahí consumieron drawdown real, que es lo que
+decidió que esas cuentas se quemaran.
+
+Solo queda **un** trade fuera de ±160, y a propósito: el **6-feb** (−$194,30 con un contrato).
+No es tamaño ni instrumento: es un stop que se dejó correr **96,5 puntos** con el límite en 80.
+
+> Al documentar apareció una **colisión de IDs**: otra sesión había creado un D-018 ("Dos
+> setups") el mismo día. La decisión de la cuenta única quedó como **D-019** (el commit
+> `ebd7e5d` cita "D-018"; la buena es la D-019).
+
+**Pendiente (Fase 4 del diseño):** cuando la cuenta real sea la principal y esté en
+`apex_cuentas`, sus trades irán a `trades` y el Tracker no los verá. Se resuelve con un
+trigger en Postgres, sin recompilar NinjaTrader.
+
+Diseño: `docs/disenos/2026-09-18-cuenta-unica-en-trades.md` · Migraciones:
+`2026-09-18-cuenta-unica-en-trades`, `2026-09-19-regularizar-trades-a-160`,
+`2026-09-19-nq-a-mnq-en-el-journal` · Commits: `ebd7e5d` · `0ac02f0` · `befe509`.
+
+---
+
+## Checkpoint 2026-09-23 — Curva de equity verde/roja y tooltip del día
+
+### La curva cambia de color en el cero
+
+Verde por encima de cero y rojo por debajo, **exactamente donde la cruza**. Colorear tramo a
+tramo no sirve: un tramo que cruza el cero sale entero de un color. Se usa un degradado
+vertical con un **corte duro en el píxel del cero**, recalculado en cada pintada porque
+depende del alto real del área.
+
+- **Relleno** entre la curva y el cero, más intenso lejos del cero y apagado al tocarlo.
+- **El cero siempre visible** (`beginAtZero`): es la frontera entre los dos colores.
+- **Fechas** "3 ago" en vez de "08-03"; el tooltip de Chart.js da el acumulado (en su
+  color) y el resultado **del día**.
+- **Colores leídos de los tokens** con `getComputedStyle` (`--accent-txt`, `--red-txt`,
+  `--bg3`…): Chart.js pinta en canvas y no lee CSS, pero así no hay hex sueltos.
+
+### La etiqueta del acumulado
+
+Primero se puso **dentro del área**, encima del último punto, y se montaba sobre la propia
+línea y el relleno: casi no se leía. Pasó al **margen derecho**, a la altura del último punto,
+como la etiqueta de precio de una plataforma de trading: pestaña sólida en el color del
+resultado, texto en el color del fondo y una guía punteada desde el punto. El margen se
+reserva **midiendo el texto real** antes de crear la gráfica, para no robar ancho en móvil.
+
+### Tooltip del día
+
+Al pasar el ratón por un día del calendario: **setup** declarado, **puntos** del día y
+**errores** — solo el nombre, sin la descripción; si no hay, **"Sin errores"**. Los repetidos
+salen con "×2".
+
+- Los **puntos salen del precio**, no del P&L: es la medida de riesgo del proyecto y no
+  depende de los contratos (tampoco de la regularización del 19-sep).
+- `getCasuisticasByMonth` trae ahora el nombre del error (`casuistica:error`); solo lo usa el
+  calendario. La caché pasó de `true` a la lista de nombres por día, y los iconos de error de
+  la rejilla siguen funcionando.
+- **Solo con ratón** (`hover: hover` + `pointer: fine`). En táctil no se monta, y el toque
+  sigue abriendo la vista del día.
+- `position: fixed` con las coordenadas de la celda y `pointer-events: none`, para que no lo
+  recorte ningún `overflow` ni parpadee al entrar y salir. Se oculta con cualquier scroll.
+
+### Verificación
+
+**Por píxel, con `getImageData`**, porque el panel del navegador deja de componer fotogramas
+a ratos y las capturas salían en blanco o con fundidos a medias. En agosto: la línea en el
+punto de +$73 da `#3FE0A6` exacto y en los negativos `#F2706F`; la pestaña del acumulado es
+`#F2706F` sólido y empieza en x=653 con el área acabando en 645. Tooltip del 6-ago con los 4
+errores reales de la BD; en móvil no se crea. Consola limpia.
+
+Commits: `539b64d` · `99d3786`.
 
 ---
 
