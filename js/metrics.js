@@ -754,6 +754,13 @@ const Metrics = (() => {
 
     // Etiqueta con el acumulado al final de la curva: es el número que se busca
     // al mirar, y así no hay que pasar el ratón para leerlo.
+    // Va FUERA del área de la curva, en el margen derecho y a la altura del último
+    // punto, como la etiqueta de precio de una plataforma de trading. La primera
+    // versión la ponía encima del punto, dentro del área, y se montaba sobre la
+    // propia línea y el relleno: casi no se leía (23 sep). Fuera del área no puede
+    // pisar nada, y con fondo sólido se lee siempre.
+    const FUENTE_TAG = '700 11px "Segoe UI", system-ui, sans-serif'
+    const TAG_H = 22, TAG_PAD = 8, TAG_GAP = 8
     const etiquetaFinal = {
       id: 'etiquetaFinal',
       afterDatasetsDraw(chart) {
@@ -765,17 +772,21 @@ const Metrics = (() => {
         const txt = money(v)
         const a = chart.chartArea, c = chart.ctx
         c.save()
-        c.font = '600 11px "Segoe UI", system-ui, sans-serif'
-        const w = c.measureText(txt).width + 16, h = 21
-        const x = Math.max(a.left, Math.min(pt.x - w / 2, a.right - w))
-        let y = pt.y - h - 10                       // encima del punto…
-        if (y < a.top) y = pt.y + 10                // …o debajo si no cabe
+        c.font = FUENTE_TAG
+        const w = c.measureText(txt).width + TAG_PAD * 2
+        const x = a.right + TAG_GAP
+        const y = Math.max(a.top, Math.min(pt.y - TAG_H / 2, a.bottom - TAG_H))
+        // Guía punteada del punto a la etiqueta.
         c.beginPath()
-        if (c.roundRect) c.roundRect(x, y, w, h, 6); else c.rect(x, y, w, h)
-        c.fillStyle = rgba(col, 0.14); c.fill()
-        c.lineWidth = 1; c.strokeStyle = rgba(col, 0.4); c.stroke()
-        c.fillStyle = col; c.textBaseline = 'middle'
-        c.fillText(txt, x + 8, y + h / 2 + 0.5)
+        c.setLineDash([2, 3]); c.lineWidth = 1; c.strokeStyle = rgba(col, 0.5)
+        c.moveTo(pt.x, pt.y); c.lineTo(x, pt.y); c.stroke()
+        c.setLineDash([])
+        // Pestaña sólida con el texto en el color del fondo: máximo contraste.
+        c.beginPath()
+        if (c.roundRect) c.roundRect(x, y, w, TAG_H, 5); else c.rect(x, y, w, TAG_H)
+        c.fillStyle = col; c.fill()
+        c.fillStyle = FONDO; c.textBaseline = 'middle'
+        c.fillText(txt, x + TAG_PAD, y + TAG_H / 2 + 0.5)
         c.restore()
       },
     }
@@ -805,6 +816,15 @@ const Metrics = (() => {
 
     const money = v => `${v < 0 ? '−' : '+'}$${fmtMiles(v)}`
 
+    // Ancho de la etiqueta final, medido antes de crear la gráfica para reservarle
+    // el margen derecho exacto. Sin trades no hay etiqueta ni margen.
+    const anchoTag = (() => {
+      if (!data.length) return 6
+      const m = document.createElement('canvas').getContext('2d')
+      m.font = FUENTE_TAG
+      return Math.ceil(m.measureText(money(data.at(-1))).width) + TAG_PAD * 2 + TAG_GAP + 2
+    })()
+
     calEquityInst = new Chart(ctx, {
       type: 'line',
       data: { labels: dates.map(etiquetaDia), datasets: [{
@@ -827,8 +847,9 @@ const Metrics = (() => {
       }]},
       options: {
         responsive: true, maintainAspectRatio: false,
-        // Aire arriba para la etiqueta del acumulado cuando el último punto es el máximo.
-        layout: { padding: { top: 14, right: 6 } },
+        // El margen derecho es el hueco de la etiqueta del acumulado, medido con su
+        // texto real: ni se corta ni se roba más ancho del necesario en el móvil.
+        layout: { padding: { top: 8, right: anchoTag } },
         interaction: { mode: 'index', intersect: false },
         animation: { duration: 500, easing: 'easeOutQuart' },
         plugins: {
