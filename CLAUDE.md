@@ -167,6 +167,25 @@ TelegramBot/      Bot (Cloudflare Worker). Se despliega solo al hacer push
 sola fecha. `Nav.go('coach')` y `Nav.go('historial')` son alias que abren esta sección en
 su pestaña — no romperlos.
 
+## La carpeta `chaumer/`
+
+El proyecto Chaumer —el plan de trading de Alfredo Chaumer, el **portal** para Alfredo y el
+motor de backtesting—, traído con su historia el 24 sep (`git subtree`; antes, repositorio
+`Trading_Plan`). Diseño: `docs/disenos/2026-09-24-unificacion-chaumer.md`.
+
+- **Tiene sus propias reglas:** `chaumer/CLAUDE.md` (las cinco que no se negocian) y
+  `chaumer/04_Web/CLAUDE.md` (el portal). Valen dentro de esa carpeta.
+- **`chaumer/01_Plan/` es de solo lectura para Claude Code.** Lo edita Cowork. Una
+  contradicción se apunta en `chaumer/04_Web/PROPUESTAS_AL_PLAN.md`, no se corrige.
+- **El portal es otra web** (Astro, Cloudflare Pages, `plan-operativo-nq.pages.dev`): el
+  invariante de "vanilla, sin frameworks" no le aplica. Se publica solo con
+  `.github/workflows/publicar-portal.yml`, que usa secretos **propios**
+  (`PORTAL_CLOUDFLARE_*`), no el `CLOUDFLARE_API_TOKEN` del bot.
+- **Alfredo ve el portal y nada más.** Nada del Journal (cuentas, P&L, Apex, sesiones,
+  disciplina, coach) llega al portal. GitHub Pages no publica `chaumer/` (fase 1).
+- Lo pesado y lo de terceros (velas, vídeos, gráficos del backtesting) está en disco y
+  **fuera de git**: ver el bloque `chaumer/` del `.gitignore`.
+
 ## Estado
 
 Todas las secciones funcionando. **El menú son 6 botones** — Calendario · Disciplina ·

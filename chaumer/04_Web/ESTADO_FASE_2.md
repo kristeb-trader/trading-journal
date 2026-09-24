@@ -157,7 +157,7 @@ buscar algo en él, y buscando por fecha, no leyéndolo entero.
 
 ### Tocar el portal a mano y ver el cambio al momento
 
-**VS Code**, con la carpeta `E:\Proyectos\Chaumer` abierta entera (no solo
+**VS Code**, con la carpeta `E:\Proyectos\Trading Journal\chaumer` abierta entera (no solo
 `04_Web`: así se ve el plan al lado del portal).
 
 Al abrirla, VS Code ofrece instalar dos extensiones y **levanta el portal solo**
@@ -206,7 +206,9 @@ maquetación y referencias de regla movidas. **Si alguna falla, no se publica.**
 > pasos van juntos.
 
 Los envíos se ven en
-<https://github.com/kristeb-trader/Trading_Plan/commits/main>.
+<https://github.com/kristeb-trader/trading-journal/commits/main/chaumer>. Desde el
+24/09/2026 el portal vive en el repositorio del Trading Journal, en `chaumer/`;
+`Trading_Plan` queda archivado con la historia anterior.
 
 Detalle completo en `DESPLIEGUE.md`.
 
@@ -233,7 +235,7 @@ Si el plan cambia, se sincroniza y se vuelve a compilar.
 
 ## Para retomar en un chat nuevo
 
-Basta con abrir Claude Code en `E:\Proyectos\Chaumer` y decir qué se quiere
+Basta con abrir Claude Code en `E:\Proyectos\Trading Journal\chaumer` y decir qué se quiere
 hacer. `CLAUDE.md` se carga solo, y apunta aquí.
 
 Si quieres darle contexto de golpe:

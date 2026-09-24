@@ -1,0 +1,66 @@
+# Publica el portal (chaumer/04_Web) en Cloudflare Pages cuando cambia algo que
+# el portal muestra. Viene de chaumer/.github/workflows/publicar.yml, del repositorio
+# Trading_Plan, que publicaba con cada push.
+#
+# Antes esto era manual: `npm run verificar` y luego `wrangler pages deploy`.
+# El 07/09/2026 el operador hizo commit desde VS Code, empujo a GitHub, y la
+# web siguio mostrando lo de antes — porque el push no publicaba nada. Esto
+# lo arregla: se sube el codigo y la web se actualiza sola.
+#
+# Importante: NO publica si la verificacion falla. Los enlaces rotos, la
+# pared invisible del texto y las referencias a reglas que cambiaron paran
+# el despliegue antes de que lleguen a la web.
+#
+# Solo salta con cambios en lo que el portal lee al compilar (sync.mjs):
+# el plan, sus imagenes (02_Assets), el propio portal y el test ciego. Un
+# cambio del Journal no vuelve a publicar el portal.
+#
+# Requiere dos secretos en el repositorio (Settings → Secrets → Actions), de la
+# cuenta de Cloudflare donde vive el portal:
+#   PORTAL_CLOUDFLARE_API_TOKEN    token con permiso «Cloudflare Pages: Edit»
+#   PORTAL_CLOUDFLARE_ACCOUNT_ID   el identificador de esa cuenta
+# NO son CLOUDFLARE_API_TOKEN: ese es el del bot (deploy-bot.yml), de otra cuenta.
+# Diseño: docs/disenos/2026-09-24-unificacion-chaumer.md, fase 3.2.
+name: Publicar el portal
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'chaumer/01_Plan/**'
+      - 'chaumer/02_Assets/**'
+      - 'chaumer/04_Web/**'
+      - 'chaumer/05_Backtesting/test_ciego/**'
+      - '.github/workflows/publicar-portal.yml'
+  workflow_dispatch:        # tambien a mano, desde la pestaña Actions
+
+concurrency:
+  group: publicar-portal
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chaumer/04_Web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: chaumer/04_Web/package-lock.json
+
+      - run: npm ci
+
+      # Compila y pasa los tres guardianes: enlaces, maquetacion, referencias.
+      - name: Verificar
+        run: npm run verificar
+
+      - name: Desplegar a Cloudflare Pages
+        run: npx wrangler pages deploy dist --project-name=plan-operativo-nq --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.PORTAL_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.PORTAL_CLOUDFLARE_ACCOUNT_ID }}

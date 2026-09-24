@@ -13,3 +13,60 @@ Otros/
 
 # Caché local de wrangler (se regenera solo)
 .wrangler/
+
+# --- chaumer/ ---------------------------------------------------------------
+# Traido del .gitignore del repositorio Trading_Plan (24/09/2026, fase 3 de la
+# unificacion). Las reglas que alli valian a cualquier profundidad van como
+# chaumer/**/… para que sigan valiendo en las subcarpetas.
+
+# material de terceros y archivos grandes: PDFs y video de Chaumer. Nunca al
+# repositorio (derechos, y GitHub rechaza archivos de mas de 100 MB)
+chaumer/00_Guias/
+
+# trabajo interno cerrado: se conserva en disco, no en el repositorio
+chaumer/**/_Historia/
+chaumer/03_Materia_Prima/transcripciones/
+
+# datos de mercado exportados de NinjaTrader
+chaumer/05_Backtesting/datos/
+
+# graficos del backtesting manual: se quedan en disco (decision del 22/09/2026;
+# crecen cada dia y en git quedarian para siempre en el historial)
+chaumer/05_Backtesting/05_01_Operativo/Back_*/
+
+# portal: lo que genera la compilacion
+chaumer/04_Web/node_modules/
+chaumer/04_Web/dist/
+chaumer/04_Web/.astro/
+chaumer/04_Web/src/content/
+chaumer/04_Web/public/assets/
+chaumer/04_Web/public/min/
+chaumer/04_Web/public/_detector.js
+
+# imagenes que caen en textos/ al corregir contenido: se copian a public/
+chaumer/04_Web/textos/*.jfif
+chaumer/04_Web/textos/*.jpg
+chaumer/04_Web/textos/*.jpeg
+chaumer/04_Web/textos/*.png
+
+# Cloudflare en local: .dev.vars lleva CLAVE_OPERADOR para probar en el equipo;
+# .wrangler/ es la base y el almacen simulados
+chaumer/04_Web/.dev.vars
+chaumer/04_Web/.wrangler/
+
+# general
+chaumer/**/node_modules/
+chaumer/**/dist/
+chaumer/**/.env
+chaumer/**/.env.*
+!chaumer/**/.env.example
+chaumer/**/*.tmp
+chaumer/**/__pycache__/
+chaumer/**/*.pyc
+
+# skills de terceros e informes de auditoria de diseno: se regeneran
+chaumer/.claude/skills/
+chaumer/**/.agents/
+chaumer/**/.agent/
+chaumer/**/skills-lock.json
+chaumer/**/.impeccable/

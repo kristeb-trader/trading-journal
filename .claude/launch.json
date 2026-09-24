@@ -12,6 +12,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["-y", "serve", "-l", "3211"],
       "port": 3211
+    },
+    {
+      "name": "portal",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "chaumer/04_Web", "--", "--port", "4321"],
+      "port": 4321
     }
   ]
 }

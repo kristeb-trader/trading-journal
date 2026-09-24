@@ -1,11 +1,11 @@
 # ============================================================
 #  Ordenar 05_Backtesting  ·  08/09/2026
-#  Ejecutar desde E:\Proyectos\Chaumer   ->   .\_ordenar_backtesting.ps1
+#  Ejecutar desde E:\Proyectos\Trading Journal\chaumer   ->   .\_ordenar_backtesting.ps1
 # ============================================================
 $ErrorActionPreference = 'Stop'
-$B = 'E:\Proyectos\Chaumer\05_Backtesting'
+$B = 'E:\Proyectos\Trading Journal\chaumer\05_Backtesting'
 $H = Join-Path $B '_Historia'
-$G = 'E:\Proyectos\Chaumer\02_Assets\galeria'
+$G = 'E:\Proyectos\Trading Journal\chaumer\02_Assets\galeria'
 
 if (-not (Test-Path $B)) { Write-Host "No encuentro $B" -ForegroundColor Red; exit 1 }
 New-Item -ItemType Directory -Force -Path $H | Out-Null
