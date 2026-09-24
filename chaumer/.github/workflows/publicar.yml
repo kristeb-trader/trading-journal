@@ -1,0 +1,51 @@
+# Publica el portal en Cloudflare Pages en cada push a `main`.
+#
+# Antes esto era manual: `npm run verificar` y luego `wrangler pages deploy`.
+# El 07/09/2026 el operador hizo commit desde VS Code, empujo a GitHub, y la
+# web siguio mostrando lo de antes — porque el push no publicaba nada. Esto
+# lo arregla: se sube el codigo y la web se actualiza sola.
+#
+# Importante: NO publica si la verificacion falla. Los enlaces rotos, la
+# pared invisible del texto y las referencias a reglas que cambiaron paran
+# el despliegue antes de que lleguen a la web.
+#
+# Requiere dos secretos en el repositorio (Settings → Secrets → Actions):
+#   CLOUDFLARE_API_TOKEN    token con permiso «Cloudflare Pages: Edit»
+#   CLOUDFLARE_ACCOUNT_ID   el identificador de la cuenta de Cloudflare
+name: Publicar el portal
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:        # tambien a mano, desde la pestaña Actions
+
+concurrency:
+  group: publicar
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 04_Web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: 04_Web/package-lock.json
+
+      - run: npm ci
+
+      # Compila y pasa los tres guardianes: enlaces, maquetacion, referencias.
+      - name: Verificar
+        run: npm run verificar
+
+      - name: Desplegar a Cloudflare Pages
+        run: npx wrangler pages deploy dist --project-name=plan-operativo-nq --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -1,0 +1,175 @@
+---
+/**
+ * Las tres puertas del portal: el recorrido, las reglas y los casos.
+ *
+ * Es lo único que el operador quiere en la portada además del banner. Las
+ * tres comparten datos y cambian de forma según el diseño que las use, con
+ * la propiedad `variante`.
+ *
+ * Las cifras salen de los archivos, no se escriben a mano.
+ */
+import Icono from './Icono.astro';
+import * as P from '../lib/parsers.mjs';
+import { MODULOS } from '../lib/modulos.mjs';
+
+interface Props { variante?: 'rejilla' | 'filas' | 'vidrio' }
+const { variante = 'rejilla' } = Astro.props;
+
+const PUERTAS = [
+  {
+    href: '/premercado',
+    icono: 'map-trifold',
+    tono: '#22D3EE',
+    titulo: 'El plan operativo',
+    sub: 'El método completo en ocho módulos, en el orden real de la jornada: desde el premercado hasta el cierre de la operación.',
+    n: MODULOS.length,
+    etiqueta: 'módulos',
+    pie: MODULOS.slice(0, 4).map((m) => m.corto),
+  },
+  {
+    href: '/reglas',
+    icono: 'list-checks',
+    tono: '#A78BFA',
+    titulo: 'Las reglas',
+    sub: 'Cada decisión del método escrita con sus condiciones medibles. Sin adjetivos: ticks, puntos, velas y horas exactas.',
+    n: P.reglas().length,
+    etiqueta: 'reglas',
+    // Los siete grupos del plan, en su orden y con su primera palabra
+    // («Setup y entrada» -> «Setup»). Salen de reglas.json: si un grupo
+    // cambia de nombre o aparece otro, la portada lo sigue sola. Tarea 8 de
+    // PENDIENTE_PORTAL.md; antes eran cuatro escritos a mano.
+    pie: P.categorias().map((c) => c.nombre.split(/\s+/)[0].replace(/[,.;:]+$/, '')),
+  },
+  {
+    href: '/galeria',
+    icono: 'images',
+    tono: '#F472B6',
+    titulo: 'Casos reales',
+    sub: 'Sesiones de verdad, marcadas vela a vela: las que se operaron, las que se descartaron y por qué.',
+    n: P.casosReales().total,
+    etiqueta: 'casos',
+    // Los tres bloques de la pagina, desde que test ciego y galeria se unieron.
+    pie: ['Test ciego', 'Sesiones', 'Ejemplos'],
+  },
+];
+---
+
+<ul class:list={['puertas', variante]}>
+  {PUERTAS.map((p, i) => (
+    <li style={`--c:${p.tono}; --retraso:${i * 90}ms`}>
+      <a class="puerta" href={p.href}>
+        <span class="p-ic"><Icono nombre={p.icono} /></span>
+        <span class="p-cuerpo">
+          <span class="p-t">{p.titulo}</span>
+          <span class="p-s">{p.sub}</span>
+          <span class="p-pie">
+            {p.pie.map((x) => <span class="p-tag">{x}</span>)}
+          </span>
+        </span>
+        <span class="p-n">
+          <b>{p.n}</b>
+          <span class="p-e">{p.etiqueta}</span>
+        </span>
+        <span class="p-ir" aria-hidden="true"><Icono nombre="arrow-right" /></span>
+      </a>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .puertas { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e-4); }
+  .puertas > li { margin: 0; animation: sube 0.6s var(--retraso) both cubic-bezier(.2,.7,.3,1); }
+  @keyframes sube { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .puertas > li { animation: none; } }
+
+  .puerta {
+    position: relative; overflow: hidden;
+    display: grid; gap: var(--e-3);
+    height: 100%;
+    padding: var(--e-6);
+    border-radius: var(--radio-4);
+    background: var(--vidrio-fondo);
+    background-image: var(--vidrio-brillo);
+    border: 1px solid var(--vidrio-borde);
+    color: var(--texto-2);
+    transition: transform var(--normal), border-color var(--normal), box-shadow var(--normal);
+  }
+  /* El halo de color vive detrás de la tarjeta y sube al pasar por encima.
+     Es lo que hace que no parezca un rectángulo apagado. */
+  .puerta::before {
+    content: ''; position: absolute; inset: -40% 40% 55% -20%;
+    background: radial-gradient(closest-side, var(--c), transparent 70%);
+    opacity: 0.12; filter: blur(18px);
+    transition: opacity var(--normal), transform var(--normal);
+    pointer-events: none;
+  }
+  .puerta:hover, .puerta:focus-visible {
+    transform: translateY(-4px);
+    color: var(--texto-2);
+    border-color: color-mix(in srgb, var(--c) 45%, var(--vidrio-borde));
+    box-shadow: 0 18px 40px -18px color-mix(in srgb, var(--c) 55%, transparent), var(--sombra-2);
+  }
+  .puerta:hover::before { opacity: 0.26; transform: translate(6%, -6%); }
+
+  .p-ic {
+    display: grid; place-items: center;
+    width: 2.75rem; height: 2.75rem; --i: 1.35rem;
+    border-radius: var(--radio-3);
+    color: var(--c);
+    background: color-mix(in srgb, var(--c) 16%, transparent);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16),
+                inset 0 0 0 1px color-mix(in srgb, var(--c) 34%, transparent);
+    transition: background var(--normal), transform var(--normal);
+  }
+  .puerta:hover .p-ic { background: color-mix(in srgb, var(--c) 26%, transparent); transform: scale(1.06); }
+
+  .p-cuerpo { display: grid; gap: var(--e-2); min-width: 0; }
+  .p-t { font-size: var(--t-6); color: var(--texto); font-weight: var(--peso-medio); line-height: 1.2; }
+  .p-s { font-size: var(--t-3); color: var(--texto-2); line-height: 1.5; }
+
+  .p-pie { display: flex; flex-wrap: wrap; gap: var(--e-2); margin-top: var(--e-1); }
+  .p-tag {
+    font-size: var(--t-1); color: var(--texto-3);
+    padding: 0.1rem var(--e-2);
+    border-radius: var(--radio-pill);
+    border: 1px solid var(--borde-sutil);
+  }
+
+  .p-n { display: flex; align-items: baseline; gap: var(--e-2); }
+  .p-n b {
+    font-size: var(--t-8); line-height: 1; color: var(--c);
+    font-variant-numeric: tabular-nums; letter-spacing: var(--track-cifra);
+  }
+  .p-e { font-size: var(--t-2); color: var(--texto-3); }
+
+  .p-ir {
+    position: absolute; top: var(--e-5); right: var(--e-5);
+    display: flex; --i: 1.1rem; color: var(--texto-3);
+    transition: transform var(--normal), color var(--normal);
+  }
+  .puerta:hover .p-ir { transform: translateX(4px); color: var(--c); }
+
+  /* ── rejilla: tres columnas iguales ─────────────────────────────────── */
+  @media (min-width: 60rem) {
+    .puertas.rejilla { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .puertas.vidrio  { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+
+  /* ── filas: una debajo de otra, la cifra a la izquierda ─────────────── */
+  /* Cuatro columnas explicitas: icono · texto · cifra · flecha. Sin esto la
+     cifra se colocaba sola encima del icono. */
+  .puertas.filas .puerta {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center; gap: var(--e-5);
+    padding: var(--e-5) var(--e-6);
+  }
+  .puertas.filas .p-ic   { grid-column: 1; grid-row: 1; }
+  .puertas.filas .p-cuerpo { grid-column: 2; grid-row: 1; }
+  .puertas.filas .p-n    { grid-column: 3; grid-row: 1; flex-direction: column; align-items: flex-end; gap: 0; }
+  .puertas.filas .p-ir   { grid-column: 4; grid-row: 1; position: static; }
+  .puertas.filas .p-pie  { display: none; }
+
+  /* ── vidrio: más aire y el número de fondo ──────────────────────────── */
+  .puertas.vidrio .puerta { padding: var(--e-7) var(--e-6) var(--e-6); }
+  .puertas.vidrio .p-n b { font-size: var(--t-9, 3.5rem); }
+</style>

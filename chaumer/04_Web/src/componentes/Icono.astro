@@ -1,0 +1,38 @@
+---
+/**
+ * Icono — inserta un icono de Phosphor en la compilacion.
+ *
+ * Se lee el SVG real del paquete y se pega en linea. Asi no se dibujan
+ * iconos a mano (que se nota), no se carga ninguna libreria en el navegador
+ * y todos comparten el mismo trazo y la misma caja.
+ *
+ * Heredan el color con currentColor y el tamano con la propiedad --i.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+
+interface Props { nombre: string; peso?: 'regular' | 'bold' | 'fill' | 'light' }
+const { nombre, peso = 'regular' } = Astro.props;
+
+const base = path.join(process.cwd(), 'node_modules', '@phosphor-icons', 'core', 'assets', peso);
+const sufijo = peso === 'regular' ? '' : '-' + peso;
+const ruta = path.join(base, nombre + sufijo + '.svg');
+
+let cuerpo = '';
+if (fs.existsSync(ruta)) {
+  cuerpo = fs.readFileSync(ruta, 'utf8').replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+} else {
+  throw new Error('No existe el icono ' + nombre + ' con peso ' + peso);
+}
+---
+
+<svg class="icono" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" set:html={cuerpo} />
+
+<style>
+  .icono {
+    width: var(--i, 1.125rem);
+    height: var(--i, 1.125rem);
+    flex: none;
+    display: block;
+  }
+</style>

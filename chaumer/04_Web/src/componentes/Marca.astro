@@ -1,0 +1,114 @@
+---
+/**
+ * Marca — el banner del portal, centrado en la cabecera.
+ *
+ * El icono NO es un simbolo generico de bolsa. Es el zigzag con el que este
+ * plan marca corridas y retrocesos: sube, corrige, vuelve a subir. Es el
+ * unico dibujo del portal que sale del vocabulario del metodo.
+ *
+ * RELIEVE (pedido por el operador el 02/09/2026: «que se vea 3D»).
+ * Se consigue con tres capas, no con un filtro:
+ *   1. el azulejo lleva un degradado de arriba abajo y un brillo interior,
+ *      que es como se ve un objeto iluminado desde arriba;
+ *   2. debajo lleva una sombra desplazada y difuminada, que lo despega;
+ *   3. el texto lleva un degradado vertical muy corto y una sombra oscura
+ *      de 1px por debajo, que es lo que da el grabado.
+ * Nada de esto entra en una grafica: alli manda el estandar del operador.
+ *
+ * El mismo dibujo esta en public/favicon.svg para la pestana del navegador.
+ * Alli los colores van literales porque un archivo .svg suelto no ve los
+ * tokens de la pagina; aqui, al ir en linea, si los hereda.
+ */
+---
+
+<a class="marca" href="/" aria-label="Trading Plan de Futuros NQ, ir al inicio">
+  <span class="marca-i" aria-hidden="true">
+    <svg viewBox="0 0 32 32" fill="none">
+      <defs>
+        <linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" class="mg-a" />
+          <stop offset="100%" class="mg-b" />
+        </linearGradient>
+      </defs>
+      <rect class="m-tile" width="32" height="32" rx="9" fill="url(#mg)" />
+      <rect class="m-luz" x="1" y="1" width="30" height="30" rx="8" />
+      <path class="m-zig" d="M7 23.5 L12.5 13 L16.5 17.5 L21.5 8" />
+      <circle class="m-pt" cx="21.5" cy="8" r="2.6" />
+    </svg>
+  </span>
+  <span class="marca-t">
+    <span class="marca-n">Trading Plan de Futuros</span>
+    <span class="marca-sep" aria-hidden="true"></span>
+    <span class="marca-a">NQ</span>
+  </span>
+</a>
+
+<style>
+  .marca {
+    display: inline-flex; align-items: center; gap: var(--e-4);
+    min-height: var(--alto-marca);
+    color: var(--texto);
+  }
+  .marca:hover { color: var(--texto); }
+
+  .marca-i { display: block; width: var(--alto-marca); height: var(--alto-marca); flex: none; }
+  .marca-i svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+  /* 1 · el azulejo: degradado de arriba abajo, como un objeto con luz. */
+  .mg-a { stop-color: var(--acento-vivo); }
+  .mg-b { stop-color: var(--acento-hondo); }
+  /* 2 · y despegado del fondo con una sombra de verdad, con desplazamiento
+     y desenfoque. Un halo sin desplazamiento no es profundidad, es adorno. */
+  .m-tile { filter: drop-shadow(0 4px 10px color-mix(in srgb, var(--acento) 45%, transparent)); }
+  /* El brillo interior del borde superior: es lo que redondea el volumen. */
+  .m-luz {
+    fill: none; stroke: rgba(255, 255, 255, 0.35); stroke-width: 1;
+  }
+  .m-zig {
+    stroke: var(--n-50);
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .m-pt { fill: var(--n-50); }
+
+  .marca-t { display: flex; align-items: center; gap: var(--e-3); }
+
+  /* 3 · el texto grabado: degradado vertical corto y sombra oscura debajo. */
+  .marca-n {
+    font-size: var(--t-7);
+    font-weight: var(--peso-max);
+    letter-spacing: var(--track-titulo);
+    white-space: nowrap;
+    background: var(--texto-relieve);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.55));
+  }
+  .marca-sep {
+    width: 1px; height: 1.15em; flex: none;
+    background: var(--borde);
+  }
+  .marca-a {
+    font-size: var(--t-7);
+    font-weight: var(--peso-max);
+    letter-spacing: var(--track-cifra);
+    color: var(--acento);
+    text-shadow: 0 0 18px color-mix(in srgb, var(--acento) 55%, transparent),
+                 0 1px 0 rgba(0, 0, 0, 0.55);
+  }
+
+  .marca:hover .mg-a { stop-color: #8AB6FF; }
+  .marca:hover .m-tile { filter: drop-shadow(0 6px 14px color-mix(in srgb, var(--acento) 60%, transparent)); }
+  .m-tile, .mg-a { transition: filter var(--normal), stop-color var(--normal); }
+
+  @media (max-width: 900px) {
+    .marca { gap: var(--e-3); }
+    .marca-n, .marca-a { font-size: var(--t-4); }
+  }
+  /* En pantallas muy estrechas el nombre largo no cabe con el resto: se queda
+     el icono y «NQ», que es lo que identifica el portal de un vistazo. */
+  @media (max-width: 360px) {
+    .marca-n, .marca-sep { display: none; }
+  }
+</style>

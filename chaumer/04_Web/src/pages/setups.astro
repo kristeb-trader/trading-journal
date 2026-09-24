@@ -1,0 +1,418 @@
+---
+/**
+ * Modulo 3 — Setups operativos.
+ *
+ * Solo hay dos, y son el reverso el uno del otro: la Continuacion opera el
+ * rompimiento que funciona y el Reingreso el que fallo. Se explican por
+ * separado y con la misma estructura, para que la diferencia se vea sola.
+ *
+ * El 23/09/2026 el setup IRI paso a llamarse Continuacion (decision del
+ * operador; nada operativo cambia). IRI nombra ahora la ESTRUCTURA —impulso,
+ * retroceso, impulso— sobre la que se construye la Continuacion. La seccion
+ * se llama #continuacion y conserva #iri como ancla muda, para no romper un
+ * enlace guardado. Ver CAMBIO_IRI_A_CONTINUACION.md.
+ */
+import Modulo from '../componentes/Modulo.astro';
+import * as P from '../lib/parsers.mjs';
+import Refs from '../componentes/Refs.astro';
+
+
+const v = (n: string) => P.parametro(n);
+
+const SECCIONES = [
+  { id: 'dos', t: 'Solo hay dos' },
+  { id: 'continuacion', t: 'Continuación' },
+  { id: 'fluida', t: 'Corrida fluida' },
+  { id: 'reingreso', t: 'Reingreso' },
+  { id: 'comparar', t: 'Diferencias' },
+];
+---
+
+<Modulo slug="setups" secciones={SECCIONES}>
+  <section class="ap" id="dos">
+    <h2>Solo hay dos <Refs cods="R-23" /></h2>
+    <p>
+      El método no busca oportunidades: busca <strong>dos figuras concretas</strong>.
+      Si lo que hay delante no es una de las dos, no hay operación, por bien que
+      se vea el gráfico.
+    </p>
+
+    <div class="rejilla dos">
+      <div class="tarj">
+        <span class="tarj-n">Continuación</span>
+        <h3>Rompimiento que funciona</h3>
+        <p>El precio rompe una zona y sigue. Se opera <strong>a favor</strong> del rompimiento.</p>
+      </div>
+      <div class="tarj">
+        <span class="tarj-n">Reingreso</span>
+        <h3>Rompimiento fallido</h3>
+        <p>El precio rompe una zona, no sigue y se da la vuelta. Se opera <strong>en contra</strong> del rompimiento.</p>
+      </div>
+    </div>
+
+    <figure class="gr">
+      <img src="/conceptos/27-setup-continuacion.png" alt="Lámina del setup Continuación: sobre un IRI fluido —impulso, retroceso, impulso— el segundo impulso rompe la zona y la entrada va en la vela que confirma" loading="eager" />
+    </figure>
+
+    <figure class="gr">
+      <img src="/conceptos/28-setup-reingreso.png" alt="Lámina del setup Reingreso: el precio rompe la zona y confirma, falla, y vuelve a atravesarla entera hasta salir por el borde contrario, donde está la entrada" loading="eager" />
+    </figure>
+
+    <div class="duro">
+      <p>
+        <strong>Se toma el primero que aparezca y se llene.</strong> No se
+        compara con lo que pueda venir después, ni se espera «uno mejor». El
+        criterio es el reloj, no la calidad.
+      </p>
+    </div>
+  </section>
+
+  <section class="ap" id="continuacion">
+    <span class="ancla-vieja" id="iri" aria-hidden="true"></span>
+    <h2>Continuación <Refs cods="R-25" /></h2>
+    <h3>El concepto fundamental</h3>
+    <p>
+      La Continuación es un modelo de entrada autocontenido. Significa que no
+      necesitas buscar referencias del pasado ni indicadores externos: el
+      propio movimiento del precio crea en tiempo real la zona que va a romper.
+    </p>
+    <p>
+      Se construye sobre un <strong>IRI (Impulso - Retroceso - Impulso)</strong>:
+      una corrida deja su zona, el precio retrocede y la corrida siguiente
+      rompe esa zona. El IRI es la estructura, y no se opera por sí solo; la
+      Continuación es ese IRI más su consecución, que es la entrada.
+    </p>
+
+    <p>La lógica de la entrada es simple:</p>
+    <div class="flujo-iri" aria-label="Impulso 1, retroceso e Impulso 2, disparador de entrada">
+      <span class="flujo-etapa flujo-impulso">Impulso 1</span>
+      <span class="flujo-flecha" aria-hidden="true">→</span>
+      <span class="flujo-etapa flujo-retroceso">Retroceso</span>
+      <span class="flujo-flecha" aria-hidden="true">→</span>
+      <span class="flujo-etapa flujo-entrada">
+        <strong>Impulso 2</strong>
+        <small>(Disparador de entrada)</small>
+      </span>
+    </div>
+
+    <h3>La secuencia operativa en 5 pasos (sesión real)</h3>
+    <ol class="secuencia">
+      <li><strong>Una corrida (Impulso 1).</strong> Es el movimiento inicial donde el precio avanza con fuerza en una dirección.</li>
+      <li><strong>Un retroceso.</strong> El movimiento se detiene a descansar o “respirar”. Este punto define el extremo opuesto temporal.</li>
+      <li><strong>La zona.</strong> Se marca el nivel exacto en la vela extrema que dejó la corrida antes de empezar a retroceder. <strong>Sin zona marcada en la vela extrema, no existe la Continuación.</strong></li>
+      <li><strong>Rompimiento.</strong> El precio reanuda la marcha y rompe esa misma zona en el sentido del movimiento original por al menos un tick.</li>
+      <li><strong>Confirmación / consecución (la entrada).</strong> La entrada se ejecuta en la vela que da la consecución. Esto ocurre cuando una vela sobrepasa el extremo de la vela que rompió la zona.</li>
+    </ol>
+
+    <figure class="gr">
+      <img src="/conceptos/04-romper-confirmar.png" alt="Una Continuación completa: movimiento, retroceso, zona, rompimiento y consecución" loading="eager" />
+      <figcaption class="meta">Los cinco pasos sobre una sesión real. La vela de la consecución es la que entra.</figcaption>
+    </figure>
+
+    <h3>Reglas de tiempo e invalidación</h3>
+    <dl class="datos">
+      <dt>Plazo para la consecución (Regla R-14)</dt>
+      <dd>Hay un tope máximo de <strong>{v('PLAZO_CONSECUCION')}</strong>, contadas a partir de la vela siguiente a la que rompió la zona, para que aparezca la vela de confirmación.</dd>
+      <dt>Nota importante</dt>
+      <dd>Las <strong>{v('PLAZO_CONSECUCION')}</strong> son un límite máximo, no una espera obligatoria. Lo normal es que la consecución ocurra en la primera o segunda vela inmediatamente posterior al rompimiento.</dd>
+      <dt>Si no llega a tiempo</dt>
+      <dd>La entrada queda completamente invalidada. La orden o idea se descarta. La zona deja de funcionar para este setup y sigue su propio camino técnico.</dd>
+    </dl>
+
+    <h3>Gestión parametrizada (stop loss y filtro)</h3>
+    <dl class="datos">
+      <dt>Ubicación del stop loss (SL)</dt>
+      <dd>Se coloca en el punto más extremo alcanzado por el retroceso: el punto más lejano desde que nació la zona extrema hasta la vela que realizó el rompimiento.</dd>
+      <dt>Relación riesgo/beneficio</dt>
+      <dd>Se mantiene estrictamente en <strong>1:1</strong> con respecto a la distancia del stop.</dd>
+      <dt>Filtro de objetivo</dt>
+      <dd>Para que la operación sea válida, el camino desde el punto de entrada hasta el objetivo 1:1 debe estar completamente libre de zonas vivas que puedan frenar o rebotar el precio.</dd>
+    </dl>
+  </section>
+
+  <!-- Corrida fluida — nueva el 14/09/2026, ampliada el 21/09/2026. Todo lo
+       de esta seccion sale de su regla en reglas.json; nada de price action
+       generico. -->
+  <section class="ap" id="fluida">
+    <h2>Corrida fluida <Refs cods="R-40" /></h2>
+    <p>
+      La Continuación solo se opera si la corrida que la arma es <strong>fluida</strong>.
+      La secuencia tiene que salir bien tres veces seguidas; si falla una, ese
+      rompimiento no se opera.
+    </p>
+
+    <ol class="secuencia">
+      <li><strong>La corrida deja su zona</strong> al terminar.</li>
+      <li><strong>El retroceso no se pasa.</strong> Mide menos que su corrida. Se miden los dos sobre el zigzag: la corrida desde su arranque hasta su extremo, y el retroceso desde ese mismo extremo hasta su nivel de referencia. Si empatan, no se pasa.</li>
+      <li><strong>La corrida siguiente rompe esa zona.</strong> Ese es el rompimiento que opera la Continuación.</li>
+    </ol>
+
+    <dl class="datos">
+      <dt>Quién declara el sentido</dt>
+      <dd>La vela de apertura. Desde ahí el mercado alterna corrida en ese sentido y retroceso en contra</dd>
+      <dt>Cómo se emparejan</dt>
+      <dd>Cada corrida con el retroceso que viene justo después de ella. Las parejas no se solapan: tras una pareja rota, la cuenta empieza de nuevo con la corrida siguiente</dd>
+      <dt>A qué setup afecta</dt>
+      <dd>Solo a la Continuación. El Reingreso no se toca</dd>
+      <dt>El tope de riesgo</dt>
+      <dd>No tiene nada que ver. Una entrada puede caber de sobra en el tope y quedar fuera igual</dd>
+    </dl>
+
+    <h3>Cuando falla</h3>
+    <dl class="datos">
+      <dt>El retroceso se pasa</dt>
+      <dd>Mide más que su corrida. Quedan fuera para entrar las dos zonas de la pareja: la de la corrida y la que deja el propio retroceso</dd>
+      <dt>La corrida siguiente no rompe</dt>
+      <dd>Se devuelve sin romper la zona. El mercado está lateral y esa zona queda bloqueada</dd>
+    </dl>
+
+    <div class="veto">
+      <p>
+        <strong>Perdida la fluidez, se bloquea el sentido del día entero.</strong>
+        No se opera ningún rompimiento en el sentido que declaró la vela de
+        apertura, sea cual sea la zona — tampoco las de premercado. El sentido
+        contrario no se toca.
+      </p>
+    </div>
+
+    <h3>El rompimiento directo</h3>
+    <p>
+      Es el rompimiento de una zona mientras el sentido está bloqueado. Por
+      parámetros cumple, pero el mercado está lateral: <strong>no se opera
+      nunca</strong>. Solo sirve como primer paso para recuperar la fluidez.
+    </p>
+
+    <h3>Cómo se recupera</h3>
+    <ol class="secuencia">
+      <li><strong>La zona bloqueada queda rota con su consecución.</strong> Ese es el rompimiento directo, y no se opera.</li>
+      <li><strong>El mercado arma un IRI nuevo entero más allá:</strong> corrida que deja su zona, retroceso que la confirma y rompimiento de esa zona con su consecución. La zona nueva tiene que quedar <strong>entera</strong> más allá de la bloqueada: por encima si se busca largo, por debajo si se busca corto. Se entra en ese rompimiento, no antes.</li>
+    </ol>
+
+    <div class="duro">
+      <p>
+        <strong>La fluidez se puede volver a perder.</strong> Recuperarla no
+        vale para toda la jornada: cada movimiento se juzga por separado. Si el
+        IRI siguiente tampoco es fluido, el sentido se vuelve a bloquear y hay
+        que esperar otro.
+      </p>
+    </div>
+
+    <div class="duro">
+      <p>
+        <strong>La zona bloqueada sigue viva.</strong> Se dibuja, tapa
+        objetivos, hace de borde de franja y se rompe e invalida como cualquier
+        otra. Lo único que se descarta es entrar en su rompimiento.
+      </p>
+    </div>
+  </section>
+
+  <section class="ap" id="reingreso">
+    <h2>Reingreso · rompimiento fallido <Refs cods="R-26" /></h2>
+    <p>
+      Es el contrario exacto de la Continuación. Aquí el rompimiento se confirmó pero el
+      precio <strong>no continuó</strong>: se dio la vuelta y se comió la zona
+      entera. Se opera esa vuelta.
+    </p>
+
+    <figure class="gr">
+      <img src="/conceptos/11-reingreso.png" alt="Un Reingreso: rompimiento con consecución que falla y el precio recupera la zona entera" loading="lazy" />
+      <figcaption class="meta">El rompimiento se confirmó y no siguió. El precio atraviesa la zona completa y sale por el borde contrario: ahí empieza el Reingreso.</figcaption>
+    </figure>
+
+    <ol class="secuencia">
+      <li><strong>Sobre una zona hubo rompimiento y confirmación.</strong> El traspaso está hecho.</li>
+      <li><strong>El precio no continúa</strong> en esa dirección.</li>
+      <li><strong>El precio atraviesa la zona entera y sobrepasa el borde contrario.</strong> No basta con tocarla ni con meterse dentro: tiene que salir por el otro lado. Esa vela hace de vela de rompimiento del Reingreso.</li>
+      <li><strong>Confirmación: y esa es la entrada.</strong> Una vela pasa el extremo de la vela anterior, igual que en la Continuación.</li>
+    </ol>
+
+    <dl class="datos">
+      <dt>Dirección</dt>
+      <dd>Contraria a la del rompimiento que falló</dd>
+      <dt>Plazo para que aparezca</dt>
+      <dd><strong>Ninguno.</strong> El límite de {v('PLAZO_CONSECUCION')} no aplica aquí</dd>
+      <dt>Dónde va el stop</dt>
+      <dd>En el extremo de la <strong>corrida fallida</strong>, la que rompió y no continuó</dd>
+      <dt>Filtro propio</dt>
+      <dd>El objetivo <strong>no puede pasar del punto de referencia</strong></dd>
+    </dl>
+
+    <!-- Unificado el 14/09/2026: antes era solo el extremo del retroceso que
+         origino la zona. Ahora vale el de cualquier retroceso vivo. -->
+    <h3>El punto de referencia <Refs cods="R-41" /></h3>
+    <p>
+      El Reingreso es el único setup con este filtro. <strong>Todo retroceso
+      deja un punto de referencia:</strong> su nivel de referencia, el mínimo
+      más bajo si el retroceso baja y el máximo más alto si sube. Es el mismo
+      vértice que ya dibuja el zigzag.
+    </p>
+
+    <dl class="datos">
+      <dt>Cuál manda</dt>
+      <dd>El punto de referencia vivo más cercano a la entrada que quede entre la entrada y el objetivo. Vale el de cualquier retroceso, no solo el del que originó la zona. Los que quedan fuera de ese tramo no estorban</dd>
+      <dt>Cuándo descarta</dt>
+      <dd>Si el objetivo <strong>pasa</strong> de ese nivel, el Reingreso no se opera. Si cae justo encima, se opera: solo descarta pasarlo</dd>
+      <dt>Cuándo deja de contar</dt>
+      <dd>Cuando una vela <strong>cierra</strong> más allá del nivel. A partir de ahí no estorba ningún objetivo</dd>
+    </dl>
+
+    <div class="duro">
+      <p>
+        <strong>Aquí manda el cierre, no la mecha.</strong> Un pinchazo de mecha
+        no rompe el punto de referencia. Es al revés que con una zona, que se
+        rompe con solo pasar la mecha.
+      </p>
+    </div>
+
+    <div class="duro">
+      <p>
+        <strong>El Reingreso es inmediato o no es.</strong> La ventana se abre
+        con la vela de la consecución y se cierra en cuanto el precio supera el
+        extremo de esa misma vela.
+      </p>
+      <p>Cuando el precio sigue de largo, la ventana se cerró para siempre. No se espera a que vuelva.</p>
+    </div>
+  </section>
+
+  <section class="ap" id="comparar">
+    <h2>Diferencias</h2>
+    <p>
+      Comparten la mecánica de entrada — los dos entran con la confirmación —
+      pero se diferencian en casi todo lo demás.
+    </p>
+
+    <div class="tabla-env">
+      <table class="comp">
+        <thead>
+          <tr><th></th><th>Continuación</th><th>Reingreso</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>Qué opera</th>
+            <td>El rompimiento que funciona</td>
+            <td>El rompimiento que falló</td>
+          </tr>
+          <tr>
+            <th>Dirección</th>
+            <td>A favor del movimiento</td>
+            <td>Contraria al rompimiento</td>
+          </tr>
+          <tr>
+            <th>Plazo</th>
+            <td>{v('PLAZO_CONSECUCION')} para la consecución</td>
+            <td>Sin plazo para aparecer; inmediato para entrar</td>
+          </tr>
+          <tr>
+            <th>Stop</th>
+            <td>Extremo del retroceso</td>
+            <td>Extremo de la corrida fallida</td>
+          </tr>
+          <tr>
+            <th>Filtros de objetivo</th>
+            <td>Camino libre de zonas vivas</td>
+            <td>Camino libre <em>y</em> sin pasar del punto de referencia</td>
+          </tr>
+          <tr>
+            <th>Corrida fluida</th>
+            <td>Obligatoria</td>
+            <td>No aplica</td>
+          </tr>
+          <tr>
+            <th>Día de la Fed</th>
+            <td><span class="no">Prohibido</span></td>
+            <td><span class="si">Permitido</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="duro">
+      <p>
+        <strong>El stop del Reingreso suele salir más ancho.</strong> Se mide
+        contra la corrida fallida, que está al otro lado de la zona, así que
+        incluye la zona entera. Por eso el tope de riesgo descarta más
+        Reingresos que Continuaciones.
+      </p>
+    </div>
+  </section>
+</Modulo>
+
+<style>
+
+  .flujo-iri {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--e-3);
+    margin: var(--e-5) 0 var(--e-6);
+    padding: var(--e-4) 0;
+    border-top: 1px solid var(--borde);
+    border-bottom: 1px solid var(--borde);
+    text-align: center;
+  }
+
+  .flujo-etapa {
+    color: var(--texto);
+    font-size: var(--t-6);
+    font-weight: var(--peso-fuerte);
+    line-height: var(--alto-corto);
+  }
+
+  .flujo-flecha {
+    color: var(--texto-3);
+    font-size: var(--t-6);
+    line-height: 1;
+  }
+
+  .flujo-impulso { color: var(--texto); }
+  .flujo-retroceso { color: var(--aviso); }
+
+  .flujo-entrada {
+    display: inline-flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--e-2);
+    color: var(--positivo);
+  }
+
+  .flujo-entrada strong { color: var(--acento-vivo); }
+
+  .flujo-entrada small {
+    color: var(--texto-3);
+    font-family: var(--fuente-mono);
+    font-size: var(--t-1);
+    font-weight: var(--peso-normal);
+    letter-spacing: var(--track-etiqueta);
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 40rem) {
+    .flujo-iri {
+      flex-wrap: wrap;
+      gap: var(--e-2) var(--e-3);
+    }
+
+    .flujo-etapa {
+      font-size: var(--t-5);
+    }
+  }
+
+  .tabla-env { overflow-x: auto; margin: var(--e-5) 0; }
+  .comp { width: 100%; border-collapse: collapse; font-size: var(--t-3); min-width: 34rem; }
+  .comp th, .comp td {
+    padding: var(--e-3) var(--e-4);
+    vertical-align: top;
+    border-bottom: 1px solid var(--borde-sutil);
+  }
+  .comp thead th {
+    font-size: var(--t-1);
+    letter-spacing: var(--track-etiqueta);
+    text-transform: uppercase;
+    color: var(--texto-3);
+    border-bottom-color: var(--borde);
+  }
+  .comp tbody th { color: var(--texto-3); font-weight: var(--peso-normal); width: 11rem; }
+  .comp td { color: var(--texto-2); }
+  .si { color: var(--positivo); }
+  .no { color: var(--negativo); }
+</style>

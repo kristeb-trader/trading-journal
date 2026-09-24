@@ -1,0 +1,160 @@
+---
+/**
+ * Banner 2 — «Terminal».
+ *
+ * La estética de una mesa de operaciones: cinta de cotización que corre en
+ * bucle, reloj de la ventana operativa y tipografía monoespaciada. Encima,
+ * el titular.
+ *
+ * 🔴 La cinta es MOTIVO GRÁFICO. Los símbolos son reales pero los números NO
+ * son cotizaciones: no hay conexión a mercado y no deben leerse como tal.
+ * Por eso van marcados con «demo» en la propia cinta.
+ */
+interface Props { titulo: string; destacado?: string; sub?: string }
+const { titulo, destacado, sub } = Astro.props;
+
+// Fijos a propósito: si cambiaran daría la impresión de ser precios en vivo.
+const CINTA = [
+  { s: 'MNQ', v: '21.480,25', d: +0.62 },
+  { s: 'NQ', v: '21.482,00', d: +0.58 },
+  { s: 'ES', v: '5.914,50', d: +0.21 },
+  { s: 'YM', v: '43.210', d: -0.14 },
+  { s: 'VIX', v: '14,82', d: -1.90 },
+  { s: 'DXY', v: '104,31', d: +0.08 },
+];
+---
+
+<div class="banner">
+  <div class="malla" aria-hidden="true"></div>
+
+  <div class="cinta" aria-hidden="true">
+    <div class="corre">
+      {[0, 1].map(() => (
+        <>
+          {CINTA.map((c) => (
+            <span class="tick">
+              <b>{c.s}</b>
+              <span class="v">{c.v}</span>
+              <span class:list={['d', c.d >= 0 ? 'sube' : 'baja']}>
+                {c.d >= 0 ? '▲' : '▼'} {Math.abs(c.d).toFixed(2)}%
+              </span>
+            </span>
+          ))}
+          <span class="tick demo">datos de muestra · el portal no se conecta a mercado</span>
+        </>
+      ))}
+    </div>
+  </div>
+
+  <div class="texto">
+    <h1>{titulo}{destacado && <> <span class="destacado">{destacado}</span></>}</h1>
+    {sub && <p class="sub">{sub}</p>}
+
+    <dl class="reloj">
+      <div><dt>Instrumento</dt><dd>MNQ</dd></div>
+      <div><dt>Marco</dt><dd>1 min</dd></div>
+      <div><dt>Ventana</dt><dd>08:31 <span>→</span> 10:30</dd></div>
+      <div><dt>Órdenes por sesión</dt><dd>1</dd></div>
+    </dl>
+  </div>
+</div>
+
+<style>
+  .banner {
+    position: relative; overflow: hidden;
+    border-radius: var(--radio-4);
+    border: 1px solid var(--vidrio-borde);
+    background:
+      radial-gradient(120% 90% at 8% 0%, rgba(46, 134, 255, 0.20), transparent 60%),
+      radial-gradient(90% 80% at 100% 100%, rgba(34, 211, 238, 0.14), transparent 60%),
+      var(--n-950);
+    box-shadow: 0 24px 60px -30px rgba(46, 134, 255, 0.5);
+  }
+
+  /* Una malla muy tenue que se desplaza: da sensación de pantalla encendida
+     sin llegar a ser una cuadrícula de gráfico, que el estándar prohíbe. */
+  .malla {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(139, 147, 167, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139, 147, 167, 0.07) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(120% 100% at 20% 0%, #000 20%, transparent 75%);
+    animation: deriva 24s linear infinite;
+  }
+  @keyframes deriva { to { background-position: 44px 44px; } }
+
+  .cinta {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--vidrio-borde);
+    background: rgba(11, 14, 20, 0.55);
+    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  }
+  .corre {
+    display: flex; gap: var(--e-6); width: max-content;
+    padding: var(--e-3) 0;
+    animation: correr 38s linear infinite;
+  }
+  @keyframes correr { to { transform: translateX(-50%); } }
+
+  .tick {
+    display: inline-flex; align-items: baseline; gap: var(--e-2);
+    font-family: var(--fuente-mono); font-size: var(--t-2);
+    color: var(--texto-2); white-space: nowrap;
+  }
+  .tick b { color: var(--texto); letter-spacing: var(--track-etiqueta); }
+  .tick .v { font-variant-numeric: tabular-nums; }
+  .tick .d.sube { color: #4ADE80; }
+  .tick .d.baja { color: #F472B6; }
+  .tick.demo { color: var(--texto-3); font-style: italic; }
+
+  .texto { position: relative; padding: var(--e-7); }
+  /* Centrado a peticion del operador el 07/09/2026: el titular y la
+     entradilla van al eje del banner. El resto (cinta y reloj) no se toca. */
+  .texto h1 {
+    margin: 0; text-wrap: pretty; text-align: center;
+    font-size: clamp(var(--t-7), 4.2vw, 3rem); line-height: 1.08;
+    color: var(--texto);
+  }
+  /* El nombre del autor del metodo, un tono por encima del titular. */
+  .texto h1 .destacado { color: var(--acento-vivo); }
+  /* Sin tope de ancho: la entradilla llega hasta el borde como el resto
+     del portal. Antes eran 44rem y dejaba media franja vacia. */
+  .sub {
+    margin: var(--e-4) 0 0; text-align: center;
+    font-size: var(--t-5); color: var(--texto-2);
+  }
+
+  /* Rejilla, no flex: en flex cada dato medía lo que mide su texto y la
+     fila moria a media pantalla. Ahora los cuatro se reparten el ancho
+     completo y llegan hasta el borde. */
+  .reloj {
+    display: grid; gap: var(--e-3);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    margin: var(--e-6) 0 0;
+  }
+  .reloj > div {
+    padding: var(--e-3) var(--e-4);
+    border-radius: var(--radio-2);
+    border: 1px solid var(--vidrio-borde);
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .reloj dt {
+    margin: 0; font-size: var(--t-1); color: var(--texto-3);
+    letter-spacing: var(--track-etiqueta); text-transform: uppercase;
+  }
+  .reloj dd {
+    margin: var(--e-1) 0 0;
+    font-family: var(--fuente-mono); font-size: var(--t-5);
+    color: var(--texto); font-variant-numeric: tabular-nums;
+  }
+  .reloj dd span { color: var(--info); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .corre, .malla { animation: none; }
+  }
+  @media (max-width: 46rem) {
+    .texto { padding: var(--e-6) var(--e-5); }
+  }
+</style>

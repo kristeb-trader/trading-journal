@@ -1,0 +1,173 @@
+/**
+ * TOKENS — el unico sitio donde vive un valor literal.
+ *
+ * DIRECCION (02/09/2026, rediseno completo con los tres skills):
+ *
+ *   ui-ux-pro-max  -> patron "Documentacion": portada con buscador destacado
+ *                     y mapa de contenido. Estilo Minimalism & Swiss:
+ *                     limpio, espacioso, rejilla, jerarquia clara.
+ *   taste-skill    -> jerarquia por PESO Y COLOR, no por tamano bruto.
+ *                     Nada de negro puro. Acentos desaturados para que
+ *                     convivan con los neutros. Sin adornos enumerados.
+ *   impeccable     -> contraste AA verificado, medida de linea, sin barras
+ *                     de color laterales, sin filete bajo cada fila.
+ *
+ * Es un portal de consulta: lo primero es encontrar, no impresionar.
+ */
+:root {
+  color-scheme: dark;
+
+  /* ── neutros ─────────────────────────────────────────────────────────
+     Rampa unica con matiz azul, del fondo al texto. Nada de negro puro:
+     #000 sobre pantalla es plano y delata plantilla.                    */
+  --n-950: #0A0C11;  /* pagina */
+  --n-900: #0F1218;  /* superficie elevada, cabecera */
+  --n-850: #13171F;  /* tarjeta */
+  --n-800: #191E28;  /* hover, celda activa */
+  --n-700: #232936;  /* borde marcado */
+  --n-600: #333B4B;  /* borde de control */
+  --n-500: #4C5566;
+  --n-400: #8790A1;  /* texto terciario */
+  --n-300: #A8B0BF;  /* texto secundario */
+  --n-100: #DDE2EA;
+  --n-50:  #F2F5F9;  /* texto principal, blanco roto */
+
+  /* ── acentos, desaturados para convivir con los neutros ──────────── */
+  --acento:      #4C8DFF;  /* interactivo, foco, enlace */
+  --acento-vivo: #6AA0FF;  /* el mismo acento al pasar el raton */
+  --acento-hondo:#2C5FD0;  /* el pie de los degradados con relieve */
+  --sobre-acento:#06121F;  /* texto sobre un relleno de acento */
+  --acento-flojo:#1B2A45;  /* fondo de estado activo */
+  --aviso:       #E3B341;  /* plan no probado, pendiente */
+  --negativo:    #EF5F63;  /* unico dato negativo real */
+  --positivo:    #3FCF8E;  /* confirmado */
+  --info:        #38BDD4;  /* referencia cruzada, glosario */
+
+  /* ── semanticos ──────────────────────────────────────────────────── */
+  --fondo:      var(--n-950);
+  --superficie: var(--n-900);
+  --tarjeta:    var(--n-850);
+  --elevado:    var(--n-800);
+  --borde:      var(--n-700);
+  --borde-sutil: rgba(255, 255, 255, 0.055);
+  --texto:      var(--n-50);
+  --texto-2:    var(--n-300);
+  --texto-3:    var(--n-400);
+
+  /* ── espacio, base 4 ─────────────────────────────────────────────── */
+  --e-1: 0.25rem; --e-2: 0.5rem;  --e-3: 0.75rem; --e-4: 1rem;
+  --e-5: 1.5rem;  --e-6: 2rem;    --e-7: 2.75rem; --e-8: 4rem;
+  --e-9: 6rem;
+
+  /* ── tipografia · Geist autoalojada, SIL OFL. Sin CDN ────────────── */
+  --fuente: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --fuente-mono: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  /* Escala contenida. La jerarquia la hacen el peso y el color, no el
+     tamano: un titular de 7rem solo grita. */
+  --t-1: 0.75rem;    /* etiqueta, contador */
+  --t-2: 0.8125rem;  /* metadato, interfaz densa */
+  --t-3: 0.875rem;   /* interfaz, tabla */
+  --t-4: 0.9375rem;  /* cuerpo */
+  --t-5: 1.0625rem;  /* entradilla */
+  --t-6: 1.25rem;    /* titulo de bloque */
+  --t-7: 1.75rem;    /* titulo de seccion */
+  --t-8: 2.375rem;   /* titulo de pagina */
+  --t-9: 3rem;       /* cifra protagonista */
+  --t-10: 3.75rem;   /* titular de portada */
+
+  --peso-normal: 400; --peso-medio: 500;
+  --peso-fuerte: 600; --peso-max: 700;
+
+  --alto-linea: 1.65;
+  --alto-corto: 1.2;
+
+  --track-titulo: -0.02em;
+  --track-cifra:  -0.03em;
+  --track-etiqueta: 0.06em;
+
+  /* ── forma ───────────────────────────────────────────────────────── */
+  --radio-1: 6px;
+  --radio-2: 10px;
+  --radio-3: 14px;
+  --radio-4: 20px;   /* piezas de cristal */
+  --radio-pill: 999px;
+
+  /* Sombras teñidas, nunca negro puro: dan profundidad sin ensuciar. */
+  --sombra-1: 0 1px 2px rgba(5, 8, 14, 0.5);
+  --sombra-2: 0 4px 16px rgba(5, 8, 14, 0.45);
+  /* En capas y contenida: borde de 1px con 64px de desenfoque es una firma
+     de interfaz generada, y el detector la marca. */
+  --sombra-3: 0 2px 6px rgba(5, 8, 14, 0.55), 0 10px 28px rgba(5, 8, 14, 0.5);
+
+  /* ── medida ──────────────────────────────────────────────────────── */
+  /* El texto llena su columna. Antes esto era 62ch y dejaba una franja
+     vacia a la derecha en todas las paginas: el operador lo reporto cinco
+     veces como «se corta contra una pared invisible». Quien limita el ancho
+     ahora es el contenedor de la pagina (--ancho), no cada parrafo. */
+  --medida: 100%;
+  --ancho: 72rem;
+  --rail: 17.5rem;  /* con icono, contador y texto sin cortar */
+
+  /* Alto minimo de cualquier cosa que se pueda pulsar: 44px, el objetivo
+     tactil. De aqui salen botones, filas del menu y campos. */
+  --alto-control: 2.75rem;
+  /* La cabecera pegajosa. El rail y la barra de apartados cuelgan de aqui,
+     asi que NO es un numero suelto: es lo que mide de verdad, calculado.
+     Si cambia el relleno de la cabecera, esto se ajusta solo. */
+  /* El banner de la cabecera. Es lo mas alto que hay ahi dentro. */
+  --alto-marca: 3rem;
+  --alto-cabecera: calc(max(var(--alto-control), var(--alto-marca)) + var(--e-3) * 2 + 1px);
+
+  /* ── movimiento · hover 200-250ms, como pide el sistema ──────────── */
+  --curva: cubic-bezier(0.4, 0, 0.2, 1);
+  --curva-salida: cubic-bezier(0.16, 1, 0.3, 1);
+  --rapido: 140ms var(--curva);
+  --normal: 220ms var(--curva);
+  --entrada: 480ms var(--curva-salida);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CAPA DE PROFUNDIDAD (02/09/2026)
+   El operador pidio cuatro veces algo mas moderno y menos plano. Lo que
+   faltaba no era tipografia: era PROFUNDIDAD, COLOR e IMAGEN. Aqui viven
+   los degradados, el cristal y los halos que dan volumen real.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Aurora de fondo: tres focos de color muy diluidos que se mueven lento.
+     Es lo que separa una pagina con vida de un rectangulo oscuro. */
+  --aurora:
+    radial-gradient(58rem 34rem at 78% -8%,  rgba(76, 141, 255, 0.20), transparent 62%),
+    radial-gradient(46rem 30rem at 8% 12%,   rgba(56, 189, 212, 0.13), transparent 60%),
+    radial-gradient(52rem 32rem at 52% 96%,  rgba(120, 96, 255, 0.10), transparent 64%);
+
+  /* Cristal: superficie translucida con desenfoque por detras. */
+  --vidrio-fondo: rgba(255, 255, 255, 0.035);
+  --vidrio-borde: rgba(255, 255, 255, 0.10);
+  --vidrio-hover: rgba(255, 255, 255, 0.08);
+  --vidrio-brillo: linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0) 42%);
+  --desenfoque: blur(18px);
+
+  /* Halos de color para piezas destacadas. */
+  --halo-azul: 0 0 0 1px rgba(76, 141, 255, 0.22), 0 18px 50px -12px rgba(76, 141, 255, 0.35);
+  --halo-oro:  0 0 0 1px rgba(227, 179, 65, 0.22), 0 18px 50px -12px rgba(227, 179, 65, 0.22);
+  /* Sombra del boton principal: desplazada y con desenfoque, no un halo plano. */
+  --halo-boton: 0 8px 26px -10px rgba(76, 141, 255, 0.75);
+
+  /* Luz de arriba abajo sobre el mismo blanco: es lo que graba un texto.
+     No es un degradado de color, que seria otra cosa. */
+  --texto-relieve: linear-gradient(180deg, #FFFFFF 0%, #C8D2E2 100%);
+
+  /* Degradado de texto para una sola frase por pantalla, no mas. */
+  --texto-degradado: linear-gradient(96deg, #FFFFFF 8%, #9CC2FF 46%, #5BE1F0 92%);
+
+  /* Iconos de los avisos de los módulos, como máscara. Son los mismos trazos
+     de Phosphor que usa el componente Icono, aquí en forma de dato porque un
+     ::before no puede montar un componente. */
+  --icono-aviso: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cpath d='M240.26,186.1,152.81,34.23h0a28.74,28.74,0,0,0-49.62,0L15.74,186.1a27.45,27.45,0,0,0,0,27.71A28.31,28.31,0,0,0,40.55,228h174.9a28.31,28.31,0,0,0,24.79-14.19A27.45,27.45,0,0,0,240.26,186.1Zm-20.8,15.7a4.46,4.46,0,0,1-4,2.2H40.55a4.46,4.46,0,0,1-4-2.2,3.56,3.56,0,0,1,0-3.73L124,46.2a4.77,4.77,0,0,1,8,0l87.44,151.87A3.56,3.56,0,0,1,219.46,201.8ZM116,136V104a12,12,0,0,1,24,0v32a12,12,0,0,1-24,0Zm28,40a16,16,0,1,1-16-16A16,16,0,0,1,144,176Z'/%3E%3C/svg%3E");
+  --icono-veto: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cpath d='M128,20A108,108,0,1,0,236,128,108.12,108.12,0,0,0,128,20Zm84,108a83.6,83.6,0,0,1-16.75,50.28L77.72,60.75A84,84,0,0,1,212,128ZM44,128A83.6,83.6,0,0,1,60.75,77.72L178.28,195.25A84,84,0,0,1,44,128Z'/%3E%3C/svg%3E");
+
+  --borde-vivo: linear-gradient(140deg,
+                rgba(76,141,255,0.55), rgba(56,189,212,0.25) 38%,
+                rgba(255,255,255,0.06) 62%, rgba(76,141,255,0.30));
+}

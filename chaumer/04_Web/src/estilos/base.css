@@ -1,0 +1,586 @@
+/**
+ * BASE — reset, documento y piezas compartidas.
+ * Ni un valor literal: todo sale de tokens.css.
+ */
+
+/* Geist · SIL OFL 1.1 · licencia en public/fuentes/ */
+@font-face {
+  font-family: 'Geist';
+  src: url('/fuentes/geist.woff2') format('woff2-variations');
+  font-weight: 100 900; font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fuentes/geist-mono.woff2') format('woff2-variations');
+  font-weight: 100 900; font-display: swap;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  /* Explícito a propósito. La cabecera y el marco van UNO DEBAJO DE OTRO.
+     Si algo externo convierte el body en grid o flex (una extensión, un
+     panel de vista previa), los dos se colocarían en paralelo y la página
+     se vería corrida a la derecha. Esto lo impide. */
+  display: block;
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: var(--fuente);
+  font-size: var(--t-4);
+  line-height: var(--alto-linea);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── titulos · jerarquia por peso y color, no por tamano bruto ─────────── */
+h1, h2, h3, h4 {
+  line-height: var(--alto-corto);
+  letter-spacing: var(--track-titulo);
+  font-weight: var(--peso-fuerte);
+  margin: var(--e-6) 0 var(--e-3);
+  /* `pretty`, NUNCA `balance`. `balance` reparte el titular en lineas de
+     igual longitud: corta antes del borde y deja una franja vacia a la
+     derecha. Es la «pared invisible» que el operador reporto ocho veces, y
+     no la veia el verificador porque no es un max-width. `pretty` llena la
+     linea y solo evita que la ultima quede con una palabra suelta.
+     `npm run verificar` ahora falla si alguien vuelve a poner `balance`. */
+  text-wrap: pretty;
+}
+h1 { font-size: var(--t-8); margin-top: 0; }
+h2 { font-size: var(--t-7); }
+h3 { font-size: var(--t-6); }
+h4 { font-size: var(--t-4); color: var(--texto-2); }
+
+/* ── ALINEACIÓN Y ANCHO DEL TEXTO ────────────────────────────────────────
+   Las dos cosas se deciden AQUI y en ningun otro sitio. Ninguna pagina ni
+   componente vuelve a poner su propio `text-align` ni su propio tope de
+   ancho sobre texto: `npm run verificar` falla si alguien lo intenta.
+
+   · Justificado a los dos margenes, como en Word.
+   · La ultima linea no se estira — sin esto, un parrafo de dos palabras
+     queda repartido de lado a lado.
+   · Partido por silabas. Es obligatorio con justificado: sin el se abren
+     rios de espacio en blanco entre palabras.
+   · Sin tope de ancho. El texto llena su columna; quien limita es el
+     contenedor de la pagina.
+
+   Reportado por el operador seis veces. La sexta se midieron las 53
+   paginas: 1.186 bloques a la izquierda contra 26 justificados. */
+main :is(p, li, dd, dt, figcaption, blockquote, td, th, h1, h2, h3, h4) {
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
+}
+
+/* Un titular de banner no es texto de lectura: justificarlo abre huecos
+   enormes entre palabras. Hereda lo que diga su banner. */
+main .banner :is(h1, p, dt, dd) {
+  text-align: inherit;      /* alineacion-ok: titular de banner */
+  text-align-last: auto;
+  hyphens: manual;
+}
+
+/* Lo que va centrado a proposito sigue centrado: la cabecera de cada pagina
+   y de cada modulo, y las etiquetas que dibuja mermaid dentro de un <svg>,
+   que no son texto de lectura. */
+main :is(.cab, .mod-cab) :is(p, h1, h2, h3),
+main svg :is(p, span, div) {
+  text-align: center;
+  text-align-last: center;
+  hyphens: manual;
+}
+
+p { margin: 0 0 var(--e-4); max-width: var(--medida); }
+ul, ol { margin: 0 0 var(--e-4); padding-left: var(--e-5); max-width: var(--medida); }
+li { margin-bottom: var(--e-2); }
+li::marker { color: var(--texto-3); }
+
+a {
+  color: var(--acento);
+  text-decoration: none;
+  transition: color var(--rapido);
+}
+a:hover { color: var(--texto); }
+
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+  border-radius: var(--radio-1);
+}
+
+strong, b { font-weight: var(--peso-fuerte); color: var(--texto); }
+code, kbd, samp { font-family: var(--fuente-mono); font-size: 0.9em; }
+
+blockquote {
+  margin: var(--e-5) 0;
+  padding: var(--e-4) var(--e-5);
+  background: var(--superficie);
+  border-radius: var(--radio-2);
+  color: var(--texto-2);
+}
+blockquote > :last-child { margin-bottom: 0; }
+
+hr { border: 0; border-top: 1px solid var(--borde-sutil); margin: var(--e-6) 0; }
+
+/* ── tablas ────────────────────────────────────────────────────────────── */
+.tabla-scroll {
+  overflow-x: auto;
+  margin: var(--e-5) 0;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-2);
+}
+table { border-collapse: collapse; width: 100%; font-size: var(--t-3); }
+th, td { padding: var(--e-3) var(--e-4); vertical-align: top; }
+th {
+  position: sticky; top: 0; background: var(--tarjeta);
+  font-size: var(--t-1); font-weight: var(--peso-fuerte);
+  color: var(--texto-3); letter-spacing: var(--track-etiqueta);
+  text-transform: uppercase; white-space: nowrap;
+  border-bottom: 1px solid var(--borde);
+}
+/* Fila alterna en vez de filete bajo cada fila: separa igual y pesa menos. */
+tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.018); }
+.num, td.num { font-variant-numeric: tabular-nums; font-family: var(--fuente-mono); }
+
+img { max-width: 100%; height: auto; display: block; }
+
+/* ── piezas ────────────────────────────────────────────────────────────── */
+.tarjeta {
+  background: var(--tarjeta);
+  border: 1px solid var(--borde-sutil);
+  border-radius: var(--radio-3);
+  box-shadow: var(--sombra-1);
+}
+
+.etiqueta {
+  font-size: var(--t-1);
+  font-weight: var(--peso-medio);
+  letter-spacing: var(--track-etiqueta);
+  text-transform: uppercase;
+  color: var(--texto-3);
+}
+
+/* Distintivo de estado. Sin punto de color decorativo: el color del texto
+   y la palabra ya dicen el estado. */
+.marca-estado {
+  display: inline-flex; align-items: center;
+  padding: var(--e-1) var(--e-3);
+  border-radius: var(--radio-pill);
+  font-size: var(--t-1);
+  font-weight: var(--peso-medio);
+  letter-spacing: var(--track-etiqueta);
+  text-transform: uppercase;
+  border: 1px solid;
+}
+.marca-estado.aviso    { color: var(--aviso);    border-color: color-mix(in srgb, var(--aviso) 35%, transparent);    background: color-mix(in srgb, var(--aviso) 8%, transparent); }
+.marca-estado.ok       { color: var(--positivo); border-color: color-mix(in srgb, var(--positivo) 35%, transparent); background: color-mix(in srgb, var(--positivo) 8%, transparent); }
+.marca-estado.info     { color: var(--info);     border-color: color-mix(in srgb, var(--info) 35%, transparent);     background: color-mix(in srgb, var(--info) 8%, transparent); }
+
+/* Tecla, para el atajo del buscador. */
+kbd.tecla {
+  display: inline-block;
+  padding: 1px var(--e-2);
+  border: 1px solid var(--n-600);
+  border-bottom-width: 2px;
+  border-radius: var(--radio-1);
+  background: var(--elevado);
+  font-size: var(--t-1);
+  color: var(--texto-3);
+  line-height: 1.5;
+}
+
+.apunte { color: var(--texto-2); font-size: var(--t-3); }
+.meta   { color: var(--texto-3); font-size: var(--t-2); }
+.mono   { font-family: var(--fuente-mono); }
+
+.solo-lectores {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+/* ── entrada ───────────────────────────────────────────────────────────── */
+.entra { opacity: 0; transform: translateY(0.5rem); }
+.entra.visible {
+  opacity: 1; transform: none;
+  transition: opacity var(--entrada), transform var(--entrada);
+  transition-delay: var(--retraso, 0ms);
+}
+.sin-js .entra { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  .entra { opacity: 1 !important; transform: none !important; }
+}
+
+/* ═══════════════════════════ piezas con profundidad ═══════════════════ */
+
+/* Fondo vivo. Va en un pseudoelemento fijo para no repintar al hacer scroll. */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: -2;
+  background-image: var(--aurora);
+  pointer-events: none;
+}
+/* Grano finisimo: quita el aspecto de degradado digital plano. */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: -1; opacity: 0.05;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Cristal: la superficie por defecto de las piezas destacadas. */
+.vidrio {
+  position: relative;
+  background-color: var(--vidrio-fondo);
+  background-image: var(--vidrio-brillo);
+  backdrop-filter: var(--desenfoque);
+  border: 1px solid var(--vidrio-borde);
+  border-radius: var(--radio-4);
+  box-shadow: var(--sombra-2);
+}
+
+/* Borde vivo: un degradado de un pixel alrededor de la pieza principal. */
+.borde-vivo { position: relative; }
+.borde-vivo::before {
+  content: '';
+  position: absolute; inset: 0;
+  padding: 1px; border-radius: inherit;
+  background: var(--borde-vivo);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Una sola frase por pantalla en degradado. Mas es ruido. */
+.degradado {
+  background: var(--texto-degradado);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+}
+
+/* Marco de grafico: la imagen es el contenido, el marco solo la sostiene. */
+.marco-gr {
+  border-radius: var(--radio-3);
+  overflow: hidden;
+  border: 1px solid var(--vidrio-borde);
+  background: var(--n-950);
+}
+.marco-gr img { width: 100%; display: block; }
+
+/* ═══════════════ referencias y pastillas dentro del texto ═════════════
+   Estos nodos los genera enriquecer() en el servidor y llegan por set:html,
+   asi que van globales: los estilos con ambito no los alcanzarian.        */
+
+/* Pastilla de parametro: el nombre mas el valor vigente, resuelto de
+   PARAMETROS.md. En ningun sitio se escribe el numero a mano. */
+.pastilla-par {
+  display: inline-flex; align-items: baseline; gap: var(--e-2);
+  padding: 1px var(--e-2);
+  border-radius: var(--radio-1);
+  background: color-mix(in srgb, var(--info) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--info) 26%, transparent);
+  font-family: var(--fuente-mono); font-size: 0.82em;
+  color: var(--info); white-space: nowrap;
+  transition: background var(--rapido), border-color var(--rapido);
+}
+.pastilla-par:hover {
+  background: color-mix(in srgb, var(--info) 20%, transparent);
+  border-color: color-mix(in srgb, var(--info) 55%, transparent);
+  color: var(--info);
+}
+.pastilla-par .pp-v { color: var(--texto); font-weight: var(--peso-medio); }
+
+/* Referencia cruzada a otra regla o a un caso. */
+.ref {
+  font-family: var(--fuente-mono); font-size: 0.88em;
+  color: var(--acento);
+  border-bottom: 1px solid color-mix(in srgb, var(--acento) 35%, transparent);
+}
+.ref:hover { color: var(--texto); border-bottom-color: var(--texto); }
+
+/* ═══════════ markdown renderado de los documentos ═══════════════════════
+   Llega por set:html, asi que va global.                                  */
+.md { color: var(--texto-2); font-size: var(--t-4); }
+.md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+.md p { max-width: var(--medida); }
+.md h2, .md h3, .md h4 { color: var(--texto); }
+.md h3 { font-size: var(--t-5); margin-top: var(--e-6); }
+.md h4 { font-size: var(--t-4); margin-top: var(--e-5); }
+.md strong { color: var(--texto); }
+.md ul, .md ol { max-width: var(--medida); }
+.md li { margin-bottom: var(--e-2); }
+.md table {
+  display: block; max-width: 100%; overflow-x: auto;
+  border-collapse: collapse; margin: var(--e-4) 0; font-size: var(--t-3);
+}
+.md th, .md td { padding: var(--e-2) var(--e-4) var(--e-2) 0; vertical-align: top; }
+.md thead th {
+  position: static; background: none;
+  border-bottom: 1px solid var(--borde);
+  color: var(--texto-3); font-size: var(--t-1);
+  letter-spacing: var(--track-etiqueta); text-transform: uppercase;
+}
+.md tbody tr { border-bottom: 1px solid var(--borde-sutil); background: none; }
+.md tbody tr:last-child { border-bottom: 0; }
+.md blockquote {
+  margin: var(--e-4) 0; padding: var(--e-4) var(--e-5);
+  background: rgba(255, 255, 255, 0.03); border-radius: var(--radio-2);
+}
+.md code { color: var(--info); }
+.md img { border-radius: var(--radio-2); margin: var(--e-4) 0; }
+.md hr { margin: var(--e-5) 0; }
+
+/* ═══════════════════ diagramas del plan ═══════════════════════════════
+   Dibujados a SVG en la compilacion desde el mermaid del documento. El
+   navegador no descarga ninguna libreria: el dibujo viaja en el HTML.   */
+.diagrama {
+  margin: var(--e-6) 0;
+  padding: var(--e-5);
+  border-radius: var(--radio-3);
+  background: var(--superficie);
+  border: 1px solid var(--borde-sutil);
+  overflow-x: auto;
+}
+.diagrama svg { width: 100%; height: auto; max-width: 100%; display: block; }
+
+
+/* ═══════════ códigos de regla: ocultos salvo en modo técnico ═══════════
+   «R-22» no le dice nada a quien llega nuevo, y tenerlo delante obliga a
+   navegar para saber qué es. El identificador sigue en el HTML, así que el
+   enlace y la búsqueda siguen funcionando: solo deja de verse.            */
+
+/* Las referencias dentro del texto no se pueden esconder sin romper la
+   frase, así que se apagan y llevan el enunciado en el título emergente. */
+body:not(.tecnico) .ref {
+  color: var(--texto-3);
+  border-bottom-color: var(--borde);
+}
+body:not(.tecnico) .ref:hover { color: var(--acento); }
+
+
+/* ═══════════════════ piezas de los ocho módulos ═══════════════════════
+   Vocabulario visual compartido por los ocho pasos del método. Vive aquí y
+   no en cada página para que los ocho se lean igual: un apartado es un
+   apartado, una regla dura es una regla dura, y no cambian de aspecto al
+   pasar de un módulo al siguiente.                                      */
+
+/* Un apartado del módulo. El ancla del índice lateral. */
+.ap { margin-bottom: var(--e-8); scroll-margin-top: calc(var(--alto-cabecera) + 4.5rem); }
+/* El titulo del apartado: en blanco resaltado, a la izquierda (el operador
+   probo alineado a la derecha y no le convencio), tal cual esta escrito
+   (mayuscula solo en la primera letra — «Cómo estoy hoy»). Antes llevaba el
+   tono del modulo y mayusculas; ese tratamiento paso al titulo principal del
+   modulo (--tono-mod), y aqui queda al reves. */
+.ap > h2 {
+  margin: 0 0 var(--e-5);
+  font-size: var(--t-7);
+  color: var(--texto);
+  text-wrap: pretty;
+}
+.ap > h2 .ref-cod { letter-spacing: 0; }
+.ap > h3 { margin: var(--e-6) 0 var(--e-3); font-size: var(--t-6); }
+.ap > p { color: var(--texto-2); }
+.ap > p:first-of-type { font-size: var(--t-5); color: var(--texto-2); }
+
+/* Los párrafos de un apartado llenan su columna de lado a lado y se
+   justifican, como pidió el operador («márgenes tipo Word»). Antes cada <p>
+   tope aba en 62ch (699px) dentro de una caja de 768: sobraban 69px a la
+   derecha, y como el título va centrado, ese margen se leía como un corte.
+   Con hyphens:auto (el <html lang="es"> ya está puesto en Marco.astro) el
+   justificado no deja ríos de espacio en blanco. Las listas y fichas de
+   datos se quedan alineadas a la izquierda: justificar líneas cortas se ve
+   peor, no mejor. */
+.ap p {
+  max-width: none;
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
+}
+/* La última línea de un párrafo no se estira: es la regla de siempre en
+   texto justificado, y sin ella la última línea corta queda con huecos
+   enormes entre dos o tres palabras. */
+
+/* Gráfico con su pie.
+   Con un apartado por pantalla el gráfico deja de ser un adorno al margen y
+   pasa a ser el centro del apartado: marco de cristal, halo azul y el pie
+   dentro de la misma pieza. La imagen NO se toca — el estándar de gráficas
+   manda dentro del marco; esto es el marco. */
+.gr {
+  margin: var(--e-6) 0;
+  padding: var(--e-2);
+  border-radius: var(--radio-4);
+  background: var(--vidrio-fondo);
+  background-image: var(--vidrio-brillo);
+  border: 1px solid var(--vidrio-borde);
+  box-shadow: var(--halo-azul), var(--sombra-2);
+}
+.gr img {
+  width: 100%; display: block;
+  border-radius: calc(var(--radio-4) - var(--e-2));
+  background: var(--n-950);
+}
+.gr figcaption {
+  margin: 0;
+  padding: var(--e-3) var(--e-4) var(--e-2);
+}
+
+/* Apartado partido en dos: texto a la izquierda, una imagen de referencia a
+   la derecha — una captura real de la plataforma, no un gráfico de mercado.
+   Se usa cuando el apartado necesita enseñar una pantalla (la ATM, el
+   calendario) sin cortar la lectura con una figura a todo el ancho. */
+/* Dos mitades de verdad: el texto a la izquierda y la imagen a la derecha,
+   al 50 %. Antes la columna de la derecha eran 14rem fijos —cabia una captura
+   vertical y poco mas—; el operador pidio el 06/09/2026 que la imagen ocupe
+   media pagina. */
+.ap-dividido {
+  display: grid;
+  /* Dos mitades SOLO si cada una respira: por debajo de 22rem por columna se
+     apilan solas. Con un punto de ruptura fijo, entre 700 y 1000px salian dos
+     columnas de cuatro palabras por linea. */
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  gap: var(--e-7);
+  align-items: center;
+}
+.ap-dividido .ap-texto { min-width: 0; }
+.ap-dividido .gr { margin-top: 0; }
+
+/* Ficha de datos: lo medible de un apartado, en dos columnas. */
+.datos {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  gap: 1px;
+  margin: var(--e-5) 0;
+  border: 1px solid var(--borde-sutil);
+  border-radius: var(--radio-3);
+  overflow: hidden;
+  background: var(--borde-sutil);
+}
+.datos > dt, .datos > dd {
+  margin: 0;
+  padding: var(--e-3) var(--e-4);
+  background: var(--superficie);
+  font-size: var(--t-3);
+}
+.datos > dt { color: var(--texto-3); }
+.datos > dd { color: var(--texto); }
+.datos > dd strong { font-weight: var(--peso-fuerte); }
+
+/* Secuencia numerada: los pasos de un procedimiento, en orden. */
+.secuencia { list-style: none; margin: var(--e-5) 0; padding: 0; counter-reset: sec; max-width: none; }
+.secuencia > li {
+  counter-increment: sec;
+  position: relative;
+  margin: 0 0 var(--e-4);
+  padding-left: var(--e-7);
+  color: var(--texto-2);
+  font-size: var(--t-4);
+}
+.secuencia > li::before {
+  content: counter(sec);
+  position: absolute; left: 0; top: 0.05em;
+  width: 1.6rem; height: 1.6rem;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  font-family: var(--fuente-mono);
+  font-size: var(--t-1);
+  color: var(--acento);
+  letter-spacing: 0;
+}
+.secuencia > li > strong { color: var(--texto); font-weight: var(--peso-medio); }
+
+/* Avisos: regla dura y prohibición.
+   Antes eran una barra de color de 2px a la izquierda. Esa barra es la marca
+   de fábrica de las interfaces generadas —el propio detector la señala en
+   otras páginas— y además el color iba solo. Ahora llevan icono, panel
+   teñido y borde entero: se distinguen sin depender del matiz. */
+.duro, .veto {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--e-3) var(--e-4);
+  margin: var(--e-5) 0;
+  padding: var(--e-4) var(--e-5);
+  border-radius: var(--radio-3);
+  border: 1px solid;
+}
+.duro > p, .veto > p { grid-column: 2; margin: 0; color: var(--texto-2); font-size: var(--t-4); }
+/* Las separa el hueco de filas de la rejilla; no hace falta margen. */
+.duro > p + p, .veto > p + p { margin-top: 0; }
+
+/* El icono va en un pseudoelemento con máscara: mismo trazo y misma caja que
+   el resto de iconos del portal, sin tocar el HTML de los ocho módulos. */
+.duro::before, .veto::before {
+  content: '';
+  grid-row: 1 / -1;
+  width: 1.25rem; height: 1.25rem;
+  margin-top: 0.15em;
+  background: currentColor;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-size: contain; mask-size: contain;
+}
+
+/* Regla dura: oro, que es advertencia y no error. */
+.duro {
+  border-color: color-mix(in srgb, var(--aviso) 28%, transparent);
+  background: color-mix(in srgb, var(--aviso) 7%, transparent);
+  color: var(--aviso);
+}
+.duro strong { color: var(--aviso); }
+.duro::before {
+  -webkit-mask-image: var(--icono-aviso); mask-image: var(--icono-aviso);
+}
+
+/* Prohibición: rojo. Es el único sitio de los módulos donde el rojo dice
+   «esto no se hace», y va siempre con el icono y con la palabra. */
+.veto {
+  border-color: color-mix(in srgb, var(--negativo) 28%, transparent);
+  background: color-mix(in srgb, var(--negativo) 7%, transparent);
+  color: var(--negativo);
+}
+.veto strong { color: var(--negativo); }
+.veto::before {
+  -webkit-mask-image: var(--icono-veto); mask-image: var(--icono-veto);
+}
+
+/* Rejilla de tarjetas: casos, filtros, variantes. */
+.rejilla { display: grid; gap: var(--e-4); margin: var(--e-5) 0; }
+.rejilla.dos { grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
+.rejilla.tres { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+.tarj {
+  padding: var(--e-5);
+  border: 1px solid var(--vidrio-borde);
+  border-radius: var(--radio-3);
+  background: var(--vidrio-fondo);
+  background-image: var(--vidrio-brillo);
+  box-shadow: var(--sombra-1);
+}
+.tarj > h3, .tarj > h4 { margin: 0 0 var(--e-2); font-size: var(--t-4); color: var(--texto); }
+.tarj > p { margin: 0; color: var(--texto-2); font-size: var(--t-3); }
+.tarj > p + p { margin-top: var(--e-2); }
+.tarj-n {
+  display: inline-block;
+  margin-bottom: var(--e-2);
+  font-family: var(--fuente-mono);
+  font-size: var(--t-1);
+  letter-spacing: var(--track-cifra);
+  color: var(--acento);
+}
+
+/* Cifra suelta dentro del texto: un número que importa. */
+.cifra-en {
+  font-family: var(--fuente-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--texto);
+  letter-spacing: var(--track-cifra);
+}
+
+/* El lateral plegado. Vive aqui y no en el componente porque la clase la pone
+   un script de <head> sobre <html>, antes de que exista ningun componente. */
+

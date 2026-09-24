@@ -1,0 +1,155 @@
+---
+/**
+ * Parametros.
+ *
+ * Es la pantalla que da sentido a todas las pastillas del portal: aqui vive
+ * el valor, y las reglas lo citan por NOMBRE. Cambiar un numero aqui lo
+ * cambia en las 38 fichas sin tocar codigo.
+ *
+ * Cada parametro lleva ancla propia para que las pastillas puedan apuntar
+ * directamente a el.
+ */
+import Marco from '../componentes/Marco.astro';
+import Icono from '../componentes/Icono.astro';
+import * as P from '../lib/parsers.mjs';
+
+const params = [...P.parametros().values()];
+const notas = P.notasParametros();
+const reglas = P.reglas();
+
+// Reglas que citan cada parametro. Calculado sobre el texto de reglas.json.
+function reglasQueCitan(nombre) {
+  const re = new RegExp('(^|[^A-Za-z0-9_])' + nombre + '(?![A-Za-z0-9_])');
+  return reglas.filter((r) => re.test(JSON.stringify(r))).map((r) => r.id);
+}
+
+const secciones = [];
+for (const p of params) {
+  let s = secciones.find((x) => x.nombre === p.seccion);
+  if (!s) { s = { nombre: p.seccion, items: [] }; secciones.push(s); }
+  s.items.push({ ...p, citan: reglasQueCitan(p.nombre) });
+}
+---
+
+<Marco titulo="Parámetros">
+  <header class="cab entra">
+    <h1>Los {params.length} parámetros</h1>
+    <p class="lead">
+      Todo lo que puede cambiar, en un solo sitio. Las reglas citan el{' '}
+      <strong>nombre</strong> del parámetro, nunca el valor, así que cambiar un
+      número aquí lo cambia en todo el portal.
+    </p>
+  </header>
+
+  {secciones.map((s, si) => (
+    <section class="sec">
+      <h2 class="sec-t entra">{s.nombre}</h2>
+      <div class="rejilla">
+        {s.items.map((p, i) => (
+          <article class="par entra" id={p.nombre} data-obs-tipo="parametro" data-obs-id={p.nombre} data-obs-titulo={p.nombre} style={`--retraso:${Math.min(i, 6) * 40}ms`}>
+            <header class="p-cab">
+              <h3 class="p-n mono">{p.nombre}</h3>
+              <a class="p-enlace" href={`#${p.nombre}`} aria-label={`Enlace a ${p.nombre}`}>
+                <Icono nombre="link-simple" />
+              </a>
+            </header>
+            <p class="p-v" set:html={P.enriquecerHtml(P.tituloAHtml(p.valor))} />
+            {p.glosa && <p class="p-glosa" set:html={P.enriquecerHtml(P.tituloAHtml(p.glosa))} />}
+            {p.anotacion && <p class="p-an meta">{p.anotacion}</p>}
+            <dl class="p-d">
+              {p.detalle.map((d) => (
+                <div class="p-fila">
+                  <dt class="etiqueta">{d.etiqueta}</dt>
+                  <dd set:html={P.enriquecerHtml(P.tituloAHtml(d.valor))} />
+                </div>
+              ))}
+            </dl>
+            {p.citan.length > 0 && (
+              <footer class="p-pie">
+                <span class="etiqueta">Lo citan</span>
+                <span class="p-refs">
+                  {p.citan.filter(P.hayRegla).map((id) => <a class="ref" href={`/reglas/${id}`}>{id}</a>)}
+                </span>
+              </footer>
+            )}
+          </article>
+        ))}
+      </div>
+
+      {notas.filter((n) => n.seccion === s.nombre).map((n) => (
+        <div class="nota md" set:html={n.html} />
+      ))}
+      {si === secciones.length - 1 && notas.filter((n) => !secciones.some((x) => x.nombre === n.seccion)).map((n) => (
+        <div class="nota md">
+          <p class="etiqueta nota-t">{n.seccion}</p>
+          <div set:html={n.html} />
+        </div>
+      ))}
+    </section>
+  ))}
+</Marco>
+
+<style>
+  .cab { margin-bottom: var(--e-7); }
+  .lead { font-size: var(--t-5); color: var(--texto-2); margin: var(--e-4) 0 0; }
+
+  .sec { margin-bottom: var(--e-8); }
+  .sec-t {
+    margin: 0 0 var(--e-5);
+    font-size: var(--t-1); font-weight: var(--peso-fuerte);
+    letter-spacing: var(--track-etiqueta); text-transform: uppercase;
+    color: var(--texto-3);
+    padding-bottom: var(--e-3);
+    border-bottom: 1px solid var(--borde-sutil);
+  }
+
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); gap: var(--e-3); }
+
+  .par {
+    display: flex; flex-direction: column; gap: var(--e-3);
+    padding: var(--e-5);
+    border-radius: var(--radio-3);
+    background: var(--vidrio-fondo);
+    background-image: var(--vidrio-brillo);
+    border: 1px solid var(--vidrio-borde);
+    scroll-margin-top: 6rem;
+  }
+  /* Al llegar desde una pastilla, el parametro se resalta un momento. */
+  .par:target {
+    border-color: color-mix(in srgb, var(--info) 55%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--info) 30%, transparent),
+                0 14px 40px -14px color-mix(in srgb, var(--info) 45%, transparent);
+  }
+
+  .p-cab { display: flex; align-items: center; gap: var(--e-3); }
+  .p-n { margin: 0; font-size: var(--t-3); font-weight: var(--peso-fuerte); color: var(--info); letter-spacing: 0.02em; }
+  .p-enlace { margin-left: auto; color: var(--texto-3); --i: 0.9rem; display: flex; opacity: 0; transition: opacity var(--normal); }
+  .par:hover .p-enlace, .p-enlace:focus-visible { opacity: 1; }
+
+  .p-an { margin: calc(var(--e-2) * -1) 0 var(--e-3); }
+  .p-glosa { margin: calc(var(--e-2) * -1) 0 var(--e-3); color: var(--texto-2); }
+  .p-v {
+    margin: 0; font-size: var(--t-6); font-weight: var(--peso-fuerte);
+    color: var(--texto); line-height: 1.25; max-width: none;
+  }
+
+  .p-d { margin: 0; display: grid; gap: var(--e-3); }
+  .p-fila { display: grid; gap: var(--e-1); }
+  .p-fila dd { margin: 0; font-size: var(--t-3); color: var(--texto-2); }
+
+  .p-pie { display: flex; align-items: baseline; gap: var(--e-3); flex-wrap: wrap; margin-top: auto; padding-top: var(--e-3); border-top: 1px solid var(--borde-sutil); }
+  .p-refs { display: flex; flex-wrap: wrap; gap: var(--e-2); }
+
+  .nota {
+    margin-top: var(--e-5);
+    padding: var(--e-5);
+    border-radius: var(--radio-3);
+    background: color-mix(in srgb, var(--aviso) 7%, transparent);
+    border: 1px solid color-mix(in srgb, var(--aviso) 22%, transparent);
+    color: var(--texto-2); font-size: var(--t-3);
+  }
+  .nota-t { margin: 0 0 var(--e-3); color: var(--aviso); }
+  .nota :global(p) { max-width: none; }
+  .nota :global(p:last-child) { margin-bottom: 0; }
+  .nota :global(table) { margin-top: var(--e-3); }
+</style>

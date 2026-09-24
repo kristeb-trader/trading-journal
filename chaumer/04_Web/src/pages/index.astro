@@ -1,0 +1,41 @@
+---
+/**
+ * Portada — la que abre Alfredo.
+ *
+ * Direccion «Terminal», elegida por el operador el 06/09/2026 entre tres
+ * propuestas. Sustituye a la portada densa anterior: el pidio «no tanta
+ * cosa», un banner con movimiento arriba y tres tarjetas debajo. Eso es todo
+ * lo que hay.
+ *
+ *   - Banner: cinta de cotizacion en marcha, malla de pantalla encendida y
+ *     los cuatro datos que definen la operativa.
+ *   - Tres puertas: el recorrido, las reglas y los casos reales.
+ *
+ * Lo que NO va aqui: el titular de marca, que ya esta en la cabecera, y las
+ * listas de modulos, que ya estan en el menu de la izquierda.
+ */
+import Marco from '../componentes/Marco.astro';
+import BannerTerminal from '../componentes/BannerTerminal.astro';
+import TarjetasInicio from '../componentes/TarjetasInicio.astro';
+---
+
+<Marco titulo="Inicio">
+  <BannerTerminal
+    titulo="Plan de Trading Enfocado en la metodología de"
+    destacado="Alfredo Chaumer"
+    sub="Un método para operar trading de Futuros, enfocado en el Nasdaq: traducido a reglas que se pueden medir, seguir y operar todos los días." />
+
+  <section class="bloque">
+    <h2 class="rotulo">Por dónde entrar</h2>
+    <TarjetasInicio variante="rejilla" />
+  </section>
+</Marco>
+
+<style>
+  .bloque { margin-top: var(--e-8); }
+  .rotulo {
+    margin: 0 0 var(--e-5);
+    font-size: var(--t-2); color: var(--texto-3);
+    letter-spacing: var(--track-etiqueta); text-transform: uppercase;
+  }
+</style>

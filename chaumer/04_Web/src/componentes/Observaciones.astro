@@ -1,0 +1,322 @@
+---
+/**
+ * Observaciones — la caja de comentar y el globo de selección.
+ *
+ * Va en el marco, asi que funciona en TODAS las paginas sin repetir nada.
+ * Cualquier elemento con data-obs-tipo se vuelve comentable: aparece un
+ * boton discreto al pasar por encima, y ademas se puede seleccionar un
+ * trozo de texto y comentar sobre esa seleccion concreta.
+ *
+ * El portal no tiene puerta, asi que no hay identidad verificada. El nombre
+ * del revisor llega en el enlace (?a=Alfredo), se recuerda en su navegador
+ * y firma todo lo que escriba. Si no llega ninguno, se le pregunta una vez.
+ *
+ * UNA OBSERVACION NO ES UNA REGLA: queda escrito en la propia caja.
+ */
+import Icono from './Icono.astro';
+---
+
+<!-- Globo que aparece al seleccionar texto -->
+<button class="globo" type="button" data-obs-globo hidden>
+  <Icono nombre="chat-teardrop-text" /> Comentar esto
+</button>
+
+<!-- Caja de escritura -->
+<dialog class="obs" data-obs-dlg aria-label="Escribir una observación">
+  <form class="obs-in" method="dialog" data-obs-form>
+    <header class="obs-cab">
+      <span class="obs-donde" data-obs-donde></span>
+      <button class="obs-x" type="button" data-obs-cerrar aria-label="Cerrar">
+        <Icono nombre="x" />
+      </button>
+    </header>
+
+    <blockquote class="obs-cita" data-obs-cita hidden></blockquote>
+
+    <label class="obs-campo">
+      <span class="etiqueta">Tu observación</span>
+      <textarea data-obs-texto rows="5" maxlength="5000" required
+                placeholder="Qué has visto, qué cambiarías, qué no encaja con tu método."></textarea>
+    </label>
+
+    <label class="obs-campo obs-autor" data-obs-autor-campo hidden>
+      <span class="etiqueta">Tu nombre</span>
+      <input type="text" data-obs-autor maxlength="80" placeholder="Para saber quién lo escribió" />
+    </label>
+
+    <p class="obs-nota">
+      Una observación <strong>no modifica el plan</strong>. Queda registrada
+      para que el operador la lea y decida.
+    </p>
+
+    <footer class="obs-pie">
+      <span class="obs-estado meta" data-obs-estado></span>
+      <button class="obs-enviar" type="submit" data-obs-enviar>Guardar observación</button>
+    </footer>
+  </form>
+</dialog>
+
+<script is:inline>
+  (function () {
+    var CLAVE_AUTOR = 'chaumer.autor';
+
+    // El nombre puede llegar en el enlace: ?a=Alfredo. Se recuerda y se limpia
+    // de la barra de direcciones para que no viaje en cada enlace que copie.
+    try {
+      var url = new URL(window.location.href);
+      var a = url.searchParams.get('a');
+      if (a) {
+        localStorage.setItem(CLAVE_AUTOR, a.slice(0, 80));
+        url.searchParams.delete('a');
+        history.replaceState({}, '', url.pathname + url.search + url.hash);
+      }
+    } catch (e) { /* navegador sin almacenamiento: se pedira el nombre */ }
+
+    function autor() {
+      try { return localStorage.getItem(CLAVE_AUTOR) || ''; } catch (e) { return ''; }
+    }
+
+    var dlg = document.querySelector('[data-obs-dlg]');
+    var globo = document.querySelector('[data-obs-globo]');
+    if (!dlg || !globo) return;
+
+    var form = document.querySelector('[data-obs-form]');
+    var elTexto = document.querySelector('[data-obs-texto]');
+    var elAutor = document.querySelector('[data-obs-autor]');
+    var campoAutor = document.querySelector('[data-obs-autor-campo]');
+    var elDonde = document.querySelector('[data-obs-donde]');
+    var elCita = document.querySelector('[data-obs-cita]');
+    var elEstado = document.querySelector('[data-obs-estado]');
+    var btnEnviar = document.querySelector('[data-obs-enviar]');
+    var actual = null;
+
+    // ── botón de comentar en cada elemento comentable ──────────────────
+    var comentables = document.querySelectorAll('[data-obs-tipo]');
+    comentables.forEach(function (el) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'obs-btn';
+      b.setAttribute('aria-label', 'Comentar sobre ' + (el.getAttribute('data-obs-titulo') || 'esto'));
+      b.innerHTML = '<span class="obs-btn-i" aria-hidden="true">+</span><span class="obs-btn-t">Comentar</span>'
+        + '<span class="obs-btn-n" data-obs-cuenta hidden></span>';
+      b.addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        abrir({
+          tipo: el.getAttribute('data-obs-tipo'),
+          id: el.getAttribute('data-obs-id'),
+          titulo: el.getAttribute('data-obs-titulo'),
+          cita: null,
+        });
+      });
+      el.appendChild(b);
+      el.classList.add('comentable');
+    });
+
+    // ── globo al seleccionar texto dentro de algo comentable ───────────
+    document.addEventListener('mouseup', function () {
+      setTimeout(function () {
+        var sel = window.getSelection();
+        var txt = sel && String(sel).trim();
+        if (!txt || txt.length < 3 || dlg.open) { globo.hidden = true; return; }
+
+        var nodo = sel.anchorNode;
+        var el = nodo && (nodo.nodeType === 1 ? nodo : nodo.parentElement);
+        var caja = el && el.closest('[data-obs-tipo]');
+        if (!caja) { globo.hidden = true; return; }
+
+        // Dentro de un <dialog> modal (el visor de Casos reales) el globo
+        // tiene que vivir en el propio dialogo: fuera quedaria debajo, y el
+        // resto de la pagina esta inerte. Ahi se mide contra el dialogo.
+        var modal = caja.closest('dialog');
+        var casa = modal || document.body;
+        if (globo.parentNode !== casa) casa.appendChild(globo);
+        var r = sel.getRangeAt(0).getBoundingClientRect();
+        var o = modal ? modal.getBoundingClientRect() : { top: -window.scrollY, left: -window.scrollX };
+        globo.style.top = (r.top - o.top - 44) + 'px';
+        globo.style.left = (r.left - o.left + r.width / 2) + 'px';
+        globo.hidden = false;
+        globo.onclick = function () {
+          abrir({
+            tipo: caja.getAttribute('data-obs-tipo'),
+            id: caja.getAttribute('data-obs-id'),
+            titulo: caja.getAttribute('data-obs-titulo'),
+            cita: txt.slice(0, 1200),
+          });
+          globo.hidden = true;
+        };
+      }, 10);
+    });
+    document.addEventListener('scroll', function () { globo.hidden = true; }, { passive: true });
+
+    // ── abrir y enviar ─────────────────────────────────────────────────
+    function abrir(ancla) {
+      actual = ancla;
+      elDonde.textContent = ancla.titulo
+        ? (ancla.id ? ancla.id + ' · ' + ancla.titulo : ancla.titulo)
+        : 'Sobre el plan en general';
+      if (ancla.cita) { elCita.textContent = ancla.cita; elCita.hidden = false; }
+      else { elCita.hidden = true; }
+      elTexto.value = '';
+      elEstado.textContent = '';
+      btnEnviar.disabled = false;
+      campoAutor.hidden = !!autor();
+      if (elAutor) elAutor.value = autor();
+      dlg.showModal();
+      elTexto.focus();
+    }
+
+    document.querySelector('[data-obs-cerrar]').addEventListener('click', function () { dlg.close(); });
+    dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var texto = elTexto.value.trim();
+      if (!texto) return;
+
+      var quien = autor() || (elAutor && elAutor.value.trim());
+      if (!quien) { elEstado.textContent = 'Pon tu nombre para saber quién lo escribió.'; return; }
+      try { localStorage.setItem(CLAVE_AUTOR, quien); } catch (err) { /* sin almacenamiento */ }
+
+      btnEnviar.disabled = true;
+      elEstado.textContent = 'Guardando…';
+
+      fetch('/api/observaciones', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          ancla_tipo: actual.tipo, ancla_id: actual.id,
+          ancla_titulo: actual.titulo, cita: actual.cita,
+          texto: texto, autor: quien,
+        }),
+      })
+        .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (!res.ok) throw new Error(res.j.error || 'No se pudo guardar');
+          elEstado.textContent = 'Guardada. Gracias.';
+          setTimeout(function () { dlg.close(); contar(); }, 700);
+        })
+        .catch(function (err) {
+          btnEnviar.disabled = false;
+          elEstado.textContent = String(err.message || err);
+        });
+    });
+
+    // ── contador por elemento ──────────────────────────────────────────
+    function contar() {
+      if (!comentables.length) return;
+      fetch('/api/observaciones')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) return;
+          var porAncla = {};
+          (d.observaciones || []).forEach(function (o) {
+            var k = o.ancla_tipo + '/' + (o.ancla_id || '');
+            porAncla[k] = (porAncla[k] || 0) + 1;
+          });
+          comentables.forEach(function (el) {
+            var k = el.getAttribute('data-obs-tipo') + '/' + (el.getAttribute('data-obs-id') || '');
+            var n = porAncla[k];
+            var badge = el.querySelector('[data-obs-cuenta]');
+            if (!badge) return;
+            if (n) { badge.textContent = n; badge.hidden = false; el.classList.add('con-obs'); }
+            else { badge.hidden = true; el.classList.remove('con-obs'); }
+          });
+        })
+        .catch(function () { /* sin API (compilacion local): sin contadores */ });
+    }
+    contar();
+  })();
+</script>
+
+<style is:global>
+  /* Elemento comentable: el boton aparece al pasar por encima. */
+  .comentable { position: relative; }
+  .obs-btn {
+    position: absolute; top: var(--e-3); right: var(--e-3); z-index: 3;
+    display: inline-flex; align-items: center; gap: var(--e-2);
+    padding: var(--e-1) var(--e-3);
+    border-radius: var(--radio-pill);
+    background: rgba(10, 12, 17, 0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--vidrio-borde);
+    color: var(--texto-3);
+    font: inherit; font-size: var(--t-1);
+    cursor: pointer; opacity: 0;
+    transition: opacity var(--normal), color var(--normal), border-color var(--normal);
+  }
+  .comentable:hover .obs-btn,
+  .obs-btn:focus-visible,
+  .comentable.con-obs .obs-btn { opacity: 1; }
+  .obs-btn:hover { color: var(--acento); border-color: color-mix(in srgb, var(--acento) 45%, transparent); }
+  .obs-btn-i { font-weight: var(--peso-max); }
+  .obs-btn-n {
+    padding: 0 var(--e-2); border-radius: var(--radio-pill);
+    background: color-mix(in srgb, var(--acento) 30%, transparent);
+    color: var(--texto); font-variant-numeric: tabular-nums;
+  }
+
+  /* Globo de selección */
+  .globo {
+    position: absolute; z-index: 50;
+    transform: translateX(-50%);
+    display: inline-flex; align-items: center; gap: var(--e-2);
+    padding: var(--e-2) var(--e-3);
+    border-radius: var(--radio-pill);
+    background: var(--acento); color: #06121F; border: 0;
+    font: inherit; font-size: var(--t-2); font-weight: var(--peso-medio);
+    cursor: pointer;
+    box-shadow: 0 8px 24px -8px rgba(76, 141, 255, 0.8);
+  }
+  .globo[hidden] { display: none; }
+
+  /* Caja de escritura */
+  .obs {
+    width: min(34rem, calc(100vw - 2rem));
+    margin-top: 12vh; padding: 0; border: 0;
+    border-radius: var(--radio-4);
+    background: var(--tarjeta);
+    box-shadow: var(--sombra-3);
+    color: var(--texto);
+  }
+  .obs::backdrop { background: rgba(5, 8, 14, 0.75); backdrop-filter: blur(3px); }
+  .obs-in { padding: var(--e-5); display: grid; gap: var(--e-4); }
+  .obs-cab { display: flex; align-items: baseline; gap: var(--e-3); }
+  .obs-donde { flex: 1; font-size: var(--t-3); font-weight: var(--peso-fuerte); color: var(--acento); }
+  .obs-x { display: flex; padding: var(--e-1); background: none; border: 0; color: var(--texto-3); cursor: pointer; }
+  .obs-x:hover { color: var(--texto); }
+
+  .obs-cita {
+    margin: 0; padding: var(--e-3) var(--e-4);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: var(--radio-2);
+    font-size: var(--t-3); color: var(--texto-2);
+    max-height: 7rem; overflow-y: auto;
+  }
+
+  .obs-campo { display: grid; gap: var(--e-2); }
+  .obs-campo textarea, .obs-campo input {
+    width: 100%; padding: var(--e-3) var(--e-4);
+    background: var(--fondo);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-2);
+    color: var(--texto); font: inherit; font-size: var(--t-3);
+    resize: vertical;
+  }
+  .obs-campo textarea:focus, .obs-campo input:focus {
+    outline: none; border-color: color-mix(in srgb, var(--acento) 60%, transparent);
+  }
+
+  .obs-nota { margin: 0; font-size: var(--t-2); color: var(--texto-3); max-width: none; }
+  .obs-pie { display: flex; align-items: center; gap: var(--e-4); }
+  .obs-estado { flex: 1; }
+  .obs-enviar {
+    padding: var(--e-3) var(--e-5);
+    border-radius: var(--radio-2); border: 0;
+    background: var(--acento); color: #06121F;
+    font: inherit; font-size: var(--t-3); font-weight: var(--peso-medio);
+    cursor: pointer;
+    transition: background var(--normal);
+  }
+  .obs-enviar:hover:not(:disabled) { background: #6AA0FF; }
+  .obs-enviar:disabled { opacity: 0.5; cursor: default; }
+</style>

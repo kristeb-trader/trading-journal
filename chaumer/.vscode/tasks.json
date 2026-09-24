@@ -1,0 +1,20 @@
+{
+  // Tarea unica: levantar el portal en local. Se lanza sola al abrir la
+  // carpeta, asi que basta con abrir VS Code y empezar a escribir.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Portal en local",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": { "cwd": "${workspaceFolder}/04_Web" },
+      "isBackground": true,
+      "runOptions": { "runOn": "folderOpen" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

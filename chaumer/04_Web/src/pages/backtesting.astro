@@ -1,0 +1,1073 @@
+---
+/**
+ * Bitácora del backtesting operativo.
+ *
+ * Christian hace el backtesting VISUAL a mano sobre el mercado pasado. Esta
+ * página GUARDA lo que él ya decidió: no lee mercado, no marca zonas, no
+ * aplica reglas, no detecta setups. Si alguna vez aparece aquí lógica de la
+ * metodología, es un error — el diseño está en DISENO_BACKTESTING.md.
+ *
+ * Es la única página del portal que se pinta en el navegador y no al
+ * compilar: sus datos viven en D1 y cambian sin recompilar nada.
+ *
+ * El ÚNICO número que baja de la compilación es el valor del punto, y sale de
+ * reglas.json. Ninguna cifra de esta pantalla está escrita a mano.
+ */
+import Marco from '../componentes/Marco.astro';
+import Icono from '../componentes/Icono.astro';
+import * as P from '../lib/parsers.mjs';
+
+const punto = P.valorPunto();
+---
+
+<Marco titulo="Backtesting operativo">
+  <div class="bt" data-punto={punto.valor}>
+    <header class="cab entra">
+      <h1>Backtesting operativo</h1>
+      <p class="apunte" data-resumen>Cargando…</p>
+    </header>
+
+    <section class="cifras entra">
+      <div class="cifra">
+        <button class="editar" data-abrir-inicio hidden title="Datos de inicio" aria-label="Datos de inicio">
+          <Icono nombre="pencil-simple" />
+        </button>
+        <span class="etiqueta">Valor inicial</span>
+        <b data-valor-inicial>—</b>
+        <small data-sub-inicial></small>
+      </div>
+      <div class="cifra">
+        <span class="etiqueta">Saldo actual</span>
+        <b data-saldo>—</b>
+        <small data-sub-saldo></small>
+      </div>
+      <div class="cifra">
+        <span class="etiqueta">Rentabilidad</span>
+        <b data-rentabilidad>—</b>
+        <small data-sub-rentabilidad></small>
+      </div>
+      <div class="cifra">
+        <span class="etiqueta">Efectividad</span>
+        <b data-efectividad>—</b>
+        <small data-sub-efectividad></small>
+      </div>
+      <div class="cifra">
+        <span class="etiqueta">Puntos netos</span>
+        <b data-puntos>—</b>
+        <small data-sub-puntos></small>
+      </div>
+      <div class="cifra">
+        <span class="etiqueta">Caída máxima</span>
+        <b data-caida>—</b>
+        <small data-sub-caida></small>
+      </div>
+    </section>
+
+    <section class="bloque entra">
+      <div class="b-cab"><h2>Curva de capital</h2></div>
+      <div data-curva></div>
+    </section>
+
+    <div class="barra entra">
+      <div class="chips" role="group" aria-label="Filtrar">
+        <button class="chip activa" type="button" data-filtro="">Todas</button>
+        <button class="chip" type="button" data-filtro="setup:continuacion">Continuación</button>
+        <button class="chip" type="button" data-filtro="setup:reingreso">Reingreso</button>
+        <button class="chip" type="button" data-filtro="resultado:target">Target</button>
+        <button class="chip" type="button" data-filtro="resultado:stop">Stop</button>
+        <button class="chip" type="button" data-filtro="obs">Con observación</button>
+      </div>
+      <div class="crece"></div>
+      <a class="boton fantasma" href="/api/backtesting/export" data-exportar>
+        <Icono nombre="download-simple" /> Exportar
+      </a>
+      <button class="boton" type="button" data-abrir-jornada hidden>
+        <Icono nombre="plus" /> Registrar jornada
+      </button>
+    </div>
+
+    <div class="tabla-envoltura entra">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Hora</th><th>Dirección</th><th>Setup</th>
+            <th class="n">Puntos</th><th class="n">P&amp;L</th><th>Resultado</th>
+            <th>Observaciones</th><th>Gráfico</th>
+          </tr>
+        </thead>
+        <tbody data-filas></tbody>
+      </table>
+    </div>
+    <p class="vacio" data-vacio hidden></p>
+  </div>
+
+  <dialog class="bt-dlg" data-dlg-jornada>
+    <form method="dialog" data-form-jornada>
+      <div class="d-cab">
+        <h3 data-titulo-jornada>Registrar jornada</h3>
+        <button class="cerrar" type="button" data-cerrar aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="d-cuerpo">
+        <div class="rejilla">
+          <label class="campo"><span>Fecha</span><input type="date" name="fecha" required /></label>
+          <label class="campo"><span>Hora</span><input type="time" name="hora" /></label>
+          <label class="campo"><span>Dirección</span>
+            <select name="direccion">
+              <option value="largo">Largo</option>
+              <option value="corto">Corto</option>
+            </select>
+          </label>
+          <label class="campo"><span>Setup</span>
+            <select name="setup">
+              <option value="continuacion">Continuación</option>
+              <option value="reingreso">Reingreso</option>
+            </select>
+          </label>
+        </div>
+        <div class="rejilla">
+          <label class="campo"><span>Puntos</span>
+            <input type="number" name="puntos" step="0.25" min="0" inputmode="decimal" />
+          </label>
+          <label class="campo"><span>Resultado</span>
+            <select name="resultado">
+              <option value="target">Target</option>
+              <option value="stop">Stop</option>
+              <option value="">Sin operación</option>
+            </select>
+          </label>
+          <div class="calc"><span>P&amp;L</span><b data-pnl>—</b></div>
+        </div>
+        <label class="campo"><span>Observaciones</span><textarea name="observaciones"></textarea></label>
+        <label class="suelta">
+          <Icono nombre="image-square" />
+          <span data-nombre-imagen>Arrastra aquí el gráfico del día</span>
+          <input type="file" name="imagen" accept="image/png,image/jpeg,image/webp" hidden />
+        </label>
+        <p class="fallo" data-fallo-jornada hidden></p>
+      </div>
+      <div class="d-pie">
+        <button class="boton peligro" type="button" data-borrar hidden>Borrar</button>
+        <div class="acciones">
+          <button class="boton fantasma" type="button" data-cerrar>Cancelar</button>
+          <button class="boton" type="button" data-guardar>
+            <Icono nombre="floppy-disk" /> Guardar jornada
+          </button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="bt-dlg" data-dlg-inicio>
+    <form method="dialog">
+      <div class="d-cab">
+        <h3>Datos de inicio</h3>
+        <button class="cerrar" type="button" data-cerrar aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="d-cuerpo">
+        <div class="rejilla">
+          <label class="campo"><span>Valor inicial</span>
+            <input type="number" name="valor_inicial" step="0.01" min="0" inputmode="decimal" />
+          </label>
+          <label class="campo"><span>Contratos</span>
+            <input type="number" name="contratos" step="1" min="1" inputmode="numeric" />
+          </label>
+          <label class="campo"><span>Instrumento</span><input name="instrumento" maxlength="20" /></label>
+          <label class="campo"><span>Comisión</span>
+            <input type="number" name="comision" step="0.01" min="0" inputmode="decimal" />
+          </label>
+        </div>
+        <p class="fallo" data-fallo-inicio hidden></p>
+      </div>
+      <div class="d-pie">
+        <div class="acciones">
+          <button class="boton fantasma" type="button" data-cerrar>Cancelar</button>
+          <button class="boton" type="button" data-guardar-inicio>
+            <Icono nombre="floppy-disk" /> Guardar
+          </button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="bt-lupa" data-lupa>
+    <button class="cerrar" type="button" data-cerrar aria-label="Cerrar">&times;</button>
+    <img alt="" data-lupa-img />
+  </dialog>
+</Marco>
+
+<style is:global>
+  /* Global y no con ámbito porque la tabla y la curva se pintan en el
+     navegador: los nodos creados con innerHTML no llevan la marca de Astro y
+     los estilos con ámbito no les llegarían. Todo cuelga de .bt. */
+
+  .bt .apunte { margin: 0; color: var(--texto-3); font-size: var(--t-2); }
+
+  /* Seis tarjetas en dos filas de tres: arriba el dinero (valor inicial,
+     saldo, rentabilidad), abajo como va el metodo (efectividad, puntos,
+     caida). Seis en una fila no caben con cifras de cuatro digitos. */
+  .bt .cifras {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--e-3); margin: var(--e-6) 0 var(--e-5);
+  }
+  .bt .cifra {
+    position: relative; padding: var(--e-4); border-radius: var(--radio-3);
+    background: var(--vidrio-fondo); background-image: var(--vidrio-brillo);
+    border: 1px solid var(--vidrio-borde); backdrop-filter: var(--desenfoque);
+  }
+  .bt .cifra .etiqueta { display: block; margin-bottom: var(--e-2); }
+  .bt .cifra b {
+    display: block; font-family: var(--fuente-mono); font-size: var(--t-7);
+    font-weight: var(--peso-fuerte); letter-spacing: var(--track-cifra); line-height: 1.1;
+  }
+  .bt .cifra small { display: block; margin-top: var(--e-1); font-size: var(--t-2); color: var(--texto-3); }
+  .bt .pos { color: var(--positivo); }
+  .bt .neg { color: var(--negativo); }
+
+  .bt .editar {
+    position: absolute; top: var(--e-3); right: var(--e-3);
+    display: grid; place-items: center; width: 1.75rem; height: 1.75rem;
+    background: none; border: 0; border-radius: var(--radio-1);
+    color: var(--texto-3); cursor: pointer; --i: 0.95rem;
+    transition: color var(--rapido), background var(--rapido);
+  }
+  .bt .editar:hover { color: var(--texto); background: var(--vidrio-hover); }
+  /* Sin esto el display de arriba le gana al atributo hidden y el lapiz se
+     ve tambien sin la clave del operador. */
+  .bt .editar[hidden] { display: none; }
+
+  /* ── controles ───────────────────────────────────────────────────────── */
+  /* .chip y .boton no son globales en el portal: cada pagina define los
+     suyos. Estos son los mismos valores que usa la galeria. */
+  .bt .chips { display: flex; gap: var(--e-2); flex-wrap: wrap; }
+  .bt .chip {
+    padding: var(--e-2) var(--e-3); border-radius: var(--radio-pill);
+    background: rgba(255, 255, 255, 0.04); border: 1px solid var(--borde-sutil);
+    color: var(--texto-2); font: inherit; font-size: var(--t-2); cursor: pointer;
+    transition: background var(--normal), border-color var(--normal), color var(--normal);
+  }
+  .bt .chip:hover { background: rgba(255, 255, 255, 0.08); color: var(--texto); }
+  .bt .chip.activa {
+    background: var(--acento-flojo); color: var(--texto);
+    border-color: color-mix(in srgb, var(--acento) 45%, transparent);
+  }
+  .bt .boton, .bt-dlg .boton {
+    font: inherit; font-size: var(--t-3); font-weight: var(--peso-medio); cursor: pointer;
+    display: inline-flex; align-items: center; gap: var(--e-2); --i: 1rem;
+    min-height: var(--alto-control); padding: 0 var(--e-4); border-radius: var(--radio-2);
+    background: var(--acento); border: 1px solid var(--acento); color: var(--sobre-acento);
+    box-shadow: var(--halo-boton); transition: background var(--rapido), color var(--rapido);
+  }
+  .bt .boton:hover, .bt-dlg .boton:hover { background: var(--acento-vivo); }
+  .bt .boton.fantasma, .bt-dlg .boton.fantasma {
+    background: var(--vidrio-fondo); border-color: var(--vidrio-borde);
+    color: var(--texto-2); box-shadow: none;
+  }
+  .bt .boton.fantasma:hover, .bt-dlg .boton.fantasma:hover {
+    background: var(--vidrio-hover); color: var(--texto);
+  }
+  /* El display de arriba le gana al atributo hidden: hay que decirlo. */
+  .bt .boton[hidden], .bt-dlg .boton[hidden] { display: none; }
+
+  .bt .bloque {
+    margin: var(--e-5) 0; padding: var(--e-5); border-radius: var(--radio-3);
+    background: var(--tarjeta); border: 1px solid var(--borde-sutil); box-shadow: var(--sombra-1);
+  }
+  .bt .b-cab { margin-bottom: var(--e-4); }
+  .bt .b-cab h2 { margin: 0; font-size: var(--t-6); font-weight: var(--peso-fuerte); letter-spacing: var(--track-titulo); }
+  .bt svg.curva { width: 100%; height: auto; display: block; }
+
+  .bt .barra { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-3); margin: var(--e-5) 0 var(--e-4); }
+  .bt .crece { flex: 1; }
+
+  .bt .tabla-envoltura {
+    overflow-x: auto; border-radius: var(--radio-3);
+    border: 1px solid var(--borde-sutil); background: var(--tarjeta);
+  }
+  .bt table { width: 100%; border-collapse: collapse; font-size: var(--t-3); min-width: 52rem; }
+  .bt thead th {
+    text-align: left; padding: var(--e-3); /* alineacion-ok: cabecera de tabla, se alinea con su columna */
+    font-size: var(--t-1); text-transform: uppercase; letter-spacing: var(--track-etiqueta);
+    font-weight: var(--peso-fuerte); color: var(--texto-3);
+    background: var(--superficie); border-bottom: 1px solid var(--borde); white-space: nowrap;
+  }
+  .bt tbody td { padding: var(--e-3); border-bottom: 1px solid var(--borde-sutil); vertical-align: middle; color: var(--texto-2); }
+  .bt tbody tr:last-child td { border-bottom: 0; }
+  .bt tbody tr:hover td { background: var(--elevado); }
+  .bt td.n, .bt th.n { text-align: right; font-family: var(--fuente-mono); font-variant-numeric: tabular-nums; }
+  .bt td.fecha { color: var(--texto); font-weight: var(--peso-medio); white-space: nowrap; }
+  .bt td.fecha button {
+    font: inherit; color: inherit; background: none; border: 0; padding: 0;
+    cursor: pointer; text-align: left; /* alineacion-ok: es una celda de tabla disfrazada de boton */
+  }
+  .bt td.fecha button:hover { color: var(--acento-vivo); }
+  /* La observacion se recorta con puntos suspensivos y se despliega al
+     pulsarla. Sin tope, una nota larga empuja la tabla fuera de la pantalla y
+     esconde el P&L, que es lo que se viene a mirar. */
+  .bt td.obs { color: var(--texto-3); max-width: 13rem; cursor: pointer; } /* ancho-ok: celda de tabla que se despliega al pulsarla */
+  .bt td.obs span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bt tr.abierta td.obs span { white-space: normal; overflow: visible; }
+  .bt tr.vacia td { color: var(--texto-3); font-style: italic; }
+
+  /* La fila que abre cada mes, con sus totales. Tiene que separarse a la
+     primera de las filas de los dias: fondo tenido de acento, filete arriba,
+     mas aire y cifras en negrita. */
+  .bt tr.mes td {
+    padding: var(--e-4) var(--e-3);
+    font-family: var(--fuente-mono); font-variant-numeric: tabular-nums;
+    font-size: var(--t-4); font-weight: var(--peso-fuerte); color: var(--texto);
+    background: color-mix(in srgb, var(--acento) 11%, var(--superficie));
+    border-top: 1px solid color-mix(in srgb, var(--acento) 40%, transparent);
+    border-bottom: 1px solid var(--borde);
+    vertical-align: middle;
+  }
+  .bt tbody tr.mes:hover td { background: color-mix(in srgb, var(--acento) 11%, var(--superficie)); }
+  .bt tr.mes td.pos { color: var(--positivo); }
+  .bt tr.mes td.neg { color: var(--negativo); }
+  /* Nombre y cuenta en una sola linea (pedido del operador): la fila se lee
+     de corrido, como el resto de la tabla. */
+  .bt tr.mes td:first-child { white-space: nowrap; }
+  .bt .mes-nombre {
+    display: inline; font-family: var(--fuente);
+    font-size: var(--t-3); text-transform: uppercase; letter-spacing: var(--track-etiqueta);
+    font-weight: var(--peso-max); color: var(--texto);
+  }
+  .bt .mes-cuenta {
+    display: inline; margin-left: var(--e-3); font-family: var(--fuente);
+    font-size: var(--t-2); font-weight: var(--peso-medio); color: var(--texto-2);
+  }
+  /* La efectividad: la cifra que mas se mira. En su propio color, que no es
+     ni el verde ni el rojo de la fila: no juzga, destaca. */
+  .bt .mes-efec {
+    display: inline-block; padding: 0.15rem 0.6rem; border-radius: var(--radio-pill);
+    font-family: var(--fuente-mono); font-size: var(--t-5); font-weight: var(--peso-max);
+    color: var(--info); white-space: nowrap;
+    background: color-mix(in srgb, var(--info) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--info) 38%, transparent);
+  }
+
+  .bt .pil {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.15rem 0.55rem; border-radius: var(--radio-pill);
+    font-size: var(--t-1); font-weight: var(--peso-fuerte); white-space: nowrap;
+  }
+  .bt .pil.target {
+    background: color-mix(in srgb, var(--positivo) 16%, transparent); color: var(--positivo);
+    border: 1px solid color-mix(in srgb, var(--positivo) 32%, transparent);
+  }
+  .bt .pil.stop {
+    background: color-mix(in srgb, var(--negativo) 16%, transparent); color: var(--negativo);
+    border: 1px solid color-mix(in srgb, var(--negativo) 32%, transparent);
+  }
+  .bt .pil.neutra { background: rgba(255,255,255,0.05); color: var(--texto-3); border: 1px solid var(--borde-sutil); }
+  .bt .dir { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--texto); }
+  .bt .dir svg { width: 0.85rem; height: 0.85rem; }
+  .bt .dir.largo svg { color: var(--acento-vivo); }
+  .bt .dir.corto svg { color: var(--aviso); }
+
+  .bt .miniatura {
+    width: 3.25rem; height: 2rem; border-radius: var(--radio-1); object-fit: cover;
+    border: 1px solid var(--borde); cursor: zoom-in; display: block; background: var(--fondo);
+    transition: transform var(--rapido), border-color var(--rapido);
+  }
+  .bt .miniatura:hover { transform: scale(1.08); border-color: var(--acento); }
+  .bt .vacio { margin: var(--e-5) 0 0; color: var(--texto-3); font-size: var(--t-3); }
+
+  /* ── los dos formularios ─────────────────────────────────────────────── */
+  .bt-dlg {
+    border: 1px solid var(--vidrio-borde); border-radius: var(--radio-4);
+    background: var(--superficie); color: var(--texto); padding: 0;
+    width: min(46rem, 92vw); box-shadow: var(--sombra-3);
+  }
+  .bt-dlg::backdrop, .bt-lupa::backdrop { background: rgba(5,8,14,0.72); backdrop-filter: blur(6px); }
+  .bt-dlg .d-cab {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--e-4);
+    padding: var(--e-5) var(--e-5) var(--e-4); border-bottom: 1px solid var(--borde-sutil);
+  }
+  .bt-dlg .d-cab h3 { margin: 0; font-size: var(--t-6); font-weight: var(--peso-fuerte); }
+  .bt-dlg .d-cuerpo { padding: var(--e-5); display: grid; gap: var(--e-4); }
+  .bt-dlg .rejilla { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--e-3); }
+  .bt-dlg .rejilla.tres { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .bt-dlg .campo { display: grid; gap: var(--e-2); min-width: 0; }
+  .bt-dlg .campo > span {
+    font-size: var(--t-1); text-transform: uppercase; letter-spacing: var(--track-etiqueta);
+    color: var(--texto-3); font-weight: var(--peso-fuerte);
+  }
+  .bt-dlg input, .bt-dlg select, .bt-dlg textarea {
+    font: inherit; font-size: var(--t-3); color: var(--texto); width: 100%;
+    min-height: var(--alto-control); padding: var(--e-2) var(--e-3);
+    border-radius: var(--radio-2); background: var(--fondo); border: 1px solid var(--n-600);
+  }
+  .bt-dlg textarea { min-height: 4.5rem; resize: vertical; line-height: 1.5; }
+  .bt-dlg input:focus, .bt-dlg select:focus, .bt-dlg textarea:focus {
+    outline: 2px solid var(--acento); outline-offset: 1px; border-color: var(--acento);
+  }
+  .bt-dlg .calc { display: grid; gap: var(--e-2); align-content: start; grid-column: span 2; }
+  .bt-dlg .calc span {
+    font-size: var(--t-1); text-transform: uppercase; letter-spacing: var(--track-etiqueta);
+    color: var(--texto-3); font-weight: var(--peso-fuerte);
+  }
+  .bt-dlg .calc b {
+    display: flex; align-items: center; min-height: var(--alto-control);
+    padding: var(--e-2) var(--e-3); border-radius: var(--radio-2);
+    background: var(--acento-flojo); border: 1px solid color-mix(in srgb, var(--acento) 35%, transparent);
+    font-family: var(--fuente-mono); font-size: var(--t-6); font-weight: var(--peso-fuerte);
+  }
+  .bt-dlg .suelta {
+    display: grid; place-items: center; gap: var(--e-2); cursor: pointer;
+    padding: var(--e-5); border-radius: var(--radio-2);
+    border: 1px dashed var(--n-600); background: var(--fondo);
+    color: var(--texto-3); font-size: var(--t-2); text-align: center; --i: 1.5rem;
+  }
+  .bt-dlg .suelta:hover, .bt-dlg .suelta.encima { border-color: var(--acento); color: var(--texto-2); }
+  .bt-dlg .fallo { margin: 0; color: var(--negativo); font-size: var(--t-2); }
+  .bt-dlg .d-pie {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--e-4);
+    padding: var(--e-4) var(--e-5); border-top: 1px solid var(--borde-sutil);
+    background: var(--fondo); border-radius: 0 0 var(--radio-4) var(--radio-4);
+  }
+  .bt-dlg .acciones { display: flex; gap: var(--e-3); margin-left: auto; }
+  .bt-dlg .cerrar, .bt-lupa .cerrar {
+    background: none; border: 0; color: var(--texto-3); font-size: 1.25rem; cursor: pointer; line-height: 1;
+  }
+  .bt-dlg .cerrar:hover, .bt-lupa .cerrar:hover { color: var(--texto); }
+  .bt .boton.peligro, .bt-dlg .boton.peligro {
+    background: transparent; border-color: color-mix(in srgb, var(--negativo) 45%, transparent);
+    color: var(--negativo); box-shadow: none;
+  }
+  .bt .boton.peligro:hover, .bt-dlg .boton.peligro:hover {
+    background: color-mix(in srgb, var(--negativo) 14%, transparent);
+  }
+
+  .bt-lupa {
+    border: 0; background: transparent; padding: 0; max-width: 94vw; max-height: 94vh;
+  }
+  .bt-lupa img { display: block; max-width: 94vw; max-height: 88vh; border-radius: var(--radio-2); }
+  .bt-lupa .cerrar { position: absolute; top: 0.25rem; right: 0.5rem; font-size: 1.75rem; }
+
+  @media (max-width: 60rem) {
+    .bt .cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .bt-dlg .rejilla, .bt-dlg .rejilla.tres { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .bt-dlg .calc { grid-column: span 2; }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    var raiz = document.querySelector('.bt');
+    if (!raiz) return;
+
+    // El unico numero que baja de la compilacion, y sale de reglas.json.
+    var VALOR_PUNTO = Number(raiz.dataset.punto);
+
+    var CLAVE = 'chaumer.clave';
+
+    // La clave del operador llega en su enlace y se recuerda. Se limpia de la
+    // barra para que no viaje si copia la direccion.
+    //
+    // Esto estaba SOLO en la pagina de observaciones, y por eso el enlace con
+    // ?k= no encendia nada aqui: la bitacora leia una clave que nadie habia
+    // guardado todavia. Mismo criterio y mismo nombre que alli.
+    try {
+      var url = new URL(window.location.href);
+      var k = url.searchParams.get('k');
+      if (k) {
+        localStorage.setItem(CLAVE, k);
+        url.searchParams.delete('k');
+        history.replaceState({}, '', url.pathname + url.search + url.hash);
+      }
+    } catch (e) { /* sin almacenamiento */ }
+
+    function clave() { try { return localStorage.getItem(CLAVE) || ''; } catch (e) { return ''; } }
+    var operador = !!clave();
+
+    var dinero = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var $ = function (s, d) { return (d || raiz).querySelector(s); };
+
+    function usd(v) { return (v < 0 ? '−$' : '$') + dinero.format(Math.abs(v)); }
+    function firmado(v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + dinero.format(Math.abs(v)); }
+    function escapa(t) {
+      return String(t == null ? '' : t)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /** El paso de escala mas cercano a rango/(marcas-1) entre 1, 2, 2,5, 5 y
+     *  10 por una potencia de diez. */
+    function pasoRedondo(rango, marcas) {
+      var bruto = rango / Math.max(marcas - 1, 1);
+      var mag = Math.pow(10, Math.floor(Math.log10(bruto)));
+      var n = bruto / mag;
+      return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * mag;
+    }
+
+    var MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    function fechaCorta(iso) {
+      var p = String(iso).split('-');
+      return p[2] + ' ' + (MESES[Number(p[1]) - 1] || '?') + ' ' + p[0];
+    }
+    var NOMBRE = {
+      largo: 'Largo', corto: 'Corto',
+      continuacion: 'Continuación', reingreso: 'Reingreso',
+      target: 'Target', stop: 'Stop',
+    };
+    var FLECHA = {
+      largo: '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"/></svg>',
+      corto: '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M200,88V192a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h84.69L58.34,69.66A8,8,0,0,1,69.66,58.34L184,172.69V88a8,8,0,0,1,16,0Z"/></svg>',
+    };
+
+    var estado = { cabecera: null, jornadas: [] };
+    var filtro = '';
+
+    // ─────────────────────────────────────────────────────────── cargar
+    function cargar() {
+      return fetch('/api/backtesting')
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.error) throw new Error(d.error);
+          estado.cabecera = d.cabecera || { valor_inicial: 0, contratos: 1, instrumento: 'MNQ', comision: 0 };
+          estado.jornadas = d.jornadas || [];
+          pintar();
+        })
+        .catch(function (e) {
+          $('[data-resumen]').textContent = 'No se pudo leer la bitácora';
+          var v = $('[data-vacio]');
+          v.textContent = String(e.message || e);
+          v.hidden = false;
+        });
+    }
+
+    /** Las jornadas de vieja a nueva, con el saldo corriendo. Es la base de
+     *  todo lo que se pinta: la curva, la tabla y las cuatro cifras. */
+    function recorrido() {
+      var orden = estado.jornadas.slice().sort(function (a, b) {
+        return a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0;
+      });
+      var saldo = Number(estado.cabecera.valor_inicial) || 0;
+      return orden.map(function (j) {
+        var suma = (j.operaciones || []).reduce(function (t, o) { return t + Number(o.pnl); }, 0);
+        saldo += suma;
+        return { jornada: j, pnl: suma, saldo: saldo };
+      });
+    }
+
+    function pintar() {
+      var pasos = recorrido();
+      pintarCifras(pasos);
+      pintarCurva(pasos);
+      pintarTabla(pasos);
+    }
+
+    // ─────────────────────────────────────────────────────────── cifras
+    function pintarCifras(pasos) {
+      var c = estado.cabecera;
+      var inicial = Number(c.valor_inicial) || 0;
+      var saldo = pasos.length ? pasos[pasos.length - 1].saldo : inicial;
+
+      var ops = [];
+      var puntos = 0;
+      pasos.forEach(function (p) {
+        (p.jornada.operaciones || []).forEach(function (o) {
+          ops.push(o);
+          puntos += (o.resultado === 'stop' ? -1 : 1) * Number(o.puntos);
+        });
+      });
+      var ganadas = ops.filter(function (o) { return o.resultado === 'target'; }).length;
+
+      // Caida maxima: la peor distancia entre un techo y lo que vino despues.
+      var techo = inicial, caida = 0;
+      pasos.forEach(function (p) {
+        if (p.saldo > techo) techo = p.saldo;
+        if (techo - p.saldo > caida) caida = techo - p.saldo;
+      });
+
+      $('[data-resumen]').textContent = [
+        pasos.length + (pasos.length === 1 ? ' jornada' : ' jornadas'),
+        ops.length + (ops.length === 1 ? ' operación' : ' operaciones'),
+        c.instrumento,
+        'hora Colombia',
+      ].join(' · ');
+
+      $('[data-valor-inicial]').textContent = usd(inicial);
+      $('[data-sub-inicial]').textContent =
+        c.contratos + (c.contratos === 1 ? ' contrato ' : ' contratos ') + c.instrumento
+        + (c.comision ? ' · ' + usd(c.comision) + ' de comisión' : '');
+
+      var neto = saldo - inicial;
+      var tono = function (v) { return v > 0 ? 'pos' : v < 0 ? 'neg' : ''; };
+
+      var saldoEl = $('[data-saldo]');
+      saldoEl.textContent = usd(saldo);
+      saldoEl.className = tono(neto);
+      var subSaldo = $('[data-sub-saldo]');
+      subSaldo.textContent = (neto > 0 ? '+' : '') + usd(neto);
+      subSaldo.className = tono(neto);
+
+      // La rentabilidad salio de la tarjeta del saldo a una propia, en grande
+      // y en color: es la cifra que el operador quiere leer de un vistazo.
+      var rent = inicial ? (neto / inicial) * 100 : 0;
+      var rentEl = $('[data-rentabilidad]');
+      rentEl.textContent = inicial ? firmado(rent) + ' %' : '—';
+      rentEl.className = tono(rent);
+
+      // Efectividad: targets sobre operaciones. Debajo, cuantos de cada uno,
+      // cada uno en su color.
+      var stops = ops.length - ganadas;
+      $('[data-efectividad]').textContent = ops.length
+        ? dinero.format((ganadas / ops.length) * 100) + ' %' : '—';
+      $('[data-sub-efectividad]').innerHTML =
+        '<span class="pos">' + ganadas + ' target</span> · <span class="neg">' + stops + ' stop</span>';
+
+      var puntosEl = $('[data-puntos]');
+      puntosEl.textContent = firmado(puntos);
+      puntosEl.className = tono(puntos);
+      var comisiones = ops.reduce(function (t, o) { return t + (Number(o.comision) || 0); }, 0);
+      $('[data-sub-puntos]').textContent = comisiones ? usd(comisiones) + ' en comisiones' : '';
+
+      var caidaEl = $('[data-caida]');
+      caidaEl.textContent = caida ? '−' + dinero.format(caida) : usd(0);
+      caidaEl.className = caida ? 'neg' : '';
+      $('[data-sub-caida]').textContent = caida && inicial ? '−' + dinero.format((caida / inicial) * 100) + ' %' : '';
+    }
+
+    // ──────────────────────────────────────────────────────────── curva
+    /** Estandar visual del metodo: sin cuadricula. Solo el eje horizontal y
+     *  el vertical de precios, y la linea del valor inicial de referencia. */
+    function pintarCurva(pasos) {
+      var caja = $('[data-curva]');
+      if (!pasos.length) { caja.innerHTML = ''; return; }
+
+      var inicial = Number(estado.cabecera.valor_inicial) || 0;
+      var serie = [inicial].concat(pasos.map(function (p) { return p.saldo; }));
+      var min = Math.min.apply(null, serie), max = Math.max.apply(null, serie);
+
+      // La escala del eje vertical sale de un paso «redondo» (1, 2, 2,5 o 5
+      // por una potencia de diez) para que las marcas caigan en cifras que se
+      // leen solas y a distancias iguales. Se buscan unas cinco: con mas se
+      // amontonan, con menos no se ve la escala.
+      var rango = max - min || Math.max(Math.abs(max) * 0.02, 1);
+      var paso = pasoRedondo(rango, 5);
+      var lo = Math.floor(min / paso) * paso;
+      var hi = Math.ceil(max / paso) * paso;
+      if (hi === lo) hi = lo + paso;
+      // Aire arriba y abajo: si la curva toca el borde, la etiqueta del ultimo
+      // punto se sale del dibujo.
+      if ((hi - max) / (hi - lo) < 0.1) hi += paso;
+      if ((min - lo) / (hi - lo) < 0.1) lo -= paso;
+
+      var EJE = 76, X0 = 92, X1 = 860, ARRIBA = 24, ABAJO = 200;
+      var y = function (v) { return ABAJO - ((v - lo) / (hi - lo)) * (ABAJO - ARRIBA); };
+      var x = function (i) { return serie.length === 1 ? X0 : X0 + (i * (X1 - X0)) / (serie.length - 1); };
+
+      var puntos = serie.map(function (v, i) { return x(i) + ',' + y(v).toFixed(1); });
+      var ultimo = serie[serie.length - 1];
+      var arriba = ultimo >= inicial;
+
+      // Como maximo doce fechas bajo el eje: mas se pisan entre ellas.
+      var salto = Math.ceil(pasos.length / 12);
+      var etiquetas = pasos.map(function (p, i) {
+        if (i % salto) return '';
+        var t = p.jornada.fecha.split('-');
+        return '<text x="' + x(i + 1).toFixed(1) + '" y="230">' + t[2] + ' ' + MESES[Number(t[1]) - 1] + '</text>';
+      }).join('');
+
+      var decimales = paso < 1 ? 2 : 0;
+      var cifraEje = new Intl.NumberFormat('es-CO', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
+      var marcas = '';
+      for (var v = lo; v <= hi + paso / 2; v += paso) {
+        var yy = y(v).toFixed(1);
+        marcas += '<line x1="' + (EJE - 4) + '" y1="' + yy + '" x2="' + EJE + '" y2="' + yy + '" stroke="#3A4256"/>' +
+                  '<text x="' + (EJE - 8) + '" y="' + yy + '" dy="0.35em">' + cifraEje.format(v) + '</text>';
+      }
+
+      caja.innerHTML =
+        '<svg class="curva" viewBox="0 0 900 250" role="img" aria-label="Curva de capital: de ' +
+          dinero.format(inicial) + ' a ' + dinero.format(ultimo) + ' dólares en ' + pasos.length + ' jornadas">' +
+          '<defs><linearGradient id="bt-relleno" x1="0" y1="0" x2="0" y2="1">' +
+            '<stop offset="0%" stop-color="#4C8DFF" stop-opacity=".28"/>' +
+            '<stop offset="100%" stop-color="#4C8DFF" stop-opacity="0"/>' +
+          '</linearGradient></defs>' +
+          '<line x1="' + EJE + '" y1="' + (ARRIBA - 8) + '" x2="' + EJE + '" y2="210" stroke="#3A4256"/>' +
+          '<line x1="' + EJE + '" y1="210" x2="880" y2="210" stroke="#3A4256"/>' +
+          '<g fill="#8790A1" font-size="11" font-family="Geist Mono, monospace" text-anchor="end">' +
+            marcas +
+          '</g>' +
+          '<line x1="' + EJE + '" y1="' + y(inicial).toFixed(1) + '" x2="880" y2="' + y(inicial).toFixed(1) +
+            '" stroke="#8790A1" stroke-dasharray="3 5" opacity=".7"/>' +
+          '<path d="M' + puntos.join(' L') + ' L' + X1 + ',210 L' + X0 + ',210 Z" fill="url(#bt-relleno)"/>' +
+          '<polyline points="' + puntos.join(' ') + '" fill="none" stroke="#4C8DFF" stroke-width="2.25" ' +
+            'stroke-linejoin="round" stroke-linecap="round"/>' +
+          '<circle cx="' + x(serie.length - 1).toFixed(1) + '" cy="' + y(ultimo).toFixed(1) + '" r="4.5" fill="' +
+            (arriba ? '#3FCF8E' : '#EF5F63') + '"/>' +
+          '<text x="' + (x(serie.length - 1) - 4).toFixed(1) + '" y="' + (y(ultimo) - 13).toFixed(1) +
+            '" fill="' + (arriba ? '#3FCF8E' : '#EF5F63') + '" font-size="12" ' +
+            'font-family="Geist Mono, monospace" text-anchor="end">' + dinero.format(ultimo) + '</text>' +
+          '<g fill="#8790A1" font-size="11" font-family="Geist Mono, monospace" text-anchor="middle">' +
+            etiquetas +
+          '</g>' +
+        '</svg>';
+    }
+
+    // ──────────────────────────────────────────────────────────── tabla
+    function pasaElFiltro(op) {
+      if (!filtro) return true;
+      if (filtro === 'obs') return !!(op && String(op.observaciones || '').trim());
+      var partes = filtro.split(':');
+      return op && op[partes[0]] === partes[1];
+    }
+
+    var MESES_LARGOS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio',
+                        'Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    var COLUMNAS = 9;
+
+    /**
+     * Por meses, de nuevo a viejo. Cada mes abre con su nombre y cierra con
+     * una fila de totales.
+     *
+     * Los totales son de LO QUE SE VE: filtrando por «Stop», el total del mes
+     * es el de sus stops. Un mes sin nada que enseñar con ese filtro no sale.
+     */
+    function pintarTabla(pasos) {
+      var cuerpo = $('[data-filas]');
+      var vacio = $('[data-vacio]');
+      var meses = [];
+      var porClave = {};
+
+      pasos.slice().reverse().forEach(function (p) {
+        var j = p.jornada;
+        var ops = j.operaciones || [];
+        var visibles = ops.filter(pasaElFiltro);
+        var clave = j.fecha.slice(0, 7);
+        var filas = [];
+
+        // Un dia sin operaciones solo aparece si no hay filtro: filtrando por
+        // «Stop» no pinta nada un dia en el que no se entro.
+        if (!ops.length && !filtro) filas.push(filaVacia(j));
+        else visibles.forEach(function (o, i) { filas.push(filaOperacion(j, o, i === 0)); });
+        if (!filas.length) return;
+
+        if (!porClave[clave]) {
+          porClave[clave] = { clave: clave, filas: [], ops: [] };
+          meses.push(porClave[clave]);
+        }
+        porClave[clave].filas = porClave[clave].filas.concat(filas);
+        porClave[clave].ops = porClave[clave].ops.concat(visibles);
+      });
+
+      cuerpo.innerHTML = meses.map(function (m) {
+        return filaMes(m.clave, m.ops) + m.filas.join('');
+      }).join('');
+
+      vacio.hidden = meses.length > 0;
+      vacio.textContent = pasos.length ? 'Ninguna operación pasa ese filtro.' : 'Todavía no hay jornadas registradas.';
+    }
+
+    /**
+     * La fila que abre cada mes lleva sus totales (15/09/2026: antes iban en
+     * una fila aparte al final). Cada total cae bajo su columna: puntos bajo
+     * Puntos, P&L bajo P&L, y la efectividad —lo que el operador mas mira—
+     * bajo Resultado, en grande y en color.
+     */
+    function filaMes(clave, ops) {
+      var t = clave.split('-');
+      var puntos = 0, pnl = 0, target = 0;
+      ops.forEach(function (o) {
+        puntos += (o.resultado === 'stop' ? -1 : 1) * Number(o.puntos);
+        pnl += Number(o.pnl);
+        if (o.resultado === 'target') target++;
+      });
+      var stop = ops.length - target;
+      var tono = function (v) { return v > 0 ? 'pos' : v < 0 ? 'neg' : ''; };
+      var hay = ops.length > 0;
+
+      return '<tr class="mes">' +
+        '<td colspan="4">' +
+          '<span class="mes-nombre">' + MESES_LARGOS[Number(t[1]) - 1] + ' ' + t[0] + '</span>' +
+          '<span class="mes-cuenta">' + ops.length + (ops.length === 1 ? ' operación' : ' operaciones') +
+            (hay ? ' · <span class="pos">' + target + ' target</span> · <span class="neg">' + stop + ' stop</span>' : '') +
+          '</span>' +
+        '</td>' +
+        '<td class="n ' + tono(puntos) + '">' + (hay ? firmado(puntos) : '—') + '</td>' +
+        '<td class="n ' + tono(pnl) + '">' + (hay ? (pnl > 0 ? '+' : '') + usd(pnl) : '—') + '</td>' +
+        '<td>' + (hay
+          ? '<span class="mes-efec">' + dinero.format((target / ops.length) * 100) + ' %</span>'
+          : '—') + '</td>' +
+        '<td colspan="2"></td>' +
+        '</tr>';
+    }
+
+    function celdaFecha(j) {
+      var texto = escapa(fechaCorta(j.fecha));
+      return '<td class="fecha">' + (operador
+        ? '<button type="button" data-editar="' + j.id + '">' + texto + '</button>'
+        : texto) + '</td>';
+    }
+
+    function celdaGrafico(j) {
+      if (!j.imagen) return '<td></td>';
+      var url = '/api/backtesting/imagen/' + encodeURIComponent(j.imagen);
+      return '<td><img class="miniatura" loading="lazy" src="' + url +
+             '" alt="Gráfico del ' + escapa(fechaCorta(j.fecha)) + '" data-lupa-abrir="' + url + '"></td>';
+    }
+
+    function filaVacia(j) {
+      return '<tr class="vacia">' + celdaFecha(j) +
+        '<td>—</td><td>—</td><td>—</td><td class="n">—</td><td class="n">' + usd(0) + '</td>' +
+        '<td><span class="pil neutra">Sin operación</span></td>' +
+        '<td class="obs"><span>' + escapa(j.notas || '') + '</span></td>' +
+        celdaGrafico(j) + '</tr>';
+    }
+
+    function filaOperacion(j, o, primera) {
+      var pnl = Number(o.pnl);
+      return '<tr>' +
+        (primera ? celdaFecha(j) : '<td class="fecha"></td>') +
+        '<td class="mono">' + escapa(o.hora) + '</td>' +
+        '<td><span class="dir ' + o.direccion + '">' + FLECHA[o.direccion] + ' ' + NOMBRE[o.direccion] + '</span></td>' +
+        '<td>' + NOMBRE[o.setup] + '</td>' +
+        '<td class="n">' + dinero.format(o.puntos) + '</td>' +
+        '<td class="n ' + (pnl > 0 ? 'pos' : pnl < 0 ? 'neg' : '') + '">' +
+          (pnl > 0 ? '+' : '') + usd(pnl).replace('−$', '−$') + '</td>' +
+        '<td><span class="pil ' + o.resultado + '">' + NOMBRE[o.resultado] + '</span></td>' +
+        '<td class="obs"><span>' + escapa(o.observaciones || '') + '</span></td>' +
+        (primera ? celdaGrafico(j) : '<td></td>') +
+        '</tr>';
+    }
+
+    // ─────────────────────────────────────────────────────── interaccion
+    raiz.addEventListener('click', function (e) {
+      var chip = e.target.closest('[data-filtro]');
+      if (chip) {
+        filtro = chip.dataset.filtro;
+        raiz.querySelectorAll('[data-filtro]').forEach(function (c) { c.classList.toggle('activa', c === chip); });
+        pintarTabla(recorrido());
+        return;
+      }
+      var mini = e.target.closest('[data-lupa-abrir]');
+      if (mini) { abrirLupa(mini.dataset.lupaAbrir, mini.alt); return; }
+
+      var editar = e.target.closest('[data-editar]');
+      if (editar) { abrirJornada(Number(editar.dataset.editar)); return; }
+
+      var obs = e.target.closest('td.obs');
+      if (obs) obs.parentElement.classList.toggle('abierta');
+    });
+
+    var lupa = document.querySelector('[data-lupa]');
+    function abrirLupa(url, alt) {
+      var img = lupa.querySelector('[data-lupa-img]');
+      img.src = url; img.alt = alt || '';
+      lupa.showModal();
+    }
+
+    document.querySelectorAll('[data-cerrar]').forEach(function (b) {
+      b.addEventListener('click', function () { b.closest('dialog').close(); });
+    });
+
+    // ──────────────────────────────────────────── el formulario de jornada
+    var dlg = document.querySelector('[data-dlg-jornada]');
+    var form = dlg.querySelector('[data-form-jornada]');
+    var archivo = form.elements.imagen;
+    var editando = null;
+
+    /** La misma cuenta que hace la API al guardar. Aqui solo se enseña: lo que
+     *  se escribe en la base es lo que calcula el servidor, nunca esto. */
+    function calcularPnl() {
+      var puntos = Number(form.elements.puntos.value || 0);
+      var res = form.elements.resultado.value;
+      var contratos = Number(estado.cabecera && estado.cabecera.contratos) || 1;
+      var comision = Number(estado.cabecera && estado.cabecera.comision) || 0;
+      var v = res
+        ? (res === 'stop' ? -1 : 1) * puntos * VALOR_PUNTO * contratos - comision * contratos
+        : 0;
+      var b = dlg.querySelector('[data-pnl]');
+      b.textContent = (v > 0 ? '+' : '') + usd(v);
+      b.className = v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+    }
+    ['puntos', 'resultado'].forEach(function (n) {
+      form.elements[n].addEventListener('input', calcularPnl);
+      form.elements[n].addEventListener('change', calcularPnl);
+    });
+
+    function abrirJornada(id) {
+      editando = id || null;
+      var j = id && estado.jornadas.find(function (x) { return x.id === id; });
+      var o = j && j.operaciones && j.operaciones[0];
+
+      form.reset();
+      dlg.querySelector('[data-titulo-jornada]').textContent = j ? 'Corregir jornada' : 'Registrar jornada';
+      dlg.querySelector('[data-borrar]').hidden = !j;
+      dlg.querySelector('[data-nombre-imagen]').textContent = j && j.imagen
+        ? j.imagen : 'Arrastra aquí el gráfico del día';
+      $('[data-fallo-jornada]', dlg).hidden = true;
+
+      form.elements.fecha.value = j ? j.fecha : new Date().toISOString().slice(0, 10);
+      form.elements.hora.value = o ? o.hora : '';
+      form.elements.direccion.value = o ? o.direccion : 'largo';
+      form.elements.setup.value = o ? o.setup : 'continuacion';
+      form.elements.puntos.value = o ? o.puntos : '';
+      form.elements.resultado.value = o ? o.resultado : 'target';
+      form.elements.observaciones.value = o ? (o.observaciones || '') : (j ? (j.notas || '') : '');
+
+      calcularPnl();
+      dlg.showModal();
+    }
+
+    // Soltar el grafico encima, o elegirlo.
+    var suelta = dlg.querySelector('.suelta');
+    ['dragenter', 'dragover'].forEach(function (n) {
+      suelta.addEventListener(n, function (e) { e.preventDefault(); suelta.classList.add('encima'); });
+    });
+    ['dragleave', 'drop'].forEach(function (n) {
+      suelta.addEventListener(n, function () { suelta.classList.remove('encima'); });
+    });
+    suelta.addEventListener('drop', function (e) {
+      e.preventDefault();
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        archivo.files = e.dataTransfer.files;
+        archivo.dispatchEvent(new Event('change'));
+      }
+    });
+    archivo.addEventListener('change', function () {
+      dlg.querySelector('[data-nombre-imagen]').textContent =
+        archivo.files[0] ? archivo.files[0].name : 'Arrastra aquí el gráfico del día';
+    });
+
+    function fallo(caja, texto) {
+      var p = caja.querySelector('.fallo');
+      p.textContent = texto;
+      p.hidden = !texto;
+    }
+
+    /** El nombre en el almacen lleva la fecha y un sufijo. El sufijo es lo que
+     *  permite corregir el grafico de un dia sin pelear con la cache. */
+    function subirImagen(fecha) {
+      var f = archivo.files && archivo.files[0];
+      if (!f) return Promise.resolve(null);
+      var ext = (f.name.split('.').pop() || 'png').toLowerCase();
+      if (['png', 'jpg', 'jpeg', 'webp'].indexOf(ext) < 0) {
+        return Promise.reject(new Error('El gráfico tiene que ser PNG, JPG o WebP'));
+      }
+      var nombre = fecha + '-' + Date.now().toString(36) + '.' + ext;
+      return fetch('/api/backtesting/imagen/' + nombre, {
+        method: 'PUT',
+        headers: { 'x-clave': clave(), 'content-type': f.type || 'application/octet-stream' },
+        body: f,
+      }).then(function (r) {
+        return r.json().then(function (d) {
+          if (!r.ok) throw new Error(d.error || 'No se pudo subir el gráfico');
+          return d.imagen;
+        });
+      });
+    }
+
+    dlg.querySelector('[data-guardar]').addEventListener('click', function () {
+      var fecha = form.elements.fecha.value;
+      if (!fecha) { fallo(dlg, 'Falta la fecha'); return; }
+
+      var resultado = form.elements.resultado.value;
+      var hora = form.elements.hora.value;
+      var puntos = form.elements.puntos.value;
+
+      var operaciones = [];
+      if (resultado) {
+        if (!hora) { fallo(dlg, 'Falta la hora'); return; }
+        if (puntos === '') { fallo(dlg, 'Faltan los puntos'); return; }
+        operaciones.push({
+          hora: hora,
+          direccion: form.elements.direccion.value,
+          setup: form.elements.setup.value,
+          puntos: Number(puntos),
+          resultado: resultado,
+          observaciones: form.elements.observaciones.value,
+        });
+      }
+
+      var previa = editando && estado.jornadas.find(function (x) { return x.id === editando; });
+      fallo(dlg, '');
+
+      subirImagen(fecha)
+        .then(function (nueva) {
+          var cuerpo = {
+            fecha: fecha,
+            instrumento: estado.cabecera.instrumento,
+            contratos: estado.cabecera.contratos,
+            valor_punto: VALOR_PUNTO,
+            comision: estado.cabecera.comision,
+            imagen: nueva || (previa ? previa.imagen : null),
+            notas: resultado ? null : form.elements.observaciones.value,
+            operaciones: operaciones,
+          };
+          return fetch(editando ? '/api/backtesting/' + editando : '/api/backtesting', {
+            method: editando ? 'PUT' : 'POST',
+            headers: { 'content-type': 'application/json', 'x-clave': clave() },
+            body: JSON.stringify(cuerpo),
+          });
+        })
+        .then(function (r) {
+          return r.json().then(function (d) {
+            if (!r.ok) throw new Error(d.error || 'No se pudo guardar');
+            dlg.close();
+            return cargar();
+          });
+        })
+        .catch(function (e) { fallo(dlg, String(e.message || e)); });
+    });
+
+    dlg.querySelector('[data-borrar]').addEventListener('click', function () {
+      if (!editando) return;
+      if (!confirm('¿Borrar esta jornada y su gráfico?')) return;
+      fetch('/api/backtesting/' + editando, { method: 'DELETE', headers: { 'x-clave': clave() } })
+        .then(function (r) {
+          return r.json().then(function (d) {
+            if (!r.ok) throw new Error(d.error || 'No se pudo borrar');
+            dlg.close();
+            return cargar();
+          });
+        })
+        .catch(function (e) { fallo(dlg, String(e.message || e)); });
+    });
+
+    // ─────────────────────────────────────────── el formulario de inicio
+    var dlgIni = document.querySelector('[data-dlg-inicio]');
+    var formIni = dlgIni.querySelector('form');
+
+    $('[data-abrir-inicio]').addEventListener('click', function () {
+      formIni.elements.valor_inicial.value = estado.cabecera.valor_inicial;
+      formIni.elements.contratos.value = estado.cabecera.contratos;
+      formIni.elements.instrumento.value = estado.cabecera.instrumento;
+      formIni.elements.comision.value = estado.cabecera.comision || 0;
+      fallo(dlgIni, '');
+      dlgIni.showModal();
+    });
+
+    dlgIni.querySelector('[data-guardar-inicio]').addEventListener('click', function () {
+      fetch('/api/backtesting/cabecera', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json', 'x-clave': clave() },
+        body: JSON.stringify({
+          valor_inicial: Number(formIni.elements.valor_inicial.value),
+          contratos: Number(formIni.elements.contratos.value),
+          instrumento: formIni.elements.instrumento.value,
+          comision: Number(formIni.elements.comision.value),
+        }),
+      })
+        .then(function (r) {
+          return r.json().then(function (d) {
+            if (!r.ok) throw new Error(d.error || 'No se pudo guardar');
+            dlgIni.close();
+            return cargar();
+          });
+        })
+        .catch(function (e) { fallo(dlgIni, String(e.message || e)); });
+    });
+
+    // Registrar, corregir y los datos de inicio solo se ven con la clave.
+    if (operador) {
+      $('[data-abrir-jornada]').hidden = false;
+      $('[data-abrir-inicio]').hidden = false;
+      $('[data-abrir-jornada]').addEventListener('click', function () { abrirJornada(null); });
+      $('[data-exportar]').href = '/api/backtesting/export';
+    }
+
+    cargar();
+  })();
+</script>

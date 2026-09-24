@@ -1,0 +1,10 @@
+<!-- Icono de pestana. Mismo dibujo que componentes/Marca.astro: el zigzag de
+     corrida y retroceso. Un .svg suelto no ve los tokens de la pagina, asi que
+     aqui los colores van literales; si cambia el acento, se cambia tambien
+     este archivo. Acento #4C8DFF y texto #F2F5F9 de tokens.css. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="9" fill="#4C8DFF"/>
+  <path d="M7 23.5 L12.5 13 L16.5 17.5 L21.5 8" stroke="#F2F5F9" stroke-width="2.4"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="21.5" cy="8" r="2.6" fill="#F2F5F9"/>
+</svg>

@@ -1,0 +1,275 @@
+---
+/**
+ * Observaciones.
+ *
+ * Todo el mundo que entre al portal las ve: es sano que el revisor compruebe
+ * que lo suyo llego. Lo que solo puede hacer el operador es RESPONDER,
+ * MARCAR, EXPORTAR y BORRAR, y para eso hace falta la clave que viaja en su
+ * enlace (?k=...). Sin ella la pantalla es de solo lectura.
+ *
+ * UNA OBSERVACION NO ES UNA REGLA. El plan solo cambia si el operador cambia
+ * 01_Plan/. Esto es constancia de la revision, no la fuente.
+ */
+import Marco from '../componentes/Marco.astro';
+import Icono from '../componentes/Icono.astro';
+---
+
+<Marco titulo="Observaciones">
+  <header class="cab entra">
+    <h1>Observaciones de la revisión</h1>
+    <p class="lead">
+      Lo que se ha anotado sobre el plan, con su anclaje y su estado. Una
+      observación <strong>no modifica el plan</strong>: queda registrada para
+      que el operador la lea y decida.
+    </p>
+  </header>
+
+  <div class="barra entra">
+    <div class="chips" role="group" aria-label="Filtrar por estado">
+      <button class="chip activa" type="button" data-estado="">Todas <span data-n-todas></span></button>
+      <button class="chip" type="button" data-estado="nueva">Nuevas <span data-n-nueva></span></button>
+      <button class="chip" type="button" data-estado="revisada">Revisadas <span data-n-revisada></span></button>
+      <button class="chip" type="button" data-estado="aplicada">Aplicadas <span data-n-aplicada></span></button>
+      <button class="chip" type="button" data-estado="descartada">Descartadas <span data-n-descartada></span></button>
+    </div>
+    <a class="exportar" href="#" data-exportar hidden>
+      <Icono nombre="download-simple" /> Exportar a Markdown
+    </a>
+  </div>
+
+  <p class="aviso-op meta" data-modo-lectura hidden>
+    Estás viendo la lista en modo lectura. Para responder y marcar, abre esta
+    página desde tu enlace de operador.
+  </p>
+
+  <div class="lista" data-lista>
+    <p class="cargando meta">Cargando observaciones…</p>
+  </div>
+</Marco>
+
+<script is:inline>
+  (function () {
+    var CLAVE = 'chaumer.clave';
+    var lista = document.querySelector('[data-lista]');
+    var exportar = document.querySelector('[data-exportar]');
+    var avisoLectura = document.querySelector('[data-modo-lectura]');
+    var filtro = '';
+    var todas = [];
+
+    // La clave del operador llega en su enlace y se recuerda. Se limpia de la
+    // barra para que no viaje si copia la direccion.
+    try {
+      var url = new URL(window.location.href);
+      var k = url.searchParams.get('k');
+      if (k) {
+        localStorage.setItem(CLAVE, k);
+        url.searchParams.delete('k');
+        history.replaceState({}, '', url.pathname + url.search + url.hash);
+      }
+    } catch (e) { /* sin almacenamiento */ }
+
+    function clave() { try { return localStorage.getItem(CLAVE) || ''; } catch (e) { return ''; } }
+    var soyOperador = !!clave();
+
+    exportar.hidden = !soyOperador;
+    avisoLectura.hidden = soyOperador;
+    if (soyOperador) exportar.href = '/api/observaciones/export?k=' + encodeURIComponent(clave());
+
+    // Las anclas de termino y pendiente no llevan a ningun sitio desde el
+    // 06/09/2026: esas paginas se retiraron. Caen en `general`, que es la
+    // portada, en vez de a un enlace roto. Las de sub-fase, igual desde el
+    // 22/09/2026, cuando se borro la pagina del plan por sub-fases.
+    var RUTA = {
+      regla: function (id) { return '/reglas/' + id; },
+      caso: function (id) { return '/galeria#' + id; },
+      parametro: function (id) { return '/parametros#' + id; },
+      subfase: function () { return '/'; },
+      general: function () { return '/'; },
+    };
+    var NOMBRE = {
+      regla: 'Regla', termino: 'Término', caso: 'Caso', parametro: 'Parámetro',
+      pendiente: 'Pendiente', subfase: 'Sub-fase', general: 'General',
+    };
+
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function pintar() {
+      var ver = todas.filter(function (o) { return !filtro || o.estado === filtro; });
+
+      document.querySelector('[data-n-todas]').textContent = todas.length;
+      ['nueva', 'revisada', 'aplicada', 'descartada'].forEach(function (e) {
+        var n = todas.filter(function (o) { return o.estado === e; }).length;
+        document.querySelector('[data-n-' + e + ']').textContent = n;
+      });
+
+      if (!ver.length) {
+        lista.innerHTML = '<p class="vacio">' + (todas.length
+          ? 'Ninguna observación en ese estado.'
+          : 'Todavía no hay observaciones. Aparecerán aquí en cuanto alguien anote algo en el plan.')
+          + '</p>';
+        return;
+      }
+
+      lista.innerHTML = ver.map(function (o) {
+        var ruta = (RUTA[o.ancla_tipo] || RUTA.general)(o.ancla_id || '');
+        var donde = o.ancla_id
+          ? '<a class="ref" href="' + ruta + '">' + esc(o.ancla_id) + '</a>'
+          : '<span class="meta">sobre el plan</span>';
+        var acciones = soyOperador
+          ? '<div class="acciones">'
+            + ['revisada', 'aplicada', 'descartada'].map(function (e) {
+                return '<button class="mini' + (o.estado === e ? ' activa' : '') + '" data-marcar="'
+                  + o.id + '" data-valor="' + e + '">' + e + '</button>';
+              }).join('')
+            + '<button class="mini responder" data-responder="' + o.id + '">responder</button>'
+            + '<button class="mini borrar" data-borrar="' + o.id + '">borrar</button>'
+            + '</div>'
+          : '';
+        return '<article class="obs-f estado-' + esc(o.estado) + '">'
+          + '<header class="of-cab">'
+          +   '<span class="of-tipo etiqueta">' + esc(NOMBRE[o.ancla_tipo] || o.ancla_tipo) + '</span>'
+          +   donde
+          +   (o.ancla_titulo ? '<span class="of-t">' + esc(o.ancla_titulo) + '</span>' : '')
+          +   '<span class="of-estado ' + esc(o.estado) + '">' + esc(o.estado) + '</span>'
+          + '</header>'
+          + (o.cita ? '<blockquote class="of-cita">' + esc(o.cita) + '</blockquote>' : '')
+          + '<p class="of-texto">' + esc(o.texto) + '</p>'
+          + '<p class="of-meta meta">' + esc(o.autor) + ' · ' + esc(o.creada_en) + '</p>'
+          + (o.respuesta
+              ? '<div class="of-resp"><span class="etiqueta">Respuesta del operador</span><p>'
+                + esc(o.respuesta) + '</p></div>' : '')
+          + acciones
+          + '</article>';
+      }).join('');
+    }
+
+    function api(id, cuerpo, metodo) {
+      return fetch('/api/observaciones/' + id, {
+        method: metodo || 'PATCH',
+        headers: { 'content-type': 'application/json', 'x-clave': clave() },
+        body: metodo === 'DELETE' ? undefined : JSON.stringify(cuerpo),
+      }).then(function (r) {
+        if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || 'Error'); });
+        return cargar();
+      }).catch(function (e) { alert(e.message); });
+    }
+
+    lista.addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b) return;
+      if (b.dataset.marcar) api(b.dataset.marcar, { estado: b.dataset.valor });
+      else if (b.dataset.responder) {
+        var txt = prompt('Tu respuesta para esta observación:');
+        if (txt && txt.trim()) api(b.dataset.responder, { respuesta: txt.trim() });
+      } else if (b.dataset.borrar) {
+        if (confirm('¿Borrar esta observación? No se puede deshacer.')) {
+          api(b.dataset.borrar, null, 'DELETE');
+        }
+      }
+    });
+
+    document.querySelectorAll('[data-estado]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        document.querySelectorAll('[data-estado]').forEach(function (o) { o.classList.remove('activa'); });
+        b.classList.add('activa');
+        filtro = b.getAttribute('data-estado');
+        pintar();
+      });
+    });
+
+    function cargar() {
+      return fetch('/api/observaciones')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) throw new Error('sin respuesta');
+          todas = d.observaciones || [];
+          pintar();
+        })
+        .catch(function () {
+          lista.innerHTML = '<p class="vacio">No se pudo contactar con el servidor de'
+            + ' observaciones. Si estás viendo esto en local, es normal: la API solo'
+            + ' existe una vez publicado el portal.</p>';
+        });
+    }
+    cargar();
+  })();
+</script>
+
+<style>
+  .cab { margin-bottom: var(--e-6); }
+  .lead { font-size: var(--t-5); color: var(--texto-2); margin: var(--e-4) 0 0; }
+
+  .barra { display: flex; align-items: center; gap: var(--e-4); flex-wrap: wrap; margin-bottom: var(--e-4); }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--e-2); }
+  .chip {
+    display: inline-flex; align-items: center; gap: var(--e-2);
+    padding: var(--e-2) var(--e-3);
+    border-radius: var(--radio-pill);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--borde-sutil);
+    color: var(--texto-2); font: inherit; font-size: var(--t-2); cursor: pointer;
+    transition: background var(--normal), border-color var(--normal), color var(--normal);
+  }
+  .chip:hover { background: rgba(255, 255, 255, 0.08); color: var(--texto); }
+  .chip.activa {
+    background: color-mix(in srgb, var(--acento) 20%, transparent);
+    border-color: color-mix(in srgb, var(--acento) 45%, transparent);
+    color: var(--texto);
+  }
+  .chip span { color: var(--texto-3); font-variant-numeric: tabular-nums; }
+
+  .exportar { margin-left: auto; display: inline-flex; align-items: center; gap: var(--e-2); font-size: var(--t-3); }
+  .aviso-op { margin-bottom: var(--e-5); }
+
+  .lista { display: grid; gap: var(--e-3); }
+  .lista :global(.vacio), .cargando { color: var(--texto-2); font-size: var(--t-3); padding: var(--e-6) 0; }
+
+  .lista :global(.obs-f) {
+    padding: var(--e-5);
+    border-radius: var(--radio-3);
+    background: var(--vidrio-fondo);
+    border: 1px solid var(--vidrio-borde);
+    border-left: 2px solid var(--texto-3);
+  }
+  .lista :global(.estado-nueva) { border-left-color: var(--acento); }
+  .lista :global(.estado-aplicada) { border-left-color: var(--positivo); }
+  .lista :global(.estado-descartada) { opacity: 0.6; }
+
+  .lista :global(.of-cab) { display: flex; align-items: baseline; gap: var(--e-3); flex-wrap: wrap; margin-bottom: var(--e-3); }
+  .lista :global(.of-t) { font-size: var(--t-3); color: var(--texto-2); flex: 1; min-width: 8rem; }
+  .lista :global(.of-estado) {
+    font-size: var(--t-1); letter-spacing: var(--track-etiqueta); text-transform: uppercase;
+    color: var(--texto-3);
+  }
+  .lista :global(.of-estado.nueva) { color: var(--acento); }
+  .lista :global(.of-estado.aplicada) { color: var(--positivo); }
+
+  .lista :global(.of-cita) {
+    margin: 0 0 var(--e-3); padding: var(--e-3) var(--e-4);
+    background: rgba(255, 255, 255, 0.04); border-radius: var(--radio-2);
+    font-size: var(--t-3); color: var(--texto-3);
+  }
+  .lista :global(.of-texto) { margin: 0 0 var(--e-3); font-size: var(--t-4); color: var(--texto); }
+  .lista :global(.of-meta) { margin: 0; }
+  .lista :global(.of-resp) {
+    margin-top: var(--e-4); padding: var(--e-4);
+    background: color-mix(in srgb, var(--positivo) 8%, transparent);
+    border-radius: var(--radio-2);
+  }
+  .lista :global(.of-resp p) { margin: var(--e-2) 0 0; font-size: var(--t-3); color: var(--texto-2); }
+
+  .lista :global(.acciones) { display: flex; flex-wrap: wrap; gap: var(--e-2); margin-top: var(--e-4); }
+  .lista :global(.mini) {
+    padding: var(--e-1) var(--e-3);
+    border-radius: var(--radio-pill);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--borde-sutil);
+    color: var(--texto-3); font: inherit; font-size: var(--t-1); cursor: pointer;
+  }
+  .lista :global(.mini:hover) { color: var(--texto); }
+  .lista :global(.mini.activa) { background: color-mix(in srgb, var(--acento) 25%, transparent); color: var(--texto); }
+  .lista :global(.mini.borrar:hover) { color: var(--negativo); border-color: var(--negativo); }
+</style>

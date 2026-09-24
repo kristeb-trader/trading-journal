@@ -1,0 +1,25 @@
+{
+  // El portal es prosa, no codigo: que las lineas se vean enteras sin
+  // desplazarse a lo ancho.
+  "editor.wordWrap": "on",
+  "editor.renderWhitespace": "none",
+
+  // Corrector en espanol sobre los textos del portal.
+  "[astro]": { "editor.wordWrap": "on" },
+  "[markdown]": { "editor.wordWrap": "on" },
+
+  // Carpetas que solo estorban al buscar.
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.astro": true,
+    "04_Web/dist": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "04_Web/dist": true,
+    "05_Backtesting/datos": true
+  },
+
+  // Sin acentos rotos: todo el proyecto va en UTF-8.
+  "files.encoding": "utf8"
+}

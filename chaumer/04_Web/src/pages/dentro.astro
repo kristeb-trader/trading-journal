@@ -1,0 +1,118 @@
+---
+/**
+ * Modulo 7 — Dentro de la operacion.
+ *
+ * El modulo mas corto y el mas duro. Dos ajustes, y despues una prohibicion
+ * absoluta. Es la unica regla del plan enunciada sin excepciones.
+ */
+import Modulo from '../componentes/Modulo.astro';
+import * as P from '../lib/parsers.mjs';
+import Refs from '../componentes/Refs.astro';
+
+const v = (n: string) => P.parametro(n);
+
+const SECCIONES = [
+  { id: 'llenado', t: 'Al llenarse' },
+  { id: 'no-tocar', t: 'No se toca nada' },
+  { id: 'salidas', t: 'Solo hay dos salidas' },
+  { id: 'cerrar', t: 'Al cerrar' },
+];
+---
+
+<Modulo slug="dentro" secciones={SECCIONES}>
+  <section class="ap" id="llenado">
+    <h2>Al llenarse <Refs cods="R-31 · R-32" /></h2>
+    <p>
+      La orden se llenó. Hay dos cosas que hacer, en este orden exacto, y
+      después no hay ninguna más.
+    </p>
+
+    <figure class="gr">
+      <img src="/conceptos/13-dentro.png" alt="Una operación desde el llenado hasta su resultado, con el stop y el objetivo colocados" loading="eager" />
+      <figcaption class="meta">Desde el llenado hasta el resultado. Colocados el stop y el objetivo, no se vuelve a intervenir.</figcaption>
+    </figure>
+
+    <ol class="secuencia">
+      <li><strong>Primero el stop</strong>, a su nivel estructural.</li>
+      <li><strong>Después el objetivo</strong>, a la misma distancia al otro lado.</li>
+    </ol>
+
+    <p>
+      El orden importa. Entre el llenado y este ajuste, la posición corre con el
+      valor por defecto de la ATM — <span class="cifra-en">{v('ATM_DEFECTO')}</span>,
+      que son {P.equivalencias('ATM_DEFECTO')[0]}. Ese valor es igual al tope de riesgo justo para que
+      nunca sea más ajustado que el stop real.
+    </p>
+  </section>
+
+  <section class="ap" id="no-tocar">
+    <h2>No se toca nada <Refs cods="R-33" /></h2>
+    <p>
+      Colocados el stop y el objetivo, la operación deja de gestionarse.
+    </p>
+
+    <div class="veto">
+      <p><strong>Prohibido mover el stop</strong>, en cualquier dirección.</p>
+      <p><strong>Prohibido mover el objetivo</strong>, en cualquier dirección.</p>
+      <p><strong>Prohibido pasar a punto de entrada.</strong></p>
+      <p><strong>Prohibido cerrar a mano</strong>, también si el precio no se mueve o va en contra.</p>
+      <p><strong>Prohibido cerrar por partes.</strong> Hay un solo contrato: no hay nada que partir.</p>
+      <p><strong>Prohibido añadir contratos.</strong></p>
+    </div>
+
+    <p>
+      Palabras del operador: <em>«no se toca nada, jamás… Repito, jamás se
+      gestiona»</em>. Es la única regla del método enunciada como prohibición
+      absoluta y sin una sola excepción.
+    </p>
+
+    <div class="duro">
+      <p>
+        <strong>Esto es lo que convierte cada operación en una medida limpia.</strong>
+        El resultado mide el setup, no la habilidad para gestionar. Si se
+        interviene, deja de saberse qué se estaba midiendo.
+      </p>
+    </div>
+  </section>
+
+  <section class="ap" id="salidas">
+    <h2>Solo hay dos salidas <Refs cods="R-30" /></h2>
+
+    <dl class="datos">
+      <dt>Salida 1</dt>
+      <dd><strong>El stop.</strong></dd>
+      <dt>Salida 2</dt>
+      <dd><strong>El objetivo.</strong></dd>
+      <dt>Cierre por hora</dt>
+      <dd><strong>No existe.</strong> El fin de la ventana prohíbe abrir, no obliga a cerrar</dd>
+    </dl>
+
+    <p>
+      Si la ventana de dos horas termina con la operación viva, la operación
+      sigue. No hay ninguna acción que se dispare por reloj.
+    </p>
+  </section>
+
+  <section class="ap" id="cerrar">
+    <h2>Al cerrar <Refs cods="R-34 · R-28" /></h2>
+    <p>
+      Terminada la operación, con el resultado que sea:
+    </p>
+
+    <ol class="secuencia">
+      <li><strong>Se anota en la bitácora:</strong> el setup, la imagen, los errores y las observaciones.</li>
+      <li><strong>Se cierra NinjaTrader.</strong></li>
+    </ol>
+
+    <div class="duro">
+      <p>
+        <strong>El cupo del día está consumido.</strong> No se coloca ninguna
+        orden más, aunque aparezcan setups perfectamente válidos y quede
+        ventana de sobra.
+      </p>
+    </div>
+  </section>
+</Modulo>
+
+<style>
+</style>

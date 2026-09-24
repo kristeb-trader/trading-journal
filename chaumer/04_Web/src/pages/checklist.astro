@@ -1,0 +1,83 @@
+---
+/**
+ * La checklist diaria.
+ *
+ * Se renderiza tal cual la escribe el documento, en sus bloques. Es una
+ * vista de lectura e impresion: el portal NO se usa mientras se opera, asi
+ * que aqui no hay casillas que marcar ni estado que guardar. Eso seria
+ * convertirlo en herramienta de operacion, que es justo lo que no es.
+ */
+import Marco from '../componentes/Marco.astro';
+import Icono from '../componentes/Icono.astro';
+import * as P from '../lib/parsers.mjs';
+
+const bloques = P.checklist().map((b) => ({ ...b, html: P.markdownRico(b.cuerpo) }));
+---
+
+<Marco titulo="Checklist diaria" ancho="texto">
+  <header class="cab entra">
+    <h1>La secuencia del día</h1>
+    <p class="lead">
+      Los {bloques.length} bloques del proceso operativo, en su orden real, tal
+      como los escribe el documento.
+    </p>
+    <div class="acciones">
+      <button class="imprimir" type="button" onclick="window.print()">
+        <Icono nombre="printer" /> Imprimir
+      </button>
+      <span class="apunte">
+        Es una vista de consulta. El portal no se usa mientras se opera.
+      </span>
+    </div>
+  </header>
+
+  {bloques.map((b, i) => (
+    <section class="bloque entra" style={`--retraso:${Math.min(i, 6) * 40}ms`}
+             data-obs-tipo="general" data-obs-titulo={`Checklist: ${b.titulo}`}>
+      <h2 class="b-t" set:html={P.tituloAHtml(b.titulo)} />
+      <div class="md" set:html={b.html} />
+    </section>
+  ))}
+</Marco>
+
+<style>
+  .cab { margin-bottom: var(--e-7); }
+  .lead { font-size: var(--t-5); color: var(--texto-2); margin: var(--e-4) 0; }
+  .acciones { display: flex; align-items: center; gap: var(--e-4); flex-wrap: wrap; }
+  .imprimir {
+    display: inline-flex; align-items: center; gap: var(--e-2);
+    padding: var(--e-2) var(--e-4);
+    border-radius: var(--radio-2);
+    background: var(--vidrio-fondo);
+    border: 1px solid var(--vidrio-borde);
+    color: var(--texto); font: inherit; font-size: var(--t-3);
+    cursor: pointer;
+    transition: background var(--normal);
+  }
+  .imprimir:hover { background: rgba(255, 255, 255, 0.08); }
+
+  .bloque {
+    padding: var(--e-6) 0;
+    border-top: 1px solid var(--borde-sutil);
+    scroll-margin-top: 6rem;
+  }
+  .bloque:first-of-type { border-top: 0; }
+  .b-t { margin: 0 0 var(--e-4); font-size: var(--t-6); color: var(--acento); }
+
+  /* ── impresion ───────────────────────────────────────────────────────── */
+  /* En papel manda la legibilidad: fondo blanco, tinta negra, sin adornos. */
+  @media print {
+    :global(body) { background: #FFFFFF !important; color: #000000 !important; }
+    :global(body::before), :global(body::after) { display: none !important; }
+    :global(.cabecera), :global(.rail), :global(.pie),
+    :global(.obs-btn), :global(.globo), .acciones { display: none !important; }
+    :global(.contenido) { max-width: none !important; padding: 0 !important; }
+    :global(.md), :global(.md p), :global(.md li), :global(.md td) { color: #000 !important; }
+    :global(.md th) { color: #333 !important; border-bottom: 1px solid #999 !important; }
+    :global(.md blockquote) { background: #F2F2F2 !important; }
+    :global(.md code), :global(.pastilla-par), :global(.ref) { color: #000 !important; background: none !important; border: 0 !important; }
+    .b-t { color: #000 !important; }
+    .bloque { border-top: 1px solid #CCC !important; page-break-inside: avoid; }
+    .cab .lead, .cab .apunte { color: #333 !important; }
+  }
+</style>

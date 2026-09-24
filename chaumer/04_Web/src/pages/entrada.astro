@@ -1,0 +1,164 @@
+---
+/**
+ * Modulo 5 — Mecanica de entrada.
+ *
+ * Que orden, donde exactamente, y como se miden el stop y el objetivo. Lo que
+ * IMPIDE entrar no esta aqui: esta en el modulo siguiente, y se comprueba
+ * entre medir y enviar.
+ */
+import Modulo from '../componentes/Modulo.astro';
+import * as P from '../lib/parsers.mjs';
+import Refs from '../componentes/Refs.astro';
+
+const v = (n: string) => P.parametro(n);
+
+const SECCIONES = [
+  { id: 'orden', t: 'Qué orden y dónde' },
+  { id: 'medir', t: 'Stop y objetivo' },
+  { id: 'antes', t: 'Antes de enviar' },
+  { id: 'espera', t: 'La orden esperando' },
+];
+---
+  <!-- 1 ─────────────────────────────────────────────────────────────── -->
+<Modulo slug="entrada" secciones={SECCIONES}>
+  <section class="ap" id="orden">
+    <h2>Qué orden y dónde <Refs cods="R-24" /></h2>
+    <p>
+      La entrada no se hace a mano. Se deja una orden puesta y se espera a que
+      el mercado la llene solo.
+    </p>
+
+    <figure class="gr">
+      <img src="/conceptos/06-entrada.png" alt="La orden colocada un tick más allá del extremo de la vela de rompimiento" loading="eager" />
+      <figcaption class="meta">La orden se coloca al cierre de la vela que rompió, un tick más allá de su extremo.</figcaption>
+    </figure>
+
+    <dl class="datos">
+      <dt>Tipo de orden</dt>
+      <dd><strong>Stop Market.</strong> Buy Stop para largos, Sell Stop para cortos</dd>
+      <dt>Cuándo se coloca</dt>
+      <dd>Al <strong>cierre de la vela de rompimiento</strong>, ni antes ni después</dd>
+      <dt>A qué nivel, en largo</dt>
+      <dd>Máximo de esa vela <strong>+ 1 tick</strong> ({v('TICK')})</dd>
+      <dt>A qué nivel, en corto</dt>
+      <dd>Mínimo de esa vela <strong>− 1 tick</strong> ({v('TICK')})</dd>
+      <dt>Dónde se lee el nivel</dt>
+      <dd>En el gráfico de <strong>MNQ</strong>, no en el de NQ</dd>
+      <dt>Desde dónde se manda</dt>
+      <dd>Desde el Chart Trader de MNQ</dd>
+    </dl>
+
+    <div class="veto">
+      <p>
+        <strong>Orden a mercado: prohibida. Orden límite: prohibida.</strong>
+      </p>
+      <p>No se persigue el precio a mano. Se coloca la orden y se espera.</p>
+    </div>
+
+    <p>
+      Colocar la orden un tick más allá del extremo de la vela que rompió es lo
+      mismo que decir que <strong>entra sola cuando llega la confirmación</strong>.
+      La orden es la confirmación, convertida en instrucción.
+    </p>
+  </section>
+
+  <section class="ap" id="medir">
+    <h2>Stop y objetivo <Refs cods="R-32" /></h2>
+    <p>
+      Los dos se miden desde el nivel de entrada, y en este orden: primero el
+      stop, que lo decide la estructura; después el objetivo, que sale del stop.
+    </p>
+
+    <figure class="gr">
+      <img src="/conceptos/07-stop-objetivo.png" alt="La distancia al stop y la misma distancia al objetivo desde la entrada" loading="lazy" />
+      <figcaption class="meta">La distancia hasta el stop, repetida al otro lado. Esa es toda la aritmética.</figcaption>
+    </figure>
+
+    <ol class="secuencia">
+      <li><strong>Se ancla en la entrada.</strong> Todo se mide desde ahí.</li>
+      <li><strong>Se coloca el stop en su referencia estructural.</strong> En una Continuación, el punto más extremo que alcanzó el precio <strong>desde que nació la zona hasta la vela que rompió</strong> — no solo el extremo del retroceso que la originó. En un Reingreso, el extremo de la corrida fallida.</li>
+      <li><strong>Se mide esa distancia</strong> y se pone el objetivo a la misma distancia al otro lado.</li>
+    </ol>
+
+    <dl class="datos">
+      <dt>Relación</dt>
+      <dd><strong>{v('RATIO_TARGET')}.</strong> El objetivo recorre exactamente lo mismo que el stop</dd>
+      <dt>Stop de una Continuación</dt>
+      <dd>El punto más extremo alcanzado desde que nació la zona hasta la vela de rompimiento</dd>
+      <dt>Stop de un Reingreso</dt>
+      <dd>El extremo de la corrida que rompió y no continuó</dd>
+    </dl>
+
+    <div class="veto">
+      <p>
+        <strong>El objetivo nunca se acorta para que quepa.</strong> Si no cabe,
+        la entrada se descarta entera.
+      </p>
+      <p>No existe media entrada, ni relación reducida, ni «lo tomo más corto por esta vez».</p>
+    </div>
+  </section>
+
+  <section class="ap" id="antes">
+    <h2>Antes de enviar</h2>
+    <p>
+      Con el stop y el objetivo ya medidos, y <strong>antes</strong> de tocar el
+      botón, se comprueban los filtros. Basta que falle uno para que no haya
+      operación.
+    </p>
+
+    <div class="rejilla dos">
+      <div class="tarj">
+        <h3>¿El stop cabe?</h3>
+        <p>La distancia hasta el stop no puede pasar de <strong>{v('STOP_MAX')}</strong>.</p>
+      </div>
+      <div class="tarj">
+        <h3>¿El camino está libre?</h3>
+        <p>Entre la entrada y el objetivo no puede haber ninguna zona viva.</p>
+      </div>
+      <div class="tarj">
+        <h3>¿Es día de la Fed?</h3>
+        <p>Ese día la Continuación no se opera.</p>
+      </div>
+      <div class="tarj">
+        <h3>¿Hay noticia cerca?</h3>
+        <p>Dentro de la ventana de una noticia roja no se coloca nada.</p>
+      </div>
+    </div>
+
+    <p class="mas-filtros">
+      Los cuatro filtros, con sus casos límite, están en el módulo siguiente.
+    </p>
+  </section>
+
+  <section class="ap" id="espera">
+    <h2>La orden esperando <Refs cods="R-29" /></h2>
+    <p>
+      Entre que se coloca la orden y que se llena pueden pasar varias cosas. Solo
+      una de ellas es entrar.
+    </p>
+
+    <div class="duro">
+      <p>
+        <strong>Un retroceso nuevo NO cancela la orden.</strong> Es lo más fácil
+        de confundir: la aparición de una estructura nueva marca zona nueva, sí,
+        pero deja la orden pendiente intacta.
+      </p>
+    </div>
+
+    <p>
+      Lo que sí la cancela — el plazo, la vuelta al stop, la hora y las noticias
+      — está en el módulo siguiente, junto con el resto de lo que impide operar.
+    </p>
+
+    <dl class="datos">
+      <dt>Si se llena</dt>
+      <dd>Empieza el módulo <strong>Dentro de la operación</strong></dd>
+      <dt>Si se cancela</dt>
+      <dd><strong>No consume el cupo del día.</strong> Se puede esperar otro setup dentro de la ventana</dd>
+    </dl>
+  </section>
+</Modulo>
+
+<style>
+  .mas-filtros { color: var(--texto-3); font-size: var(--t-3); }
+</style>

@@ -1,0 +1,3 @@
+Aqui va la captura del grafico del operador, con SU marcado.
+Un archivo por dia, con el nombre de la fecha: 2026-09-10.png
+No se abre hasta que Claude haya entregado su marcado.

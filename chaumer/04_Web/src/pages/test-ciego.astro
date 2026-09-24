@@ -1,0 +1,27 @@
+---
+/**
+ * /test-ciego ya no es una pagina: desde el 22/09/2026 el test ciego es el
+ * primer bloque de «Casos reales» (a peticion del operador). Esto solo
+ * redirige, para que un enlace guardado no caiga en la portada.
+ *
+ * Una jornada que venia con su fecha —/test-ciego#2026-09-10— sigue
+ * llegando a su tarjeta: la galeria tiene la misma ancla.
+ */
+const destino = '/galeria/#test-ciego';
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Test ciego · ahora en Casos reales</title>
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="refresh" content={`0; url=${destino}`} />
+    <link rel="canonical" href="/galeria/" />
+    <script is:inline define:vars={{ destino }}>
+      location.replace(location.hash && location.hash.length > 1 ? '/galeria/' + location.hash : destino);
+    </script>
+  </head>
+  <body>
+    <p>El test ciego está ahora en <a href="/galeria/#test-ciego">Casos reales</a>.</p>
+  </body>
+</html>

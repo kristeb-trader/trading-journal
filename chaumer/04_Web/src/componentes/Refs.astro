@@ -1,0 +1,51 @@
+---
+/**
+ * Refs — los códigos de regla de un apartado, y cada uno lleva a su ficha.
+ *
+ * Hasta el 05/09/2026 eran texto muerto: se veían y no se podía pinchar.
+ *
+ * ⚠️ Los códigos van escritos a mano en cada módulo, así que NO se traducen
+ * solos si las reglas se renumeran. El 06/09/2026 pasó: 47 referencias
+ * seguían apuntando a la numeración anterior y llevaban a otra regla.
+ * `npm run verificar` avisa si los enunciados cambian de número.
+ *
+ * Uso:  <Refs cods="R-12 · R-33" />
+ */
+import * as P from '../lib/parsers.mjs';
+
+interface Props { cods: string }
+const { cods } = Astro.props;
+
+// El enunciado va en el título del enlace: al pasar por encima se sabe qué
+// regla es sin salir del módulo.
+const enunciados = new Map(P.reglas().map((r) => [r.id, r.enunciado]));
+const ids = cods.split('·').map((t) => t.trim()).filter(Boolean);
+---
+
+<span class="mono refs">
+  {ids.map((id, i) => (
+    <>
+      {i > 0 && <span class="refs-sep" aria-hidden="true">·</span>}
+      <a class="refs-i" href={`/reglas/${id}`} title={enunciados.get(id) ?? id}>{id}</a>
+    </>
+  ))}
+</span>
+
+<style>
+  .refs {
+    margin-left: var(--e-2);
+    font-size: var(--t-1);
+    color: var(--texto-3);
+    white-space: nowrap;
+  }
+  .refs-sep { margin: 0 0.15rem; opacity: 0.5; }
+  .refs-i {
+    color: var(--texto-3);
+    border-bottom: 1px dotted color-mix(in srgb, var(--texto-3) 55%, transparent);
+    transition: color var(--normal), border-color var(--normal);
+  }
+  .refs-i:hover {
+    color: var(--acento);
+    border-bottom-color: var(--acento);
+  }
+</style>

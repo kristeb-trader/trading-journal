@@ -1,0 +1,205 @@
+---
+/**
+ * Modulo 6 — Filtros: cuando NO se entra.
+ *
+ * Todo lo que frena una operacion, en el orden en que aparece: lo que impide
+ * abrir el dia, lo que descarta un setup ya medido, y lo que mata una orden
+ * que ya estaba puesta.
+ */
+import Modulo from '../componentes/Modulo.astro';
+import * as P from '../lib/parsers.mjs';
+import Refs from '../componentes/Refs.astro';
+
+const v = (n: string) => P.parametro(n);
+
+const SECCIONES = [
+  { id: 'dia', t: 'No abrir el día' },
+  { id: 'cuatro', t: 'Los cinco filtros' },
+  { id: 'noticias', t: 'Las noticias' },
+  { id: 'cancelan', t: 'Lo que cancela la orden' },
+  { id: 'despues', t: 'Descartado no es vacío' },
+];
+---
+
+<Modulo slug="filtros" secciones={SECCIONES}>
+  <section class="ap" id="dia">
+    <h2>No abrir el día <Refs cods="R-37 · R-36" /></h2>
+    <p>
+      Hay dos cosas que se deciden antes de mirar un solo gráfico, y las dos
+      pueden cerrar el día entero.
+    </p>
+
+    <div class="rejilla dos">
+      <div class="tarj">
+        <h3>No estar bien</h3>
+        <p>Enfermo o mal mentalmente: <strong>no se opera</strong>. El día se cierra sin abrir la plataforma.</p>
+      </div>
+      <div class="tarj">
+        <h3>Día de la Fed</h3>
+        <p>Si Forex Factory marca en rojo un evento de la Fed, ese día <strong>la Continuación queda prohibida</strong>. Solo se permite <strong>Reingreso</strong>.</p>
+      </div>
+    </div>
+
+    <p>
+      El veto del día de la Fed dura <strong>toda la jornada</strong>, no solo la
+      hora del anuncio, e incluye decisión de tipos, actas y discursos de <strong>Powell</strong>
+      siempre que aparezcan en rojo.
+    </p>
+  </section>
+
+  <section class="ap" id="cuatro">
+    <h2>Los cinco filtros <Refs cods="R-31 · R-32 · R-41 · R-40 · R-36" /></h2>
+    <p>
+      Con el setup identificado y el stop y el objetivo ya medidos, se pasan
+      cinco comprobaciones. <strong>Basta que falle una</strong> para que no
+      haya operación.
+    </p>
+
+    <ol class="secuencia">
+      <li>
+        <strong>El stop no pasa de {v('STOP_MAX')}.</strong> Se mide
+        desde la entrada hasta su referencia estructural. Si lo supera aunque sea
+        por un tick, no se opera.
+      </li>
+      <li>
+        <strong>El camino al objetivo está libre de zonas vivas.</strong> Una sola
+        zona viva entre la entrada y el objetivo descarta la operación.
+      </li>
+      <li>
+        <strong>Solo en Reingreso:</strong> el objetivo no pasa del punto de
+        referencia vivo más cercano que quede entre la entrada y el objetivo.
+        Solo lo rompe una vela que cierre más allá; la mecha no cuenta.
+      </li>
+      <li>
+        <strong>Solo en Continuación:</strong> la corrida es fluida. Si no lo es, ese
+        rompimiento no se opera; la zona sigue viva y se espera otro IRI que
+        deje una zona nueva entera más allá.
+      </li>
+      <li>
+        <strong>No es día de la Fed con una Continuación delante.</strong>
+      </li>
+    </ol>
+
+    <figure class="gr">
+      <img src="/conceptos/08-descarte.png" alt="Un setup válido descartado porque el stop estructural supera el tope de riesgo" loading="eager" />
+      <figcaption class="meta">Un setup que cumple todo menos el tope de riesgo. El stop estructural queda por encima del máximo, y no se opera.</figcaption>
+    </figure>
+
+    <div class="duro">
+      <p>
+        <strong>El tope de riesgo es una línea dura, no una zona de aviso.</strong>
+        Un stop de 79,75 puntos se opera exactamente igual que uno de 30.
+      </p>
+      <p>
+        No existe «está muy cerca del límite, mejor la dejo». Un caso real de
+        julio se tomó con el <span class="cifra-en">94 %</span> del tope
+        consumido, y se ganó.
+      </p>
+    </div>
+
+    <div class="veto">
+      <p>
+        <strong>El objetivo nunca se acorta para que quepa.</strong> Si no cabe,
+        se descarta la entrada entera.
+      </p>
+    </div>
+  </section>
+
+  <section class="ap" id="noticias">
+    <h2>Las noticias <Refs cods="R-35" /></h2>
+    <p>
+      Alrededor de cada noticia roja hay una ventana de once minutos en la que
+      no se opera.
+    </p>
+
+    <dl class="datos">
+      <dt>Fuente</dt>
+      <dd><strong>Forex Factory</strong>, y solo esa</dd>
+      <dt>Nivel</dt>
+      <dd>Solo <strong>rojo</strong>. Naranja y amarillo no bloquean nada</dd>
+      <dt>Antes</dt>
+      <dd><span class="cifra-en">5</span> minutos antes de la hora publicada</dd>
+      <dt>Después</dt>
+      <dd><span class="cifra-en">5</span> minutos después</dd>
+      <dt>Con orden ya puesta</dt>
+      <dd><strong>Se cancela</strong> al entrar la ventana</dd>
+      <dt>Pasada la ventana</dt>
+      <dd>Si el setup sigue vivo, se vuelve a colocar la orden</dd>
+    </dl>
+  </section>
+
+  <section class="ap" id="cancelan">
+    <h2>Lo que cancela la orden <Refs cods="R-29" /></h2>
+    <p>
+      Una orden puesta que todavía no se ha llenado muere con lo primero que
+      llegue de esta lista.
+    </p>
+
+    <div class="rejilla dos">
+      <div class="tarj">
+        <h3>Se agota el plazo</h3>
+        <p>Pasan {v('PLAZO_CONSECUCION')} desde el rompimiento sin que el precio llegue al nivel de la orden.</p>
+      </div>
+      <div class="tarj">
+        <h3>El precio vuelve al stop</h3>
+        <p>El precio regresa al punto del stop: el extremo alcanzado desde que nació la zona hasta la vela que rompió.</p>
+      </div>
+      <div class="tarj">
+        <h3>Se acaba la ventana</h3>
+        <p>Un minuto antes del final de las dos horas.</p>
+      </div>
+      <div class="tarj">
+        <h3>Entra una noticia</h3>
+        <p>Empieza la ventana de once minutos de una noticia roja.</p>
+      </div>
+    </div>
+
+    <div class="duro">
+      <p>
+        <strong>El plazo se comprueba antes del llenado.</strong> Pasado el
+        plazo la orden ya no existe, y no puede llenarse aunque el precio toque
+        el nivel en esa misma vela.
+      </p>
+    </div>
+
+    <div class="veto">
+      <p>
+        <strong>Un retroceso nuevo NO cancela la orden.</strong> Marca zona
+        nueva, sí, pero la orden sigue viva.
+      </p>
+      <p>
+        Esto estuvo escrito al revés hasta finales de agosto. Con el criterio
+        equivocado, una orden real del 9 de julio se canceló dos minutos antes
+        de que se hubiera llenado.
+      </p>
+    </div>
+
+    <p>
+      Una orden cancelada <strong>no consume el cupo del día</strong>: se puede
+      esperar otro setup mientras quede ventana.
+    </p>
+  </section>
+
+  <section class="ap" id="despues">
+    <h2>Descartado no es vacío</h2>
+    <p>
+      Cuando una Continuación se descarta por cualquiera de los filtros, la zona no
+      se abandona. <strong>Se sigue mirando</strong>.
+    </p>
+
+    <div class="duro">
+      <p>
+        Si el rompimiento falla y el precio atraviesa la zona entera hasta salir
+        por el borde contrario, ahí hay un <strong>Reingreso</strong> — y puede
+        llegar en la misma vela.
+      </p>
+      <p>
+        Caso real del 6 de julio: una Continuación descartada y un Reingreso operado con un
+        minuto de diferencia sobre la misma zona.
+      </p>
+    </div>
+  </section>
+</Modulo>
+
+<style>
+</style>

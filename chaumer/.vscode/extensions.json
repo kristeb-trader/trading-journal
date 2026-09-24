@@ -1,0 +1,9 @@
+{
+  // Lo que VS Code ofrecera instalar al abrir esta carpeta.
+  "recommendations": [
+    // Entiende los archivos .astro: colores, autocompletado y errores en vivo.
+    "astro-build.astro-vscode",
+    // Abre la pagina dentro del propio VS Code, al lado del codigo.
+    "ms-vscode.live-server"
+  ]
+}

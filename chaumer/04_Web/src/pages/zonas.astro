@@ -1,0 +1,441 @@
+---
+/**
+ * Modulo 2 — Marcacion de zonas.
+ *
+ * El modulo mas largo del recorrido, y con razon: casi todo el plan se apoya
+ * en que una zona este bien dibujada.
+ *
+ * Reestructurado el 03/09/2026 y corregido por el operador el mismo dia sobre
+ * textos/02-zonas.md. El vocabulario es suyo: se dice MOVIMIENTO (no tramo) y
+ * despues del rompimiento se dice CONSECUCION (no confirmacion), que es el
+ * termino del glosario.
+ *
+ * Solo reglas confirmadas de 01_Plan/reglas.json. Nada del PDF de parametros
+ * que no este ya en el plan.
+ *
+ * OJO — cuatro cosas que el operador quito en su repaso y estan pendientes de
+ * su respuesta (ver ESTADO_FASE_2_HISTORIAL, 03/09/2026; codigos ya
+ * traducidos a la numeracion del 06/09/2026):
+ *   - R-13 «si se tocan, se funden» ya no se explica en ningun sitio
+ *   - de R-09 desaparecio «esa incluida» (la vela que dispara el retroceso)
+ *   - de R-12 desaparecio «se mide el recorrido, no el rectangulo»
+ *   - el PENDIENTE de como se entra sobre una zona apendice ya no se muestra
+ */
+import Modulo from '../componentes/Modulo.astro';
+import * as P from '../lib/parsers.mjs';
+import Refs from '../componentes/Refs.astro';
+
+
+const v = (n: string) => P.parametro(n);
+
+const SECCIONES = [
+  { id: 'movimiento', t: 'Corrida y retroceso' },
+  { id: 'nace', t: 'Generación de zonas' },
+  { id: 'consecucion', t: 'Rompimiento y consecución' },
+  { id: 'estira', t: 'Sin consecución' },
+  { id: 'apendice', t: 'La zona apéndice' },
+  { id: 'convivencia', t: 'Zonas entre zonas' },
+  { id: 'caduca', t: 'Cuándo quitar una zona' },
+];
+---
+
+<Modulo slug="zonas" secciones={SECCIONES}>
+  <!-- 1 ─────────────────────────────────────────────────────────────── -->
+  <section class="ap" id="movimiento">
+    <h2>Corrida y retroceso <Refs cods="R-05 · R-06" /></h2>
+    <p>
+      El mercado solo tiene dos fases: se mueve con fuerza hacia una dirección
+      (arriba o abajo) o hace una pausa y retrocede un poco, ya sea para
+      continuar el movimiento o para cambiar de sentido. El movimiento con
+      dirección es la <strong>corrida</strong>; la pausa es el
+      <strong>retroceso</strong>. Todo lo que pasa en el gráfico cae en una de
+      esas dos categorías.
+    </p>
+
+    <figure class="gr">
+      <img src="/conceptos/02-corrida-retroceso.png" alt="Un movimiento alcista real separado en su corrida y su retroceso" loading="eager" />
+      <figcaption class="meta">Movimiento alcista: la corrida sube y el retroceso baja.</figcaption>
+    </figure>
+
+    <figure class="gr">
+      <img src="/conceptos/16-corrida-bajista.png" alt="El mismo mecanismo en un movimiento bajista real" loading="eager" />
+      <figcaption class="meta">El mismo mecanismo hacia abajo: la corrida baja y el retroceso sube.</figcaption>
+    </figure>
+
+    <dl class="datos">
+      <dt>Cuándo nace una corrida</dt>
+      <dd>Surge en la vela que rompe y supera el extremo de la anterior</dd>
+      <dt>Continuidad del movimiento</dt>
+      <dd>Se mantiene activa mientras cada vela respete el extremo opuesto de la previa. Si empatan al tick, continúa vigente</dd>
+      <dt>Cuándo termina</dt>
+      <dd>Termina en la primera vela que rompe en dirección contraria, así sea por <span class="cifra-en">1</span> solo tick</dd>
+      <dt>Duración</dt>
+      <dd>No tiene límite</dd>
+      <dt>El color de la vela</dt>
+      <dd>No importa en absoluto</dd>
+      <dt>Una vela dentro de la anterior</dt>
+      <dd>No interrumpe ni altera la continuidad de la corrida</dd>
+    </dl>
+
+    <div class="duro">
+      <p>
+        <strong>Un retroceso no tiene tamaño mínimo ni máximo de velas.</strong>
+        Puede ser una sola vela. No se descarta un movimiento por parecer
+        demasiado corto o demasiado largo.
+      </p>
+    </div>
+
+    <p>
+      Del retroceso interesa un punto concreto: <strong>su extremo</strong> — el
+      más bajo si la corrida era alcista, el más alto si era bajista. Ahí irá el
+      stop cuando llegue el momento, y ese punto reaparece en casi todas las
+      decisiones que vienen después.
+    </p>
+  </section>
+
+  <!-- 2 ─────────────────────────────────────────────────────────────── -->
+  <section class="ap" id="nace">
+    <h2>Generación de zonas <Refs cods="R-09 · R-16 · R-19" /></h2>
+    <p>
+      Cuando una corrida termina, deja un rastro en el gráfico: una franja de
+      precio que se llama <strong>zona</strong>. No se dibuja a ojo. Sale
+      siempre de la misma vela y con los mismos límites.
+    </p>
+
+    <ol class="secuencia">
+      <li><strong>Se Identifica fin de corrida</strong>: Se busca la vela del máximo más alto si la corrida fue alcista, la del mínimo más bajo si fue bajista.</li>
+      <li><strong>Se dibuja una zona del borde del cuerpo a la punta de la mecha</strong> de esa vela. Ese es todo el criterio.</li>
+      <li><strong>Se extiende hacia la derecha</strong>, a lo largo del gráfico.</li>
+    </ol>
+
+    <figure class="gr">
+      <img src="/conceptos/17-vela-designada.png" alt="La vela que genera la zona y los dos bordes exactos que la delimitan" loading="eager" />
+      <figcaption class="meta">La vela que genera zona y sus dos bordes: del borde del cuerpo a la punta de la mecha. Ni un tick más, ni un tick menos.</figcaption>
+    </figure>
+
+    <dl class="datos">
+      <dt>Corrida alcista</dt>
+      <dd>Deja una zona de <strong>resistencia</strong> en la parte de arriba</dd>
+      <dt>Corrida bajista</dt>
+      <dd>Deja una zona de <strong>soporte</strong> en la parte de abajo</dd>
+      <dt>Y su retroceso</dt>
+      <dd>El retroceso de una corrida alcista deja <strong>soporte</strong>; el de una corrida bajista genera una <strong>resistencia</strong> arriba</dd>
+      <dt>Vela sin mecha</dt>
+      <dd>La zona queda dibujada como una línea sobre el precio de cierre o apertura</dd>
+      <dt>Vela sin cuerpo</dt>
+      <dd>La zona se traza desde el precio de apertura o cierre hasta la punta de la mecha</dd>
+      <dt>Una vela con máximo mayor y mínimo menor</dt>
+      <dd>El orden dentro de la vela decide cuál sostiene la zona</dd>
+    </dl>
+
+    <figure class="gr">
+      <img src="/conceptos/03-zona.png" alt="La zona ya dibujada y extendida hacia la derecha sobre una sesión real" loading="lazy" />
+      <figcaption class="meta">Ya extendida: el rectángulo se dibuja desde la vela de origen, no desde donde el precio vuelva más tarde.</figcaption>
+    </figure>
+
+    <h3>Cuándo se dibuja cada una</h3>
+    <p>
+      Las dos zonas de un movimiento no nacen a la vez, y confundirlo lleva a
+      operar algo que todavía no existe:
+    </p>
+    <div class="rejilla dos">
+      <div class="tarj">
+        <h3>La zona de la corrida</h3>
+        <p>Se dibuja <strong>en cuanto aparece el retroceso</strong>, en vivo. Ya se puede operar.</p>
+      </div>
+      <div class="tarj">
+        <h3>La zona del retroceso</h3>
+        <p>Mientras el retroceso vive es solo una <strong>línea provisional</strong> que se mueve con cada vela. Se convierte en zona cuando aparece el movimiento contrario.</p>
+      </div>
+    </div>
+
+    <div class="veto">
+      <p>
+        <strong>Una línea provisional no opera.</strong> No admite rompimiento,
+        ni consecución, ni reingreso. Hasta que no es zona, no existe para el
+        método.
+      </p>
+    </div>
+  </section>
+
+  <!-- 3 ─────────────────────────────────────────────────────────────── -->
+  <section class="ap" id="consecucion">
+    <h2>Rompimiento y consecución <Refs cods="R-20 · R-22 · R-19" /></h2>
+    <p>
+      Superar una zona son dos cosas, no una. Primero el <strong>rompimiento</strong>, después la
+      <strong>consecución</strong>. Y el mismo mecanismo que supera una zona es el que más tarde
+      dispara la entrada.
+    </p>
+
+    <div class="rejilla dos">
+      <div class="tarj">
+        <span class="tarj-n">1</span>
+        <h3>Rompimiento</h3>
+        <p>El precio pasa el borde de la zona por al menos <strong>un tick</strong>.</p>
+        <p>Basta la mecha. <strong>El cierre da igual.</strong></p>
+      </div>
+      <div class="tarj">
+        <span class="tarj-n">2</span>
+        <h3>Consecución</h3>
+        <p>Una vela posterior pasa por un tick el <strong>extremo de la vela que rompió</strong>.</p>
+        <p>Recién ahí la zona quedó traspasada.</p>
+      </div>
+    </div>
+    <br />
+
+    <figure class="gr">
+      <img src="/conceptos/14-traspaso.png" alt="La vela que pasa el borde de la zona y la que después pasa de su extremo" loading="eager" />
+      <figcaption class="meta">Las dos velas del traspaso sobre una sesión real: la que rompe, y la consecución que pasa de su extremo.</figcaption>
+    </figure>
+
+    <br />
+
+    <h3>Dos maneras de romper</h3>
+    <p>
+      Hay dos tipos de vela de rompimiento: Vela de rompimiento con mecha y vela de rompimiento con cuerpo. 
+      La diferencia es que la primera pasa el borde pero cierra dentro de la zona, y la segunda pasa el borde y cierra fuera de la zona.
+    </p>
+
+    <figure class="gr">
+      <img src="/conceptos/18-rompe-mecha.png" alt="Una vela que pasa el borde con la mecha y cierra dentro de la zona" loading="lazy" />
+      <figcaption class="meta">Rompimiento con mecha: la vela pasa el borde pero cierra dentro de la zona. Sigue siendo rompimiento.</figcaption>
+    </figure>
+
+    <figure class="gr">
+      <img src="/conceptos/19-rompe-cuerpo.png" alt="Una vela que pasa el borde y cierra fuera de la zona" loading="lazy" />
+      <figcaption class="meta">Rompimiento con cuerpo: la vela cierra al otro lado del borde.</figcaption>
+    </figure>
+
+    <div class="duro">
+      <p>
+        <strong>Un rompimiento solo, sin consecución, no invalida nada.</strong>
+        La zona sigue viva y sigue contando para todo.
+      </p>
+      <p>
+        Y la vela que da la consecución de un traspaso no abre a la vez el
+        rompimiento del lado contrario: eso se busca a partir de la siguiente.
+      </p>
+    </div>
+  </section>
+
+  <!-- 4 ─────────────────────────────────────────────────────────────── -->
+  <!-- Reescrita el 22/09/2026 con el texto que quedo en el plan el 14/09/2026
+       (PROPUESTAS_AL_PLAN.md). Las dos graficas ya estaban bien y no cambian. -->
+  <section class="ap" id="estira">
+    <h2>Cuando no llega la consecución <Refs cods="R-10 · R-14" /></h2>
+    <p>
+      El precio rompe una zona <strong>con mecha</strong> —el cierre se queda
+      dentro— y la consecución no llega. Eso se puede acabar de dos maneras, y
+      vale <strong>la que llegue primero</strong>:
+    </p>
+
+    <p>
+      <strong>Una ·</strong> pasan <strong>{v('PLAZO_CONSECUCION')}</strong> desde la siguiente
+      a la del rompimiento, y la consecución no ha llegado.
+    </p>
+
+    <figure class="gr">
+      <img src="/conceptos/05-sin-confirmar.png" alt="Una vela cruza la zona y ninguna de las siguientes supera su extremo" loading="eager" />
+      <figcaption class="meta">El caso más común: la vela cruza la zona, pero ninguna de las siguientes pasa de su extremo. No hubo traspaso y la zona sigue viva.</figcaption>
+    </figure>
+
+    <p>
+      <strong>Otra ·</strong> antes de esas {v('PLAZO_CONSECUCION')}, el mercado arma una
+      <strong>estructura completa en sentido contrario</strong>:
+    </p>
+
+    <ol class="secuencia">
+      <li>Una vela que <strong>no da la consecución</strong> y se va en contra.</li>
+      <li>Otra que <strong>hace retroceso</strong>.</li>
+      <li>Una tercera que <strong>no sigue ese retroceso</strong> y vuelve en el sentido de la primera. <strong>La zona se estira en esa tercera vela</strong>, sin esperar más.</li>
+    </ol>
+
+    <figure class="gr">
+      <img src="/conceptos/24-estructura-antes.png" alt="Antes de las cinco velas el mercado arma una estructura en contra y la zona se estira en la tercera vela" loading="lazy" />
+      <figcaption class="meta">No hizo falta esperar: antes de las cinco velas el mercado armó la estructura en contra, y la zona se estiró en la tercera vela.</figcaption>
+    </figure>
+
+    <p>
+      En cualquiera de los dos casos, la zona <strong>se estira</strong> hasta
+      la punta de la mecha que la rompió. <strong>Si es una resistencia, se
+      estira solo por arriba; si es un soporte, solo por abajo.</strong> El
+      otro borde no se mueve. Sigue habiendo <strong>una sola zona</strong>,
+      más grande, y conserva su historial.
+    </p>
+
+    <div class="veto">
+      <p>
+        <strong>Un soporte nunca se estira hacia arriba, ni una resistencia
+        hacia abajo.</strong> Si el precio cruza la zona por el lado contrario,
+        no hay nada que estirar: ese cruce no la toca, solo la mata cuando
+        llegue su consecución.
+      </p>
+    </div>
+
+    <div class="duro">
+      <p>
+        <strong>Las {v('PLAZO_CONSECUCION')} son un tope, no una espera obligatoria.</strong>
+        Si antes de que se cumplan el mercado arma la estructura en contra,
+        todo se resuelve en ese momento y no se espera más.
+      </p>
+    </div>
+  </section>
+
+  <!-- 5 ─────────────────────────────────────────────────────────────── -->
+  <section class="ap" id="apendice">
+    <h2>La zona apéndice <Refs cods="R-11" /></h2>
+    <!-- Cabecera reescrita el 22/09/2026 con el texto que quedo en el plan el
+         15/09/2026 (PROPUESTAS_AL_PLAN.md): los dos finales van juntos y con
+         el mismo rango, no uno en la ficha y el otro como nota al pie. -->
+    <p>
+      El precio rompe una zona <strong>con cuerpo</strong> —el cierre queda
+      fuera— y la consecución no llega. Se acaba igual que al estirar, de dos
+      maneras, y vale <strong>la que llegue primero</strong>: o pasan
+      <strong>{v('PLAZO_CONSECUCION')}</strong> desde la siguiente a la del rompimiento, o antes
+      el mercado arma la <strong>estructura completa en sentido
+      contrario</strong> —la misma de tres velas—, y entonces la apéndice nace
+      en la tercera, sin esperar más.
+    </p>
+    <p>
+      En cualquiera de los dos casos <strong>la zona original no se
+      toca</strong> y nace una <strong>segunda zona</strong> sobre la mecha de
+      la vela de rompimiento: la <strong>zona apéndice</strong>. Un borde es el
+      borde del cuerpo de esa vela; el otro, la punta de su mecha.
+    </p>
+    <p>
+      Con la mecha se estira la zona; con el cuerpo nace otra.
+      <strong>Lo único que cambia es dónde cierra la vela de
+      rompimiento.</strong>
+    </p>
+
+    <figure class="gr">
+      <img src="/conceptos/10-zona-apendice.png" alt="Caso 1: pasan las cinco velas sin consecución y ahí se marca la zona apéndice" loading="eager" />
+      <figcaption class="meta">Caso 1: ninguna de las cinco velas vuelve a pasar de la mecha. Al vencer el plazo se marca la apéndice, y la original se queda intacta.</figcaption>
+    </figure>
+
+    <dl class="datos">
+      <dt>Qué lo dispara</dt>
+      <dd>Rompimiento con cuerpo sin consecución: o pasan <strong>{v('PLAZO_CONSECUCION')}</strong>, o antes el mercado arma la estructura en contra. Lo que llegue primero</dd>
+      <dt>La zona original</dt>
+      <dd>No se modifica</dd>
+      <dt>Un borde de la apéndice</dt>
+      <dd>El borde del cuerpo de la vela que rompió</dd>
+      <dt>El otro borde</dt>
+      <dd>El extremo de su mecha</dd>
+      <dt>Zonas resultantes</dt>
+      <dd><span class="cifra-en">2</span>: la original y su apéndice</dd>
+      <dt>Desde dónde se dibuja</dt>
+      <dd>Desde la vela que rompió, aunque no quede marcada hasta más tarde. Del mismo gris que cualquier otra zona</dd>
+    </dl>
+
+    <div class="duro">
+      <p>
+        <strong>La apéndice no nace por acción del precio sobre ella.</strong>
+        No es una zona más que apareció: es el rastro de un rompimiento que se
+        quedó sin consecución.
+      </p>
+    </div>
+    
+
+    <figure class="gr">
+      <img src="/conceptos/10-zona-apendice-caso2.png" alt="Caso 2: antes de las cinco velas el mercado arma una estructura en sentido contrario" loading="lazy" />
+      <figcaption class="meta">Caso 2: antes de que venza el plazo el mercado arma una estructura completa en sentido contrario. La apéndice se marca ahí.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 6 ─────────────────────────────────────────────────────────────── -->
+  <section class="ap" id="convivencia">
+    <h2>Zonas entre zonas <Refs cods="R-12 · R-17 · R-18" /></h2>
+    <p>
+      A lo largo de la mañana el precio deja muchas zonas candidatas. Si se marcaran todas,
+      el gráfico acabaría siendo una reja de rectángulos y se operaría con demasiado ruido. 
+      Dos reglas lo impiden, y las dos se aplican en el mismo momento.
+    </p>
+
+    <h3>Solo una zona entre zonas</h3>
+    <p>
+      Cuando hay una zona por arriba y otra por abajo, se calcula el punto medio
+      entre sus bordes internos. Solo se marca zona nueva si el movimiento que la
+      genera <strong>no supera el 50%</strong> entre esas dos zonas.
+    </p>
+
+    <figure class="gr">
+      <img src="/conceptos/22-entre-zonas.png" alt="Una zona marcada entre otras dos: el movimiento se quedó de un lado de la mitad" loading="eager" />
+      <figcaption class="meta">El movimiento entero se queda del lado en el que empezó. Por eso esta zona sí se marca.</figcaption>
+    </figure>
+
+    <figure class="gr">
+      <img src="/conceptos/26-entre-zonas-no.png" alt="Un movimiento entre dos zonas que cruza la mitad y por eso no marca zona" loading="lazy" />
+      <figcaption class="meta">El mismo caso al revés: el movimiento cruzó la mitad, así que ahí no se marca nada.</figcaption>
+    </figure>
+
+    <div class="duro">
+      <p>
+        <strong>Solo se marca una sola zona entre zonas</strong> entre cada
+        resistencia y soporte, si cumple las reglas. Es decir: si se presentan
+        más zonas en el día entre ese rango de resistencia y soporte, ya no se
+        marcan más zonas.
+      </p>
+    </div>
+
+    <h3>Una sola por franja y por jornada</h3>
+    <p>
+      La franja entre dos zonas admite <strong>una zona en todo el día</strong>,
+      y el turno lo resuelve el primer retroceso que aparezca dentro. Si ese
+      primero respeta la mitad, se marca; si no la respeta, no se marca. En los
+      dos casos <strong>la franja queda cerrada</strong> para el resto de la
+      jornada, y no se reabre aunque las zonas que la formaban se mueran.
+    </p>
+    <p>
+      Cualquier zona viva sirve de borde de la franja, incluidas las que se
+      marcaron de madrugada por volumen.
+    </p>
+
+    <div class="veto">
+      <p>
+        <strong>Salir de una zona es rompimiento y tambien consecución</strong>
+        No solo rompimiento. Mientras un rompimiento espera su consecución, no se marca zona al otro
+        lado de esa zona, a menos que pasen las {v('PLAZO_CONSECUCION')} sin consecución o aparezca un retroceso nuevo. En ese caso sí se marca zona, aunque no haya habido consecución.
+      </p>
+    </div>
+  </section>
+
+  <!-- 7 ─────────────────────────────────────────────────────────────── -->
+  <section class="ap" id="caduca">
+    <h2>Cuándo quitar una zona<Refs cods="R-21" /></h2>
+    <p>
+      Una zona muere cuando ha sido superada <strong>en las dos direcciones</strong>:
+      rompimiento y consecución hacia un lado, y rompimiento y consecución hacia
+      el otro.
+    </p>
+
+    <figure class="gr">
+      <img src="/conceptos/23-zona-invalida.png" alt="Una zona traspasada primero hacia un lado y después hacia el otro" loading="eager" />
+      <figcaption class="meta">Traspasada en los dos sentidos. A partir de ahí no bloquea ni sirve para entrar.</figcaption>
+    </figure>
+
+    <dl class="datos">
+      <dt>Solo rompimiento, sin consecución</dt>
+      <dd>La zona sigue vigente. No ha pasado nada</dd>
+      <dt>Superada en un solo sentido</dt>
+      <dd>Sigue viva. Cambia de papel: el soporte pasa a resistencia y al revés</dd>
+      <dt>Superada en los dos</dt>
+      <dd><strong>No cuenta para nada.</strong> Ni bloquea un objetivo, ni sirve para entrar, ni cuenta para medir la mitad entre zonas</dd>
+      <dt>En pantalla</dt>
+      <dd>Se deja dibujada en tono muy tenue, solo como recuerdo</dd>
+    </dl>
+
+    <p>
+      Esa distinción importa más de lo que parece: una zona que sigue viva puede
+      impedir una entrada perfectamente válida, porque se cruza en el camino del
+      objetivo.
+    </p>
+
+    <p>
+      Cuando una zona <strong>no es válida visualmente</strong>, se baja el contraste de color de esa zona, para que no confunda. Pero sigue viva en la memoria del plan hasta que se cierre la jornada.
+    </p>
+  </section>
+</Modulo>
+
+<style>
+</style>

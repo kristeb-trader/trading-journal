@@ -1,0 +1,281 @@
+---
+/**
+ * Ficha de una regla.
+ *
+ * REGLA DE ORO DE ESTA PANTALLA: un campo ausente NO SE DIBUJA. Nada de
+ * guiones, nada de «sin excepciones», nada de bloques vacios. De las 38
+ * reglas, 30 tienen accion y prioridad, 21 tienen nota, 5 tienen fuente y
+ * solo 3 tienen excepciones de verdad.
+ *
+ * Los nombres de parametro se convierten en pastillas con su valor vigente,
+ * resuelto de PARAMETROS.md. Aqui no se escribe ningun numero a mano.
+ */
+import Marco from '../../componentes/Marco.astro';
+import Icono from '../../componentes/Icono.astro';
+import * as P from '../../lib/parsers.mjs';
+
+export function getStaticPaths() {
+  return P.reglas().map((r) => ({ params: { id: r.id }, props: { regla: r } }));
+}
+
+const { regla } = Astro.props;
+const todas = P.reglas();
+const i = todas.findIndex((r) => r.id === regla.id);
+const anterior = todas[i - 1] ?? null;
+const siguiente = todas[i + 1] ?? null;
+
+const seccion = P.seccionesDeReglas().get(regla.id) ?? null;
+const casos = P.casosPorRegla().get(regla.id) ?? [];
+const imagenes = P.imagenesDeReglas().get(regla.id) ?? [];
+
+const excepciones = Array.isArray(regla.excepciones)
+  ? regla.excepciones.filter((e) => e && String(e).trim()) : [];
+
+// El nombre del grupo sale del propio archivo de reglas, igual que en el
+// indice. Aqui hubo un mapa escrito a mano con las doce categorias viejas.
+const NOMBRE_SUB = { marcado: 'Marcado', vigencia: 'Vigencia' };
+const etiquetaCat = (r) => {
+  const base = r.categoria_nombre ?? r.categoria;
+  return r.subcategoria ? `${base} · ${NOMBRE_SUB[r.subcategoria] ?? r.subcategoria}` : base;
+};
+const rico = (t) => P.enriquecer(t, { sinEnlaceA: regla.id });
+---
+
+<Marco titulo={regla.id} ancho="texto">
+  <nav class="paso" aria-label="Regla anterior y siguiente">
+    {anterior
+      ? <a class="paso-a" href={`/reglas/${anterior.id}`}>
+          <Icono nombre="caret-left" />
+          <span class="paso-c">
+            <span class="meta">Anterior</span>
+            <span class="paso-t">{anterior.id}</span>
+          </span>
+        </a>
+      : <span />}
+    {siguiente && (
+      <a class="paso-a der" href={`/reglas/${siguiente.id}`}>
+        <span class="paso-c">
+          <span class="meta">Siguiente</span>
+          <span class="paso-t">{siguiente.id}</span>
+        </span>
+        <Icono nombre="caret-right" />
+      </a>
+    )}
+  </nav>
+
+
+  <article class="ficha" data-obs-tipo="regla" data-obs-id={regla.id} data-obs-titulo={regla.enunciado.slice(0,120)}>
+    <header class="f-cab entra">
+      <div class="f-meta">
+        <span class="f-id mono">{regla.id}</span>
+        <span class="f-cat">{etiquetaCat(regla)}</span>
+        {regla.prioridad && <span class="f-pri meta">prioridad {regla.prioridad}</span>}
+      </div>
+      <h1 class="f-e" set:html={rico(regla.enunciado)} />
+      {regla.estado && <p class="f-estado meta">{regla.estado}</p>}
+    </header>
+
+    {/* La explicacion del documento maestro va AQUI, entera. Antes habia un
+        enlace a /plan#R-xx, pero esa pagina solo tiene anclas de sub-fase:
+        el enlace caia al principio del documento y no llevaba a ningun
+        sitio. Comprobado el 06/09/2026 con scripts/enlaces.mjs. Esa pagina se
+        borro el 22/09/2026. */}
+    {seccion && (
+      <section class="bloque entra">
+        <h2>Por qué dice esto</h2>
+        <p class="apunte">
+          Del documento maestro, sección <strong>{seccion.titulo}</strong>.
+        </p>
+        <div class="md" set:html={P.markdownRico(seccion.cuerpo, { sinEnlaceA: regla.id })} />
+      </section>
+    )}
+
+
+    {regla.accion && (
+      <section class="bloque entra">
+        <h2>Acción</h2>
+        <p class="cuerpo" set:html={rico(regla.accion)} />
+      </section>
+    )}
+
+    {excepciones.length > 0 && (
+      <section class="bloque entra">
+        <h2>Excepciones</h2>
+        <ul class="excepciones">
+          {excepciones.map((e) => <li set:html={rico(e)} />)}
+        </ul>
+      </section>
+    )}
+
+    {regla.nota && (
+      <section class="bloque entra">
+        <h2>Nota</h2>
+        <p class="cuerpo" set:html={rico(regla.nota)} />
+      </section>
+    )}
+
+    {regla.fuente && (
+      <p class="fuente meta">Fuente: {regla.fuente}</p>
+    )}
+
+    {regla.pendiente && (
+      <section class="bloque entra">
+        <div class="aviso-p">
+          <span class="ap-cab"><Icono nombre="warning-diamond" /> Tiene un punto abierto</span>
+          <p class="ap-x" set:html={rico(regla.pendiente)} />
+        </div>
+      </section>
+    )}
+
+
+    {casos.length > 0 && (
+      <section class="bloque entra">
+        <h2>Casos reales que la citan</h2>
+        <ul class="casos">
+          {casos.map((c) => (
+            <li><a href={`/galeria#${c.id}`}><span class="mono">{c.id}</span> {c.titulo}</a></li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    {imagenes.length > 0 && (
+      <section class="bloque entra">
+        <h2>{imagenes.length === 1 ? 'Diagrama' : 'Diagramas'}</h2>
+        {imagenes.map((im) => (
+          <figure class="fig">
+            <div class="marco-gr"><img src={im.url} alt={`Diagrama de ${regla.id}`} loading="lazy" /></div>
+            <figcaption class="meta">
+              {im.papel === 'contraejemplo' ? 'Contraejemplo: marcado que NO es válido' : 'Diagrama de la regla'}
+            </figcaption>
+          </figure>
+        ))}
+      </section>
+    )}
+
+    <section class="bloque entra">
+      <h2>Condiciones medibles</h2>
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr><th>Variable</th><th>Op.</th><th>Valor</th><th>Marco</th></tr>
+          </thead>
+          <tbody>
+            {regla.condiciones.map((c) => (
+              <tr>
+                <td class="c-var mono">{c.variable}</td>
+                <td class="c-op mono">{c.operador}</td>
+                <td set:html={rico(c.valor)} />
+                <td class="c-tf mono">{c.timeframe}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </article>
+
+</Marco>
+
+<style>
+  .volver {
+    display: inline-flex; align-items: center; gap: var(--e-2);
+    font-size: var(--t-3); color: var(--texto-3);
+    margin-bottom: var(--e-6);
+  }
+  .volver:hover { color: var(--texto); }
+
+  /* ── cabecera ────────────────────────────────────────────────────────── */
+  .f-cab { margin-bottom: var(--e-7); }
+  .f-meta { display: flex; align-items: center; gap: var(--e-3); flex-wrap: wrap; }
+  .f-id {
+    font-size: var(--t-3); font-weight: var(--peso-max); color: var(--acento);
+    padding: var(--e-1) var(--e-3);
+    border-radius: var(--radio-1);
+    background: color-mix(in srgb, var(--acento) 14%, transparent);
+  }
+  .f-cat {
+    font-size: var(--t-1); color: var(--texto-3);
+    letter-spacing: var(--track-etiqueta); text-transform: uppercase;
+  }
+  .f-pri { margin-left: auto; }
+  .f-e {
+    margin: var(--e-5) 0 var(--e-3);
+    font-size: var(--t-7); line-height: 1.25;
+    /* Sin tope: `text-wrap: pretty` deja que el titular llene
+       la columna como todo lo demas. */
+  }
+  .f-estado { margin: 0; }
+
+  /* ── bloques ─────────────────────────────────────────────────────────── */
+  .bloque { margin-bottom: var(--e-7); }
+  .bloque h2 {
+    margin: 0 0 var(--e-4);
+    font-size: var(--t-1); font-weight: var(--peso-fuerte);
+    letter-spacing: var(--track-etiqueta); text-transform: uppercase;
+    color: var(--texto-3);
+  }
+  .cuerpo { font-size: var(--t-4); color: var(--texto-2); max-width: var(--medida); }
+
+  .c-var { color: var(--texto-2); font-size: var(--t-2); white-space: nowrap; }
+  .c-op { color: var(--acento); text-align: center; }
+  .c-tf { color: var(--texto-3); font-size: var(--t-1); white-space: nowrap; }
+
+  .excepciones, .casos { margin: 0; padding-left: var(--e-5); color: var(--texto-2); font-size: var(--t-3); }
+  .casos { list-style: none; padding: 0; display: grid; gap: var(--e-2); }
+  .casos a { display: inline-flex; gap: var(--e-3); }
+  .casos .mono { color: var(--texto-3); font-size: var(--t-2); }
+
+  .fuente { margin: calc(-1 * var(--e-5)) 0 var(--e-7); }
+
+  /* ── punto abierto ───────────────────────────────────────────────────── */
+  .aviso-p {
+    padding: var(--e-5);
+    border-radius: var(--radio-3);
+    background: color-mix(in srgb, var(--aviso) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--aviso) 26%, transparent);
+  }
+  .ap-cab {
+    display: flex; align-items: center; gap: var(--e-2);
+    font-size: var(--t-3); font-weight: var(--peso-fuerte); color: var(--aviso);
+  }
+  .ap-x { margin: var(--e-3) 0; font-size: var(--t-3); color: var(--texto-2); }
+
+  .fig { margin: 0 0 var(--e-5); }
+  .fig figcaption { margin-top: var(--e-3); }
+
+
+  /* ── anterior y siguiente ────────────────────────────────────────────── */
+  /* La navegacion va ARRIBA desde el 06/09/2026: «anterior» ocupa el sitio
+     que tenia el enlace a todas las reglas, y «siguiente» el lado opuesto. */
+  .paso {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: var(--e-3);
+    margin: 0 0 var(--e-6);
+  }
+  .paso-a {
+    display: flex; align-items: center; gap: var(--e-3);
+    padding: var(--e-2) var(--e-4);
+    border-radius: var(--radio-2);
+    border: 1px solid var(--vidrio-borde);
+    background: var(--vidrio-fondo);
+    color: var(--texto-2);
+    transition: background var(--normal), border-color var(--normal), transform var(--normal);
+  }
+  .paso-a:hover {
+    background: rgba(255, 255, 255, 0.06); color: var(--texto);
+    border-color: var(--n-600);
+  }
+  .paso-a:hover :global(.icono) { color: var(--acento); }
+  .paso-a.der { text-align: right; margin-left: auto; }
+  .paso-a :global(.icono) { --i: 0.95rem; color: var(--texto-3); flex: none; }
+  .paso-c { display: grid; line-height: 1.25; }
+
+  /* El boton de comentar deja de flotar arriba a la derecha y se coloca al
+     final, despues de la tabla. Lo pidio el operador: arriba estorbaba. */
+  .ficha :global(.obs-btn) {
+    position: static; opacity: 1;
+    margin-top: var(--e-8);
+  }
+  .paso-t { font-family: var(--fuente-mono); font-size: var(--t-3); color: var(--texto); }
+</style>

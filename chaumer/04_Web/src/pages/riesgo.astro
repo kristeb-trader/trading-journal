@@ -1,0 +1,103 @@
+---
+/**
+ * Modulo 8 — Riesgo y tamano.
+ *
+ * Cierra el recorrido con lo que cuesta cada operacion, cuantas veces se
+ * opera y con cuantos contratos.
+ *
+ * La seccion «No hay regla de parada» y su tabla de rachas se BORRARON el
+ * 22/09/2026 (tarea 4 de PENDIENTE_PORTAL.md): decision del operador del
+ * 07/09/2026, los huecos declarados no van al portal. Siguen escritos en el
+ * plan, en PENDIENTES.md y en el acta de cierre.
+ */
+import Modulo from '../componentes/Modulo.astro';
+import * as P from '../lib/parsers.mjs';
+import Refs from '../componentes/Refs.astro';
+
+const v = (n: string) => P.parametro(n);
+
+// La cuenta objetivo y su porcentaje: bloque «Consecuencias de riesgo» del plan.
+const riesgo = P.consecuenciasRiesgo();
+
+const SECCIONES = [
+  { id: 'cuanto', t: 'Cuánto se arriesga' },
+  { id: 'cuantas', t: 'Cuántas veces' },
+  { id: 'tamano', t: 'Con cuántos contratos' },
+];
+---
+
+<Modulo slug="riesgo" secciones={SECCIONES}>
+  <section class="ap" id="cuanto">
+    <h2>Cuánto se arriesga <Refs cods="R-31" /></h2>
+    <p>
+      El riesgo de cada operación no lo decide una cuenta: lo decide la
+      estructura del mercado. Lo único que hay es un techo.
+    </p>
+
+    <dl class="datos">
+      <dt>Tope de stop</dt>
+      <dd><strong>{v('STOP_MAX')}</strong> = {P.equivalencias('STOP_MAX').join(' = ')}</dd>
+      <dt>Objetivo</dt>
+      <dd>La misma distancia, al otro lado. Relación {v('RATIO_TARGET')}</dd>
+      <dt>Sobre la cuenta objetivo de {riesgo.cuenta}</dt>
+      <dd><strong>{riesgo.porcentaje}</strong> por operación</dd>
+    </dl>
+
+    <figure class="gr">
+      <img src="/conceptos/07-stop-objetivo.png" alt="La distancia al stop y la misma distancia al objetivo desde la entrada" loading="lazy" />
+      <figcaption class="meta">El riesgo lo pone la estructura: la distancia hasta el stop, repetida al otro lado. El tope solo dice hasta dónde se acepta esa distancia.</figcaption>
+    </figure>
+
+    <div class="duro">
+      <p>
+        <strong>El tope es una línea dura.</strong> Un stop de 79,75 puntos se
+        opera igual que uno de 30. Y si el stop estructural sale a 80,25, no se
+        opera, por buena que sea la figura.
+      </p>
+    </div>
+
+    <figure class="gr">
+      <img src="/conceptos/08-descarte.png" alt="Un setup válido descartado porque el stop estructural supera el tope de riesgo" loading="lazy" />
+      <figcaption class="meta">El tope en acción: un setup que cumple todo lo demás y se descarta entero porque el stop no cabe.</figcaption>
+    </figure>
+
+    <p>
+      Con una sola operación al día y una relación de uno a uno, hace falta
+      acertar <strong>más de la mitad de las veces</strong> solo para no perder
+      dinero.
+    </p>
+  </section>
+
+  <section class="ap" id="cuantas">
+    <h2>Cuántas veces <Refs cods="R-28" /></h2>
+
+    <dl class="datos">
+      <dt>Operaciones por sesión</dt>
+      <dd><strong>{v('OPS_POR_SESION')}, como máximo</strong></dd>
+      <dt>¿Y si la orden se cancela sin llenarse?</dt>
+      <dd>No consume el cupo. Se puede esperar otro setup</dd>
+      <dt>¿Cambia algo el resultado?</dt>
+      <dd>No. Ganada o perdida, el día terminó igual</dd>
+    </dl>
+
+    <p>
+      Una operación al día es también lo que hace lenta la recuperación: no hay
+      forma de compensar un mal día dentro del mismo día, y eso es
+      deliberado.
+    </p>
+  </section>
+
+  <section class="ap" id="tamano">
+    <h2>Con cuántos contratos <Refs cods="R-04" /></h2>
+
+    <div class="duro">
+      <p>
+        <strong>Siempre {v('CONTRATOS')}.</strong> No sube
+        porque la cuenta crezca. No baja tras una mala racha. No cambia por
+        convicción.
+      </p>
+      <p>El tamaño solo se puede revisar una vez al año.</p>
+    </div>
+  </section>
+
+</Modulo>

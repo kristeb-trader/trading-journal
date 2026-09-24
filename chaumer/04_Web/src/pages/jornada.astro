@@ -1,0 +1,182 @@
+---
+/**
+ * Modulo 4 — Jornada operativa.
+ *
+ * El dia paso a paso. El ancla es SIEMPRE la apertura americana, nunca el
+ * numero del reloj: la hora en pantalla se desplaza con el cambio de horario
+ * de Nueva York y escribirla fija seria un error a fecha conocida.
+ */
+import Modulo from '../componentes/Modulo.astro';
+import * as P from '../lib/parsers.mjs';
+import Refs from '../componentes/Refs.astro';
+
+
+// La ventana sale de VENTANA_OPERATIVA, pasada a hora Colombia por el calendario.
+const ventana = P.ventanaOperativa();
+
+const SECCIONES = [
+  { id: 'ventana', t: 'Ventana Operativa' },
+  { id: 'primera', t: 'La primera vela' },
+  { id: 'transcurso', t: 'Cómo avanza la sesión' },
+  { id: 'registro', t: 'El registro' },
+];
+---
+
+<Modulo slug="jornada" secciones={SECCIONES}>
+  <section class="ap" id="ventana">
+    <h2>Ventana Operativa <Refs cods="R-02" /></h2>
+    <p>
+      Se opera durante las <strong> primeras {ventana.duracion} del
+      mercado americano</strong>. Fuera de esa ventana no se coloca ninguna
+      orden, pase lo que pase en el gráfico.
+    </p>
+
+    <figure class="gr">
+      <img src="/conceptos/01-ventana.png" alt="Una jornada completa con la ventana operativa de dos horas marcada" loading="eager" />
+      <figcaption class="meta">Una jornada real. La franja marca las dos horas en las que se puede colocar una orden.</figcaption>
+    </figure>
+
+    <dl class="datos">
+      <dt>Referencia</dt>
+      <dd><strong>La apertura americana</strong>, no el número del reloj</dd>
+      <dt>Duración</dt>
+      <dd><strong>{ventana.minutos} minutos</strong> exactos</dd>
+      <dt>En el plan</dt>
+      <dd><span class="cifra-en">{ventana.plan}</span>, hora de Nueva York</dd>
+      <dt>En pantalla, verano de Nueva York</dt>
+      <dd><span class="cifra-en">{ventana.verano}</span> hora Colombia</dd>
+      <dt>En pantalla, invierno de Nueva York</dt>
+      <dd><span class="cifra-en">{ventana.invierno}</span> hora Colombia</dd>
+    </dl>
+
+    <div class="duro">
+      <p>
+        <strong>El fin de la ventana prohíbe abrir, no obliga a cerrar.</strong>
+        Si a esa hora hay una operación viva, se queda viva hasta su stop o su
+        objetivo.
+      </p>
+    </div>
+  </section>
+
+  <section class="ap" id="primera">
+    <h2>La primera vela <Refs cods="R-07" /></h2>
+    <p>
+      La primera vela después de la apertura — la de las <span class="cifra-en">08:31</span>
+      en horario de verano de Nueva York — tiene un papel especial y es donde
+      arranca todo el análisis del día.
+    </p>
+
+    <figure class="gr">
+      <img src="/conceptos/12-vela-0831.png" alt="La primera vela de la sesión declarando la dirección inicial del día" loading="eager" />
+      <figcaption class="meta">La primera vela de la ventana declara la dirección con su propio cuerpo, y es el origen desde el que se mide el primer movimiento.</figcaption>
+    </figure>
+
+    <dl class="datos">
+      <dt>Qué declara</dt>
+      <dd>La dirección inicial del día, <strong>con su propio cuerpo</strong>: cierra por encima de su apertura, el día empieza alcista; por debajo, bajista</dd>
+      <dt>Qué papel tiene</dt>
+      <dd>Es la <strong>vela origen</strong>. El primer movimiento se mide desde su mínimo si es alcista, desde su máximo si es bajista</dd>
+      <dt>Las velas anteriores</dt>
+      <dd>No sirven de referencia. La estructura del día empieza aquí</dd>
+      <dt>¿Puede sostener una zona?</dt>
+      <dd>Sí</dd>
+    </dl>
+
+    <!-- Devuelta el 22/09/2026 por decision del operador (tarea 7 de
+         PENDIENTE_PORTAL.md): salio de aqui sin querer en la reorganizacion
+         del 07/09. El texto es el de antes, que coincide con su regla. -->
+    <h3>La vela que abarca a la anterior <Refs cods="R-08" /></h3>
+    <p>
+      Hay un caso que rompe la cuenta: una vela que hace a la vez máximo más
+      alto y mínimo más bajo que la anterior, sin que haya un movimiento vivo. Esa
+      vela <strong>no declara dirección</strong>: pasa a ser la nueva vela
+      origen, y la dirección la da la siguiente.
+    </p>
+    <p>
+      Si la siguiente vuelve a hacer lo mismo, se repite el mismo criterio, sin
+      límite. Con un movimiento ya vivo esto no aplica: manda el movimiento.
+    </p>
+
+    <h3>Por dónde empieza el día <Refs cods="R-27" /></h3>
+    <p>
+      Que la primera vela declare una dirección no significa que haya que
+      operar en ese sentido toda la mañana.
+    </p>
+       <div class="duro">
+      <p>
+        <strong>Marca por dónde empieza el día, no en qué sentido se opera.</strong>
+        Se buscan entradas de continuación en los dos sentidos.
+      </p>
+      <p>
+        Cada movimiento deja su zona al terminar, y esa zona se opera a favor de ese
+        movimiento — sea el que sea.
+      </p>
+    </div>
+  </section>
+
+  <section class="ap" id="transcurso">
+    <h2>Cómo avanza la sesión</h2>
+    <p>
+      Abierto el mercado, la sesión es una repetición del mismo ciclo hasta que
+      aparece un setup válido que se llena, o hasta que se acaban las dos horas.
+    </p>
+
+    <figure class="gr">
+      <img src="/conceptos/15-sesion.png" alt="Una sesión completa con la línea que une los extremos de cada movimiento" loading="lazy" />
+      <figcaption class="meta">Una sesión entera. La línea blanca une los extremos: cada movimiento que avanza y cada descanso que viene después.</figcaption>
+    </figure>
+
+    <ol class="secuencia">
+      <li><strong>Se sigue la estructura.</strong> Movimiento, retroceso, movimiento. Cada movimiento que termina deja su zona.</li>
+      <li><strong>Se marcan las zonas conforme aparecen.</strong> Ya no por volumen: dentro de sesión solo nacen por estructura.</li>
+      <li><strong>Se vigila si alguna zona se rompe.</strong> Un rompimiento abre la posibilidad de una Continuación; un rompimiento con consecución que luego falla abre la de un Reingreso.</li>
+      <li><strong>Aparece un setup:</strong> se mide, se pasan los filtros y, si los pasa, se manda la orden.</li>
+      <li><strong>Con la orden puesta se vigila,</strong> porque hay varias cosas que la cancelan.</li>
+      <li><strong>Si la orden se llena, el día se acabó.</strong> No solo la operativa: también el análisis.</li>
+    </ol>
+
+    <div class="veto">
+      <p>
+        <strong>Al llenarse la orden termina el análisis del día.</strong> No se
+        marcan más zonas, no se buscan más setups, no se sigue estudiando el
+        gráfico.
+      </p>
+      <p>
+        Palabras del operador: <em>«ya no marco más zonas, no hago más análisis,
+        no hago nada más»</em>. Seguir analizando mientras se ve venir el stop
+        es exactamente el estado en el que se rompen los planes.
+      </p>
+    </div>
+
+    <p>
+      Cerrada la operación se anota todo, se guarda la captura y
+      <strong>se cierra la plataforma</strong>.
+    </p>
+  </section>
+
+  <section class="ap" id="registro">
+    <h2>El registro <Refs cods="R-38" /></h2>
+    <p>
+      Se registran <strong>todas las sesiones</strong>, incluidas aquellas en
+      las que no se operó — y en esas, el motivo por el que no se operó.
+    </p>
+
+    <dl class="datos">
+      <dt>Automático</dt>
+      <dd>Entrada, salida, niveles, hora y resultado, del propio indicador</dd>
+      <dt>A mano</dt>
+      <dd>Qué setup fue, la imagen, los errores y las observaciones</dd>
+      <dt>Los días sin operar</dt>
+      <dd><strong>También se registran</strong>, con el motivo</dd>
+    </dl>
+
+    <p>
+      Los días en que no se opera son los que más información dan sobre el
+      método. Sin ellos no hay forma de saber cuántas veces el plan dijo que no,
+      ni por qué.
+    </p>
+  </section>
+</Modulo>
+
+<style>
+</style>

@@ -1,0 +1,797 @@
+---
+/**
+ * Casos reales — la galeria y el test ciego, en una sola pagina.
+ *
+ * Unificadas el 22/09/2026 a peticion del operador: «son lo mismo, casos de
+ * backtesting hechos desde Claude». Tres bloques, en este orden:
+ *
+ *   1. Test ciego        las jornadas marcadas a ciegas, la mas reciente
+ *                        primero. Las que tienen caso en la galeria salen
+ *                        UNA vez, con el texto del caso dentro.
+ *   2. Sesiones          las completas de julio, marcadas con el operador.
+ *   3. Ejemplos          un caso por setup, filtro o descarte.
+ *
+ * El reparto lo hace P.casosReales() leyendo el titulo que da el plan.
+ *
+ * INDICE Y VISOR (propuesta aprobada por el operador el 22/09/2026). La
+ * pagina media 46 pantallas: todas las graficas y todos los textos abiertos a
+ * la vez. Ahora cada bloque es una pestana con una rejilla de miniaturas, y
+ * el caso se estudia en un visor encima: la grafica grande a la izquierda, el
+ * texto al lado con su propio scroll, y las flechas para pasar de un caso al
+ * siguiente sin cerrar.
+ *
+ * Las anclas no cambian: /galeria#G-xx (las fichas de regla y las
+ * observaciones enlazan asi) y /galeria#AAAA-MM-DD abren el visor en ese
+ * caso. /galeria#sesiones abre esa pestana. La direccion vieja /test-ciego
+ * redirige a la primera.
+ *
+ * La imagen de un caso se resuelve SOLO por nombre de archivo, y las graficas
+ * de sesiones/ ganan siempre porque llevan el estandar visual vigente. Un
+ * caso sin imagen se muestra igual, con su texto: nada de placeholders.
+ *
+ * Sin totales de resultado, a proposito: el agregado del backtesting no sale
+ * en el portal (decision del operador, 22/09/2026). Cada jornada va sola.
+ */
+import Marco from '../componentes/Marco.astro';
+import Icono from '../componentes/Icono.astro';
+import * as P from '../lib/parsers.mjs';
+import { miniatura } from '../lib/miniaturas.mjs';
+
+const { testCiego, sesiones, ejemplos, total } = P.casosReales();
+
+// Las rutas de archivo del plan son para quien lo escribe: «**Archivo:** `…png`
+// · **Reglas:** …» en la galeria y «**Gráfico:** `05_Backtesting\…png`» en el
+// test ciego. A quien lee no le dicen nada (la grafica ya esta al lado), las
+// reglas ya van al pie de cada caso, y una ruta sin espacios abria huecos
+// enormes en el texto justificado. Se quitan solo aqui; el plan no se toca.
+const sinRutas = (md) => md
+  .replace(/^\*\*Archivo:\*\*[^\n]*\n?/m, '')
+  .replace(/\*\*Gr[aá]fico:\*\*\s*`[^`]*`\s*(?:·\s*)?/g, '');
+const conHtml = (c) => (c ? { ...c, html: P.markdownRico(sinRutas(c.cuerpo)) } : null);
+
+// En la tarjeta, el nombre del bloque sobra: ya lo dice la pestana.
+const corto = (t) => t
+  .replace(/\b(?:LA\s+)?SESI[OÓ]N COMPLETA\s*·\s*/i, '')
+  .replace(/\bTEST CIEGO\s*·\s*/i, '');
+
+// El color del resultado solo distingue tres palabras que el plan ya escribe.
+const tono = (r) => (/TARGET/i.test(r) ? 'ok' : /STOP/i.test(r) ? 'mal' : 'aviso');
+
+/** Todo lo que necesitan la tarjeta y el visor, con la misma forma. */
+function deJornada({ jornada: j, caso }) {
+  const c = conHtml(caso);
+  const img = j ? j.imagen : c.imagen;
+  const v = j?.veredicto;
+  return {
+    id: c ? c.id : j.fecha,
+    alias: c && j ? j.fecha : null,
+    titulo: j ? j.titulo : c.titulo,
+    cortoHtml: P.tituloAHtml(j ? j.titulo : corto(c.titulo)),
+    lema: c && j ? j.caso.lema : null,
+    res: v ? { texto: v.resultado, tono: tono(v.resultado) } : null,
+    setup: v ? v.setup : null,
+    puntos: v && v.puntos && v.puntos !== '—' ? v.puntos : null,
+    img, mini: miniatura(img),
+    alt: `Gráfico del test ciego: ${j ? j.titulo : c.titulo}`,
+    caso: c,
+    marca: null,
+  };
+}
+function deCaso(caso) {
+  const c = conHtml(caso);
+  return {
+    id: c.id, alias: null,
+    titulo: c.titulo,
+    cortoHtml: P.tituloAHtml(corto(c.titulo)),
+    lema: null, res: null, setup: null, puntos: null,
+    img: c.imagen, mini: miniatura(c.imagen),
+    alt: `Gráfico del caso ${c.id}: ${c.titulo}`,
+    caso: c,
+    marca: c.estandarActual ? 'vigente' : c.imagen ? 'anterior' : null,
+  };
+}
+
+// Si todas las sesiones son de julio, la pestana lo dice; si algun dia hay de
+// otro mes, pasa a llamarse por lo que son.
+const soloJulio = sesiones.length > 0 && sesiones.every((c) => /JULIO/i.test(c.titulo));
+
+const bloques = [
+  { id: 'test-ciego', titulo: 'Test ciego', corto: 'Test ciego', items: testCiego.map(deJornada),
+    lead: 'Cada jornada la marca Claude a ciegas, sin saber qué hizo el operador, y después se contrastan las dos lecturas. La más reciente primero. El gráfico lo genera la herramienta de auditoría: su cabecera dice si hubo operación.' },
+  { id: 'sesiones', titulo: soloJulio ? 'Sesiones de julio' : 'Sesiones completas', corto: 'Sesiones', items: sesiones.map(deCaso),
+    lead: 'Sesiones completas marcadas con el operador delante, corrigiendo vela a vela.' },
+  { id: 'ejemplos', titulo: 'Ejemplos del método', corto: 'Ejemplos', items: ejemplos.map(deCaso),
+    lead: 'Un caso por cada setup, filtro o descarte del método.' },
+].filter((b) => b.items.length > 0);
+
+const todos = bloques.flatMap((b) => b.items);
+
+// Reglas citadas por algun caso, para el filtro, con su enunciado para que el
+// desplegable se entienda sin abrir la ficha. Ordenadas por numero.
+const enunciados = new Map(P.reglas().map((r) => [r.id, r.enunciado]));
+const recorta = (t, n) => (t.length <= n ? t : t.slice(0, t.lastIndexOf(' ', n)) + '…');
+const reglasCitadas = [...new Set(todos.flatMap((it) => (it.caso ? it.caso.reglas : [])))]
+  .sort((a, b) => Number(a.slice(2)) - Number(b.slice(2)))
+  .map((id) => ({ id, texto: enunciados.has(id) ? `${id} · ${recorta(enunciados.get(id), 64)}` : id }));
+---
+
+<Marco titulo="Casos reales">
+  <header class="cab entra">
+    <h1>{total} casos reales</h1>
+    <p class="lead">
+      Jornadas y sesiones de verdad, marcadas vela a vela y etiquetadas con las
+      reglas que las explican. Es el material con el que se entrena el ojo y con
+      el que se resuelven las dudas de marcado.
+    </p>
+  </header>
+
+  <div class="barra entra">
+    <div class="pestanas" role="tablist" aria-label="Bloques de casos">
+      {bloques.map((b, i) => (
+        <button class="pestana" type="button" role="tab" id={`p-${b.id}`}
+                aria-controls={b.id} aria-selected={i === 0 ? 'true' : 'false'}
+                tabindex={i === 0 ? 0 : -1} data-pestana={b.id} data-titulo={b.titulo}>
+          <span class="p-largo">{b.titulo}</span><span class="p-corto" aria-hidden="true">{b.corto}</span>
+          <span class="p-n mono" data-cuenta>{b.items.length}</span>
+        </button>
+      ))}
+    </div>
+
+    <label class="filtro">
+      <Icono nombre="funnel" />
+      <select data-filtro aria-label="Filtrar por regla">
+        <option value="">Todas las reglas</option>
+        {reglasCitadas.map((r) => <option value={r.id}>{r.texto}</option>)}
+      </select>
+    </label>
+  </div>
+
+  {bloques.map((b, i) => (
+    <section class="panel" id={b.id} role="tabpanel" aria-labelledby={`p-${b.id}`}
+             data-panel={b.id} hidden={i > 0}>
+      <p class="b-lead">{b.lead}</p>
+      <p class="vacio" data-vacio hidden>Ningún caso de este bloque cita esa regla.</p>
+
+      <ul class="rejilla" role="list">
+        {b.items.map((it) => (
+          <li class="ficha" id={it.id} data-ficha data-reglas={it.caso ? it.caso.reglas.join(' ') : ''}>
+            {it.alias && <span class="ancla" id={it.alias} data-alias={it.alias}></span>}
+            <a class="f-a" href={`#${it.id}`} data-abrir={it.id}>
+              {it.mini && (
+                <span class="f-fig"><img src={it.mini} alt="" loading="lazy" decoding="async" /></span>
+              )}
+              <span class="f-cab">
+                {it.caso && <span class="c-id mono">{it.caso.id}</span>}
+                {it.res && <span class:list={['j-res', it.res.tono]}>{it.res.texto}</span>}
+              </span>
+              <p class="f-t" set:html={it.cortoHtml} />
+              {it.setup && (
+                <p class="f-set">{it.setup}{it.puntos && <span class="mono"> · {it.puntos} pts</span>}</p>
+              )}
+              {it.lema && <p class="f-lema">{it.lema}</p>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+
+  <!-- El visor. <dialog> modal: Esc lo cierra, el foco no se escapa y el
+       resto de la pagina queda inerte mientras esta abierto. -->
+  <dialog class="visor" data-visor aria-label="Caso">
+    <div class="v-caja">
+      <header class="v-cab">
+        <p class="v-pos meta"><span data-v-pos></span> de <span data-v-total></span> · <span data-v-bloque></span></p>
+        <div class="v-nav">
+          <button class="v-btn v-amp" type="button" data-v-ampliar aria-label="Ampliar la gráfica">
+            <span class="v-amp-a"><Icono nombre="magnifying-glass-plus" /><span class="v-amp-t">Ampliar gráfica</span></span>
+            <span class="v-amp-b"><Icono nombre="article" /><span class="v-amp-t">Ver el texto</span></span>
+          </button>
+          <button class="v-btn" type="button" data-v-mover="-1" aria-label="Caso anterior" title="Anterior (←)">
+            <Icono nombre="caret-left" />
+          </button>
+          <button class="v-btn" type="button" data-v-mover="1" aria-label="Caso siguiente" title="Siguiente (→)">
+            <Icono nombre="caret-right" />
+          </button>
+          <button class="v-btn" type="button" data-v-cerrar aria-label="Cerrar" title="Cerrar (Esc)">
+            <Icono nombre="x" />
+          </button>
+        </div>
+      </header>
+
+      <div class="v-cuerpo" data-v-cuerpo>
+        {todos.map((it) => {
+          const c = it.caso;
+          const conTexto = Boolean(c || it.res);
+          return (
+            <article class:list={['det', { 'sin-fig': !it.img, 'sin-texto': !conTexto }]} data-det={it.id} hidden>
+              {it.img && (
+                <div class="d-fig">
+                  <button class="d-img" type="button" data-ampliar tabindex="-1" aria-hidden="true">
+                    <img data-src={it.img} alt={it.alt} />
+                  </button>
+                </div>
+              )}
+
+              {conTexto && (
+                <div class="d-texto" data-obs-tipo={c ? 'caso' : undefined}
+                     data-obs-id={c ? c.id : undefined} data-obs-titulo={c ? c.titulo : undefined}>
+                  <header class="d-cab">
+                    {c && <span class="c-id mono">{c.id}</span>}
+                    {it.res && <span class:list={['j-res', it.res.tono]}>{it.res.texto}</span>}
+                    {it.marca === 'vigente' && <span class="marca-estado ok">estándar vigente</span>}
+                    {it.marca === 'anterior' && <span class="marca-estado info">gráfica anterior</span>}
+                  </header>
+                  <h2 class="d-t" set:html={P.tituloAHtml(it.titulo)} />
+                  {it.lema && <p class="d-lema">{it.lema}</p>}
+
+                  {it.setup && (
+                    <p class="d-ver">
+                      <span class="etiqueta">Veredicto</span>
+                      <span>{it.setup}</span>
+                      {it.puntos && <span class="d-pts mono">{it.puntos} pts</span>}
+                    </p>
+                  )}
+
+                  {c && <div class="d-md md" set:html={c.html} />}
+
+                  {c && c.reglas.length > 0 && (
+                    <footer class="d-pie">
+                      <span class="etiqueta">Reglas que lo explican</span>
+                      <span class="d-refs">
+                        {c.reglas.filter(P.hayRegla).map((id) => <a class="ref" href={`/reglas/${id}`}>{id}</a>)}
+                      </span>
+                    </footer>
+                  )}
+                </div>
+              )}
+            </article>
+          );
+        })}
+      </div>
+
+      <nav class="v-tira" aria-label="Casos de este bloque" data-v-tira></nav>
+    </div>
+  </dialog>
+</Marco>
+
+<script is:inline>
+  (function () {
+    var visor = document.querySelector('[data-visor]');
+    if (!visor) return;
+    var pestanas = [].slice.call(document.querySelectorAll('[data-pestana]'));
+    var paneles = [].slice.call(document.querySelectorAll('[data-panel]'));
+    var fichas = [].slice.call(document.querySelectorAll('[data-ficha]'));
+    var filtro = document.querySelector('[data-filtro]');
+    var cuerpo = visor.querySelector('[data-v-cuerpo]');
+    var tira = visor.querySelector('[data-v-tira]');
+    var elPos = visor.querySelector('[data-v-pos]');
+    var elTotal = visor.querySelector('[data-v-total]');
+    var elBloque = visor.querySelector('[data-v-bloque]');
+    var btnAnt = visor.querySelector('[data-v-mover="-1"]');
+    var btnSig = visor.querySelector('[data-v-mover="1"]');
+    var btnAmp = visor.querySelector('[data-v-ampliar]');
+
+    var dets = {};
+    visor.querySelectorAll('[data-det]').forEach(function (d) { dets[d.getAttribute('data-det')] = d; });
+    // La fecha de una jornada con caso lleva al caso: /galeria#2026-09-10.
+    var alias = {};
+    document.querySelectorAll('[data-alias]').forEach(function (a) {
+      alias[a.getAttribute('data-alias')] = a.closest('[data-ficha]').id;
+    });
+
+    var lista = [];      // los ids que recorre el visor: el bloque, ya filtrado
+    var actual = null;
+    var origen = null;   // la tarjeta a la que vuelve el foco al cerrar
+
+    function panelActual() {
+      return paneles.filter(function (p) { return !p.hidden; })[0] || paneles[0];
+    }
+    function visibles(panel) {
+      return fichas.filter(function (f) { return !f.hidden && panel.contains(f); });
+    }
+    function idDeHash() {
+      var h = decodeURIComponent(location.hash.slice(1));
+      return dets[h] ? h : alias[h] || null;
+    }
+
+    // ── pestanas ────────────────────────────────────────────────────────
+    function activar(nombre, conHash) {
+      pestanas.forEach(function (t) {
+        var si = t.getAttribute('data-pestana') === nombre;
+        t.setAttribute('aria-selected', si ? 'true' : 'false');
+        t.tabIndex = si ? 0 : -1;
+      });
+      paneles.forEach(function (p) { p.hidden = p.getAttribute('data-panel') !== nombre; });
+      if (conHash) history.replaceState(null, '', '#' + nombre);
+    }
+    pestanas.forEach(function (t, i) {
+      t.addEventListener('click', function () { activar(t.getAttribute('data-pestana'), true); });
+      t.addEventListener('keydown', function (e) {
+        var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        var otra = pestanas[(i + d + pestanas.length) % pestanas.length];
+        otra.focus(); otra.click();
+      });
+    });
+
+    // ── filtro por regla ────────────────────────────────────────────────
+    // Una jornada del test ciego sin caso no cita reglas: con un filtro
+    // puesto se oculta. Cada pestana cuenta lo que queda en su bloque.
+    filtro.addEventListener('change', function () {
+      var id = filtro.value;
+      fichas.forEach(function (f) {
+        f.hidden = Boolean(id) && (' ' + f.getAttribute('data-reglas') + ' ').indexOf(' ' + id + ' ') < 0;
+      });
+      paneles.forEach(function (p) {
+        var n = visibles(p).length;
+        p.querySelector('[data-vacio]').hidden = n > 0;
+        var t = document.getElementById('p-' + p.getAttribute('data-panel'));
+        t.querySelector('[data-cuenta]').textContent = n;
+        t.classList.toggle('a-cero', n === 0);
+      });
+    });
+
+    // ── visor ───────────────────────────────────────────────────────────
+    function cargar(id) {
+      var img = dets[id] && dets[id].querySelector('img[data-src]');
+      if (img && !img.getAttribute('src')) img.src = img.getAttribute('data-src');
+    }
+
+    function mostrar(id) {
+      if (actual && dets[actual]) dets[actual].hidden = true;
+      actual = id;
+      var d = dets[id];
+      d.hidden = false;
+      cargar(id);
+      var i = lista.indexOf(id);
+      // Las vecinas se piden ya: al pasar, la grafica esta.
+      if (lista[i + 1]) cargar(lista[i + 1]);
+      if (lista[i - 1]) cargar(lista[i - 1]);
+      elPos.textContent = i + 1;
+      elTotal.textContent = lista.length;
+      btnAnt.disabled = i <= 0;
+      btnSig.disabled = i >= lista.length - 1;
+      // Ampliar solo tiene sentido si hay grafica Y texto que se reparten.
+      btnAmp.hidden = d.classList.contains('sin-texto') || d.classList.contains('sin-fig');
+      var tx = d.querySelector('.d-texto');
+      if (tx) tx.scrollTop = 0;
+      cuerpo.scrollTop = 0;
+      var t = d.querySelector('.d-t');
+      visor.setAttribute('aria-label', t ? t.textContent : id);
+      [].forEach.call(tira.children, function (b) {
+        var si = b.getAttribute('data-ir') === id;
+        b.classList.toggle('activa', si);
+        if (si) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
+        if (si && b.scrollIntoView) b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      });
+    }
+
+    function montarTira() {
+      tira.innerHTML = '';
+      lista.forEach(function (id) {
+        var f = document.getElementById(id);
+        var mini = f.querySelector('.f-fig img');
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'v-mini';
+        b.setAttribute('data-ir', id);
+        b.setAttribute('aria-label', (f.querySelector('.f-t') || f).textContent.trim());
+        if (mini) {
+          var im = document.createElement('img');
+          im.src = mini.getAttribute('src'); im.alt = '';
+          b.appendChild(im);
+        } else b.textContent = id;
+        b.addEventListener('click', function () { ir(id); });
+        tira.appendChild(b);
+      });
+    }
+
+    function abrir(id, empujar) {
+      var ficha = document.getElementById(id);
+      var panel = ficha.closest('[data-panel]');
+      activar(panel.getAttribute('data-panel'), false);
+      lista = visibles(panel).map(function (f) { return f.id; });
+      if (lista.indexOf(id) < 0) lista = [].slice.call(panel.querySelectorAll('[data-ficha]')).map(function (f) { return f.id; });
+      origen = ficha.querySelector('[data-abrir]');
+      elBloque.textContent = document.getElementById('p-' + panel.getAttribute('data-panel')).getAttribute('data-titulo');
+      montarTira();
+      visor.classList.remove('solo-fig');
+      btnAmp.setAttribute('aria-pressed', 'false');
+      if (!visor.open) {
+        visor.showModal();
+        document.documentElement.classList.add('con-visor');
+      }
+      mostrar(id);
+      if (empujar) history.pushState({ visor: true }, '', '#' + id);
+      else history.replaceState(history.state, '', '#' + id);
+    }
+
+    function ir(id) {
+      if (lista.indexOf(id) < 0) return;
+      mostrar(id);
+      history.replaceState(history.state, '', '#' + id);
+    }
+    function mover(d) {
+      var i = lista.indexOf(actual) + d;
+      if (i >= 0 && i < lista.length) ir(lista[i]);
+    }
+
+    // Cerrar: si el visor se abrio con un clic, cerrar es volver atras en el
+    // historial (asi el boton «atras» del movil y el aspa hacen lo mismo). Si
+    // se llego con el enlace ya puesto, se queda en la pestana del caso.
+    function cerrar() {
+      if (history.state && history.state.visor) { history.back(); return; }
+      ocultar();
+      history.replaceState(null, '', '#' + panelActual().getAttribute('data-panel'));
+    }
+    function ocultar() {
+      if (visor.open) visor.close();
+    }
+    visor.addEventListener('close', function () {
+      document.documentElement.classList.remove('con-visor');
+      if (actual && dets[actual]) dets[actual].hidden = true;
+      var ficha = actual && document.getElementById(actual);
+      actual = null;
+      if (ficha) {
+        var a = ficha.querySelector('[data-abrir]');
+        if (a) a.focus({ preventScroll: true });
+        if (ficha.scrollIntoView) ficha.scrollIntoView({ block: 'nearest' });
+      }
+    });
+    // Esc: el navegador cierra el dialogo solo; aqui se pasa por cerrar() para
+    // que el historial quede igual que con el aspa.
+    visor.addEventListener('cancel', function (e) { e.preventDefault(); cerrar(); });
+
+    document.querySelectorAll('[data-abrir]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;  // pestana nueva: que la abra
+        e.preventDefault();
+        abrir(a.getAttribute('data-abrir'), true);
+      });
+    });
+    visor.querySelector('[data-v-cerrar]').addEventListener('click', cerrar);
+    btnAnt.addEventListener('click', function () { mover(-1); });
+    btnSig.addEventListener('click', function () { mover(1); });
+    // Un clic fuera de la caja, en el velo, cierra.
+    visor.addEventListener('click', function (e) { if (e.target === visor) cerrar(); });
+
+    function ampliar() {
+      if (btnAmp.hidden) return;
+      visor.classList.toggle('solo-fig');
+      btnAmp.setAttribute('aria-pressed', visor.classList.contains('solo-fig') ? 'true' : 'false');
+    }
+    btnAmp.addEventListener('click', ampliar);
+    // La grafica tambien se pulsa: es lo que hace la mano sin pensar.
+    visor.querySelectorAll('[data-ampliar]').forEach(function (b) { b.addEventListener('click', ampliar); });
+
+    document.addEventListener('keydown', function (e) {
+      if (!visor.open || document.querySelector('dialog[open]:not([data-visor])')) return;
+      var dentro = e.target.closest && e.target.closest('input, textarea, select');
+      if (dentro) return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); mover(1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); mover(-1); }
+    });
+
+    // Deslizar con el dedo, en el movil. Con la grafica ampliada no: ahi el
+    // dedo mueve la grafica.
+    var x0 = null, y0 = null;
+    cuerpo.addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 1) { x0 = null; return; }
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+    }, { passive: true });
+    cuerpo.addEventListener('touchend', function (e) {
+      if (x0 === null || visor.classList.contains('solo-fig')) return;
+      var dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+      x0 = null;
+      if (Math.abs(dx) > 60 && Math.abs(dy) < 50) mover(dx < 0 ? 1 : -1);
+    }, { passive: true });
+
+    // Atras y adelante del navegador.
+    window.addEventListener('popstate', function () {
+      var id = idDeHash();
+      if (id) { abrir(id, false); return; }
+      ocultar();
+      var h = decodeURIComponent(location.hash.slice(1));
+      if (document.querySelector('[data-panel="' + h + '"]')) activar(h, false);
+    });
+
+    // Al llegar: el enlace dice que caso abrir, o que pestana.
+    var inicial = idDeHash();
+    var h0 = decodeURIComponent(location.hash.slice(1));
+    if (inicial) abrir(inicial, false);
+    else if (document.querySelector('[data-panel="' + h0 + '"]')) activar(h0, false);
+  })();
+</script>
+
+<style>
+  .cab { margin-bottom: var(--e-6); }
+  .lead { font-size: var(--t-5); color: var(--texto-2); margin: var(--e-4) 0 0; }
+
+  /* ── barra: pestanas y filtro ─────────────────────────────────────────── */
+  .barra {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: var(--e-4); flex-wrap: wrap;
+    margin-bottom: var(--e-5);
+  }
+  .pestanas {
+    display: inline-flex; gap: var(--e-1);
+    padding: var(--e-1);
+    border-radius: var(--radio-pill);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--borde-sutil);
+  }
+  .pestana {
+    display: inline-flex; align-items: center; gap: var(--e-2);
+    padding: var(--e-2) var(--e-4);
+    border: 1px solid transparent;
+    border-radius: var(--radio-pill);
+    background: none; color: var(--texto-2);
+    font: inherit; font-size: var(--t-3); font-weight: var(--peso-fuerte);
+    cursor: pointer;
+    transition: background var(--normal), color var(--normal), border-color var(--normal);
+  }
+  .pestana:hover { color: var(--texto); background: rgba(255, 255, 255, 0.05); }
+  .pestana[aria-selected='true'] {
+    color: var(--texto);
+    background: color-mix(in srgb, var(--acento) 20%, transparent);
+    border-color: color-mix(in srgb, var(--acento) 45%, transparent);
+  }
+  .p-n {
+    font-size: var(--t-1); color: var(--texto-3);
+    padding: 0 var(--e-2);
+    border-radius: var(--radio-pill);
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .pestana[aria-selected='true'] .p-n { color: var(--texto); }
+  .pestana.a-cero { opacity: 0.55; }
+  .p-corto { display: none; }
+
+  .filtro {
+    display: inline-flex; align-items: center; gap: var(--e-2);
+    padding: 0 var(--e-3);
+    border-radius: var(--radio-pill);
+    border: 1px solid var(--borde-sutil);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--texto-3);
+    --i: 1rem;
+    /* Ancho propio: el desplegable mediria lo que su opcion mas larga y
+       empujaria las pestanas a otra fila. */
+    width: 19rem;
+  }
+  .filtro select { flex: 1; width: 100%; text-overflow: ellipsis; }
+  .filtro:focus-within { border-color: color-mix(in srgb, var(--acento) 45%, transparent); }
+  .filtro select {
+    min-width: 0; max-width: 100%;
+    padding: var(--e-2) 0;
+    border: 0; background: none; color: var(--texto);
+    font: inherit; font-size: var(--t-2);
+    color-scheme: dark; cursor: pointer;
+    outline: none;
+  }
+  .filtro option { background: var(--elevado); color: var(--texto); }
+
+  /* ── bloques ─────────────────────────────────────────────────────────── */
+  .panel { scroll-margin-top: 6rem; }
+  .panel[hidden] { display: none; }
+  .b-lead { color: var(--texto-2); margin: 0 0 var(--e-5); }
+  .vacio { color: var(--texto-2); font-size: var(--t-3); }
+
+  /* ── la rejilla de tarjetas ──────────────────────────────────────────── */
+  .rejilla {
+    list-style: none; margin: 0; padding: 0; max-width: none;
+    display: grid; gap: var(--e-4);
+    grid-template-columns: repeat(auto-fill, minmax(17.5rem, 1fr));
+  }
+  .ficha { position: relative; margin: 0; scroll-margin-top: 7rem; }
+  .ficha[hidden] { display: none; }
+  .ancla { position: absolute; top: 0; scroll-margin-top: 7rem; }
+
+  .f-a {
+    display: flex; flex-direction: column; gap: var(--e-2);
+    height: 100%;
+    padding: var(--e-3) var(--e-3) var(--e-4);
+    border-radius: var(--radio-3);
+    background: var(--vidrio-fondo);
+    background-image: var(--vidrio-brillo);
+    border: 1px solid var(--vidrio-borde);
+    color: var(--texto); text-decoration: none;
+    transition: border-color var(--normal), box-shadow var(--normal), transform var(--normal);
+  }
+  .f-a:hover, .f-a:focus-visible {
+    border-color: color-mix(in srgb, var(--acento) 45%, transparent);
+    box-shadow: var(--halo-azul);
+  }
+  .f-a:hover { transform: translateY(-2px); }
+  .ficha:target .f-a, .ficha:has(.ancla:target) .f-a { box-shadow: var(--halo-azul); }
+
+  /* Todas las graficas en la misma caja, para que la rejilla no baile: la
+     del test ciego y las de la galeria no tienen la misma proporcion. */
+  .f-fig {
+    display: block;
+    aspect-ratio: 1.9;
+    margin-bottom: var(--e-1);
+    border-radius: var(--radio-2);
+    overflow: hidden;
+    background: var(--n-950);
+    border: 1px solid var(--borde-sutil);
+  }
+  .f-fig img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+  .f-cab { display: flex; align-items: center; gap: var(--e-2); flex-wrap: wrap; }
+  .f-cab:empty { display: none; }
+  .f-a p { margin: 0; max-width: none; }
+  .f-t { font-size: var(--t-3); font-weight: var(--peso-fuerte); line-height: var(--alto-corto); }
+  .f-set { font-size: var(--t-2); color: var(--texto-2); }
+  .f-lema { font-size: var(--t-2); color: var(--texto-3); }
+
+  .c-id {
+    font-size: var(--t-1); font-weight: var(--peso-fuerte); color: var(--acento);
+    padding: var(--e-1) var(--e-2);
+    border-radius: var(--radio-1);
+    background: color-mix(in srgb, var(--acento) 14%, transparent);
+  }
+
+  /* El resultado de una jornada: tres tonos y la palabra del plan dentro.
+     No es solo color: la palabra dice lo mismo. */
+  .j-res {
+    flex: none;
+    padding: var(--e-1) var(--e-3);
+    border-radius: var(--radio-pill);
+    border: 1px solid currentColor;
+    font-size: var(--t-1); font-weight: var(--peso-fuerte);
+    letter-spacing: var(--track-etiqueta);
+  }
+  .j-res.ok    { color: var(--positivo); background: color-mix(in srgb, var(--positivo) 10%, transparent); }
+  .j-res.mal   { color: var(--negativo); background: color-mix(in srgb, var(--negativo) 10%, transparent); }
+  .j-res.aviso { color: var(--aviso);    background: color-mix(in srgb, var(--aviso) 10%, transparent); }
+
+  /* ── el visor ────────────────────────────────────────────────────────── */
+  .visor {
+    width: 100vw; height: 100dvh; max-width: none; max-height: none;
+    margin: 0; padding: var(--e-4);
+    border: 0; background: none; color: var(--texto);
+  }
+  .visor::backdrop { background: rgba(5, 8, 14, 0.86); backdrop-filter: blur(4px); }
+  :global(html.con-visor) { overflow: hidden; }
+
+  .v-caja {
+    display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+    width: 100%; height: 100%;
+    border-radius: var(--radio-4);
+    background: var(--tarjeta);
+    border: 1px solid var(--vidrio-borde);
+    box-shadow: var(--sombra-3);
+    overflow: hidden;
+  }
+  .v-cab {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--e-3);
+    padding: var(--e-3) var(--e-4) var(--e-3) var(--e-5);
+    border-bottom: 1px solid var(--borde-sutil);
+  }
+  .v-pos { margin: 0; }
+  .v-nav { display: flex; gap: var(--e-2); }
+  .v-btn {
+    display: flex; padding: var(--e-2);
+    border-radius: var(--radio-pill);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--vidrio-borde);
+    color: var(--texto-2); cursor: pointer;
+    --i: 1.15rem;
+    transition: background var(--normal), color var(--normal);
+  }
+  .v-btn:hover:not(:disabled) { background: var(--elevado); color: var(--texto); }
+  .v-btn:disabled { opacity: 0.35; cursor: default; }
+  .v-btn[hidden] { display: none; }
+  .v-amp { padding: var(--e-2) var(--e-4); font: inherit; font-size: var(--t-2); --i: 1rem; }
+  .v-amp-a, .v-amp-b { display: inline-flex; align-items: center; gap: var(--e-2); }
+  .v-amp-b, .visor.solo-fig .v-amp-a { display: none; }
+  .visor.solo-fig .v-amp-b { display: inline-flex; }
+
+  .v-cuerpo { min-height: 0; }
+  .det {
+    display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(22rem, 1fr);
+    height: 100%;
+  }
+  .det[hidden] { display: none; }
+  .det.sin-fig, .det.sin-texto { grid-template-columns: minmax(0, 1fr); }
+  .visor.solo-fig .det { grid-template-columns: minmax(0, 1fr); }
+  .visor.solo-fig .d-texto { display: none; }
+
+  .d-fig {
+    min-height: 0; padding: var(--e-4);
+    display: flex; align-items: center; justify-content: center;
+    background: var(--n-950);
+  }
+  .d-img {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%;
+    padding: 0; border: 0; background: none;
+    cursor: zoom-in;
+  }
+  .visor.solo-fig .d-img { cursor: zoom-out; }
+  .sin-texto .d-img { cursor: default; }
+  .d-img img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; border-radius: var(--radio-2); }
+
+  .d-texto {
+    min-height: 0; overflow-y: auto;
+    padding: var(--e-5) var(--e-5) var(--e-6);
+    border-left: 1px solid var(--borde-sutil);
+  }
+  .sin-fig .d-texto { border-left: 0; }
+  /* Hueco a la derecha para el boton de comentar, que se pinta arriba. */
+  .d-cab { display: flex; align-items: center; gap: var(--e-2); flex-wrap: wrap; padding-right: 7rem; min-height: 1.75rem; margin-bottom: var(--e-3); }
+  .d-t { margin: 0 0 var(--e-3); font-size: var(--t-5); line-height: var(--alto-corto); }
+  .d-lema { color: var(--texto-2); margin: 0 0 var(--e-4); }
+  .d-ver {
+    display: flex; align-items: baseline; gap: var(--e-3); flex-wrap: wrap;
+    margin: 0 0 var(--e-4); max-width: none;
+  }
+  .d-pts { color: var(--texto-2); }
+  .d-md { font-size: var(--t-3); }
+  .d-pie {
+    display: flex; align-items: baseline; gap: var(--e-3); flex-wrap: wrap;
+    margin-top: var(--e-5); padding-top: var(--e-4);
+    border-top: 1px solid var(--borde-sutil);
+  }
+  .d-refs { display: flex; flex-wrap: wrap; gap: var(--e-2); }
+
+  /* La tira: donde estas dentro del bloque, y un atajo para saltar. */
+  .v-tira {
+    display: flex; gap: var(--e-2);
+    padding: var(--e-3) var(--e-4);
+    border-top: 1px solid var(--borde-sutil);
+    overflow-x: auto;
+  }
+  .v-tira:empty { display: none; }
+  :global(.v-mini) {
+    flex: none; width: 6.5rem; aspect-ratio: 1.9;
+    padding: 0; overflow: hidden;
+    border-radius: var(--radio-2);
+    border: 1px solid var(--borde-sutil);
+    background: var(--n-950);
+    color: var(--texto-3); font: inherit; font-size: var(--t-1);
+    cursor: pointer; opacity: 0.6;
+    transition: opacity var(--normal), border-color var(--normal);
+  }
+  :global(.v-mini img) { width: 100%; height: 100%; object-fit: contain; display: block; }
+  :global(.v-mini:hover) { opacity: 1; }
+  :global(.v-mini.activa) { opacity: 1; border-color: var(--acento); box-shadow: 0 0 0 1px var(--acento); }
+
+  /* ── movil y tableta ─────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .visor { padding: 0; }
+    .v-caja { border-radius: 0; border: 0; }
+    .v-cuerpo { overflow-y: auto; }
+    .det, .visor.solo-fig .det { grid-template-columns: minmax(0, 1fr); height: auto; }
+    .d-fig { padding: var(--e-2); }
+    .d-img { height: auto; }
+    .d-texto { overflow: visible; border-left: 0; border-top: 1px solid var(--borde-sutil); padding: var(--e-4); }
+    .v-tira { display: none; }
+    /* Ampliada en el movil: la grafica al doble y se recorre con el dedo. */
+    .visor.solo-fig .d-fig { overflow-x: auto; justify-content: flex-start; }
+    .visor.solo-fig .d-img { width: 220%; flex: none; }
+    .visor.solo-fig .d-img img { max-width: none; width: 100%; }
+  }
+
+  /* En el movil la tarjeta se vuelve fila: miniatura a la izquierda y el
+     texto al lado. Nueve jornadas caben en una pantalla y media. */
+  @media (max-width: 560px) {
+    .barra { flex-direction: column; align-items: stretch; }
+    .pestanas { display: flex; }
+    .pestana { flex: 1; justify-content: center; padding: var(--e-2); font-size: var(--t-2); }
+    .p-largo { display: none; }
+    .v-amp { padding: var(--e-2); }
+    .v-amp-t { display: none; }
+    .p-corto { display: inline; }
+    .filtro { width: auto; }
+    .rejilla { grid-template-columns: minmax(0, 1fr); gap: var(--e-3); }
+    .f-a {
+      display: grid; grid-template-columns: 7.5rem minmax(0, 1fr);
+      column-gap: var(--e-3); row-gap: var(--e-1); align-content: start;
+      padding: var(--e-2);
+    }
+    .f-fig { grid-row: 1 / span 4; margin: 0; align-self: start; }
+    .f-a > :not(.f-fig) { grid-column: 2; }
+  }
+</style>

@@ -1,0 +1,36 @@
+{
+  "name": "chaumer-portal",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Portal de revision del plan de trading Chaumer. Renderiza 01_Plan/ - no anade metodologia.",
+  "scripts": {
+    "sync": "node scripts/sync.mjs",
+    "dev": "npm run sync && npm run miniaturas && npm run diagramas && astro dev",
+    "build": "npm run sync && npm run miniaturas && npm run diagramas && astro build",
+    "preview": "astro preview",
+    "fuentes": "node scripts/contar-fuentes.mjs",
+    "diagramas": "node scripts/diagramas.mjs",
+    "miniaturas": "node scripts/miniaturas.mjs",
+    "enlaces": "node scripts/enlaces.mjs",
+    "verificar": "npm run build && npm run enlaces && npm run maquetacion && npm run parametros && npm run cifras && npm run nombres && npm run referencias && npm run vista && npm run aprobados",
+    "maquetacion": "node scripts/maquetacion.mjs",
+    "vista": "node scripts/vista.mjs",
+    "cifras": "node scripts/cifras.mjs",
+    "nombres": "node scripts/nombres.mjs",
+    "parametros": "node scripts/parametros.mjs",
+    "aprobados": "node scripts/aprobados.mjs",
+    "referencias": "node scripts/referencias.mjs"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^11.16.0",
+    "astro": "^7.2.10",
+    "sharp": "^0.35.4",
+    "wrangler": "^4.127.1"
+  },
+  "dependencies": {
+    "@phosphor-icons/core": "^2.1.1",
+    "geist": "^1.7.2",
+    "marked": "^18.0.11"
+  }
+}
