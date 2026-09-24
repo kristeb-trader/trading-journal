@@ -1,6 +1,6 @@
 # Unificación — el proyecto Chaumer entra en el Trading Journal
 
-**Versión:** v1.2 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1 y 2 cerradas; la siguiente es la 3.
+**Versión:** v1.3 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1 y 2 cerradas; la 3 en curso.
 **Escrito:** 24/09/2026, desde una sesión en `E:\Proyectos\Chaumer`. **Se ejecuta desde una sesión nueva en este proyecto.**
 
 | Versión | Fecha | Qué cambió |
@@ -8,6 +8,7 @@
 | v1 | 24/09/2026 | Primera versión |
 | v1.1 | 24/09/2026 | Fase 2 cerrada: los cambios pendientes de Cowork se guardaron en `Trading_Plan` (commit `8983073`, plan 3.13) |
 | v1.2 | 24/09/2026 | Aprobado. Fase 1 cerrada: GitHub Pages publica solo la aplicación (commit `f20786d`) |
+| v1.3 | 24/09/2026 | Revisión de la fase 3 contra el código, aprobada por Kris: `02_Assets` entra en el filtro del portal; secretos propios del portal para no pisar el del bot; tres huecos de 3.3/3.4 |
 
 > ✅ Este archivo se subió a GitHub **después** de cerrar la fase 1, con las direcciones del hallazgo 1 ya
 > en 404. Desde entonces `docs/` no se publica.
@@ -158,15 +159,20 @@ Estimación en llamadas a herramientas. Si una fase pasa de ~25, se avisa y se o
 ### Fase 3 · Traer Chaumer con su historia (~25)
 
 **3.1 · El traslado.**
-- `git subtree add --prefix=chaumer <ruta o URL de Trading_Plan> main`. Conserva los 112 commits.
+- `git subtree add --prefix=chaumer <ruta o URL de Trading_Plan> main`. Conserva los commits (115 el 24/09).
 - **Antes de subirlo a GitHub**, comprobar que `chaumer/` no se publica en GitHub Pages (debería estar resuelto por la fase 1).
 
 **3.2 · La publicación del portal.**
 - `publicar-portal.yml` se crea a partir del workflow de Chaumer, con:
   - `working-directory: chaumer/04_Web`;
-  - filtro `paths: ['chaumer/01_Plan/**', 'chaumer/04_Web/**', 'chaumer/05_Backtesting/test_ciego/**']`, para que un cambio del Journal no vuelva a publicar el portal.
-- **Kris, a mano:** poner en el repositorio del Journal los secretos `CLOUDFLARE_ACCOUNT_ID` y un
-  `CLOUDFLARE_API_TOKEN` con permiso de **Cloudflare Pages: Edit**. El que existe hoy es para Workers; comprobar si sirve o crear otro.
+  - filtro `paths: ['chaumer/01_Plan/**', 'chaumer/02_Assets/**', 'chaumer/04_Web/**', 'chaumer/05_Backtesting/test_ciego/**', '.github/workflows/publicar-portal.yml']`,
+    para que un cambio del Journal no vuelva a publicar el portal.
+  - *(v1.3)* **`02_Assets` va en el filtro:** `04_Web/scripts/sync.mjs` copia sus PNG al portal al compilar. Sin
+    ella, un diagrama que cambia solo no se publicaría.
+- **Kris, a mano:** poner en el repositorio del Journal los secretos **`PORTAL_CLOUDFLARE_ACCOUNT_ID`** y
+  **`PORTAL_CLOUDFLARE_API_TOKEN`** (permiso **Cloudflare Pages: Edit**), de la cuenta donde vive el portal.
+  - *(v1.3)* **Nombres propios, no `CLOUDFLARE_API_TOKEN`:** ese ya es el del bot (`deploy-bot.yml`, cuenta
+    `03b9d27f…`), y el portal vive en otra cuenta (hallazgo 8). Reutilizar el nombre rompería uno de los dos.
 - `chaumer/.github/` se retira. GitHub solo lee los workflows de la raíz.
 
 **3.3 · Lo que no viaja con git y se copia a mano** (de `E:\Proyectos\Chaumer` a `chaumer/`):
@@ -178,8 +184,15 @@ Estimación en llamadas a herramientas. Si una fase pasa de ~25, se avisa y se o
 | `04_Web/.dev.vars` | la clave de operador para probar en local |
 | `04_Web/textos/*.jfif` | imágenes de los textos del portal |
 | `00_Guias/`, `_Historia/`, `03_Materia_Prima/transcripciones/` | material de origen (vídeos y PDFs de Chaumer). Se copian para tenerlo todo junto, y **nunca entran en git** |
+| `05_Backtesting/_Historia/` *(v1.3)* | lo cerrado del backtesting, igual que `_Historia/` |
+| `04_Web/.wrangler/` *(v1.3)* | la base D1 y el almacén R2 simulados en local. Sin esto, la bitácora sale vacía en local |
 
-El `.gitignore` de Chaumer se traslada al del Journal **con el prefijo `chaumer/`**.
+No se copian: `settings.local.json` (permisos locales), `.impeccable/` (informes que se regeneran) ni lo que
+genera la compilación (`node_modules/`, `dist/`, `.astro/`, `src/content/`, `public/assets/`, `public/min/`).
+
+El `.gitignore` de Chaumer se traslada al del Journal **con el prefijo `chaumer/`**. *(v1.3)* Las reglas sin
+barra de Chaumer (`node_modules/`, `.env`, `__pycache__/`…) valen a cualquier profundidad: van como
+`chaumer/**/…` para que sigan valiendo en las subcarpetas.
 
 **3.4 · Instrucciones y rutas.**
 - `chaumer/CLAUDE.md` y `chaumer/04_Web/CLAUDE.md` se quedan. Se corrigen las rutas absolutas:
@@ -187,6 +200,8 @@ El `.gitignore` de Chaumer se traslada al del Journal **con el prefijo `chaumer/
 - El `CLAUDE.md` raíz del Journal gana una sección corta, **"La carpeta `chaumer/`"**: qué es, que tiene sus
   propias reglas y que `01_Plan` es de solo lectura.
 - `.vscode/` de Chaumer: su tarea abre el portal al abrir la carpeta. Se adapta a `chaumer/04_Web` o se retira.
+- *(v1.3)* **`chaumer/.claude/launch.json` no lo lee nadie:** Claude Code solo lee el de la raíz. La
+  configuración `portal` pasa a `.claude/launch.json` del Journal, apuntando a `chaumer/04_Web`.
 - **Memorias de Claude Code:** de `C:\Users\Asus\.claude\projects\E--Proyectos-Chaumer\memory\` se copian a
   la memoria de este proyecto las cuatro que valen para el portal: publicar con push, validar en navegador,
   `text-wrap: balance` y capturas con puppeteer.
