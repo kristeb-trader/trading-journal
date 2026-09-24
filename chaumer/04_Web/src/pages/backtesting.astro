@@ -8,20 +8,19 @@
  * metodología, es un error — el diseño está en DISENO_BACKTESTING.md.
  *
  * Es la única página del portal que se pinta en el navegador y no al
- * compilar: sus datos viven en D1 y cambian sin recompilar nada.
+ * compilar: sus datos cambian sin recompilar nada.
  *
- * El ÚNICO número que baja de la compilación es el valor del punto, y sale de
- * reglas.json. Ninguna cifra de esta pantalla está escrita a mano.
+ * DE SOLO LECTURA desde el 24/09/2026 (fase 4a de la unificación): la bitácora
+ * vive en Supabase y se registra desde el Journal. Esta página la lee a través
+ * de /api/backtesting, que la pide a Supabase desde el servidor. Ninguna cifra
+ * de esta pantalla está escrita a mano.
  */
 import Marco from '../componentes/Marco.astro';
 import Icono from '../componentes/Icono.astro';
-import * as P from '../lib/parsers.mjs';
-
-const punto = P.valorPunto();
 ---
 
 <Marco titulo="Backtesting operativo">
-  <div class="bt" data-punto={punto.valor}>
+  <div class="bt">
     <header class="cab entra">
       <h1>Backtesting operativo</h1>
       <p class="apunte" data-resumen>Cargando…</p>
@@ -29,9 +28,6 @@ const punto = P.valorPunto();
 
     <section class="cifras entra">
       <div class="cifra">
-        <button class="editar" data-abrir-inicio hidden title="Datos de inicio" aria-label="Datos de inicio">
-          <Icono nombre="pencil-simple" />
-        </button>
         <span class="etiqueta">Valor inicial</span>
         <b data-valor-inicial>—</b>
         <small data-sub-inicial></small>
@@ -81,9 +77,6 @@ const punto = P.valorPunto();
       <a class="boton fantasma" href="/api/backtesting/export" data-exportar>
         <Icono nombre="download-simple" /> Exportar
       </a>
-      <button class="boton" type="button" data-abrir-jornada hidden>
-        <Icono nombre="plus" /> Registrar jornada
-      </button>
     </div>
 
     <div class="tabla-envoltura entra">
@@ -100,94 +93,6 @@ const punto = P.valorPunto();
     </div>
     <p class="vacio" data-vacio hidden></p>
   </div>
-
-  <dialog class="bt-dlg" data-dlg-jornada>
-    <form method="dialog" data-form-jornada>
-      <div class="d-cab">
-        <h3 data-titulo-jornada>Registrar jornada</h3>
-        <button class="cerrar" type="button" data-cerrar aria-label="Cerrar">&times;</button>
-      </div>
-      <div class="d-cuerpo">
-        <div class="rejilla">
-          <label class="campo"><span>Fecha</span><input type="date" name="fecha" required /></label>
-          <label class="campo"><span>Hora</span><input type="time" name="hora" /></label>
-          <label class="campo"><span>Dirección</span>
-            <select name="direccion">
-              <option value="largo">Largo</option>
-              <option value="corto">Corto</option>
-            </select>
-          </label>
-          <label class="campo"><span>Setup</span>
-            <select name="setup">
-              <option value="continuacion">Continuación</option>
-              <option value="reingreso">Reingreso</option>
-            </select>
-          </label>
-        </div>
-        <div class="rejilla">
-          <label class="campo"><span>Puntos</span>
-            <input type="number" name="puntos" step="0.25" min="0" inputmode="decimal" />
-          </label>
-          <label class="campo"><span>Resultado</span>
-            <select name="resultado">
-              <option value="target">Target</option>
-              <option value="stop">Stop</option>
-              <option value="">Sin operación</option>
-            </select>
-          </label>
-          <div class="calc"><span>P&amp;L</span><b data-pnl>—</b></div>
-        </div>
-        <label class="campo"><span>Observaciones</span><textarea name="observaciones"></textarea></label>
-        <label class="suelta">
-          <Icono nombre="image-square" />
-          <span data-nombre-imagen>Arrastra aquí el gráfico del día</span>
-          <input type="file" name="imagen" accept="image/png,image/jpeg,image/webp" hidden />
-        </label>
-        <p class="fallo" data-fallo-jornada hidden></p>
-      </div>
-      <div class="d-pie">
-        <button class="boton peligro" type="button" data-borrar hidden>Borrar</button>
-        <div class="acciones">
-          <button class="boton fantasma" type="button" data-cerrar>Cancelar</button>
-          <button class="boton" type="button" data-guardar>
-            <Icono nombre="floppy-disk" /> Guardar jornada
-          </button>
-        </div>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog class="bt-dlg" data-dlg-inicio>
-    <form method="dialog">
-      <div class="d-cab">
-        <h3>Datos de inicio</h3>
-        <button class="cerrar" type="button" data-cerrar aria-label="Cerrar">&times;</button>
-      </div>
-      <div class="d-cuerpo">
-        <div class="rejilla">
-          <label class="campo"><span>Valor inicial</span>
-            <input type="number" name="valor_inicial" step="0.01" min="0" inputmode="decimal" />
-          </label>
-          <label class="campo"><span>Contratos</span>
-            <input type="number" name="contratos" step="1" min="1" inputmode="numeric" />
-          </label>
-          <label class="campo"><span>Instrumento</span><input name="instrumento" maxlength="20" /></label>
-          <label class="campo"><span>Comisión</span>
-            <input type="number" name="comision" step="0.01" min="0" inputmode="decimal" />
-          </label>
-        </div>
-        <p class="fallo" data-fallo-inicio hidden></p>
-      </div>
-      <div class="d-pie">
-        <div class="acciones">
-          <button class="boton fantasma" type="button" data-cerrar>Cancelar</button>
-          <button class="boton" type="button" data-guardar-inicio>
-            <Icono nombre="floppy-disk" /> Guardar
-          </button>
-        </div>
-      </div>
-    </form>
-  </dialog>
 
   <dialog class="bt-lupa" data-lupa>
     <button class="cerrar" type="button" data-cerrar aria-label="Cerrar">&times;</button>
@@ -223,18 +128,6 @@ const punto = P.valorPunto();
   .bt .pos { color: var(--positivo); }
   .bt .neg { color: var(--negativo); }
 
-  .bt .editar {
-    position: absolute; top: var(--e-3); right: var(--e-3);
-    display: grid; place-items: center; width: 1.75rem; height: 1.75rem;
-    background: none; border: 0; border-radius: var(--radio-1);
-    color: var(--texto-3); cursor: pointer; --i: 0.95rem;
-    transition: color var(--rapido), background var(--rapido);
-  }
-  .bt .editar:hover { color: var(--texto); background: var(--vidrio-hover); }
-  /* Sin esto el display de arriba le gana al atributo hidden y el lapiz se
-     ve tambien sin la clave del operador. */
-  .bt .editar[hidden] { display: none; }
-
   /* ── controles ───────────────────────────────────────────────────────── */
   /* .chip y .boton no son globales en el portal: cada pagina define los
      suyos. Estos son los mismos valores que usa la galeria. */
@@ -250,23 +143,23 @@ const punto = P.valorPunto();
     background: var(--acento-flojo); color: var(--texto);
     border-color: color-mix(in srgb, var(--acento) 45%, transparent);
   }
-  .bt .boton, .bt-dlg .boton {
+  .bt .boton {
     font: inherit; font-size: var(--t-3); font-weight: var(--peso-medio); cursor: pointer;
     display: inline-flex; align-items: center; gap: var(--e-2); --i: 1rem;
     min-height: var(--alto-control); padding: 0 var(--e-4); border-radius: var(--radio-2);
     background: var(--acento); border: 1px solid var(--acento); color: var(--sobre-acento);
     box-shadow: var(--halo-boton); transition: background var(--rapido), color var(--rapido);
   }
-  .bt .boton:hover, .bt-dlg .boton:hover { background: var(--acento-vivo); }
-  .bt .boton.fantasma, .bt-dlg .boton.fantasma {
+  .bt .boton:hover { background: var(--acento-vivo); }
+  .bt .boton.fantasma {
     background: var(--vidrio-fondo); border-color: var(--vidrio-borde);
     color: var(--texto-2); box-shadow: none;
   }
-  .bt .boton.fantasma:hover, .bt-dlg .boton.fantasma:hover {
+  .bt .boton.fantasma:hover {
     background: var(--vidrio-hover); color: var(--texto);
   }
   /* El display de arriba le gana al atributo hidden: hay que decirlo. */
-  .bt .boton[hidden], .bt-dlg .boton[hidden] { display: none; }
+  .bt .boton[hidden] { display: none; }
 
   .bt .bloque {
     margin: var(--e-5) 0; padding: var(--e-5); border-radius: var(--radio-3);
@@ -372,72 +265,11 @@ const punto = P.valorPunto();
   .bt .miniatura:hover { transform: scale(1.08); border-color: var(--acento); }
   .bt .vacio { margin: var(--e-5) 0 0; color: var(--texto-3); font-size: var(--t-3); }
 
-  /* ── los dos formularios ─────────────────────────────────────────────── */
-  .bt-dlg {
-    border: 1px solid var(--vidrio-borde); border-radius: var(--radio-4);
-    background: var(--superficie); color: var(--texto); padding: 0;
-    width: min(46rem, 92vw); box-shadow: var(--sombra-3);
-  }
-  .bt-dlg::backdrop, .bt-lupa::backdrop { background: rgba(5,8,14,0.72); backdrop-filter: blur(6px); }
-  .bt-dlg .d-cab {
-    display: flex; align-items: center; justify-content: space-between; gap: var(--e-4);
-    padding: var(--e-5) var(--e-5) var(--e-4); border-bottom: 1px solid var(--borde-sutil);
-  }
-  .bt-dlg .d-cab h3 { margin: 0; font-size: var(--t-6); font-weight: var(--peso-fuerte); }
-  .bt-dlg .d-cuerpo { padding: var(--e-5); display: grid; gap: var(--e-4); }
-  .bt-dlg .rejilla { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--e-3); }
-  .bt-dlg .rejilla.tres { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .bt-dlg .campo { display: grid; gap: var(--e-2); min-width: 0; }
-  .bt-dlg .campo > span {
-    font-size: var(--t-1); text-transform: uppercase; letter-spacing: var(--track-etiqueta);
-    color: var(--texto-3); font-weight: var(--peso-fuerte);
-  }
-  .bt-dlg input, .bt-dlg select, .bt-dlg textarea {
-    font: inherit; font-size: var(--t-3); color: var(--texto); width: 100%;
-    min-height: var(--alto-control); padding: var(--e-2) var(--e-3);
-    border-radius: var(--radio-2); background: var(--fondo); border: 1px solid var(--n-600);
-  }
-  .bt-dlg textarea { min-height: 4.5rem; resize: vertical; line-height: 1.5; }
-  .bt-dlg input:focus, .bt-dlg select:focus, .bt-dlg textarea:focus {
-    outline: 2px solid var(--acento); outline-offset: 1px; border-color: var(--acento);
-  }
-  .bt-dlg .calc { display: grid; gap: var(--e-2); align-content: start; grid-column: span 2; }
-  .bt-dlg .calc span {
-    font-size: var(--t-1); text-transform: uppercase; letter-spacing: var(--track-etiqueta);
-    color: var(--texto-3); font-weight: var(--peso-fuerte);
-  }
-  .bt-dlg .calc b {
-    display: flex; align-items: center; min-height: var(--alto-control);
-    padding: var(--e-2) var(--e-3); border-radius: var(--radio-2);
-    background: var(--acento-flojo); border: 1px solid color-mix(in srgb, var(--acento) 35%, transparent);
-    font-family: var(--fuente-mono); font-size: var(--t-6); font-weight: var(--peso-fuerte);
-  }
-  .bt-dlg .suelta {
-    display: grid; place-items: center; gap: var(--e-2); cursor: pointer;
-    padding: var(--e-5); border-radius: var(--radio-2);
-    border: 1px dashed var(--n-600); background: var(--fondo);
-    color: var(--texto-3); font-size: var(--t-2); text-align: center; --i: 1.5rem;
-  }
-  .bt-dlg .suelta:hover, .bt-dlg .suelta.encima { border-color: var(--acento); color: var(--texto-2); }
-  .bt-dlg .fallo { margin: 0; color: var(--negativo); font-size: var(--t-2); }
-  .bt-dlg .d-pie {
-    display: flex; align-items: center; justify-content: space-between; gap: var(--e-4);
-    padding: var(--e-4) var(--e-5); border-top: 1px solid var(--borde-sutil);
-    background: var(--fondo); border-radius: 0 0 var(--radio-4) var(--radio-4);
-  }
-  .bt-dlg .acciones { display: flex; gap: var(--e-3); margin-left: auto; }
-  .bt-dlg .cerrar, .bt-lupa .cerrar {
+  .bt-lupa::backdrop { background: rgba(5,8,14,0.72); backdrop-filter: blur(6px); }
+  .bt-lupa .cerrar {
     background: none; border: 0; color: var(--texto-3); font-size: 1.25rem; cursor: pointer; line-height: 1;
   }
-  .bt-dlg .cerrar:hover, .bt-lupa .cerrar:hover { color: var(--texto); }
-  .bt .boton.peligro, .bt-dlg .boton.peligro {
-    background: transparent; border-color: color-mix(in srgb, var(--negativo) 45%, transparent);
-    color: var(--negativo); box-shadow: none;
-  }
-  .bt .boton.peligro:hover, .bt-dlg .boton.peligro:hover {
-    background: color-mix(in srgb, var(--negativo) 14%, transparent);
-  }
-
+  .bt-lupa .cerrar:hover { color: var(--texto); }
   .bt-lupa {
     border: 0; background: transparent; padding: 0; max-width: 94vw; max-height: 94vh;
   }
@@ -446,8 +278,6 @@ const punto = P.valorPunto();
 
   @media (max-width: 60rem) {
     .bt .cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .bt-dlg .rejilla, .bt-dlg .rejilla.tres { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .bt-dlg .calc { grid-column: span 2; }
   }
 </style>
 
@@ -455,30 +285,6 @@ const punto = P.valorPunto();
   (function () {
     var raiz = document.querySelector('.bt');
     if (!raiz) return;
-
-    // El unico numero que baja de la compilacion, y sale de reglas.json.
-    var VALOR_PUNTO = Number(raiz.dataset.punto);
-
-    var CLAVE = 'chaumer.clave';
-
-    // La clave del operador llega en su enlace y se recuerda. Se limpia de la
-    // barra para que no viaje si copia la direccion.
-    //
-    // Esto estaba SOLO en la pagina de observaciones, y por eso el enlace con
-    // ?k= no encendia nada aqui: la bitacora leia una clave que nadie habia
-    // guardado todavia. Mismo criterio y mismo nombre que alli.
-    try {
-      var url = new URL(window.location.href);
-      var k = url.searchParams.get('k');
-      if (k) {
-        localStorage.setItem(CLAVE, k);
-        url.searchParams.delete('k');
-        history.replaceState({}, '', url.pathname + url.search + url.hash);
-      }
-    } catch (e) { /* sin almacenamiento */ }
-
-    function clave() { try { return localStorage.getItem(CLAVE) || ''; } catch (e) { return ''; } }
-    var operador = !!clave();
 
     var dinero = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     var $ = function (s, d) { return (d || raiz).querySelector(s); };
@@ -796,14 +602,13 @@ const punto = P.valorPunto();
 
     function celdaFecha(j) {
       var texto = escapa(fechaCorta(j.fecha));
-      return '<td class="fecha">' + (operador
-        ? '<button type="button" data-editar="' + j.id + '">' + texto + '</button>'
-        : texto) + '</td>';
+      return '<td class="fecha">' + texto + '</td>';
     }
 
     function celdaGrafico(j) {
       if (!j.imagen) return '<td></td>';
-      var url = '/api/backtesting/imagen/' + encodeURIComponent(j.imagen);
+      // La direccion completa de Cloudinary, tal cual la guarda la jornada.
+      var url = escapa(j.imagen);
       return '<td><img class="miniatura" loading="lazy" src="' + url +
              '" alt="Gráfico del ' + escapa(fechaCorta(j.fecha)) + '" data-lupa-abrir="' + url + '"></td>';
     }
@@ -844,9 +649,6 @@ const punto = P.valorPunto();
       var mini = e.target.closest('[data-lupa-abrir]');
       if (mini) { abrirLupa(mini.dataset.lupaAbrir, mini.alt); return; }
 
-      var editar = e.target.closest('[data-editar]');
-      if (editar) { abrirJornada(Number(editar.dataset.editar)); return; }
-
       var obs = e.target.closest('td.obs');
       if (obs) obs.parentElement.classList.toggle('abierta');
     });
@@ -861,212 +663,6 @@ const punto = P.valorPunto();
     document.querySelectorAll('[data-cerrar]').forEach(function (b) {
       b.addEventListener('click', function () { b.closest('dialog').close(); });
     });
-
-    // ──────────────────────────────────────────── el formulario de jornada
-    var dlg = document.querySelector('[data-dlg-jornada]');
-    var form = dlg.querySelector('[data-form-jornada]');
-    var archivo = form.elements.imagen;
-    var editando = null;
-
-    /** La misma cuenta que hace la API al guardar. Aqui solo se enseña: lo que
-     *  se escribe en la base es lo que calcula el servidor, nunca esto. */
-    function calcularPnl() {
-      var puntos = Number(form.elements.puntos.value || 0);
-      var res = form.elements.resultado.value;
-      var contratos = Number(estado.cabecera && estado.cabecera.contratos) || 1;
-      var comision = Number(estado.cabecera && estado.cabecera.comision) || 0;
-      var v = res
-        ? (res === 'stop' ? -1 : 1) * puntos * VALOR_PUNTO * contratos - comision * contratos
-        : 0;
-      var b = dlg.querySelector('[data-pnl]');
-      b.textContent = (v > 0 ? '+' : '') + usd(v);
-      b.className = v > 0 ? 'pos' : v < 0 ? 'neg' : '';
-    }
-    ['puntos', 'resultado'].forEach(function (n) {
-      form.elements[n].addEventListener('input', calcularPnl);
-      form.elements[n].addEventListener('change', calcularPnl);
-    });
-
-    function abrirJornada(id) {
-      editando = id || null;
-      var j = id && estado.jornadas.find(function (x) { return x.id === id; });
-      var o = j && j.operaciones && j.operaciones[0];
-
-      form.reset();
-      dlg.querySelector('[data-titulo-jornada]').textContent = j ? 'Corregir jornada' : 'Registrar jornada';
-      dlg.querySelector('[data-borrar]').hidden = !j;
-      dlg.querySelector('[data-nombre-imagen]').textContent = j && j.imagen
-        ? j.imagen : 'Arrastra aquí el gráfico del día';
-      $('[data-fallo-jornada]', dlg).hidden = true;
-
-      form.elements.fecha.value = j ? j.fecha : new Date().toISOString().slice(0, 10);
-      form.elements.hora.value = o ? o.hora : '';
-      form.elements.direccion.value = o ? o.direccion : 'largo';
-      form.elements.setup.value = o ? o.setup : 'continuacion';
-      form.elements.puntos.value = o ? o.puntos : '';
-      form.elements.resultado.value = o ? o.resultado : 'target';
-      form.elements.observaciones.value = o ? (o.observaciones || '') : (j ? (j.notas || '') : '');
-
-      calcularPnl();
-      dlg.showModal();
-    }
-
-    // Soltar el grafico encima, o elegirlo.
-    var suelta = dlg.querySelector('.suelta');
-    ['dragenter', 'dragover'].forEach(function (n) {
-      suelta.addEventListener(n, function (e) { e.preventDefault(); suelta.classList.add('encima'); });
-    });
-    ['dragleave', 'drop'].forEach(function (n) {
-      suelta.addEventListener(n, function () { suelta.classList.remove('encima'); });
-    });
-    suelta.addEventListener('drop', function (e) {
-      e.preventDefault();
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        archivo.files = e.dataTransfer.files;
-        archivo.dispatchEvent(new Event('change'));
-      }
-    });
-    archivo.addEventListener('change', function () {
-      dlg.querySelector('[data-nombre-imagen]').textContent =
-        archivo.files[0] ? archivo.files[0].name : 'Arrastra aquí el gráfico del día';
-    });
-
-    function fallo(caja, texto) {
-      var p = caja.querySelector('.fallo');
-      p.textContent = texto;
-      p.hidden = !texto;
-    }
-
-    /** El nombre en el almacen lleva la fecha y un sufijo. El sufijo es lo que
-     *  permite corregir el grafico de un dia sin pelear con la cache. */
-    function subirImagen(fecha) {
-      var f = archivo.files && archivo.files[0];
-      if (!f) return Promise.resolve(null);
-      var ext = (f.name.split('.').pop() || 'png').toLowerCase();
-      if (['png', 'jpg', 'jpeg', 'webp'].indexOf(ext) < 0) {
-        return Promise.reject(new Error('El gráfico tiene que ser PNG, JPG o WebP'));
-      }
-      var nombre = fecha + '-' + Date.now().toString(36) + '.' + ext;
-      return fetch('/api/backtesting/imagen/' + nombre, {
-        method: 'PUT',
-        headers: { 'x-clave': clave(), 'content-type': f.type || 'application/octet-stream' },
-        body: f,
-      }).then(function (r) {
-        return r.json().then(function (d) {
-          if (!r.ok) throw new Error(d.error || 'No se pudo subir el gráfico');
-          return d.imagen;
-        });
-      });
-    }
-
-    dlg.querySelector('[data-guardar]').addEventListener('click', function () {
-      var fecha = form.elements.fecha.value;
-      if (!fecha) { fallo(dlg, 'Falta la fecha'); return; }
-
-      var resultado = form.elements.resultado.value;
-      var hora = form.elements.hora.value;
-      var puntos = form.elements.puntos.value;
-
-      var operaciones = [];
-      if (resultado) {
-        if (!hora) { fallo(dlg, 'Falta la hora'); return; }
-        if (puntos === '') { fallo(dlg, 'Faltan los puntos'); return; }
-        operaciones.push({
-          hora: hora,
-          direccion: form.elements.direccion.value,
-          setup: form.elements.setup.value,
-          puntos: Number(puntos),
-          resultado: resultado,
-          observaciones: form.elements.observaciones.value,
-        });
-      }
-
-      var previa = editando && estado.jornadas.find(function (x) { return x.id === editando; });
-      fallo(dlg, '');
-
-      subirImagen(fecha)
-        .then(function (nueva) {
-          var cuerpo = {
-            fecha: fecha,
-            instrumento: estado.cabecera.instrumento,
-            contratos: estado.cabecera.contratos,
-            valor_punto: VALOR_PUNTO,
-            comision: estado.cabecera.comision,
-            imagen: nueva || (previa ? previa.imagen : null),
-            notas: resultado ? null : form.elements.observaciones.value,
-            operaciones: operaciones,
-          };
-          return fetch(editando ? '/api/backtesting/' + editando : '/api/backtesting', {
-            method: editando ? 'PUT' : 'POST',
-            headers: { 'content-type': 'application/json', 'x-clave': clave() },
-            body: JSON.stringify(cuerpo),
-          });
-        })
-        .then(function (r) {
-          return r.json().then(function (d) {
-            if (!r.ok) throw new Error(d.error || 'No se pudo guardar');
-            dlg.close();
-            return cargar();
-          });
-        })
-        .catch(function (e) { fallo(dlg, String(e.message || e)); });
-    });
-
-    dlg.querySelector('[data-borrar]').addEventListener('click', function () {
-      if (!editando) return;
-      if (!confirm('¿Borrar esta jornada y su gráfico?')) return;
-      fetch('/api/backtesting/' + editando, { method: 'DELETE', headers: { 'x-clave': clave() } })
-        .then(function (r) {
-          return r.json().then(function (d) {
-            if (!r.ok) throw new Error(d.error || 'No se pudo borrar');
-            dlg.close();
-            return cargar();
-          });
-        })
-        .catch(function (e) { fallo(dlg, String(e.message || e)); });
-    });
-
-    // ─────────────────────────────────────────── el formulario de inicio
-    var dlgIni = document.querySelector('[data-dlg-inicio]');
-    var formIni = dlgIni.querySelector('form');
-
-    $('[data-abrir-inicio]').addEventListener('click', function () {
-      formIni.elements.valor_inicial.value = estado.cabecera.valor_inicial;
-      formIni.elements.contratos.value = estado.cabecera.contratos;
-      formIni.elements.instrumento.value = estado.cabecera.instrumento;
-      formIni.elements.comision.value = estado.cabecera.comision || 0;
-      fallo(dlgIni, '');
-      dlgIni.showModal();
-    });
-
-    dlgIni.querySelector('[data-guardar-inicio]').addEventListener('click', function () {
-      fetch('/api/backtesting/cabecera', {
-        method: 'PUT',
-        headers: { 'content-type': 'application/json', 'x-clave': clave() },
-        body: JSON.stringify({
-          valor_inicial: Number(formIni.elements.valor_inicial.value),
-          contratos: Number(formIni.elements.contratos.value),
-          instrumento: formIni.elements.instrumento.value,
-          comision: Number(formIni.elements.comision.value),
-        }),
-      })
-        .then(function (r) {
-          return r.json().then(function (d) {
-            if (!r.ok) throw new Error(d.error || 'No se pudo guardar');
-            dlgIni.close();
-            return cargar();
-          });
-        })
-        .catch(function (e) { fallo(dlgIni, String(e.message || e)); });
-    });
-
-    // Registrar, corregir y los datos de inicio solo se ven con la clave.
-    if (operador) {
-      $('[data-abrir-jornada]').hidden = false;
-      $('[data-abrir-inicio]').hidden = false;
-      $('[data-abrir-jornada]').addEventListener('click', function () { abrirJornada(null); });
-      $('[data-exportar]').href = '/api/backtesting/export';
-    }
 
     cargar();
   })();

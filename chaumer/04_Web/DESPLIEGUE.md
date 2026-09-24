@@ -71,56 +71,35 @@ Pega la clave del paso 4. **No va al repositorio ni al navegador.**
 
 ---
 
-## Una sola vez, para la bitácora de backtesting
+## La bitácora de backtesting: la lee de Supabase
 
-Los datos van a la **misma base D1** que las observaciones; solo hacen falta
-las tablas nuevas. Las imágenes van a **R2**, que sí es nuevo.
+**Desde el 24/09/2026 (fase 4a de la unificación) la bitácora no vive aquí.**
+Está en Supabase, en el proyecto del Trading Journal (`bt_cabecera`,
+`bt_jornadas`, `bt_operaciones`), y los gráficos en Cloudinary. Se registra
+desde el Journal. El portal **solo la lee**, desde su servidor:
+`functions/api/backtesting/` la pide a las vistas `portal_bt_cabecera` y
+`portal_bt_jornadas`. Escribir responde 405.
 
-### 1 · Crear las tablas  ✅ HECHA en produccion el 09/09/2026
+Lo que tiene que estar configurado:
 
-```
-npx wrangler d1 execute trading-plan-observaciones --remote --file=./d1/0002_backtesting.sql
-```
+### El secreto `SUPABASE_PORTAL_KEY`
 
-### 1 bis · La comisión  ✅ HECHA en produccion el 09/09/2026
-
-```
-npx wrangler d1 execute trading-plan-observaciones --remote --file=./d1/0003_backtesting_comision.sql
-```
-
-### 2 · Crear el almacén de las imágenes  ✅ HECHO el 09/09/2026
+Un JWT de rol `portal_lector`, que solo puede leer esas dos vistas. Se genera
+desde esta carpeta con:
 
 ```
-npx wrangler r2 bucket create chaumer-bitacora
+node scripts/llave-portal.mjs
 ```
 
-El bucket queda **privado**: no tiene dirección pública ni dominio propio. Las
-imágenes salen solo por `/api/backtesting/imagen/`, que las sirve el portal.
-No hay nada más que configurar — el binding ya está en `wrangler.toml`.
+Pide el *Legacy JWT Secret* de Supabase sin enseñarlo, firma la llave, la
+prueba (lee las vistas y **no** lee `trades` ni escribe) y la guarda en
+`.dev.vars`. Después se pega en Cloudflare → Workers & Pages →
+`plan-operativo-nq` → Settings → Variables and Secrets (Production), tipo
+Secret. Sin ella, `/backtesting` dice «No se pudo leer la bitácora».
 
-### 3 · Poner la clave de operador  ⚠️ PENDIENTE
-
-Sin ella **la bitácora es de solo lectura**: no se puede registrar nada. El
-proyecto no tiene ningún secreto configurado todavía (comprobado el
-09/09/2026 con `wrangler pages secret list`), así que el paso 4 de arriba —
-inventar la clave— y este siguen sin hacer:
-
-```
-npx wrangler pages secret put CLAVE_OPERADOR --project-name=plan-operativo-nq
-```
-
-Pide pegar la clave y no la enseña. Es la misma que abre responder y borrar
-en las observaciones.
-
-### 4 · Rellenar los datos de inicio
-
-Con tu enlace de operador abierto, el lápiz de la tarjeta **Valor inicial**
-abre la ventanita de datos de inicio: valor inicial, contratos e instrumento.
-Se rellena una vez.
-
-> **La copia de seguridad.** La bitácora vive en la base, no en git: si se
-> borra una fila no hay historial que lo cuente. El botón **Exportar** baja
-> todo en JSON. Conviene guardarlo en el repositorio de vez en cuando.
+> Lo de antes —las tablas `bt_*` en D1 y el bucket R2 `chaumer-bitacora`— sigue
+> ahí, sin tocar, hasta la fase 8, que lo apaga con una exportación guardada.
+> Los scripts `d1/0002` y `d1/0003` quedan como historia.
 
 ---
 
@@ -142,13 +121,11 @@ marcar, exportar y borrar:
 https://plan-operativo-nq.pages.dev/observaciones?k=TU_CLAVE
 ```
 
-También se recuerda, y es la misma clave que deja **registrar, corregir y
-borrar jornadas** en la bitácora de backtesting: una vez abierto ese enlace,
-en `/backtesting` aparecen el botón de registrar y el lápiz de los datos de
-inicio. Leer la bitácora y ver sus gráficos no pide nada.
+También se recuerda. Desde el 24/09/2026 ya **no** abre nada en la bitácora de
+backtesting, que se registra desde el Journal.
 
-**No lo compartas**: quien lo tenga puede responder, borrar y tocar tu
-bitácora en tu nombre.
+**No lo compartas**: quien lo tenga puede responder y borrar observaciones en
+tu nombre.
 
 ---
 

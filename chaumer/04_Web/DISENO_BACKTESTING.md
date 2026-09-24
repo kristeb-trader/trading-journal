@@ -3,6 +3,14 @@
 **Cerrado con el operador el 09/09/2026.** Este archivo es la referencia:
 si el código y este documento se contradicen, manda este documento.
 
+> **24/09/2026 — la bitácora se mudó a Supabase** (fase 4a de
+> `docs/disenos/2026-09-24-unificacion-chaumer.md`, en la raíz del Journal).
+> Los datos están en el proyecto de Supabase del Journal, los gráficos en
+> Cloudinary, y **el portal ya solo la lee**. Registrar, corregir y borrar
+> pasan al Journal (fase 4b). El modelo, la aritmética y las tres decisiones de
+> abajo **no cambian**: se trasladaron tal cual. Lo que cambió está en «Dónde
+> vive cada cosa» y «Quién puede qué».
+
 ---
 
 ## Qué es
@@ -16,10 +24,11 @@ detecta setups. Si aparece lógica de la metodología aquí, es un error.
 
 | | |
 |---|---|
-| Los datos | **D1**, la misma base que las observaciones. Tablas con prefijo `bt_` |
-| Las imágenes | **R2**, bucket privado. La página las pide a la API, nunca directo |
-| La página | `src/pages/backtesting.astro` — cascarón estático, datos por `fetch` |
-| La API | `functions/api/backtesting/` |
+| Los datos | **Supabase**, proyecto del Journal: `bt_cabecera`, `bt_jornadas`, `bt_operaciones` (hasta el 24/09/2026, D1) |
+| Las imágenes | **Cloudinary**, carpeta `backtesting/`. `imagen` guarda la dirección completa (hasta el 24/09/2026, R2) |
+| La página | `src/pages/backtesting.astro` — cascarón estático, datos por `fetch`, **solo lectura** |
+| La API | `functions/api/backtesting/` — lee las vistas `portal_bt_*` con la llave de rol `portal_lector`. Escribir: 405 |
+| Registrar | el **Journal** (fase 4b) |
 
 **Por qué no archivos en el repositorio:** para poder registrar desde el
 navegador sin recompilar ni publicar. El precio es que el registro deja de
@@ -27,9 +36,10 @@ estar versionado en git; se compensa con el botón de exportar.
 
 **Por qué R2 y no D1 para las imágenes:** una captura no es una fila.
 
-## Migrar a Supabase algún día
+## Migrar a Supabase algún día — ✅ hecho el 24/09/2026
 
-Se decidió empezar en D1 dejando la puerta abierta. Lo que la mantiene abierta:
+Se decidió empezar en D1 dejando la puerta abierta, y sirvió: la página no
+cambió de datos, solo perdió los botones de escribir. Lo que la mantuvo abierta:
 
 1. **La página nunca habla con la base.** Solo conoce `/api/backtesting/…`.
    Migrar es reescribir esos archivos; la página ni se entera.
@@ -102,9 +112,10 @@ día sin operación no paga comisión, porque no hubo operación.
 2,04 — que es como cobra un bróker. Confirmado con el operador el 09/09/2026,
 que lo enunció como «por trade» con un solo contrato en juego.
 
-`valor_punto` sale de `reglas.json` (`valor_punto_MNQ`, en `R-01`) al compilar
-la página, y se congela en cada jornada al guardarla. **No se escribe a mano
-en ningún sitio.**
+`valor_punto` sale de `reglas.json` (`valor_punto_MNQ`, en `R-01`) y se congela
+en cada jornada al guardarla. **No se escribe a mano en ningún sitio.** Desde el
+24/09/2026 vive también en `bt_cabecera.valor_punto` (sembrado con el del plan,
+2), porque el Journal, que es quien registra, no puede leer `reglas.json`.
 
 ## Vocabulario en pantalla
 
@@ -122,7 +133,7 @@ queda escrita en `PROPUESTAS_AL_PLAN.md` y la decide él.
 |---|---|
 | Leer la bitácora | cualquiera con el enlace, sin clave |
 | Ver las imágenes | cualquiera con el enlace, sin clave |
-| Registrar, corregir, borrar | pide `CLAVE_OPERADOR`, la que ya existe |
+| Registrar, corregir, borrar | **el Journal**, con la sesión de Kris (desde el 24/09/2026; antes, `CLAVE_OPERADOR` en el portal) |
 
 ## La pantalla
 
@@ -151,6 +162,6 @@ queda escrita en `PROPUESTAS_AL_PLAN.md` y la decide él.
 - **Sin texto explicativo.** El operador lo pidió tres veces: la pantalla
   enseña datos, no se explica a sí misma.
 
-## Lo que falta para publicar
+## Lo que hace falta para publicar
 
-El bucket de R2 y el binding. Está en `DESPLIEGUE.md`.
+El secreto `SUPABASE_PORTAL_KEY`. Está en `DESPLIEGUE.md`.
