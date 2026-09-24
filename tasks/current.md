@@ -31,13 +31,15 @@ sesión**, con `/clear` entre una y otra.
   automáticas; el plan entero en `catalogo_reglas`. Piloto hecho por Kris: 6/6
 - [ ] **Cuando Cowork cambie la checklist o las reglas del plan:** `node scripts/plan/sincronizar.mjs`
   y aplicar el SQL por el MCP (lo hace Claude)
-- [ ] **Fase 5c** — Coach, Estrategia, NinjaTrader y documentos
+- [x] **Fase 5c** — Coach y Diario por etapa de la fecha; Estrategia de solo lectura; docs y D-024
+- [ ] **Kris:** al abrir NinjaTrader, mirar que el indicador `ChecklistChaumer` enseña la casilla
+  nueva (no hay que recompilar: el `.cs` no cambió)
+- [ ] Fases 6–8 — coach con el plan completo, cadena diaria, apagar D1/R2
 - [ ] Aparte, vistos en la 4a: activar RLS (o borrar) `_bak_20260919_trades_regularizacion`;
   la copia local de D1 del portal no tiene la tabla `observaciones`
 - [ ] **Repositorio público de momento (D-022).** Cuando haya presupuesto: GitHub Pro y
   pasarlo a privado, u otra solución. Aparte: proteger el portal (Cloudflare Access) y ver
   qué devuelve `/api/backtesting/export`, que responde 200 sin sesión
-- [ ] Fases 5–8 — reglas por etapa, coach, cadena diaria, apagar D1/R2
 
 > ℹ️ **Un archivo nuevo que necesite la app** (fuera de `js/`, `css/` o `icons/`) hay que
 > añadirlo al `cp` de `.github/workflows/publicar-journal.yml`. Si no, dará 404 en producción.

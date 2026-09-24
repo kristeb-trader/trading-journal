@@ -100,6 +100,8 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-09-24-backtesting-datos-desde-d1.sql` | ✅ MCP | las 85 jornadas y 73 operaciones de D1, tal cual (P&L 1.233,04 sin recalcular); `imagen` apunta a Cloudinary |
 | `2026-09-24-bt-guardar-jornada.sql` | ✅ MCP | función `bt_guardar_jornada(jsonb)`: guarda jornada + operaciones en una transacción y calcula el P&L; al corregir conserva los valores congelados. Solo `authenticated` y `service_role` |
 | `2026-09-24-disciplina-etapas.sql` | ✅ MCP | tabla `disciplina_etapas` (etapa 1) y columnas `etapa`, `plan_reglas`, `origen`, `plan_tipo` en `catalogo_reglas`; las 17 casillas activas → etapa 1. La disciplina cuenta por etapa, no por `activa` |
+| `2026-09-24-etapa-plan-chaumer.sql` | ✅ MCP | etapa 2 (Plan de Chaumer) desde el 24/09; `plan_bloque`; 40 reglas + 48 líneas + 2 automáticas de regla (SQL de `scripts/plan/sincronizar.mjs`); las 17 casillas de la etapa 1 a `activa = false` |
+| `2026-09-24-plan-linea.sql` | ✅ MCP | `plan_linea`: la posición de cada línea en la checklist diaria del plan (48) |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.

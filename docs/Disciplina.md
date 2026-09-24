@@ -13,6 +13,31 @@
 
 ---
 
+## Etapas (desde el 24/09/2026)
+
+La disciplina se mide **por etapas**. Cada regla del checklist pertenece a una
+(`catalogo_reglas.etapa`) y cada día, a la que contiene su fecha (`disciplina_etapas`):
+
+| Etapa | Días | Reglas |
+|---|---|---|
+| 1 · Rulebook propio | hasta el 23/09/2026 | las 17 casillas de siempre (14 declaradas + 3 automáticas) |
+| 2 · Plan de Chaumer | desde el 24/09/2026 | **1 casilla** según el setup (corrida fluida · punto de referencia) + **7 automáticas** (stop ≤ 80, noticia, FOMC, una operación, MNQ, 1 contrato, entrada 09:30–11:30 ET) |
+
+- **Un día cuenta las reglas de su etapa, estén activas o no.** `activa` solo decide qué se
+  ve para marcar. Antes contaba las activas de hoy sobre toda la historia, y desactivar una
+  regla la borraba del pasado.
+- **Un período se mide con una sola etapa**: la elegida en el desplegable de período del
+  Dashboard o, por defecto, la del día más reciente del período. Agosto se mide con la 1;
+  septiembre, con la 2, cuenta solo del 24 al 30.
+- **Van por etapa:** disciplina %, fase más débil y desglose por regla. **No:** errores %,
+  días limpios y racha, que cuentan días.
+- En la etapa 2 **no hay fase 1**: un día sin operar no tiene disciplina.
+- El 24/09/2026 tiene además sus 17 casillas viejas guardadas; no cuentan (un día es de una
+  sola etapa). Fue el piloto: 6/6.
+
+Todo lo que sigue explica el cálculo con la etapa 1 (julio de 2026). La mecánica es la misma
+en la 2; solo cambian las reglas.
+
 ## Resumen rápido
 
 | Métrica | Qué mide | Fórmula |

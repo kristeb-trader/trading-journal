@@ -96,7 +96,7 @@ const Coach = (() => {
   // ── Construcción del System Prompt ────────────────────────────────────
 
   async function buildSystemPrompt(date) {
-    const [reglas, historial, patrones, sesion, trades, casuisticas, emociones, catalogoErrores, , fechasEsp, objetivos] = await Promise.all([
+    const [reglasTodas, historial, patrones, sesion, trades, casuisticas, emociones, catalogoErrores, , fechasEsp, objetivos] = await Promise.all([
       cargarReglas(),
       cargarHistorialCompacto(date),
       detectarPatrones(date),
@@ -109,6 +109,9 @@ const Coach = (() => {
       DB.getFechasEspeciales().catch(() => []),   // para la regla "día FOMC"
       DB.getObjetivos().catch(() => null),        // stop máximo en puntos
     ])
+    // El reglamento de la ETAPA de esa fecha: un día anterior al 24/09 se analiza con
+    // el rulebook propio; desde el 24/09, con el plan de Chaumer (fase 5c).
+    const reglas = reglasDeEtapa(reglasTodas, date)
     // Familia del setup operado ese día (continuacion | reingreso | null). Si no se operó
     // pero se identificó un setup válido que no se tomó, se usa ese.
     const familiaDia = DB.setupFamily(sesion) ||
@@ -191,7 +194,7 @@ const Coach = (() => {
     // Filtrado por setup Y por contexto del día: una regla condicional (día FOMC,
     // hay noticia) no debe ni aparecer si su contexto no se dio ese día, o el Coach
     // la reporta como violada cuando ni siquiera existía.
-    const chkItems = DB.checklistItemsSync().filter(it =>
+    const chkItems = DB.checklistDeEtapa(etapaDeFecha(date)).filter(it =>
       reglaAplica(it, familiaDia) &&
       (!sesion || discAplicaContexto({ aplica_si: it.aplica_si }, sesion, _discCtx)))
     const checklistStr = sesion
@@ -544,8 +547,21 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
   // Carga el rulebook canónico (reglas activas) una vez por sesión de coaching.
   async function cargarReglas() {
     if (reglasCache) return reglasCache
-    reglasCache = await DB.getReglas({ soloActivas: true }).catch(() => [])
+    // TODAS, activas o no: cada fecha se analiza con el reglamento de su etapa.
+    reglasCache = await DB.getReglas().catch(() => [])
     return reglasCache
+  }
+
+  // El reglamento de la etapa de `date` (fase 5c, 24 sep):
+  //   · etapa 1 (hasta el 23/09): sus casillas —activas o no— y la filosofía propia;
+  //   · etapa 2 (plan de Chaumer): sus reglas y su checklist; las líneas de guía no,
+  //     que repiten el plan y solo inflarían el prompt.
+  // Sin etapas cargadas: las activas, como siempre.
+  function reglasDeEtapa(todas, date) {
+    const et = etapaDeFecha(date)
+    if (et === undefined) return todas.filter(r => r.activa !== false)
+    return todas.filter(r => (r.etapa === et && r.plan_tipo !== 'guia') ||
+      (et === 1 && r.origen === 'journal' && r.etapa == null && !r.es_checklist && r.activa !== false))
   }
 
   // Bloque de filosofía/estrategia (capa 'filosofia')
@@ -876,7 +892,7 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
         // Parte 9 (opcional): código de la regla del checklist que el error contradice.
         // Se valida contra el catálogo para no guardar códigos inventados (hay FK).
         const rcRaw = (parts[8] || '').replace(/[`'"]/g, '').trim()
-        const reglaCodigo = rcRaw && DB.checklistItemsSync().some(i => i.clave === rcRaw) ? rcRaw : null
+        const reglaCodigo = rcRaw && DB.checklistTodos().some(i => i.clave === rcRaw) ? rcRaw : null
         if (nombre) out.push({ nombre, tipo, resultado, detalle, recNombre, recTexto, fase, reglaVista, reglaCodigo })
       } else if (l.length > 2) {
         out.push({ nombre: l.slice(0, 40), tipo: '', resultado: null, detalle: l })

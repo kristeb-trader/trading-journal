@@ -4179,13 +4179,20 @@ details.cz-det > summary:focus-visible {
 }
 .rb-card.dura { border-left: 3px solid var(--red); border-radius: 0 14px 14px 0; }
 .rb-card.inactiva { opacity: 0.5; }
-.rb-crow { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
-.rb-bdg { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 9px; border-radius: 6px; }
+.rb-crow { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; flex-wrap: wrap; }
+.rb-bdg { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 9px; border-radius: 6px; white-space: nowrap; }
 .b-capa { background: rgba(255,255,255,0.06); color: var(--text2); }
 .b-f1 { background: var(--accent-dim); color: var(--accent-txt); }
 .b-f2 { background: var(--warning-dim); color: var(--warning-txt); }
 .b-f3 { background: rgba(91,148,201,0.18); color: var(--blue-txt); }
 .b-setup { background: rgba(127,119,221,0.18); color: var(--violet-txt); }
+/* Tipo de línea del plan (Estrategia, fase 5c) */
+.b-casilla { background: var(--accent-dim); color: var(--accent-txt); }
+.b-auto    { background: var(--blue-dim);   color: var(--blue-txt); }
+.b-guia    { background: rgba(255,255,255,0.06); color: var(--text3); }
+.rb-refs { margin-left: auto; white-space: nowrap; font-size: 0.7rem; color: var(--text3); font-variant-numeric: tabular-nums; }
+.rb-nota { display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; color: var(--text3); }
+.rb-intro { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 0.8rem; color: var(--text3); }
 .rb-chip {
   margin-left: auto; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.04em;
   padding: 4px 11px; border-radius: 999px; cursor: pointer; white-space: nowrap;

@@ -108,7 +108,7 @@ Lo que el esquema no cuenta y hay que saber:
 | Tabla | Lo que no se ve mirando las columnas |
 |---|---|
 | `sesion_checklist` | 1 fila = sesión × regla. **Sin fila = N/A**, no cuenta en disciplina. Sin triggers de materialización desde el 16 ago: la sesión nace **limpia** |
-| `catalogo_reglas` | Rulebook canónico. `bloquea_go`, `aplica_si` (siempre/dia_fomc/hay_noticia) y `evidencia` (auto/declarada) son los 3 ejes que deciden si una regla se evalúa. `setup` NULL = común a todos |
+| `catalogo_reglas` | Rulebook canónico. `bloquea_go`, `aplica_si` (siempre/dia_fomc/hay_noticia) y `evidencia` (auto/declarada) son los 3 ejes que deciden si una regla se evalúa. `setup` NULL = común a todos. **`etapa`** decide en qué disciplina cuenta (activa o no); `activa` solo, si se ve para marcar. La etapa 2 (`origen` plan_*) la escribe **solo** `scripts/plan/sincronizar.mjs` desde `chaumer/01_Plan`: no se edita a mano ni desde la app |
 | `diagnostico_errores` | `regla_codigo` = la regla que ese error contradice → la disciplina la cuenta incumplida **aunque la casilla esté marcada**. NULL = psicológico, no toca el checklist |
 | `sesion_noticias` | UNIQUE (fecha, hora): una noticia por hora. El CPI publica 4 cifras a las 7:30 pero es **un** evento con **una** ventana (±5 min sobre la entrada) |
 | `objetivos` | Fila única. `cuenta_principal` es la cuenta que alimenta P&L/Análisis/Coach; se elige en Datos y la lee el indicador NT8 al arrancar. `limite_perdida_dia` está **obsoleto** (el riesgo se mide en puntos) |
@@ -160,7 +160,7 @@ js/coach.js       Pestaña "Coach IA" (3 etapas) + renderHistorial = "Días ante
 js/calendar.js    Calendario mensual · js/metrics.js  KPIs
 js/charts.js      Sección Análisis · js/disciplina.js  Dashboard de Disciplina
 js/apex.js        Apex Tracker · js/experimentos.js  Laboratorio
-js/estrategia.js  Editor del rulebook · js/fechas.js  Fechas Especiales
+js/estrategia.js  El plan de Chaumer y la etapa anterior, de solo lectura · js/fechas.js  Fechas Especiales
 js/chaumer.js     Comparador Chaumer vs yo (pestañas Diferencias y Registrar)
 js/backtesting.js Bitácora de backtesting: registrar, corregir, borrar (bt_*)
 js/account-filter.js  Filtro de cuentas compartido (nombre COMPLETO)

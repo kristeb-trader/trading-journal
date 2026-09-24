@@ -1,11 +1,16 @@
 # Metodología Chaumer — la estrategia que este journal registra
 
-> Conocimiento de dominio. Vive en el repo (no en la memoria) porque el código que lo
-> implementa está aquí y cambian juntos.
+> ⚠️ **Desde el 24/09/2026 la metodología es el plan de Chaumer**, no este documento:
+> **`chaumer/01_Plan/`** (lo edita Cowork; Claude Code solo lo lee). Las reglas son
+> `reglas.json`, y la checklist del día, `CHECKLIST_DIARIA.md`.
 >
-> El rulebook **operativo y vivo** no es este documento: es la tabla `catalogo_reglas` en
-> Supabase, que editas desde la sección **Estrategia**. Esto explica el modelo; la tabla
-> manda.
+> El Journal trae el plan a `catalogo_reglas` con `scripts/plan/sincronizar.mjs`, en la
+> **etapa 2** de la disciplina, y lo enseña en **Estrategia de solo lectura**. Qué línea es
+> casilla, automática o guía lo decide `scripts/plan/mapa-casillas.json` (decisiones de Kris).
+> Diseño: `docs/disenos/2026-09-24-etapa-plan-chaumer.md`.
+>
+> Lo que sigue describe el **rulebook propio** que el Journal usó hasta el 23/09 (etapa 1).
+> Se conserva porque sus casillas siguen contando en la disciplina de esa etapa.
 
 ## El modelo del rulebook (`catalogo_reglas`)
 

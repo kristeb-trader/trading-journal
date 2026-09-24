@@ -366,7 +366,12 @@ clave de operador. Pasa a ser del Journal. **Su diseño ya lo preveía:** SQL co
 - el portal ya no acepta escrituras de la bitácora; *(4a)*
 - el Journal registra un día de prueba y el portal lo ve. *(4b)*
 
-### Fase 5 · Una sola lista de reglas: la etapa nueva (sub-diseño propio, ~25)
+### Fase 5 · Una sola lista de reglas: la etapa nueva (sub-diseño propio, ~25) ✅ CERRADA el 24/09/2026
+
+> Hecha según su sub-diseño `docs/disenos/2026-09-24-etapa-plan-chaumer.md` (v2.3), que manda sobre lo que
+> sigue. Kris eligió un checklist **simple**: 2 casillas + 7 automáticas; la etapa empezó el 24/09 con el
+> trade del día como piloto (6/6). El bot de Telegram no hubo que tocarlo, y NinjaTrader tampoco. D-024.
+
 
 **Toca invariantes del Journal:** disciplina en `db.js`, borrado lógico y claves ajenas desde
 `sesion_checklist`. **Empieza con su propio análisis y diseño, y para para que Kris lo apruebe.**

@@ -63,7 +63,8 @@ const SessionForm = (() => {
   }
 
   async function loadChecklist() {
-    try { checklistItems = await DB.getChecklistItems({ soloActivos: true }) }
+    // Todas, activas o no: cada día se marca con las casillas de SU etapa (itemsDelDia).
+    try { await DB.getChecklistItems(); checklistItems = DB.checklistItemsSync() }
     catch { checklistItems = [] }
     if (!checklistItems || !checklistItems.length) checklistItems = DB.checklistClaves().length ? checklistItems : []
     renderChecklist()
@@ -106,6 +107,14 @@ const SessionForm = (() => {
     return DB.setupFamily({ setup: document.getElementById('setup')?.value || null })
   }
 
+  // Las casillas de la ETAPA del día que se edita (fase 5c): un día anterior al 24/09
+  // se corrige con sus casillas de entonces, aunque ya no estén activas; desde el
+  // 24/09, con las del plan de Chaumer. Sin etapas cargadas, las activas.
+  function itemsDelDia() {
+    const et = etapaDeFecha(document.getElementById('sesionDate')?.value)
+    return et === undefined ? checklistItems : DB.checklistDeEtapa(et)
+  }
+
   function renderChecklist() {
     const cont = document.getElementById('checklistContainer')
     if (!cont) return
@@ -117,7 +126,7 @@ const SessionForm = (() => {
     // no se pueden validar si aún no se sabe cuál se operó (antes se mostraban
     // las de TODOS los setups mezcladas).
     const fam = setupFamily()
-    const visibles = checklistItems.filter(i => !i.setup || i.setup === fam)
+    const visibles = itemsDelDia().filter(i => !i.setup || i.setup === fam)
     const byFase = { 1: [], 2: [], 3: [] }
     visibles.forEach(i => (byFase[i.fase] || byFase[1]).push(i))
     // El GO se marca UNA sola vez en todo el checklist (cae dentro de la Fase 2):
@@ -834,6 +843,7 @@ const SessionForm = (() => {
       if (date) {
         document.getElementById('sesionDate').value = date
         updateRetroceso(date)
+        renderChecklist()   // la etapa depende de la fecha, que se pone DESPUÉS del clearForm
       }
       setMode('edit') // día sin sesión: abrir editable para crear
       return
@@ -841,6 +851,7 @@ const SessionForm = (() => {
 
     editingDate = sesion.sesion_date
     document.getElementById('sesionDate').value = sesion.sesion_date
+    renderChecklist()   // las casillas de la etapa de ESTA fecha (el clearForm pintó las de la anterior)
     loadCasuisticasForDate(sesion.sesion_date)
     updateRetroceso(sesion.sesion_date)
     document.getElementById('noOpero').checked = sesion.no_opero || false

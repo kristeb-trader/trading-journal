@@ -10,6 +10,40 @@
 
 ---
 
+## D-024 — La disciplina se mide por etapas, y la etapa del plan de Chaumer empieza el 24/09
+
+**Decisión (Kris, 24/09/2026, fase 5 de la unificación Chaumer).**
+- Cada regla pertenece a una **etapa** y cada día a la que contiene su fecha. Un día cuenta las
+  reglas **de su etapa, activas o no**; `activa` solo decide qué se ve para marcar.
+- **Etapa 2 = el plan de Chaumer, desde el 24/09/2026**, con el trade de ese día como piloto.
+  Checklist **simple**, decidido línea por línea: **2 casillas** (corrida fluida en
+  Continuación; punto de referencia en Reingreso) y **7 automáticas**. El resto de la
+  checklist del plan, como guía. Las noticias se anotan como siempre.
+- El texto se edita **solo en el plan** (Cowork); el Journal lo trae con un sincronizador de un
+  solo sentido y lo enseña en Estrategia **de solo lectura**.
+
+**Motivo.**
+- La disciplina contaba las reglas activas de hoy sobre toda la historia: desactivar una regla
+  la borraba del pasado. Le pasó a `rr_1a1` (135 casillas) sin que nadie lo notara. Montar la
+  etapa nueva desactivando las 17 casillas de entonces habría borrado la historia entera.
+  Comprobado con los datos reales: con etapas, la etapa 1 sale **idéntica** (813/916 = 89 %,
+  mes a mes).
+- Kris quiere un checklist que se use de verdad: 2 casillas que miden lo que el plan dice que
+  más se falla, y lo demás comprobado por los datos, que no pueden «mentir».
+
+**Consecuencias asumidas.**
+- La disciplina de la etapa 2 es casi toda automática, y un día sin operar no tiene disciplina.
+- «1 contrato» se comprueba con `trades.qty`, que solo es fiable desde que la principal es
+  Sim101: la regularización de D-020 fue de fechas anteriores. Si se repitiera, daría falsos.
+- El 24/09 guarda también sus 17 casillas viejas, que no cuentan en ninguna etapa.
+
+**Descartado.** Una casilla por cada una de las 40 reglas (la mitad son definiciones de
+dibujo, no se «cumplen» un día); las 18 casillas de la primera propuesta (Kris: «lo vamos a
+dejar más simple»); empezar la etapa cuando NinjaTrader tuviera el checklist nuevo (Kris
+prefirió hoy, como piloto).
+
+---
+
 ## D-023 — El portal lee Supabase con un rol propio, y los gráficos van a Cloudinary
 
 **Decisión (Kris, 24/09/2026, fase 4a de la unificación Chaumer).** La bitácora de

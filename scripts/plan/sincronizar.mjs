@@ -89,6 +89,7 @@ lineas.forEach(l => {
       fase: c.fase, setup: c.setup, es_checklist: true, orden: c.orden,
       evidencia: c.tipo === 'auto' ? 'auto' : 'declarada', bloquea_go: c.bloquea_go, aplica_si: c.aplica_si,
       plan_reglas: l.reglas, origen: 'plan_linea', plan_tipo: c.tipo, plan_bloque: l.bloque, campo: c.campo || null,
+      plan_linea: l.n,
     })
   } else {
     const h = crypto.createHash('sha1').update(norma(l.texto)).digest('hex').slice(0, 8)
@@ -96,7 +97,7 @@ lineas.forEach(l => {
       codigo: `p2_g_${h}`, titulo: l.texto, enunciado: l.texto, capa: 'plan', tipo: 'blanda',
       fase: null, setup: null, es_checklist: false, orden: 100 + l.n, evidencia: null, bloquea_go: false,
       aplica_si: 'siempre', plan_reglas: l.reglas, origen: 'plan_linea', plan_tipo: 'guia',
-      plan_bloque: l.bloque, campo: null,
+      plan_bloque: l.bloque, campo: null, plan_linea: l.n,
     })
   }
 })
@@ -117,7 +118,7 @@ if (dup.length) { console.error('✘ Códigos repetidos (dos líneas con el mism
 
 // ── SQL ────────────────────────────────────────────────────────────────────
 const cols = ['codigo', 'titulo', 'enunciado', 'capa', 'tipo', 'fase', 'setup', 'es_checklist', 'orden', 'evidencia',
-  'bloquea_go', 'aplica_si', 'plan_reglas', 'origen', 'plan_tipo', 'plan_bloque', 'campo']
+  'bloquea_go', 'aplica_si', 'plan_reglas', 'origen', 'plan_tipo', 'plan_bloque', 'campo', 'plan_linea']
 const valores = filas.map(f => `  (${cols.map(k => k === 'plan_reglas' ? arr(f[k]) : q(f[k])).join(', ')}, 'vigente', true, ${ETAPA})`)
 const intocables = mapa.casillas.map(c => c.codigo).filter(c => !filas.some(f => f.codigo === c))
 

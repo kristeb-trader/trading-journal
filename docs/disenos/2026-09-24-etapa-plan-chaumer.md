@@ -1,6 +1,6 @@
 # Fase 5 — Una sola lista de reglas: la etapa del plan de Chaumer
 
-**Versión:** v2.2 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 5a y 5b cerradas; la siguiente es la 5c.
+**Versión:** v2.3 · **Estado:** ✅ **CERRADO el 24/09/2026.** Fase 5 completa (5a, 5b y 5c).
 **Escrito:** 24/09/2026. Es el sub-diseño de la fase 5 de `docs/disenos/2026-09-24-unificacion-chaumer.md`.
 
 | Versión | Fecha | Qué cambió |
@@ -9,6 +9,7 @@
 | v2 | 24/09/2026 | **Checklist simple, decidido por Kris línea por línea:** 2 casillas (corrida fluida · punto de referencia) y las 7 automáticas. Las noticias se siguen anotando como hoy. El resto de la checklist del plan, como guía |
 | v2.1 | 24/09/2026 | 5a cerrada. **Desvío de §6:** el selector de etapa va solo en Disciplina, dentro del desplegable de período; Calendario y Análisis usan la etapa del período, sin selector |
 | v2.2 | 24/09/2026 | 5b cerrada: la etapa 2 activa desde el 24/09, el plan en `catalogo_reglas` y el piloto de hoy hecho por Kris (6/6) |
+| v2.3 | 24/09/2026 | 5c cerrada: Coach y Diario por etapa de la fecha, Estrategia de solo lectura, `plan_linea`, documentos. NinjaTrader no necesitó cambios |
 
 > El diseño aprobado manda sobre la implementación. Toca invariantes del Journal (disciplina en `db.js`,
 > `sesion_checklist`, soft-delete de reglas): **no se implementa nada hasta el sí de Kris.**
@@ -268,7 +269,31 @@ Cada una se verifica por separado. Estimación en llamadas.
 - **Verificado cuando:** el Diario enseña el checklist nuevo; Kris hace el piloto; un `SELECT` confirma las
   filas y la disciplina de hoy cuadra con la cuenta a mano; **la etapa anterior sigue en su cifra**.
 
-### 5c · Coach, Estrategia, NinjaTrader y documentos (~20)
+### 5c · Coach, Estrategia, NinjaTrader y documentos (~20) ✅ CERRADA el 24/09/2026
+
+*Resultado:*
+- **Coach:** analiza cada fecha con el reglamento de su etapa. Antes del 24/09, las mismas **28** reglas
+  de siempre (17 casillas + 11 de filosofía); desde el 24/09, las **49** del plan (40 reglas + 9 del
+  checklist, sin las guías). Comprobado con un `SELECT`. El vínculo error → regla acepta los códigos de
+  cualquier etapa.
+- **Estrategia**, reescrita de solo lectura: pestaña «Plan de Chaumer» (Tu checklist · Checklist diaria en
+  el orden del documento · Reglas por categoría) y «Etapa anterior» (su checklist y la filosofía). Lo
+  único editable, el límite del stop. Sin «Nueva regla». La tarjeta de Otros cuenta las reglas del plan.
+- **Columna `plan_linea`** (migración `2026-09-24-plan-linea`): la posición de cada línea en el documento,
+  para ordenarlas en Estrategia. `orden` no servía: decide el orden del checklist, con la casilla antes del GO.
+- **Desvío, no previsto en el diseño:** el **Diario** también enseñaba las activas. Ahora pinta las casillas
+  de la **etapa del día que se edita**: corregir un día anterior al 24/09 vuelve a enseñar sus 17 de
+  entonces. Y se arregló que, al abrir un día sin sesión, el checklist se pintaba con la fecha anterior.
+- **NinjaTrader:** el indicador ya hacía lo necesario (lee las activas; salta la fase vacía; no deja marcar
+  ni exige para el GO las automáticas). **No se tocó el `.cs`: no hay que recompilar.** Falta que Kris lo
+  mire abierto.
+- Documentos: `docs/metodologia-chaumer.md` apunta al plan; `docs/Disciplina.md` gana las etapas;
+  `CLAUDE.md`; D-024.
+- **Verificado:** `node --check`; en el preview (etapas simuladas en la pestaña), el Diario cambia de
+  checklist con la fecha (20/08 viejo · 24/09 nuevo · 18/08 viejo) y Estrategia enseña sus vistas sin errores,
+  también a 375 px (las etiquetas se partían: ahora pasan enteras a la línea siguiente).
+
+*Lo que se diseñó:*
 
 - Coach por etapa de la fecha; Estrategia de solo lectura; docs e invariante.
 - NinjaTrader: Kris abre el indicador y mira si sale la lista nueva y si sigue anotando noticias. Si hay que

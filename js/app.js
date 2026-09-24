@@ -382,7 +382,7 @@ const Otros = {
     // Neutra: en Consultar ya no queda color libre que no sea el rojo, y el rojo
     // es stop/error. Entró el 24 sep (fase 4b de la unificación Chaumer).
     { id: 'backtesting',  grupo: 'Consultar',  color: '',        icon: 'ti-history',       name: 'Backtesting',       desc: 'Tu bitácora de días pasados',       unidad: 'jornadas' },
-    { id: 'estrategia',   grupo: 'Configurar', color: 'warning', icon: 'ti-book-2',        name: 'Estrategia',        desc: 'Tus reglas y setups',               unidad: 'reglas activas' },
+    { id: 'estrategia',   grupo: 'Configurar', color: 'warning', icon: 'ti-book-2',        name: 'Estrategia',        desc: 'El plan de Chaumer y tu checklist', unidad: 'reglas del plan' },
     { id: 'data',         grupo: 'Configurar', color: '',        icon: 'ti-database',      name: 'Datos',             desc: 'Cuentas, catálogos e importación',  unidad: 'ítems en catálogo' },
     { id: 'fechas',       grupo: 'Configurar', color: 'red',     icon: 'ti-calendar-star', name: 'Fechas Especiales', desc: 'Festivos, FOMC y días marcados',    unidad: 'este año' },
   ],
