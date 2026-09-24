@@ -10,6 +10,35 @@
 
 ---
 
+## D-023 — El portal lee Supabase con un rol propio, y los gráficos van a Cloudinary
+
+**Decisión (Kris, 24/09/2026, fase 4a de la unificación Chaumer).** La bitácora de
+backtesting pasa de D1/R2 a Supabase. El portal la lee **desde su servidor** con un JWT de
+rol **`portal_lector`**, que solo puede leer las vistas `portal_bt_cabecera` y
+`portal_bt_jornadas`. Los 83 gráficos van a **Cloudinary** (carpeta `backtesting/`).
+
+**Motivo.**
+- **El mínimo permiso posible.** La `service_role` abre la base entera; si se filtrara desde
+  Cloudflare, se llevaría trades, cuentas y sesiones. La llave de `portal_lector` solo lee
+  lo que el portal ya enseña sin contraseña. Comprobado: lee las dos vistas y **no** lee
+  `trades`, `bt_jornadas` ni escribe.
+- **Las vistas corren con los permisos de su dueño** (no `security_invoker`): así el rol no
+  necesita permiso sobre las tablas. Por eso se les quitan a mano los permisos por defecto
+  de `anon` y `authenticated`, que Supabase da a todo objeto nuevo de `public`: si no, la
+  clave anónima del Journal —pública en el repositorio— las leería.
+- **Cloudinary** es donde el Journal ya guarda sus gráficos, y sube desde el navegador sin
+  servidor. Las imágenes quedan públicas, como ya lo eran en el portal.
+
+**Cómo se revoca la llave** sin tocar nada más: `revoke portal_lector from authenticator`.
+Caduca a los 10 años. La firma el *Legacy JWT Secret*; si Supabase lo retira, hay que
+volver a firmarla (`chaumer/04_Web/scripts/llave-portal.mjs`).
+
+**Descartado.** `service_role` en Cloudflare (todo el poder para leer dos vistas); dar
+permiso a `anon` sobre las vistas (la lectura sería desde el navegador, y el diseño lo
+prohíbe); Supabase Storage (bucket privado = URLs firmadas y más código en el portal).
+
+---
+
 ## D-022 — El repositorio `trading-journal` es público, de momento
 
 **Decisión.** El repositorio sigue **público** en GitHub, `chaumer/` incluido, hasta que

@@ -87,9 +87,10 @@ sobre la implementación.** Ya pasó que se implementara otra cosa y hubo que re
 
 ## Datos
 
-- **Supabase** (PostgreSQL), proyecto `jothoslozctflfrnysrx`. **RLS activo en las 18
+- **Supabase** (PostgreSQL), proyecto `jothoslozctflfrnysrx`. **RLS activo en todas las
   tablas**: política `auth_all` para `authenticated`; `anon` sin políticas. Bot, Worker e
-  indicadores NT8 usan `service_role`.
+  indicadores NT8 usan `service_role`. **El portal** lee con un rol propio,
+  `portal_lector`, que solo ve las vistas `portal_*` (D-023).
 - **El esquema se consulta con `list_tables` del MCP**, no con un documento. Aquí solo va
   lo que el esquema no dice.
 - **Migraciones:** `docs/migrations/`, nombre `YYYY-MM-DD-descripcion.sql`. **Las aplica
@@ -109,6 +110,7 @@ Lo que el esquema no cuenta y hay que saber:
 | `sesion_noticias` | UNIQUE (fecha, hora): una noticia por hora. El CPI publica 4 cifras a las 7:30 pero es **un** evento con **una** ventana (±5 min sobre la entrada) |
 | `objetivos` | Fila única. `cuenta_principal` es la cuenta que alimenta P&L/Análisis/Coach; se elige en Datos y la lee el indicador NT8 al arrancar. `limite_perdida_dia` está **obsoleto** (el riesgo se mide en puntos) |
 | `chaumer_operativas` | Comparador. **Solo el lado de Chaumer**: el de Kris se LEE de `sesiones`+`trades`, nunca se copia aquí. `hora_entrada` va en **hora Colombia**, igual que `trades.entry_time`: se restan tal cual, **sin** `horaEt()` (era ET hasta el 17 sep; D-017). `puntos` en **PUNTOS**, no en dólares. El veredicto del día no se guarda: se calcula |
+| `bt_*` (cabecera, jornadas, operaciones) | La **bitácora de backtesting** (fase 4 de la unificación Chaumer): nunca se mezcla con `trades` ni `apex_trades`. `pnl` **neto y congelado** al guardar, no se recalcula; cada jornada congela instrumento, contratos, `valor_punto` y comisión; `puntos` siempre positivo (el signo lo da `resultado`); `hora` en hora Colombia; una jornada sin operaciones es un día sin entrada. `imagen` = dirección de Cloudinary. El portal la lee por `portal_bt_cabecera` / `portal_bt_jornadas` |
 | `sesiones` | `setup` (texto) y `setup_codigo` los sincroniza el trigger `fn_sync_setup_codigo`, escriba quien escriba. La columna `noticias` se retiró de la UI el 16 ago y su contenido se migró a `sesion_noticias`; **la columna sigue existiendo**. `soportes_naranja` / `resistencias_naranja` (jsonb) las escribe el **AddOn** en premercado desde el 16 ago: el bot ya NO las manda: si las mandara (en `[]`) las **borraría** por la noche, igual que pasaría con los niveles de precio |
 
 ## Lenguaje visual

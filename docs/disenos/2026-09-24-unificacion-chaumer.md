@@ -1,6 +1,6 @@
 # Unificación — el proyecto Chaumer entra en el Trading Journal
 
-**Versión:** v1.4 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1, 2 y 3 cerradas; la siguiente es la 4.
+**Versión:** v1.5 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1, 2 y 3 cerradas; la 4 se parte en 4a y 4b.
 **Escrito:** 24/09/2026, desde una sesión en `E:\Proyectos\Chaumer`. **Se ejecuta desde una sesión nueva en este proyecto.**
 
 | Versión | Fecha | Qué cambió |
@@ -10,6 +10,7 @@
 | v1.2 | 24/09/2026 | Aprobado. Fase 1 cerrada: GitHub Pages publica solo la aplicación (commit `f20786d`) |
 | v1.3 | 24/09/2026 | Revisión de la fase 3 contra el código, aprobada por Kris: `02_Assets` entra en el filtro del portal; secretos propios del portal para no pisar el del bot; tres huecos de 3.3/3.4 |
 | v1.4 | 24/09/2026 | Fase 3 cerrada. La carpeta vieja quedó en `E:\Proyectos\Otros Claude\Chaumer_ARCHIVADO`; `Trading_Plan` archivado. Hallazgo 10 y D-022: el repositorio es público |
+| v1.5 | 24/09/2026 | Revisión de la fase 4 contra el código, aprobada por Kris: recuento hecho sin Cloudflare; `valor_punto` en `bt_cabecera`; dos vistas `portal_bt_*`; la fase se parte en **4a** (datos + portal de solo lectura) y **4b** (Registrar en el Journal). Decididos: rol `portal_lector` y Cloudinary |
 
 > ✅ Este archivo se subió a GitHub **después** de cerrar la fase 1, con las direcciones del hallazgo 1 ya
 > en 404. Desde entonces `docs/` no se publica.
@@ -259,35 +260,55 @@ barra de Chaumer (`node_modules/`, `.env`, `__pycache__/`…) valen a cualquier 
 - el Journal carga igual;
 - `…/trading-journal/chaumer/CLAUDE.md` devuelve 404.
 
-### Fase 4 · El backtesting pasa a Supabase (~25, probablemente en dos sesiones)
+### Fase 4 · El backtesting pasa a Supabase (partida en 4a y 4b)
 
 Hoy la bitácora vive en la base D1 y los gráficos en el almacén R2 del portal, y el portal la escribe con la
 clave de operador. Pasa a ser del Journal. **Su diseño ya lo preveía:** SQL corriente, sin atajos de SQLite
 (`chaumer/04_Web/DISENO_BACKTESTING.md`, "Migrar a Supabase algún día").
 
-1. **Contar antes:** jornadas, operaciones e imágenes en D1 y R2, con acceso de Kris a esa cuenta de Cloudflare.
-2. **Tablas:** `bt_cabecera`, `bt_jornadas` y `bt_operaciones` a Postgres, con las convenciones del Journal:
-   - migración en `docs/migrations/`;
-   - RLS activado, política `auth_all`, permisos a `service_role`;
-   - `NOTIFY pgrst`.
-3. **Datos:** con la exportación que ya existe (`/api/backtesting/export`), copiados tal cual. El P&L se guardó
-   congelado: **no se recalcula**.
-4. **Imágenes:** a un solo almacén. Propuesto **Cloudinary**, el que ya usa el Journal. Son gráficos de
-   backtesting y Alfredo ya los ve. **A decidir en la fase.**
-5. **Registrar pasa al Journal:** una tarjeta **Backtesting** en *Otros* (la barra se queda en 6 botones), más
-   `Nav.PADRE`.
-6. **El portal pasa a solo lectura.** Su página de backtesting lee de Supabase **desde su servidor**, a través
-   de una vista `portal_backtesting`. Nunca desde el navegador.
-7. **La llave del portal, con el mínimo permiso posible:**
-   - preferido: un rol de Postgres `portal_lector` que solo puede leer las vistas `portal_*`;
-   - si el montaje de Supabase no lo permite: la `service_role` como secreto de Cloudflare, igual que la usan hoy el bot y los indicadores, y el código tocando solo esas vistas.
-   - Se decide con pruebas, no por suposición.
+**Revisión contra el código (v1.5, 24/09/2026), aprobada por Kris:**
+- **El recuento no necesitaba Cloudflare:** `/api/backtesting/export` y las imágenes son públicas. D1, el 24/09:
+  **85 jornadas** (31/07/2025 → 26/11/2025, 12 sin operación), **73 operaciones**, **P&L neto 1.233,04 USD**,
+  comisiones 74,46, **83 imágenes** (las 83 responden 200, 35 MB). Datos de inicio: 3.000 · MNQ · 1 · 1,02.
+  Lo único que no se cuenta sin acceso son objetos de R2 que ninguna jornada use: no hacen falta.
+- **El valor del punto** lo saca el portal de `reglas.json` al compilar, y el Journal no puede leerlo (GitHub
+  Pages no publica `chaumer/`). Va como **`valor_punto` en `bt_cabecera`**, sembrado con el del plan (2); cada
+  jornada lo congela, como hoy.
+- **Dos vistas, no una:** `portal_bt_jornadas` (cada jornada con sus operaciones) y `portal_bt_cabecera` (la
+  curva arranca en el valor inicial).
+- **"El portal no acepta escrituras"** vale para la bitácora. Las observaciones siguen en D1 hasta la fase 8, y
+  los enlaces a D1 y R2 se quedan hasta entonces.
+- **`imagen` guarda la dirección de Cloudinary**, no el nombre en R2. La página del portal la usa directamente.
+- **Decidido por Kris:** llave = **rol `portal_lector`**; imágenes = **Cloudinary**.
+
+**4a · Los datos a Supabase y el portal en solo lectura**
+1. **Tablas** `bt_cabecera`, `bt_jornadas` y `bt_operaciones` en Postgres, con las convenciones del Journal
+   (migración, RLS + `auth_all`, permisos a `service_role`, `NOTIFY pgrst`). Tipos `numeric`, no `real`.
+2. **Rol `portal_lector`** y las dos vistas `portal_bt_*`: solo ese rol puede leerlas; `anon` y
+   `authenticated` no.
+3. **Imágenes** a Cloudinary (carpeta `backtesting/`), con el preset que ya usa el Journal.
+4. **Datos** de la exportación, copiados tal cual. El P&L se guardó congelado: **no se recalcula**.
+5. **El portal lee de Supabase desde su servidor** (las funciones de `functions/api/backtesting/`), con un JWT
+   de rol `portal_lector` como secreto de Cloudflare (`SUPABASE_PORTAL_KEY`). Registrar, corregir, borrar,
+   subir gráficos y cambiar los datos de inicio responden **403**, y la página pierde esos botones.
+6. **Kris, a mano:** generar la llave con `node chaumer/04_Web/scripts/llave-portal.mjs` (pide el *JWT secret*
+   de Supabase sin enseñarlo, firma, prueba y escribe `.dev.vars`) y pegarla como secreto en Cloudflare
+   Pages **antes** del push que cambia el portal.
+- **Mientras llega la 4b no se puede registrar backtesting.** Aceptado por Kris.
+
+**4b · Registrar pasa al Journal**
+- Una tarjeta **Backtesting** en *Otros* (la barra se queda en 6 botones), más `Nav.PADRE` y `sw.js`.
+- Hace las cinco cosas que hacía el portal: registrar, corregir, borrar, subir el gráfico y cambiar los datos
+  de inicio. Una lista de jornadas y un formulario; la curva, las cifras y la tabla por meses se quedan en el
+  portal.
+- El P&L se calcula al guardar, con la misma aritmética que `_comun.js` del portal.
 
 **Verificado cuando:**
-- las cuentas de filas y la **suma del P&L** coinciden entre D1 y Supabase, comprobado con una consulta;
-- el portal enseña la bitácora igual que antes;
-- el Journal registra un día de prueba y el portal lo ve;
-- el portal ya no acepta escrituras.
+- las cuentas de filas y la **suma del P&L** coinciden entre D1 y Supabase, comprobado con una consulta; *(4a)*
+- `portal_lector` lee las dos vistas y nada más; *(4a)*
+- el portal enseña la bitácora igual que antes; *(4a)*
+- el portal ya no acepta escrituras de la bitácora; *(4a)*
+- el Journal registra un día de prueba y el portal lo ve. *(4b)*
 
 ### Fase 5 · Una sola lista de reglas: la etapa nueva (sub-diseño propio, ~25)
 
@@ -386,8 +407,8 @@ cadena de la fase 7.
 
 | # | Qué | Fase |
 |---|---|---|
-| 1 | Dónde van las imágenes: Cloudinary o Supabase Storage | 4 |
-| 2 | La llave del portal: rol propio o `service_role` | 4 |
+| 1 | ~~Dónde van las imágenes~~ → **Cloudinary** (Kris, 24/09) | 4 |
+| 2 | ~~La llave del portal~~ → **rol `portal_lector`** (Kris, 24/09) | 4 |
 | 3 | Qué reglas son casilla, cuáles bloquean y cuándo aplican | 5 |
 | 4 | La fecha de inicio exacta de la etapa nueva | 5 |
 | 5 | Modelo y esfuerzo del coach con el plan completo | 6 |

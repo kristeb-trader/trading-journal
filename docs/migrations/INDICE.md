@@ -96,6 +96,8 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-09-18-cuenta-unica-en-trades.sql` | ✅ MCP | `trades` pasa a una sola cuenta (`Sim101`), la real queda en `cuenta_origen`; las 98 filas de cuentas Apex se copian a `apex_trades` |
 | `2026-09-19-regularizar-trades-a-160.sql` | ✅ MCP | los 20 trades que pasaban de ±$160 por tamaño bajan de contratos hasta entrar en rango; respaldo en `_bak_20260919_trades_regularizacion` |
 | `2026-09-19-nq-a-mnq-en-el-journal.sql` | ✅ MCP | el único trade en NQ del journal (24-jun) pasa a MNQ respetando los −32,5 puntos: −$653,80 → −$66,30. `apex_trades` no se toca |
+| `2026-09-24-backtesting-tablas.sql` | ✅ MCP | tablas `bt_cabecera`, `bt_jornadas`, `bt_operaciones` (la bitácora de backtesting, antes en D1 del portal), rol `portal_lector` y vistas `portal_bt_*` que solo él lee |
+| `2026-09-24-backtesting-datos-desde-d1.sql` | ✅ MCP | las 85 jornadas y 73 operaciones de D1, tal cual (P&L 1.233,04 sin recalcular); `imagen` apunta a Cloudinary |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.

@@ -8,7 +8,7 @@
 
 ### 🟢 Unificación Chaumer → Journal (24 sep)
 
-Diseño aprobado: `docs/disenos/2026-09-24-unificacion-chaumer.md` (v1.2). **Una fase por
+Diseño aprobado: `docs/disenos/2026-09-24-unificacion-chaumer.md` (v1.5). **Una fase por
 sesión**, con `/clear` entre una y otra.
 
 - [x] **Fase 1** — GitHub Pages publica solo la aplicación (`publicar-journal.yml`).
@@ -17,8 +17,16 @@ sesión**, con `/clear` entre una y otra.
 - [x] **Fase 3** — Chaumer traído con su historia a `chaumer/` (`git subtree`). El portal se
   publica solo desde el Journal (56 páginas idénticas). La carpeta vieja está en
   `E:\Proyectos\Otros Claude\Chaumer_ARCHIVADO` y `Trading_Plan`, archivado
-- [ ] **Fase 4** — La bitácora de backtesting pasa de D1/R2 a Supabase. Probablemente dos
-  sesiones. Lo primero: ver qué devuelve `/api/backtesting/export`
+- [ ] **Fase 4a** — La bitácora, a Supabase, y el portal, en solo lectura. **Hecho:** tablas
+  `bt_*`, rol `portal_lector` y vistas `portal_bt_*`; los datos copiados (85 jornadas, 73
+  operaciones, P&L 1.233,04, huella idéntica a D1); los 83 gráficos en Cloudinary (idénticos
+  byte a byte); el portal reescrito para leer de Supabase (commit local, **sin subir**).
+  **Falta:** Kris genera la llave (`node scripts/llave-portal.mjs` en `chaumer/04_Web`) y la
+  pega en Cloudflare; después, prueba en local, push y verificación del portal publicado.
+  ⚠️ **No subir nada de `chaumer/04_Web` antes de que el secreto esté en Cloudflare**: el
+  push publica el portal y, sin la llave, `/backtesting` se queda sin datos
+- [ ] **Fase 4b** — Registrar backtesting desde el Journal (tarjeta en *Otros*). Hasta
+  entonces no se puede registrar
 - [ ] **Repositorio público de momento (D-022).** Cuando haya presupuesto: GitHub Pro y
   pasarlo a privado, u otra solución. Aparte: proteger el portal (Cloudflare Access) y ver
   qué devuelve `/api/backtesting/export`, que responde 200 sin sesión
