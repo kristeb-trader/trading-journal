@@ -16,10 +16,11 @@
 # cambio del Journal no vuelve a publicar el portal.
 #
 # Requiere dos secretos en el repositorio (Settings → Secrets → Actions), de la
-# cuenta de Cloudflare donde vive el portal:
+# cuenta de Cloudflare donde vive el portal (la misma que el bot, 03b9d27f…):
 #   PORTAL_CLOUDFLARE_API_TOKEN    token con permiso «Cloudflare Pages: Edit»
 #   PORTAL_CLOUDFLARE_ACCOUNT_ID   el identificador de esa cuenta
-# NO son CLOUDFLARE_API_TOKEN: ese es el del bot (deploy-bot.yml), de otra cuenta.
+# NO son CLOUDFLARE_API_TOKEN: ese es el del bot (deploy-bot.yml), solo con permiso de
+# Workers. Un token por web: cambiar o borrar uno no rompe la otra.
 # Diseño: docs/disenos/2026-09-24-unificacion-chaumer.md, fase 3.2.
 name: Publicar el portal
 

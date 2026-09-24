@@ -172,8 +172,11 @@ Estimación en llamadas a herramientas. Si una fase pasa de ~25, se avisa y se o
     ella, un diagrama que cambia solo no se publicaría.
 - **Kris, a mano:** poner en el repositorio del Journal los secretos **`PORTAL_CLOUDFLARE_ACCOUNT_ID`** y
   **`PORTAL_CLOUDFLARE_API_TOKEN`** (permiso **Cloudflare Pages: Edit**), de la cuenta donde vive el portal.
-  - *(v1.3)* **Nombres propios, no `CLOUDFLARE_API_TOKEN`:** ese ya es el del bot (`deploy-bot.yml`, cuenta
-    `03b9d27f…`), y el portal vive en otra cuenta (hallazgo 8). Reutilizar el nombre rompería uno de los dos.
+  - *(v1.3)* **Nombres propios, no `CLOUDFLARE_API_TOKEN`:** ese ya es el del bot (`deploy-bot.yml`), solo con
+    permiso de Workers. Un token por web: cambiar o borrar uno no rompe la otra.
+  - *(corregido el 24/09)* La v1.3 decía que el portal vivía en otra cuenta. **No:** es la misma que el bot,
+    `03b9d27f…` (se ve en la dirección del panel de Cloudflare). El error 7403 del hallazgo 8 era de
+    permisos de este PC, no de otra cuenta.
 - `chaumer/.github/` se retira. GitHub solo lee los workflows de la raíz.
 
 **3.3 · Lo que no viaja con git y se copia a mano** (de `E:\Proyectos\Chaumer` a `chaumer/`):
