@@ -17,16 +17,14 @@ sesión**, con `/clear` entre una y otra.
 - [x] **Fase 3** — Chaumer traído con su historia a `chaumer/` (`git subtree`). El portal se
   publica solo desde el Journal (56 páginas idénticas). La carpeta vieja está en
   `E:\Proyectos\Otros Claude\Chaumer_ARCHIVADO` y `Trading_Plan`, archivado
-- [ ] **Fase 4a** — La bitácora, a Supabase, y el portal, en solo lectura. **Hecho:** tablas
-  `bt_*`, rol `portal_lector` y vistas `portal_bt_*`; los datos copiados (85 jornadas, 73
-  operaciones, P&L 1.233,04, huella idéntica a D1); los 83 gráficos en Cloudinary (idénticos
-  byte a byte); el portal reescrito para leer de Supabase (commit local, **sin subir**).
-  **Falta:** Kris genera la llave (`node scripts/llave-portal.mjs` en `chaumer/04_Web`) y la
-  pega en Cloudflare; después, prueba en local, push y verificación del portal publicado.
-  ⚠️ **No subir nada de `chaumer/04_Web` antes de que el secreto esté en Cloudflare**: el
-  push publica el portal y, sin la llave, `/backtesting` se queda sin datos
-- [ ] **Fase 4b** — Registrar backtesting desde el Journal (tarjeta en *Otros*). Hasta
-  entonces no se puede registrar
+- [x] **Fase 4a** — La bitácora, en Supabase (85 jornadas, 73 operaciones, P&L 1.233,04,
+  idénticas a D1) y los gráficos en Cloudinary. El portal la lee con la llave de
+  `portal_lector` (secreto `SUPABASE_PORTAL_KEY` en Cloudflare) y ya no acepta escrituras.
+  Verificado en vivo (24 sep)
+- [ ] **Fase 4b** — Registrar backtesting desde el Journal (tarjeta en *Otros*). **Hasta
+  entonces no se puede registrar backtesting en ningún sitio**
+- [ ] Aparte, vistos en la 4a: activar RLS (o borrar) `_bak_20260919_trades_regularizacion`;
+  la copia local de D1 del portal no tiene la tabla `observaciones`
 - [ ] **Repositorio público de momento (D-022).** Cuando haya presupuesto: GitHub Pro y
   pasarlo a privado, u otra solución. Aparte: proteger el portal (Cloudflare Access) y ver
   qué devuelve `/api/backtesting/export`, que responde 200 sin sesión

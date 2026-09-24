@@ -1,6 +1,6 @@
 # Unificación — el proyecto Chaumer entra en el Trading Journal
 
-**Versión:** v1.5 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1, 2 y 3 cerradas; la 4 se parte en 4a y 4b.
+**Versión:** v1.6 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1, 2, 3 y 4a cerradas; la siguiente es la 4b.
 **Escrito:** 24/09/2026, desde una sesión en `E:\Proyectos\Chaumer`. **Se ejecuta desde una sesión nueva en este proyecto.**
 
 | Versión | Fecha | Qué cambió |
@@ -11,6 +11,7 @@
 | v1.3 | 24/09/2026 | Revisión de la fase 3 contra el código, aprobada por Kris: `02_Assets` entra en el filtro del portal; secretos propios del portal para no pisar el del bot; tres huecos de 3.3/3.4 |
 | v1.4 | 24/09/2026 | Fase 3 cerrada. La carpeta vieja quedó en `E:\Proyectos\Otros Claude\Chaumer_ARCHIVADO`; `Trading_Plan` archivado. Hallazgo 10 y D-022: el repositorio es público |
 | v1.5 | 24/09/2026 | Revisión de la fase 4 contra el código, aprobada por Kris: recuento hecho sin Cloudflare; `valor_punto` en `bt_cabecera`; dos vistas `portal_bt_*`; la fase se parte en **4a** (datos + portal de solo lectura) y **4b** (Registrar en el Journal). Decididos: rol `portal_lector` y Cloudinary |
+| v1.6 | 24/09/2026 | Fase 4a cerrada: la bitácora en Supabase, el portal la lee con `portal_lector` y ya no acepta escrituras |
 
 > ✅ Este archivo se subió a GitHub **después** de cerrar la fase 1, con las direcciones del hallazgo 1 ya
 > en 404. Desde entonces `docs/` no se publica.
@@ -281,7 +282,33 @@ clave de operador. Pasa a ser del Journal. **Su diseño ya lo preveía:** SQL co
 - **`imagen` guarda la dirección de Cloudinary**, no el nombre en R2. La página del portal la usa directamente.
 - **Decidido por Kris:** llave = **rol `portal_lector`**; imágenes = **Cloudinary**.
 
-**4a · Los datos a Supabase y el portal en solo lectura**
+**4a · Los datos a Supabase y el portal en solo lectura** ✅ CERRADA el 24/09/2026
+
+*Resultado:*
+- Migraciones `2026-09-24-backtesting-tablas` y `2026-09-24-backtesting-datos-desde-d1` (commit `06db530`).
+  En Supabase: **85 jornadas, 73 operaciones, P&L 1.233,04, comisiones 74,46**, igual que D1. Una huella del
+  contenido completo (cada campo de cada fila) da **lo mismo** en Supabase y en la exportación de D1.
+- Los 83 gráficos en Cloudinary (`backtesting/`), **idénticos byte a byte** a los de R2.
+- `portal_lector`, probado en la base y por la API: lee las dos vistas; **no** lee `trades`, `sesiones` ni
+  `bt_jornadas`, y no escribe. `anon` y `authenticated` no ven las vistas.
+- El portal (commits `59948fc`…`1918a4f`, publicado solo por Actions): **`/api/backtesting/export` en vivo coincide
+  campo a campo con la de D1**; la página enseña las mismas cifras (saldo 4.233,04, efectividad 64,38 %, caída
+  −265,62), 90 filas, 83 gráficos sin ninguno roto, sin botones de escribir y sin errores en la consola. POST,
+  PUT y DELETE de la bitácora, de los datos de inicio y de los gráficos responden **405**. Las observaciones
+  siguen respondiendo 200.
+- **Desvíos:**
+  - el proyecto de Supabase ya firma con una clave ECC; el *Legacy JWT Secret* quedó como clave anterior y
+    **se sigue aceptando**. Con él se firmó la llave. **No se revoca**: de él dependen también la clave anónima
+    del Journal, el bot y NinjaTrader;
+  - pegar el secreto en la terminal lo corrompía. `llave-portal.mjs` lo lee del portapapeles
+    (`Get-Clipboard | node scripts/llave-portal.mjs`) y lo comprueba contra la clave anónima antes de usarlo;
+  - una ruta comodín `[[resto]]` tapaba la lectura de `index.js`. Se vio en la prueba local, antes de publicar;
+    se cambió por rutas de un solo tramo.
+- **Visto de paso, sin tocar:** la copia local de D1 (`04_Web/.wrangler/`) no tiene la tabla `observaciones`
+  (en local, `/api/observaciones` da 500; en producción, 200). Y el aviso de Supabase de que
+  `_bak_20260919_trades_regularizacion` no tiene RLS (`anon` no puede leerla).
+
+*Lo que se diseñó:*
 1. **Tablas** `bt_cabecera`, `bt_jornadas` y `bt_operaciones` en Postgres, con las convenciones del Journal
    (migración, RLS + `auth_all`, permisos a `service_role`, `NOTIFY pgrst`). Tipos `numeric`, no `real`.
 2. **Rol `portal_lector`** y las dos vistas `portal_bt_*`: solo ese rol puede leerlas; `anon` y
