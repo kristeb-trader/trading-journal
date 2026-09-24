@@ -8,6 +8,8 @@ name: Publicar Journal
 # Requiere en GitHub → Settings → Pages → Source: "GitHub Actions".
 # Y el repositorio PÚBLICO: con la cuenta gratuita, Pages no publica repositorios
 # privados. El 24/09/2026 se probó privado y el Journal cayó entero (D-022).
+# Pasar a privado DESACTIVA Pages: al volver a público hay que reactivarlo (Source:
+# "GitHub Actions") y relanzar este workflow; si no, configure-pages falla.
 # Diseño: docs/disenos/2026-09-24-unificacion-chaumer.md, fase 1.
 
 on:
