@@ -76,17 +76,31 @@ const Disciplina = (() => {
   }
   function evidenciaAuto(f, s) {
     const trs = (ctx.tradesPorDia && ctx.tradesPorDia.get(s.sesion_date)) || []
-    if (f.key === 'stop_max_puntos') {
+    const key = AUTO_ALIAS[f.key] || f.key
+    if (key === 'p2_una_operacion') return `<b>${trs.length} operaciones</b> ese día. El plan permite una por sesión.`
+    if (key === 'p2_instrumento') {
+      const otros = [...new Set(trs.map(t => t.instrument).filter(i => !/^MNQ\b/i.test(String(i || ''))))]
+      return `Operado en <b>${esc(otros.join(', ') || 'otro instrumento')}</b>. El plan opera solo MNQ.`
+    }
+    if (key === 'p2_un_contrato') {
+      const q = [...new Set(trs.map(t => Number(t.qty)).filter(n => n !== 1))]
+      return `Operado con <b>${q.join(', ')} contratos</b>. El plan opera siempre 1.`
+    }
+    if (key === 'p2_ventana_horaria') {
+      const fuera = trs.map(t => horaEt(t.entry_time, s.sesion_date)).filter(h => h && (h < VENTANA_ET.desde || h >= VENTANA_ET.hasta))
+      return `Entrada a las <b>${esc(fuera.join(', '))} ET</b>, fuera de la ventana ${VENTANA_ET.desde}–${VENTANA_ET.hasta} ET.`
+    }
+    if (key === 'stop_max_puntos') {
       const pts = trs.map(maeEnPuntos).filter(p => p != null)
       if (!pts.length) return 'Verificado por dato.'
       return `El peor movimiento en contra fue de <b>${Math.max(...pts).toFixed(1)} pts</b>, por encima del stop máximo de ${ctx.stopMaxPuntos} pts.`
     }
-    if (f.key === 'chk_noticias') {
+    if (key === 'chk_noticias') {
       const en = tradesEnVentanaNoticia(trs, s)
       if (!en.length) return 'Verificado por dato.'
       return `${en.length} entrada${en.length !== 1 ? 's' : ''} dentro de la ventana ±5 min de la noticia roja de las <b>${esc(String(s.hora_noticia_roja).slice(0,5))}</b>.`
     }
-    if (f.key === 'fomc_solo_reingreso') {
+    if (key === 'fomc_solo_reingreso') {
       return `Día FOMC operado con <b>${esc(s.setup || 'setup sin declarar')}</b>. En día FOMC solo se permiten reingresos.`
     }
     return 'El dato del día resolvió la regla en contra.'

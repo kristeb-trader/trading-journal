@@ -1,0 +1,21 @@
+{
+  "_leeme": [
+    "Qué líneas de la checklist diaria del plan (chaumer/01_Plan/CHECKLIST_DIARIA.md) son casilla o automática en el Journal.",
+    "Lo decidió Kris el 24/09/2026 (docs/disenos/2026-09-24-etapa-plan-chaumer.md §4). Toda línea que no esté aquí es GUÍA.",
+    "`linea` es un fragmento literal de la línea del plan: identifica la línea aunque cambie el resto. Si Cowork lo cambia, sincronizar.mjs avisa y no toca esa casilla.",
+    "`regla` en vez de `linea`: automática que sale de una regla de reglas.json, no de una línea de la checklist.",
+    "El texto que se guarda es siempre el del plan, nunca el de este archivo."
+  ],
+  "casillas": [
+    { "codigo": "p2_corrida_fluida",   "linea": "Tres cosas seguidas",                       "tipo": "casilla", "fase": 2, "setup": "continuacion", "bloquea_go": true,  "aplica_si": "siempre",     "orden": 1 },
+    { "codigo": "p2_punto_referencia", "linea": "punto de referencia vivo más cercano",      "tipo": "casilla", "fase": 2, "setup": "reingreso",    "bloquea_go": true,  "aplica_si": "siempre",     "orden": 2 },
+
+    { "codigo": "p2_stop_max",          "linea": "Stop ≤ 80 puntos",                          "tipo": "auto", "fase": 2, "setup": null, "bloquea_go": false, "aplica_si": "siempre",     "orden": 3, "campo": "trades.mae / ($punto x contratos)" },
+    { "codigo": "p2_fomc_continuacion", "linea": "Es día de FOMC y el setup es una Continuación", "tipo": "auto", "fase": 2, "setup": null, "bloquea_go": false, "aplica_si": "dia_fomc", "orden": 4, "campo": "catalogo_fechas.tipo=fomc + familia del setup" },
+    { "codigo": "p2_noticia",           "linea": "Estoy dentro de una ventana de noticia",    "tipo": "auto", "fase": 3, "setup": null, "bloquea_go": false, "aplica_si": "hay_noticia", "orden": 1, "campo": "trades.entry_time vs sesion_noticias.hora ±5min" },
+    { "codigo": "p2_instrumento",       "linea": "La orden se envía sobre el gráfico de MNQ", "tipo": "auto", "fase": 3, "setup": null, "bloquea_go": false, "aplica_si": "siempre",     "orden": 2, "campo": "trades.instrument empieza por MNQ" },
+    { "codigo": "p2_una_operacion",     "linea": "Cupo consumido",                            "tipo": "auto", "fase": 3, "setup": null, "bloquea_go": false, "aplica_si": "siempre",     "orden": 3, "campo": "trades del día ≤ 1" },
+    { "codigo": "p2_un_contrato",       "regla": "R-04",                                      "tipo": "auto", "fase": 3, "setup": null, "bloquea_go": false, "aplica_si": "siempre",     "orden": 4, "campo": "trades.qty = 1" },
+    { "codigo": "p2_ventana_horaria",   "regla": "R-02",                                      "tipo": "auto", "fase": 3, "setup": null, "bloquea_go": false, "aplica_si": "siempre",     "orden": 5, "campo": "trades.entry_time (Colombia) → ET entre 09:30 y 11:30" }
+  ]
+}

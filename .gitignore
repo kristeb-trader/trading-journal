@@ -70,3 +70,6 @@ chaumer/**/.agents/
 chaumer/**/.agent/
 chaumer/**/skills-lock.json
 chaumer/**/.impeccable/
+
+# Salida del sincronizador del plan: se guarda como migración, no suelta
+scripts/plan/salida.sql

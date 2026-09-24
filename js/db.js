@@ -322,9 +322,43 @@ function maeEnPuntos(t) {
   return Math.abs(parseFloat(t.mae) || 0) / (_usdPorPunto(t) * qty)
 }
 
+// Las automáticas de la etapa del plan (fase 5b) que miden LO MISMO que una de la
+// etapa anterior reutilizan su cálculo tal cual: mismo código, misma respuesta.
+const AUTO_ALIAS = {
+  p2_stop_max: 'stop_max_puntos',
+  p2_fomc_continuacion: 'fomc_solo_reingreso',
+  p2_noticia: 'chk_noticias',
+}
+// Ventana operativa del plan (R-02): 09:30–11:30 ET, los 120 minutos tras la apertura.
+const VENTANA_ET = { desde: '09:30', hasta: '11:30' }
+
 function reglaAutoResultado(codigo, s, opts) {
   const o = opts || {}
   const trades = (o.tradesPorDia && o.tradesPorDia.get(s.sesion_date)) || []
+  codigo = AUTO_ALIAS[codigo] || codigo
+
+  // ── Etapa del plan de Chaumer: cuatro que solo existen en ella ──
+  // Sin trade no hay nada que comprobar: null (no cuenta), como las demás.
+  if (codigo === 'p2_una_operacion') {           // R-28 · como máximo una operación
+    if (!trades.length) return null
+    return trades.length <= 1
+  }
+  if (codigo === 'p2_instrumento') {             // R-01 · todo sobre MNQ
+    if (!trades.length) return null
+    return trades.every(t => /^MNQ\b/i.test(String(t.instrument || '')))
+  }
+  if (codigo === 'p2_un_contrato') {             // R-04 · siempre 1 contrato
+    // `qty` es real desde que la principal es Sim101; lo anterior está regularizado
+    // (D-020) y no se evalúa: esta regla solo vive en la etapa nueva.
+    if (!trades.length) return null
+    return trades.every(t => Number(t.qty) === 1)
+  }
+  if (codigo === 'p2_ventana_horaria') {         // R-02 · entrada entre 09:30 y 11:30 ET
+    // entry_time está en hora de COLOMBIA: se convierte a ET antes de comparar.
+    const et = trades.map(t => horaEt(t.entry_time, s.sesion_date)).filter(Boolean)
+    if (!et.length) return null
+    return et.every(h => h >= VENTANA_ET.desde && h < VENTANA_ET.hasta)
+  }
 
   if (codigo === 'stop_max_puntos') {
     const lim = o.stopMaxPuntos || 80
