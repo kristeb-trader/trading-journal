@@ -27,8 +27,10 @@ sesión**, con `/clear` entre una y otra.
 - [x] **Fase 5a** — Etapas de la disciplina: cada regla es de una etapa y cuenta aunque se
   desactive. La disciplina histórica, **idéntica** (813/916 = 89 %, mes a mes), comprobado con
   los datos reales. Diseño: `docs/disenos/2026-09-24-etapa-plan-chaumer.md` (v2.1)
-- [ ] **Fase 5b** — Las reglas del plan en el Journal, las 4 automáticas nuevas, la etapa 2
-  desde el 24/09 y el piloto de hoy (Kris marca su casilla en el Diario)
+- [x] **Fase 5b** — Etapa 2 (Plan de Chaumer) activa desde el 24/09: 2 casillas + 7
+  automáticas; el plan entero en `catalogo_reglas`. Piloto hecho por Kris: 6/6
+- [ ] **Cuando Cowork cambie la checklist o las reglas del plan:** `node scripts/plan/sincronizar.mjs`
+  y aplicar el SQL por el MCP (lo hace Claude)
 - [ ] **Fase 5c** — Coach, Estrategia, NinjaTrader y documentos
 - [ ] Aparte, vistos en la 4a: activar RLS (o borrar) `_bak_20260919_trades_regularizacion`;
   la copia local de D1 del portal no tiene la tabla `observaciones`

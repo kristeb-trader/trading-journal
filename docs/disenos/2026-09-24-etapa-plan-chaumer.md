@@ -1,6 +1,6 @@
 # Fase 5 — Una sola lista de reglas: la etapa del plan de Chaumer
 
-**Versión:** v2.1 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 5a cerrada; la siguiente es la 5b.
+**Versión:** v2.2 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 5a y 5b cerradas; la siguiente es la 5c.
 **Escrito:** 24/09/2026. Es el sub-diseño de la fase 5 de `docs/disenos/2026-09-24-unificacion-chaumer.md`.
 
 | Versión | Fecha | Qué cambió |
@@ -8,6 +8,7 @@
 | v1 | 24/09/2026 | Primera versión, tras el diagnóstico y las dos decisiones de Kris |
 | v2 | 24/09/2026 | **Checklist simple, decidido por Kris línea por línea:** 2 casillas (corrida fluida · punto de referencia) y las 7 automáticas. Las noticias se siguen anotando como hoy. El resto de la checklist del plan, como guía |
 | v2.1 | 24/09/2026 | 5a cerrada. **Desvío de §6:** el selector de etapa va solo en Disciplina, dentro del desplegable de período; Calendario y Análisis usan la etapa del período, sin selector |
+| v2.2 | 24/09/2026 | 5b cerrada: la etapa 2 activa desde el 24/09, el plan en `catalogo_reglas` y el piloto de hoy hecho por Kris (6/6) |
 
 > El diseño aprobado manda sobre la implementación. Toca invariantes del Journal (disciplina en `db.js`,
 > `sesion_checklist`, soft-delete de reglas): **no se implementa nada hasta el sí de Kris.**
@@ -229,7 +230,37 @@ Cada una se verifica por separado. Estimación en llamadas.
   (card, dashboard, Análisis); un `SELECT` confirma que las 17 tienen `etapa = 1` y las 2 inactivas `NULL`;
   consola limpia; móvil. **Kris no nota nada.**
 
-### 5b · Las reglas del plan y la etapa nueva (~25)
+### 5b · Las reglas del plan y la etapa nueva (~25) ✅ CERRADA el 24/09/2026
+
+*Resultado:*
+- `scripts/plan/mapa-casillas.json` (las 9 decisiones de Kris) y `scripts/plan/sincronizar.mjs`: casa el mapa
+  con el plan y genera el SQL. Primera sincronización: **40 reglas + 48 líneas (2 casillas, 5 automáticas,
+  41 guía) + 2 automáticas de regla = 90 filas**, todo el mapa casado.
+- `db.js`: `AUTO_ALIAS` (stop, FOMC y noticia reutilizan su cálculo de siempre) y las 4 automáticas nuevas
+  (`p2_una_operacion`, `p2_instrumento`, `p2_un_contrato`, `p2_ventana_horaria`, esta con `horaEt()`). El
+  Dashboard explica cada una cuando falla.
+- Migración `2026-09-24-etapa-plan-chaumer`: `plan_bloque`; etapa 1 hasta el 23/09 y etapa 2 desde el 24/09;
+  las 90 filas; las 17 casillas viejas a `activa = false`. **Orden:** primero se publicó el código y después
+  se aplicó la migración, para que la app nunca viera reglas que no sabía calcular.
+- **Verificado:**
+  - `SELECT`: 2 etapas con sus fechas; visibles para marcar, exactamente las 9 de la etapa 2; las 17 viejas
+    en la etapa 1 e inactivas;
+  - con los datos reales y el `db.js` nuevo: la etapa 1 da **806/909** (la de siempre sin el 24/09), agosto
+    sigue en 115/119; la ventana horaria acierta en verano (10:31 Col = 11:31 ET → fuera) y en invierno
+    (09:35 Col = 09:35 ET → dentro);
+  - el Diario en el preview: sin fase 1, la casilla «¿La corrida es FLUIDA?» en la fase 2 al elegir
+    Continuación, y el separador del GO debajo;
+  - **el piloto:** Kris marcó la casilla en el Diario (18:16). En la base, `p2_corrida_fluida = true` en la
+    etapa 2, y las 17 filas viejas del día intactas. Hoy: casilla ✔ · stop 27,25 pts ✔ · MNQ ✔ · una
+    operación ✔ · 1 contrato ✔ · entrada 08:47 Col = 09:47 ET ✔ → **6/6, 100 %**. Noticia y FOMC no
+    aplican (no hubo).
+- **Desvíos:**
+  - dos líneas de guía acababan en «— —» (la columna «Si falla» del plan con un guion): el sincronizador ya
+    descarta esas celdas;
+  - al aplicar la primera vez se omitió el `update … not in (…)` de la etapa 2, porque no había nada que
+    desactivar. El archivo lo conserva para las sincronizaciones siguientes.
+
+*Lo que se diseñó:*
 
 - `mapa-casillas.json` + `sincronizar.mjs`; aplicar: 40 reglas + 48 líneas + 2 automáticas de regla.
 - Las 4 automáticas nuevas en `reglaAutoResultado`.
