@@ -190,7 +190,7 @@ Estimación en llamadas a herramientas. Si una fase pasa de ~25, se avisa y se o
   - ✅ `Trading_Plan` archivado en GitHub: un push responde *"This repository was archived so it is
     read-only"*, y su `main` sigue en `8983073`, el commit traído a `chaumer/`.
 - **El test ciego no cambia:** su protocolo usa rutas relativas. Solo cambia dónde se guardan las velas del
-  día (`chaumer_Backtesting\datos\dia\`) y que el gráfico llega al portal con un commit en el Journal.
+  día (`chaumer\05_Backtesting\datos\dia\`) y que el gráfico llega al portal con un commit en el Journal.
 
 **Lo que se diseñó:**
 
