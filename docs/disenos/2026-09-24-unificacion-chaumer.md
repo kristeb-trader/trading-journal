@@ -135,7 +135,7 @@ Estimación en llamadas a herramientas. Si una fase pasa de ~25, se avisa y se o
     recursos propios de `APP_SHELL`, sin que falte ninguno.
 - **Desvío menor, anterior a esta fase:** `APP_SHELL` no lista `js/chaumer.js`, aunque `index.html` lo carga.
   Se publica igual, pero no está en caché en la primera visita sin conexión. Queda como tarea aparte.
-- ⬜ **Falta que Kris lo confirme en el móvil instalado.** No se puede probar desde aquí.
+- ✅ **Kris lo confirmó en el móvil instalado** (24/09): carga bien.
 
 **Lo que se diseñó:**
 

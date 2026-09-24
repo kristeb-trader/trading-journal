@@ -12,13 +12,10 @@ Diseño aprobado: `docs/disenos/2026-09-24-unificacion-chaumer.md` (v1.2). **Una
 sesión**, con `/clear` entre una y otra.
 
 - [x] **Fase 1** — GitHub Pages publica solo la aplicación (`publicar-journal.yml`).
-  `CLAUDE.md`, `docs/` y `NinjaTrader/` ya dan 404
+  `CLAUDE.md`, `docs/` y `NinjaTrader/` ya dan 404. Kris la confirmó en el móvil (24 sep)
 - [x] **Fase 2** — Lo pendiente de Cowork, guardado en `Trading_Plan` (`8983073`)
 - [ ] **Fase 3** — Traer Chaumer con su historia a `chaumer/` (`git subtree`)
 - [ ] Fases 4–8 — backtesting a Supabase, reglas por etapa, coach, cadena diaria, apagar D1/R2
-
-> ⬜ **Le toca a Kris:** abrir la **app instalada en el móvil** y confirmar que carga igual.
-> Es lo único de la fase 1 que no se pudo comprobar desde aquí.
 
 > ℹ️ **Un archivo nuevo que necesite la app** (fuera de `js/`, `css/` o `icons/`) hay que
 > añadirlo al `cp` de `.github/workflows/publicar-journal.yml`. Si no, dará 404 en producción.
