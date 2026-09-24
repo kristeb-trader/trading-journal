@@ -1,0 +1,4 @@
+# chaumer/ sale de git con LF, como estaba en E:\Proyectos\Chaumer (Cowork escribe
+# LF). Con la conversion a CRLF de Windows, la huella de cada diagrama del portal
+# cambiaba y la compilacion los volvia a dibujar. text=auto deja en paz los binarios.
+chaumer/** text=auto eol=lf
