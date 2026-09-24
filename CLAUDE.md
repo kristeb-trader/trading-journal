@@ -138,7 +138,9 @@ Lo que el esquema no cuenta y hay que saber:
 
 - Producción: `https://kristeb-trader.github.io/trading-journal`
 - Supabase: `https://jothoslozctflfrnysrx.supabase.co`
-- Repo: `https://github.com/kristeb-trader/trading-journal` (privado, `main`)
+- Repo: `https://github.com/kristeb-trader/trading-journal` (**público**, `main`). Lo que se
+  sube lo puede leer cualquiera, `chaumer/` incluido: nunca claves en el código. Motivo y
+  qué queda a la vista: D-022
 
 ## Mapa del código
 
@@ -182,7 +184,8 @@ motor de backtesting—, traído con su historia el 24 sep (`git subtree`; antes
   `.github/workflows/publicar-portal.yml`, que usa secretos **propios**
   (`PORTAL_CLOUDFLARE_*`), no el `CLOUDFLARE_API_TOKEN` del bot.
 - **Alfredo ve el portal y nada más.** Nada del Journal (cuentas, P&L, Apex, sesiones,
-  disciplina, coach) llega al portal. GitHub Pages no publica `chaumer/` (fase 1).
+  disciplina, coach) llega al portal. GitHub Pages no publica `chaumer/` (fase 1), **pero el
+  repositorio es público** (D-022): lo que hay en `chaumer/` se puede leer en GitHub.
 - Lo pesado y lo de terceros (velas, vídeos, gráficos del backtesting) está en disco y
   **fuera de git**: ver el bloque `chaumer/` del `.gitignore`.
 

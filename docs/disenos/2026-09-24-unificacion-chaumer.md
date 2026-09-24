@@ -93,6 +93,7 @@ Si la estructura interna no cambia, nada se rompe. Renombrar se puede hacer desp
 | 6 | **Cowork** trabaja sobre `E:\Proyectos\Chaumer` | por lo que dice Kris | el día del traslado hay que cambiarle la ruta, o seguirá editando la copia vieja |
 | 7 | El código del proxy de IA del coach (`broad-hall-c53f`) **no está en ningún repositorio**. Solo aparece nombrado en `docs/archivo/` | ✅ búsqueda | antes de tocar el coach (fase 6) hay que traerlo al repositorio |
 | 8 | No se pudo contar lo que hay en la base D1 del portal: este PC no tiene permiso en esa cuenta de Cloudflare | ✅ error 7403 de wrangler | se cuenta en la fase 4, antes de copiar |
+| 10 | *(24/09, durante la fase 3)* **El repositorio `trading-journal` es público** desde su creación; `CLAUDE.md` decía "privado". La fase 1 cerró GitHub Pages, no el repositorio | ✅ la API sin sesión: `"visibility": "public"` | `chaumer/` quedó legible en GitHub al subirlo. Se probó privado y el Journal cayó (Pages no publica privados con la cuenta gratuita). **Kris decide dejarlo público de momento: D-022** |
 | 9 | Las dos listas de reglas **ya no coinciden**: el Journal tiene 28 reglas activas pensadas como checklist, el plan tiene 40 reglas medibles, y "Contexto / tendencia a favor" es casilla aquí pero no es regla en el plan | ✅ consulta a `catalogo_reglas` | es la fase 5, y la decide Kris |
 
 ---

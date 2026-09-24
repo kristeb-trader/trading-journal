@@ -10,6 +10,40 @@
 
 ---
 
+## D-022 — El repositorio `trading-journal` es público, de momento
+
+**Decisión.** El repositorio sigue **público** en GitHub, `chaumer/` incluido, hasta que
+haya presupuesto para GitHub Pro (unos 4 US$/mes) o se busque otra solución.
+
+**Motivo.** Con la cuenta gratuita de GitHub, **Pages no publica repositorios privados**.
+El 24/09 se puso privado tras subir `chaumer/` (fase 3 de la unificación) y el Journal cayó
+entero, en la web y en el móvil (404 desde las 10:43). Kris eligió volver a público antes
+que pagar.
+
+**Qué queda a la vista, y lo sabe Kris:**
+- **La metodología de Alfredo, más de lo que enseña el portal:** el plan fuente completo,
+  el motor de backtesting, `FASES.md`, los diseños internos y la historia. El portal
+  (`plan-operativo-nq.pages.dev`) ya enseñaba sin contraseña reglas, plan, glosario,
+  parámetros, galería, backtesting y test ciego, pero con `noindex`; GitHub sí se indexa y
+  se copia.
+- **Del Journal:** el email, los números de las cuentas de Apex, cifras de resultados y
+  disciplina en `docs/`, y el mapa de la arquitectura. **Ninguna clave secreta** (solo la
+  pública de Supabase, protegida por RLS).
+
+**Alternativas descartadas por ahora.** GitHub Pro (coste). Cloudflare Pages para el
+Journal (cambia la dirección, hay que reinstalar la app del móvil y revisar los Workers).
+Sacar `chaumer/` de la historia (push forzado prohibido, y deshace la fase 3).
+
+**Lo que corrige.** `CLAUDE.md` decía "privado" y no lo era: el repositorio es público
+desde su creación (10/05/2026). La revisión de la fase 3 se fió de eso y no lo comprobó.
+
+**Se revisa** cuando haya presupuesto. Pendiente aparte: proteger el portal con Cloudflare
+Access, y ver qué devuelve `/api/backtesting/export`, que responde 200 sin sesión (fase 4).
+
+**Fecha.** 24/09/2026
+
+---
+
 ## D-021 — El NQ del journal pasa a MNQ; en `apex_trades` se queda
 
 **Decisión.** El único trade en NQ de `trades` (24-jun-2026, `trade_number` 86) se convierte

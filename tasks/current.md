@@ -14,7 +14,12 @@ sesión**, con `/clear` entre una y otra.
 - [x] **Fase 1** — GitHub Pages publica solo la aplicación (`publicar-journal.yml`).
   `CLAUDE.md`, `docs/` y `NinjaTrader/` ya dan 404. Kris la confirmó en el móvil (24 sep)
 - [x] **Fase 2** — Lo pendiente de Cowork, guardado en `Trading_Plan` (`8983073`)
-- [ ] **Fase 3** — Traer Chaumer con su historia a `chaumer/` (`git subtree`)
+- [ ] **Fase 3** — Traer Chaumer con su historia a `chaumer/` (`git subtree`). **En curso:**
+  traslado, `.gitignore`, rutas, memorias y `npm run verificar` hechos. Faltan los secretos
+  `PORTAL_CLOUDFLARE_*`, la prueba de publicación, el cambio de carpeta en Cowork y archivar
+- [ ] **Repositorio público de momento (D-022).** Cuando haya presupuesto: GitHub Pro y
+  pasarlo a privado, u otra solución. Aparte: proteger el portal (Cloudflare Access) y ver
+  qué devuelve `/api/backtesting/export`, que responde 200 sin sesión
 - [ ] Fases 4–8 — backtesting a Supabase, reglas por etapa, coach, cadena diaria, apagar D1/R2
 
 > ℹ️ **Un archivo nuevo que necesite la app** (fuera de `js/`, `css/` o `icons/`) hay que

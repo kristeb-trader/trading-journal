@@ -6,6 +6,8 @@ name: Publicar Journal
 # carga y solo eso sale a internet. Un archivo nuevo que la app necesite hay que
 # añadirlo aquí; si no, dará 404 en producción.
 # Requiere en GitHub → Settings → Pages → Source: "GitHub Actions".
+# Y el repositorio PÚBLICO: con la cuenta gratuita, Pages no publica repositorios
+# privados. El 24/09/2026 se probó privado y el Journal cayó entero (D-022).
 # Diseño: docs/disenos/2026-09-24-unificacion-chaumer.md, fase 1.
 
 on:
