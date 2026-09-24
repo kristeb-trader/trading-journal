@@ -18,8 +18,9 @@ import crypto from 'node:crypto';
 import sharp from 'sharp';
 import * as P from '../src/lib/parsers.mjs';
 import { miniatura, ANCHO_MINIATURA } from '../src/lib/miniaturas.mjs';
+import { fileURLToPath } from 'node:url';
 
-const WEB = path.dirname(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')));
+const WEB = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const PUBLICO = path.join(WEB, 'public');
 const MIN = path.join(PUBLICO, 'min');
 const HUELLAS = path.join(MIN, 'huellas.json');

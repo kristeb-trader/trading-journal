@@ -25,8 +25,9 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const AQUI = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const WEB = path.dirname(AQUI);
 const DIST = path.join(WEB, 'dist');
 const SALIDA = path.join(WEB, 'textos');

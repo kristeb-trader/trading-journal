@@ -14,8 +14,9 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const WEB = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1'));
+const WEB = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(path.dirname(WEB), 'dist');
 
 if (!fs.existsSync(DIST)) {

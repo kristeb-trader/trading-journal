@@ -30,8 +30,9 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const WEB = path.dirname(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')));
+const WEB = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const SRC = path.join(WEB, 'src');
 
 /** Todos los .astro y .css de src/. */
