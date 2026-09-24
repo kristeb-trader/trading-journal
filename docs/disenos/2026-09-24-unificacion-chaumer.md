@@ -157,7 +157,37 @@ Estimación en llamadas a herramientas. Si una fase pasa de ~25, se avisa y se o
 - ✅ **Hecho el 24/09/2026**, antes de la fase 1, por decisión de Kris. Lo guardó Claude Code desde la sesión de Chaumer, **tal cual, sin editar**, con el sí explícito de Kris: plan 3.13 (el orden de la vela vale también para las órdenes) y el gráfico del test ciego del 23/09. Commit `8983073`. `git status` limpio y al día con `origin/main`.
 - **Ojo:** si Cowork escribe algo nuevo en Chaumer antes de la fase 3, hay que volver a guardarlo antes de mudar.
 
-### Fase 3 · Traer Chaumer con su historia (~25)
+### Fase 3 · Traer Chaumer con su historia 🟡 EN CURSO — falta lo de Kris (24/09/2026)
+
+**Resultado hasta ahora (24/09/2026):**
+- **Traslado:** `git subtree add` desde `E:\Proyectos\Chaumer` (`8983073`), con los 115 commits. `01_Plan`,
+  `02_Assets` y `05_Backtesting` quedan **idénticos byte a byte** a la carpeta vieja, contando lo copiado a mano.
+- **3.3:** copiado todo lo de la tabla, con el mismo número de archivos en origen y destino. Las 22 rutas que
+  Chaumer ignoraba siguen ignoradas en el `.gitignore` raíz.
+- **3.4:** rutas absolutas corregidas; sección `chaumer/` en `CLAUDE.md`; configuración `portal` en
+  `launch.json`; las 4 memorias copiadas, con la de publicar adaptada a "el push publica".
+  `.vscode/` se queda como está: funciona abriendo `chaumer/` como carpeta en VS Code.
+- **Desvíos, arreglados sobre la marcha:**
+  - cinco scripts de `04_Web/scripts` no encontraban su carpeta con el espacio de "Trading Journal"
+    (`%20`), y `npm run verificar` fallaba. Ahora usan `fileURLToPath`;
+  - con la conversión a CRLF de Windows, la huella de los diagramas cambiaba y se volvían a dibujar.
+    `.gitattributes`: `chaumer/** text=auto eol=lf`. En git no cambió nada; solo la copia en disco;
+  - **el repositorio era público** (hallazgo 10, D-022). Se probó privado, el Journal cayó, y volvió a público.
+- **Verificado:**
+  - ✅ `npm run verificar` pasa en `chaumer/04_Web`, en local y en GitHub Actions;
+  - ✅ `lector.py 20260923 datos/dia/2026-09-23.txt` da la misma salida (28 líneas) en las dos carpetas;
+  - ✅ el portal **se publicó solo** desde el Journal (commit `dffd562`, los 6 pasos en verde). Las **56
+    páginas son idénticas byte a byte** a las de antes, las 101 imágenes responden 200, y se miraron
+    portada, una regla (R-05), casos reales y backtesting;
+  - ✅ los pushes que solo tocaban el Journal (`fb32a92`, `b984823`) **no** publicaron el portal;
+  - ✅ `…/trading-journal/chaumer/CLAUDE.md` da 404 en GitHub Pages, y el Journal carga en escritorio.
+- **Falta (Kris):**
+  - confirmar el Journal en el móvil tras la caída;
+  - cambiar Cowork a `E:\Proyectos\Trading Journal\chaumer`;
+  - archivar: renombrar la carpeta vieja a `Chaumer_ARCHIVADO` y archivar `Trading_Plan` en GitHub.
+
+**Lo que se diseñó:**
+
 
 **3.1 · El traslado.**
 - `git subtree add --prefix=chaumer <ruta o URL de Trading_Plan> main`. Conserva los commits (115 el 24/09).
