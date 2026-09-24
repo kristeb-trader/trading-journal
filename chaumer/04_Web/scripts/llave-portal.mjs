@@ -159,8 +159,35 @@ const secreto = (await preguntarOculto('JWT secret de Supabase (no se ve al pega
 if (!secreto) { console.error('No llegó ningún secreto.'); process.exit(1); }
 
 console.log(`Secreto recibido: ${secreto.length} caracteres.`);
-const esElBueno = firmaLaClaveAnonima(secreto);
+
+// Variantes de lo mismo que se cuelan al copiar: comillas, espacios, o un
+// secreto que en realidad son bytes escritos en base64. Se prueba cuál firma.
+const variantes = [
+  ['tal cual', secreto],
+  ['sin comillas ni espacios', secreto.replace(/["'`\s]/g, '')],
+  ['decodificado de base64', Buffer.from(secreto.replace(/["'`\s]/g, ''), 'base64')],
+];
+let secretoBueno = null;
+let esElBueno = null;
+for (const [nombre, v] of variantes) {
+  const r = firmaLaClaveAnonima(v);
+  if (r === null) break;
+  esElBueno = r;
+  if (r) { secretoBueno = v; console.log(`✔ Firma la clave anónima (${nombre}).`); break; }
+}
 if (esElBueno === false) {
+  // Solo la FORMA de lo copiado, nunca el contenido.
+  const forma = {
+    letras: (secreto.match(/[A-Za-z]/g) || []).length,
+    digitos: (secreto.match(/\d/g) || []).length,
+    'signos + / =': (secreto.match(/[+/=]/g) || []).length,
+    'signos - _': (secreto.match(/[-_]/g) || []).length,
+    espacios: (secreto.match(/\s/g) || []).length,
+    comillas: (secreto.match(/["'`]/g) || []).length,
+    otros: (secreto.match(/[^A-Za-z\d+/=\-_\s"'`]/g) || []).length,
+  };
+  console.error('');
+  console.error(`  Forma de lo recibido: ${Object.entries(forma).map(([k, n]) => `${k} ${n}`).join(' · ')}`);
   console.error('');
   console.error('✘ Ese NO es el secreto que firmó la clave anónima del Journal: no se ha probado nada.');
   console.error('  Cópialo otra vez de Supabase → Settings → JWT Keys → pestaña «Legacy JWT Secret»');
@@ -168,9 +195,8 @@ if (esElBueno === false) {
   console.error('    Get-Clipboard | node scripts/llave-portal.mjs');
   process.exit(1);
 }
-if (esElBueno) console.log('✔ Es el secreto que firmó la clave anónima del Journal.');
 
-const llave = firmar(secreto);
+const llave = firmar(secretoBueno ?? secreto);
 const pruebas = await probar(llave);
 
 console.log('');
