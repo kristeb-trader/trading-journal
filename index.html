@@ -1171,6 +1171,19 @@
         </div>
       </section>
 
+      <!-- ═══ BACKTESTING ═════════════════════════════════════════════════ -->
+      <!-- La bitácora del backtesting visual de días pasados (bt_*). Aquí se
+           REGISTRA; el portal de Chaumer la enseña con su curva y sus cifras, en
+           solo lectura. Nunca se mezcla con trades. Ver js/backtesting.js. -->
+      <section class="section" id="section-backtesting">
+        <div class="section-actions">
+          <a class="btn-secondary btn-sm" href="https://plan-operativo-nq.pages.dev/backtesting"
+             target="_blank" rel="noopener"><i class="ti ti-external-link"></i> Ver en el portal</a>
+          <button class="btn-primary btn-sm" id="btNueva"><i class="ti ti-plus"></i> Registrar jornada</button>
+        </div>
+        <div id="btContent"></div>
+      </section>
+
       <!-- Modal: las dos gráficas de un día, la mía y la suya. Se abre desde la
            lista de Diferencias; Esc / X / clic fuera lo cierran y ← → cambian de
            día. Lo pinta Chaumer.abrirComparacion. -->
@@ -1359,6 +1372,94 @@
             </div>
             <div class="form-group"><label>Notas</label><input type="text" id="fechaNotas" placeholder="Opcional"></div>
             <button class="btn-primary" id="fechaGuardar" style="width:100%;margin-top:6px"><i class="ti ti-device-floppy"></i> Guardar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: registrar / corregir una jornada de backtesting. Lo pinta
+           Backtesting.abrir. Una jornada lleva como mucho una operación en esta
+           pantalla; "Sin operación" la guarda vacía, con la nota del día. -->
+      <div class="modal-overlay hidden" id="btModal">
+        <div class="modal" style="max-width:480px">
+          <div class="modal-header">
+            <h3 id="btModalTitle"><i class="ti ti-history"></i> Registrar jornada</h3>
+            <button class="btn-icon" id="closeBtModal" aria-label="Cerrar"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="modal-content" style="padding:16px 20px 20px">
+            <input type="hidden" id="btId">
+            <div class="form-row">
+              <div class="form-group"><label>Fecha</label><input type="date" id="btFecha"></div>
+              <div class="form-group"><label>Resultado</label>
+                <select id="btResultado">
+                  <option value="target">Target</option>
+                  <option value="stop">Stop</option>
+                  <option value="">Sin operación</option>
+                </select>
+              </div>
+            </div>
+            <div id="btSiOpera">
+              <div class="form-row">
+                <div class="form-group"><label>Hora <span class="ch-hint">(hora Colombia)</span></label><input type="time" id="btHora"></div>
+                <div class="form-group"><label>Dirección</label>
+                  <select id="btDireccion">
+                    <option value="largo">Largo</option>
+                    <option value="corto">Corto</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>Setup</label>
+                  <select id="btSetup">
+                    <option value="continuacion">Continuación</option>
+                    <option value="reingreso">Reingreso</option>
+                  </select>
+                </div>
+                <div class="form-group"><label>Puntos <span class="ch-hint">(siempre en positivo)</span></label>
+                  <input type="number" id="btPuntos" step="0.25" min="0" inputmode="decimal" placeholder="40">
+                </div>
+              </div>
+              <div class="bt-pnl">
+                <span>P&amp;L neto</span><b id="btPnl">—</b>
+                <small id="btPnlBase"></small>
+              </div>
+            </div>
+            <div class="form-group">
+              <label id="btNotasLabel">Observaciones</label>
+              <textarea id="btNotas" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Gráfico del día</label>
+              <input type="file" id="btImagen" accept="image/png,image/jpeg,image/webp">
+              <input type="hidden" id="btImagenUrl">
+              <small class="bt-img-actual" id="btImagenActual"></small>
+            </div>
+            <div class="bt-acciones">
+              <button class="btn-secondary hidden" id="btBorrar"><i class="ti ti-trash"></i> Borrar</button>
+              <button class="btn-primary" id="btGuardar"><i class="ti ti-device-floppy"></i> Guardar jornada</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: datos de inicio del backtesting (bt_cabecera). Son la PROPUESTA
+           para la próxima jornada: cambiarlos no toca las ya registradas. -->
+      <div class="modal-overlay hidden" id="btInicioModal">
+        <div class="modal" style="max-width:420px">
+          <div class="modal-header">
+            <h3><i class="ti ti-adjustments"></i> Datos de inicio</h3>
+            <button class="btn-icon" id="closeBtInicioModal" aria-label="Cerrar"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="modal-content" style="padding:16px 20px 20px">
+            <div class="form-row">
+              <div class="form-group"><label>Valor inicial</label><input type="number" id="btIniValor" step="0.01" min="0" inputmode="decimal"></div>
+              <div class="form-group"><label>Contratos</label><input type="number" id="btIniContratos" step="1" min="1" inputmode="numeric"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Instrumento</label><input type="text" id="btIniInstrumento" maxlength="20"></div>
+              <div class="form-group"><label>Comisión <span class="ch-hint">(por contrato)</span></label><input type="number" id="btIniComision" step="0.01" min="0" inputmode="decimal"></div>
+            </div>
+            <p class="bt-nota" id="btIniPunto"></p>
+            <button class="btn-primary" id="btIniGuardar" style="width:100%;margin-top:6px"><i class="ti ti-device-floppy"></i> Guardar</button>
           </div>
         </div>
       </div>
@@ -1631,6 +1732,7 @@
   <script src="js/coach.js"></script>
   <script src="js/fechas.js"></script>
   <script src="js/chaumer.js"></script>
+  <script src="js/backtesting.js"></script>
   <script src="js/app.js"></script>
 
   <!-- Registro del Service Worker (PWA) -->

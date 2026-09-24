@@ -225,12 +225,14 @@ function puntosTrade(t) {
 
 // ── Subida a Cloudinary ─────────────────────────────────────────────────────
 // Solo la parte de red: quien llama se ocupa de su propio DOM y sus avisos.
-// Vive aquí para que el Diario y el comparador de Chaumer suban igual.
-async function subirACloudinary(file) {
+// Vive aquí para que el Diario, el comparador de Chaumer y el Backtesting suban
+// igual. `carpeta` es opcional: el Backtesting guarda en `backtesting/`.
+async function subirACloudinary(file, { carpeta = null } = {}) {
   if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) throw new Error('Cloudinary no configurado')
   const fd = new FormData()
   fd.append('file', file)
   fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET)
+  if (carpeta) fd.append('folder', carpeta)
   const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
     method: 'POST', body: fd,
   })
@@ -1225,7 +1227,7 @@ const DB = {
     const [
       trades, ultimo, imagenes, experimentos, reglas,
       errores, emociones, recomendaciones, setups, variantes,
-      fechas, proxima, chaumerDias,
+      fechas, proxima, chaumerDias, btJornadas, btUltima,
     ] = await Promise.all([
       cuenta('trades'),
       primero('trades', 'trade_date', q => q.order('trade_date', { ascending: false })),
@@ -1240,6 +1242,8 @@ const DB = {
       cuenta('catalogo_fechas', q => q.eq('activa', true).gte('fecha', `${anio}-01-01`).lte('fecha', `${anio}-12-31`)),
       primero('catalogo_fechas', 'fecha', q => q.eq('activa', true).gte('fecha', hoyISO()).order('fecha', { ascending: true })),
       cuenta('chaumer_operativas'),
+      cuenta('bt_jornadas'),
+      primero('bt_jornadas', 'fecha', q => q.order('fecha', { ascending: false })),
     ])
 
     // La tarjeta de Datos cuenta los ítems de los cinco catálogos que se editan
@@ -1256,6 +1260,7 @@ const DB = {
       data:         { n: catalogos, cuenta: _cuentaPrincipalCache },
       fechas:       { n: fechas, proxima },
       chaumer:      { n: chaumerDias },
+      backtesting:  { n: btJornadas, ultimo: btUltima },
     }
     _resumenOtros = { t: Date.now(), datos }
     return datos
@@ -1415,6 +1420,56 @@ const DB = {
       setup_observado: setupNombre || null,
       motivo_no_entrada: motivo || null,
     }, { onConflict: 'sesion_date' })
+    if (error) throw error
+  },
+
+  // ── Backtesting: la bitácora (bt_cabecera · bt_jornadas · bt_operaciones) ──
+  // Backtesting VISUAL de días pasados, hecho a mano. Nunca se mezcla con
+  // `trades` ni `apex_trades`. El P&L se calcula al GUARDAR, en la función
+  // `bt_guardar_jornada` de la BD (jornada + operaciones en una transacción), y se
+  // guarda neto y congelado: aquí no se recalcula nada.
+  // El portal lee estas mismas tablas por las vistas `portal_bt_*` (solo lectura).
+
+  async getBacktesting() {
+    const [cab, jor] = await Promise.all([
+      supa.from('bt_cabecera').select('*').eq('id', 1).maybeSingle(),
+      supa.from('bt_jornadas')
+        .select('*, operaciones:bt_operaciones(*)')
+        .order('fecha', { ascending: false }),
+    ])
+    if (cab.error) throw cab.error
+    if (jor.error) throw jor.error
+    // Las operaciones de cada jornada, en su orden (se ordena aquí y no en la
+    // consulta: con el alias, el orden del recurso embebido es ambiguo).
+    const jornadas = (jor.data || []).map(j => ({
+      ...j, operaciones: (j.operaciones || []).slice().sort((a, b) => a.orden - b.orden),
+    }))
+    return { cabecera: cab.data, jornadas }
+  },
+
+  // `payload` = { id?, fecha, imagen, notas, operaciones: [{ hora, direccion, setup,
+  // puntos, resultado, observaciones }] }. Devuelve el id de la jornada.
+  async guardarBtJornada(payload) {
+    const { data, error } = await supa.rpc('bt_guardar_jornada', { p: payload })
+    if (error) {
+      if (error.code === '23505') throw new Error('Esa fecha ya está registrada: corrígela desde su fila')
+      throw error
+    }
+    return data
+  },
+
+  // Las operaciones se van con ella (ON DELETE CASCADE). El gráfico se queda en
+  // Cloudinary: el preset sin firma no permite borrar.
+  async borrarBtJornada(id) {
+    const { error } = await supa.from('bt_jornadas').delete().eq('id', id)
+    if (error) throw error
+  },
+
+  // Los datos de inicio. `valor_punto` no se toca desde aquí: sale del plan.
+  async guardarBtCabecera({ valor_inicial, contratos, instrumento, comision }) {
+    const { error } = await supa.from('bt_cabecera')
+      .update({ valor_inicial, contratos, instrumento, comision, actualizada_en: new Date().toISOString() })
+      .eq('id', 1)
     if (error) throw error
   },
 

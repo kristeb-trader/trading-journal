@@ -89,6 +89,10 @@ cambió de datos, solo perdió los botones de escribir. Lo que la mantuvo abiert
    solo cuando se corrige esa jornada.
 2. **Contratos, instrumento y valor del punto se congelan en cada jornada.**
    La cabecera es la propuesta para lo próximo, no la verdad del pasado.
+   *(24/09/2026)* Al **corregir** una jornada se recalcula su P&L con **sus**
+   valores congelados, no con los de la cabecera. El portal cogía los de la
+   cabecera al corregir, y eso contradecía esta misma regla. Lo hace la función
+   `bt_guardar_jornada` de Supabase.
 3. **Nada bloquea.** No hay tope de puntos, ni aviso, ni fila en rojo por
    apartarse del plan. Es un registro, no un juez. Solo se rechaza lo que
    corrompería el registro: una dirección que no existe, unos puntos

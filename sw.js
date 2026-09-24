@@ -4,7 +4,7 @@
 //   - CDN (tabler, supabase, chart.js): cache-first → no cambian, carga instantánea
 //   - APIs externas (supabase, cloudinary, workers.dev...): network-only
 
-const CACHE = 'nqjournal-v6'
+const CACHE = 'nqjournal-v7'
 
 // Recursos CDN que no cambian → cache-first
 const CDN_SHELL = [
@@ -38,6 +38,8 @@ const APP_SHELL = [
   './js/disciplina.js',
   './js/coach.js',
   './js/fechas.js',
+  './js/chaumer.js',
+  './js/backtesting.js',
   './js/app.js',
   // recursos del manifest, para que la PWA instalada abra sin red
   './favicon.svg',

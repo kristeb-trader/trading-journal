@@ -98,6 +98,7 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-09-19-nq-a-mnq-en-el-journal.sql` | ✅ MCP | el único trade en NQ del journal (24-jun) pasa a MNQ respetando los −32,5 puntos: −$653,80 → −$66,30. `apex_trades` no se toca |
 | `2026-09-24-backtesting-tablas.sql` | ✅ MCP | tablas `bt_cabecera`, `bt_jornadas`, `bt_operaciones` (la bitácora de backtesting, antes en D1 del portal), rol `portal_lector` y vistas `portal_bt_*` que solo él lee |
 | `2026-09-24-backtesting-datos-desde-d1.sql` | ✅ MCP | las 85 jornadas y 73 operaciones de D1, tal cual (P&L 1.233,04 sin recalcular); `imagen` apunta a Cloudinary |
+| `2026-09-24-bt-guardar-jornada.sql` | ✅ MCP | función `bt_guardar_jornada(jsonb)`: guarda jornada + operaciones en una transacción y calcula el P&L; al corregir conserva los valores congelados. Solo `authenticated` y `service_role` |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.

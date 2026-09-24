@@ -1,6 +1,6 @@
 # Unificación — el proyecto Chaumer entra en el Trading Journal
 
-**Versión:** v1.6 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1, 2, 3 y 4a cerradas; la siguiente es la 4b.
+**Versión:** v1.7 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1 a 4 cerradas; la siguiente es la 5.
 **Escrito:** 24/09/2026, desde una sesión en `E:\Proyectos\Chaumer`. **Se ejecuta desde una sesión nueva en este proyecto.**
 
 | Versión | Fecha | Qué cambió |
@@ -12,6 +12,7 @@
 | v1.4 | 24/09/2026 | Fase 3 cerrada. La carpeta vieja quedó en `E:\Proyectos\Otros Claude\Chaumer_ARCHIVADO`; `Trading_Plan` archivado. Hallazgo 10 y D-022: el repositorio es público |
 | v1.5 | 24/09/2026 | Revisión de la fase 4 contra el código, aprobada por Kris: recuento hecho sin Cloudflare; `valor_punto` en `bt_cabecera`; dos vistas `portal_bt_*`; la fase se parte en **4a** (datos + portal de solo lectura) y **4b** (Registrar en el Journal). Decididos: rol `portal_lector` y Cloudinary |
 | v1.6 | 24/09/2026 | Fase 4a cerrada: la bitácora en Supabase, el portal la lee con `portal_lector` y ya no acepta escrituras |
+| v1.7 | 24/09/2026 | Fase 4b cerrada: se registra desde el Journal (Otros › Backtesting). Fase 4 completa |
 
 > ✅ Este archivo se subió a GitHub **después** de cerrar la fase 1, con las direcciones del hallazgo 1 ya
 > en 404. Desde entonces `docs/` no se publica.
@@ -323,7 +324,35 @@ clave de operador. Pasa a ser del Journal. **Su diseño ya lo preveía:** SQL co
    Pages **antes** del push que cambia el portal.
 - **Mientras llega la 4b no se puede registrar backtesting.** Aceptado por Kris.
 
-**4b · Registrar pasa al Journal**
+**4b · Registrar pasa al Journal** ✅ CERRADA el 24/09/2026
+
+*Resultado:*
+- Sección **Backtesting** en *Otros* (grupo Consultar, tarjeta neutra), con `Nav.PADRE`, y `js/backtesting.js`
+  en `sw.js` (caché `nqjournal-v7`; de paso entró `js/chaumer.js`, el desvío menor de la fase 1). La barra sigue
+  con 6 botones.
+- Registrar, corregir, borrar, subir el gráfico (Cloudinary, `backtesting/`) y cambiar los datos de inicio.
+- **Guardar va por una función de Postgres, `bt_guardar_jornada`** (migración `2026-09-24-bt-guardar-jornada`): jornada +
+  operaciones en una transacción, con la aritmética del portal. Así un corte a medias no deja una jornada con el
+  P&L viejo.
+- **Decisión tomada al implementar:** al **corregir**, la jornada conserva sus contratos, valor del punto y comisión;
+  los datos de inicio solo valen para las nuevas. El portal, al corregir, cogía los de la cabecera, y eso
+  contradecía su propio diseño («cambiar la comisión de hoy no reescribe lo de ayer»). Anotado en
+  `DISENO_BACKTESTING.md`.
+- **Verificado:**
+  - la función, como `authenticated` en una transacción deshecha: target de 40 puntos = 78,98; stop de 13,25 =
+    −27,52; sin operación, la nota va a la jornada; volver a guardar la real del 26 nov da su −27,02; rechaza
+    la fecha repetida y los puntos negativos; `anon` y `portal_lector` no pueden ejecutarla;
+  - **de punta a punta:** una jornada de prueba guardada con la función apareció en el portal publicado con su
+    P&L; se borró y el portal volvió a 85 jornadas y 1.233,04;
+  - la pantalla, en el preview (modo local): los totales de cada mes coinciden con los del portal; registrar,
+    corregir a «sin operación», fecha repetida, borrar y datos de inicio funcionan; sin errores de consola; a
+    1400 px, a ~800 px y a 375 px (6 botones, sin scroll horizontal). Las filas pasan a dos líneas según el
+    ancho del **grupo** (*container query*), no de la ventana: con la barra lateral abierta no cabían.
+  - Las miniaturas se piden a Cloudinary recortadas (1,4 KB en vez de ~400 KB); el original solo se baja al
+    abrirlo en grande.
+- **Falta por mirar con la sesión de Kris:** la primera jornada real registrada desde el Journal en producción.
+
+*Lo que se diseñó:*
 - Una tarjeta **Backtesting** en *Otros* (la barra se queda en 6 botones), más `Nav.PADRE` y `sw.js`.
 - Hace las cinco cosas que hacía el portal: registrar, corregir, borrar, subir el gráfico y cambiar los datos
   de inicio. Una lista de jornadas y un formulario; la curva, las cifras y la tabla por meses se quedan en el

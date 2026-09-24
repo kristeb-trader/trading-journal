@@ -25,7 +25,7 @@ del mismo grupo se distingan entre sí, no la asociación histórica. Reparto vi
 
 | Grupo | Tarjetas |
 |---|---|
-| Consultar | Trades `accent` · Imágenes `violet` · Experimentos `warning` · Chaumer `blue` |
+| Consultar | Trades `accent` · Imágenes `violet` · Experimentos `warning` · Chaumer `blue` · Backtesting neutra (24 sep: el único libre era el rojo, y el rojo es stop) |
 | Configurar | Estrategia `warning` · Datos neutro · Fechas `red` |
 
 Dentro de un grupo no se repite ningún color; entre grupos sí puede. **La sección

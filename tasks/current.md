@@ -21,14 +21,16 @@ sesión**, con `/clear` entre una y otra.
   idénticas a D1) y los gráficos en Cloudinary. El portal la lee con la llave de
   `portal_lector` (secreto `SUPABASE_PORTAL_KEY` en Cloudflare) y ya no acepta escrituras.
   Verificado en vivo (24 sep)
-- [ ] **Fase 4b** — Registrar backtesting desde el Journal (tarjeta en *Otros*). **Hasta
-  entonces no se puede registrar backtesting en ningún sitio**
+- [x] **Fase 4b** — Se registra desde el Journal: **Otros › Backtesting** (registrar,
+  corregir, borrar, gráfico y datos de inicio). Verificado de punta a punta con el portal
+- [ ] **Kris:** registrar la primera jornada real desde el Journal (la siguiente es el
+  27/11/2025) y mirar que el portal la enseña
 - [ ] Aparte, vistos en la 4a: activar RLS (o borrar) `_bak_20260919_trades_regularizacion`;
   la copia local de D1 del portal no tiene la tabla `observaciones`
 - [ ] **Repositorio público de momento (D-022).** Cuando haya presupuesto: GitHub Pro y
   pasarlo a privado, u otra solución. Aparte: proteger el portal (Cloudflare Access) y ver
   qué devuelve `/api/backtesting/export`, que responde 200 sin sesión
-- [ ] Fases 4–8 — backtesting a Supabase, reglas por etapa, coach, cadena diaria, apagar D1/R2
+- [ ] Fases 5–8 — reglas por etapa, coach, cadena diaria, apagar D1/R2
 
 > ℹ️ **Un archivo nuevo que necesite la app** (fuera de `js/`, `css/` o `icons/`) hay que
 > añadirlo al `cp` de `.github/workflows/publicar-journal.yml`. Si no, dará 404 en producción.

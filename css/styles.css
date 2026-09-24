@@ -4884,6 +4884,86 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
   .fechas-notes { grid-column: 2 / 4; }
 }
 
+/* ═══ Backtesting (Otros › Backtesting) ═══════════════════════════════════ */
+/* Misma estructura que Fechas Especiales: tarjeta arriba, grupos con filas.
+   Aquí solo se registra; la curva y las cifras las enseña el portal. */
+.bt-cab {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px 16px; margin-bottom: 14px; position: relative;
+}
+.bt-cab-item { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bt-cab-item span {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text3);
+}
+.bt-cab-item b { font-size: 1rem; color: var(--text); font-variant-numeric: tabular-nums; }
+.bt-cab-item small { font-size: 0.74rem; color: var(--text3); }
+.bt-cab-editar { position: absolute; top: 10px; right: 10px; }
+
+/* container-type: el corte a dos líneas depende del ancho del GRUPO, no de la
+   ventana — con la barra lateral abierta el contenido es 220 px más estrecho. */
+.bt-mes { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; container-type: inline-size; }
+.bt-mes-h {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 16px; background: var(--bg3); border-bottom: 1px solid var(--border);
+  font-size: 0.85rem; font-weight: 700; color: var(--text2);
+}
+.bt-mes-h .bt-mes-n { font-size: 0.74rem; font-weight: 600; color: var(--text3); }
+.bt-mes-h .bt-mes-pnl { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+.bt-row {
+  display: grid; align-items: center; gap: 10px;
+  grid-template-columns: 88px 48px 76px 96px 56px 72px 96px minmax(0, 1fr) 32px auto;
+  padding: 8px 16px; border-bottom: 1px solid var(--border); font-size: 0.82rem; color: var(--text2);
+}
+.bt-row:last-child { border-bottom: none; }
+.bt-row.vacia { color: var(--text3); }
+.bt-fecha { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.bt-num { text-align: right; font-variant-numeric: tabular-nums; }
+.bt-obs { font-size: 0.76rem; color: var(--text3); font-style: italic; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bt-img { width: 32px; height: 22px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); cursor: zoom-in; display: block; }
+.bt-acc { display: flex; gap: 4px; }
+.bt-pos { color: var(--accent-txt); }
+.bt-neg { color: var(--red-txt); }
+.bt-res {
+  display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; text-align: center; white-space: nowrap;
+  background: var(--bg3); color: var(--text3);
+}
+.bt-res.target { background: var(--accent-dim); color: var(--accent-txt); }
+.bt-res.stop   { background: var(--red-dim);    color: var(--red-txt); }
+.bt-vacio { color: var(--text3); font-size: 0.84rem; padding: 18px 16px; margin: 0; }
+
+/* Formulario */
+.bt-pnl {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  padding: 10px 12px; margin-bottom: 14px; border-radius: 8px; background: var(--bg3);
+}
+.bt-pnl span { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text3); }
+.bt-pnl b { font-size: 1.1rem; font-variant-numeric: tabular-nums; color: var(--text); }
+.bt-pnl small, .bt-img-actual, .bt-nota { font-size: 0.74rem; color: var(--text3); }
+.bt-img-actual { display: block; margin-top: 6px; overflow-wrap: anywhere; }
+.bt-nota { margin: 0 0 8px; }
+.bt-acciones { display: flex; gap: 8px; margin-top: 6px; }
+.bt-acciones .btn-primary { flex: 1; justify-content: center; }
+
+/* Estrecho: la fila pasa a dos líneas — arriba fecha, resultado y P&L; abajo el
+   detalle. Las observaciones y el gráfico se ven al abrir la jornada. */
+@container (max-width: 760px) {
+  .bt-row {
+    grid-template-columns: 1fr auto 64px auto;
+    grid-template-areas: "fecha res pnl acc" "det det det det";
+    row-gap: 3px; column-gap: 10px; padding: 9px 12px;
+  }
+  .bt-row .bt-fecha { grid-area: fecha; }
+  .bt-row .bt-c-res { grid-area: res; justify-self: end; }
+  .bt-row .bt-c-pnl { grid-area: pnl; }
+  .bt-row .bt-acc   { grid-area: acc; }
+  .bt-row .bt-c-hora, .bt-row .bt-c-dir, .bt-row .bt-c-setup, .bt-row .bt-c-pts,
+  .bt-row .bt-obs, .bt-row .bt-c-img { display: none; }
+  .bt-row .bt-det { grid-area: det; display: block; font-size: 0.74rem; color: var(--text3); }
+}
+@container (min-width: 761px) { .bt-row .bt-det { display: none; } }
+
 /* ═══ Desglose de días (Calendario, bajo la curva de equity) ═══════════════ */
 .dd-periodo {
   margin-left: auto; font-size: 0.72rem; color: var(--text3);

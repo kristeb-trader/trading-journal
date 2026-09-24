@@ -110,7 +110,7 @@ Lo que el esquema no cuenta y hay que saber:
 | `sesion_noticias` | UNIQUE (fecha, hora): una noticia por hora. El CPI publica 4 cifras a las 7:30 pero es **un** evento con **una** ventana (±5 min sobre la entrada) |
 | `objetivos` | Fila única. `cuenta_principal` es la cuenta que alimenta P&L/Análisis/Coach; se elige en Datos y la lee el indicador NT8 al arrancar. `limite_perdida_dia` está **obsoleto** (el riesgo se mide en puntos) |
 | `chaumer_operativas` | Comparador. **Solo el lado de Chaumer**: el de Kris se LEE de `sesiones`+`trades`, nunca se copia aquí. `hora_entrada` va en **hora Colombia**, igual que `trades.entry_time`: se restan tal cual, **sin** `horaEt()` (era ET hasta el 17 sep; D-017). `puntos` en **PUNTOS**, no en dólares. El veredicto del día no se guarda: se calcula |
-| `bt_*` (cabecera, jornadas, operaciones) | La **bitácora de backtesting** (fase 4 de la unificación Chaumer): nunca se mezcla con `trades` ni `apex_trades`. `pnl` **neto y congelado** al guardar, no se recalcula; cada jornada congela instrumento, contratos, `valor_punto` y comisión; `puntos` siempre positivo (el signo lo da `resultado`); `hora` en hora Colombia; una jornada sin operaciones es un día sin entrada. `imagen` = dirección de Cloudinary. El portal la lee por `portal_bt_cabecera` / `portal_bt_jornadas` |
+| `bt_*` (cabecera, jornadas, operaciones) | La **bitácora de backtesting** (fase 4 de la unificación Chaumer): nunca se mezcla con `trades` ni `apex_trades`. `pnl` **neto y congelado** al guardar, no se recalcula; cada jornada congela instrumento, contratos, `valor_punto` y comisión; `puntos` siempre positivo (el signo lo da `resultado`); `hora` en hora Colombia; una jornada sin operaciones es un día sin entrada. `imagen` = dirección de Cloudinary. Se escribe con la función `bt_guardar_jornada` (jornada + operaciones en una transacción; calcula el P&L). Una jornada que se corrige **conserva** sus valores congelados. El portal la lee por `portal_bt_cabecera` / `portal_bt_jornadas` |
 | `sesiones` | `setup` (texto) y `setup_codigo` los sincroniza el trigger `fn_sync_setup_codigo`, escriba quien escriba. La columna `noticias` se retiró de la UI el 16 ago y su contenido se migró a `sesion_noticias`; **la columna sigue existiendo**. `soportes_naranja` / `resistencias_naranja` (jsonb) las escribe el **AddOn** en premercado desde el 16 ago: el bot ya NO las manda: si las mandara (en `[]`) las **borraría** por la noche, igual que pasaría con los niveles de precio |
 
 ## Lenguaje visual
@@ -159,6 +159,7 @@ js/charts.js      Sección Análisis · js/disciplina.js  Dashboard de Disciplin
 js/apex.js        Apex Tracker · js/experimentos.js  Laboratorio
 js/estrategia.js  Editor del rulebook · js/fechas.js  Fechas Especiales
 js/chaumer.js     Comparador Chaumer vs yo (pestañas Diferencias y Registrar)
+js/backtesting.js Bitácora de backtesting: registrar, corregir, borrar (bt_*)
 js/account-filter.js  Filtro de cuentas compartido (nombre COMPLETO)
 css/styles.css    Dark mode + responsive
 NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) ·
@@ -194,9 +195,9 @@ motor de backtesting—, traído con su historia el 24 sep (`git subtree`; antes
 ## Estado
 
 Todas las secciones funcionando. **El menú son 6 botones** — Calendario · Disciplina ·
-Análisis · Sesión · Apex · **Otros** —, y las otras 7 secciones se abren desde las tarjetas
+Análisis · Sesión · Apex · **Otros** —, y las otras 8 secciones se abren desde las tarjetas
 de **Otros**, repartidas en dos grupos: *Consultar* (Trades · Imágenes · Experimentos ·
-Chaumer) y *Configurar* (Estrategia · Datos · Fechas Especiales). Ahí vive también
+Chaumer · Backtesting) y *Configurar* (Estrategia · Datos · Fechas Especiales). Ahí vive también
 **Ajustes** (claves y objetivos, tema, seguridad, cerrar sesión).
 
 **Qué está en marcha y qué falta: `tasks/current.md`.**

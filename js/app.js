@@ -378,17 +378,21 @@ const Otros = {
     // tarjetas azules seguidas en el mismo grupo se leen como un error.
     { id: 'experimentos', grupo: 'Consultar',  color: 'warning', icon: 'ti-flask',         name: 'Experimentos',      desc: 'Qué estás probando y si funciona',  unidad: 'en prueba' },
     { id: 'chaumer',      grupo: 'Consultar',  color: 'blue',    icon: 'ti-arrows-diff',   name: 'Chaumer',           desc: 'Sus operativas frente a las tuyas', unidad: 'días cargados' },
+    // Neutra: en Consultar ya no queda color libre que no sea el rojo, y el rojo
+    // es stop/error. Entró el 24 sep (fase 4b de la unificación Chaumer).
+    { id: 'backtesting',  grupo: 'Consultar',  color: '',        icon: 'ti-history',       name: 'Backtesting',       desc: 'Tu bitácora de días pasados',       unidad: 'jornadas' },
     { id: 'estrategia',   grupo: 'Configurar', color: 'warning', icon: 'ti-book-2',        name: 'Estrategia',        desc: 'Tus reglas y setups',               unidad: 'reglas activas' },
     { id: 'data',         grupo: 'Configurar', color: '',        icon: 'ti-database',      name: 'Datos',             desc: 'Cuentas, catálogos e importación',  unidad: 'ítems en catálogo' },
     { id: 'fechas',       grupo: 'Configurar', color: 'red',     icon: 'ti-calendar-star', name: 'Fechas Especiales', desc: 'Festivos, FOMC y días marcados',    unidad: 'este año' },
   ],
 
-  // Línea inferior de la tarjeta. Solo la tienen tres; en las demás el bloque
+  // Línea inferior de la tarjeta. Solo la tienen cuatro; en las demás el bloque
   // ni se pinta, para no dejar un separador colgando de nada.
   META: {
     trades: d => (d.ultimo  ? `última · ${Otros._fecha(d.ultimo)}` : ''),
     data:   d => (d.cuenta  ? `principal · ${AccountFilter.corto(d.cuenta)}` : ''),
     fechas: d => (d.proxima ? `próxima · ${Otros._fecha(d.proxima)}` : ''),
+    backtesting: d => (d.ultimo ? `última · ${Otros._fecha(d.ultimo)}` : ''),
   },
 
   // Ancla al mediodía a propósito: sobre una fecha YA anclada, pasar por Date es
@@ -470,6 +474,7 @@ const Nav = {
     data: 'Datos',
     fechas: 'Fechas Especiales',
     chaumer: 'Chaumer',
+    backtesting: 'Backtesting',
     otros: 'Otros',
   },
   // `coach` e `historial` ya no son secciones: son pestañas de Sesión Operativa.
@@ -482,7 +487,7 @@ const Nav = {
   PADRE: {
     experimentos: 'otros', trades: 'otros', gallery: 'otros',
     estrategia: 'otros', data: 'otros', fechas: 'otros',
-    chaumer: 'otros',
+    chaumer: 'otros', backtesting: 'otros',
   },
   initialized: new Set(),
 
@@ -580,6 +585,7 @@ const Nav = {
         if (sectionId === 'data') await DataManager.init()
         if (sectionId === 'fechas') await Fechas.init()
         if (sectionId === 'chaumer') await Chaumer.init()
+        if (sectionId === 'backtesting') await Backtesting.init()
         if (sectionId === 'otros') Otros.init()
       } catch (err) {
         Toast.show('Error cargando sección: ' + err.message, 'error')
@@ -598,6 +604,8 @@ const Nav = {
       Fechas.reload()
     } else if (sectionId === 'chaumer') {
       Chaumer.reload()
+    } else if (sectionId === 'backtesting') {
+      Backtesting.reload()
     } else if (sectionId === 'otros') {
       // Refresca los contadores al volver. El TTL de 5 min de getResumenOtros
       // evita que entrar y salir dispare consultas cada vez.
