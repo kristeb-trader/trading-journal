@@ -137,8 +137,38 @@ function guardarDevVars(llave) {
   fs.writeFileSync(DEV_VARS, lineas.join('\n'));
 }
 
-const secreto = await preguntarOculto('JWT secret de Supabase (no se ve al pegarlo): ');
+/**
+ * ¿Es este el secreto que firmó la clave anónima del Journal (js/config.js)?
+ * Esa clave es un JWT firmado con el Legacy JWT Secret: si la firma recalculada
+ * coincide, el secreto es el bueno. Se comprueba sin red y sin enseñar nada.
+ */
+function firmaLaClaveAnonima(secreto) {
+  const config = path.join(WEB, '..', '..', 'js', 'config.js');
+  const m = fs.existsSync(config) && fs.readFileSync(config, 'utf8').match(/eyJ[\w-]+\.[\w-]+\.[\w-]+/);
+  if (!m) return null; // sin la clave a mano no se puede saber
+  const [cabeza, cuerpo, firma] = m[0].split('.');
+  return createHmac('sha256', secreto).update(`${cabeza}.${cuerpo}`).digest('base64url') === firma;
+}
+
+// Pegar en una terminal sin eco puede colar basura: las marcas de «pegado entre
+// corchetes» (ESC[200~ … ESC[201~) o un Ctrl+V que llega como carácter de control.
+const secreto = (await preguntarOculto('JWT secret de Supabase (no se ve al pegarlo): '))
+  .replace(/\x1b\[20[01]~/g, '')
+  .replace(/[\x00-\x1f\x7f]/g, '')
+  .trim();
 if (!secreto) { console.error('No llegó ningún secreto.'); process.exit(1); }
+
+console.log(`Secreto recibido: ${secreto.length} caracteres.`);
+const esElBueno = firmaLaClaveAnonima(secreto);
+if (esElBueno === false) {
+  console.error('');
+  console.error('✘ Ese NO es el secreto que firmó la clave anónima del Journal: no se ha probado nada.');
+  console.error('  Cópialo otra vez de Supabase → Settings → JWT Keys → pestaña «Legacy JWT Secret»');
+  console.error('  y pásalo desde el portapapeles, sin pegar en la terminal:');
+  console.error('    Get-Clipboard | node scripts/llave-portal.mjs');
+  process.exit(1);
+}
+if (esElBueno) console.log('✔ Es el secreto que firmó la clave anónima del Journal.');
 
 const llave = firmar(secreto);
 const pruebas = await probar(llave);
