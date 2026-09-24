@@ -1,6 +1,6 @@
 # Unificación — el proyecto Chaumer entra en el Trading Journal
 
-**Versión:** v1.3 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1 y 2 cerradas; la 3 en curso.
+**Versión:** v1.4 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1, 2 y 3 cerradas; la siguiente es la 4.
 **Escrito:** 24/09/2026, desde una sesión en `E:\Proyectos\Chaumer`. **Se ejecuta desde una sesión nueva en este proyecto.**
 
 | Versión | Fecha | Qué cambió |
@@ -9,6 +9,7 @@
 | v1.1 | 24/09/2026 | Fase 2 cerrada: los cambios pendientes de Cowork se guardaron en `Trading_Plan` (commit `8983073`, plan 3.13) |
 | v1.2 | 24/09/2026 | Aprobado. Fase 1 cerrada: GitHub Pages publica solo la aplicación (commit `f20786d`) |
 | v1.3 | 24/09/2026 | Revisión de la fase 3 contra el código, aprobada por Kris: `02_Assets` entra en el filtro del portal; secretos propios del portal para no pisar el del bot; tres huecos de 3.3/3.4 |
+| v1.4 | 24/09/2026 | Fase 3 cerrada. La carpeta vieja quedó en `E:\Proyectos\Otros Claude\Chaumer_ARCHIVADO`; `Trading_Plan` archivado. Hallazgo 10 y D-022: el repositorio es público |
 
 > ✅ Este archivo se subió a GitHub **después** de cerrar la fase 1, con las direcciones del hallazgo 1 ya
 > en 404. Desde entonces `docs/` no se publica.
@@ -157,7 +158,7 @@ Estimación en llamadas a herramientas. Si una fase pasa de ~25, se avisa y se o
 - ✅ **Hecho el 24/09/2026**, antes de la fase 1, por decisión de Kris. Lo guardó Claude Code desde la sesión de Chaumer, **tal cual, sin editar**, con el sí explícito de Kris: plan 3.13 (el orden de la vela vale también para las órdenes) y el gráfico del test ciego del 23/09. Commit `8983073`. `git status` limpio y al día con `origin/main`.
 - **Ojo:** si Cowork escribe algo nuevo en Chaumer antes de la fase 3, hay que volver a guardarlo antes de mudar.
 
-### Fase 3 · Traer Chaumer con su historia 🟡 EN CURSO — falta lo de Kris (24/09/2026)
+### Fase 3 · Traer Chaumer con su historia ✅ CERRADA el 24/09/2026
 
 **Resultado hasta ahora (24/09/2026):**
 - **Traslado:** `git subtree add` desde `E:\Proyectos\Chaumer` (`8983073`), con los 115 commits. `01_Plan`,
@@ -181,10 +182,15 @@ Estimación en llamadas a herramientas. Si una fase pasa de ~25, se avisa y se o
     portada, una regla (R-05), casos reales y backtesting;
   - ✅ los pushes que solo tocaban el Journal (`fb32a92`, `b984823`) **no** publicaron el portal;
   - ✅ `…/trading-journal/chaumer/CLAUDE.md` da 404 en GitHub Pages, y el Journal carga en escritorio.
-- **Falta (Kris):**
-  - confirmar el Journal en el móvil tras la caída;
-  - cambiar Cowork a `E:\Proyectos\Trading Journal\chaumer`;
-  - archivar: renombrar la carpeta vieja a `Chaumer_ARCHIVADO` y archivar `Trading_Plan` en GitHub.
+- **Cerrado por Kris (24/09):**
+  - ✅ el Journal carga en el móvil tras la caída;
+  - ✅ Cowork trabaja en `E:\Proyectos\Trading Journal\chaumer`;
+  - ✅ la carpeta vieja, renombrada y movida a **`E:\Proyectos\Otros Claude\Chaumer_ARCHIVADO`** (no a
+    `E:\Proyectos\Chaumer_ARCHIVADO` como decía 3.5). Intacta: limpia y en `8983073`;
+  - ✅ `Trading_Plan` archivado en GitHub: un push responde *"This repository was archived so it is
+    read-only"*, y su `main` sigue en `8983073`, el commit traído a `chaumer/`.
+- **El test ciego no cambia:** su protocolo usa rutas relativas. Solo cambia dónde se guardan las velas del
+  día (`chaumer_Backtesting\datos\dia\`) y que el gráfico llega al portal con un commit en el Journal.
 
 **Lo que se diseñó:**
 

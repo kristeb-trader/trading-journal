@@ -1,9 +1,10 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-09-23
+**Última actualización:** 2026-09-24
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-09-24 | Unificación Chaumer: fases 1–3 y el repositorio público |
 | 2026-09-23 | Curva de equity verde/roja y tooltip del día |
 | 2026-09-19 | El journal: una sola cuenta, regularizado a ±$160 |
 | 2026-09-18 | Dos setups: Continuación y Reingreso |
@@ -2816,6 +2817,44 @@ punto de +$73 da `#3FE0A6` exacto y en los negativos `#F2706F`; la pestaña del 
 errores reales de la BD; en móvil no se crea. Consola limpia.
 
 Commits: `539b64d` · `99d3786`.
+
+---
+
+## Checkpoint 2026-09-24 — Unificación Chaumer: fases 1–3 y el repositorio público
+
+Diseño: `docs/disenos/2026-09-24-unificacion-chaumer.md` (v1.4). **Un solo proyecto por
+debajo, dos webs por encima:** el proyecto Chaumer entra en el Journal y el portal queda como
+la pantalla de Alfredo.
+
+### Fase 1 · GitHub Pages publica solo la aplicación
+
+Pages servía la rama `main` entera: `CLAUDE.md`, `docs/`, `NinjaTrader/` daban 200.
+`publicar-journal.yml` monta una carpeta con `index.html`, `js/`, `css/`, `icons/`,
+`favicon.svg`, `manifest.json` y `sw.js`, y solo publica eso. Kris cambió *Source* a
+**GitHub Actions** antes del push. Lo privado da 404; la app carga en escritorio y en móvil.
+
+### Fase 3 · `chaumer/` con sus 115 commits
+
+`git subtree add` desde `Trading_Plan`. `01_Plan`, `02_Assets` y `05_Backtesting`, idénticos
+byte a byte a la carpeta vieja. El portal se publica solo con `publicar-portal.yml`
+(secretos propios `PORTAL_CLOUDFLARE_*`; la misma cuenta que el bot) y las 56 páginas salieron
+idénticas a las de antes. Dos cosas que solo aparecieron al mudar:
+
+- **El espacio de "Trading Journal".** Cinco scripts del portal sacaban su carpeta con
+  `URL.pathname`, que deja `%20`: `npm run verificar` fallaba. Ahora `fileURLToPath`.
+- **CRLF.** Git en Windows sacaba `chaumer/` con CRLF, la huella de los diagramas cambiaba y se
+  redibujaban. `.gitattributes`: `chaumer/** text=auto eol=lf`.
+
+### El repositorio era público (D-022)
+
+`CLAUDE.md` decía "privado"; no lo era desde su creación. Al subir `chaumer/`, el plan de
+Alfredo quedó legible en GitHub. Pasarlo a privado **tumbó el Journal** (Pages no publica
+privados con la cuenta gratuita) y lo **desactivó**. Kris lo dejó público hasta tener
+presupuesto para GitHub Pro; hubo que reactivar Pages y relanzar la publicación. El portal ya
+enseñaba sin contraseña casi todo el plan (con `noindex`).
+
+Commits: `f20786d` · `21b82c0` · `221379d` · `29496d7` · `3bbaffa` · `fb32a92` · `b984823` ·
+`dffd562` · `31133c0`.
 
 ---
 
