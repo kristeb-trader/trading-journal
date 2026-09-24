@@ -14,6 +14,7 @@ const CHECKLIST_DEFAULT = [
   { id: -7, clave: 'chk_orden',       fase: 3, texto: 'Orden precolocada a tiempo',                                 orden: 1, activo: true },
 ]
 let _checklistCache = null  // catálogo cacheado tras la primera carga
+let _etapasCache = null     // disciplina_etapas, tras la primera carga (fase 5)
 let _cuentaPrincipalCache = 'PA-APEX-232411-03'  // fallback histórico hasta leer objetivos
 
 // ── Setups paramétricos (catalogo_setups + catalogo_setup_variantes) ────────
@@ -375,7 +376,42 @@ function reglaCumplida(s, key, rotas) {
 // trades y errores COMPLETOS (sin filtro de cuenta ni de período): son índices de
 // "qué pasó ese día", no métricas del período. La disciplina es del proceso del
 // trader, no de una cuenta — pasarlos filtrados ya causó una regresión.
-function discContexto({ trades, fechasEsp, errores, stopMaxPuntos } = {}) {
+// ── Etapas de la disciplina (fase 5, 24 sep) ─────────────────────────────────
+// Cada regla del checklist pertenece a una ETAPA (`catalogo_reglas.etapa`) y cada
+// día, a la etapa que contiene su fecha (`disciplina_etapas`). La disciplina de un
+// día cuenta las reglas DE SU ETAPA, estén activas o no: `activa` solo decide qué
+// se ve para marcar. Antes contaba las activas de hoy sobre toda la historia, y
+// desactivar una regla la borraba del pasado (le pasó a rr_1a1).
+// Diseño: docs/disenos/2026-09-24-etapa-plan-chaumer.md.
+//
+// `undefined` = no hay etapas cargadas: se vuelve al criterio viejo (solo activas),
+// para que un fallo al leer `disciplina_etapas` no cambie ninguna cifra.
+function etapaDeFecha(fecha) {
+  if (!_etapasCache || !_etapasCache.length || !fecha) return undefined
+  const f = String(fecha).slice(0, 10)
+  const e = _etapasCache.find(x => (!x.desde || f >= x.desde) && (!x.hasta || f <= x.hasta))
+  return e ? e.id : null
+}
+// ¿Cuenta esta regla en un día de la etapa `etapa`?
+function reglaEnEtapa(item, etapa) {
+  if (etapa === undefined) return item.activo !== false   // sin etapas: criterio viejo
+  if (item.etapa === undefined) return true                // CHECKLIST_DEFAULT: sin etapa
+  return item.etapa === etapa
+}
+// La etapa con la que se mide un período: la pedida (número) o, si es 'auto' o no
+// viene, la del día hábil más reciente del período. Un período que cruza el cambio
+// de etapa solo cuenta los días de esa etapa: las dos listas no se mezclan.
+function etapaDelPeriodo(sesiones, pedida) {
+  if (typeof pedida === 'number') return pedida
+  let ultima = null
+  ;(sesiones || []).forEach(s => {
+    const d = s && s.sesion_date
+    if (d && esDiaHabil(d) && (!ultima || d > ultima)) ultima = d
+  })
+  return ultima ? etapaDeFecha(ultima) : undefined
+}
+
+function discContexto({ trades, fechasEsp, errores, stopMaxPuntos, etapa } = {}) {
   const tradesPorDia = new Map()
   ;(trades || []).forEach(t => {
     const d = t.trade_date || t.entry_time?.slice(0, 10)
@@ -389,6 +425,7 @@ function discContexto({ trades, fechasEsp, errores, stopMaxPuntos } = {}) {
     fomcDates: new Set((fechasEsp || []).filter(f => f.tipo === 'fomc').map(f => f.fecha)),
     rotas: reglasRotasPorDia(errores),
     stopMaxPuntos: stopMaxPuntos || 80,
+    etapa,      // número, 'auto' o undefined (= 'auto'). Ver etapaDelPeriodo()
   }
 }
 
@@ -400,24 +437,31 @@ function discContexto({ trades, fechasEsp, errores, stopMaxPuntos } = {}) {
 function calcDisciplinaStats(sesiones, items, opts) {
   const o = opts || {}
   const rotas = o.rotas || null
-  const factores = (items || DB.checklistItemsSync())
-    .filter(i => i.activo !== false)
+  // TODAS las reglas del checklist, activas o no: cada día se queda con las de su etapa.
+  const factores = (items || DB.checklistTodos())
     .map(i => ({
       key: i.clave, fase: i.fase || 1, setup: i.setup || null,
       aplica_si: i.aplica_si || 'siempre', evidencia: i.evidencia || 'declarada',
+      etapa: i.etapa, activo: i.activo,
     }))
+  const etapa = etapaDelPeriodo(sesiones, o.etapa)
   let total = 0, ok = 0
-  ;(sesiones || []).forEach(s => factores.forEach(f => {
-    if (!discFactorAplica(f, s, o)) return
-    if (f.evidencia === 'auto') {
-      const r = reglaAutoResultado(f.key, s, o)
-      if (r === null) return            // sin evidencia suficiente: no cuenta
-      total++; if (r) ok++
-      return
-    }
-    if (s[f.key] === undefined) return  // ítem sin registrar = N/A
-    total++; if (reglaCumplida(s, f.key, rotas)) ok++
-  }))
+  ;(sesiones || []).forEach(s => {
+    const es = etapaDeFecha(s.sesion_date)
+    if (etapa !== undefined && es !== etapa) return   // día de otra etapa: no se mezcla
+    factores.forEach(f => {
+      if (!reglaEnEtapa(f, es)) return
+      if (!discFactorAplica(f, s, o)) return
+      if (f.evidencia === 'auto') {
+        const r = reglaAutoResultado(f.key, s, o)
+        if (r === null) return            // sin evidencia suficiente: no cuenta
+        total++; if (r) ok++
+        return
+      }
+      if (s[f.key] === undefined) return  // ítem sin registrar = N/A
+      total++; if (reglaCumplida(s, f.key, rotas)) ok++
+    })
+  })
   return { total, ok, pct: total > 0 ? Math.round(ok / total * 100) : null }
 }
 
@@ -571,7 +615,7 @@ const DB = {
       .from('catalogo_reglas')
       // `bloquea_go` = hay que marcarla para dar GO; `aplica_si` = condición de
       // contexto del día (siempre|dia_fomc|hay_noticia); `evidencia` = auto|declarada.
-      .select('id, clave:codigo, fase, setup, texto:titulo, enunciado, orden, activo:activa, peso, bloquea_go, aplica_si, evidencia, campo')
+      .select('id, clave:codigo, fase, setup, texto:titulo, enunciado, orden, activo:activa, peso, bloquea_go, aplica_si, evidencia, campo, etapa')
       .eq('es_checklist', true)
       .order('fase', { ascending: true })
       .order('orden', { ascending: true })
@@ -678,10 +722,46 @@ const DB = {
       this.getSetups().catch(() => {}),
       this.getSetupVariantes().catch(() => {}),
       this.getChecklistItems().catch(() => {}),
+      this.getEtapas().catch(() => {}),
       // Sin esto, `cuentaPrincipal()` devuelve el fallback histórico hasta que
       // alguien la pida, y el Coach analizaría la cuenta equivocada.
       this.fetchCuentaPrincipal().catch(() => {}),
     ])
+  },
+
+  // ── Etapas de la disciplina ────────────────────────────────────────────
+  async getEtapas({ force = false } = {}) {
+    if (_etapasCache && !force) return _etapasCache
+    const { data, error } = await supa
+      .from('disciplina_etapas').select('id, nombre, desde, hasta, descripcion').order('id')
+    // Si falla, se queda en null: la disciplina vuelve al criterio viejo (activas).
+    if (!error && data) _etapasCache = data
+    return _etapasCache || []
+  },
+  etapasSync() { return _etapasCache || [] },
+
+  // TODAS las reglas del checklist, activas o no (sincrónico). Es lo que usa la
+  // disciplina: cada día se queda con las de su etapa.
+  checklistTodos() {
+    return _checklistCache || CHECKLIST_DEFAULT
+  },
+  // Las reglas de una etapa, activas o no. Sin etapas cargadas: las activas.
+  checklistDeEtapa(etapa) {
+    return this.checklistTodos().filter(i => reglaEnEtapa(i, etapa))
+  },
+
+  // La etapa elegida en el selector del Dashboard de Disciplina: 'auto' (la del
+  // período) o un id. Por visitante y en este navegador: es una preferencia de vista.
+  etapaVista() {
+    try {
+      const v = localStorage.getItem('disc.etapa')
+      if (!v || v === 'auto') return 'auto'
+      const n = Number(v)
+      return this.etapasSync().some(e => e.id === n) ? n : 'auto'
+    } catch { return 'auto' }
+  },
+  elegirEtapaVista(v) {
+    try { localStorage.setItem('disc.etapa', String(v)) } catch { /* sin almacenamiento */ }
   },
 
   // Claves activas (sincrónico, tras una carga previa). Fallback al default.

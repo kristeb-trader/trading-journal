@@ -25,6 +25,18 @@ Funciones canónicas: `discContexto` · `esDiaHabil` · `sesionOpero` · `discFa
 **Construye el contexto con `discContexto()` y pásale trades y errores COMPLETOS** — sin
 filtro de cuenta ni de período. Son índices de "qué pasó ese día", no métricas.
 
+## Etapas (24 sep, fase 5)
+
+Cada regla pertenece a una **etapa** (`catalogo_reglas.etapa`) y cada día, a la etapa que
+contiene su fecha (`disciplina_etapas`). **Un día cuenta las reglas de su etapa, activas o no.**
+`activa` solo decide qué se ve para marcar (Diario, NinjaTrader). Funciones: `etapaDeFecha` ·
+`reglaEnEtapa` · `etapaDelPeriodo` · `DB.checklistDeEtapa` · `DB.etapaVista`.
+- Un período se mide con **una** etapa: la elegida en Disciplina o la de su día más reciente.
+  Los días de la otra etapa no entran: las dos listas no se mezclan.
+- Para la disciplina, pedir **todas** las reglas (`getChecklistItems()`), nunca
+  `soloActivos: true`: eso borraba del pasado las reglas desactivadas.
+- Sin etapas cargadas, `etapaDeFecha` da `undefined` y todo vuelve al criterio viejo (activas).
+
 ## Las siete invariantes
 
 1. **Sábados y domingos no cuentan en NADA.** El AddOn crea filas de `sesiones` al abrir

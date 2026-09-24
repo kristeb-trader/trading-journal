@@ -72,7 +72,7 @@ const Metrics = (() => {
   function cleanSessions(activeSesiones, casByDate) {
     return activeSesiones.filter(s => {
       if (s.no_opero) return !casByDate[s.sesion_date]
-      return clavesActivas().every(k => s[k]) && !casByDate[s.sesion_date]
+      return clavesActivas(s).every(k => s[k]) && !casByDate[s.sesion_date]
     }).length
   }
 
@@ -235,19 +235,11 @@ const Metrics = (() => {
 
   const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
 
-  // Factores del checklist — se cargan dinámicamente del catálogo en init().
-  // Cada factor: { key: <clave>, label: <texto>, fase }. Fallback al default de DB.
-  let DISC_FACTORS = []
-  function buildDiscFactors(items) {
-    const src = (items && items.length) ? items : DB.checklistClaves().map(c => ({ clave: c, texto: c, fase: 1 }))
-    DISC_FACTORS = src
-      .filter(i => i.activo !== false)
-      .map(i => ({ key: i.clave, label: i.texto, fase: i.fase || 1, setup: i.setup || null }))
-  }
-
-  // Claves activas del checklist (para conteos de disciplina)
-  function clavesActivas() {
-    return DISC_FACTORS.length ? DISC_FACTORS.map(f => f.key) : DB.checklistClaves()
+  // Claves del checklist de UN día: las de su etapa, activas o no. Sin etapas
+  // cargadas, DB.checklistDeEtapa devuelve las activas (el criterio de siempre).
+  function clavesActivas(s) {
+    const items = DB.checklistDeEtapa(etapaDeFecha(s && s.sesion_date))
+    return items.length ? items.map(i => i.clave) : DB.checklistClaves()
   }
 
   // ¿La sesión se "conectó" ese día? (operó, o no operó pero sí se conectó a analizar)
@@ -900,10 +892,9 @@ const Metrics = (() => {
     let checklistItems, fechasEsp
     ;[allTrades, allSesiones, allCasuisticas, allCatalogo, allObjetivos, allExpCatalogo, allExpRegistros, checklistItems, fechasEsp] = await Promise.all([
       DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getCatalogoCasuisticas(), DB.getObjetivos(), DB.getCatalogoExperimentos(), DB.getAllExperimentoRegistros(),
-      DB.getChecklistItems({ soloActivos: true }).catch(() => null),
+      DB.getChecklistItems().catch(() => null),   // todas: cada día usa las de su etapa
       DB.getFechasEspeciales().catch(() => []),
     ])
-    buildDiscFactors(checklistItems)
     // Índice por tipo → Set de fechas (festivos y FOMC del desglose de días)
     allFechasEsp = fechasEsp || []
     fechasEspByDate = {}

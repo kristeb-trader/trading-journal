@@ -43,12 +43,26 @@ const Disciplina = (() => {
     if (f.evidencia === 'auto') return reglaAutoResultado(f.key, s, ctx) !== null
     return s[f.key] !== undefined
   }
-  function buildFactors(items) {
-    const src = (items && items.length) ? items : DB.checklistClaves().map(c => ({ clave: c, texto: c, fase: 1 }))
-    DISC_FACTORS = src.filter(i => i.activo !== false)
-      .map(i => ({ key: i.clave, label: i.texto, enunciado: i.enunciado || '',
+  // Las reglas llegan YA filtradas por etapa (DB.checklistDeEtapa): activas o no,
+  // cuentan todas las de la etapa. Ver docs/disenos/2026-09-24-etapa-plan-chaumer.md.
+  function mapFactors(items) {
+    return items.map(i => ({ key: i.clave, label: i.texto, enunciado: i.enunciado || '',
                    fase: i.fase || 1, setup: i.setup || null, bloqueaGo: i.bloquea_go !== false,
                    evidencia: i.evidencia || 'declarada', aplica_si: i.aplica_si || 'siempre' }))
+  }
+  function buildFactors(items) {
+    const src = (items && items.length) ? items : DB.checklistClaves().map(c => ({ clave: c, texto: c, fase: 1 }))
+    DISC_FACTORS = mapFactors(src)
+  }
+  // Las reglas de UN día: las de su etapa. La racha y el historial recorren días que
+  // pueden ser de otra etapa que la elegida.
+  let etapaActual = undefined
+  const factoresCache = new Map()
+  function factoresDe(s) {
+    const e = etapaDeFecha(s.sesion_date)
+    if (e === etapaActual) return DISC_FACTORS
+    if (!factoresCache.has(e)) factoresCache.set(e, mapFactors(DB.checklistDeEtapa(e)))
+    return factoresCache.get(e)
   }
 
   // ── Por qué falló una regla un día concreto ───────────────────────────────
@@ -129,6 +143,13 @@ const Disciplina = (() => {
     // Sábados y domingos quedan fuera de toda estadística (no se opera en fin de
     // semana; pueden existir filas creadas por el AddOn de NT8).
     const ses = sesiones.filter(s => s.sesion_date && inR(s.sesion_date, r) && esDiaHabil(s.sesion_date))
+    // Etapa: la del selector o, en 'auto', la del día más reciente del período. La
+    // disciplina y las fases cuentan SOLO los días de esa etapa, con sus reglas; los
+    // errores y los días limpios cuentan días, no reglas, y no se filtran.
+    etapaActual = etapaDelPeriodo(ses, DB.etapaVista())
+    factoresCache.clear()
+    buildFactors(DB.checklistDeEtapa(etapaActual))
+    const enEtapa = s => etapaActual === undefined || etapaDeFecha(s.sesion_date) === etapaActual
     const cas = casuisticas.filter(c => c.sesion_date && inR(c.sesion_date, r) && esDiaHabil(c.sesion_date))
     const trd = trades.filter(t => t.trade_date && inR(t.trade_date, r) && esDiaHabil(t.trade_date))
 
@@ -149,7 +170,7 @@ const Disciplina = (() => {
     // Disciplina total — solo cuentan los ítems con valor registrado en la sesión
     // (un ítem sin registrar, p. ej. una regla nueva en días previos, es N/A).
     let dTotal = 0, dOk = 0
-    ses.forEach(s => DISC_FACTORS.forEach(f => {
+    ses.filter(enEtapa).forEach(s => DISC_FACTORS.forEach(f => {
       if (!factorAplica(f, s)) return
       if (!evaluable(s, f)) return
       dTotal++; if (cumple(s, f.key, f)) dOk++
@@ -159,7 +180,7 @@ const Disciplina = (() => {
     // Cumplimiento por fase (con ítems, días fallidos y cobertura de datos)
     const phases = [1, 2, 3].map(fase => {
       const facs = DISC_FACTORS.filter(f => f.fase === fase)
-      const baseDias = fase === 1 ? conectadas : operadas
+      const baseDias = (fase === 1 ? conectadas : operadas).filter(enEtapa)
       const factores = facs.map(f => {
         const aplicables = baseDias.filter(s => factorAplica(f, s))
         const registradas = aplicables.filter(s => evaluable(s, f))
@@ -192,7 +213,7 @@ const Disciplina = (() => {
     const opOrd = [...operadas].sort((a, b) => b.sesion_date.localeCompare(a.sesion_date))
     let racha = 0
     for (const s of opOrd) {
-      const registrados = DISC_FACTORS.filter(f => factorAplica(f, s) && evaluable(s, f))
+      const registrados = factoresDe(s).filter(f => factorAplica(f, s) && evaluable(s, f))
       if (registrados.length && registrados.every(f => cumple(s, f.key, f))) racha++
       else break
     }
@@ -227,7 +248,7 @@ const Disciplina = (() => {
 
     // Historial de racha (últimas 12 sesiones operadas)
     const hist = [...operadas].sort((a, b) => a.sesion_date.localeCompare(b.sesion_date)).slice(-12).map(s => {
-      const registrados = DISC_FACTORS.filter(f => factorAplica(f, s) && evaluable(s, f))
+      const registrados = factoresDe(s).filter(f => factorAplica(f, s) && evaluable(s, f))
       const fails = registrados.filter(f => !cumple(s, f.key, f)).length
       const tieneError = (casByDate[s.sesion_date] || []).length > 0
       const enVentana = tradesEnVentanaNoticia(trByDate[s.sesion_date] || [], s).length > 0
@@ -563,12 +584,23 @@ const Disciplina = (() => {
       <button type="button" class="per-filter-opt ${period === p.k ? 'on' : ''}" data-period="${p.k}">
         <i class="ti ${period === p.k ? 'ti-check' : ''}"></i>${p.label}
       </button>`).join('')
+    // Etapa: solo aparece cuando hay más de una. Va en el MISMO desplegable que el
+    // período para no sumar un tercer control a la barra en móvil.
+    const etapas = DB.etapasSync()
+    const ev = DB.etapaVista()
+    const optsEtapa = etapas.length < 2 ? '' : `
+      <div class="per-filter-sep"></div>
+      <div class="per-filter-h">Etapa</div>
+      ${[{ id: 'auto', nombre: 'La del período' }, ...etapas].map(e => `
+        <button type="button" class="per-filter-opt ${ev === e.id ? 'on' : ''}" data-etapa="${e.id}">
+          <i class="ti ${ev === e.id ? 'ti-check' : ''}"></i>${esc(e.nombre)}
+        </button>`).join('')}`
     el.innerHTML = `
       <button type="button" class="per-filter-btn" id="disciplinaPeriodBtn" title="Período del dashboard">
         <span class="per-filter-text">${periodoInfo().label}</span>
         <i class="ti ti-chevron-down"></i>
       </button>
-      <div class="per-filter-panel ${abierto ? '' : 'hidden'}">${opts}</div>`
+      <div class="per-filter-panel ${abierto ? '' : 'hidden'}">${opts}${optsEtapa}</div>`
   }
   function togglePeriodPanel(abrir) {
     const p = document.querySelector('#disciplinaPeriod .per-filter-panel')
@@ -590,7 +622,12 @@ const Disciplina = (() => {
 
   function refreshTitle() {
     // El rango del período va al contexto de la barra superior (título único).
-    Nav.setContexto('disciplina', range().label)
+    // Con dos etapas, el nombre de la que se mide va junto al período. Se calcula
+    // aquí y no se lee de `etapaActual`: el título se pinta antes que el tablero.
+    const r = range()
+    const idEt = etapaDelPeriodo(sesiones.filter(s => s.sesion_date && inR(s.sesion_date, r)), DB.etapaVista())
+    const et = DB.etapasSync().length > 1 ? DB.etapasSync().find(e => e.id === idEt) : null
+    Nav.setContexto('disciplina', et ? `${range().label} · ${et.nombre}` : range().label)
   }
 
   async function load() {
@@ -601,14 +638,16 @@ const Disciplina = (() => {
         DB.getSesiones(),
         DB.getAllCasuisticas(),
         DB.getCatalogoCasuisticas().catch(() => []),
-        DB.getChecklistItems({ soloActivos: true }).catch(() => null),
+        // TODAS, activas o no: cada día se mide con las de su etapa.
+        DB.getChecklistItems().catch(() => null),
         DB.getFechasEspeciales().catch(() => []),
         DB.getObjetivos().catch(() => null),
         DB.getSetups ? DB.getSetups().catch(() => []) : [],
       ])
       trades = t || []; sesiones = s || []; casuisticas = c || []; catalogo = cat || []
       fechasEsp = fe || []; stopMax = obj?.stop_max_puntos || 80; setupsCat = sup || []
-      buildFactors(items)
+      await DB.getEtapas().catch(() => [])
+      buildFactors(DB.checklistDeEtapa(etapaDelPeriodo(sesiones, DB.etapaVista())))
       loaded = true
     } catch (e) {
       if (cont) cont.innerHTML = `<p class="coach-error">Error al cargar disciplina: ${esc(e.message)}</p>`
@@ -620,6 +659,13 @@ const Disciplina = (() => {
   function wire() {
     document.getElementById('disciplinaPeriod')?.addEventListener('click', e => {
       if (e.target.closest('.per-filter-btn')) { togglePeriodPanel(); return }
+      const et = e.target.closest('[data-etapa]')
+      if (et) {
+        DB.elegirEtapaVista(et.dataset.etapa)
+        togglePeriodPanel(false)
+        renderPeriodPicker(); refreshTitle(); render()
+        return
+      }
       const b = e.target.closest('[data-period]'); if (!b) return
       period = b.dataset.period
       renderPeriodPicker(); updateMonthNav(); refreshTitle(); render()

@@ -23,8 +23,13 @@ sesión**, con `/clear` entre una y otra.
   Verificado en vivo (24 sep)
 - [x] **Fase 4b** — Se registra desde el Journal: **Otros › Backtesting** (registrar,
   corregir, borrar, gráfico y datos de inicio). Verificado de punta a punta con el portal
-- [ ] **Kris:** registrar la primera jornada real desde el Journal (la siguiente es el
-  27/11/2025) y mirar que el portal la enseña
+- [x] **Kris:** primera jornada real registrada desde el Journal (01/12/2025) y vista en el portal
+- [x] **Fase 5a** — Etapas de la disciplina: cada regla es de una etapa y cuenta aunque se
+  desactive. La disciplina histórica, **idéntica** (813/916 = 89 %, mes a mes), comprobado con
+  los datos reales. Diseño: `docs/disenos/2026-09-24-etapa-plan-chaumer.md` (v2.1)
+- [ ] **Fase 5b** — Las reglas del plan en el Journal, las 4 automáticas nuevas, la etapa 2
+  desde el 24/09 y el piloto de hoy (Kris marca su casilla en el Diario)
+- [ ] **Fase 5c** — Coach, Estrategia, NinjaTrader y documentos
 - [ ] Aparte, vistos en la 4a: activar RLS (o borrar) `_bak_20260919_trades_regularizacion`;
   la copia local de D1 del portal no tiene la tabla `observaciones`
 - [ ] **Repositorio público de momento (D-022).** Cuando haya presupuesto: GitHub Pro y

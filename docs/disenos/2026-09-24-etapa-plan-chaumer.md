@@ -1,12 +1,13 @@
 # Fase 5 — Una sola lista de reglas: la etapa del plan de Chaumer
 
-**Versión:** v2 · **Estado:** 🟡 **PROPUESTO, pendiente de aprobar por Kris.**
+**Versión:** v2.1 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 5a cerrada; la siguiente es la 5b.
 **Escrito:** 24/09/2026. Es el sub-diseño de la fase 5 de `docs/disenos/2026-09-24-unificacion-chaumer.md`.
 
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 24/09/2026 | Primera versión, tras el diagnóstico y las dos decisiones de Kris |
 | v2 | 24/09/2026 | **Checklist simple, decidido por Kris línea por línea:** 2 casillas (corrida fluida · punto de referencia) y las 7 automáticas. Las noticias se siguen anotando como hoy. El resto de la checklist del plan, como guía |
+| v2.1 | 24/09/2026 | 5a cerrada. **Desvío de §6:** el selector de etapa va solo en Disciplina, dentro del desplegable de período; Calendario y Análisis usan la etapa del período, sin selector |
 
 > El diseño aprobado manda sobre la implementación. Toca invariantes del Journal (disciplina en `db.js`,
 > `sesion_checklist`, soft-delete de reglas): **no se implementa nada hasta el sí de Kris.**
@@ -157,9 +158,13 @@ y las precisiones de zonas. Se leen en Estrategia con su bloque y sus reglas.
   casilla y días sin conexión, igual que hoy.
 - **Qué va por etapa:** disciplina %, fase más débil y desglose por regla. **Qué no:** errores %, días limpios
   y racha, que cuentan días y no reglas.
-- **Selector de etapa** en la barra superior (`Nav.HERRAMIENTAS`) de **Disciplina**, **Calendario** (la card)
-  y **Análisis**. Por defecto, la actual. Un período que cruza el 24/09 solo cuenta los días de la etapa
-  elegida: septiembre, en la etapa nueva, es del 24 al 30.
+- **Qué etapa se mide** *(v2.1, al implementar 5a)*: por defecto, **la del período**, que es la del día hábil
+  más reciente que contiene. Un período que cruza el 24/09 solo cuenta los días de esa etapa: septiembre,
+  en la etapa nueva, es del 24 al 30. Agosto se mide con la anterior sin tocar nada.
+- **Selector de etapa** solo en **Disciplina**, como segundo grupo del **desplegable de período** («La del
+  período» · cada etapa), y solo cuando hay más de una. Con dos etapas, su nombre va junto al período en la
+  barra. *Desvío del diseño:* decía selector en Disciplina, Calendario y Análisis; Análisis ya lleva dos
+  controles en la barra y un tercero no cabe a 375 px. Calendario y Análisis usan siempre la del período.
 - El Coach y el modal del día usan las reglas de la etapa **de la fecha** que miran.
 
 ---
@@ -195,7 +200,27 @@ decide qué se ve para marcar. Desactivar una regla nunca cambia el pasado.*
 
 Cada una se verifica por separado. Estimación en llamadas.
 
-### 5a · Etapas y disciplina por etapa, sin reglas nuevas (~20)
+### 5a · Etapas y disciplina por etapa, sin reglas nuevas (~20) ✅ CERRADA el 24/09/2026
+
+*Resultado:*
+- Migración `2026-09-24-disciplina-etapas`: tabla `disciplina_etapas` (solo la etapa 1, sin fechas), columnas
+  `etapa`, `plan_reglas`, `origen`, `plan_tipo`. **Las 17 casillas activas → `etapa = 1`**; `rr_1a1` y las
+  11 de filosofía y archivadas, `NULL`. Comprobado con un `SELECT`.
+- `db.js`: `etapaDeFecha`, `reglaEnEtapa`, `etapaDelPeriodo`; `calcDisciplinaStats` cuenta las reglas de la
+  etapa del día, **activas o no**; `DB.getEtapas`, `checklistTodos`, `checklistDeEtapa`, `etapaVista`. Si no
+  se pueden leer las etapas, vuelve al criterio viejo (activas).
+- Dashboard de Disciplina (disciplina y fases por etapa; racha e historial con las reglas de cada día),
+  card del Calendario, Análisis y el modal del día (las reglas de la etapa de ESE día).
+- **Verificado, con los datos reales** (164 sesiones, 113 trades, 30 errores con regla, exportados por el MCP
+  y pasados por el `db.js` de antes y el de después): **813/916 = 89 %, idéntico**, y los 8 meses idénticos
+  (feb 77 · mar 75 · abr 80 · may 93 · jun 95 · jul 100 · ago 97 · sep 100); la lista del Dashboard, las
+  mismas 17; y sin etapas cargadas, también idéntico. Simulada la 5b, la etapa 1 deja fuera solo el 24/09.
+- En el preview: Calendario, Disciplina, Análisis y el modal del día, sin errores; el selector, simulado con
+  dos etapas, a 375 px.
+- **Desvíos:** el del selector (§6); y `setEtapaVista` pasó a `elegirEtapaVista`, porque el modo local anula
+  los métodos que empiezan por `set` (los toma por escrituras en la BD).
+
+*Lo que se diseñó:*
 
 - Migración: `disciplina_etapas` (solo la **etapa 1** por ahora, sin fechas); columnas `etapa`, `plan_reglas`,
   `origen`, `plan_tipo`; `etapa = 1` en las 17 casillas activas.

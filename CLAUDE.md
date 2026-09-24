@@ -10,6 +10,9 @@ al abrir el archivo afectado.
 
 - **Disciplina** — el criterio vive SOLO en `js/db.js`. Estuvo duplicado en 4 sitios y se
   desincronizó. Detalle: `.claude/rules/disciplina.md` · paso a paso: `docs/Disciplina.md`.
+- **Disciplina por etapa (24 sep)** — un día cuenta las reglas de **su etapa**
+  (`catalogo_reglas.etapa`, `disciplina_etapas`), **activas o no**. `activa` solo decide qué se
+  ve para marcar. Desactivar una regla nunca cambia el pasado (le pasó a `rr_1a1`).
 - **P&L** — `trades.profit` es **NETO** (comisión round-trip ya descontada);
   `commission` es el round-trip total. Unificado jun 2026.
 - **Riesgo en PUNTOS, no en dólares** — MNQ = $2/punto, NQ = $20/punto. Normalizar mal el

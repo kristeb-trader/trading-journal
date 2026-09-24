@@ -48,7 +48,8 @@ const Modal = {
       dateStr ? DB.getDiagnosticoByDate(dateStr) : null,
       dateStr ? DB.getCasuisticasByDate(dateStr) : [],
       DB.getCatalogoEmociones().catch(() => []),
-      DB.getChecklistItems({ soloActivos: true }).catch(() => []),
+      // Las reglas de la ETAPA de ese día, activas o no (un día viejo se ve con las suyas).
+      DB.getChecklistItems().then(() => DB.checklistDeEtapa(etapaDeFecha(dateStr))).catch(() => []),
       dateStr ? DB.getTradesByDate(dateStr).catch(() => []) : [],
       DB.getFechasEspeciales().catch(() => []),   // la regla FOMC necesita saber si lo era
     ])
@@ -891,7 +892,8 @@ async function boot() {
   Nav.init()
 
   // Precargar el catálogo del checklist (claves dinámicas para calendario/charts/métricas)
-  await DB.getChecklistItems().catch(() => {})
+  // y las etapas de la disciplina: sin ellas, todo cuenta con el criterio viejo.
+  await Promise.all([DB.getChecklistItems().catch(() => {}), DB.getEtapas().catch(() => {})])
 
   // Start on calendar
   Nav.go('calendar')

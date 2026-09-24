@@ -99,6 +99,7 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-09-24-backtesting-tablas.sql` | ✅ MCP | tablas `bt_cabecera`, `bt_jornadas`, `bt_operaciones` (la bitácora de backtesting, antes en D1 del portal), rol `portal_lector` y vistas `portal_bt_*` que solo él lee |
 | `2026-09-24-backtesting-datos-desde-d1.sql` | ✅ MCP | las 85 jornadas y 73 operaciones de D1, tal cual (P&L 1.233,04 sin recalcular); `imagen` apunta a Cloudinary |
 | `2026-09-24-bt-guardar-jornada.sql` | ✅ MCP | función `bt_guardar_jornada(jsonb)`: guarda jornada + operaciones en una transacción y calcula el P&L; al corregir conserva los valores congelados. Solo `authenticated` y `service_role` |
+| `2026-09-24-disciplina-etapas.sql` | ✅ MCP | tabla `disciplina_etapas` (etapa 1) y columnas `etapa`, `plan_reglas`, `origen`, `plan_tipo` en `catalogo_reglas`; las 17 casillas activas → etapa 1. La disciplina cuenta por etapa, no por `activa` |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.
