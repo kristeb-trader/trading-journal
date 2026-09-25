@@ -3,7 +3,7 @@
  *
  *   node scripts/plan/sincronizar.mjs            informe + SQL en scripts/plan/salida.sql
  *
- * Lee (SOLO LECTURA, es de Cowork):
+ * Lee (SOLO LECTURA: el plan se cambia aparte, con el sí de Kris, D-028):
  *   chaumer/01_Plan/CHECKLIST_DIARIA.md   las líneas de la checklist diaria
  *   chaumer/01_Plan/reglas.json           las reglas del plan
  * y el mapa del Journal (scripts/plan/mapa-casillas.json): qué líneas son casilla o

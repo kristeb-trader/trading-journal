@@ -191,8 +191,11 @@ motor de backtesting—, traído con su historia el 24 sep (`git subtree`; antes
 
 - **Tiene sus propias reglas:** `chaumer/CLAUDE.md` (las cinco que no se negocian) y
   `chaumer/04_Web/CLAUDE.md` (el portal). Valen dentro de esa carpeta.
-- **`chaumer/01_Plan/` es de solo lectura para Claude Code.** Lo edita Cowork. Una
-  contradicción se apunta en `chaumer/04_Web/PROPUESTAS_AL_PLAN.md`, no se corrige.
+- **`chaumer/01_Plan/` se cambia solo con el sí de Kris, cambio a cambio** — erratas
+  incluidas (D-028; Cowork ya no existe). Cada cambio en su commit `plan: …`, nunca
+  mezclado con portal o Journal, y no está cerrado hasta sincronizarlo (`sincronizar.mjs`,
+  los dos SQL, huellas, `npm run verificar`). Lo que se vea del plan trabajando en otra
+  cosa se le dice a Kris en el momento o va a `tasks/current.md`: no se corrige de paso.
 - **El portal es otra web** (Astro, Cloudflare Pages, `plan-operativo-nq.pages.dev`): el
   invariante de "vanilla, sin frameworks" no le aplica. Se publica solo con
   `.github/workflows/publicar-portal.yml`, que usa secretos **propios**

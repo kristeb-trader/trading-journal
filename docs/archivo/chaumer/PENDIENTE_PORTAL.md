@@ -1,5 +1,10 @@
 # PENDIENTE DEL PORTAL
 
+> 🗄️ **Archivado el 25/09/2026 (D-028).** Era el buzón entre Cowork y Claude Code, y Cowork dejó de existir.
+> Las 9 tareas estaban hechas. Lo que seguía en pie pasó a otro sitio: el diagrama con el umbral viejo, a
+> `tasks/current.md`; «no toques `02_Assets\diagramas\`» y «no apliques las cuatro fusiones», a
+> `chaumer/04_Web/CLAUDE.md`. No se añade nada nuevo.
+
 **El buzón entre Cowork y Claude Code.** Aquí queda escrito lo que hay que hacer en el portal.
 
 ---

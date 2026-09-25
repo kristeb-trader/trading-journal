@@ -114,6 +114,8 @@ Si la estructura interna no cambia, nada se rompe. Renombrar se puede hacer desp
    portal se apagan solo en la última fase, con una exportación guardada antes.
 4. **`chaumer/01_Plan/` es de solo lectura para Claude Code.** Lo edita Cowork. Las cinco reglas del proyecto
    Chaumer viajan en `chaumer/CLAUDE.md` y siguen vigentes dentro de esa carpeta.
+   *Sustituida el 25/09/2026 por D-028: Cowork deja de existir y el plan se cambia desde Claude Code, con el
+   sí de Kris cambio a cambio. Las cinco reglas siguen vigentes.*
 5. **La historia del Journal no cambia** (decisión del 24/09). La nueva etapa se añade al lado; no se reescribe
    nada de lo anterior.
 6. **Los invariantes del Journal siguen vigentes para el Journal.** El de "vanilla, sin frameworks" vale para la

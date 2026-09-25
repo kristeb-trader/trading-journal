@@ -2,7 +2,7 @@
 //
 // «Plan de Chaumer» (etapa 2, desde el 24/09): tu checklist (las casillas y las
 // automáticas), la checklist diaria del plan en el orden del documento, y sus
-// reglas. El texto sale del plan (chaumer/01_Plan) y se edita SOLO allí, en Cowork;
+// reglas. El texto sale del plan (chaumer/01_Plan) y se edita SOLO allí (D-028);
 // lo trae scripts/plan/sincronizar.mjs. Aquí no se toca.
 // «Etapa anterior» (hasta el 23/09): el rulebook propio tal como quedó —sus 17
 // casillas y los textos de filosofía—. Tampoco se edita: es la historia.
@@ -124,7 +124,7 @@ const Estrategia = (() => {
     const cont = document.getElementById('reglasList'); if (!cont) return
     let html = ''
     if (tab === 'plan') {
-      html = `<p class="rb-intro"><i class="ti ti-lock"></i> El plan de Chaumer, de solo lectura. El texto se cambia en el plan (Cowork) y llega aquí al sincronizar.</p>`
+      html = `<p class="rb-intro"><i class="ti ti-lock"></i> El plan de Chaumer, de solo lectura. El texto se cambia en el plan y llega aquí al sincronizar.</p>`
       if (vista === 'checklist') html += porGrupo(planChecklist(), r => FASE_TITLE[r.fase])
       else if (vista === 'diaria') html += porGrupo(planLineas(), r => r.plan_bloque)
       else html += porGrupo(planReglas(), r => r.plan_bloque)

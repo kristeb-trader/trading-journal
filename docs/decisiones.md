@@ -10,6 +10,48 @@
 
 ---
 
+## D-028 — El plan de Chaumer se trabaja desde Claude Code; Cowork deja de existir
+
+**Decisión (Kris, 25/09/2026).** El plan (`chaumer/01_Plan`), el test ciego, `lector.py`/`dia.py` y los
+diagramas del método se trabajan desde Claude Code. `01_Plan` deja de ser de solo lectura y pasa a ser
+**de escritura con aprobación**:
+- Un cambio del plan solo entra con el **sí de Kris, cambio a cambio — erratas incluidas**.
+- Va en su propio commit `plan: …`, nunca mezclado con portal o Journal, y sube la versión (`ESTADO.md` y
+  la tabla de versiones de `TRADING_PLAN_CHAUMER.md`).
+- No está cerrado hasta sincronizarlo: `sincronizar.mjs`, los dos SQL con sus huellas, `npm run verificar`
+  del portal y, si tocó `lector.py`, la regresión del motor.
+- **`PROPUESTAS_AL_PLAN.md` y `PENDIENTE_PORTAL.md` se archivan** (`docs/archivo/chaumer/`). Lo que se vea
+  del plan trabajando en otra cosa se le dice a Kris en el momento o va a `tasks/current.md`: no se corrige
+  de paso.
+- Los diagramas los genera Claude Code en una sesión del plan y Kris los revisa uno a uno antes de
+  colocarlos.
+- El test ciego se hace en una sesión nueva que no lee `mio/` ni ninguna tabla de Kris de ese día hasta
+  haber entregado (`test_ciego/LEEME_BACK_DIARIO.md`).
+
+**Motivo.** Una sola herramienta en vez de dos. Un cambio del plan llega al Coach y al portal en la misma
+sesión, en vez de quedarse «pendiente de Cowork»: el 25/09 había cinco así, uno desde el 08/09.
+
+**Consecuencias asumidas.**
+- La separación entre quien escribe el plan y quien escribe el código deja de ser de herramienta y pasa a
+  ser de procedimiento: el sí de Kris y el commit `plan:`. `git log -- chaumer/01_Plan` es ahora el registro
+  de los cambios aprobados.
+- La ceguera del test ciego depende de instrucciones, no de un candado: Claude Code tiene a mano el MCP de
+  Supabase y `mio/`, que Cowork no veía.
+- El texto del Coach (`INSTRUCCIONES_PLAN`) cambió: la caché del bloque A se reescribe una vez.
+- El comentario de `plan_documentos` se actualizó (`2026-09-25-plan-sin-cowork.sql`).
+
+**Descartado.** Mantener la bandeja de propuestas, en `04_Web/` o subida a `chaumer/` (Kris: se archiva, «ya
+que estamos haciendo otra reestructuración»). Que la aprobación la compartiera Alfredo en los cambios de
+metodología. Que Claude corrigiera la redacción sin preguntar: el cambio de metodología que se coló una
+vez entró justo así.
+
+**Sustituye** a la parte de D-024, D-025 y D-026 —y a la regla 4 del diseño de unificación— que asignaba el
+plan y el motor a Cowork.
+
+**Fecha.** 2026-09-25
+
+---
+
 ## D-027 — Las observaciones de Alfredo se quedan en D1; el portal suelta R2
 
 **Decisión (Kris, 25/09/2026, fase 8 de la unificación Chaumer).**
@@ -38,6 +80,8 @@ A) o con una segunda llave (B); quitar las observaciones del portal (D).
 ---
 
 ## D-026 — El candado del test ciego vive en la base de datos, y el motor de Cowork se tocó
+
+*Parcialmente sustituida por D-028 (25/09/2026): el plan y el motor ya no son de Cowork.*
 
 **Decisión (Kris, 24/09/2026, fase 7 de la unificación Chaumer).**
 - `motor_fichas` (lo que marcó el motor cada día) tiene RLS con una política **propia**, `candado`, y
@@ -76,6 +120,8 @@ bitácora); el candado en JavaScript; las herramientas `dia`/`velas` del Coach (
 
 ## D-025 — El Coach lee el plan de Chaumer entero y pasa a Claude Opus 5.5
 
+*Parcialmente sustituida por D-028 (25/09/2026): el plan y el motor ya no son de Cowork.*
+
 **Decisión (Kris, 24/09/2026, fase 6 de la unificación Chaumer).**
 - En los días de la etapa 2, el Coach recibe los cinco documentos del plan (reglas con sus
   condiciones, parámetros, glosario, checklist y contextualización) como **primer bloque** del
@@ -106,6 +152,8 @@ el Coach no ve fichas ni velas del motor.
 ---
 
 ## D-024 — La disciplina se mide por etapas, y la etapa del plan de Chaumer empieza el 24/09
+
+*Parcialmente sustituida por D-028 (25/09/2026): el plan y el motor ya no son de Cowork.*
 
 **Decisión (Kris, 24/09/2026, fase 5 de la unificación Chaumer).**
 - Cada regla pertenece a una **etapa** y cada día a la que contiene su fecha. Un día cuenta las

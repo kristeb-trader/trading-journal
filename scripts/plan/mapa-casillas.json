@@ -2,7 +2,7 @@
   "_leeme": [
     "Qué líneas de la checklist diaria del plan (chaumer/01_Plan/CHECKLIST_DIARIA.md) son casilla o automática en el Journal.",
     "Lo decidió Kris el 24/09/2026 (docs/disenos/2026-09-24-etapa-plan-chaumer.md §4). Toda línea que no esté aquí es GUÍA.",
-    "`linea` es un fragmento literal de la línea del plan: identifica la línea aunque cambie el resto. Si Cowork lo cambia, sincronizar.mjs avisa y no toca esa casilla.",
+    "`linea` es un fragmento literal de la línea del plan: identifica la línea aunque cambie el resto. Si el plan lo cambia, sincronizar.mjs avisa y no toca esa casilla.",
     "`regla` en vez de `linea`: automática que sale de una regla de reglas.json, no de una línea de la checklist.",
     "El texto que se guarda es siempre el del plan, nunca el de este archivo."
   ],

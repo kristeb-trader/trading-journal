@@ -46,8 +46,8 @@ razonamiento **no se puede apagar** (`disabled` / `enabled` dan 400) y cuenta de
   primero porque es igual para todos los días de la etapa: la caché lo relee entre turnos y entre días. Un
   día de la etapa 1 va sin A, como siempre. Meter algo de la fecha en A rompe la caché de todos los días.
 - **`plan_documentos` lo escribe solo `scripts/plan/sincronizar.mjs`** (genera `salida-documentos.sql`, se
-  aplica por el MCP y se comprueba con la huella sha256). Nunca a mano ni desde la app. Si Cowork cambia el
-  plan, se vuelve a sincronizar: el Coach lo cachea en memoria (`DB.getPlanDocumentos`) hasta recargar.
+  aplica por el MCP y se comprueba con la huella sha256). Nunca a mano ni desde la app. Cada commit `plan:`
+  (D-028) se cierra sincronizando: el Coach lo cachea en memoria (`DB.getPlanDocumentos`) hasta recargar.
 - **Vigilante** (`quitarCodigosPlan`, solo con el bloque A): quita los códigos `R-/P-/G-/D-/C-` que el modelo
   cuele **entre paréntesis** antes de pintar y de guardar; los de fuera solo se avisan en la consola. Si
   `coach_uso.codigos_quitados` empieza a salir > 0, la instrucción ya no basta.

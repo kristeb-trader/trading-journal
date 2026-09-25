@@ -19,13 +19,17 @@ Metodología de trading de Alfredo Chaumer para **MNQ** en NinjaTrader 8, traduc
 
 ## Quién hace qué
 
-| Cowork (chat) | Claude Code (en `04_Web\`) |
-|---|---|
-| Las reglas y el plan · `01_Plan\` | El código del portal |
-| Los gráficos del método (PNG) | Maquetación, compilar, publicar |
-| Auditar sesiones con los datos | **Nada de `01_Plan\`** |
+Todo se hace desde Claude Code: **Cowork dejó de existir el 25/09/2026** (D-028, en `docs/decisiones.md` del Journal). Lo que separa el trabajo ya no es la herramienta: es la **sesión** y el **commit**.
 
-`01_Plan\` es **de solo lectura desde el portal**. Si encuentras una contradicción, escríbela en `04_Web\PROPUESTAS_AL_PLAN.md` y avisa. No la corrijas tú.
+| Sesión del plan | Sesión del portal o del Journal |
+|---|---|
+| Las reglas y el plan · `01_Plan\` | El código del portal y del Journal |
+| Los gráficos del método (PNG), que el operador revisa uno por uno | Maquetación, compilar, publicar |
+| El test ciego y auditar sesiones con los datos · `05_Backtesting\` | **Nada de `01_Plan\`** |
+
+**Un cambio de `01_Plan\` solo entra con el sí del operador, cambio a cambio — erratas incluidas.** Va en su propio commit `plan: …`, nunca mezclado con cambios del portal o del Journal, y sube la versión (cabecera de `ESTADO.md` y tabla de versiones de `TRADING_PLAN_CHAUMER.md`). No está cerrado hasta sincronizarlo: `node scripts/plan/sincronizar.mjs` desde la raíz del repo, los dos SQL por el MCP con sus huellas, y `npm run verificar` en `04_Web\`. Si tocó `lector.py`, además la regresión `scripts/cadena/prueba_motor.py`.
+
+Si trabajando en otra cosa ves algo mal en el plan, **díselo al operador en ese momento**. No lo corrijas de paso, aunque sea evidente: una vez se coló así un cambio de metodología que nadie había aprobado. Si se deja para después, va a `tasks/current.md` (raíz del repo).
 
 ---
 

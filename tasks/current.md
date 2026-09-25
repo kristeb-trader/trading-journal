@@ -29,7 +29,7 @@ sesión**, con `/clear` entre una y otra.
   los datos reales. Diseño: `docs/disenos/2026-09-24-etapa-plan-chaumer.md` (v2.1)
 - [x] **Fase 5b** — Etapa 2 (Plan de Chaumer) activa desde el 24/09: 2 casillas + 7
   automáticas; el plan entero en `catalogo_reglas`. Piloto hecho por Kris: 6/6
-- [ ] **Cuando Cowork cambie el plan** (checklist, reglas, parámetros, glosario o contextualización):
+- [ ] **Con cada commit `plan:`** (checklist, reglas, parámetros, glosario o contextualización; D-028):
   `node scripts/plan/sincronizar.mjs` y aplicar por el MCP **los dos** SQL — `salida.sql`
   (`catalogo_reglas`) y `salida-documentos.sql` (`plan_documentos`, lo que lee el Coach) —, y
   comprobar las huellas (lo hace Claude)
@@ -59,6 +59,28 @@ sesión**, con `/clear` entre una y otra.
 
 > ℹ️ **Un archivo nuevo que necesite la app** (fuera de `js/`, `css/` o `icons/`) hay que
 > añadirlo al `cp` de `.github/workflows/publicar-journal.yml`. Si no, dará 404 en producción.
+
+### 🟡 El plan de Chaumer: lo que estaba «pendiente de Cowork» (25 sep, D-028)
+
+Cowork ya no existe: el plan se cambia desde aquí. **Todo lo que toque `chaumer/01_Plan/` necesita el sí de
+Kris**, erratas incluidas, y va en su propio commit `plan: …`, con la versión subida y sincronizado (ver
+arriba). Venían de los dos buzones archivados en `docs/archivo/chaumer/`, donde está el detalle.
+
+- [ ] **Antes del 2/11** — `test_ciego/LEEME_BACK_DIARIO.md` solo da la ventana de verano (08:31–10:30 Col =
+  13:31–15:30 UTC). Añadir la de invierno: desde el 2/11, 09:31–11:30 Col = 14:31–16:30 UTC. No es del plan,
+  pero sin esto el test ciego marca mal la hora
+- [ ] **Plan** · `CHECKLIST_DIARIA.md`: la nota de debajo de los filtros dice «los cuatro filtros» y son cinco.
+  Propuesta (22/09): quitar el número, como ya hace el portal, o poner cinco
+- [ ] **Plan** · `CHECKLIST_DIARIA.md`, línea 70: «IRI descartado» → «Continuación descartada». Resto del cambio
+  del 23/09; sale publicada en la checklist del portal
+- [ ] **Plan** · `ESTADO.md`, línea 120: remite a `04_Web\PENDIENTE_PORTAL.md`, que está archivado
+- [ ] **Kris** · revalidar el **8/07** vela a vela. El motor arreglado da un Reingreso bajista a las 8:38 con
+  −64,75; el día estaba validado como NO OPERA. La duda es de un reingreso de una sola vela (la convención
+  intravela). Si se confirma, julio cambia en −64,75 puntos
+- [ ] **Diagramas**, revisados por Kris uno a uno: `09-zona-volumen.png` (y su copia
+  `02_Assets/diagramas/R-15_premercado_volumen.png`) lleva dibujado el umbral de 2.000; el vigente es más
+  de 8.000 en MNQ (pendiente desde el 08/09). Y los **siete diagramas de reglas de agosto**, que se van del
+  portal cuando estén rehechos; después, unificar las carpetas de imágenes
 
 ### 🟢 Empezar a cargar las operativas de Chaumer (19 ago)
 

@@ -1,5 +1,9 @@
 # PROPUESTAS AL PLAN — desde el portal
 
+> 🗄️ **Archivado el 25/09/2026 (D-028).** Cowork dejó de existir y el plan se cambia desde Claude Code,
+> con el sí de Kris cambio a cambio. Lo que estaba pendiente aquí (los cuatro filtros, la línea de IRI,
+> la ventana de invierno del test ciego y el 8 de julio) pasó a `tasks/current.md`. No se añade nada nuevo.
+
 > El portal **no edita `01_Plan\`**. Cuando desde aquí se ve una contradicción o una imprecisión,
 > se anota en este archivo y se decide con el operador en la conversación del plan.
 

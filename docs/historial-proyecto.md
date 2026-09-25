@@ -4,6 +4,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-09-25c | Cowork deja de existir: el plan se trabaja desde Claude Code |
 | 2026-09-25b | Fase 8: el portal suelta R2 — unificación Chaumer completa |
 | 2026-09-25 | Fase 7: la cadena diaria |
 | 2026-09-24 | Unificación Chaumer: fases 1–3 y el repositorio público |
@@ -2875,6 +2876,18 @@ Commits: `f20786d` · `21b82c0` · `221379d` · `29496d7` · `3bbaffa` · `fb32a
   `parsearSetupsJson` cortaba el resumen del veredicto en la palabra «setup» y guardaba los `**`.
 
 Commits: `272b5ea` · `57006aa` · `804a1dc` y el de la 6c.
+
+## Checkpoint 2026-09-25c — Cowork deja de existir: el plan se trabaja desde Claude Code
+
+Kris decidió que el plan de Chaumer, el test ciego, el motor y los diagramas se trabajen desde aquí. `01_Plan`
+deja de ser de solo lectura: cada cambio necesita el sí de Kris (erratas incluidas), va en su propio commit
+`plan:` y se cierra sincronizado. Se reescribieron las instrucciones que asignaban cosas a Cowork (`CLAUDE.md`,
+los dos de `chaumer/`, la regla del Coach, `sincronizar.mjs`, el texto del Coach y el de Estrategia, el LEEME
+del test ciego —que gana una regla de ceguera para Claude Code— y varios comentarios) y el comentario de
+`plan_documentos` en la BD. Los dos buzones, `PROPUESTAS_AL_PLAN.md` y `PENDIENTE_PORTAL.md`, se archivaron
+en `docs/archivo/chaumer/`, y lo que tenían abierto pasó a `tasks/current.md`. D-028.
+
+---
 
 ## Checkpoint 2026-09-25b — Fase 8: el portal suelta R2, y la unificación termina
 

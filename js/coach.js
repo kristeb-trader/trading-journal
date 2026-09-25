@@ -868,7 +868,7 @@ Este día pertenece a la etapa en que Kris opera con el plan de trading de Alfre
 
 Cómo usarlos:
 - **El plan es la única fuente de reglas.** Juzga cada decisión de Kris con las condiciones medibles del plan (ticks, velas, puntos, horas), nunca con análisis técnico genérico ni con criterio propio.
-- **Si el plan no cubre un caso, dilo con esas palabras** —«el plan no cubre este caso»— y sugiere llevarlo a Cowork, donde se edita el plan. No rellenes el hueco con una regla tuya.
+- **Si el plan no cubre un caso, dilo con esas palabras** —«el plan no cubre este caso»— y, si crees que debería cubrirlo, sugiere proponer un cambio del plan: solo entra con el sí de Kris. No rellenes el hueco con una regla tuya.
 - **Nunca uses los códigos de los documentos** (R-40, P-22, G-12, D-06, C-01…) al hablar con Kris: nombra cada regla por lo que dice («la corrida fluida», «el stop máximo»). Los códigos internos del checklist (p2_…) solo van donde el formato de salida los pide.
 - **La CONTEXTUALIZACIÓN son recordatorios de criterio, no reglas:** sirven para leer el contexto, nunca para juzgar un incumplimiento.
 - Las horas del plan dicen su zona (ET u hora Colombia); los trades del día traen las dos.`

@@ -22,3 +22,12 @@ Para el estado real: `CLAUDE.md` (raíz) y `docs/historial-proyecto.md`.
 
 Archivado el 2026-08-16. Motivo y criterio:
 `docs/disenos/2026-08-16-reestructuracion.md` §2.2.
+
+## `chaumer/` — los dos buzones de Cowork
+
+| Archivo | Por qué no sirve hoy |
+|---|---|
+| `chaumer/PROPUESTAS_AL_PLAN.md` | Lo que el portal no podía corregir en el plan, para que lo hiciera Cowork. Desde D-028 el plan se cambia desde Claude Code con el sí de Kris; lo pendiente pasó a `tasks/current.md` |
+| `chaumer/PENDIENTE_PORTAL.md` | El buzón entre Cowork y Claude Code para el portal. Tareas hechas; lo vivo pasó a `tasks/current.md` y a `chaumer/04_Web/CLAUDE.md` |
+
+Archivados el 2026-09-25. Motivo: D-028 en `docs/decisiones.md`.

@@ -1,6 +1,7 @@
-# TEST CIEGO DIARIO — instrucciones para la sesión de Cowork
+# TEST CIEGO DIARIO — instrucciones para la sesión del test ciego
 
-> El operador abre una **conversación nueva** cada día y escribe una línea:
+> Desde el 25/09/2026 se hace en **Claude Code** (antes, en Cowork; D-028).
+> El operador abre una **sesión nueva** cada día y escribe una línea:
 > *"back del 10 de septiembre"* + las noticias rojas de ese día.
 > Esto es lo que se lee entonces. Nada más.
 
@@ -18,6 +19,16 @@ Lo único que él te da de entrada, porque el plan lo necesita y se sabe antes d
 - si es **día de reunión de la Fed**
 
 Si no te lo dice, **pregúntaselo antes de marcar**. Eso sí.
+
+### ⚠️ En Claude Code tienes a mano lo que Cowork no veía
+
+Aquí nadie te tapa los ojos: la ceguera depende de ti. **Hasta haber entregado tu marcado de ese día:**
+
+- no abras `mio\` ni nada del operador de ese día;
+- no consultes por el MCP de Supabase **ninguna** tabla con lo suyo de ese día — `sesiones`, `trades`, `apex_trades`, `sesion_checklist`, `chaumer_operativas`, `bt_*`;
+- no leas el historial del Journal (`docs/historial-proyecto.md`, `tasks/`) ni conversaciones anteriores sobre ese día.
+
+Si algo de eso se te cruza por accidente, **dilo en la entrega**: ese día ya no es ciego.
 
 ---
 

@@ -129,7 +129,7 @@ en cada jornada al guardarla. **No se escribe a mano en ningún sitio.** Desde e
 | Objetivo | **Target** |
 
 Decisión del operador, 09/09/2026. **El plan no se ha cambiado**: la propuesta
-queda escrita en `PROPUESTAS_AL_PLAN.md` y la decide él.
+la decide él (desde el 25/09/2026, con su sí y en un commit `plan:`, D-028).
 
 ## Quién puede qué
 

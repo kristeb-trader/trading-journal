@@ -2,9 +2,11 @@
 # ─────────────────────────────────────────────────────────────────────────
 # ⚠️  NO SE EJECUTA DESDE EL PORTAL.
 #
-#     Los diagramas del metodo (public/conceptos/) se hacen en Cowork, donde
-#     se revisan mirandolos uno por uno. Este script es de cuando se dibujaban
-#     desde aqui: se conserva como referencia, no como herramienta.
+#     Los diagramas del metodo (public/conceptos/) se hacen en una sesion del
+#     plan, no de paso desde el portal, y el operador los revisa uno por uno
+#     antes de colocarlos (D-028, 25/09/2026). Este script es de cuando se
+#     dibujaban desde aqui: se conserva como referencia. Antes de reusarlo,
+#     comprobar que sigue el estandar visual de chaumer/CLAUDE.md.
 #     Nota anadida el 22/09/2026 (tarea 9 de PENDIENTE_PORTAL.md).
 # ─────────────────────────────────────────────────────────────────────────
 """

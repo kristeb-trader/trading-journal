@@ -22,21 +22,24 @@
 
 > ⚠️ **`TRADING_PLAN_CHAUMER.md` son 29.000 tokens. No lo abras entero — nunca.** Busca la sección.
 > ⚠️ **No edites nada de `src\content\`.** Se pisa en la siguiente compilación.
-> ⚠️ **No edites nada de `..\01_Plan\`.** Es de solo lectura para ti.
+> ⚠️ **No edites nada de `..\01_Plan\` desde una sesión del portal.** El plan se cambia en una sesión del plan, con el sí del operador y en su propio commit `plan:` (`..\CLAUDE.md`, «Quién hace qué»).
 
 ---
 
 ## Si encuentras algo mal en el plan
 
-Lo escribes en `PROPUESTAS_AL_PLAN.md` y avisas. **No lo corriges tú**, aunque sea evidente. Ya pasó una vez y se coló un cambio de metodología que nadie había aprobado.
+**Díselo al operador en ese momento.** No lo corriges tú de paso, aunque sea evidente. Ya pasó una vez y se coló un cambio de metodología que nadie había aprobado. Si se deja para después, va a `tasks/current.md` (raíz del repo).
+
+*(Hasta el 25/09/2026 esto se apuntaba en `PROPUESTAS_AL_PLAN.md`, y el portal tenía su buzón en `PENDIENTE_PORTAL.md`. Los dos están archivados en `docs/archivo/chaumer/`, D-028.)*
 
 ---
 
-## Lo que el operador te va a pedir
+## Lo que queda abierto en el portal
 
-Está escrito en **`PENDIENTE_PORTAL.md`**. Cuando te diga *"lee el pendiente y hazlo"*, es ese archivo. Ábrelo siempre antes de tocar nada.
+Lo que está por hacer vive en `tasks/current.md` (raíz del repo). Dos cosas que siguen en pie desde `PENDIENTE_PORTAL.md`:
 
-🛑 **Ahora mismo ese archivo está en modo diagnóstico: mirar y contar, sin cambiar nada.** Lee ahí las condiciones exactas. Nada se ejecuta hasta que el operador dé el sí, aunque el arreglo sea evidente.
+- **No toques `..\02_Assets\diagramas\` ni el manifiesto que asigna diagramas a reglas.** Los siete diagramas de reglas de agosto se van del portal cuando estén rehechos; hasta entonces, mover archivos es trabajo tirado.
+- **No apliques las cuatro fusiones de reglas** (38 → 33). Sin decidir.
 
 ---
 
@@ -82,9 +85,9 @@ scripts\            sync, diagramas, y los verificadores
 
 ## Los gráficos del método
 
-**No los generas tú.** Los diagramas de `public\conceptos\` se hacen en Cowork, donde se revisan mirándolos uno por uno. Tú los colocas y los enlazas.
+**No los generas desde una sesión del portal.** Los diagramas de `public\conceptos\` se hacen en una sesión del plan, siguiendo el estándar visual de `..\CLAUDE.md`, y el operador los revisa mirándolos uno por uno antes de colocarlos. Desde el portal los colocas y los enlazas.
 
-Si uno está mal o falta, escríbelo en `PENDIENTE_PORTAL.md` con el nombre del archivo y qué le pasa.
+Si uno está mal o falta, díselo al operador con el nombre del archivo y qué le pasa, o apúntalo en `tasks/current.md`.
 
 ---
 

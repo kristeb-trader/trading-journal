@@ -22,7 +22,7 @@ const PLAN = path.join(RAIZ, '01_Plan');
 const ASSETS = path.join(RAIZ, '02_Assets');
 const DEST_CONTENIDO = path.join(WEB, 'src', 'content');
 const DEST_ASSETS = path.join(WEB, 'public', 'assets');
-// Los graficos del test ciego diario. Los genera Cowork, uno por jornada.
+// Los graficos del test ciego diario, uno por jornada (test_ciego/LEEME_BACK_DIARIO.md).
 const TEST_CIEGO = path.join(RAIZ, '05_Backtesting', 'test_ciego', 'Back_claude');
 
 // Los documentos que el portal espera encontrar. Si falta uno, se avisa.

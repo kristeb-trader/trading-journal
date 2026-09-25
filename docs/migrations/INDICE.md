@@ -108,6 +108,7 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-09-24-cadena-diaria.sql` | ✅ MCP | fase 7: `sesiones.registrada_at` (congelada por trigger) y `diario_editado_at`; tabla `motor_fichas` con el **candado** (`authenticated` solo lee días registrados; NO es `auth_all`, D-026); funciones `motor_dia_registrado`, `motor_estado`, `motor_marcar_vista` |
 | `2026-09-24-registrada-at-relleno.sql` | ✅ MCP | `registrada_at` para los 163 días ya registrados (con lectura, o anteriores al 16/08); queda fuera el 07/09 (festivo) |
 | `2026-09-24-fed-day1-a-otro.sql` | ✅ MCP | el 27/10 y el 8/12 ("FOMC Day 1") pasan de `fomc` a `otro`: Fechas Especiales = días con evento rojo de la Fed |
+| `2026-09-25-plan-sin-cowork.sql` | ✅ MCP | el comentario de `plan_documentos` deja de decir que el plan lo edita Cowork (D-028). Solo el texto del comentario |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.

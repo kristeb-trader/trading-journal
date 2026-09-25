@@ -4,7 +4,8 @@ EL PUENTE de la cadena diaria (fase 7 · docs/disenos/2026-09-24-cadena-diaria.m
 
 Corre el motor de Chaumer sobre el archivo de velas de un día, hace su gráfico, lo sube a
 Cloudinary y guarda la FICHA en Supabase (motor_fichas). El motor se IMPORTA, no se copia:
-chaumer/05_Backtesting/lector.py y dia.py son de auditoría y los mantiene Cowork.
+chaumer/05_Backtesting/lector.py y dia.py son de auditoría: un cambio en ellos pasa por
+scripts/cadena/prueba_motor.py (D-026, D-028).
 
     python scripts/cadena/subir_dia.py 2026-09-23 [2026-09-22 ...]    unos días
     python scripts/cadena/subir_dia.py --pendientes [--dias 10]        lo que falte o haya cambiado
@@ -13,7 +14,7 @@ chaumer/05_Backtesting/lector.py y dia.py son de auditoría y los mantiene Cowor
 Lo lanza el AddOn CadenaDiaria de NinjaTrader; a mano, el acceso directo "Subir el dia.bat".
 Clave: la service_role de los indicadores (Documentos\\NinjaTrader 8\\supabase-service-key.txt).
 Umbral: el de chaumer/01_Plan/PARAMETROS.md. Días de Fed: Fechas Especiales (tipo fomc).
-Nunca escribe en test_ciego/ (es de Cowork). Registro: %LOCALAPPDATA%\\TradingJournal\\cadena\\registro.txt
+Nunca escribe en test_ciego/ (es del test ciego, que marca a ciegas). Registro: %LOCALAPPDATA%\\TradingJournal\\cadena\\registro.txt
 """
 import os, re, sys, json, glob, hashlib, datetime, traceback, urllib.request, urllib.error, uuid
 
