@@ -30,7 +30,8 @@ al abrir el archivo afectado.
   escribe TAL CUAL como columnas de `sesiones`. Una clave que no sea columna revienta el
   guardado entero (PGRST204). `checklist` y `noticiasRojas` van fuera del destructuring.
 - **Coach IA** — prompt caching por prefijo, la gráfica no se persiste, el historial va
-  cortado a la fecha analizada. Detalle: `.claude/rules/coach.md`.
+  cortado a la fecha analizada. En días de la etapa 2 el system lleva **primero** el plan de
+  Chaumer entero (`plan_documentos`), igual para todos los días. Detalle: `.claude/rules/coach.md`.
 - **Sesión Operativa** — nada interactivo funciona dentro de `#sessionFieldset` en modo
   lectura; los trades del día NO se filtran por cuenta principal. Detalle:
   `.claude/rules/sesion.md`.
@@ -114,6 +115,8 @@ Lo que el esquema no cuenta y hay que saber:
 | `objetivos` | Fila única. `cuenta_principal` es la cuenta que alimenta P&L/Análisis/Coach; se elige en Datos y la lee el indicador NT8 al arrancar. `limite_perdida_dia` está **obsoleto** (el riesgo se mide en puntos) |
 | `chaumer_operativas` | Comparador. **Solo el lado de Chaumer**: el de Kris se LEE de `sesiones`+`trades`, nunca se copia aquí. `hora_entrada` va en **hora Colombia**, igual que `trades.entry_time`: se restan tal cual, **sin** `horaEt()` (era ET hasta el 17 sep; D-017). `puntos` en **PUNTOS**, no en dólares. El veredicto del día no se guarda: se calcula |
 | `bt_*` (cabecera, jornadas, operaciones) | La **bitácora de backtesting** (fase 4 de la unificación Chaumer): nunca se mezcla con `trades` ni `apex_trades`. `pnl` **neto y congelado** al guardar, no se recalcula; cada jornada congela instrumento, contratos, `valor_punto` y comisión; `puntos` siempre positivo (el signo lo da `resultado`); `hora` en hora Colombia; una jornada sin operaciones es un día sin entrada. `imagen` = dirección de Cloudinary. Se escribe con la función `bt_guardar_jornada` (jornada + operaciones en una transacción; calcula el P&L). Una jornada que se corrige **conserva** sus valores congelados. El portal la lee por `portal_bt_cabecera` / `portal_bt_jornadas` |
+| `plan_documentos` | Los 5 documentos del plan que lee el Coach. Los escribe **solo** `scripts/plan/sincronizar.mjs` (SQL por el MCP, verificado por `huella` sha256). Sin copia editable: el texto se edita en `chaumer/01_Plan` |
+| `coach_uso` | Una fila por llamada del Coach: tokens, coste (USD) y `codigos_quitados`. **Sin texto** de la conversación. Mide si la caché funciona y cuánto cuesta el mes |
 | `sesiones` | `setup` (texto) y `setup_codigo` los sincroniza el trigger `fn_sync_setup_codigo`, escriba quien escriba. La columna `noticias` se retiró de la UI el 16 ago y su contenido se migró a `sesion_noticias`; **la columna sigue existiendo**. `soportes_naranja` / `resistencias_naranja` (jsonb) las escribe el **AddOn** en premercado desde el 16 ago: el bot ya NO las manda: si las mandara (en `[]`) las **borraría** por la noche, igual que pasaría con los niveles de precio |
 
 ## Lenguaje visual
@@ -136,7 +139,7 @@ Lo que el esquema no cuenta y hay que saber:
 | Frontend | HTML + JS vanilla — GitHub Pages |
 | BD | Supabase (PostgreSQL) |
 | Proxy IA | Cloudflare Worker `broad-hall-c53f.kristerock.workers.dev` |
-| Análisis IA | Claude API `claude-sonnet-5` (`js/coach.js:5`) — adaptive thinking, effort low, prompt caching |
+| Análisis IA | Claude API `claude-opus-5-5` (`js/coach.js`) — adaptive thinking, effort low, prompt caching; consumo en `coach_uso` (D-025) |
 | Imágenes | Cloudinary (`dq4n7bjta` / preset `trading-journal`) |
 | Bot | Telegram → Cloudflare Worker #2 + KV |
 | NT8 | Indicadores C# en `NinjaTrader/` |

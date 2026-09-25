@@ -17,7 +17,7 @@ paths:
 
 ## Invariantes
 
-- **El prompt lleva `cache_control`** (system + último turno de usuario). Es un match de
+- **El prompt lleva `cache_control`** (cada bloque del system + último turno de usuario). Es un match de
   PREFIJO byte a byte: cualquier cosa que varíe el system prompt o la serialización de un
   mensaje entre turnos mata el caché sin avisar. `llamarClaude` loguea escritos/leídos: si
   "leídos" sale 0 turno tras turno, se rompió el prefijo.
@@ -35,6 +35,33 @@ paths:
   el Diario. Para el prompt se leen del dato guardado.
 - **El Coach no tiene selector de fecha propio**: la manda la cabecera de Sesión Operativa
   vía `Coach.setFecha(date)`.
+
+## El plan de Chaumer (fase 6, 24 sep)
+
+Modelo **`claude-opus-5-5`**, `max_tokens` 16.000, `thinking: adaptive`, `effort: low`. En Opus 5.5 el
+razonamiento **no se puede apagar** (`disabled` / `enabled` dan 400) y cuenta dentro de `max_tokens`.
+
+- **El system son DOS bloques, en este orden:** A = el plan (`construirBloquePlan`: instrucciones fijas + los
+  5 documentos de `plan_documentos`), **solo en días de la etapa 2**; B = el día (`buildSystemPrompt`). A va
+  primero porque es igual para todos los días de la etapa: la caché lo relee entre turnos y entre días. Un
+  día de la etapa 1 va sin A, como siempre. Meter algo de la fecha en A rompe la caché de todos los días.
+- **`plan_documentos` lo escribe solo `scripts/plan/sincronizar.mjs`** (genera `salida-documentos.sql`, se
+  aplica por el MCP y se comprueba con la huella sha256). Nunca a mano ni desde la app. Si Cowork cambia el
+  plan, se vuelve a sincronizar: el Coach lo cachea en memoria (`DB.getPlanDocumentos`) hasta recargar.
+- **Vigilante** (`quitarCodigosPlan`, solo con el bloque A): quita los códigos `R-/P-/G-/D-/C-` que el modelo
+  cuele **entre paréntesis** antes de pintar y de guardar; los de fuera solo se avisan en la consola. Si
+  `coach_uso.codigos_quitados` empieza a salir > 0, la instrucción ya no basta.
+- **`stop_reason: "refusal"`**: se retira el turno de Kris del historial y se enseña «El modelo no ha querido
+  responder a esto; prueba a reformular.».
+- **`coach_uso`: una fila por llamada** (`registrarUso`) con tokens, coste y `stop_reason`, sin texto. Los
+  precios viven en `PRECIO` (`coach.js`); si cambia el modelo, cambian ahí. Medido el 24/09: prefijo de
+  ~88.000 tokens, sesión completa 0,92 USD, lecturas de caché desde el 2º turno.
+
+```sql
+-- ¿funciona la caché y cuánto cuesta el mes?
+select date_trunc('month', creado) mes, count(*) llamadas, sum(cache_leida) leidos, sum(coste_usd) usd
+from coach_uso group by 1 order by 1;
+```
 
 ## Cómo lee el contexto de premercado
 

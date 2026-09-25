@@ -1,6 +1,6 @@
 # Unificación — el proyecto Chaumer entra en el Trading Journal
 
-**Versión:** v1.7 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1 a 4 cerradas; la siguiente es la 5.
+**Versión:** v1.8 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1 a 6 cerradas; la siguiente es la 7.
 **Escrito:** 24/09/2026, desde una sesión en `E:\Proyectos\Chaumer`. **Se ejecuta desde una sesión nueva en este proyecto.**
 
 | Versión | Fecha | Qué cambió |
@@ -13,6 +13,7 @@
 | v1.5 | 24/09/2026 | Revisión de la fase 4 contra el código, aprobada por Kris: recuento hecho sin Cloudflare; `valor_punto` en `bt_cabecera`; dos vistas `portal_bt_*`; la fase se parte en **4a** (datos + portal de solo lectura) y **4b** (Registrar en el Journal). Decididos: rol `portal_lector` y Cloudinary |
 | v1.6 | 24/09/2026 | Fase 4a cerrada: la bitácora en Supabase, el portal la lee con `portal_lector` y ya no acepta escrituras |
 | v1.7 | 24/09/2026 | Fase 4b cerrada: se registra desde el Journal (Otros › Backtesting). Fase 4 completa |
+| v1.8 | 24/09/2026 | Fases 5 y 6 cerradas (sub-diseños `2026-09-24-etapa-plan-chaumer.md` y `2026-09-24-coach-plan-completo.md`). El candado del test ciego pasa a la fase 7; la memoria con aprobación se descarta (D-025) |
 
 > ✅ Este archivo se subió a GitHub **después** de cerrar la fase 1, con las direcciones del hallazgo 1 ya
 > en 404. Desde entonces `docs/` no se publica.
@@ -397,7 +398,12 @@ Arrastra además:
 - el indicador `ChecklistChaumer` de NinjaTrader y el bot de Telegram leen el checklist: hay que adaptarlos. **Recompilar en NinjaTrader** (aviso a Kris);
 - `docs/metodologia-chaumer.md` pasa a apuntar al plan y deja de describir un rulebook propio.
 
-### Fase 6 · El coach con el plan completo (sub-diseño propio)
+### Fase 6 · El coach con el plan completo (sub-diseño propio) ✅ CERRADA el 24/09/2026
+
+> Hecha según `docs/disenos/2026-09-24-coach-plan-completo.md` y D-025: el plan entero en el contexto, sin
+> inventar reglas ni usar códigos, con **Opus 5.5** (decisión de Kris). **Memoria con aprobación:
+> descartada** (Kris: basta la memoria de hoy). **Candado del test ciego: aplazado a la fase 7**, cuando el
+> Coach pueda ver fichas y velas del motor.
 
 Se reutiliza lo pensado en `chaumer/04_Web/DISENO_COACH.md`, **adaptado al coach que ya existe aquí**:
 - **Antes de nada:** traer al repositorio el código del proxy `broad-hall-c53f` (hallazgo 7).

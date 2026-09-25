@@ -10,6 +10,37 @@
 
 ---
 
+## D-025 — El Coach lee el plan de Chaumer entero y pasa a Claude Opus 5.5
+
+**Decisión (Kris, 24/09/2026, fase 6 de la unificación Chaumer).**
+- En los días de la etapa 2, el Coach recibe los cinco documentos del plan (reglas con sus
+  condiciones, parámetros, glosario, checklist y contextualización) como **primer bloque** del
+  system, con caché de 1 h. Los días de la etapa 1 se analizan como antes.
+- **Modelo: Claude Opus 5.5** (`claude-opus-5-5`), esfuerzo `low`, 16.000 tokens.
+- **Sin cuaderno nuevo:** la memoria sigue siendo la de siempre (resúmenes de 60 días y errores
+  repetidos).
+- El plan es la única fuente de reglas; sin códigos de regla con Kris (y un vigilante que los
+  quita); la contextualización no juzga incumplimientos.
+
+**Motivo.**
+- Desde la 5c el Coach solo veía el enunciado de cada regla: no podía juzgar una corrida fluida ni
+  un stop con los números del plan. Con el plan entero lo hace — la primera prueba real (24/09)
+  detectó un stop 11 puntos más corto de lo que marca el plan.
+- `chaumer/` no se publica, así que el plan tiene que estar en Supabase para que la app lo lea.
+
+**Consecuencias asumidas.**
+- Coste medido el 24/09: **0,92 USD por sesión** (análisis + chat + diagnóstico), ≈ 19 USD al mes
+  si se analizan los 21 días. Antes, con Sonnet 5 y sin el plan, rondaba 0,25–0,35. El prefijo
+  son ~88.000 tokens (plan + día), casi el doble de lo estimado; lo compensa la lectura de caché.
+- Cada vez que Cowork cambie el plan hay que sincronizar también `plan_documentos`.
+
+**Descartado.** El Coach en el portal con base D1 y herramientas (`DISENO_COACH.md`, pensado para
+otra cosa); el cuaderno de aprendizajes con bandeja de aprobación (Kris: la memoria de hoy basta);
+seguir con Sonnet 5. El **candado del test ciego** no se descarta: se aplaza a la fase 7, porque hoy
+el Coach no ve fichas ni velas del motor.
+
+---
+
 ## D-024 — La disciplina se mide por etapas, y la etapa del plan de Chaumer empieza el 24/09
 
 **Decisión (Kris, 24/09/2026, fase 5 de la unificación Chaumer).**

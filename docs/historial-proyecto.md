@@ -2858,6 +2858,24 @@ Commits: `f20786d` · `21b82c0` · `221379d` · `29496d7` · `3bbaffa` · `fb32a
 
 ---
 
+## Checkpoint 2026-09-24 — Fase 6: el Coach con el plan de Chaumer y Claude Opus 5.5
+
+- **6a** — El Worker `broad-hall-c53f` al repositorio (`workers/proxy-ia/`), sin claves escritas. Pasa
+  el cuerpo tal cual: el cambio de modelo no necesitó tocarlo. No reenvía `anthropic-beta`.
+- **6b** — `plan_documentos` (los 5 documentos, 138 K caracteres) y `coach_uso`. Se cargaron por el
+  MCP con el SQL del sincronizador, en trozos, comprobando cada trozo con su sha256: un salto de línea
+  perdido en el glosario lo cazó la huella. El Coach manda el plan como primer bloque del system en
+  días de la etapa 2, con Opus 5.5, un vigilante de códigos y el aviso de negativa.
+- **Prueba real (24/09):** 88.235 tokens escritos en caché en el análisis y leídos en el chat y el
+  diagnóstico; 0,92 USD la sesión. El análisis juzgó con el plan: stop 11 puntos más corto que el que
+  marca el plan (desde que nace la zona) → entrada inválida.
+- **6c** — Documentos (`.claude/rules/coach.md`, `CLAUDE.md`, D-025) y un arreglo visto de paso:
+  `parsearSetupsJson` cortaba el resumen del veredicto en la palabra «setup» y guardaba los `**`.
+
+Commits: `272b5ea` · `57006aa` · `804a1dc` y el de la 6c.
+
+---
+
 ## Cómo continuar en un nuevo chat
 
 1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo

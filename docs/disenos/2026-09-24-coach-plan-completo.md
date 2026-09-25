@@ -1,6 +1,6 @@
 # Fase 6 — El Coach con el plan completo
 
-**Versión:** v1 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 6a y 6b cerradas; queda 6c (documentos).
+**Versión:** v1 · **Estado:** ✅ **CERRADO el 24/09/2026.** Las tres subfases hechas y verificadas.
 **Escrito:** 24/09/2026. Sub-diseño de la fase 6 de `docs/disenos/2026-09-24-unificacion-chaumer.md`.
 
 | Versión | Fecha | Qué cambió |
@@ -191,7 +191,15 @@ no usa ninguna.
     las lecturas; el análisis nombra las reglas por su nombre, sin códigos, y juzga la corrida fluida con las
     condiciones del plan.
 
-### 6c · Documentos (~4)
+### 6c · Documentos (~4) ✅ CERRADA el 24/09/2026
+
+*Resultado:* `.claude/rules/coach.md` (sección «El plan de Chaumer»: dos bloques, vigilante, negativa,
+`coach_uso` con su consulta), `CLAUDE.md` (invariante del Coach, modelo, `plan_documentos` y `coach_uso`
+en Datos), D-025, `tasks/current.md` (sincronizar también `salida-documentos.sql`) e historial. Con el sí de
+Kris, el arreglo visto en la 6b: `parsearSetupsJson` parte en cada veredicto, quita el Markdown y corta sin
+partir palabras; corregida la fila ya guardada del 24/09.
+
+*Lo que se diseñó:*
 - `.claude/rules/coach.md` (dos bloques de system, el vigilante, `coach_uso`), `CLAUDE.md` (modelo), D-025.
 
 ---

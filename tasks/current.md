@@ -29,12 +29,17 @@ sesión**, con `/clear` entre una y otra.
   los datos reales. Diseño: `docs/disenos/2026-09-24-etapa-plan-chaumer.md` (v2.1)
 - [x] **Fase 5b** — Etapa 2 (Plan de Chaumer) activa desde el 24/09: 2 casillas + 7
   automáticas; el plan entero en `catalogo_reglas`. Piloto hecho por Kris: 6/6
-- [ ] **Cuando Cowork cambie la checklist o las reglas del plan:** `node scripts/plan/sincronizar.mjs`
-  y aplicar el SQL por el MCP (lo hace Claude)
+- [ ] **Cuando Cowork cambie el plan** (checklist, reglas, parámetros, glosario o contextualización):
+  `node scripts/plan/sincronizar.mjs` y aplicar por el MCP **los dos** SQL — `salida.sql`
+  (`catalogo_reglas`) y `salida-documentos.sql` (`plan_documentos`, lo que lee el Coach) —, y
+  comprobar las huellas (lo hace Claude)
 - [x] **Fase 5c** — Coach y Diario por etapa de la fecha; Estrategia de solo lectura; docs y D-024
 - [ ] **Kris:** al abrir NinjaTrader, mirar que el indicador `ChecklistChaumer` enseña la casilla
   nueva (no hay que recompilar: el `.cs` no cambió)
-- [ ] Fases 6–8 — coach con el plan completo, cadena diaria, apagar D1/R2
+- [x] **Fase 6** — El Coach con el plan completo y Claude Opus 5.5; consumo en `coach_uso`.
+  Prueba real de Kris (24/09): caché desde el 2º turno, **0,92 USD** la sesión, sin códigos.
+  Diseño: `docs/disenos/2026-09-24-coach-plan-completo.md` · D-025
+- [ ] Fases 7–8 — cadena diaria (con el candado del test ciego para el Coach), apagar D1/R2
 - [ ] Aparte, vistos en la 4a: activar RLS (o borrar) `_bak_20260919_trades_regularizacion`;
   la copia local de D1 del portal no tiene la tabla `observaciones`
 - [ ] **Repositorio público de momento (D-022).** Cuando haya presupuesto: GitHub Pro y

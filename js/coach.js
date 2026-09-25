@@ -1059,16 +1059,22 @@ Cómo usarlos:
 
   function parsearSetupsJson(textoValidacion) {
     if (!textoValidacion) return []
+    // Se parte en cada veredicto, no en la palabra "setup": el veredicto suele
+    // nombrarla en la primera línea («…la lectura del setup era correcta») y cortaba
+    // la descripción ahí. Sin el Markdown, que se guardaba tal cual («INVÁLIDA.**»).
+    const limpio = textoValidacion.replace(/\*\*|__|^#+\s*/gm, '')
     const setups = []
-    const bloques = textoValidacion.split(/(?=setup|entrada)/i)
-    bloques.forEach(bloque => {
-      const valido   = /ENTRADA VÁLIDA/i.test(bloque)
-      const invalido = /ENTRADA INVÁLIDA/i.test(bloque)
+    const vistos = new Set()
+    limpio.split(/(?=ENTRADA (?:IN)?V[ÁA]LIDA)/i).forEach(bloque => {
+      const invalido = /^ENTRADA INV[ÁA]LIDA/i.test(bloque)
+      const valido   = !invalido && /^ENTRADA V[ÁA]LIDA/i.test(bloque)
       if (!valido && !invalido) return
-      setups.push({
-        descripcion: bloque.slice(0, 100).trim(),
-        valido: valido && !invalido
-      })
+      let descripcion = bloque.replace(/\s+/g, ' ').trim()
+      // A 100 caracteres, como siempre, pero sin partir una palabra.
+      if (descripcion.length > 100) descripcion = descripcion.slice(0, 100).replace(/\s+\S*$/, '').replace(/[\s.,;:—–-]+$/, '') + '…'
+      if (vistos.has(descripcion)) return
+      vistos.add(descripcion)
+      setups.push({ descripcion, valido })
     })
     return setups
   }
