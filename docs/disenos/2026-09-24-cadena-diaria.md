@@ -1,6 +1,6 @@
 # Fase 7 — La cadena diaria
 
-**Versión:** v1.1 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 7a y 7b cerradas; la siguiente es la 7c.
+**Versión:** v1.1 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 7a, 7b y 7c cerradas; la siguiente es la 7d.
 **Escrito:** 24/09/2026. Sub-diseño de la fase 7 de `docs/disenos/2026-09-24-unificacion-chaumer.md`.
 **Reemplaza** el texto de la fase 7 del diseño general (10:45, tarea de Windows, motor sin modificar): el
 diagnóstico demostró que así se rompía el 2/11. Al aprobarse, el diseño general pasa a apuntar aquí.
@@ -10,6 +10,7 @@ diagnóstico demostró que así se rompía el 2/11. Al aprobarse, el diseño gen
 | v1 | 24/09/2026 | Primera versión, tras el diagnóstico y las cuatro decisiones de Kris |
 | v1.1 | 24/09/2026 | Aprobado, con las velas en `motor_fichas`. Resuelta la pregunta de §11: Kris guarda las noticias desde el AddOn del checklist, que **no** marca el día como registrado — la regla se queda. **7a cerrada** |
 | v1.2 | 24/09/2026 | **7b cerrada**: tres migraciones en vez de una (esquema y dos parches de datos, un propósito por archivo). El relleno cuenta también los días anteriores al 16/08 |
+| v1.3 | 24/09/2026 | **7c cerrada.** El aviso de la "banda de apertura" **no se calcula**: definirlo exigiría escribir la secuencia de marcado fuera del plan (inventar metodología). El Coach recuerda siempre ese agujero del motor |
 
 > Toca un script del proyecto Chaumer (`lector.py`), una tabla nueva con una política que **no** es `auth_all`
 > (a propósito), el Diario, el bot de Telegram, el Coach y un AddOn de NinjaTrader. No se implementa nada hasta
@@ -270,7 +271,7 @@ quita de las respuestas. Coste: ~1.500 tokens más por día en el bloque B (≈ 
 | Aviso | Cuándo |
 |---|---|
 | plazo | el registro del motor tiene un "plazo vencido" (rompimiento sin consecución) |
-| banda de apertura | entre las dos primeras zonas de la sesión nació más de una zona. La definición exacta se ajusta en la fase 7c con el 15/09, el caso conocido |
+| ~~banda de apertura~~ | **retirado en la 7c** (v1.3): con la definición más natural (entre las dos primeras zonas opuestas de la sesión) ningún día de septiembre lo dispara, tampoco el 23/09 que citaba `DISENO_COACH.md`, y afinarla sería inventar la secuencia de marcado. El Coach lo menciona siempre como agujero genérico |
 | Fed sin fecha | noticia roja con FOMC/Fed/Powell y el día no está en Fechas Especiales |
 | datos | la exportación del AddOn y la manual difieren (solo durante la fase 7e) |
 
@@ -338,12 +339,20 @@ Cada subfase se verifica sola y termina en commit + push. Estimación en llamada
 > **Desviación:** tres archivos (`2026-09-24-cadena-diaria.sql`, `-registrada-at-relleno.sql`,
 > `-fed-day1-a-otro.sql`) en vez de uno, por la regla de un propósito por migración.
 
-### 7c · El puente (~15)
+### 7c · El puente (~15) ✅ CERRADA el 24/09/2026
 - `subir_dia.py` y el `.bat`. Se sube desde los archivos manuales del **10/09 al 23/09** (y el 24/09 si Kris lo
   exporta).
 - **Verificado cuando:** cada ficha coincide con lo que imprime el motor a mano (zonas y operación); el PNG abre
   desde Cloudinary; un `SELECT` cuenta las fichas y sus estados; un festivo simulado da `sin_jornada`; el aviso de
   la banda de apertura sale el 15/09.
+
+> **Medido (24/09):** 10 fichas subidas (10/09–23/09), todas `ok`, motor `e51f02b8`, ~931 velas (~48 KB) por
+> día · operaciones iguales a las del motor a mano (21/09 +23,75 · 22/09 +44,50 · 23/09 −28,25…) · 16/09 con
+> `dia_fed` y sin aviso de Fed (su noticia "FOMC Economic Projections" sí está en la lista) · 10/09 y 11/09
+> llevan el aviso de umbral aplicado a un día anterior al cambio del 14/09 · el PNG del 23/09 responde 200
+> (image/png, 91 KB) · un día sin mercado da `sin_jornada` · `--pendientes` después: nada que subir.
+> **Desviaciones:** el aviso de la banda de apertura, retirado (ver §5); un error solo crea la fila si no
+> existe (`ignore-duplicates`): una ficha buena no se pisa con un fallo pasajero de Cloudinary.
 
 ### 7d · El Journal (~22)
 - Diario, bot, `db.js`, tarjeta y contexto del Coach.
