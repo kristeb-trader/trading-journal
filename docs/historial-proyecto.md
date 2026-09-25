@@ -4,6 +4,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-09-25b | Fase 8: el portal suelta R2 — unificación Chaumer completa |
 | 2026-09-25 | Fase 7: la cadena diaria |
 | 2026-09-24 | Unificación Chaumer: fases 1–3 y el repositorio público |
 | 2026-09-23 | Curva de equity verde/roja y tooltip del día |
@@ -2874,6 +2875,16 @@ Commits: `f20786d` · `21b82c0` · `221379d` · `29496d7` · `3bbaffa` · `fb32a
   `parsearSetupsJson` cortaba el resumen del veredicto en la palabra «setup» y guardaba los `**`.
 
 Commits: `272b5ea` · `57006aa` · `804a1dc` y el de la 6c.
+
+## Checkpoint 2026-09-25b — Fase 8: el portal suelta R2, y la unificación termina
+
+La fase iba a mudar las observaciones de Alfredo a Supabase y apagar D1 y R2. La revisión contra el código lo
+cambió: en D1 había **0 observaciones** y **ninguna línea** usaba R2 desde la fase 4. Kris decidió dejar las
+observaciones en D1 (mudarlas obligaba a que la llave del portal escribiera en Supabase, contra D-023). El portal
+suelta R2 (el bucket sigue en Cloudflare, sin borrar) y la copia local de D1 gana la tabla que le faltaba.
+D-027. Con esto, **las 8 fases de la unificación Chaumer están cerradas**.
+
+---
 
 ## Checkpoint 2026-09-25 — Fase 7: la cadena diaria
 

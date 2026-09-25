@@ -42,7 +42,7 @@ Está escrito en **`PENDIENTE_PORTAL.md`**. Cuando te diga *"lee el pendiente y 
 
 ## El stack, en cuatro líneas
 
-Astro · sin framework de UI · CSS propio en `src\estilos\` (`tokens.css` manda) · Cloudflare Pages con Wrangler · las observaciones de Alfredo van a D1 (`d1\` y `functions\api\`). La bitácora de backtesting **ya no**: desde el 24/09/2026 vive en Supabase (el Journal) y el portal solo la lee, desde `functions\api\backtesting\`, con la llave `SUPABASE_PORTAL_KEY`.
+Astro · sin framework de UI · CSS propio en `src\estilos\` (`tokens.css` manda) · Cloudflare Pages con Wrangler · las observaciones de Alfredo van a D1 (`d1\` y `functions\api\`), y se quedan ahí (D-027). **R2 ya no está conectado** (fase 8). La bitácora de backtesting **ya no**: desde el 24/09/2026 vive en Supabase (el Journal) y el portal solo la lee, desde `functions\api\backtesting\`, con la llave `SUPABASE_PORTAL_KEY`.
 
 ```
 npm run dev          sync + diagramas + servidor local en el 4321

@@ -98,8 +98,14 @@ prueba (lee las vistas y **no** lee `trades` ni escribe) y la guarda en
 Secret. Sin ella, `/backtesting` dice «No se pudo leer la bitácora».
 
 > Lo de antes —las tablas `bt_*` en D1 y el bucket R2 `chaumer-bitacora`— sigue
-> ahí, sin tocar, hasta la fase 8, que lo apaga con una exportación guardada.
-> Los scripts `d1/0002` y `d1/0003` quedan como historia.
+> en Cloudflare, sin tocar y sin usar. **Desde la fase 8 (25/09/2026) el portal
+> ya no está conectado a R2**; D1 sigue conectada **solo para las observaciones**,
+> que se quedan ahí por decisión del operador (D-027). Los scripts `d1/0002` y
+> `d1/0003` quedan como historia.
+>
+> **En local**, la copia de D1 (`.wrangler/`) necesita la tabla de observaciones:
+> `npx wrangler d1 execute trading-plan-observaciones --local --file=d1/0001_observaciones.sql`
+> (solo la copia local; no toca la de verdad).
 
 ---
 

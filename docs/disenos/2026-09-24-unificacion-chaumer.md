@@ -1,6 +1,6 @@
 # Unificación — el proyecto Chaumer entra en el Trading Journal
 
-**Versión:** v1.9 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1 a 7 cerradas; la siguiente es la 8.
+**Versión:** v2.0 · **Estado:** ✅ **CERRADO el 25/09/2026.** Las 8 fases hechas; la 8, reducida (D-027).
 **Escrito:** 24/09/2026, desde una sesión en `E:\Proyectos\Chaumer`. **Se ejecuta desde una sesión nueva en este proyecto.**
 
 | Versión | Fecha | Qué cambió |
@@ -13,6 +13,7 @@
 | v1.5 | 24/09/2026 | Revisión de la fase 4 contra el código, aprobada por Kris: recuento hecho sin Cloudflare; `valor_punto` en `bt_cabecera`; dos vistas `portal_bt_*`; la fase se parte en **4a** (datos + portal de solo lectura) y **4b** (Registrar en el Journal). Decididos: rol `portal_lector` y Cloudinary |
 | v1.6 | 24/09/2026 | Fase 4a cerrada: la bitácora en Supabase, el portal la lee con `portal_lector` y ya no acepta escrituras |
 | v1.7 | 24/09/2026 | Fase 4b cerrada: se registra desde el Journal (Otros › Backtesting). Fase 4 completa |
+| v2.0 | 25/09/2026 | Fase 8 cerrada **reducida**: la revisión contra el código encontró 0 observaciones en D1 y R2 sin usar. Kris decide dejar las observaciones en D1; el portal solo suelta R2 (D-027) |
 | v1.9 | 25/09/2026 | Fase 7 cerrada. Su texto aquí lo sustituye el sub-diseño `2026-09-24-cadena-diaria.md`: el de abajo (10:45 fijo, tarea de Windows, motor sin tocar) se rompía el 2/11 (D-026) |
 | v1.8 | 24/09/2026 | Fases 5 y 6 cerradas (sub-diseños `2026-09-24-etapa-plan-chaumer.md` y `2026-09-24-coach-plan-completo.md`). El candado del test ciego pasa a la fase 7; la memoria con aprobación se descarta (D-025) |
 
@@ -431,7 +432,18 @@ Plan original (de `DISENO_COACH.md` 3.1–3.2):
 - **Verificado** comparando, durante 3–5 días, el archivo del AddOn con la exportación manual, línea a línea.
 - Es la base de la fase 3 del proyecto: el agente.
 
-### Fase 8 · Las observaciones de Alfredo y apagar Cloudflare D1 y R2 (~15)
+### Fase 8 · Las observaciones de Alfredo y apagar Cloudflare D1 y R2 (~15) — ✅ CERRADA el 25/09/2026, reducida
+
+> **Lo que se hizo (D-027):** la revisión contra el código encontró **0 observaciones** en D1 y **ninguna línea
+> que usara R2**. Kris decidió dejar las observaciones en D1. Se quitó R2 de `wrangler.toml` (el bucket sigue en
+> Cloudflare, dormido), se creó la tabla de observaciones en la copia local de D1 (antes esa página daba 500 en
+> local) y se actualizaron `DESPLIEGUE.md` y el `CLAUDE.md` del portal. **Verificado:** `npm run verificar` sin
+> fallos; en local, wrangler solo ve `env.DB` y las observaciones responden (listar 200, crear 201, prueba
+> borrada); en producción, publicado y respondiendo.
+> Queda fuera, por decisión: `/api/backtesting/export` responde sin clave (a propósito: el portal no tiene
+> puerta; el arreglo es Cloudflare Access, en `tasks/current.md`).
+
+Plan original:
 
 - Las observaciones pasan a Supabase. El portal las escribe **desde su servidor**, igual que hoy, y las respuestas de Kris siguen en el portal.
 - **Antes:** exportación completa de D1 y R2 guardada en disco.

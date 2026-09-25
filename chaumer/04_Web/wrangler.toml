@@ -21,10 +21,6 @@ database_id = "86e396a1-4b29-4f88-99c4-3872fb418a8d"
 # Sin ella, la API solo permite leer y escribir observaciones; responder,
 # marcar, exportar y borrar quedan cerrados.
 
-# Los graficos de la bitacora de backtesting. Bucket PRIVADO: no tiene
-# direccion publica ni dominio propio, las imagenes salen solo por
-# /api/backtesting/imagen/. Se crea una vez con
-#   npx wrangler r2 bucket create chaumer-bitacora
-[[r2_buckets]]
-binding = "IMAGENES"
-bucket_name = "chaumer-bitacora"
+# Sin R2 desde el 25/09/2026 (fase 8 de la unificacion): los graficos de la
+# bitacora estan en Cloudinary desde la fase 4 y ningun codigo usaba ya el
+# bucket. `chaumer-bitacora` sigue existiendo en Cloudflare, dormido: no se borro.

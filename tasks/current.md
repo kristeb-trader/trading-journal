@@ -49,9 +49,10 @@ sesión**, con `/clear` entre una y otra.
   - **28/10** (Fed): la ficha sale con `dia_fed` y el motor ve reingresos
   - **2/11** (invierno): vela base 9:31, el AddOn exporta a las 11:32 (registro del AddOn)
   - **≈10/12** (cambio de contrato): el AddOn pasa solo a `MNQ 03-27` (`AAAA-MM-DD.meta.json`)
-- [ ] Fase 8 — las observaciones de Alfredo a Supabase y apagar D1/R2
-- [ ] Aparte, vistos en la 4a: activar RLS (o borrar) `_bak_20260919_trades_regularizacion`;
-  la copia local de D1 del portal no tiene la tabla `observaciones`
+- [x] **Fase 8** (reducida, D-027) — el portal suelta R2; las observaciones de Alfredo se quedan en D1 (había
+  0). La copia local de D1 ya tiene su tabla. **La unificación Chaumer está completa**
+- [x] Aparte, vistos en la 4a: `_bak_20260919_trades_regularizacion` cerrado (`a8abbb5`); la copia local de
+  D1 del portal ya tiene la tabla `observaciones` (fase 8)
 - [ ] **Repositorio público de momento (D-022).** Cuando haya presupuesto: GitHub Pro y
   pasarlo a privado, u otra solución. Aparte: proteger el portal (Cloudflare Access) y ver
   qué devuelve `/api/backtesting/export`, que responde 200 sin sesión

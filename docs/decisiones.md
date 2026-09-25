@@ -10,6 +10,33 @@
 
 ---
 
+## D-027 — Las observaciones de Alfredo se quedan en D1; el portal suelta R2
+
+**Decisión (Kris, 25/09/2026, fase 8 de la unificación Chaumer).**
+- Las observaciones que Alfredo deja en el portal (y las respuestas del operador) **siguen en Cloudflare D1**.
+  No se mudan a Supabase.
+- El portal deja de estar conectado a **R2**. El bucket `chaumer-bitacora` y las tablas `bt_*` de D1 siguen en
+  Cloudflare, sin usar: no se borró nada.
+
+**Motivo.**
+- En D1 hay **0 observaciones** (la API del portal, 25/09): no hay datos que mudar, y Kris no las considera
+  relevantes para el Journal.
+- Mudarlas obligaba a que la llave del portal **escribiera** en Supabase, contra D-023 (`portal_lector` solo lee),
+  o a una segunda llave que Kris tendría que poner a mano en Cloudflare. No compensa para una tabla vacía.
+- R2 no lo usaba ninguna línea de código desde la fase 4: los 83 gráficos están en Cloudinary (idénticos byte a
+  byte) y en disco.
+
+**Consecuencias asumidas.** El portal sigue dependiendo de D1 para una sola cosa. La copia de D1 y R2 a disco
+que pedía el diseño no se hizo: este PC no tiene permiso en esa cuenta de Cloudflare, D1 está vacía y R2 está
+duplicado en Cloudinary; además, nada se borró allí.
+
+**Descartado.** Pasar las observaciones a Supabase con funciones de escritura para la llave del portal (opción
+A) o con una segunda llave (B); quitar las observaciones del portal (D).
+
+**Fecha.** 2026-09-25 · Diseño: `docs/disenos/2026-09-24-unificacion-chaumer.md` (fase 8)
+
+---
+
 ## D-026 — El candado del test ciego vive en la base de datos, y el motor de Cowork se tocó
 
 **Decisión (Kris, 24/09/2026, fase 7 de la unificación Chaumer).**
