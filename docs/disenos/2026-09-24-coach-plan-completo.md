@@ -1,6 +1,6 @@
 # Fase 6 — El Coach con el plan completo
 
-**Versión:** v1 · **Estado:** 🟡 **PROPUESTO, pendiente de aprobar por Kris.**
+**Versión:** v1 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 6a cerrada; en curso: 6b.
 **Escrito:** 24/09/2026. Sub-diseño de la fase 6 de `docs/disenos/2026-09-24-unificacion-chaumer.md`.
 
 | Versión | Fecha | Qué cambió |
@@ -132,7 +132,15 @@ Hoy, con Sonnet 5 y sin el plan, rondaría 0,25–0,35 USD por sesión.
 
 ## 5 · Fases
 
-### 6a · El proxy al repositorio (~6)
+### 6a · El proxy al repositorio (~6) ✅ CERRADA el 24/09/2026
+
+*Resultado:* Kris copió el código del panel. **Sin claves escritas** (lee `DASHBOARD_SECRET`, `SUPABASE_URL` y
+`SUPABASE_SERVICE_KEY` de los secretos de Cloudflare): subido tal cual a `workers/proxy-ia/worker.js`, con
+`README.md`. **No filtra modelo ni `max_tokens`** (reenvía el cuerpo sin tocarlo): el cambio a Opus 5.5 no necesita
+tocar el proxy. Visto de paso: **no reenvía `anthropic-beta`**, así que ninguna función beta llega por él; esta fase
+no usa ninguna.
+
+*Lo que se diseñó:*
 - Kris pega el código; revisión de claves; `workers/proxy-ia/worker.js` + nota de qué hace cada ruta.
 - **Verificado cuando:** el archivo está en el repo sin ninguna clave y se sabe si filtra modelo o tokens.
 
