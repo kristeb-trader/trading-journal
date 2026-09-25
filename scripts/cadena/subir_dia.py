@@ -8,6 +8,7 @@ chaumer/05_Backtesting/lector.py y dia.py son de auditoría y los mantiene Cowor
 
     python scripts/cadena/subir_dia.py 2026-09-23 [2026-09-22 ...]    unos días
     python scripts/cadena/subir_dia.py --pendientes [--dias 10]        lo que falte o haya cambiado
+    python scripts/cadena/subir_dia.py --comparar                      fase 7e: AddOn contra exportación manual
 
 Lo lanza el AddOn CadenaDiaria de NinjaTrader; a mano, el acceso directo "Subir el dia.bat".
 Clave: la service_role de los indicadores (Documentos\\NinjaTrader 8\\supabase-service-key.txt).
@@ -228,6 +229,26 @@ def procesar(fecha, umbral, desde, fed_set, huella_motor):
     return True
 
 
+def comparar_todo():
+    """Fase 7e: cada día con las dos exportaciones (datos/dia y datos/dia_auto), ¿son idénticas entre
+    las 00:00 UTC y el fin de ventana? --pendientes solo apunta las DIFERENCIAS (si la huella no cambia
+    no reprocesa el día), así que el "son iguales" hay que pedirlo aquí. No sube nada."""
+    fechas = sorted(os.path.basename(p)[:10] for p in glob.glob(os.path.join(DIA_AUTO, '????-??-??.txt')))
+    if not fechas: log('comparar: el AddOn aún no ha escrito ningún día'); return 0
+    iguales = distintas = 0
+    for f in fechas:
+        m, a = archivos(f)
+        if not m: log(f'{f}  comparar: falta la exportación manual'); continue
+        d = f.replace('-', '')
+        dif = comparar(m, a, d)
+        if dif: distintas += 1; log(f'{f}  comparar: ⚠️ {dif}')
+        else:
+            iguales += 1
+            log(f"{f}  comparar: idénticas ({len(velas_del_dia(a, d).splitlines())} velas del día hasta el fin de ventana)")
+    log(f'comparar: {iguales} día(s) idénticos, {distintas} con diferencias')
+    return 1 if distintas else 0
+
+
 def pendientes(n_dias, huella_motor):
     hoy = datetime.date.today()
     fechas = sorted({os.path.basename(p)[:10] for c in (DIA_MANUAL, DIA_AUTO)
@@ -245,6 +266,7 @@ def pendientes(n_dias, huella_motor):
 
 
 def main(argv):
+    if '--comparar' in argv: return comparar_todo()
     huella_motor = hashlib.sha256(open(os.path.join(BT, 'lector.py'), 'rb').read()).hexdigest()
     try:
         umbral, desde = umbral_del_plan()
