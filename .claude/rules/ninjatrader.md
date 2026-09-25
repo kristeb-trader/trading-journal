@@ -34,13 +34,33 @@ Los dos bugs que causó (jul 2026):
 **Al implementar algo con horas, verificar primero en qué zona viene el dato.** No asumir ET
 solo porque el mercado sea de NY.
 
-## Los tres indicadores
+## Los indicadores y los AddOns
 
 | Archivo | Qué hace |
 |---|---|
 | `SupabaseAutoExport.cs` | Exporta trades. Una instancia monitorea varias cuentas |
 | `SupabaseDailyLevels.cs` | Escribe los niveles de referencia del día en `sesiones` |
 | `ChecklistChaumer.cs` | Pinta el checklist en el gráfico; lee de `catalogo_reglas` y `catalogo_setups` |
+| `CadenaDiaria.cs` | AddOn sin ventana: exporta las velas del día y lanza el puente del motor (fase 7) |
+
+## CadenaDiaria (fase 7, 25 sep)
+
+Arranca con el Control Center. Cada minuto, si hay conexión con precios, mira los **últimos 5 días
+hábiles** y hoy (si ya pasaron las 11:32 de Nueva York = 10:32 Col en verano, 11:32 en invierno). Cada
+día **sin archivo** en `datos\dia\` lo pide con `BarsRequest` y lo escribe como la exportación manual
+(`yyyyMMdd HHmmss;o;h;l;c;v`, UTC, hora de cierre, punto decimal); luego lanza
+`python scripts/cadena/subir_dia.py --pendientes` sin consola.
+
+- **Horas:** `Bars.GetTime` viene en la zona de NinjaTrader (`Globals.GeneralOptions.TimeZoneInfo`,
+  hoy `SA Pacific Standard Time`) y se pasa a UTC con ella; la ventana se calcula con la zona de Nueva
+  York de Windows. Nada de horas fijas.
+- **Contrato:** el del último rollover de `MasterInstrument.RolloverCollection` con fecha ≤ el día (hoy
+  `MNQ 12-26`), con la merge policy global.
+- **Configuración:** `Documentos\NinjaTrader 8\cadena-diaria.json` (la relee cada minuto: cambiarla no
+  pide recompilar). **Registro:** `Documentos\NinjaTrader 8\cadena-diaria\registro.txt`.
+- **Si algo no cuadra**, `subir_dia.py --comparar` compara línea a línea la carpeta `datos\dia_auto\`
+  con `datos\dia\`: para volver a verificar, se apunta la configuración a `dia_auto` unos días y se
+  exporta a mano en paralelo. Verificado así el 24–25/09: 6 de 6 días idénticos.
 
 ## Routing de trades (`SupabaseAutoExport`)
 
@@ -149,6 +169,9 @@ o miembros nuevos se confirman por reflexión sobre `NinjaTrader.Core.dll`
 (`[Reflection.Assembly]::ReflectionOnlyLoadFrom`). Referencias para compilar:
 `C:\Program Files\NinjaTrader 8\bin\*.dll` + `Documents\NinjaTrader 8\bin\Custom\NinjaTrader.Custom.dll`
 + las de WPF en `…\v4.0.30319\WPF\`.
+
+`CadenaDiaria.cs` está escrito en C# 5 a propósito y ese `csc` lo compila **entero**, sin errores: ahí
+no hace falta la baseline, y la DLL compilada se puede cargar para probar sus funciones sin NinjaTrader.
 
 ## ⚠️ Tras editar cualquier `.cs`
 

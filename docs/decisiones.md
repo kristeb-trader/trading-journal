@@ -10,6 +10,43 @@
 
 ---
 
+## D-026 — El candado del test ciego vive en la base de datos, y el motor de Cowork se tocó
+
+**Decisión (Kris, 24/09/2026, fase 7 de la unificación Chaumer).**
+- `motor_fichas` (lo que marcó el motor cada día) tiene RLS con una política **propia**, `candado`, y
+  **no** `auth_all`: `authenticated` solo lee la ficha de un día **registrado** (`sesiones.registrada_at`,
+  o una jornada de ese día en `bt_jornadas`). Sin políticas de escritura: solo `service_role` (el puente).
+  `motor_estado(fecha)` dice si hay ficha y si está bloqueada **sin enseñarla**.
+- `registrada_at` la pone el primer guardado del Diario o del bot, y un trigger la congela.
+- `chaumer/05_Backtesting/lector.py` (el motor, de Cowork) se tocó en dos sitios y en nada más: la
+  apertura sigue a Nueva York (vela base 9:31 Col en invierno) y los días de Fed anota los rompimientos y
+  ve los reingresos.
+
+**Motivo.**
+- El test ciego: la lectura de Kris se escribe **antes** de ver lo que marcó el motor, o deja de medir su
+  lectura. La app lee con `authenticated`: con `auth_all`, un candado en JavaScript sería de adorno (una
+  consulta desde la consola lo salta).
+- En `sesiones` hay fila **antes** de registrar (niveles, zonas naranjas, el GO del checklist): "existe la
+  fila" no sirve para saber si Kris registró.
+- Sin tocar el motor, desde el 2/11 habría tomado una vela de premercado como vela base, y los días de Fed
+  no veía ningún reingreso. El 8/07 (validado NO OPERA) da con el motor arreglado un Reingreso con −64,75:
+  llevado a Cowork (`chaumer/04_Web/PROPUESTAS_AL_PLAN.md`).
+
+**Consecuencias asumidas.**
+- `motor_fichas` es la **única** tabla del Journal con RLS que no es `auth_all`. Un Claude futuro que
+  "normalice" la política abre el candado **sin ningún error**: por eso consta en `CLAUDE.md`.
+- Cada cambio de `lector.py` se pasa por la regresión (`scripts/cadena/prueba_motor.py`): los días no Fed
+  tienen que dar idéntico.
+
+**Descartado** (de `chaumer/04_Web/DISENO_COACH.md`): la hora fija 10:45 y una tarea de Windows (se
+rompía el 2/11 y dependía de que el PC estuviera encendido a esa hora; ahora lo lanza un AddOn de
+NinjaTrader que además recupera los días que falten); R2 para el gráfico (va a Cloudinary, como la
+bitácora); el candado en JavaScript; las herramientas `dia`/`velas` del Coach (la ficha va en su contexto).
+
+**Fecha.** 2026-09-24 · Diseño: `docs/disenos/2026-09-24-cadena-diaria.md`
+
+---
+
 ## D-025 — El Coach lee el plan de Chaumer entero y pasa a Claude Opus 5.5
 
 **Decisión (Kris, 24/09/2026, fase 6 de la unificación Chaumer).**

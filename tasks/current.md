@@ -39,7 +39,17 @@ sesión**, con `/clear` entre una y otra.
 - [x] **Fase 6** — El Coach con el plan completo y Claude Opus 5.5; consumo en `coach_uso`.
   Prueba real de Kris (24/09): caché desde el 2º turno, **0,92 USD** la sesión, sin códigos.
   Diseño: `docs/disenos/2026-09-24-coach-plan-completo.md` · D-025
-- [ ] Fases 7–8 — cadena diaria (con el candado del test ciego para el Coach), apagar D1/R2
+- [x] **Fase 7** — La cadena diaria: el AddOn `CadenaDiaria` exporta el día a las 10:32, el motor lo
+  marca y la ficha llega al Coach, con candado hasta que Kris registra. **Kris ya no exporta a mano**
+  (25/09). Verificado: 6 de 6 días idénticos a la exportación manual. Diseño:
+  `docs/disenos/2026-09-24-cadena-diaria.md` · D-026
+- [ ] **Cadena diaria, comprobaciones con fecha** (las hace Claude):
+  - el primer Coach de un día **con ficha**: la sección del motor entra y la caché del bloque A se sigue
+    leyendo (`coach_uso.cache_leida` > 0 desde el 2º turno)
+  - **28/10** (Fed): la ficha sale con `dia_fed` y el motor ve reingresos
+  - **2/11** (invierno): vela base 9:31, el AddOn exporta a las 11:32 (registro del AddOn)
+  - **≈10/12** (cambio de contrato): el AddOn pasa solo a `MNQ 03-27` (`AAAA-MM-DD.meta.json`)
+- [ ] Fase 8 — las observaciones de Alfredo a Supabase y apagar D1/R2
 - [ ] Aparte, vistos en la 4a: activar RLS (o borrar) `_bak_20260919_trades_regularizacion`;
   la copia local de D1 del portal no tiene la tabla `observaciones`
 - [ ] **Repositorio público de momento (D-022).** Cuando haya presupuesto: GitHub Pro y

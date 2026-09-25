@@ -94,7 +94,9 @@ sobre la implementación.** Ya pasó que se implementara otra cosa y hubo que re
 - **Supabase** (PostgreSQL), proyecto `jothoslozctflfrnysrx`. **RLS activo en todas las
   tablas**: política `auth_all` para `authenticated`; `anon` sin políticas. Bot, Worker e
   indicadores NT8 usan `service_role`. **El portal** lee con un rol propio,
-  `portal_lector`, que solo ve las vistas `portal_*` (D-023).
+  `portal_lector`, que solo ve las vistas `portal_*` (D-023). **Excepción a propósito:
+  `motor_fichas`** lleva la política `candado`, no `auth_all` — es el candado del test ciego
+  (D-026). "Normalizarla" lo abre sin dar ningún error.
 - **El esquema se consulta con `list_tables` del MCP**, no con un documento. Aquí solo va
   lo que el esquema no dice.
 - **Migraciones:** `docs/migrations/`, nombre `YYYY-MM-DD-descripcion.sql`. **Las aplica
@@ -117,7 +119,8 @@ Lo que el esquema no cuenta y hay que saber:
 | `bt_*` (cabecera, jornadas, operaciones) | La **bitácora de backtesting** (fase 4 de la unificación Chaumer): nunca se mezcla con `trades` ni `apex_trades`. `pnl` **neto y congelado** al guardar, no se recalcula; cada jornada congela instrumento, contratos, `valor_punto` y comisión; `puntos` siempre positivo (el signo lo da `resultado`); `hora` en hora Colombia; una jornada sin operaciones es un día sin entrada. `imagen` = dirección de Cloudinary. Se escribe con la función `bt_guardar_jornada` (jornada + operaciones en una transacción; calcula el P&L). Una jornada que se corrige **conserva** sus valores congelados. El portal la lee por `portal_bt_cabecera` / `portal_bt_jornadas` |
 | `plan_documentos` | Los 5 documentos del plan que lee el Coach. Los escribe **solo** `scripts/plan/sincronizar.mjs` (SQL por el MCP, verificado por `huella` sha256). Sin copia editable: el texto se edita en `chaumer/01_Plan` |
 | `coach_uso` | Una fila por llamada del Coach: tokens, coste (USD) y `codigos_quitados`. **Sin texto** de la conversación. Mide si la caché funciona y cuánto cuesta el mes |
-| `sesiones` | `setup` (texto) y `setup_codigo` los sincroniza el trigger `fn_sync_setup_codigo`, escriba quien escriba. La columna `noticias` se retiró de la UI el 16 ago y su contenido se migró a `sesion_noticias`; **la columna sigue existiendo**. `soportes_naranja` / `resistencias_naranja` (jsonb) las escribe el **AddOn** en premercado desde el 16 ago: el bot ya NO las manda: si las mandara (en `[]`) las **borraría** por la noche, igual que pasaría con los niveles de precio |
+| `motor_fichas` | Lo que marcó el motor de Chaumer cada día (fase 7). La escribe **solo** `scripts/cadena/subir_dia.py` (`service_role`), que lanza el AddOn `CadenaDiaria` a las 10:32 (11:32 en invierno). **Candado:** `authenticated` solo la lee si el día está registrado; `motor_estado(fecha)` dice si la hay sin enseñarla. `velas` (las del día, en UTC) son para el agente: el Coach no las lee. Horas en hora Colombia, precios en puntos |
+| `sesiones` | `registrada_at` = el **primer** guardado del Diario o del bot (un trigger la congela) y abre el candado de `motor_fichas`; `diario_editado_at` = el último. NinjaTrader nunca las manda. `setup` (texto) y `setup_codigo` los sincroniza el trigger `fn_sync_setup_codigo`, escriba quien escriba. La columna `noticias` se retiró de la UI el 16 ago y su contenido se migró a `sesion_noticias`; **la columna sigue existiendo**. `soportes_naranja` / `resistencias_naranja` (jsonb) las escribe el **AddOn** en premercado desde el 16 ago: el bot ya NO las manda: si las mandara (en `[]`) las **borraría** por la noche, igual que pasaría con los niveles de precio |
 
 ## Lenguaje visual
 
@@ -170,7 +173,9 @@ js/account-filter.js  Filtro de cuentas compartido (nombre COMPLETO)
 css/styles.css    Dark mode + responsive
 NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) ·
                   ChecklistChaumer (checklist en el gráfico) ·
-                  RR (herramienta de dibujo: Risk Reward en PUNTOS, clon de @RiskReward)
+                  RR (herramienta de dibujo: Risk Reward en PUNTOS, clon de @RiskReward) ·
+                  CadenaDiaria (AddOn: exporta el día al cerrar la ventana y lanza el puente)
+scripts/cadena/   El puente de la cadena diaria: motor → gráfico → ficha en Supabase
 TelegramBot/      Bot (Cloudflare Worker). Se despliega solo al hacer push
 ```
 

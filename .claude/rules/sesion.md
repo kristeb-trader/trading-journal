@@ -46,6 +46,10 @@ entero (PGRST204). Las claves de tablas relacionales —hoy `checklist` y `notic
 hay que **sacarlas del destructuring** antes de enviarlo. Ya rompió el guardado una vez
 (3 ago).
 
+`collectFormData` manda además `registrada_at` y `diario_editado_at` (fase 7): son columnas reales. El
+primer guardado abre el candado de la ficha del motor y un trigger lo congela; los siguientes solo mueven
+`diario_editado_at`.
+
 ## Vista del día
 
 El clic en el calendario abre la **vista del día a pantalla completa** (`Modal.openDay` en

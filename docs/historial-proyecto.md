@@ -1,9 +1,10 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-09-24
+**Última actualización:** 2026-09-25
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-09-25 | Fase 7: la cadena diaria |
 | 2026-09-24 | Unificación Chaumer: fases 1–3 y el repositorio público |
 | 2026-09-23 | Curva de equity verde/roja y tooltip del día |
 | 2026-09-19 | El journal: una sola cuenta, regularizado a ±$160 |
@@ -2873,6 +2874,30 @@ Commits: `f20786d` · `21b82c0` · `221379d` · `29496d7` · `3bbaffa` · `fb32a
   `parsearSetupsJson` cortaba el resumen del veredicto en la palabra «setup» y guardaba los `**`.
 
 Commits: `272b5ea` · `57006aa` · `804a1dc` y el de la 6c.
+
+## Checkpoint 2026-09-25 — Fase 7: la cadena diaria
+
+Diseño: `docs/disenos/2026-09-24-cadena-diaria.md` (v1.8) · D-026. **Kris deja de exportar a mano:** cada
+día a las 10:32 un AddOn de NinjaTrader exporta las velas, el motor de Chaumer marca el día y la ficha
+llega al Coach, que no la enseña hasta que Kris registra su lectura.
+
+- **7a · el motor.** `lector.py` sigue a Nueva York (desde el 2/11 habría tomado una vela de premercado
+  como vela base) y en día de Fed ve reingresos. Regresión: 46 días no Fed idénticos. El 8/07 da ahora un
+  Reingreso −64,75 y se llevó a Cowork.
+- **7b · la BD.** `sesiones.registrada_at` (congelada por trigger) y `diario_editado_at`; `motor_fichas`
+  con el candado del test ciego: la única tabla con RLS que no es `auth_all`, a propósito.
+- **7c · el puente.** `scripts/cadena/subir_dia.py` importa el motor sin copiarlo, sube el gráfico a
+  Cloudinary y la ficha a Supabase. 10 fichas del 10 al 23/09.
+- **7d · el Journal.** Tarjeta "Lo que marcó el motor" en el Coach y la sección en su contexto, sin
+  códigos del plan y presentada como auditoría.
+- **7e · el AddOn.** `CadenaDiaria.cs`, escrito en C# 5 para compilarlo fuera de NinjaTrader. La primera
+  noche recuperó solo 5 días; el 25/09 exportó a las 10:32:42. **6 de 6 días idénticos** a la
+  exportación manual, línea a línea.
+
+**Lo que enseñó:** el diseño viejo (10:45 fijo y una tarea de Windows) se rompía el 2/11; y un candado en
+JavaScript no protege nada si la app lee con `auth_all`.
+
+---
 
 ---
 

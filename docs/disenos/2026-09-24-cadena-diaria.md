@@ -1,6 +1,6 @@
 # Fase 7 — La cadena diaria
 
-**Versión:** v1.7 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 7a–7e cerradas; falta el **cierre** de la fase 7 (documentación).
+**Versión:** v1.8 · **Estado:** ✅ **CERRADO el 25/09/2026.** Fase 7 completa (7a–7e y el cierre). Quedan las comprobaciones con fecha de §10.
 **Escrito:** 24/09/2026. Sub-diseño de la fase 7 de `docs/disenos/2026-09-24-unificacion-chaumer.md`.
 **Reemplaza** el texto de la fase 7 del diseño general (10:45, tarea de Windows, motor sin modificar): el
 diagnóstico demostró que así se rompía el 2/11. Al aprobarse, el diseño general pasa a apuntar aquí.
@@ -13,6 +13,7 @@ diagnóstico demostró que así se rompía el 2/11. Al aprobarse, el diseño gen
 | v1.3 | 24/09/2026 | **7c cerrada.** El aviso de la "banda de apertura" **no se calcula**: definirlo exigiría escribir la secuencia de marcado fuera del plan (inventar metodología). El Coach recuerda siempre ese agujero del motor |
 | v1.4 | 24/09/2026 | **7d cerrada.** La tarjeta distingue un día pasado sin ficha de hoy sin ficha. El contexto del Coach dice a cuántas horas de ET está la hora Colombia ese día |
 | v1.5 | 24/09/2026 | **7e, el código.** Los supuestos de la API de NinjaTrader de §4.4, comprobados por reflexión (ver 7e). El puente gana `--comparar`. Falta la instalación y la espera |
+| v1.8 | 25/09/2026 | **Cierre:** D-026, `CLAUDE.md`, reglas del Coach, de NinjaTrader y de Sesión, tareas e historial. El diseño general pasa a v1.9 y apunta aquí |
 | v1.7 | 25/09/2026 | **7e cerrada:** el AddOn escribe en `datos\dia\` y Kris deja de exportar a mano |
 | v1.6 | 25/09/2026 | **7e verificada:** 6 días idénticos, uno de ellos con la exportación automática de las 10:32. No hicieron falta los 3–5 días de espera: la recuperación al arrancar dio 5 días comparables la primera noche |
 
@@ -434,7 +435,7 @@ Cada subfase se verifica sola y termina en commit + push. Estimación en llamada
 > mano. El valor por defecto de `CadenaDiaria.cs` pasa también a `datos\dia`: no hace falta recompilar, manda
 > la configuración. `datos\dia_auto\` queda como copia de la verificación (fuera de git); se puede borrar.
 
-### Cierre
+### Cierre ✅ HECHO el 25/09/2026
 Diseño general a v1.9 (fase 7 cerrada, apunta aquí) · `tasks/current.md` · D-026 en `docs/decisiones.md` (por
 qué el candado no es `auth_all` y por qué el motor se tocó) · `CLAUDE.md` (fila de `motor_fichas` y de
 `sesiones.registrada_at` en la tabla de Datos) · `.claude/rules/coach.md` · `.claude/rules/ninjatrader.md`.

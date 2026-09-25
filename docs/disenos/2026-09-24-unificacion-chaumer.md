@@ -1,6 +1,6 @@
 # Unificación — el proyecto Chaumer entra en el Trading Journal
 
-**Versión:** v1.8 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1 a 6 cerradas; la siguiente es la 7.
+**Versión:** v1.9 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** Fases 1 a 7 cerradas; la siguiente es la 8.
 **Escrito:** 24/09/2026, desde una sesión en `E:\Proyectos\Chaumer`. **Se ejecuta desde una sesión nueva en este proyecto.**
 
 | Versión | Fecha | Qué cambió |
@@ -13,6 +13,7 @@
 | v1.5 | 24/09/2026 | Revisión de la fase 4 contra el código, aprobada por Kris: recuento hecho sin Cloudflare; `valor_punto` en `bt_cabecera`; dos vistas `portal_bt_*`; la fase se parte en **4a** (datos + portal de solo lectura) y **4b** (Registrar en el Journal). Decididos: rol `portal_lector` y Cloudinary |
 | v1.6 | 24/09/2026 | Fase 4a cerrada: la bitácora en Supabase, el portal la lee con `portal_lector` y ya no acepta escrituras |
 | v1.7 | 24/09/2026 | Fase 4b cerrada: se registra desde el Journal (Otros › Backtesting). Fase 4 completa |
+| v1.9 | 25/09/2026 | Fase 7 cerrada. Su texto aquí lo sustituye el sub-diseño `2026-09-24-cadena-diaria.md`: el de abajo (10:45 fijo, tarea de Windows, motor sin tocar) se rompía el 2/11 (D-026) |
 | v1.8 | 24/09/2026 | Fases 5 y 6 cerradas (sub-diseños `2026-09-24-etapa-plan-chaumer.md` y `2026-09-24-coach-plan-completo.md`). El candado del test ciego pasa a la fase 7; la memoria con aprobación se descarta (D-025) |
 
 > ✅ Este archivo se subió a GitHub **después** de cerrar la fase 1, con las direcciones del hallazgo 1 ya
@@ -414,9 +415,16 @@ Se reutiliza lo pensado en `chaumer/04_Web/DISENO_COACH.md`, **adaptado al coach
 - **Memoria con aprobación:** aprendizajes propuestos que Kris acepta o descarta. Hay que ver cómo encaja con la sección *Aprendizaje* y con `diagnostico_errores`, que ya existen.
 - **Modelo y esfuerzo:** hoy Sonnet 5 con esfuerzo bajo. Se mide si con el plan completo hace falta subir. **Lo decide Kris.**
 
-### Fase 7 · La cadena diaria (sub-diseño propio)
+### Fase 7 · La cadena diaria (sub-diseño propio) — ✅ CERRADA el 25/09/2026
 
-Diseñada en `DISENO_COACH.md` 3.1–3.2. Queda así:
+> **Lo que manda es `docs/disenos/2026-09-24-cadena-diaria.md`** (v1.8). El texto de abajo es el plan
+> original y **no** se implementó así: la hora fija y la tarea de Windows se rompían con el cambio de
+> horario del 2/11, y el motor sí se tocó (D-026). Queda: un AddOn que exporta a las 10:32 (11:32 en
+> invierno) y recupera los días que falten, el puente `scripts/cadena/subir_dia.py`, la tabla
+> `motor_fichas` con el candado del test ciego y la ficha en el Coach. Verificado con 6 de 6 días
+> idénticos a la exportación manual.
+
+Plan original (de `DISENO_COACH.md` 3.1–3.2):
 - **10:45:** un AddOn de NinjaTrader exporta el día con `BarsRequest`, en el formato de siempre, en UTC y con la hora de cierre de la vela.
 - **10:50:** una tarea de Windows corre `lector.py` y `dia.py` **sin modificarlos**, y sube la **ficha del día** a Supabase.
 - Igual que los indicadores de hoy: `service_role` leída de un archivo local fuera del repositorio.

@@ -63,6 +63,25 @@ select date_trunc('month', creado) mes, count(*) llamadas, sum(cache_leida) leid
 from coach_uso group by 1 order by 1;
 ```
 
+## La ficha del motor (fase 7, 25 sep)
+
+Lo que marcó el motor de Chaumer (`motor_fichas`) entra en el Coach por dos sitios:
+
+- **La tarjeta** de arriba de la pestaña (`renderTarjetaMotor`), según `DB.motorEstado`: candado, pendiente,
+  sin sesión completa, error o la ficha con su gráfico. Empieza el 10/09 (`CADENA_DESDE`). Al pintar una
+  ficha llama a `motor_marcar_vista`: así se sabe si Kris editó su lectura **después** de verla.
+- **La sección "LO QUE MARCÓ EL MOTOR ESE DÍA"**, en el **bloque B** y nunca en el A: meter algo de la fecha
+  en A rompe la caché de todos los días.
+
+Invariantes:
+- **El candado es de la BD** (D-026): si el día no está registrado, `getFichaMotor` devuelve `null` por RLS
+  y la sección no sale. No se "arregla" en JavaScript.
+- Las líneas del motor traen códigos del plan (`(R-40)`): se quitan con `quitarCodigosPlan(…, { avisar:
+  false })` antes de entrar al contexto.
+- Las horas del motor van en **hora Colombia**; la sección dice cuántas horas hay hasta ET ese día.
+- El motor es **auditoría, no verdad**: la sección lo dice y nombra sus dos agujeros (el plazo de un
+  rompimiento sin consecución y la secuencia de marcado).
+
 ## Cómo lee el contexto de premercado
 
 NQ/MNQ es un **futuro continuo** (~23 h), así que la diferencia entre el cierre de ayer y la
