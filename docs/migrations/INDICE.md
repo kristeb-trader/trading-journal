@@ -104,6 +104,7 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-09-24-plan-linea.sql` | ✅ MCP | `plan_linea`: la posición de cada línea en la checklist diaria del plan (48) |
 | `2026-09-24-coach-plan.sql` | ✅ MCP | tablas `plan_documentos` (los 5 documentos del plan que lee el Coach; los escribe solo `scripts/plan/sincronizar.mjs`) y `coach_uso` (tokens y coste de cada llamada del Coach). Los documentos se cargaron con el SQL del sincronizador y se verificaron por huella sha256 |
 | `2026-09-24-coach-uso-codigos.sql` | ✅ MCP | `coach_uso.codigos_quitados`: cuántos códigos del plan quitó el vigilante del Coach en esa respuesta |
+| `2026-09-24-cerrar-bak-trades-regularizacion.sql` | ✅ MCP | `_bak_20260919_trades_regularizacion` nació sin RLS y con permisos de `anon`: se activa RLS (sin políticas, como los demás `_bak_*`) y se le quitan los permisos a `anon`. Las 109 filas, intactas |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.
