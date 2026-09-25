@@ -108,7 +108,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         private class Config
         {
             public bool Activo = true;
-            public string Carpeta = @"E:\Proyectos\Trading Journal\chaumer\05_Backtesting\datos\dia_auto";
+            public string Carpeta = @"E:\Proyectos\Trading Journal\chaumer\05_Backtesting\datos\dia";   // dia_auto durante la verificación (7e)
             public string Python = "python";
             public string Puente = @"E:\Proyectos\Trading Journal\scripts\cadena\subir_dia.py";
             public bool LanzarPuente = true;
