@@ -1,6 +1,6 @@
 # Fase 7 — La cadena diaria
 
-**Versión:** v1.6 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 7a–7d cerradas. **7e verificada** (6 de 6 días idénticos): falta solo que el AddOn escriba en `datos\dia\` (lo cambia Kris en su configuración). Después, el cierre de la fase 7.
+**Versión:** v1.7 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 7a–7e cerradas; falta el **cierre** de la fase 7 (documentación).
 **Escrito:** 24/09/2026. Sub-diseño de la fase 7 de `docs/disenos/2026-09-24-unificacion-chaumer.md`.
 **Reemplaza** el texto de la fase 7 del diseño general (10:45, tarea de Windows, motor sin modificar): el
 diagnóstico demostró que así se rompía el 2/11. Al aprobarse, el diseño general pasa a apuntar aquí.
@@ -13,6 +13,7 @@ diagnóstico demostró que así se rompía el 2/11. Al aprobarse, el diseño gen
 | v1.3 | 24/09/2026 | **7c cerrada.** El aviso de la "banda de apertura" **no se calcula**: definirlo exigiría escribir la secuencia de marcado fuera del plan (inventar metodología). El Coach recuerda siempre ese agujero del motor |
 | v1.4 | 24/09/2026 | **7d cerrada.** La tarjeta distingue un día pasado sin ficha de hoy sin ficha. El contexto del Coach dice a cuántas horas de ET está la hora Colombia ese día |
 | v1.5 | 24/09/2026 | **7e, el código.** Los supuestos de la API de NinjaTrader de §4.4, comprobados por reflexión (ver 7e). El puente gana `--comparar`. Falta la instalación y la espera |
+| v1.7 | 25/09/2026 | **7e cerrada:** el AddOn escribe en `datos\dia\` y Kris deja de exportar a mano |
 | v1.6 | 25/09/2026 | **7e verificada:** 6 días idénticos, uno de ellos con la exportación automática de las 10:32. No hicieron falta los 3–5 días de espera: la recuperación al arrancar dio 5 días comparables la primera noche |
 
 > Toca un script del proyecto Chaumer (`lector.py`), una tabla nueva con una política que **no** es `auth_all`
@@ -385,7 +386,7 @@ Cada subfase se verifica sola y termina en commit + push. Estimación en llamada
 > la cadena; (3) el contexto dice a cuántas horas de ET está la hora Colombia ese día, porque el Coach razona en
 > ET y las horas del motor van en hora Colombia.
 
-### 7e · El AddOn (~12, más 3–5 días hábiles de espera) — ✅ VERIFICADA el 25/09/2026 (falta cambiar la carpeta)
+### 7e · El AddOn (~12, más 3–5 días hábiles de espera) — ✅ CERRADA el 25/09/2026
 - `CadenaDiaria.cs` escribiendo en `datos\dia_auto\`. **Kris lo instala** (pasos en §8). Kris sigue exportando
   a mano esos días, como hoy.
 - **Verificado cuando:**
@@ -428,9 +429,10 @@ Cada subfase se verifica sola y termina en commit + push. Estimación en llamada
 > anterior (17:01 Col del día previo, por las horas de negociación del instrumento), no desde las 00:00: escribe
 > más velas que la exportación manual, pero el motor y la comparación solo leen el día, de 00:00 UTC al fin de
 > ventana.
-> **Falta para cerrarla:** en `Documentos\NinjaTrader 8\cadena-diaria.json`, `carpeta_salida` pasa de
-> `…\datos\dia_auto` a `…\datos\dia` (el AddOn lee la configuración cada minuto; no hay que recompilar), y
-> Kris deja de exportar a mano.
+> **Cerrada (25/09, 10:52):** Kris cambió `carpeta_salida` a `…\datos\dia` en
+> `Documentos\NinjaTrader 8\cadena-diaria.json` (JSON válido, sin errores en el registro) y deja de exportar a
+> mano. El valor por defecto de `CadenaDiaria.cs` pasa también a `datos\dia`: no hace falta recompilar, manda
+> la configuración. `datos\dia_auto\` queda como copia de la verificación (fuera de git); se puede borrar.
 
 ### Cierre
 Diseño general a v1.9 (fase 7 cerrada, apunta aquí) · `tasks/current.md` · D-026 en `docs/decisiones.md` (por
