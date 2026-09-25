@@ -1,6 +1,6 @@
 # Fase 7 — La cadena diaria
 
-**Versión:** v1 · **Estado:** 🟡 **PROPUESTO**, pendiente del sí de Kris.
+**Versión:** v1.1 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 7a cerrada; la siguiente es la 7b.
 **Escrito:** 24/09/2026. Sub-diseño de la fase 7 de `docs/disenos/2026-09-24-unificacion-chaumer.md`.
 **Reemplaza** el texto de la fase 7 del diseño general (10:45, tarea de Windows, motor sin modificar): el
 diagnóstico demostró que así se rompía el 2/11. Al aprobarse, el diseño general pasa a apuntar aquí.
@@ -8,6 +8,7 @@ diagnóstico demostró que así se rompía el 2/11. Al aprobarse, el diseño gen
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 24/09/2026 | Primera versión, tras el diagnóstico y las cuatro decisiones de Kris |
+| v1.1 | 24/09/2026 | Aprobado, con las velas en `motor_fichas`. Resuelta la pregunta de §11: Kris guarda las noticias desde el AddOn del checklist, que **no** marca el día como registrado — la regla se queda. **7a cerrada** |
 
 > Toca un script del proyecto Chaumer (`lector.py`), una tabla nueva con una política que **no** es `auth_all`
 > (a propósito), el Diario, el bot de Telegram, el Coach y un AddOn de NinjaTrader. No se implementa nada hasta
@@ -301,7 +302,7 @@ existentes de NinjaTrader.
 
 Cada subfase se verifica sola y termina en commit + push. Estimación en llamadas.
 
-### 7a · El motor (~12)
+### 7a · El motor (~12) ✅ CERRADA el 24/09/2026
 - Los dos cambios de §4.1. `scripts/cadena/prueba_motor.py` corre el motor **viejo** (de git) y el **nuevo**
   sobre todos los días disponibles y compara eventos y operación.
 - **Verificado cuando:**
@@ -312,6 +313,14 @@ Cada subfase se verifica sola y termina en commit + push. Estimación en llamada
     horas del gráfico en 9:xx;
   - `apertura_utc` da 1331 el 30/10/2026, 1431 el 2/11/2026 y 1331 el 15/03/2027.
 - Entregable para Kris: el gráfico del 8/07 con el motor arreglado, para llevárselo a Cowork.
+
+> **Medido (24/09):** 46 días no Fed idénticos, 0 distintos · Fed: 16/09 los 3 reingresos con los mismos
+> motivos, 29/07 NO OPERA, 8/07 Reingreso 8:38 −64,75 · `apertura_utc` bien en 6 fechas (incluidos los dos
+> cambios de hora) · invierno simulado: mismas zonas y operación, 8:36 → 9:36, vela base 09:31.
+> **Desviaciones:** (1) el texto fijo "08:31 vela base" del registro del motor también pasa a calcularse (en
+> invierno habría dicho 08:31); (2) el 8/07 resulta ser un **reingreso de una sola vela** (el caso sin decidir
+> del 16/09): anotado para Cowork en `chaumer/04_Web/PROPUESTAS_AL_PLAN.md` junto con el cambio de la ventana
+> que falta en `LEEME_BACK_DIARIO.md`.
 
 ### 7b · La base de datos (~10)
 - La migración de §4.2, aplicada por el MCP.
@@ -373,7 +382,7 @@ qué el candado no es `auth_all` y por qué el motor se tocó) · `CLAUDE.md` (f
 | Riesgo | Qué lo evita |
 |---|---|
 | El cambio del motor altera un resultado ya validado | la regresión de 7a: todos los días no Fed tienen que dar **idéntico** |
-| **Kris guarda el Diario antes de operar** (por ejemplo, para las noticias) y el día cuenta como registrado antes de tiempo | **pregunta en §11.** Si pasa, el Diario solo manda `registrada_at` al guardar después del fin de ventana, o con operación o "no operé" marcados |
+| Un guardado **antes de operar** marca el día como registrado antes de tiempo | ✅ comprobado el 24/09: Kris guarda las noticias desde el AddOn del checklist, que en `sesiones` solo escribe la fecha y las zonas naranjas (`ChecklistChaumer.cs:719`, `:809`) y nunca manda `registrada_at`. Si algún día el Diario se usa antes de operar, se revisa |
 | El AddOn escribe un archivo distinto al manual | 3–5 días de comparación automática; y `huella_datos` en cada ficha |
 | El cambio de contrato (≈10/12) o el de horario (2/11) rompen algo que hoy no se ve | comprobaciones fijas en §10 |
 | El Coach toma al motor por la verdad | instrucción fija + avisos de sus agujeros + la ficha nunca se presenta como regla |
@@ -394,8 +403,7 @@ qué el candado no es `auth_all` y por qué el motor se tocó) · `CLAUDE.md` (f
 
 ## 11 · Para aprobar
 
-- [ ] El diseño en general
-- [ ] Que `motor_fichas` guarde también las velas del día (~11 MB/año)
-- [ ] **Una pregunta:** ¿guardas alguna vez el Diario **antes** de operar (noticias, premercado)? Si la respuesta
-  es sí, ajusto la regla de "registrado" como dice §9 antes de implementar
-- [ ] Empezar por la 7a
+- [x] El diseño en general — Kris, 24/09
+- [x] Que `motor_fichas` guarde también las velas del día (~11 MB/año) — Kris, 24/09
+- [x] ¿Se guarda el Diario antes de operar? — no: las noticias salen del AddOn del checklist (ver §9)
+- [x] Empezar por la 7a

@@ -20,6 +20,8 @@ PLAZO = 5            # velas para la consecucion
 # Dias de FOMC: solo se operan Reingresos, nunca Continuacion (antes IRI).
 # Julio 2026 confirmado por el operador (26/08/2026). Agosto: PENDIENTE de confirmar.
 FOMC = {'20260708','20260729','20260916'}
+# Desde el 24/09/2026 la cadena diaria del Trading Journal (scripts/cadena/subir_dia.py) sustituye
+# esta lista por la de Fechas Especiales (tipo fomc), igual que hace con UMBRAL_VOL.
 
 def cargar(path):
     V=[]
@@ -33,6 +35,30 @@ def cargar(path):
 
 def hm(k): return int(k['t'][:4])          # HHMM en UTC
 def col(k): return hm(k)-500               # HHMM en hora Colombia
+
+# APERTURA AMERICANA (R-02) — 24/09/2026, fase 7 del Trading Journal, con el OK del operador.
+# La ventana es 09:30-11:30 de NUEVA YORK. Colombia no cambia de hora y Nueva York si, asi que
+# la vela base es la 08:31 Col (13:31 UTC) en el horario de verano de EE. UU. y la 09:31 Col
+# (14:31 UTC) en invierno. Hasta hoy el motor tenia 13:31 UTC fijo y desde el 2/11/2026 habria
+# tomado una vela de premercado como vela base. El grafico sigue en hora Colombia: col() no cambia.
+# La regla de EE. UU. (desde 2007: del segundo domingo de marzo al primer domingo de noviembre) va
+# escrita a mano porque zoneinfo no trae la base de husos horarios en Windows.
+def _domingo(y, m, n):
+    import datetime
+    d = datetime.date(y, m, 1)
+    d += datetime.timedelta(days=(6 - d.weekday()) % 7)      # primer domingo del mes
+    return d + datetime.timedelta(weeks=n - 1)
+
+def apertura_utc(dia):
+    """HHMM UTC de la vela base de la jornada `dia` (yyyymmdd): 1331 en verano de EE. UU., 1431 en invierno."""
+    import datetime
+    f = datetime.date(int(dia[:4]), int(dia[4:6]), int(dia[6:]))
+    verano = _domingo(f.year, 3, 2) <= f < _domingo(f.year, 11, 1)
+    return 1331 if verano else 1431
+
+def cierre_utc(dia):
+    """HHMM UTC de la ultima vela de la ventana: 120 velas despues de la base (15:30 o 16:30 UTC)."""
+    return apertura_utc(dia) + 199
 
 def z_res(k): return (max(k['o'],k['c']), k['h'])
 def z_sop(k): return (k['l'], min(k['o'],k['c']))
@@ -68,8 +94,9 @@ class Zona:
 # ---------------------------------------------------------------- premercado
 def zonas_premercado(V):
     Z=[]
+    ini = apertura_utc(V[0]['d']) if V else 1331   # el premercado acaba en la apertura (24/09/2026)
     for i,k in enumerate(V):
-        if hm(k)>=1331: break
+        if hm(k)>=ini: break
         if k['v']<=UMBRAL_VOL: continue
         if k['c']>=k['o']: lo,hi=z_res(k); Z.append(Zona(lo,hi,'R',i,f"{col(k)//100}:{k['t'][2:4]} pm"))
         else:              lo,hi=z_sop(k); Z.append(Zona(lo,hi,'S',i,f"{col(k)//100}:{k['t'][2:4]} pm"))
@@ -170,7 +197,8 @@ def leer_sesion(V, dia):
     D=[k for k in V if k['d']==dia]
     if not D: return None
     Z = zonas_premercado(D)
-    S=[i for i,k in enumerate(D) if 1331<=hm(k)<=1530]
+    ini, fin_v = apertura_utc(dia), cierre_utc(dia)   # la ventana sigue a Nueva York (24/09/2026)
+    S=[i for i,k in enumerate(D) if ini<=hm(k)<=fin_v]
     if len(S)<30: return None   # no es una jornada americana completa
     b=S[0]                                   # indice de la vela base 08:31
     base=D[b]
@@ -181,7 +209,7 @@ def leer_sesion(V, dia):
     ref_actual=None; z_pend=None
     rangos=[]        # bandas entre zonas ya resueltas: una sola zona por banda y por jornada
     log=[]
-    log.append(f"08:31 vela base {'ALCISTA' if alc else 'BAJISTA'} "
+    log.append(f"{col(base)//100:02d}:{base['t'][2:4]} vela base {'ALCISTA' if alc else 'BAJISTA'} "
                f"(abre {base['o']:.2f} cierra {base['c']:.2f})")
 
     estado='corrida'
@@ -354,7 +382,7 @@ def leer_sesion(V, dia):
     piv.append((ext if estado=='corrida' else r_ext,
                 (D[ext]['h'] if alc else D[ext]['l']) if estado=='corrida'
                 else (D[r_ext]['l'] if alc else D[r_ext]['h'])))
-    return dict(D=D, Z=Z, alc=alc, log=log, b=b, fin=fin, retros=retros, piv=piv)
+    return dict(D=D, Z=Z, alc=alc, log=log, b=b, fin=fin, retros=retros, piv=piv, fin_v=fin_v)
 
 if __name__=='__main__':
     import sys
@@ -525,7 +553,7 @@ def detectar_setups(res, solo_reingresos=False):
             if orden and ((k['l'] <= o['s']) if o['dir']>0 else (k['h'] >= o['s'])):
                 ev.append(f"{hh(k)}  orden cancelada — el precio volvió al punto del stop "
                           f"({o['s']:.2f})"); orden=None
-            elif orden and col(k)>=1029:
+            elif orden and hm(k)>=res['fin_v']-1:      # 10:29 Col en verano, 11:29 en invierno
                 ev.append(f"{hh(k)}  orden cancelada — fin de ventana"); orden=None
         if orden: continue
 
@@ -558,13 +586,22 @@ def detectar_setups(res, solo_reingresos=False):
         if orden: continue
 
         # ---------- ROMPIMIENTO -> CONTINUACION (el setup que se llamaba IRI) ----------
-        for z in ([] if solo_reingresos else vivas):
+        # DIA DE FED (R-36) — 24/09/2026, fase 7 del Trading Journal, con el OK del operador.
+        # Hasta hoy este bloque se saltaba entero en dia de Fed: no se anotaba ningun rompimiento y,
+        # sin rompimiento anotado, el motor no podia ver NINGUN reingreso, que es justo el unico setup
+        # permitido ese dia (DISCREPANCIAS, 16/09/2026). Ahora el rompimiento se anota siempre y lo que
+        # se salta es solo la ORDEN de continuacion. Efecto: el 8/07 aparece un reingreso, que Cowork
+        # tiene que revalidar (PROPUESTAS_AL_PLAN, 24/09/2026).
+        for z in vivas:
             if z.roto or not z.de_corrida or z.r_ini is None: continue
             zlo,zhi=z.en(i); nd=z.dir
             if   nd>0 and k['l']<=zhi and k['h'] > zhi+TICK/2: d,e0='arriba',k['h']
             elif nd<0 and k['h']>=zlo and k['l'] < zlo-TICK/2: d,e0='abajo', k['l']
             else: continue
             z.roto=(d,i,e0)
+            if solo_reingresos:
+                ev.append(f"{hh(k)}  rompimiento de {z} — día de Fed: no se opera la continuación")
+                break
             # R-40 (14/09/2026): no se entra en el rompimiento de una zona cuyo
             # RETROCESO fue mayor que la CORRIDA que la creo. Ojo al ORDEN de estas
             # lineas: el rompimiento se REGISTRA (z.roto, arriba) y solo despues se

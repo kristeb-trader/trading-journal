@@ -89,6 +89,7 @@ Definiciones medibles en `01_Plan\GLOSARIO.md`.
 ## Datos y motor
 
 - `05_Backtesting\datos\NQ 09-26.Last.txt` — `yyyyMMdd HHmmss;o;h;l;c;v`, **en UTC**.
-- **Horario:** el gráfico es hora Colombia (UTC−5). Ventana **08:31–10:30 Col = 13:31–15:30 UTC**.
+- **Horario:** el gráfico es hora Colombia (UTC−5). Ventana **08:31–10:30 Col = 13:31–15:30 UTC** en el horario de verano de EE. UU.; **09:31–11:30 Col = 14:31–16:30 UTC** en invierno (desde el 2/11/2026). `lector.py` la calcula sola con `apertura_utc()` desde el 24/09/2026.
+- **Días de Fed:** desde el 24/09/2026 el motor anota los rompimientos también en día de Fed (antes no veía ningún reingreso). La lista la pone la cadena diaria del Journal desde Fechas Especiales.
 - ⚠️ El plan opera **solo MNQ** desde el 06/09/2026. Los datos de backtesting son de **NQ** y así se quedan, por decisión del operador. No intentes arreglar esa diferencia.
 - `lector.py` reproduce el marcado · `dia.py` genera la gráfica de una jornada. **Los dos son auditoría.**

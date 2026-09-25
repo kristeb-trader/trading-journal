@@ -150,3 +150,44 @@ operador renombra su selector de NinjaTrader.
 `CHECKLIST_DIARIA.md`, línea 70, al final: *«Caso real: `G-12`, 06/07/2026, **IRI descartado** y
 Reingreso operado con un minuto de diferencia.»* → **«Continuación descartada y Reingreso operado…»**.
 Sale publicada en la checklist del portal. Detalle en `CAMBIO_IRI_A_CONTINUACION.md` §9.
+
+---
+
+## 24/09/2026 · El motor cambió en dos cosas — y el 8 de julio hay que revalidarlo
+
+Desde el Trading Journal (fase 7, la cadena diaria), **con el OK del operador**. Solo se tocó
+`05_Backtesting\lector.py`; `01_Plan\` no se ha tocado. Regresión: los **46 días que no son de Fed**
+(10/09–23/09 y julio–agosto del archivo de NQ) dan **exactamente** lo mismo que antes
+(`scripts/cadena/prueba_motor.py`).
+
+### 1 · La apertura sigue a Nueva York
+
+El motor tenía la vela base fija a las 13:31 UTC. Desde el **2/11/2026** la apertura es a las 14:31 UTC
+(**9:31 Col**), como ya dice la regla de la ventana. Ahora lo calcula solo. Se probó simulando un día de
+invierno: mismas zonas y misma operación, una hora después en el gráfico.
+
+**Para Cowork:** `test_ciego\LEEME_BACK_DIARIO.md` dice *"Ventana operativa 08:31–10:30 Col = 13:31–15:30
+UTC"*. Vale solo hasta el 1/11. Desde el 2/11: 09:31–11:30 Col = 14:31–16:30 UTC.
+
+### 2 · El agujero de los días de Fed, cerrado en el motor
+
+Es el que describe `PENDIENTES.md` ("hermano del mismo fallo"): en día de Fed el motor no anotaba
+rompimientos y no podía ver ningún reingreso. Ahora los anota y solo se salta la orden de continuación.
+
+| Día de Fed | Antes | Ahora | Validado a mano |
+|---|---|---|---|
+| 16/09 | nada | los 3 reingresos (8:46, 9:00, 10:09), descartados por los mismos motivos | igual ✅ |
+| 29/07 | nada | reingreso 8:50, cancelado por volver al stop → NO OPERA | igual ✅ |
+| **08/07** | nada | **Reingreso bajista 8:38** · entrada 29.273,25 · stop 29.338,00 · objetivo 29.208,50 · riesgo 64,75 → **STOP −64,75 pts** | **NO OPERA** ❌ |
+
+🟡 **Pendiente para el operador y Cowork: revalidar el 8 de julio vela a vela.** Si se confirma, el resultado
+de julio del backtesting cambia en −64,75 puntos. Para regenerar el gráfico:
+
+```
+python dia.py 20260708 "datos/NQ 09-26.Last.txt" 2026-07-08.png 2000
+```
+
+🟡 **Ojo: es un reingreso de una sola vela**, el caso que quedó sin decidir el 16/09 (DISCREPANCIAS): la 8:37
+hace la consecución y vuelve dentro de la zona en la misma vela. Aquí la vela es **blanca** —con la convención
+intravela del plan, máximo primero—, así que la consecución llega antes que la vuelta. Si esa convención vale
+para los reingresos, la entrada se sostiene; si no, el 8/07 sigue siendo NO OPERA.
