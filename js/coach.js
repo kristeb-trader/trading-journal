@@ -2,18 +2,21 @@
 const Coach = (() => {
 
   const CLAUDE_URL = 'https://broad-hall-c53f.kristerock.workers.dev/api/claude'
-  const MODEL      = 'claude-sonnet-5'
-  // Sonnet 5 PIENSA por defecto, y el razonamiento sale del mismo presupuesto que
-  // la respuesta: con los 3000 de antes el diagnóstico se cortaría a medias.
-  const MAX_TOKENS = 8000
-  // Se declara explícito aunque `adaptive` sea el default: en Sonnet 4.6 omitirlo
-  // significaba lo CONTRARIO (sin pensar), así que dejarlo escrito evita que el
-  // próximo que lea esto crea que seguimos sin razonamiento.
+  // Opus 5.5 desde el 24 sep (fase 6, decisión de Kris): lee el plan de Chaumer entero.
+  const MODEL      = 'claude-opus-5-5'
+  // Opus 5.5 piensa SIEMPRE (no se puede apagar) y el razonamiento sale del mismo
+  // presupuesto que la respuesta: con 8000 el diagnóstico podría cortarse a medias.
+  const MAX_TOKENS = 16000
+  // En Opus 5.5 `adaptive` es lo único que se acepta (`disabled` y `enabled` dan 400);
+  // se deja escrito para que nadie crea que el Coach responde sin razonar.
   const THINKING   = { type: 'adaptive' }
   // El Coach es interactivo y el proxy no hace streaming: la respuesta entera viaja
   // en una sola petición. `low` acota cuánto piensa y mantiene la latencia parecida
   // a la de hoy. Si el análisis se queda corto, subir a 'medium' (una línea).
   const EFFORT     = 'low'
+  // Precio de Opus 5.5 en USD por millón de tokens, para la fila de `coach_uso`.
+  // La escritura de caché cuesta 2× la entrada con TTL de 1 h y 1,25× con 5 min.
+  const PRECIO = { entrada: 4, salida: 20, cache1h: 8, cache5m: 5, cacheLeida: 0.20 }
 
   // El Coach IA solo analiza la CUENTA PRINCIPAL configurada (Datos → Cuenta
   // principal, guardada en objetivos.cuenta_principal). Las demás se ignoran.
@@ -33,6 +36,7 @@ const Coach = (() => {
   // ── Estado interno ─────────────────────────────────────────────────────
   let chatHistory       = []   // conversación del día en memoria
   let systemPromptCache = null // se construye una vez por sesión abierta
+  let planBloque        = null // bloque A (el plan de Chaumer); null en días de la etapa 1
   let diagnosticoActual = {}   // secciones parseadas del último análisis
   let reglasCache       = null // rulebook canónico; se recarga al limpiar caché
   let emocionesCache    = []   // catálogo de emociones
@@ -702,6 +706,88 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
     return out
   }
 
+  // ── El plan de Chaumer: bloque A del system (fase 6, 24 sep) ─────────────
+  // Solo en días de la etapa 2. Va PRIMERO en el system y no depende de la fecha:
+  // es el mismo texto para todos los días de la etapa, así que la caché lo relee
+  // entre turnos y entre días. Un día de la etapa 1 se analiza como siempre.
+  const PLAN_DOCS = [
+    ['reglas',            'LAS REGLAS DEL PLAN, con sus condiciones medibles'],
+    ['parametros',        'PARÁMETROS'],
+    ['glosario',          'GLOSARIO'],
+    ['checklist',         'CHECKLIST DIARIA'],
+    ['contextualizacion', 'CONTEXTUALIZACIÓN — recordatorios de criterio, NO son reglas'],
+  ]
+
+  const INSTRUCCIONES_PLAN = `# EL PLAN DE TRADING — la única fuente de reglas
+
+Este día pertenece a la etapa en que Kris opera con el plan de trading de Alfredo Chaumer. Abajo van sus documentos completos. En ellos, "el operador" es Kris.
+
+Cómo usarlos:
+- **El plan es la única fuente de reglas.** Juzga cada decisión de Kris con las condiciones medibles del plan (ticks, velas, puntos, horas), nunca con análisis técnico genérico ni con criterio propio.
+- **Si el plan no cubre un caso, dilo con esas palabras** —«el plan no cubre este caso»— y sugiere llevarlo a Cowork, donde se edita el plan. No rellenes el hueco con una regla tuya.
+- **Nunca uses los códigos de los documentos** (R-40, P-22, G-12, D-06, C-01…) al hablar con Kris: nombra cada regla por lo que dice («la corrida fluida», «el stop máximo»). Los códigos internos del checklist (p2_…) solo van donde el formato de salida los pide.
+- **La CONTEXTUALIZACIÓN son recordatorios de criterio, no reglas:** sirven para leer el contexto, nunca para juzgar un incumplimiento.
+- Las horas del plan dicen su zona (ET u hora Colombia); los trades del día traen las dos.`
+
+  async function construirBloquePlan(date) {
+    if (etapaDeFecha(date) !== 2) return null
+    const docs = await DB.getPlanDocumentos().catch(e => {
+      console.warn('[Coach] no se pudo leer el plan:', e?.message || e)
+      return []
+    })
+    const porNombre = Object.fromEntries(docs.map(d => [d.nombre, d.contenido]))
+    const partes = PLAN_DOCS.filter(([n]) => porNombre[n])
+      .map(([n, titulo]) => `<documento nombre="${n}" titulo="${titulo}">\n${porNombre[n]}\n</documento>`)
+    // Sin plan cargado el Coach sigue con el bloque B, que ya trae las reglas de la etapa.
+    if (!partes.length) return null
+    return `${INSTRUCCIONES_PLAN}\n\n${partes.join('\n\n')}`
+  }
+
+  // Vigilante (§3.3): los códigos del plan que el modelo cuele ENTRE PARÉNTESIS se
+  // quitan antes de pintar y de guardar, y se cuentan en coach_uso para saber si la
+  // instrucción basta. "(R-10 y R-11)" desaparece entero; "(80 puntos, R-31)" queda
+  // "(80 puntos)". Los que vayan fuera de paréntesis no se tocan: solo se avisan.
+  const RE_COD = /`?\b[RPGDC]-\d{1,3}\b`?/g
+  function quitarCodigosPlan(texto) {
+    let n = 0
+    const limpio = texto.replace(/(\s?)\(([^()\n]*)\)/g, (m, esp, dentro) => {
+      const cods = dentro.match(RE_COD)
+      if (!cods) return m
+      n += cods.length
+      const quedan = dentro.split(/\s*[,;/+·]\s*/)
+        .filter(p => p.replace(RE_COD, '').replace(/\bpunto\s*\d+\b|\b(ver|y|e|o|regla|reglas)\b|[\s.:—–-]/gi, ''))
+        .map(p => p.replace(RE_COD, '').replace(/\s{2,}/g, ' ').trim())
+      return quedan.length ? `${esp}(${quedan.join(', ')})` : ''
+    })
+    const sueltos = (limpio.match(RE_COD) || []).length
+    if (n || sueltos) console.warn('[Coach] vigilante — códigos quitados: %d · fuera de paréntesis: %d', n, sueltos)
+    return { texto: limpio, n }
+  }
+
+  // Una fila en coach_uso por llamada, con el `usage` de la respuesta. No bloquea:
+  // si falla, el análisis sigue y solo se avisa en la consola.
+  function registrarUso(u, stopReason, codigosQuitados) {
+    if (!u) return
+    const cc = u.cache_creation
+    const escr1h = cc ? (cc.ephemeral_1h_input_tokens || 0) : (u.cache_creation_input_tokens || 0)
+    const escr5m = cc ? (cc.ephemeral_5m_input_tokens || 0) : 0
+    const coste = ((u.input_tokens || 0) * PRECIO.entrada + escr1h * PRECIO.cache1h +
+      escr5m * PRECIO.cache5m + (u.cache_read_input_tokens || 0) * PRECIO.cacheLeida +
+      (u.output_tokens || 0) * PRECIO.salida) / 1e6
+    DB.registrarUsoCoach({
+      fecha_analizada:  coachDate || null,
+      etapa:            etapaDeFecha(coachDate) ?? null,
+      modelo:           MODEL,
+      entrada:          u.input_tokens || 0,
+      cache_escrita:    u.cache_creation_input_tokens || 0,
+      cache_leida:      u.cache_read_input_tokens || 0,
+      salida:           u.output_tokens || 0,
+      coste_usd:        Math.round(coste * 10000) / 10000,
+      stop_reason:      stopReason || null,
+      codigos_quitados: codigosQuitados || 0,
+    }).catch(e => console.warn('[Coach] no se pudo registrar el consumo:', e?.message || e))
+  }
+
   // ── Llamada a Claude ───────────────────────────────────────────────────
 
   async function llamarClaude(userContent, isFirst = false) {
@@ -709,14 +795,14 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
     if (!apiKey) throw new Error('Configura tu API Key de Claude en ⚙ Ajustes')
 
     if (isFirst) {
-      systemPromptCache = await buildSystemPrompt(coachDate)
+      ;[planBloque, systemPromptCache] = await Promise.all([construirBloquePlan(coachDate), buildSystemPrompt(coachDate)])
       chatHistory = []
     } else if (!systemPromptCache) {
       // Sesión guardada que se retoma: la app pintó el análisis en pantalla, pero
       // el Coach no tiene NADA en la cabeza (reglas, estrategia, histórico, datos
       // del día). Se le reconstruye el contexto de esa fecha antes de continuar.
       // No cuesta una llamada a la IA: son lecturas de Supabase.
-      systemPromptCache = await buildSystemPrompt(coachDate)
+      ;[planBloque, systemPromptCache] = await Promise.all([construirBloquePlan(coachDate), buildSystemPrompt(coachDate)])
       await imagenPromesa   // la gráfica puede seguir bajando de Cloudinary
       restaurarImagenEnChat()
     }
@@ -737,9 +823,13 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
         max_tokens: MAX_TOKENS,
         thinking: THINKING,
         output_config: { effort: EFFORT },
-        // El system prompt es idéntico durante toda la sesión de coaching (se
-        // construye una vez en la Etapa 1), así que es el prefijo cacheable.
-        system: [{ type: 'text', text: systemPromptCache, cache_control: CACHE_CTRL }],
+        // El system es idéntico durante toda la sesión de coaching (se construye una
+        // vez en la Etapa 1), así que es el prefijo cacheable. Dos bloques, cada uno
+        // con su marca: A (el plan, solo etapa 2; igual para todos los días) y B (el día).
+        system: [
+          ...(planBloque ? [{ type: 'text', text: planBloque, cache_control: CACHE_CTRL }] : []),
+          { type: 'text', text: systemPromptCache, cache_control: CACHE_CTRL },
+        ],
         messages: mensajesConCache(chatHistory),
       })
     })
@@ -761,9 +851,17 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
     // Con razonamiento activo, `content[0]` es un bloque `thinking` (de texto vacío,
     // porque no pedimos que lo devuelva). Quedarse con el primer bloque a secas daba
     // "" y rompía TODAS las llamadas: hay que buscar el bloque de tipo `text`.
-    const texto = (data?.content || []).filter(b => b?.type === 'text')
+    const crudo = (data?.content || []).filter(b => b?.type === 'text')
       .map(b => b.text || '').join('\n').trim()
+    const { texto, n: codigosQuitados } = planBloque ? quitarCodigosPlan(crudo) : { texto: crudo, n: 0 }
+    registrarUso(u, data?.stop_reason, codigosQuitados)
 
+    if (data?.stop_reason === 'refusal') {
+      // Opus 5.5 puede negarse a responder. Se retira el turno de Kris para que la
+      // conversación no quede con una pregunta sin respuesta, y se dice en claro.
+      chatHistory.pop()
+      throw new Error('El modelo no ha querido responder a esto; prueba a reformular.')
+    }
     if (data?.stop_reason === 'max_tokens') {
       // El corte es silencioso: llegaría un diagnóstico a medias que el parser
       // trocearía sin quejarse. Mejor decirlo.
@@ -1376,6 +1474,7 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
     diagnosticoHecho = false
     erroresRevisados = false
     systemPromptCache = null
+    planBloque = null
 
     const chatEl = document.getElementById('coachChatMessages')
     if (chatEl) chatEl.innerHTML = ''
@@ -2134,6 +2233,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     erroresDetectados   = []
     erroresRevisados    = false
     systemPromptCache   = null
+    planBloque          = null
     imagenBase64        = null
     imagenPromesa       = null
 

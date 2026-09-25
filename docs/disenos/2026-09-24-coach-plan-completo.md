@@ -1,6 +1,7 @@
 # Fase 6 — El Coach con el plan completo
 
-**Versión:** v1 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 6a cerrada; en curso: 6b.
+**Versión:** v1 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 6a cerrada; 6b en el código y verificada en
+el preview, **falta la prueba real de Kris** (analizar el 24/09).
 **Escrito:** 24/09/2026. Sub-diseño de la fase 6 de `docs/disenos/2026-09-24-unificacion-chaumer.md`.
 
 | Versión | Fecha | Qué cambió |
@@ -144,7 +145,26 @@ no usa ninguna.
 - Kris pega el código; revisión de claves; `workers/proxy-ia/worker.js` + nota de qué hace cada ruta.
 - **Verificado cuando:** el archivo está en el repo sin ninguna clave y se sabe si filtra modelo o tokens.
 
-### 6b · El plan en Supabase y el Coach con Opus 5.5 (~22)
+### 6b · El plan en Supabase y el Coach con Opus 5.5 (~22) — 🟡 falta la prueba de Kris
+
+*Resultado (24/09/2026):*
+- Los cinco documentos en `plan_documentos`, **íntegros** (sha256 del contenido = huella del sincronizador):
+  reglas 59.574 caracteres · glosario 53.214 · contextualización 11.422 · checklist 8.903 · parámetros 4.801
+  (138 K en total). Cargados por el MCP con el SQL de `sincronizar.mjs` (`salida-documentos.sql`, fuera de git).
+- `coach.js`: `MODEL = 'claude-opus-5-5'`, `MAX_TOKENS = 16000`, `EFFORT = 'low'`; bloque A
+  (`construirBloquePlan`) primero en el system solo en días de la etapa 2, cada documento en su
+  `<documento>`; vigilante `quitarCodigosPlan`; `refusal` → mensaje claro y se retira el turno; fila en
+  `coach_uso` por llamada (`registrarUso`, coste con los precios de Opus 5.5).
+- **Dos desviaciones pequeñas:** el vigilante quita también los códigos `C-` (contextualización), que son
+  del mismo tipo; y «se registra cuántos» se guarda en una columna nueva, `coach_uso.codigos_quitados`
+  (migración `2026-09-24-coach-uso-codigos.sql`), no solo en la consola.
+- **Verificado en el preview** (modo local, con la llamada a la IA interceptada): el 24/09 manda 2 bloques
+  de system (el plan con sus 5 documentos + el día), el 23/09 manda 1; los dos con `claude-opus-5-5`,
+  16.000, `adaptive`, `low`; «(R-40)» y «(80 puntos, R-31)» salen en pantalla como «» y «(80 puntos)»;
+  la negativa pinta *«El modelo no ha querido responder a esto; prueba a reformular.»*; la fila de consumo
+  calcula 0,414 USD para 1.000 de entrada + 50.000 escritos + 500 de salida. Consola sin errores.
+
+*Lo que se diseñó:*
 - Migración `plan_documentos` + `coach_uso`; `sincronizar.mjs` genera los documentos; aplicar por el MCP.
 - `coach.js`: bloque A del plan en días de la etapa 2, instrucciones fijas, vigilante de códigos, modelo,
   `max_tokens`, `refusal`, fila en `coach_uso`.

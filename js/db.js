@@ -15,6 +15,7 @@ const CHECKLIST_DEFAULT = [
 ]
 let _checklistCache = null  // catálogo cacheado tras la primera carga
 let _etapasCache = null     // disciplina_etapas, tras la primera carga (fase 5)
+let _planDocsCache = null   // plan_documentos para el Coach (fase 6)
 let _cuentaPrincipalCache = 'PA-APEX-232411-03'  // fallback histórico hasta leer objetivos
 
 // ── Setups paramétricos (catalogo_setups + catalogo_setup_variantes) ────────
@@ -1019,6 +1020,24 @@ const DB = {
 
   // ── Rulebook canónico (reglas) ───────────────────────────────────────────
   // (Reemplaza a estrategia_chaumer y setup_reglas, retiradas en Fase 4.)
+  // ── El plan de Chaumer para el Coach (fase 6) ────────────────────────────
+  // Los cinco documentos que el Coach lee enteros. Los escribe SOLO
+  // scripts/plan/sincronizar.mjs; aquí solo se leen. Se guardan en memoria: la caché
+  // de prompts de Claude necesita el MISMO texto, byte a byte, en cada turno.
+  async getPlanDocumentos() {
+    if (_planDocsCache) return _planDocsCache
+    const { data, error } = await supa.from('plan_documentos').select('nombre, contenido, huella')
+    if (error) throw error
+    _planDocsCache = data || []
+    return _planDocsCache
+  },
+
+  // Una fila por llamada del Coach a Claude: tokens y coste. Sin texto de la conversación.
+  async registrarUsoCoach(fila) {
+    const { error } = await supa.from('coach_uso').insert(fila)
+    if (error) throw error
+  },
+
   async getReglas({ capa = null, soloActivas = false } = {}) {
     let q = supa.from('catalogo_reglas').select('*')
     if (capa) q = q.eq('capa', capa)

@@ -102,6 +102,8 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-09-24-disciplina-etapas.sql` | ✅ MCP | tabla `disciplina_etapas` (etapa 1) y columnas `etapa`, `plan_reglas`, `origen`, `plan_tipo` en `catalogo_reglas`; las 17 casillas activas → etapa 1. La disciplina cuenta por etapa, no por `activa` |
 | `2026-09-24-etapa-plan-chaumer.sql` | ✅ MCP | etapa 2 (Plan de Chaumer) desde el 24/09; `plan_bloque`; 40 reglas + 48 líneas + 2 automáticas de regla (SQL de `scripts/plan/sincronizar.mjs`); las 17 casillas de la etapa 1 a `activa = false` |
 | `2026-09-24-plan-linea.sql` | ✅ MCP | `plan_linea`: la posición de cada línea en la checklist diaria del plan (48) |
+| `2026-09-24-coach-plan.sql` | ✅ MCP | tablas `plan_documentos` (los 5 documentos del plan que lee el Coach; los escribe solo `scripts/plan/sincronizar.mjs`) y `coach_uso` (tokens y coste de cada llamada del Coach). Los documentos se cargaron con el SQL del sincronizador y se verificaron por huella sha256 |
+| `2026-09-24-coach-uso-codigos.sql` | ✅ MCP | `coach_uso.codigos_quitados`: cuántos códigos del plan quitó el vigilante del Coach en esa respuesta |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.

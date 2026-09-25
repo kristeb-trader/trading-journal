@@ -73,3 +73,4 @@ chaumer/**/.impeccable/
 
 # Salida del sincronizador del plan: se guarda como migración, no suelta
 scripts/plan/salida.sql
+scripts/plan/salida-documentos.sql

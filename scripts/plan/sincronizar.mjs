@@ -138,6 +138,52 @@ update catalogo_reglas set activa = false, updated_at = now()
 const salida = path.join(RAIZ, 'scripts', 'plan', 'salida.sql')
 fs.writeFileSync(salida, sql)
 
+// ── Los documentos del plan para el Coach (fase 6) → plan_documentos ───────
+// El Coach los lee enteros. Las reglas se pasan a texto (con sus condiciones); el
+// resto va tal cual. Salen a scripts/plan/salida-documentos.sql, UN insert por
+// documento, para aplicarlos por el MCP de uno en uno.
+const leer = f => fs.readFileSync(path.join(PLAN, f), 'utf8').replace(/\r\n/g, '\n')
+function reglasATexto() {
+  const out = ['# Las reglas del plan de Chaumer', '',
+    'Fuente de verdad: chaumer/01_Plan/reglas.json. Cada regla con sus condiciones medibles.', '']
+  let cat = null
+  for (const r of reglas) {
+    if (r.categoria_nombre !== cat) { cat = r.categoria_nombre; out.push(`## ${cat}`, '') }
+    const sub = r.subcategoria ? ` · ${r.subcategoria}` : ''
+    out.push(`### ${r.id}${sub} — ${limpia(r.enunciado)}`)
+    out.push(`Estado: ${r.estado}${r.prioridad != null ? ` · prioridad ${r.prioridad}` : ''}`)
+    if (r.condiciones?.length) {
+      out.push('Condiciones:')
+      for (const c of r.condiciones) out.push(`- ${c.variable} ${c.operador} ${c.valor}${c.timeframe && c.timeframe !== '-' ? ` (${c.timeframe})` : ''}`)
+    }
+    if (r.accion) out.push(`Acción: ${r.accion}`)
+    if (r.excepciones?.length) { out.push('Excepciones:'); r.excepciones.forEach(e => out.push(`- ${e}`)) }
+    if (r.nota) out.push(`Nota: ${r.nota}`)
+    if (r.pendiente) out.push(`PENDIENTE (no resuelto en el plan): ${r.pendiente}`)
+    out.push('')
+  }
+  return out.join('\n').trim() + '\n'
+}
+const documentos = [
+  { nombre: 'reglas', origen: 'reglas.json', contenido: reglasATexto() },
+  { nombre: 'parametros', origen: 'PARAMETROS.md', contenido: leer('PARAMETROS.md') },
+  { nombre: 'glosario', origen: 'GLOSARIO.md', contenido: leer('GLOSARIO.md') },
+  { nombre: 'checklist', origen: 'CHECKLIST_DIARIA.md', contenido: leer('CHECKLIST_DIARIA.md') },
+  { nombre: 'contextualizacion', origen: 'CONTEXTUALIZACION.md',
+    contenido: '> ⚠️ RECORDATORIOS DE CRITERIO. NO SON REGLAS: nunca se juzga un incumplimiento con ellos.\n\n' + leer('CONTEXTUALIZACION.md') },
+]
+const TAG = '$plan_doc$'
+const docSql = documentos.map(d => {
+  if (d.contenido.includes(TAG)) { console.error(`✘ ${d.nombre} contiene ${TAG}`); process.exit(1) }
+  const h = crypto.createHash('sha256').update(d.contenido, 'utf8').digest('hex')
+  d.huella = h
+  return `-- ${d.nombre} · ${d.origen} · ${d.contenido.length} caracteres\n` +
+    `insert into plan_documentos (nombre, contenido, huella, origen) values ('${d.nombre}', ${TAG}${d.contenido}${TAG}, '${h}', '${d.origen}')\n` +
+    `on conflict (nombre) do update set contenido = excluded.contenido, huella = excluded.huella, origen = excluded.origen, actualizado = now()\n` +
+    ` where plan_documentos.huella is distinct from excluded.huella;\n`
+}).join('\n')
+fs.writeFileSync(path.join(RAIZ, 'scripts', 'plan', 'salida-documentos.sql'), docSql)
+
 console.log(`Plan: ${reglas.length} reglas · checklist: ${lineas.length} líneas`)
 console.log(`  casillas ${filas.filter(f => f.plan_tipo === 'casilla').length} · automáticas ${filas.filter(f => f.plan_tipo === 'auto').length} · guía ${filas.filter(f => f.plan_tipo === 'guia').length} · reglas ${reglas.length}`)
 for (const f of filas.filter(f => f.plan_tipo === 'casilla' || f.plan_tipo === 'auto'))
@@ -145,3 +191,4 @@ for (const f of filas.filter(f => f.plan_tipo === 'casilla' || f.plan_tipo === '
 avisos.forEach(a => console.log(a))
 console.log(avisos.length ? `\n⚠ ${avisos.length} aviso(s). El SQL NO toca esas filas.` : '\n✔ Todo el mapa casa con el plan.')
 console.log(`SQL: ${path.relative(RAIZ, salida)} (${filas.length} filas)`)
+console.log('Documentos del Coach: ' + documentos.map(d => `${d.nombre} ${Math.round(d.contenido.length / 1024)} KB (${d.huella.slice(0, 12)})`).join(' · ') + ' → scripts/plan/salida-documentos.sql')
