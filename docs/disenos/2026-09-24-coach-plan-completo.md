@@ -1,7 +1,6 @@
 # Fase 6 — El Coach con el plan completo
 
-**Versión:** v1 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 6a cerrada; 6b en el código y verificada en
-el preview, **falta la prueba real de Kris** (analizar el 24/09).
+**Versión:** v1 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 6a y 6b cerradas; queda 6c (documentos).
 **Escrito:** 24/09/2026. Sub-diseño de la fase 6 de `docs/disenos/2026-09-24-unificacion-chaumer.md`.
 
 | Versión | Fecha | Qué cambió |
@@ -145,7 +144,7 @@ no usa ninguna.
 - Kris pega el código; revisión de claves; `workers/proxy-ia/worker.js` + nota de qué hace cada ruta.
 - **Verificado cuando:** el archivo está en el repo sin ninguna clave y se sabe si filtra modelo o tokens.
 
-### 6b · El plan en Supabase y el Coach con Opus 5.5 (~22) — 🟡 falta la prueba de Kris
+### 6b · El plan en Supabase y el Coach con Opus 5.5 (~22) ✅ CERRADA el 24/09/2026
 
 *Resultado (24/09/2026):*
 - Los cinco documentos en `plan_documentos`, **íntegros** (sha256 del contenido = huella del sincronizador):
@@ -163,6 +162,22 @@ no usa ninguna.
   16.000, `adaptive`, `low`; «(R-40)» y «(80 puntos, R-31)» salen en pantalla como «» y «(80 puntos)»;
   la negativa pinta *«El modelo no ha querido responder a esto; prueba a reformular.»*; la fila de consumo
   calcula 0,414 USD para 1.000 de entrada + 50.000 escritos + 500 de salida. Consola sin errores.
+- **Prueba real de Kris (24/09, 21:19–21:22 hora Colombia), tres llamadas en `coach_uso`:**
+
+  | Llamada | Escrito en caché | Leído de caché | Salida | Coste |
+  |---|---|---|---|---|
+  | Análisis técnico | 88.235 | 0 | 3.127 | 0,7684 USD |
+  | Chat | 1.762 | 88.235 | 1.753 | 0,0668 USD |
+  | Diagnóstico | 1.168 | 89.997 | 3.026 | 0,0879 USD |
+
+  La caché funciona desde el 2º turno. **Sesión completa: 0,92 USD** (estimado: 0,85–1,05). El prefijo real
+  (plan + día) son **88.000 tokens**, no los 45.000–50.000 estimados para el plan solo: lo compensa que la
+  lectura cuesta 0,20. Al mes (21 días) ≈ **19 USD**. El análisis no usa ningún código (`codigos_quitados` = 0
+  en las tres) y juzga con las condiciones del plan: la corrida fluida con sus puntos, el stop desde que nace
+  la zona, el bloqueo solo del sentido del día, el umbral de 8.000 y el objetivo que nunca se recorta.
+- **Visto de paso, fuera de esta fase:** `parsearSetupsJson` corta `setups_json.descripcion` en la primera
+  palabra «setup» y deja los `**` del Markdown («ENTRADA INVÁLIDA.** La lectura del»). Ya pasaba con Sonnet
+  (siempre corta a 100 caracteres); con el estilo de Opus se nota más. Cosmético.
 
 *Lo que se diseñó:*
 - Migración `plan_documentos` + `coach_uso`; `sincronizar.mjs` genera los documentos; aplicar por el MCP.
