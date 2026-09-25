@@ -74,3 +74,6 @@ chaumer/**/.impeccable/
 # Salida del sincronizador del plan: se guarda como migración, no suelta
 scripts/plan/salida.sql
 scripts/plan/salida-documentos.sql
+
+# Python fuera de chaumer/ (scripts/cadena)
+__pycache__/

@@ -1,6 +1,6 @@
 # Fase 7 — La cadena diaria
 
-**Versión:** v1.1 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 7a cerrada; la siguiente es la 7b.
+**Versión:** v1.1 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 7a y 7b cerradas; la siguiente es la 7c.
 **Escrito:** 24/09/2026. Sub-diseño de la fase 7 de `docs/disenos/2026-09-24-unificacion-chaumer.md`.
 **Reemplaza** el texto de la fase 7 del diseño general (10:45, tarea de Windows, motor sin modificar): el
 diagnóstico demostró que así se rompía el 2/11. Al aprobarse, el diseño general pasa a apuntar aquí.
@@ -9,6 +9,7 @@ diagnóstico demostró que así se rompía el 2/11. Al aprobarse, el diseño gen
 |---|---|---|
 | v1 | 24/09/2026 | Primera versión, tras el diagnóstico y las cuatro decisiones de Kris |
 | v1.1 | 24/09/2026 | Aprobado, con las velas en `motor_fichas`. Resuelta la pregunta de §11: Kris guarda las noticias desde el AddOn del checklist, que **no** marca el día como registrado — la regla se queda. **7a cerrada** |
+| v1.2 | 24/09/2026 | **7b cerrada**: tres migraciones en vez de una (esquema y dos parches de datos, un propósito por archivo). El relleno cuenta también los días anteriores al 16/08 |
 
 > Toca un script del proyecto Chaumer (`lector.py`), una tabla nueva con una política que **no** es `auth_all`
 > (a propósito), el Diario, el bot de Telegram, el Coach y un AddOn de NinjaTrader. No se implementa nada hasta
@@ -322,12 +323,20 @@ Cada subfase se verifica sola y termina en commit + push. Estimación en llamada
 > del 16/09): anotado para Cowork en `chaumer/04_Web/PROPUESTAS_AL_PLAN.md` junto con el cambio de la ventana
 > que falta en `LEEME_BACK_DIARIO.md`.
 
-### 7b · La base de datos (~10)
+### 7b · La base de datos (~10) ✅ CERRADA el 24/09/2026
 - La migración de §4.2, aplicada por el MCP.
 - **Verificado con SELECT:** columnas y trigger (una segunda escritura no mueve `registrada_at`); filas
   rellenadas, antes y después; con una ficha de prueba, como `authenticated` un día **no registrado** devuelve 0
   filas y `motor_estado` = `bloqueada`, y uno registrado devuelve la fila; `anon` no ve nada; el 27/10 y el 8/12
   en `otro`. La ficha de prueba se borra.
+
+> **Medido (24/09):** 163 de 164 días registrados (fuera, el 07/09 festivo); un intento de mover `registrada_at`
+> del 23/09 no la movió · con fichas de prueba el 23/09 (registrado) y el 07/09 (no): `authenticated` ve solo el
+> 23/09; `motor_estado` = `ok` / `bloqueada` / `sin_ficha`; `authenticated` no puede insertar ni actualizar;
+> `anon` y `portal_lector` no leen la tabla ni la función; `motor_marcar_vista` marca el 23/09 y no el 07/09 ·
+> 27/10 y 8/12 en `otro`, 28/10 y 9/12 siguen `fomc` · fichas de prueba borradas (0 filas).
+> **Desviación:** tres archivos (`2026-09-24-cadena-diaria.sql`, `-registrada-at-relleno.sql`,
+> `-fed-day1-a-otro.sql`) en vez de uno, por la regla de un propósito por migración.
 
 ### 7c · El puente (~15)
 - `subir_dia.py` y el `.bat`. Se sube desde los archivos manuales del **10/09 al 23/09** (y el 24/09 si Kris lo

@@ -105,6 +105,9 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-09-24-coach-plan.sql` | ✅ MCP | tablas `plan_documentos` (los 5 documentos del plan que lee el Coach; los escribe solo `scripts/plan/sincronizar.mjs`) y `coach_uso` (tokens y coste de cada llamada del Coach). Los documentos se cargaron con el SQL del sincronizador y se verificaron por huella sha256 |
 | `2026-09-24-coach-uso-codigos.sql` | ✅ MCP | `coach_uso.codigos_quitados`: cuántos códigos del plan quitó el vigilante del Coach en esa respuesta |
 | `2026-09-24-cerrar-bak-trades-regularizacion.sql` | ✅ MCP | `_bak_20260919_trades_regularizacion` nació sin RLS y con permisos de `anon`: se activa RLS (sin políticas, como los demás `_bak_*`) y se le quitan los permisos a `anon`. Las 109 filas, intactas |
+| `2026-09-24-cadena-diaria.sql` | ✅ MCP | fase 7: `sesiones.registrada_at` (congelada por trigger) y `diario_editado_at`; tabla `motor_fichas` con el **candado** (`authenticated` solo lee días registrados; NO es `auth_all`, D-026); funciones `motor_dia_registrado`, `motor_estado`, `motor_marcar_vista` |
+| `2026-09-24-registrada-at-relleno.sql` | ✅ MCP | `registrada_at` para los 163 días ya registrados (con lectura, o anteriores al 16/08); queda fuera el 07/09 (festivo) |
+| `2026-09-24-fed-day1-a-otro.sql` | ✅ MCP | el 27/10 y el 8/12 ("FOMC Day 1") pasan de `fomc` a `otro`: Fechas Especiales = días con evento rojo de la Fed |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.
