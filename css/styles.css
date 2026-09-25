@@ -3475,6 +3475,38 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 }
 .coach-stage-chip.ok { background: var(--accent-dim); color: var(--accent-txt); border-color: transparent; }
 
+/* Lo que marcó el motor (fase 7): tarjeta arriba de la pestaña del Coach */
+.coach-motor {
+  margin-bottom: 14px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 18px;
+}
+.coach-motor-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  font-size: 0.82rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--text2);
+}
+.coach-motor-head i { color: var(--violet-txt); font-size: 1rem; }
+.coach-motor-msg { margin: 0; color: var(--text2); font-size: 0.9rem; display: flex; gap: 8px; align-items: baseline; }
+.coach-motor-msg.bloqueada i { color: var(--warning-txt); }
+.coach-motor-msg.error { color: var(--red-txt); }
+.coach-motor-body { display: flex; gap: 16px; align-items: flex-start; }
+.coach-motor-img {
+  width: 260px; max-width: 45%; border-radius: 8px; border: 1px solid var(--border);
+  cursor: zoom-in; flex-shrink: 0;
+}
+.coach-motor-info { min-width: 0; }
+.coach-motor-linea { margin: 0 0 6px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.coach-motor-linea.pos { color: var(--accent-txt); }
+.coach-motor-linea.neg { color: var(--red-txt); }
+.coach-motor-nota { margin: 0 0 6px; font-size: 0.82rem; color: var(--blue-txt); }
+.coach-motor-avisos { margin: 0; padding-left: 18px; font-size: 0.82rem; color: var(--warning-txt); }
+.coach-motor-avisos li + li { margin-top: 4px; }
+@media (max-width: 600px) {
+  .coach-motor-body { flex-direction: column; }
+  .coach-motor-img { width: 100%; max-width: 100%; }
+}
+
 .coach-placeholder-sm { padding: 28px 20px; }
 .coach-placeholder-sm i { font-size: 1.8rem; margin-bottom: 8px; }
 

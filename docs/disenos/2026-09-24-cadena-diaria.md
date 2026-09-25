@@ -1,6 +1,6 @@
 # Fase 7 — La cadena diaria
 
-**Versión:** v1.1 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 7a, 7b y 7c cerradas; la siguiente es la 7d.
+**Versión:** v1.4 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 7a, 7b, 7c y 7d cerradas; la siguiente es la 7e.
 **Escrito:** 24/09/2026. Sub-diseño de la fase 7 de `docs/disenos/2026-09-24-unificacion-chaumer.md`.
 **Reemplaza** el texto de la fase 7 del diseño general (10:45, tarea de Windows, motor sin modificar): el
 diagnóstico demostró que así se rompía el 2/11. Al aprobarse, el diseño general pasa a apuntar aquí.
@@ -11,6 +11,7 @@ diagnóstico demostró que así se rompía el 2/11. Al aprobarse, el diseño gen
 | v1.1 | 24/09/2026 | Aprobado, con las velas en `motor_fichas`. Resuelta la pregunta de §11: Kris guarda las noticias desde el AddOn del checklist, que **no** marca el día como registrado — la regla se queda. **7a cerrada** |
 | v1.2 | 24/09/2026 | **7b cerrada**: tres migraciones en vez de una (esquema y dos parches de datos, un propósito por archivo). El relleno cuenta también los días anteriores al 16/08 |
 | v1.3 | 24/09/2026 | **7c cerrada.** El aviso de la "banda de apertura" **no se calcula**: definirlo exigiría escribir la secuencia de marcado fuera del plan (inventar metodología). El Coach recuerda siempre ese agujero del motor |
+| v1.4 | 24/09/2026 | **7d cerrada.** La tarjeta distingue un día pasado sin ficha de hoy sin ficha. El contexto del Coach dice a cuántas horas de ET está la hora Colombia ese día |
 
 > Toca un script del proyecto Chaumer (`lector.py`), una tabla nueva con una política que **no** es `auth_all`
 > (a propósito), el Diario, el bot de Telegram, el Coach y un AddOn de NinjaTrader. No se implementa nada hasta
@@ -354,13 +355,30 @@ Cada subfase se verifica sola y termina en commit + push. Estimación en llamada
 > **Desviaciones:** el aviso de la banda de apertura, retirado (ver §5); un error solo crea la fila si no
 > existe (`ignore-duplicates`): una ficha buena no se pisa con un fallo pasajero de Cloudinary.
 
-### 7d · El Journal (~22)
+### 7d · El Journal (~22) ✅ CERRADA el 24/09/2026
 - Diario, bot, `db.js`, tarjeta y contexto del Coach.
 - **Verificado cuando:** `node --check` en cada `.js`; en el preview, un día registrado enseña la tarjeta con su
   gráfico, y la consola sin errores; un día sin registrar enseña el candado (se prueba con un día de septiembre sin
   `registrada_at`, que luego se restaura); guardar el Diario pone `registrada_at` y la segunda vez no la mueve
   (SELECT); el contexto del Coach lleva la sección sin códigos y **el bloque A sigue leyéndose de caché**
   (`coach_uso`); el bot se despliega solo con el push y un registro de prueba escribe las dos columnas.
+
+> **Medido (24/09):** `node --check` limpio en los 4 `.js` · en el preview (copia local, con las fichas reales
+> del 15/09 y 23/09 en el fixture): el 23/09 enseña su gráfico de Cloudinary (miniatura `w_640`, se amplía con
+> el Lightbox) y *Continuación bajista 8:36 · STOP −28,25 pts*; el 15/09, *9:15 · STOP −23,25* y sus 2 avisos de
+> plazo; candado, `sin_jornada`, `error`, hoy sin ficha (*…antes de las 10:32…*) y el 09/09 (antes de la cadena,
+> oculta), cada uno con su texto; consola sin errores · contexto del Coach, capturado sin enviarlo: la sección
+> del 15/09 sin ningún código (los dos `(R-40)` quitados) y con *ET = hora Colombia + 1 h*; la nota de "editó
+> después" sale cuando `diario_editado_at > vista_en`; el diff no toca ninguna línea del bloque A · en la BD, el
+> mismo *upsert* que hacen el Worker y el bot, dos veces sobre un día de prueba: `registrada_at` se queda en el
+> primero y `diario_editado_at` pasa al segundo · candado como `authenticated`: día registrado 1 fila y `ok`,
+> día sin registrar (07/09) 0 filas y `bloqueada` · pruebas borradas (10 fichas, ninguna de prueba).
+> **Pendiente, sin poder medirlo aquí:** que el bloque A se siga leyendo de caché (`coach_uso`) y el registro
+> de prueba desde Telegram: los dos piden un uso real de Kris y se comprueban con un `SELECT` después.
+> **Desviaciones:** (1) un día **pasado** sin ficha dice *"no llegó; al abrir NinjaTrader la recupera (hasta 5
+> días hábiles)"*, no el texto de hoy; (2) la tarjeta empieza el 10/09 (la primera ficha), no en un día fijo de
+> la cadena; (3) el contexto dice a cuántas horas de ET está la hora Colombia ese día, porque el Coach razona en
+> ET y las horas del motor van en hora Colombia.
 
 ### 7e · El AddOn (~12, más 3–5 días hábiles de espera)
 - `CadenaDiaria.cs` escribiendo en `datos\dia_auto\`. **Kris lo instala** (pasos en §8). Kris sigue exportando

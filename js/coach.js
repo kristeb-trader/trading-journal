@@ -113,6 +113,8 @@ const Coach = (() => {
       DB.getFechasEspeciales().catch(() => []),   // para la regla "día FOMC"
       DB.getObjetivos().catch(() => null),        // stop máximo en puntos
     ])
+    // La ficha del motor (fase 7). La BD solo la entrega si el día está registrado.
+    const fichaMotor = await DB.getFichaMotor(date).catch(() => null)
     // El reglamento de la ETAPA de esa fecha: un día anterior al 24/09 se analiza con
     // el rulebook propio; desde el 24/09, con el plan de Chaumer (fase 5c).
     const reglas = reglasDeEtapa(reglasTodas, date)
@@ -253,6 +255,8 @@ Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
 
     // Análisis del trader
     const analisisTrader = sesion?.analisis_trader || 'No registrado'
+
+    const motorStr = fmtFichaMotor(fichaMotor, sesion, date)
 
     // Premercado / contexto técnico (futuro continuo: ver sección de interpretación)
     const cAyer = sesion?.precio_cierre_ayer
@@ -444,7 +448,7 @@ Análisis del trader:
 ${setupNoTomadoStr}${riesgoStr}
 Experimentos activos (reglas en prueba):
 ${expStr}
-
+${motorStr}
 ---
 
 ## FLUJO DE TRABAJO EN 3 ETAPAS
@@ -545,6 +549,146 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
 **📋 RESUMEN PARA DIARIO**
 [Una sola línea: [FECHA] · [DIRECCIÓN] · [SETUP] · [RESULTADO] · [APRENDIZAJE CLAVE]]`
   }
+
+  // ── La ficha del motor (fase 7, la cadena diaria) ──────────────────────
+  // Lo que marcó scripts/cadena/subir_dia.py con el motor del backtesting
+  // (lector.py). El candado vive en la BD: getFichaMotor devuelve null si el día
+  // no está registrado, y motor_estado lo dice sin enseñar la ficha.
+  const CADENA_DESDE = '2026-09-10'   // primera ficha: los días anteriores no enseñan nada
+
+  const fmtPts = v => {
+    const n = Number(v)
+    if (!Number.isFinite(n)) return '—'
+    return `${n < 0 ? '−' : n > 0 ? '+' : ''}${Math.abs(n).toFixed(2).replace('.', ',')}`
+  }
+  const fmtPx = v => Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '—'
+
+  // La línea corta de la operación: «Continuación bajista 8:36 · STOP −28,25 pts».
+  function lineaOperacion(op) {
+    if (!op) return 'Sin operación'
+    return `${op.setup} ${op.sentido} ${op.hora} · ${op.resultado} ${fmtPts(op.puntos)} pts`
+  }
+
+  // Sección del bloque B. Va vacía si no hay ficha disponible. Las líneas del motor
+  // traen códigos del plan («(R-40)»): se quitan aquí, igual que el vigilante los
+  // quita de las respuestas.
+  function fmtFichaMotor(fila, sesion, date) {
+    if (!fila || fila.estado !== 'ok' || !fila.ficha) return ''
+    const f = fila.ficha
+    const limpio = t => quitarCodigosPlan(String(t), { avisar: false }).texto.replace(/\s{2,}/g, ' ').trim()
+    const difEt = (() => {
+      const et = horaEt('12:00', date)
+      return et ? Number(et.slice(0, 2)) - 12 : null
+    })()
+    const nota = difEt == null ? '' : difEt === 0
+      ? ' (ese día ET = hora Colombia)'
+      : ` (ese día ET = hora Colombia + ${difEt} h)`
+    const ap = f.apertura || {}
+    const zonas = (f.zonas || []).map(z =>
+      `  - ${z.tipo} ${fmtPx(z.desde)}–${fmtPx(z.hasta)} · vela ${z.vela} · ${z.origen}${z.vigente_al_final ? '' : ' · ya no vigente al final'}`
+    ).join('\n') || '  (ninguna)'
+    const eventos = (f.eventos || []).map(e => `  - ${limpio(e)}`).join('\n') || '  (nada que anotar)'
+    const op = f.operacion
+    const opStr = op
+      ? `${op.setup} ${op.sentido} a las ${op.hora} · entrada ${fmtPx(op.entrada)} · stop ${fmtPx(op.stop)} · objetivo ${fmtPx(op.objetivo)} · riesgo ${fmtPx(op.riesgo)} pts → ${op.resultado} (${fmtPts(op.puntos)} pts${op.salida ? `, salida ${op.salida}` : ''})`
+      : 'Ninguna: el motor no encontró entrada ese día.'
+    const avisos = (f.avisos || []).map(a => `  - ${limpio(a)}`).join('\n')
+    const pm = f.premercado || {}
+    const umbral = fila.umbral_vol ?? f.motor?.umbral_vol
+    const editada = sesion?.diario_editado_at && fila.vista_en &&
+      new Date(sesion.diario_editado_at) > new Date(fila.vista_en)
+
+    return `
+---
+
+## LO QUE MARCÓ EL MOTOR ESE DÍA
+
+Cómo leerla: es la salida de un script de auditoría (el motor del backtesting), NO la verdad ni una regla. Cítala siempre como «según el motor…» y nunca la pongas por encima del plan ni de la gráfica. Tiene dos agujeros conocidos: (1) ante un rompimiento sin consecución espera siempre a la 5.ª vela, aunque la estructura contraria lo resuelva antes; (2) no está verificado contra la secuencia de marcado de la jornada, así que puede marcar una zona que el plan no marcaría o saltarse otra. Si la gráfica o la lectura de Kris lo contradicen, dilo y razona cuál tiene razón según el plan.
+Las horas del motor van en hora Colombia, como las de NinjaTrader${nota}.${editada ? `
+⚠️ Kris editó su lectura DESPUÉS de ver esta ficha: lo que escribió puede estar influido por ella.` : ''}
+
+Apertura: vela ${ap.vela || '—'}, ${ap.direccion || '—'} (abre ${fmtPx(ap.abre)} → cierra ${fmtPx(ap.cierra)}).
+Premercado: ${pm.velas_sobre_umbral ?? '—'} vela(s) sobre el umbral de volumen (${umbral ?? '—'}); máximo ${pm.maximo_volumen ?? '—'}.
+Día de Fed: ${fila.dia_fed ? 'sí (el motor solo busca reingresos)' : 'no'}.
+Zonas que marcó:
+${zonas}
+Lo que pasó en la ventana:
+${eventos}
+Operación: ${opStr}${avisos ? `
+Avisos del motor sobre este día (cae en uno de sus agujeros):
+${avisos}` : ''}
+`
+  }
+
+  // La tarjeta de arriba de la pestaña (§4.5). Se repinta en cada cambio de fecha;
+  // si la fecha cambia mientras llega la respuesta, no pinta nada.
+  async function renderTarjetaMotor(date) {
+    const el = document.getElementById('coachMotorCard')
+    if (!el) return
+    el.classList.add('hidden')
+    el.innerHTML = ''
+    if (!date || date < CADENA_DESDE || !esDiaHabil(date)) return
+
+    let estado
+    try { estado = await DB.motorEstado(date) }
+    catch (e) { console.warn('[Coach] motor_estado:', e?.message || e); return }
+    let fila = null
+    if (estado === 'ok' || estado === 'error') {
+      fila = await DB.getFichaMotor(date).catch(e => { console.warn('[Coach] ficha del motor:', e?.message || e); return null })
+    }
+    if (date !== coachDate) return
+
+    const cabecera = '<div class="coach-motor-head"><i class="ti ti-robot"></i> Lo que marcó el motor</div>'
+    const linea = (icono, texto, clase = '') =>
+      `${cabecera}<p class="coach-motor-msg ${clase}"><i class="ti ${icono}"></i> ${texto}</p>`
+    let html = ''
+
+    if (estado === 'bloqueada') {
+      html = linea('ti-lock', 'El motor ya marcó este día. Se abre cuando registres tu lectura (Diario o Telegram).', 'bloqueada')
+    } else if (estado === 'sin_ficha') {
+      // Hora de cierre de la ventana + 2 min, en hora Colombia: 10:32 en verano, 11:32 en invierno.
+      const corte = horaEt('10:32', date) === '11:32' ? '10:32' : '11:32'
+      const hoy = today()
+      if (date > hoy) return
+      if (date === hoy) {
+        const ahoraEt = new Date().toLocaleTimeString('en-GB', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false })
+        if (ahoraEt < '11:32') return
+        html = linea('ti-clock', `La ficha del motor de hoy aún no llegó. Si cerraste NinjaTrader antes de las ${corte}, ábrelo un momento.`)
+      } else {
+        html = linea('ti-clock', 'La ficha del motor de este día no llegó. Al abrir NinjaTrader la recupera (hasta 5 días hábiles atrás).')
+      }
+    } else if (estado === 'sin_jornada') {
+      html = linea('ti-calendar-off', 'No hubo sesión completa ese día.')
+    } else if (estado === 'error') {
+      html = linea('ti-alert-triangle', `El motor no pudo marcar este día: ${esc(fila?.ficha?.motivo || 'motivo desconocido')}.`, 'error')
+    } else if (estado === 'ok' && fila) {
+      const f = fila.ficha || {}
+      const op = f.operacion
+      const clase = !op ? '' : Number(op.puntos) > 0 ? 'pos' : Number(op.puntos) < 0 ? 'neg' : ''
+      const url = fila.grafico_url || ''
+      const mini = url.replace('/upload/', '/upload/w_640,c_limit/')
+      const avisos = (f.avisos || []).map(a =>
+        `<li>${esc(quitarCodigosPlan(String(a), { avisar: false }).texto)}</li>`).join('')
+      html = `${cabecera}
+        <div class="coach-motor-body">
+          ${url ? `<img class="coach-motor-img" src="${esc(mini)}" data-full="${esc(url)}" alt="Gráfico del motor del ${esc(fmtDate(date))}" title="Ampliar">` : ''}
+          <div class="coach-motor-info">
+            <p class="coach-motor-linea ${clase}">${esc(lineaOperacion(op))}</p>
+            ${fila.dia_fed ? '<p class="coach-motor-nota">Día de Fed: el motor solo busca reingresos.</p>' : ''}
+            ${avisos ? `<ul class="coach-motor-avisos">${avisos}</ul>` : ''}
+          </div>
+        </div>`
+      DB.marcarFichaVista(date).catch(e => console.warn('[Coach] marcar ficha vista:', e?.message || e))
+    } else {
+      return
+    }
+
+    el.innerHTML = html
+    el.classList.remove('hidden')
+    el.querySelector('.coach-motor-img')?.addEventListener('click', e => Lightbox.open(e.currentTarget.dataset.full))
+  }
+
+  const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 
   // ── Carga de datos ─────────────────────────────────────────────────────
 
@@ -748,7 +892,7 @@ Cómo usarlos:
   // instrucción basta. "(R-10 y R-11)" desaparece entero; "(80 puntos, R-31)" queda
   // "(80 puntos)". Los que vayan fuera de paréntesis no se tocan: solo se avisan.
   const RE_COD = /`?\b[RPGDC]-\d{1,3}\b`?/g
-  function quitarCodigosPlan(texto) {
+  function quitarCodigosPlan(texto, { avisar = true } = {}) {
     let n = 0
     const limpio = texto.replace(/(\s?)\(([^()\n]*)\)/g, (m, esp, dentro) => {
       const cods = dentro.match(RE_COD)
@@ -760,7 +904,7 @@ Cómo usarlos:
       return quedan.length ? `${esp}(${quedan.join(', ')})` : ''
     })
     const sueltos = (limpio.match(RE_COD) || []).length
-    if (n || sueltos) console.warn('[Coach] vigilante — códigos quitados: %d · fuera de paréntesis: %d', n, sueltos)
+    if (avisar && (n || sueltos)) console.warn('[Coach] vigilante — códigos quitados: %d · fuera de paréntesis: %d', n, sueltos)
     return { texto: limpio, n }
   }
 
@@ -2304,6 +2448,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     }
 
     resetPanel()
+    renderTarjetaMotor(date)   // no se espera: el panel no depende de ella
     await cargarDatosDelDia(date)
 
     // Si ya existe diagnóstico para esa fecha, mostrarlo directamente

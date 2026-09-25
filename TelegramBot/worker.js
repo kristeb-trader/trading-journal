@@ -243,6 +243,10 @@ async function saveSession(data, env) {
     // AddOn ChecklistChaumer en premercado. Mandarlos aqui (en []) los BORRARIA,
     // exactamente igual que pasaria con los niveles de precio.
     noticias:              data.noticias              ?? null,
+    // Registrar el día abre el candado de la ficha del motor (fase 7). Un trigger
+    // congela la primera registrada_at; diario_editado_at se mueve en cada guardado.
+    registrada_at:         new Date().toISOString(),
+    diario_editado_at:     new Date().toISOString(),
   };
 
   // on_conflict=sesion_date → upsert resuelto por la restricción única de fecha

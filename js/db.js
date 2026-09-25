@@ -1038,6 +1038,34 @@ const DB = {
     if (error) throw error
   },
 
+  // ── La ficha del motor (fase 7, la cadena diaria) ─────────────────────────
+  // `motor_fichas` la sube scripts/cadena/subir_dia.py. EL CANDADO VIVE EN LA BD
+  // (D-026): la política solo deja leer la ficha de un día registrado
+  // (`sesiones.registrada_at`), así que getFichaMotor devuelve null si no lo está.
+  // motor_estado dice si hay ficha sin enseñarla: sin_ficha · bloqueada · ok ·
+  // sin_jornada · error.
+  async motorEstado(fecha) {
+    const { data, error } = await supa.rpc('motor_estado', { p_fecha: fecha })
+    if (error) throw error
+    return data || 'sin_ficha'
+  },
+
+  // Sin `velas` (~48 KB/día): son para el agente de backtesting, el Journal no las lee.
+  async getFichaMotor(fecha) {
+    const { data, error } = await supa.from('motor_fichas')
+      .select('fecha, estado, dia_fed, umbral_vol, ficha, grafico_url, generada_en, vista_en')
+      .eq('fecha', fecha).maybeSingle()
+    if (error) throw error
+    return data
+  },
+
+  // La primera vez que Kris ve la ficha (solo si el día está registrado; la BD lo
+  // comprueba). Con `diario_editado_at` dice si editó su lectura después de verla.
+  async marcarFichaVista(fecha) {
+    const { error } = await supa.rpc('motor_marcar_vista', { p_fecha: fecha })
+    if (error) throw error
+  },
+
   async getReglas({ capa = null, soloActivas = false } = {}) {
     let q = supa.from('catalogo_reglas').select('*')
     if (capa) q = q.eq('capa', capa)

@@ -679,9 +679,15 @@ const SessionForm = (() => {
     const sesionDate = document.getElementById('sesionDate').value
     const noOpero = document.getElementById('noOpero').checked
 
+    // Registrar el día abre el candado de la ficha del motor (fase 7). Las dos van en
+    // cada guardado: un trigger congela la primera `registrada_at`, y
+    // `diario_editado_at` dice al Coach si la lectura se editó después de ver la ficha.
+    const ahora = new Date().toISOString()
     const payload = {
       sesion_date: sesionDate,
       no_opero: noOpero,
+      registrada_at: ahora,
+      diario_editado_at: ahora,
     }
 
     if (noOpero) {
