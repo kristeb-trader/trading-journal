@@ -1,6 +1,6 @@
 # Fase 7 — La cadena diaria
 
-**Versión:** v1.4 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 7a, 7b, 7c y 7d cerradas; la siguiente es la 7e.
+**Versión:** v1.5 · **Estado:** 🟢 **APROBADO por Kris el 24/09/2026.** 7a–7d cerradas. **7e en marcha:** el AddOn está escrito y compila; falta que Kris lo instale y 3–5 días hábiles de comparación.
 **Escrito:** 24/09/2026. Sub-diseño de la fase 7 de `docs/disenos/2026-09-24-unificacion-chaumer.md`.
 **Reemplaza** el texto de la fase 7 del diseño general (10:45, tarea de Windows, motor sin modificar): el
 diagnóstico demostró que así se rompía el 2/11. Al aprobarse, el diseño general pasa a apuntar aquí.
@@ -12,6 +12,7 @@ diagnóstico demostró que así se rompía el 2/11. Al aprobarse, el diseño gen
 | v1.2 | 24/09/2026 | **7b cerrada**: tres migraciones en vez de una (esquema y dos parches de datos, un propósito por archivo). El relleno cuenta también los días anteriores al 16/08 |
 | v1.3 | 24/09/2026 | **7c cerrada.** El aviso de la "banda de apertura" **no se calcula**: definirlo exigiría escribir la secuencia de marcado fuera del plan (inventar metodología). El Coach recuerda siempre ese agujero del motor |
 | v1.4 | 24/09/2026 | **7d cerrada.** La tarjeta distingue un día pasado sin ficha de hoy sin ficha. El contexto del Coach dice a cuántas horas de ET está la hora Colombia ese día |
+| v1.5 | 24/09/2026 | **7e, el código.** Los supuestos de la API de NinjaTrader de §4.4, comprobados por reflexión (ver 7e). El puente gana `--comparar`. Falta la instalación y la espera |
 
 > Toca un script del proyecto Chaumer (`lector.py`), una tabla nueva con una política que **no** es `auth_all`
 > (a propósito), el Diario, el bot de Telegram, el Coach y un AddOn de NinjaTrader. No se implementa nada hasta
@@ -207,10 +208,13 @@ gráfico abierto, sin tocar la cuenta ni órdenes, sin internet.** Solo pide vel
   carpeta de salida, ruta de Python y del puente, `activo`. Durante la fase 7e la carpeta es `datos\dia_auto\`.
 - **Registro** en `Documentos\NinjaTrader 8\cadena-diaria\registro.txt`: día, velas escritas, primera y última.
 
-> A comprobar al escribirlo (supuesto, no verificado): los nombres exactos de la API de NinjaTrader para el
-> contrato vigente (`MasterInstrument.GetNextExpiry` o similar), la zona de NinjaTrader
-> (`Core.Globals.GeneralOptions.TimeZoneInfo`) y que `BarsRequest` baje días pasados con la conexión de Kris.
-> Si algo no existe, se corrige este diseño antes de seguir.
+> ✅ **Comprobado por reflexión sobre `NinjaTrader.Core.dll` 8.1.7.1 (24/09):** `BarsRequest(Instrument, DateTime
+> fromLocal, DateTime toLocal)` con `BarsPeriod`, `TradingHours`, `MergePolicy` (`Cbi.MergePolicy.UseGlobalSettings`)
+> y `Request(Action<BarsRequest, Cbi.ErrorCode, string>)`; `Bars.GetTime/GetOpen/…/GetVolume(int)`;
+> `Core.Globals.GeneralOptions.TimeZoneInfo`; `MasterInstrument.RolloverCollection` (colección de `Rollover`, con
+> `Date` y `ContractMonth`) y `GetNextExpiry(DateTime)`; `Connection.Connections` con `Status` y `PriceStatus`;
+> `MasterInstrument.TradingHours`. **Sigue siendo supuesto** hasta que corra en el PC de Kris: que `BarsRequest`
+> baje días pasados con su conexión, y que `GetTime` venga en la zona de NinjaTrader (lo delatará la comparación).
 
 ### 4.5 · El Journal
 
@@ -380,7 +384,7 @@ Cada subfase se verifica sola y termina en commit + push. Estimación en llamada
 > la cadena; (3) el contexto dice a cuántas horas de ET está la hora Colombia ese día, porque el Coach razona en
 > ET y las horas del motor van en hora Colombia.
 
-### 7e · El AddOn (~12, más 3–5 días hábiles de espera)
+### 7e · El AddOn (~12, más 3–5 días hábiles de espera) — 🟡 código listo, esperando la instalación
 - `CadenaDiaria.cs` escribiendo en `datos\dia_auto\`. **Kris lo instala** (pasos en §8). Kris sigue exportando
   a mano esos días, como hoy.
 - **Verificado cuando:**
@@ -390,6 +394,25 @@ Cada subfase se verifica sola y termina en commit + push. Estimación en llamada
   - el registro del AddOn no muestra errores.
 - Al cerrarla: la carpeta pasa a `datos\dia\` y **Kris deja de exportar a mano**. El test ciego de Cowork sigue
   leyendo la misma carpeta.
+
+> **Hecho (24/09), antes de instalar:** `NinjaTrader/CadenaDiaria.cs` compila **sin errores ni avisos** con el
+> `csc` del sistema contra las DLL de NT8 8.1.7.1 (escrito en C# 5 a propósito, para poder compilarlo entero
+> fuera de NinjaTrader). Cargando la DLL compilada, la vela base del AddOn coincide con `lector.apertura_utc` el
+> 23/09, 30/10, **2/11**, 12/03/2027 y **15/03/2027** (exporta a las 10:32 Col en verano y 11:32 en invierno).
+> Los precios salen con el formato del archivo manual (`30814;30813.5;30808.25`). `subir_dia.py --comparar`
+> con un archivo del AddOn simulado desde el manual del 23/09: *idénticas (931 velas)*; con un precio alterado,
+> señala la vela 08:31 y sale con código 1.
+> **Desviaciones:** (1) el puente gana `--comparar`: `--pendientes` solo apunta las **diferencias** (si la
+> huella de los datos no cambia no reprocesa el día), así que el "son iguales" de la verificación se pide
+> aparte; (2) el contrato sale de la lista de *rollover* (el del último rollover con fecha ≤ el día) y solo si
+> falla, de `GetNextExpiry`; (3) el AddOn arranca con el Control Center (`OnWindowCreated`, como
+> `ChecklistChaumer`), no con un estado del AddOn; (4) un día **pasado** con la ventana incompleta (festivo,
+> medio día) se escribe igual y el puente decide `sin_jornada`; **hoy** incompleto se reintenta cada minuto
+> hasta 1 h después del cierre; (5) al lado de cada archivo, un `AAAA-MM-DD.meta.json` con el contrato, las
+> velas y la zona de NinjaTrader (el puente ya leía de ahí el instrumento).
+>
+> **Cómo se comprueba cada día** (lo hace Claude): `python scripts/cadena/subir_dia.py --comparar` y el
+> registro del AddOn en `Documentos\NinjaTrader 8\cadena-diaria\registro.txt`.
 
 ### Cierre
 Diseño general a v1.9 (fase 7 cerrada, apunta aquí) · `tasks/current.md` · D-026 en `docs/decisiones.md` (por
@@ -405,7 +428,7 @@ qué el candado no es `auth_all` y por qué el motor se tocó) · `CLAUDE.md` (f
 | 7a | llevar el gráfico del 8/07 a Cowork | te lo mando al terminar la 7a |
 | 7c | nada | — |
 | 7d | nada, salvo mirar la tarjeta si quieres | — |
-| 7e | instalar el AddOn y compilarlo | te lo explico paso a paso cuando lleguemos: copiar un archivo a una carpeta, abrir el NinjaScript Editor y pulsar F5 |
+| 7e | instalar el AddOn y compilarlo | copiar `NinjaTrader\CadenaDiaria.cs` a `Documentos\NinjaTrader 8\bin\Custom\AddOns\`, abrir el NinjaScript Editor y pulsar F5. Luego cerrar y abrir NinjaTrader |
 | 7e, 3–5 días | seguir exportando a mano como hoy | nada nuevo |
 | 7e, un día | cerrar NinjaTrader antes de las 10:32 y abrirlo más tarde | para probar la recuperación |
 | 7e, una vez | llevar `Subir el dia.bat` al escritorio | clic derecho → *Enviar a* → *Escritorio (crear acceso directo)* |
