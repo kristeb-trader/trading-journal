@@ -72,9 +72,8 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
   checklist, pendientes y estado; plan 3.16). Vigilante estricto en verde
 - [x] La desviación «zonas entre zonas sin límite de cantidad», **cerrada** (plan 3.17, `c3ac598`): desde el
   27/08 el plan hace lo mismo que Chaumer, banda a banda
-- [ ] **Kris, una decisión que salió en la 2d** (si se decide, va en su propio commit `plan:`):
-  - el glosario da por retirados «vela envolvente» y «vela interior», y dos reglas los siguen usando (la de la
-    vela que hace máximo mayor y mínimo menor, y la de la corrida): ¿cuál manda?
+- [x] «Vela envolvente» y «vela interior» son los nombres del plan (Kris, 26/09; planes 3.18 y 3.19): el
+  glosario deja de darlos por retirados y ya dice lo mismo que las reglas
 - [ ] **Visto en la 2d, sin tocar** (es del plan: con el sí de Kris):
   - la regla de la vela base dice 08:31 fijo; desde el 2/11 (invierno) es la de las 09:31
   - «la zona nueva se marca sobre la vela del nuevo extremo» solo lo dice el glosario: su sitio es la regla de
