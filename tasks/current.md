@@ -70,9 +70,9 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
   lee el umbral de `PARAMETROS.md`. El vigilante baja de 13 a 9 hallazgos, todos de la F2
 - [x] **F2** — 2a (lector y vigilante), 2b (los siete archivos), 2c (consumidores; plan 3.15) y 2d (glosario,
   checklist, pendientes y estado; plan 3.16). Vigilante estricto en verde
-- [ ] **Kris, dos decisiones que salieron en la 2d** (cada una, si se decide, va en su propio commit `plan:`):
-  - la desviación «zonas entre zonas sin límite de cantidad» choca con «una sola zona por banda y por jornada»,
-    que vino de Alfredo: ¿sigue en pie o se cierra?
+- [x] La desviación «zonas entre zonas sin límite de cantidad», **cerrada** (plan 3.17, `c3ac598`): desde el
+  27/08 el plan hace lo mismo que Chaumer, banda a banda
+- [ ] **Kris, una decisión que salió en la 2d** (si se decide, va en su propio commit `plan:`):
   - el glosario da por retirados «vela envolvente» y «vela interior», y dos reglas los siguen usando (la de la
     vela que hace máximo mayor y mínimo menor, y la de la corrida): ¿cuál manda?
 - [ ] **Visto en la 2d, sin tocar** (es del plan: con el sí de Kris):
