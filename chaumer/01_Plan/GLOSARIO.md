@@ -69,9 +69,9 @@ La corrida **nace mirando máximos** y **muere mirando mínimos**. Son dos crite
 
 ## VELA BASE
 
-La **primera vela de la ventana operativa: la 08:31** hora Colombia.
+La **primera vela de la ventana operativa: la 08:31** hora Colombia en el horario de verano de EE. UU., **la 09:31** en el de invierno.
 
-No se compara con ninguna anterior — la 08:30 es premercado y no sirve como `n−1`. **Declara ella misma la dirección del día con su propio cuerpo:** cierre por encima de su apertura → el día inicia alcista; por debajo → inicia bajista. Y es la vela origen de la primera corrida.
+No se compara con ninguna anterior — la vela anterior es premercado y no sirve como `n−1`. **Declara ella misma la dirección del día con su propio cuerpo:** cierre por encima de su apertura → el día inicia alcista; por debajo → inicia bajista. Y es la vela origen de la primera corrida.
 
 La corrida se mide **desde su extremo**: el mínimo si es alcista, el máximo si es bajista. Y **puede sostener zona** como cualquier otra vela.
 
@@ -372,7 +372,7 @@ El otro setup. **Opera el rompimiento que falló:** sobre una zona hay rompimien
 
 La dirección de la vela base (`R-07`) dice **por dónde empieza** el día. **No es un sesgo**: da **mayor grado de favorabilidad** a una Continuación en ese sentido, en la apertura, pero **no prohíbe** entradas en sentido contrario. Se opera en **los dos sentidos**: cada tramo, suba o baje, deja su zona al terminar, y esa zona se opera **a favor de ese tramo**. Cuánto pesa esa favorabilidad es contextualización (`C-11`).
 
-**Regla:** `R-27`
+**Regla:** `R-07`
 
 ---
 

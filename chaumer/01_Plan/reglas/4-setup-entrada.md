@@ -95,29 +95,6 @@
 
 Diagrama: `02_Assets\diagramas\R-26_reingreso.png`
 
-## R-27 · La vela de apertura no sesga la jornada
-
-> La dirección de la vela de las 08:31 marca por dónde empieza el día, pero **no obliga a operar en ese sentido durante toda la sesión**.
-
-| | |
-|---|---|
-| Aplica a | Continuación · Reingreso |
-| Parámetros | — |
-| Relacionadas | R-07 · R-40 |
-| Casos | G-14 |
-| Fuente | operador, caso 9/07/2026 |
-| Pendiente | cuánto pesa la «mayor favorabilidad» del sentido de la apertura: el operador pidió dejarlo para la fase de contexto (`C-11`) |
-
-### Cómo se aplica
-
-- **Se buscan entradas de continuación en los dos sentidos.** Cada tramo, suba o baje, deja su zona al terminar, y esa zona sirve para entrar **a favor de ese tramo**: una zona nacida al final de una subida se opera larga cuando se rompe hacia arriba; una nacida al final de una bajada, corta cuando se rompe hacia abajo.
-
-### Por qué
-
-**Palabras del operador (27/08/2026):** *"la dirección de la vela de apertura no quiere decir que toda la jornada va a ser en esa dirección, solo da el mayor grado de favorabilidad a un trade IRI en la apertura, pero no quiere decir que se sesgue y no pueda operar un trade IRI en dirección contraria."*
-
-**Caso real 9/07/2026:** la vela 8:31 es bajista, pero el mercado sube 190 puntos desde la 8:33. Con el sesgo puesto el día no daba nada; sin sesgo aparece el largo del rompimiento de la vela 8:43, que el operador **sí tomó**.
-
 ## R-40 · Corrida fluida
 
 > **Solo se entra en el rompimiento de la zona de una corrida FLUIDA.** Una corrida es fluida cuando la secuencia sale bien **tres veces seguidas**: la corrida deja su zona · el retroceso no se pasa · y la corrida siguiente rompe esa zona.

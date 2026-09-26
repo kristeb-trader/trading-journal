@@ -146,7 +146,7 @@ El propio material se contradice a continuación, describiendo un impulso largo 
 
 ## 🆕 C-11 · La favorabilidad del sentido de la apertura — añadido 27/08/2026
 
-**Qué es:** la dirección de la vela de las 08:31 (`R-07`) **no es un sesgo** —se opera en los dos sentidos, `R-27`— pero según el operador **sí da mayor grado de favorabilidad** a una entrada de continuación en ese sentido, sobre todo en la apertura.
+**Qué es:** la dirección de la vela de las 08:31 (`R-07`) **no es un sesgo** —se opera en los dos sentidos, `R-07`— pero según el operador **sí da mayor grado de favorabilidad** a una entrada de continuación en ese sentido, sobre todo en la apertura.
 
 **Palabras del operador (27/08/2026):** *"solo da el mayor grado de favorabilidad a un trade IRI en la apertura, pero no quiere decir que se sesgue y no pueda operar un trade IRI en dirección contraria. Esa parte lo debemos ampliar mejor en la fase de contextualización."*
 

@@ -70,31 +70,38 @@ Diagrama: `../02_Assets/diagramas/R-05_corrida.png`
 
 Diagrama: `../02_Assets/diagramas/R-06_retroceso.png`
 
-## R-07 · Vela base de la ventana operativa
+## R-07 · La vela de apertura: origen sí, sesgo no
 
-> La primera vela de la ventana operativa (**08:31** hora Colombia) **declara la dirección inicial de la sesión con su propio cuerpo**, y es la vela origen. Cierre por encima de su apertura → el mercado **inicia alcista**. Cierre por debajo → **inicia bajista**.
+> La primera vela de la ventana operativa —la **08:31** hora Colombia en el horario de verano de EE. UU., la **09:31** en el de invierno— **declara la dirección inicial de la sesión con su propio cuerpo**, y es la vela origen. Cierre por encima de su apertura → el mercado **inicia alcista**. Cierre por debajo → **inicia bajista**. Esa dirección dice por dónde empieza el día, pero **no obliga a operar en ese sentido durante toda la sesión**.
 
 | | |
 |---|---|
 | Aplica a | Continuación · Reingreso |
-| Parámetros | — |
-| Relacionadas | R-05 · R-06 · R-08 · R-27 |
-| Casos | G-12 |
-| Pendiente | P-23: cierre exactamente igual a la apertura |
+| Parámetros | `VENTANA_OPERATIVA` |
+| Relacionadas | R-05 · R-06 · R-08 · R-40 |
+| Casos | G-12 · G-14 |
+| Fuente | el sesgo: operador, caso 9/07/2026 |
+| Pendiente | P-23: cierre exactamente igual a la apertura · cuánto pesa la «mayor favorabilidad» del sentido de la apertura: el operador pidió dejarlo para la fase de contexto (`C-11`) |
+| Absorbe | R-27 |
 
 ### Cómo se aplica
 
-- **Las velas de las 08:30 y anteriores son premercado.** No sirven como `n−1` para `R-05` ni para `R-06`, ni para nada.
-- **La dirección NO la declara la 08:32.** La declara la propia **08:31**, por la posición de su cierre respecto de su apertura.
+- **Las velas anteriores a la ventana son premercado** —la 08:30 y anteriores en verano; la 09:30 y anteriores en invierno—. No sirven como `n−1` para `R-05` ni para `R-06`, ni para nada.
+- **La dirección NO la declara la vela siguiente.** La declara la propia vela de apertura, por la posición de su cierre respecto de su apertura.
 - **Es la vela origen.** La corrida se mide desde su **mínimo** si es alcista, desde su **máximo** si es bajista.
-- Desde la **08:32** en adelante manda `R-05` con normalidad, comparando **siempre contra la vela inmediatamente anterior**.
+- Desde la vela siguiente en adelante manda `R-05` con normalidad, comparando **siempre contra la vela inmediatamente anterior**.
 - **Puede sostener zona** como cualquier otra vela.
+- **No sesga la jornada: se buscan entradas de continuación en los dos sentidos.** Cada tramo, suba o baje, deja su zona al terminar, y esa zona sirve para entrar **a favor de ese tramo**: una zona nacida al final de una subida se opera larga cuando se rompe hacia arriba; una nacida al final de una bajada, corta cuando se rompe hacia abajo.
 
 ### Por qué
 
 **Casos reales:** 06/07, 07/07 y 10/07 de 2026 — las tres sesiones abren con la 08:31 alcista, y las zonas ya validadas por el operador salen idénticas con esta redacción.
 
-> ⚠️ **Consecuencia sobre `R-08`.** `R-08` se escribió para *"cuando no hay corrida viva"*. Con `R-07` así, en la apertura **siempre hay corrida viva desde la 08:31**, y a partir de ahí el mercado está siempre o en corrida o en retroceso. **El supuesto de `R-08` puede no ocurrir nunca** → `P-24`, pendiente de resolver con el operador antes de tocar `R-08`.
+**Origen sí, sesgo no.** Palabras del operador (27/08/2026): *"la dirección de la vela de apertura no quiere decir que toda la jornada va a ser en esa dirección, solo da el mayor grado de favorabilidad a un trade IRI en la apertura, pero no quiere decir que se sesgue y no pueda operar un trade IRI en dirección contraria."*
+
+**Caso real 9/07/2026:** la vela 8:31 es bajista, pero el mercado sube 190 puntos desde la 8:33. Con el sesgo puesto el día no daba nada; sin sesgo aparece el largo del rompimiento de la vela 8:43, que el operador **sí tomó**.
+
+> ⚠️ **Consecuencia sobre `R-08`.** `R-08` se escribió para *"cuando no hay corrida viva"*. Con `R-07` así, en la apertura **siempre hay corrida viva desde la vela de apertura**, y a partir de ahí el mercado está siempre o en corrida o en retroceso. **El supuesto de `R-08` puede no ocurrir nunca** → `P-24`, pendiente de resolver con el operador antes de tocar `R-08`.
 
 ## R-08 · Vela envolvente sin corrida viva
 

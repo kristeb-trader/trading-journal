@@ -4,7 +4,7 @@
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
-**37 reglas.** Aquí van sin el porqué ni los ejemplos: solo lo que hay que aplicar.
+**36 reglas.** Aquí van sin el porqué ni los ejemplos: solo lo que hay que aplicar.
 
 ---
 
@@ -122,17 +122,18 @@ El retroceso es la secuencia de velas que arranca en la vela que mata la corrida
 - **Número de velas:** irrelevante, sin mínimo ni máximo. **Tamaño mínimo:** ninguno (`P-12`). **Tamaño máximo:** ≤ `STOP_MAX` (`R-31`).
 - **El nivel de referencia define el retroceso, no el stop.** El stop se mide con `R-32`: el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento — no solo el extremo del retroceso que la originó.
 
-#### `R-07` · Vela base de la ventana operativa
+#### `R-07` · La vela de apertura: origen sí, sesgo no
 
-La primera vela de la ventana operativa (**08:31** hora Colombia) **declara la dirección inicial de la sesión con su propio cuerpo**, y es la vela origen. Cierre por encima de su apertura → el mercado **inicia alcista**. Cierre por debajo → **inicia bajista**.
+La primera vela de la ventana operativa —la **08:31** hora Colombia en el horario de verano de EE. UU., la **09:31** en el de invierno— **declara la dirección inicial de la sesión con su propio cuerpo**, y es la vela origen. Cierre por encima de su apertura → el mercado **inicia alcista**. Cierre por debajo → **inicia bajista**. Esa dirección dice por dónde empieza el día, pero **no obliga a operar en ese sentido durante toda la sesión**.
 
 **Cómo se aplica**
 
-- **Las velas de las 08:30 y anteriores son premercado.** No sirven como `n−1` para `R-05` ni para `R-06`, ni para nada.
-- **La dirección NO la declara la 08:32.** La declara la propia **08:31**, por la posición de su cierre respecto de su apertura.
+- **Las velas anteriores a la ventana son premercado** —la 08:30 y anteriores en verano; la 09:30 y anteriores en invierno—. No sirven como `n−1` para `R-05` ni para `R-06`, ni para nada.
+- **La dirección NO la declara la vela siguiente.** La declara la propia vela de apertura, por la posición de su cierre respecto de su apertura.
 - **Es la vela origen.** La corrida se mide desde su **mínimo** si es alcista, desde su **máximo** si es bajista.
-- Desde la **08:32** en adelante manda `R-05` con normalidad, comparando **siempre contra la vela inmediatamente anterior**.
+- Desde la vela siguiente en adelante manda `R-05` con normalidad, comparando **siempre contra la vela inmediatamente anterior**.
 - **Puede sostener zona** como cualquier otra vela.
+- **No sesga la jornada: se buscan entradas de continuación en los dos sentidos.** Cada tramo, suba o baje, deja su zona al terminar, y esa zona sirve para entrar **a favor de ese tramo**: una zona nacida al final de una subida se opera larga cuando se rompe hacia arriba; una nacida al final de una bajada, corta cuando se rompe hacia abajo.
 
 #### `R-08` · Vela envolvente sin corrida viva
 
@@ -363,7 +364,7 @@ La vela que da la consecución de un traspaso **no cuenta a la vez** como rompim
 
 ---
 
-## Setup y entrada  (6)
+## Setup y entrada  (5)
 
 #### `R-24` · Tipo de orden y momento de colocación
 
@@ -420,14 +421,6 @@ Tras un rompimiento con consecución que falla, el precio recupera la zona enter
 - **Dirección:** contraria al rompimiento fallido.
 - **Filtro propio — el punto de referencia (`R-41`):** el objetivo tiene que quedar del lado de dentro del nivel de referencia de **cualquier retroceso vivo** que quede entre la entrada y el objetivo; ese nivel muere cuando una vela **cierra** más allá. Si el objetivo lo pasa, **el reingreso es inválido y no se opera**.
 - **La orden:** Stop Market al cierre de la vela de reingreso, en el nivel de consecución. **Se comprueba el punto de referencia antes de enviarla.**
-
-#### `R-27` · La vela de apertura no sesga la jornada
-
-La dirección de la vela de las 08:31 marca por dónde empieza el día, pero **no obliga a operar en ese sentido durante toda la sesión**.
-
-**Cómo se aplica**
-
-- **Se buscan entradas de continuación en los dos sentidos.** Cada tramo, suba o baje, deja su zona al terminar, y esa zona sirve para entrar **a favor de ese tramo**: una zona nacida al final de una subida se opera larga cuando se rompe hacia arriba; una nacida al final de una bajada, corta cuando se rompe hacia abajo.
 
 #### `R-40` · Corrida fluida
 

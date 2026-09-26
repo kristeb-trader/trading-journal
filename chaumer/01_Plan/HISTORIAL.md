@@ -775,6 +775,7 @@ Colombia es **UTC−5 fijo**: no aplica horario de verano. Todo lo demás se mue
 | **3.13** | **2026-09-23** | 🕯️ **Confirmado el orden de la vela también para las órdenes.** Cuando una misma vela toca el nivel de la orden y el stop: azul, primero el mínimo; blanca, primero el máximo. Si llega antes a la orden se llena —y el stop puede saltar en esa misma vela—; si llega antes al stop, se cancela. El motor ya lo aplicaba desde el 14/09 como **propuesta del auditor sin confirmar**; la jornada del **23/09** es la primera en que decide el resultado (−28,25 frente a +47,50 leída al revés) y el operador la da por buena. Añadido a `R-29`. Sin cambios en el motor ni en la regresión. **40 reglas** |
 | **3.14** | **2026-09-26** | 🔧 **Correcciones sin cambio de metodología** (fase 1 de la reestructuración de las reglas, D-028, con el sí del operador). En la checklist: el stop de la Continuación dice ya **el extremo alcanzado desde que nació la zona hasta la vela de rompimiento**, como `R-32` desde el 27/08 (la tabla «Medir» seguía con la definición vieja); la nota de los filtros deja de contarlos; «IRI descartado» pasa a «Continuación descartada»; sale el campo de registro de `P-20`, cerrado el 23/09. En contextualización, los segundos `C-08` y `C-09` pasan a `C-11` y `C-12` (había dos de cada). En pendientes, la copia abierta de `P-22` se marca cerrada. En el estado, el umbral vigente, los casos de la galería y los elementos de contextualización. **Ninguna regla cambia.** | **40 reglas** |
 | **3.15** | **2026-09-26** | 🗂️ **Las reglas pasan a siete archivos de grupo** (`reglas/`), con una plantilla fija, y **el documento maestro desaparece**: la explicación de cada regla va a su «Por qué», los anexos y esta tabla de versiones, a `HISTORIAL.md`. `reglas.json` pasa a ser un archivo **generado**. Reestructuración de las reglas (F2), con el sí del operador (D-028). De 1.900 frases del plan anterior no se pierde ninguna. Seis contradicciones con la regla vigente se resuelven a favor de la vigente y quedan registradas arriba. **Ninguna regla cambia lo que dice.** | **40 reglas** |
+| **3.22** | **2026-09-26** | 🔗 **Tercera fusión (F3): la vela de apertura, origen sí, sesgo no.** `R-07` absorbe `R-27` (la vela de apertura no sesga la jornada), con el sí del operador. **Y un cambio aprobado aparte:** la vela de apertura es la **09:31** en el horario de invierno de EE. UU. (la regla decía 08:31 fijo; la ventana ya se movía con `R-02`). También en el glosario. `R-27` lleva a `R-07`. | **36 reglas** |
 | **3.21** | **2026-09-26** | 🔗 **Segunda fusión (F3): solo hay dos salidas, stop u objetivo.** `R-33` absorbe `R-30` (fin de ventana con posición abierta), con el sí del operador. No cambia lo que se hace en el mercado. `R-30` lleva a `R-33`. | **37 reglas** |
 | **3.20** | **2026-09-26** | 🔗 **Primera fusión (F3): una operación, la primera que se llene, y ahí termina el día.** `R-28` absorbe `R-23` (selección de setup) y `R-34` (al llenarse termina el análisis), con el sí del operador. No cambia lo que se hace en el mercado: juntan ideas que ya eran una. Los códigos absorbidos llevan a `R-28`. | **38 reglas** |
 | **3.19** | **2026-09-26** | 🕯️ **«Vela interior» vuelve a ser el nombre del plan** para la vela que cabe entera dentro de la anterior (la que no hace nada), por decisión del operador (26/09/2026), igual que «vela envolvente» en la 3.18. La regla de la corrida ya lo usaba; el glosario lo daba por retirado y deja de hacerlo. **Ninguna regla cambia.** | **40 reglas** |
@@ -3232,3 +3233,53 @@ Consecuencia abierta: la sesión no tiene hora de cierre garantizada (`P-07`).
 > — Operador, 24/08/2026
 
 🔑 **Es la única regla del plan enunciada como prohibición absoluta**, sin excepciones. Y tiene un efecto que va más allá de la disciplina: convierte cada operación en un **experimento limpio**. Cuando se midan los resultados, medirán el setup — no la gestión. Sin esta regla, un plan mecánico no sería medible.
+
+### `R-27` → `R-07` (plan 3.22)
+
+#### R-07 · Vela base de la ventana operativa
+
+> La primera vela de la ventana operativa (**08:31** hora Colombia) **declara la dirección inicial de la sesión con su propio cuerpo**, y es la vela origen. Cierre por encima de su apertura → el mercado **inicia alcista**. Cierre por debajo → **inicia bajista**.
+
+| | |
+|---|---|
+| Aplica a | Continuación · Reingreso |
+| Parámetros | — |
+| Relacionadas | R-05 · R-06 · R-08 · R-27 |
+| Casos | G-12 |
+| Pendiente | P-23: cierre exactamente igual a la apertura |
+
+##### Cómo se aplica
+
+- **Las velas de las 08:30 y anteriores son premercado.** No sirven como `n−1` para `R-05` ni para `R-06`, ni para nada.
+- **La dirección NO la declara la 08:32.** La declara la propia **08:31**, por la posición de su cierre respecto de su apertura.
+- **Es la vela origen.** La corrida se mide desde su **mínimo** si es alcista, desde su **máximo** si es bajista.
+- Desde la **08:32** en adelante manda `R-05` con normalidad, comparando **siempre contra la vela inmediatamente anterior**.
+- **Puede sostener zona** como cualquier otra vela.
+
+##### Por qué
+
+**Casos reales:** 06/07, 07/07 y 10/07 de 2026 — las tres sesiones abren con la 08:31 alcista, y las zonas ya validadas por el operador salen idénticas con esta redacción.
+
+> ⚠️ **Consecuencia sobre `R-08`.** `R-08` se escribió para *"cuando no hay corrida viva"*. Con `R-07` así, en la apertura **siempre hay corrida viva desde la 08:31**, y a partir de ahí el mercado está siempre o en corrida o en retroceso. **El supuesto de `R-08` puede no ocurrir nunca** → `P-24`, pendiente de resolver con el operador antes de tocar `R-08`.
+#### R-27 · La vela de apertura no sesga la jornada
+
+> La dirección de la vela de las 08:31 marca por dónde empieza el día, pero **no obliga a operar en ese sentido durante toda la sesión**.
+
+| | |
+|---|---|
+| Aplica a | Continuación · Reingreso |
+| Parámetros | — |
+| Relacionadas | R-07 · R-40 |
+| Casos | G-14 |
+| Fuente | operador, caso 9/07/2026 |
+| Pendiente | cuánto pesa la «mayor favorabilidad» del sentido de la apertura: el operador pidió dejarlo para la fase de contexto (`C-11`) |
+
+##### Cómo se aplica
+
+- **Se buscan entradas de continuación en los dos sentidos.** Cada tramo, suba o baje, deja su zona al terminar, y esa zona sirve para entrar **a favor de ese tramo**: una zona nacida al final de una subida se opera larga cuando se rompe hacia arriba; una nacida al final de una bajada, corta cuando se rompe hacia abajo.
+
+##### Por qué
+
+**Palabras del operador (27/08/2026):** *"la dirección de la vela de apertura no quiere decir que toda la jornada va a ser en esa dirección, solo da el mayor grado de favorabilidad a un trade IRI en la apertura, pero no quiere decir que se sesgue y no pueda operar un trade IRI en dirección contraria."*
+
+**Caso real 9/07/2026:** la vela 8:31 es bajista, pero el mercado sube 190 puntos desde la 8:33. Con el sesgo puesto el día no daba nada; sin sesgo aparece el largo del rompimiento de la vela 8:43, que el operador **sí tomó**.

@@ -3,7 +3,7 @@
 > **Se ejecuta de arriba abajo. No se decide nada que no esté aquí.**
 > Cada línea cita su regla. Si una respuesta es **NO** donde dice parar, **se para** — no se evalúa, no se matiza.
 
-**Versión del plan:** 3.21 · 2026-09-26 · **37 reglas**
+**Versión del plan:** 3.22 · 2026-09-26 · **36 reglas**
 
 ---
 
@@ -58,7 +58,7 @@
 | ☐ | Acción | Regla |
 |---|---|---|
 | ☐ | **Primer setup válido.** No se compara con posibles setups posteriores ni se espera uno mejor | `R-28` |
-| ☐ | Se buscan entradas en **los dos sentidos**; la vela de apertura no sesga el día | `R-27` |
+| ☐ | Se buscan entradas en **los dos sentidos**; la vela de apertura no sesga el día | `R-07` |
 | ☐ | ¿Es **Continuación** o **Reingreso**? | `R-25` / `R-26` |
 | ☐ | *(solo Continuación)* **¿La corrida es FLUIDA?** Tres cosas seguidas: la corrida dejó su zona · **el retroceso no se pasó** (mide menos que su corrida) · y **ésta es la corrida siguiente, que la rompe**. Cada corrida se empareja con el retroceso que viene justo después de ella | `R-40` |
 | ☐ | *(solo Reingreso)* ¿El precio ya superó el extremo de la vela de consecución? → **no hay reingreso** | `R-26` |
