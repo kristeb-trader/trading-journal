@@ -28,6 +28,9 @@ REVISADAS = {
     'maximo de operaciones por sesion': 'el título de antes; el nombre nuevo lo aprobó Kris',
     'ejecuta como maximo una operacion por sesion': 'la regla nueva: «como máximo OPS_POR_SESION» (1 llenada)',
     'tras la primera orden llenada, no se coloca ninguna orden mas': '«Prohibido después del llenado: colocar otra orden —aunque aparezcan setups válidos—»',
+    # R-33 absorbe R-30 (plan 3.21)
+    'no existe cierre por tiempo': 'la tabla de R-33: «Cerrar por hora — ❌ no existe»',
+    'ninguna accion por hora': 'la regla de R-33: «Solo la cierran el stop o el objetivo, aunque termine la ventana operativa»',
 }
 
 def norm(t):
