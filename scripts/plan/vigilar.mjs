@@ -67,7 +67,8 @@ function camposDe(r) {
 const textoDeReglas = () => reglas.map((r) => camposDe(r).map(([, v]) => v).join('\n')).join('\n')
 
 // ── 1 · Códigos definidos dos veces ───────────────────────────────────────────
-for (const f of DOCS) {
+// HISTORIAL.md no: guarda cada pendiente cerrado tal como estaba, y uno reabierto sale dos veces a propósito.
+for (const f of DOCS.filter((f) => f !== 'HISTORIAL.md')) {
   const vistos = new Map()
   leer(f).split('\n').forEach((linea, i) => {
     const m = linea.match(/^#{1,4}\s+(.*)$/)
@@ -160,6 +161,10 @@ for (const [nombre, , enParametros] of VALORES) {
     ...(fs.existsSync(path.join(PLAN, 'TRADING_PLAN_CHAUMER.md'))
       ? { 'TRADING_PLAN_CHAUMER.md': version('TRADING_PLAN_CHAUMER.md', /\*\*Versión:\*\*\s*(\d+\.\d+)/) } : {}),
     'CHECKLIST_DIARIA.md': version('CHECKLIST_DIARIA.md', /\*\*Versión del plan:\*\*\s*(\d+\.\d+)/),
+    // la última fila de la tabla de versiones
+    ...(fs.existsSync(path.join(PLAN, 'HISTORIAL.md'))
+      ? { 'HISTORIAL.md': ([...leer('HISTORIAL.md').matchAll(/^\| \*\*(\d+\.\d+)\*\* \|/gm)].map((m) => m[1])
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).pop() || '¿?') } : {}),
   }
   if (new Set(Object.values(versiones)).size > 1) {
     anota('5 · Versiones y cuentas', 'versión del plan distinta: ' +
@@ -180,6 +185,17 @@ for (const [nombre, , enParametros] of VALORES) {
   }
 }
 
+// El índice de ESTADO.md da el nombre de cada regla: tiene que ser el de reglas/, y estar todas.
+if (NUEVAS) {
+  const indice = new Map([...leer('ESTADO.md').matchAll(/^\|\s*`(R-\d{2})`\s*\|\s*(.+?)\s*\|\s*$/gm)].map((m) => [m[1], m[2]]))
+  const faltan = reglas.filter((r) => !indice.has(r.id)).map((r) => r.id)
+  const sobran = [...indice.keys()].filter((id) => !ids.has(id))
+  const distinto = reglas.filter((r) => indice.has(r.id) && indice.get(r.id) !== r.nombre).map((r) => r.id)
+  if (faltan.length) anota('5 · Versiones y cuentas', `el índice de ESTADO.md no tiene ${faltan.join(', ')}`)
+  if (sobran.length) anota('5 · Versiones y cuentas', `el índice de ESTADO.md tiene reglas que no existen: ${sobran.join(', ')}`)
+  if (distinto.length) anota('5 · Versiones y cuentas', `el índice de ESTADO.md no da el nombre de reglas/ en ${distinto.join(', ')}`)
+}
+
 // ── 6 · Historia dentro de las reglas ────────────────────────────────────────
 {
   const FECHA = NUEVAS ? /(?!)/g : /\b\d{1,2}\/\d{2}\/20\d{2}\b|\b20\d{2}-\d{2}-\d{2}\b/g
@@ -197,6 +213,14 @@ for (const [nombre, , enParametros] of VALORES) {
     }
     fechas += fr; marcas += mr
     if (fr + mr) peores.push([r.id, fr, mr])
+  }
+  // El glosario y la checklist tampoco llevan historia desde la 2d: sus marcas («CORREGIDO 27/08/2026 — antes decía…»,
+  // «🔴 Añadido 27/08/2026») se fueron a HISTORIAL.md.
+  if (NUEVAS) {
+    for (const f of ['GLOSARIO.md', 'CHECKLIST_DIARIA.md']) {
+      const n = (leer(f).match(MARCAS) || []).length
+      if (n) anota('6 · Historia dentro de las reglas', `${f}: ${n} marcas de historia`)
+    }
   }
   if (fechas + marcas) {
     peores.sort((a, b) => (b[1] + b[2]) - (a[1] + a[2]))

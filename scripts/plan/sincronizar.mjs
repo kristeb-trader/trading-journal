@@ -67,7 +67,8 @@ for (let i = 0; i < md.length; i++) {
   if (!/^\|\s*☐\s*\|/.test(l)) continue
   if (/^\|\s*-{3,}/.test(md[i + 1] || '')) continue            // fila de encabezado
   const celdas = l.split('|').slice(2, -1).map(c => c.trim()).filter(Boolean)
-  const texto = celdas.filter(c => !esRef(c) && !/^[—–-]$/.test(c)).map(limpia).join(' — ')
+  // La checklist cita los números por su parámetro (`STOP_MAX`) desde la 3.16: el Journal los lee ya resueltos.
+  const texto = celdas.filter(c => !esRef(c) && !/^[—–-]$/.test(c)).map(c => limpia(plano(c))).join(' — ')
   lineas.push({ n: lineas.length + 1, bloque: sub ? `${bloque} · ${sub}` : bloque, texto, reglas: refsDe(l) })
 }
 
