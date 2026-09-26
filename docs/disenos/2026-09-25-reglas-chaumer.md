@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| **Versión** | v1.4 · 26/09/2026 |
-| **Estado** | ✅ **Diseño v1.1 aprobado por Kris** (26/09/2026) · ✅ F0 · ✅ F1 · ✅ 2a · ✅ 2b · ✅ 2c · ✅ 2d — **F2 cerrada** · ⏳ F3 |
+| **Versión** | v1.5 · 26/09/2026 |
+| **Estado** | ✅ **Diseño v1.1 aprobado por Kris** (26/09/2026) · ✅ F0 · ✅ F1 · ✅ 2a · ✅ 2b · ✅ 2c · ✅ 2d — **F2 cerrada** · ✅ F3 — **35 reglas** · ⏳ F4 |
 | **Alcance** | `chaumer/01_Plan` (las reglas y los documentos que las rodean), sus consumidores (portal, Journal, Coach, NinjaTrader, motor, test ciego) y cómo se ven en el portal |
 | **Regla que manda** | D-028: nada de `01_Plan` cambia sin el sí de Kris, cambio a cambio. Este documento no cambia nada |
 
@@ -74,6 +74,22 @@
     2.528 marcas intactas; 5 líneas de guía desactivadas y 4 nuevas. Portal: `npm run verificar`, 0 fallos.
   - Los documentos del Coach siguen la desviación de la v1.3: se sincronizan al cerrar la F3 (hoy suman
     ~123 KB, frente a 135).
+- **v1.5 · 26/09/2026** — **F3 hecha: 40 → 35 reglas**, cada fusión con el sí de Kris al texto y en su commit `plan:`.
+  - Antes, con su sí: se cierra la desviación de las zonas entre zonas («sin límite», contradecía a `R-17`; plan
+    3.17) y «vela envolvente» y «vela interior» vuelven a ser los nombres del plan (3.18, 3.19).
+  - **3.20** `R-28` absorbe `R-23` y `R-34` · **3.21** `R-33` absorbe `R-30` · **3.22** `R-07` absorbe `R-27`, y la vela
+    de apertura es la **09:31 en invierno** (aprobado aparte, en el mismo texto) · **3.23** la lista de `R-19` se
+    reparte: las dos precisiones que solo estaban allí van a `R-09`, que absorbe el código.
+  - **Desviación:** la precisión 6 de `R-19` va a `R-09` y no a `R-08` —sus casos son con corrida viva; `R-08` solo trata
+    el caso sin corrida viva y tiene abierto `P-24`— y la redirección de `R-19` lleva a `R-09`, no a `R-13`.
+  - **Ninguna frase se pierde:** `scripts/plan/comparar-fusion.py` busca cada frase de las reglas de antes en la
+    fusionada (no en el historial). 105 frases en las cuatro fusiones; 10 revisadas a mano, con su motivo.
+  - **Portal:** las direcciones de las reglas absorbidas redirigen a la que las absorbió (`astro.config.mjs`, desde
+    `fusionadas`); un código viejo en un texto enlaza a la regla nueva; los módulos citan la vigente. 0 fallos.
+  - **Journal:** 84 filas activas en la etapa 2 (35 reglas, 47 líneas, 2 automáticas); las 5 absorbidas, inactivas;
+    las 9 casillas y automáticas y las 2.528 marcas, intactas. La disciplina no se mueve.
+  - **Coach:** sincronizado al cerrar la F3, como estaba previsto: las cinco huellas cuadran byte a byte y el plan
+    que lee pasa de 135 a ~122 KB. El consumo real se medirá en `coach_uso` con la próxima sesión.
 ---
 
 ## 1 · En una frase
