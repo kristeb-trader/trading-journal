@@ -1,7 +1,7 @@
 # ELEMENTOS DE CONTEXTUALIZACIÓN
 
-> **Creado:** 2026-08-24 · **actualizado:** 2026-09-06
-> **Estado:** 🔵 **Registro abierto — fase posterior, sin auditar** · **10 elementos**
+> **Creado:** 2026-08-24 · **actualizado:** 2026-09-26
+> **Estado:** 🔵 **Registro abierto — fase posterior, sin auditar** · **11 elementos** *(`C-10` está resuelto y no cuenta; `C-11` y `C-12` eran un segundo `C-08` y `C-09` hasta el 26/09/2026)*
 > 🚨 **Ninguno de estos elementos es una regla, y ninguno debe convertirse en una.** Es el tercero de los cuatro huecos declarados del cierre de la fase 1.
 > **Origen:** taxonomía del propio Alfredo Chaumer, nota de voz del 24/08/2026.
 
@@ -144,7 +144,7 @@ El propio material se contradice a continuación, describiendo un impulso largo 
 
 ---
 
-## 🆕 C-08 · La favorabilidad del sentido de la apertura — añadido 27/08/2026
+## 🆕 C-11 · La favorabilidad del sentido de la apertura — añadido 27/08/2026
 
 **Qué es:** la dirección de la vela de las 08:31 (`R-07`) **no es un sesgo** —se opera en los dos sentidos, `R-27`— pero según el operador **sí da mayor grado de favorabilidad** a una entrada de continuación en ese sentido, sobre todo en la apertura.
 
@@ -160,7 +160,7 @@ El propio material se contradice a continuación, describiendo un impulso largo 
 
 ---
 
-## 🆕 C-09 · La lateralidad puede que ya esté cubierta — observación del 27/08/2026
+## 🆕 C-12 · La lateralidad puede que ya esté cubierta — observación del 27/08/2026
 
 **Hallazgo del backtesting del 8/07/2026:** en el tramo **8:51–9:12** el motor no marcó **ninguna zona** — ocho candidatas seguidas bloqueadas por la regla del 50 % (`R-12`/`R-17`). El operador lo dio por bueno: es exactamente lo que él hace en un lateral.
 

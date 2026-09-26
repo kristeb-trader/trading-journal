@@ -323,7 +323,7 @@ Entre `P-01`, `D-03`, `D-04` y `D-05`, la lista de filtros de target del materia
 
 ---
 
-## `P-22` · ¿Qué retroceso fija el stop? — ABIERTO 2026-08-26
+## `P-22` · ¿Qué retroceso fija el stop? — planteado 26/08/2026 · ✅ **CERRADO el 27/08/2026** (ver su cierre, más abajo)
 
 `R-31` dice *"nivel de entrada ↔ mínimo/máximo **del retroceso**"*. **No dice cuál**, y cuando entre la zona y la entrada ha pasado más de un retroceso, hay dos candidatos distintos:
 
@@ -377,7 +377,7 @@ Entre `P-01`, `D-03`, `D-04` y `D-05`, la lista de filtros de target del materia
 
 # 🟢 Cerrados el 27/08/2026
 
-## ✅ `P-22` · ¿Qué retroceso fija el stop? — **CERRADO 27/08/2026**
+## ✅ Cierre de `P-22` · ¿Qué retroceso fija el stop? — **27/08/2026**
 
 **Respuesta del operador:** ninguno de los dos candidatos. El stop es **el punto más extremo que haya hecho el mercado desde que nació la zona hasta la vela de rompimiento**. Todo lo que pase en medio cuenta, haya pasado un retroceso o cinco.
 

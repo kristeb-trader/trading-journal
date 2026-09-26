@@ -2,7 +2,7 @@
 
 > **Archivo de arranque.** Léelo primero cada sesión. Detalle completo en `TRADING_PLAN_CHAUMER.md` y `GLOSARIO.md`.
 
-**v3.13** · 2026-09-23 · **40 reglas** · **26 términos** · 🏁 FASE 1 CERRADA · 🔴 **TEST CIEGO EN MARCHA** · 🚧 FASE 2 en curso: portal web en `04_Web\`
+**v3.14** · 2026-09-26 · **40 reglas** · **26 términos** · 🏁 FASE 1 CERRADA · 🔴 **TEST CIEGO EN MARCHA** · 🚧 FASE 2 en curso: portal web en `04_Web\`
 
 > 🔴 **El test ciego arrancó el 14/09/2026.** Primera jornada: **10/09/2026** — largo, entrada 29.145,75 a las 8:40, riesgo 40,50 → objetivo en 8:41, **+40,50 pts**. Protocolo en `05_Backtesting\test_ciego\LEEME_BACK_DIARIO.md`; diferencias en `DISCREPANCIAS.md`. Con esto **se cierra el primero de los cuatro huecos declarados**; siguen abiertos los otros tres. Ver `CIERRE_FASE_1.md`.
 > 📅 **Tercera jornada: lunes 14/09/2026 — NO OPERA.** De ella sale la reescritura de **`R-40`** y el término **corrida fluida**. 🔴 **Obligó a corregir una sesión ya validada:** el 16/07/2026 deja de tener operación, y julio pasa de **−91,00 pts en 9** a **−77,75 en 5**.
@@ -97,9 +97,9 @@
 ## Fuera de las reglas
 
 - **Checklist** (`CHECKLIST_DIARIA.md`): la secuencia del día en 4 bloques
-- **Galería** (`GALERIA.md`): **21 casos** etiquetados, incluidas las **11 sesiones completas al tick** (6 → 20 de julio de 2026) · imágenes en `02_Assets\galeria\`
-- **Parámetros** (`PARAMETROS.md`): `STOP_MAX`=80 pts · `ATM_DEFECTO`=320 ticks · `RATIO_TARGET`=1:1 · `CONTRATOS`=1 MNQ · `PLAZO_CONSECUCION`=5 velas · `UMBRAL_VOL`>6.000 MNQ
-- **Contextualización** (`CONTEXTUALIZACION.md`): 10 elementos que **NO son reglas y no deben convertirse en reglas** — C-01 sobreextensión · C-02 volumen en extendido · C-03 lateralización · C-04 alejamiento · C-05 fluidez · C-06 recorrido · C-07 tamaño de estructura · C-08 volumen en sesión · C-09 vela de la consecución
+- **Galería** (`GALERIA.md`): **24 casos** etiquetados, incluidas las **11 sesiones completas al tick** (6 → 20 de julio de 2026) y las **3 primeras jornadas del test ciego** · imágenes en `02_Assets\galeria\`
+- **Parámetros** (`PARAMETROS.md`): `STOP_MAX`=80 pts · `ATM_DEFECTO`=320 ticks · `RATIO_TARGET`=1:1 · `CONTRATOS`=1 MNQ · `PLAZO_CONSECUCION`=5 velas · `UMBRAL_VOL`>8.000 MNQ
+- **Contextualización** (`CONTEXTUALIZACION.md`): 11 elementos que **NO son reglas y no deben convertirse en reglas** — C-01 sobreextensión · C-02 volumen en extendido · C-03 lateralización · C-04 alejamiento · C-05 fluidez · C-06 recorrido · C-07 tamaño de estructura · C-08 volumen en sesión · C-09 vela de la consecución
 - **Desviaciones** (`PENDIENTES.md`): D-01 a D-13. Descartados del curso: Fibonacci, POC, zona crítica, alto/bajo de sesión, zona de desequilibrio, fractal, manipulación, sesión europea, Giro
 - **Historia** (`_Historia\`): la bitácora de la fase 1, la equivalencia de numeración vieja→nueva y el cuaderno de limpieza de reglas. Fuera del camino, no del disco
 
@@ -117,7 +117,7 @@
 
 🏁 **Fase 1 cerrada el 01/09/2026.** Las 12 sub-fases están cerradas; el detalle de cada una vive en los anexos de `TRADING_PLAN_CHAUMER.md` y el acta en `CIERRE_FASE_1.md`.
 
-🚧 **Fase 2 en curso — el portal web**, en `04_Web\`, construido desde Claude Code contra `reglas.json`. Instrucciones en `CLAUDE.md` (raíz) y `04_Web\CLAUDE.md`. Lo que le toca hacer a Claude Code está en `04_Web\PENDIENTE_PORTAL.md`.
+🚧 **Fase 2 en curso — el portal web**, en `04_Web\`, construido desde Claude Code contra `reglas.json`. Instrucciones en `CLAUDE.md` (raíz) y `04_Web\CLAUDE.md`. Lo que queda por hacer está en `tasks/current.md`, en la raíz del repositorio (desde el 25/09/2026, D-028).
 
 🆕 **08/09/2026 — queda escrita la secuencia de marcado de la jornada.** El operador corrigió dos veces un gráfico de la duda de la zona estirada y, al hacerlo, dictó de principio a fin cómo se marca un día: la apertura deja dos zonas y ésas son la banda · dentro de esa banda se marca **una zona como máximo en toda la jornada** (la del primer retroceso, y solo si el movimiento no cruza la mitad) · después, dentro de esa banda no se dibuja nada más · la **única** forma de que aparezca una zona nueva es superar un extremo con rompimiento y consecución · y ese traspaso abre **banda nueva con turno propio, para toda la jornada**. **Ninguna regla nueva ni modificada: siguen 38.** Estaba repartido entre `R-16`, `R-12`, `R-17` y `R-18`; faltaba leerlo junto. Va como sección propia al principio del capítulo de zonas del plan (v3.3). Cierra `P-25`, abre `P-33`.
 

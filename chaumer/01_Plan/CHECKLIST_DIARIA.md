@@ -3,7 +3,7 @@
 > **Se ejecuta de arriba abajo. No se decide nada que no esté aquí.**
 > Cada línea cita su regla. Si una respuesta es **NO** donde dice parar, **se para** — no se evalúa, no se matiza.
 
-**Versión del plan:** 3.12 · 2026-09-23 · **40 reglas**
+**Versión del plan:** 3.14 · 2026-09-26 · **40 reglas**
 
 ---
 
@@ -51,7 +51,7 @@
 
 | ☐ | Setup | Dónde va el stop | Regla |
 |---|---|---|---|
-| ☐ | **Continuación** | extremo del **retroceso** | `R-32` |
+| ☐ | **Continuación** | el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento — no solo el del retroceso que la originó | `R-32` |
 | ☐ | **Reingreso** | extremo de la **corrida fallida** | `R-32` |
 | ☐ | **Target** = misma distancia, al otro lado. **1:1** | | `R-32` |
 
@@ -67,7 +67,7 @@
 
 > 🔴 **El target nunca se acorta para que quepa.** No existe media entrada ni ratio reducido.
 
-> 🟠 **Si un setup se descarta, la zona NO queda vacía.** Tras rechazar una **Continuación** por cualquiera de los cuatro filtros, **seguir mirando esa misma zona**: si el rompimiento falla y el precio la atraviesa entera hasta salir por el borde contrario, ahí hay un **Reingreso** (`R-26`) — y puede llegar en la **misma vela**. Caso real: `G-12`, 06/07/2026, IRI descartado y Reingreso operado con un minuto de diferencia.
+> 🟠 **Si un setup se descarta, la zona NO queda vacía.** Tras rechazar una **Continuación** por cualquiera de los filtros, **seguir mirando esa misma zona**: si el rompimiento falla y el precio la atraviesa entera hasta salir por el borde contrario, ahí hay un **Reingreso** (`R-26`) — y puede llegar en la **misma vela**. Caso real: `G-12`, 06/07/2026, Continuación descartada y Reingreso operado con un minuto de diferencia.
 
 ### Enviar
 
@@ -131,7 +131,6 @@ entrada · salida · niveles · hora · resultado
 | **Comisión real** ida y vuelta por contrato MNQ | `P-12` |
 | Racha de días perdedores consecutivos | 🚨 `P-21` — **la regla de parada que el plan no tiene** |
 | ¿El stop saltó en 80 pts siendo el estructural menor? | `P-09` |
-| Hora exacta de la entrada | `P-20` — dónde acaba "la apertura" |
 
 
 ---
