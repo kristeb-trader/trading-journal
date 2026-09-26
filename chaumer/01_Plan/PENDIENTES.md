@@ -3,7 +3,7 @@
 Lo que el plan tiene abierto y las desviaciones conscientes respecto al curso. **Los pendientes cerrados, con su
 resolución, están en `HISTORIAL.md`**: aquí solo queda lo que sigue abierto.
 
-> Actualizado: 2026-09-26 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **40 reglas** · **18 pendientes abiertos** · **12 desviaciones** · numeración libre a partir de `P-38`
+> Actualizado: 2026-09-26 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **40 reglas** · **18 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-38`
 >
 > 🚨 **Los cuatro huecos declarados del cierre:** ~~`P-29` test ciego no ejecutado~~ → **arrancó el 14/09/2026, primera jornada marcada: 10/09** · `P-21` sin regla de parada · falta la capa de contextualización · `P-27` las cifras del backtesting no miden la estrategia.
 
@@ -276,14 +276,6 @@ Con `P-25` cerrado queda escrita, por primera vez y en un solo sitio, la secuenc
 ### D-05 · Alto y bajo de la sesión como filtro de target — DESCARTADO
 - **El curso dice**, sección "Parámetros operativos": *"Evitar entradas cuyo target sobrepase el alto o bajo de la sesión… tienden a ser zonas de fuerte rechazo"*. Y la guía v4 lo lista como filtro de no-entrada #4.
 - **El operador:** no lo usa.
-
-### D-06 · Zonas entre zonas — sin límite de cantidad
-> *(El criterio del 50 % quedó fijado el 24/08 sobre el **movimiento**, no sobre el rectángulo, gracias a un contraejemplo real del operador: `02_Assets\invalidos\R-12_invalido_01.png`.)*
-- **El curso dice**, diapositiva: *"Luego de marcar una zona que no supera el 50%, **ya no seguimos marcando zonas**."*
-- **Y Chaumer en vivo es aún más restrictivo** — 18/08 [00:46]: *"…ya creo que lo accede, así que **ya no marcaría zonas entre zonas en toda esta área, en toda la sesión**."* Repetido el 17/08 y el 20/08.
-- **El operador:** se pueden marcar **todas** las zonas intermedias que aparezcan, siempre que cada una respete su propio 50 % recalculado contra sus vecinas inmediatas.
-- **Atenuante geométrico:** cada zona intermedia parte el hueco en dos, así que el siguiente candidato se mide contra un hueco la mitad de grande. La regla se estrangula sola; no produce el gráfico saturado que se temía.
-- **Recogido en:** `R-12`.
 
 ### D-07 · Las zonas NO envejecen — binario, no gradual
 - **Chaumer dice**, 18/08 [04:59]: *"a medida que el punto de reacción es **más reciente, es más importante aún**; cuando ya pasa mucho rato de los puntos de reacción, bueno yo **le resto un poco de importancia**."* Una escala **gradual** de importancia.

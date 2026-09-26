@@ -147,7 +147,7 @@ Diagramas: `../02_Assets/diagramas/apendice_caso1_plazo.png` *(por plazo)* y `..
 
 Contraejemplo real, anotado por el operador: `../02_Assets/invalidos/R-12_invalido_01.png`.
 
-Desviación consciente `D-06`: el curso cierra el marcado tras la primera zona; el operador no pone límite de cantidad de zonas intermedias — el límite lo pone la banda (`R-17`).
+El curso y Chaumer en vivo cierran el marcado entre dos zonas tras el primer retroceso; el plan hace lo mismo, banda a banda (`R-17`).
 
 ## R-13 · Superposición de zonas — se estira, no se duplica
 

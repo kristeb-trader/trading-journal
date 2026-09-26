@@ -431,7 +431,7 @@
       "pendiente": null,
       "absorbe": [],
       "como_se_aplica": "- **Cuándo aplica:** hay una zona por arriba y otra por abajo.\n- **La referencia del 50 %** (`UMBRAL_50`): el punto medio entre el borde interno de la zona superior y el borde interno de la inferior, **recalculado** contra la zona más cercana por arriba y la más cercana por abajo en ese momento.\n- **Se mide el recorrido del precio —el movimiento—, NO el rectángulo de la zona.** Si el movimiento cruza el 50 % en algún punto, no se marca zona, aunque el rectángulo quede entero a un lado.\n- **Quedar exactamente EN el 50 % sí marca;** hace falta superarlo por **≥1 tick** para anularla.\n- **Una sola zona por banda y por jornada, y es la del primer retroceso** (`R-17`, Alfredo, 27/08/2026).\n- Es una **prohibición con excepción rara** — el operador: *\"pasa poco, pero sí pasa\"*.",
-      "porque": "Contraejemplo real, anotado por el operador: `../02_Assets/invalidos/R-12_invalido_01.png`.\n\nDesviación consciente `D-06`: el curso cierra el marcado tras la primera zona; el operador no pone límite de cantidad de zonas intermedias — el límite lo pone la banda (`R-17`).",
+      "porque": "Contraejemplo real, anotado por el operador: `../02_Assets/invalidos/R-12_invalido_01.png`.\n\nEl curso y Chaumer en vivo cierran el marcado entre dos zonas tras el primer retroceso; el plan hace lo mismo, banda a banda (`R-17`).",
       "si_no_se_cumple": null,
       "excepciones": null,
       "orden": 12,

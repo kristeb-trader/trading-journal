@@ -775,6 +775,7 @@ Colombia es **UTC−5 fijo**: no aplica horario de verano. Todo lo demás se mue
 | **3.13** | **2026-09-23** | 🕯️ **Confirmado el orden de la vela también para las órdenes.** Cuando una misma vela toca el nivel de la orden y el stop: azul, primero el mínimo; blanca, primero el máximo. Si llega antes a la orden se llena —y el stop puede saltar en esa misma vela—; si llega antes al stop, se cancela. El motor ya lo aplicaba desde el 14/09 como **propuesta del auditor sin confirmar**; la jornada del **23/09** es la primera en que decide el resultado (−28,25 frente a +47,50 leída al revés) y el operador la da por buena. Añadido a `R-29`. Sin cambios en el motor ni en la regresión. **40 reglas** |
 | **3.14** | **2026-09-26** | 🔧 **Correcciones sin cambio de metodología** (fase 1 de la reestructuración de las reglas, D-028, con el sí del operador). En la checklist: el stop de la Continuación dice ya **el extremo alcanzado desde que nació la zona hasta la vela de rompimiento**, como `R-32` desde el 27/08 (la tabla «Medir» seguía con la definición vieja); la nota de los filtros deja de contarlos; «IRI descartado» pasa a «Continuación descartada»; sale el campo de registro de `P-20`, cerrado el 23/09. En contextualización, los segundos `C-08` y `C-09` pasan a `C-11` y `C-12` (había dos de cada). En pendientes, la copia abierta de `P-22` se marca cerrada. En el estado, el umbral vigente, los casos de la galería y los elementos de contextualización. **Ninguna regla cambia.** | **40 reglas** |
 | **3.15** | **2026-09-26** | 🗂️ **Las reglas pasan a siete archivos de grupo** (`reglas/`), con una plantilla fija, y **el documento maestro desaparece**: la explicación de cada regla va a su «Por qué», los anexos y esta tabla de versiones, a `HISTORIAL.md`. `reglas.json` pasa a ser un archivo **generado**. Reestructuración de las reglas (F2), con el sí del operador (D-028). De 1.900 frases del plan anterior no se pierde ninguna. Seis contradicciones con la regla vigente se resuelven a favor de la vigente y quedan registradas arriba. **Ninguna regla cambia lo que dice.** | **40 reglas** |
+| **3.17** | **2026-09-26** | ✂️ **Se cierra la desviación de las zonas entre zonas** («sin límite de cantidad»), con el sí del operador. Desde el 27/08/2026 la regla de una sola zona por banda y por jornada hace lo mismo que Chaumer en vivo (*«en toda esta área, en toda la sesión»*): el plan ya no se aparta del curso en esto, y la nota decía lo contrario de la regla. Su texto, abajo. El «Por qué» de la regla del 50 % deja de citarla. **Ninguna regla cambia lo que dice.** | **40 reglas** |
 | **3.16** | **2026-09-26** | 🧹 **Glosario, checklist, pendientes y estado, limpios** (F2d de la reestructuración, con el sí del operador, D-028). El **glosario** se queda en las definiciones —cada término remite a su regla— y el de antes pasa entero a `HISTORIAL.md`. La **checklist** integra en su paso los dos bloques «Añadido 27/08» y escribe los números por su parámetro. `PENDIENTES.md` se queda con lo **abierto** (18) y las **desviaciones** (12): los cerrados, con su resolución, a `HISTORIAL.md`. `ESTADO.md`: cabecera, advertencia e índice por nombre de regla. De 1.165 frases no se pierde ninguna (`scripts/plan/comparar-documentos.py`). Cinco frases del glosario y dos líneas del índice de `ESTADO.md` contradecían a su regla y se resuelven a favor de la regla (registradas abajo). **Ninguna regla cambia.** | **40 reglas** |
 
 ---
@@ -3077,3 +3078,19 @@ vive ahora en **`_Historia\BITACORA.md`**.
 - 🔴 **CORREGIDO 27/08/2026 — antes decía lo contrario.** El paso de 5 velas **SÍ cancela la orden**, y un retroceso nuevo **NO**.
 - Caso real 9/07/2026: orden puesta en la 8:43, cancelada por error en la 8:45; con la regla correcta sigue viva y se llena en la **8:46**. *(Está en el «Por qué» de `R-29`.)*
 - ¿El stop saltó en 80 pts siendo el estructural menor? *(`P-09`: el stop de 80 puntos es el provisional de la ATM, `ATM_DEFECTO`, que vale lo mismo que `STOP_MAX`.)*
+
+---
+
+## Desviaciones cerradas
+
+### D-06 · cerrada el 26/09/2026 (plan 3.17)
+
+*Decisión del operador: «cerremos eso». La desviación se escribió el 24/08/2026; la regla de una sola zona por banda y por jornada, que Alfredo Chaumer dio el 27/08/2026, la dejó sin objeto — el plan hace lo que hace Chaumer en vivo, banda a banda — y la nota nunca se actualizó. Copiada tal cual:*
+
+#### D-06 · Zonas entre zonas — sin límite de cantidad
+> *(El criterio del 50 % quedó fijado el 24/08 sobre el **movimiento**, no sobre el rectángulo, gracias a un contraejemplo real del operador: `02_Assets\invalidos\R-12_invalido_01.png`.)*
+- **El curso dice**, diapositiva: *"Luego de marcar una zona que no supera el 50%, **ya no seguimos marcando zonas**."*
+- **Y Chaumer en vivo es aún más restrictivo** — 18/08 [00:46]: *"…ya creo que lo accede, así que **ya no marcaría zonas entre zonas en toda esta área, en toda la sesión**."* Repetido el 17/08 y el 20/08.
+- **El operador:** se pueden marcar **todas** las zonas intermedias que aparezcan, siempre que cada una respete su propio 50 % recalculado contra sus vecinas inmediatas.
+- **Atenuante geométrico:** cada zona intermedia parte el hueco en dos, así que el siguiente candidato se mide contra un hueco la mitad de grande. La regla se estrangula sola; no produce el gráfico saturado que se temía.
+- **Recogido en:** `R-12`.
