@@ -1,8 +1,8 @@
 # ESTADO — índice de trabajo compacto
 
-> **Archivo de arranque.** Léelo primero cada sesión. Detalle completo en `TRADING_PLAN_CHAUMER.md` y `GLOSARIO.md`.
+> **Archivo de arranque.** Léelo primero cada sesión. Las reglas, en `reglas/` (un archivo por grupo); las definiciones, en `GLOSARIO.md`.
 
-**v3.14** · 2026-09-26 · **40 reglas** · **26 términos** · 🏁 FASE 1 CERRADA · 🔴 **TEST CIEGO EN MARCHA** · 🚧 FASE 2 en curso: portal web en `04_Web\`
+**v3.15** · 2026-09-26 · **40 reglas** · **26 términos** · 🏁 FASE 1 CERRADA · 🔴 **TEST CIEGO EN MARCHA** · 🚧 FASE 2 en curso: portal web en `04_Web\`
 
 > 🔴 **El test ciego arrancó el 14/09/2026.** Primera jornada: **10/09/2026** — largo, entrada 29.145,75 a las 8:40, riesgo 40,50 → objetivo en 8:41, **+40,50 pts**. Protocolo en `05_Backtesting\test_ciego\LEEME_BACK_DIARIO.md`; diferencias en `DISCREPANCIAS.md`. Con esto **se cierra el primero de los cuatro huecos declarados**; siguen abiertos los otros tres. Ver `CIERRE_FASE_1.md`.
 > 📅 **Tercera jornada: lunes 14/09/2026 — NO OPERA.** De ella sale la reescritura de **`R-40`** y el término **corrida fluida**. 🔴 **Obligó a corregir una sesión ya validada:** el 16/07/2026 deja de tener operación, y julio pasa de **−91,00 pts en 9** a **−77,75 en 5**.
@@ -115,7 +115,7 @@
 
 ## Siguiente
 
-🏁 **Fase 1 cerrada el 01/09/2026.** Las 12 sub-fases están cerradas; el detalle de cada una vive en los anexos de `TRADING_PLAN_CHAUMER.md` y el acta en `CIERRE_FASE_1.md`.
+🏁 **Fase 1 cerrada el 01/09/2026.** Las 12 sub-fases están cerradas; el detalle de cada una vive en `HISTORIAL.md` y el acta en `CIERRE_FASE_1.md`.
 
 🚧 **Fase 2 en curso — el portal web**, en `04_Web\`, construido desde Claude Code contra `reglas.json`. Instrucciones en `CLAUDE.md` (raíz) y `04_Web\CLAUDE.md`. Lo que queda por hacer está en `tasks/current.md`, en la raíz del repositorio (desde el 25/09/2026, D-028).
 
@@ -147,4 +147,4 @@ vela a vela, el cierre de la fase 1, las correcciones de reglas y las decisiones
 vive ahora en **`_Historia\BITACORA.md`**.
 
 > No hace falta abrirlo para trabajar. Solo para saber **por qué** una regla dice lo que dice
-> —y para eso suele bastar con la sección de esa regla en `TRADING_PLAN_CHAUMER.md`.
+> —y para eso suele bastar con el apartado «Por qué» de esa regla, en `reglas/`.

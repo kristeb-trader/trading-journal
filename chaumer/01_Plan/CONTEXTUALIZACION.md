@@ -16,7 +16,7 @@ Chaumer distingue explícitamente dos categorías, y el plan las adopta:
 
 | | Dónde vive | Naturaleza |
 |---|---|---|
-| **Parámetro operativo** | `TRADING_PLAN_CHAUMER.md`, `reglas.json` | Criterio fijo y medible. Se cumple o no se cumple. **Un operador sin criterio propio puede ejecutarlo** |
+| **Parámetro operativo** | las reglas (`reglas/`) | Criterio fijo y medible. Se cumple o no se cumple. **Un operador sin criterio propio puede ejecutarlo** |
 | **Elemento de contextualización** | **este archivo** | Ayuda a decidir. **No tiene número y no debe tenerlo.** Depende del momento |
 
 ---

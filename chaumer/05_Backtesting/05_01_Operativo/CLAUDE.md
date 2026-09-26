@@ -45,4 +45,4 @@ Los cuatro huecos que bloquean el backtesting automático **no bloquean esto**: 
 
 - `/clear` entre tareas.
 - No listes la carpeta del proyecto entera: hay `node_modules\` y `.git`, son miles de entradas.
-- No abras `TRADING_PLAN_CHAUMER.md`. **No lo necesitas para esto.** Es el plan del método, y este módulo no aplica el método.
+- No abras las reglas del plan (`01_Plan\reglas\`). **No las necesitas para esto.** Son el método, y este módulo no aplica el método.

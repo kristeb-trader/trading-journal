@@ -221,7 +221,7 @@ Diagramas: `../02_Assets/diagramas/apendice_caso1_plazo.png` y `../02_Assets/dia
 
 ## R-15 · Zona de premercado — la única que nace del volumen
 
-> En la ventana de premercado (`PREMERCADO_INICIO` del día anterior hasta la apertura americana), marca zona sobre **toda** vela cuyo volumen supere el umbral (`UMBRAL_VOL`). Fuera de esa ventana la regla no aplica.
+> En la ventana de premercado —desde las `PREMERCADO_INICIO` del día anterior hasta la apertura americana—, marca zona sobre **toda** vela cuyo volumen supere el umbral: `UMBRAL_VOL`. Fuera de esa ventana la regla no aplica.
 
 | | |
 |---|---|

@@ -27,7 +27,7 @@ Todo se hace desde Claude Code: **Cowork dejó de existir el 25/09/2026** (D-028
 | Los gráficos del método (PNG), que el operador revisa uno por uno | Maquetación, compilar, publicar |
 | El test ciego y auditar sesiones con los datos · `05_Backtesting\` | **Nada de `01_Plan\`** |
 
-**Un cambio de `01_Plan\` solo entra con el sí del operador, cambio a cambio — erratas incluidas.** Va en su propio commit `plan: …`, nunca mezclado con cambios del portal o del Journal, y sube la versión (cabecera de `ESTADO.md` y tabla de versiones de `TRADING_PLAN_CHAUMER.md`). No está cerrado hasta sincronizarlo: `node scripts/plan/sincronizar.mjs` desde la raíz del repo, los dos SQL por el MCP con sus huellas, y `npm run verificar` en `04_Web\`. Si tocó `lector.py`, además la regresión `scripts/cadena/prueba_motor.py`.
+**Un cambio de `01_Plan\` solo entra con el sí del operador, cambio a cambio — erratas incluidas.** Va en su propio commit `plan: …`, nunca mezclado con cambios del portal o del Journal, y sube la versión (cabecera de `ESTADO.md`, versión de la checklist y tabla de versiones de `HISTORIAL.md`), y se regenera `reglas.json`. No está cerrado hasta sincronizarlo: `node scripts/plan/sincronizar.mjs` desde la raíz del repo, los dos SQL por el MCP con sus huellas, y `npm run verificar` en `04_Web\`. Si tocó `lector.py`, además la regresión `scripts/cadena/prueba_motor.py`.
 
 Si trabajando en otra cosa ves algo mal en el plan, **díselo al operador en ese momento**. No lo corrijas de paso, aunque sea evidente: una vez se coló así un cambio de metodología que nadie había aprobado. Si se deja para después, va a `tasks/current.md` (raíz del repo).
 
@@ -35,14 +35,16 @@ Si trabajando en otra cosa ves algo mal en el plan, **díselo al operador en ese
 
 ## Dónde está la verdad, y qué leer para cada cosa
 
-`01_Plan\reglas.json` es **la fuente de verdad legible por máquina**: 40 reglas ordenadas por grupo, con `categoria`, `categoria_nombre`, `categoria_orden` y —solo en zonas— `subcategoria` (`marcado` / `vigencia`). Siete grupos: perímetro (4) · estructura (4) · **zonas (14)** · setup y entrada (7) · riesgo y gestión (7) · filtros (3) · proceso (1).
+**Las reglas viven en `01_Plan\reglas\`: siete archivos, uno por grupo, en el orden del día** — perímetro (4) · estructura (4) · **zonas (14)** · setup y entrada (7) · riesgo y gestión (7) · filtros (3) · proceso (1). Cada regla con la misma plantilla: la regla, cómo se aplica, si no se cumple, excepciones y por qué. Es **la única fuente**: se edita ahí y en ningún otro sitio (desde el 26/09/2026; diseño en `docs/disenos/2026-09-25-reglas-chaumer.md`, en la raíz del repositorio).
+
+`01_Plan\reglas.json` **se genera** a partir de ellos —`node scripts/plan/leer-reglas.mjs --escribir`, desde la raíz del repositorio— y **no se edita a mano**: lo leen el portal, el Journal y la ficha del test ciego. La historia del plan (cambios, fechas, notas de construcción) está en `01_Plan\HISTORIAL.md`, y **no se lee para trabajar**.
 
 | Si la tarea es… | Lee SOLO |
 |---|---|
-| una duda de una regla | `reglas.json`, **esa regla** |
+| una duda de una regla | **su archivo de grupo** en `01_Plan\reglas\`, esa regla |
 | cambiar un número | `01_Plan\PARAMETROS.md` |
 | una definición | `01_Plan\GLOSARIO.md` |
-| el porqué de una regla | **su sección** en `01_Plan\TRADING_PLAN_CHAUMER.md` |
+| el porqué de una regla | su apartado **«Por qué»**, en la misma regla |
 | la secuencia del día | `01_Plan\CHECKLIST_DIARIA.md` |
 | qué falta / qué está abierto | `01_Plan\PENDIENTES.md` |
 | casos reales | `01_Plan\GALERIA.md` |
@@ -50,8 +52,9 @@ Si trabajando en otra cosa ves algo mal en el plan, **díselo al operador en ese
 | dónde estamos | `01_Plan\ESTADO.md` (la cabecera basta) |
 | el portal | `04_Web\CLAUDE.md` |
 
-> ⚠️ **No abras `TRADING_PLAN_CHAUMER.md` entero.** Son 29.000 tokens. Busca la sección de la regla.
-> Si `reglas.json` y un `.md` se contradicen, **para y pregunta.** No elijas tú.
+> ⚠️ **Abre el archivo de grupo de la regla, no los siete.** Zonas, el más grande, son unos 35 KB.
+> Si una regla y otro documento del plan se contradicen, **para y pregunta.** No elijas tú.
+> Antes de cerrar un cambio del plan: `node scripts/plan/vigilar.mjs --estricto` (la plantilla, los números por nombre, los códigos).
 
 ---
 

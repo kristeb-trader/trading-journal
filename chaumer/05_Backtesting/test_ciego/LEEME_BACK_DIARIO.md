@@ -34,9 +34,9 @@ Si algo de eso se te cruza por accidente, **dilo en la entrega**: ese día ya no
 
 ## Qué leer, y en qué orden
 
-**1 · `FICHA_MARCADO.md`**, en esta carpeta. Las 38 reglas y los parámetros, sin el porqué. **Es lo único que necesitas del plan.**
+**1 · `FICHA_MARCADO.md`**, en esta carpeta. Las reglas y los parámetros, sin el porqué. **Es lo único que necesitas del plan.**
 
-🚫 **No abras `TRADING_PLAN_CHAUMER.md`.** Son 29.000 tokens de explicaciones y ejemplos. Para marcar no hacen falta.
+🚫 **No abras `01_Plan\reglas\` ni `01_Plan\HISTORIAL.md`.** El «por qué» de cada regla y su historia traen casos reales y te sesgan; para marcar no hacen falta.
 🚫 **No abras `ESTADO.md`, ni la bitácora, ni la galería.** Cuentan lo que pasó en julio y te sesgan.
 
 **2 · Los datos:** `..\datos\dia\AAAA-MM-DD.txt`
