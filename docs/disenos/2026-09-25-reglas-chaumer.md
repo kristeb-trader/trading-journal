@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| **Versión** | v1.3 · 26/09/2026 |
-| **Estado** | ✅ **Diseño v1.1 aprobado por Kris** (26/09/2026) · ✅ F0 · ✅ F1 · ✅ 2a · ✅ 2b · ✅ 2c · ⏳ 2d |
+| **Versión** | v1.4 · 26/09/2026 |
+| **Estado** | ✅ **Diseño v1.1 aprobado por Kris** (26/09/2026) · ✅ F0 · ✅ F1 · ✅ 2a · ✅ 2b · ✅ 2c · ✅ 2d — **F2 cerrada** · ⏳ F3 |
 | **Alcance** | `chaumer/01_Plan` (las reglas y los documentos que las rodean), sus consumidores (portal, Journal, Coach, NinjaTrader, motor, test ciego) y cómo se ven en el portal |
 | **Regla que manda** | D-028: nada de `01_Plan` cambia sin el sí de Kris, cambio a cambio. Este documento no cambia nada |
 
@@ -53,6 +53,27 @@
     F3**: hasta entonces el contenido del plan es el mismo y el Coach sigue leyendo el de antes. El documento
     «reglas» pasa de 58 KB a 75 KB porque ahora lleva los «Por qué» con sus casos; con el glosario de la 2d
     (52 → ~15–20 KB) el total del Coach quedará por debajo de los 135 KB de hoy. Se mide al sincronizar.
+
+- **v1.4 · 26/09/2026** — **2d hecha** (commit `plan:` `4c777ff`, plan 3.16), con el sí de Kris. **La F2 está cerrada.**
+  - **Glosario:** solo definiciones, cada término remite a su regla; 53 → 24 KB (algo más de lo estimado: se
+    quedan los términos que ninguna regla define, como la vela que no hace nada o la inversión de papel). El
+    de antes, entero, a `HISTORIAL.md`.
+  - **Checklist:** los dos bloques «Añadido 27/08» en su paso («Marcar» e «Identificar» de la ventana
+    operativa; la línea del stop estaba repetida) y los números por su parámetro, que `sincronizar.mjs`
+    resuelve a su valor para el Journal. 48 → 47 líneas.
+  - **Pendientes:** 18 abiertos, en cuatro grupos, y 12 desviaciones; los 19 cerrados, tal cual, al historial.
+    Los términos y preguntas del curso sin resolver, que vivían en el glosario, pasan aquí sin código.
+  - **Estado:** cabecera, advertencia (los cuatro huecos) e índice por **nombre** de regla, que el vigilante
+    compara con `reglas/`. El índice de antes tenía dos líneas que contradecían a su regla.
+  - **Nada se pierde:** `scripts/plan/comparar-documentos.py`, 1.165 frases (537 tal cual, 255 reescritas, 368
+    en el historial, 5 revisadas a mano). Cinco frases del glosario y dos del índice contradecían a su regla:
+    resueltas a favor de la regla y registradas en `HISTORIAL.md`.
+  - **Vigilante estricto en verde.** Mira además el índice de `ESTADO.md`, la versión de la tabla del historial
+    y las marcas de historia en glosario y checklist; `HISTORIAL.md` ya no cuenta para los códigos repetidos.
+  - **Journal:** catálogo aplicado — 89 activas (una línea menos), las 9 casillas y automáticas con su código,
+    2.528 marcas intactas; 5 líneas de guía desactivadas y 4 nuevas. Portal: `npm run verificar`, 0 fallos.
+  - Los documentos del Coach siguen la desviación de la v1.3: se sincronizan al cerrar la F3 (hoy suman
+    ~123 KB, frente a 135).
 ---
 
 ## 1 · En una frase

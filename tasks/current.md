@@ -68,8 +68,19 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
 - [x] **F0** — el portal enseña el «Por qué» entero de las 40 reglas; el vigilante, en modo informe
 - [x] **F1** — correcciones (plan 3.14): el stop de la checklist, C-08/C-09 y P-22, versiones y cuentas, el motor
   lee el umbral de `PARAMETROS.md`. El vigilante baja de 13 a 9 hallazgos, todos de la F2
-- [ ] **F2** — hechas 2a (lector y vigilante), 2b (los siete archivos) y 2c (consumidores; plan 3.15). Falta 2d (
-  glosario, checklist, pendientes y estado)
+- [x] **F2** — 2a (lector y vigilante), 2b (los siete archivos), 2c (consumidores; plan 3.15) y 2d (glosario,
+  checklist, pendientes y estado; plan 3.16). Vigilante estricto en verde
+- [ ] **Kris, dos decisiones que salieron en la 2d** (cada una, si se decide, va en su propio commit `plan:`):
+  - la desviación «zonas entre zonas sin límite de cantidad» choca con «una sola zona por banda y por jornada»,
+    que vino de Alfredo: ¿sigue en pie o se cierra?
+  - el glosario da por retirados «vela envolvente» y «vela interior», y dos reglas los siguen usando (la de la
+    vela que hace máximo mayor y mínimo menor, y la de la corrida): ¿cuál manda?
+- [ ] **Visto en la 2d, sin tocar** (es del plan: con el sí de Kris):
+  - la regla de la vela base dice 08:31 fijo; desde el 2/11 (invierno) es la de las 09:31
+  - «la zona nueva se marca sobre la vela del nuevo extremo» solo lo dice el glosario: su sitio es la regla de
+    salir de una zona
+  - el pendiente del test ciego sigue abierto aunque el test arrancó el 14/09; y los de la equivalencia del
+    umbral y del data feed citan umbrales viejos (6.000, 2.000)
 - [ ] **F3** — las fusiones, 40 → 35
 - [ ] **F4** — la ficha nueva del portal (y decidir si la cabecera pasa de «NQ» a «MNQ»)
 
