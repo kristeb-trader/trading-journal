@@ -79,16 +79,14 @@ La corrida se mide **desde su extremo**: el mínimo si es alcista, el máximo si
 
 ---
 
-## VELA QUE HACE MÁXIMO MAYOR Y MÍNIMO MENOR
+## VELA ENVOLVENTE  *(máximo mayor y mínimo menor)*
 
-Cubre el rango completo de la vela anterior. Palabras del operador: *"hace rompimiento tanto arriba como abajo, funcionaría como rompimiento y como retroceso"*.
+La que hace **máximo mayor Y mínimo menor** que la anterior: cubre su rango completo. Palabras del operador: *"hace rompimiento tanto arriba como abajo, funcionaría como rompimiento y como retroceso"*.
 
 | Estado | Qué pasa | Quién manda |
 |---|---|---|
 | **Con corrida viva** | El mínimo menor **mata la corrida**. Es ya la primera vela del retroceso. Sin ambigüedad | `R-05` |
-| **Sin corrida viva** | **No declara dirección.** Pasa a ser la nueva vela origen y decide la siguiente. Si esa también la cubre entera, se repite | `R-08` |
-
-> ⚠️ **Nota de vocabulario.** El auditor la había bautizado *"vela envolvente"*. **Ese término NO es del operador ni del método** y queda retirado. Se describe solo por su condición.
+| **Sin corrida viva** | **No declara dirección.** Pasa a ser la nueva vela origen y decide la siguiente. Si esa también es envolvente, se repite | `R-08` |
 
 **Regla:** `R-08` · ⚠️ **En revisión** — ver `P-24`
 
@@ -398,7 +396,7 @@ Términos del curso o del auditor que **no** se usan en el plan, y por qué.
 |---|---|
 | Impulso | sinónimo de **corrida**; el plan usa solo «corrida» |
 | Punto de control | unificado en **punto de referencia** (14/09/2026) |
-| Vela envolvente · vela interior | nombres del auditor, retirados: se describen por su condición (arriba) |
+| Vela interior | nombre del auditor, retirado: es la **vela que no hace nada** (arriba) |
 | Punto de reacción | = **zona vigente**, no es un término aparte (`P-13`) |
 | Sobreextendido | contextualización, no regla (`C-01`) |
 | Máximo volumen de sesión · volumen climático · volumen de parada | contextualización, no regla (`C-08`) |
