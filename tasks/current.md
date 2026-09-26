@@ -68,7 +68,7 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
 - [x] **F0** — el portal enseña el «Por qué» entero de las 40 reglas; el vigilante, en modo informe
 - [x] **F1** — correcciones (plan 3.14): el stop de la checklist, C-08/C-09 y P-22, versiones y cuentas, el motor
   lee el umbral de `PARAMETROS.md`. El vigilante baja de 13 a 9 hallazgos, todos de la F2
-- [ ] **F2** — la estructura nueva (2a lector y vigilante · 2b los siete archivos · 2c consumidores · 2d
+- [ ] **F2** — hechas 2a (lector y vigilante), 2b (los siete archivos) y 2c (consumidores; plan 3.15). Falta 2d (
   glosario, checklist, pendientes y estado)
 - [ ] **F3** — las fusiones, 40 → 35
 - [ ] **F4** — la ficha nueva del portal (y decidir si la cabecera pasa de «NQ» a «MNQ»)

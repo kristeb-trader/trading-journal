@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| **Versión** | v1.2 · 26/09/2026 |
-| **Estado** | ✅ **Diseño v1.1 aprobado por Kris** (26/09/2026) · ✅ F0 · ✅ F1 · ⏳ F2 |
+| **Versión** | v1.3 · 26/09/2026 |
+| **Estado** | ✅ **Diseño v1.1 aprobado por Kris** (26/09/2026) · ✅ F0 · ✅ F1 · ✅ 2a · ✅ 2b · ✅ 2c · ⏳ 2d |
 | **Alcance** | `chaumer/01_Plan` (las reglas y los documentos que las rodean), sus consumidores (portal, Journal, Coach, NinjaTrader, motor, test ciego) y cómo se ven en el portal |
 | **Regla que manda** | D-028: nada de `01_Plan` cambia sin el sí de Kris, cambio a cambio. Este documento no cambia nada |
 
@@ -30,6 +30,29 @@
   Las cinco huellas del Coach cuadran; `catalogo_reglas` sigue con 90 activas y las mismas 9 casillas y
   automáticas. El vigilante baja de 13 a **9 hallazgos**, todos de la F2.
 
+- **v1.3 · 26/09/2026** — **2a, 2b y 2c hechas.**
+  - **2a:** `leer-reglas.mjs` (el lector) y el vigilante completo, que lee `reglas/` y comprueba además que
+    `reglas.json` está al día.
+  - **2b** (commit `plan:` `1100b6d`): las 40 reglas en siete archivos, 78 KB frente a 82 + 90. **De 1.900
+    frases del plan anterior no se pierde ninguna** (`scripts/plan/comparar-migracion.py`: 535 tal cual, 805
+    reescritas con ≥85 % de sus palabras, 558 en `HISTORIAL.md`, 2 revisadas a mano). Seis contradicciones
+    con la regla vigente, resueltas a favor de la vigente y registradas; dos valores de 240 ticks pasan a
+    `STOP_MAX`, **a confirmar por Kris**. **Desviación:** «Por qué» pasa a ser **opcional** — seis reglas no
+    tienen explicación en el plan, y escribírsela sería inventar metodología.
+  - **2c:** `reglas.json` es **generado** (objeto con `grupos`, `fusionadas` y `reglas`; cada regla trae
+    además `enunciado`, en texto plano y con los parámetros resueltos). `TRADING_PLAN_CHAUMER.md` y
+    `subfases/` salen del plan: su contenido está en `HISTORIAL.md`. Plan 3.15. Consumidores:
+    `sincronizar.mjs` (título = nombre corto, enunciado = la regla en texto plano; catálogo aplicado: 90
+    activas, las 9 casillas y automáticas idénticas, 2.528 marcas intactas), la ficha del test ciego, y el
+    portal (el lector con alias de los nombres de antes; la ficha con la plantilla nueva; el índice con el
+    nombre y la regla). Las 40 fichas pasan de 21.173 a 12.834 palabras y de 2.204 a 1.471 px de alto
+    mediano. De paso: `referencias.mjs` sella por **nombre** de regla, no por enunciado; cuatro vigilantes
+    del portal quitaban etiquetas HTML con una expresión que se cortaba en un `>` dentro de un atributo; las
+    pastillas de parámetro se parten en el móvil; ninguna ficha desborda a 390 px.
+  - **Desviación:** los documentos del Coach (`plan_documentos`) **se sincronizan una sola vez al cerrar la
+    F3**: hasta entonces el contenido del plan es el mismo y el Coach sigue leyendo el de antes. El documento
+    «reglas» pasa de 58 KB a 75 KB porque ahora lleva los «Por qué» con sus casos; con el glosario de la 2d
+    (52 → ~15–20 KB) el total del Coach quedará por debajo de los 135 KB de hoy. Se mide al sincronizar.
 ---
 
 ## 1 · En una frase

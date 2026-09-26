@@ -21,7 +21,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { leerReglas, DIR_REGLAS } from './leer-reglas.mjs'
+import { leerReglas, DIR_REGLAS, RUTA_JSON, serializar } from './leer-reglas.mjs'
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 const PLAN = path.join(RAIZ, 'chaumer', '01_Plan')
@@ -40,6 +40,10 @@ if (NUEVAS) {
   reglas = leidas.reglas
   FUENTE = 'reglas/'
   for (const e of leidas.errores) anota('0 · Plantilla de las reglas', e)
+  // reglas.json lo leen el portal, el Journal y el test ciego: tiene que ser el de los archivos de hoy.
+  if (!leidas.errores.length && (!fs.existsSync(RUTA_JSON) || fs.readFileSync(RUTA_JSON, 'utf8') !== serializar(leidas))) {
+    anota('0 · Plantilla de las reglas', 'reglas.json no está al día con reglas/: node scripts/plan/leer-reglas.mjs --escribir')
+  }
 } else {
   reglas = JSON.parse(leer('reglas.json'))
   FUENTE = 'reglas.json'

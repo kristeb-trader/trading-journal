@@ -5,7 +5,8 @@
  *
  * Lee (SOLO LECTURA: el plan se cambia aparte, con el sí de Kris, D-028):
  *   chaumer/01_Plan/CHECKLIST_DIARIA.md   las líneas de la checklist diaria
- *   chaumer/01_Plan/reglas.json           las reglas del plan
+ *   chaumer/01_Plan/reglas/*.md           las reglas del plan, con el lector (leer-reglas.mjs)
+ *   chaumer/01_Plan/PARAMETROS.md         el valor de cada parámetro, para el texto del Journal
  * y el mapa del Journal (scripts/plan/mapa-casillas.json): qué líneas son casilla o
  * automática. Todo lo demás es guía.
  *
@@ -20,20 +21,31 @@
  * Si una casilla o automática del mapa no se encuentra en el plan, lo dice y NO la
  * toca: se queda como estaba hasta que se arregle el mapa.
  *
- * Diseño: docs/disenos/2026-09-24-etapa-plan-chaumer.md §5.
+ * Diseño: docs/disenos/2026-09-24-etapa-plan-chaumer.md §5 · desde el 26/09/2026, las reglas en siete
+ * archivos de grupo: docs/disenos/2026-09-25-reglas-chaumer.md §4.6.
  */
 
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
+import { leerReglas, textoPlano, valoresDeParametros, DIR_REGLAS } from './leer-reglas.mjs'
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 const PLAN = path.join(RAIZ, 'chaumer', '01_Plan')
 const ETAPA = 2
 
 const mapa = JSON.parse(fs.readFileSync(path.join(RAIZ, 'scripts', 'plan', 'mapa-casillas.json'), 'utf8'))
-const reglas = JSON.parse(fs.readFileSync(path.join(PLAN, 'reglas.json'), 'utf8'))
+const leidas = leerReglas()
+if (leidas.errores.length) {
+  console.error('✘ Las reglas no cumplen la plantilla (node scripts/plan/leer-reglas.mjs):')
+  leidas.errores.forEach(e => console.error('  ' + e))
+  process.exit(1)
+}
+const reglas = leidas.reglas
+const valoresParam = valoresDeParametros()
+// El Journal no lee Markdown: la regla va en texto plano y con cada parámetro ya resuelto («80 puntos»).
+const plano = t => textoPlano(t, valoresParam)
 const md = fs.readFileSync(path.join(PLAN, 'CHECKLIST_DIARIA.md'), 'utf8').split(/\r?\n/)
 
 const limpia = t => String(t)
@@ -74,11 +86,11 @@ const filas = []
 const q = v => v == null ? 'null' : (typeof v === 'boolean' || typeof v === 'number') ? String(v) : `'${String(v).replace(/'/g, "''")}'`
 const arr = a => a && a.length ? `array[${a.map(q).join(',')}]::text[]` : 'null'
 
-reglas.forEach((r, i) => filas.push({
-  codigo: r.id, titulo: limpia(r.enunciado), enunciado: limpia(r.enunciado), capa: 'plan', tipo: 'dura',
-  fase: null, setup: null, es_checklist: false, orden: i + 1, evidencia: null, bloquea_go: false,
+reglas.forEach(r => filas.push({
+  codigo: r.id, titulo: plano(r.nombre), enunciado: plano(r.regla), capa: 'plan', tipo: 'dura',
+  fase: null, setup: null, es_checklist: false, orden: r.orden, evidencia: null, bloquea_go: false,
   aplica_si: 'siempre', plan_reglas: [r.id], origen: 'plan_regla', plan_tipo: null,
-  plan_bloque: r.categoria_nombre, campo: null,
+  plan_bloque: r.grupo_nombre, campo: null,
 }))
 
 lineas.forEach(l => {
@@ -104,12 +116,12 @@ lineas.forEach(l => {
 
 for (const c of mapa.casillas.filter(c => c.regla)) {
   const r = reglas.find(x => x.id === c.regla)
-  if (!r) { avisos.push(`✘ ${c.codigo}: la regla ${c.regla} no está en reglas.json. No se toca.`); continue }
+  if (!r) { avisos.push(`✘ ${c.codigo}: la regla ${c.regla} no está en reglas/. No se toca.`); continue }
   filas.push({
-    codigo: c.codigo, titulo: limpia(r.enunciado), enunciado: limpia(r.enunciado), capa: 'proceso', tipo: 'dura',
+    codigo: c.codigo, titulo: plano(r.regla), enunciado: plano(r.regla), capa: 'proceso', tipo: 'dura',
     fase: c.fase, setup: c.setup, es_checklist: true, orden: c.orden, evidencia: 'auto',
     bloquea_go: c.bloquea_go, aplica_si: c.aplica_si, plan_reglas: [r.id], origen: 'plan_regla',
-    plan_tipo: 'auto', plan_bloque: r.categoria_nombre, campo: c.campo || null,
+    plan_tipo: 'auto', plan_bloque: r.grupo_nombre, campo: c.campo || null,
   })
 }
 
@@ -139,33 +151,14 @@ const salida = path.join(RAIZ, 'scripts', 'plan', 'salida.sql')
 fs.writeFileSync(salida, sql)
 
 // ── Los documentos del plan para el Coach (fase 6) → plan_documentos ───────
-// El Coach los lee enteros. Las reglas se pasan a texto (con sus condiciones); el
-// resto va tal cual. Salen a scripts/plan/salida-documentos.sql, UN insert por
-// documento, para aplicarlos por el MCP de uno en uno.
+// El Coach los lee enteros, tal cual. Las reglas son los siete archivos de grupo seguidos, en su orden:
+// ya son Markdown limpio y sin historia, así que no hace falta convertir nada. Salen a
+// scripts/plan/salida-documentos.sql, UN insert por documento, para aplicarlos por el MCP de uno en uno.
 const leer = f => fs.readFileSync(path.join(PLAN, f), 'utf8').replace(/\r\n/g, '\n')
-function reglasATexto() {
-  const out = ['# Las reglas del plan de Chaumer', '',
-    'Fuente de verdad: chaumer/01_Plan/reglas.json. Cada regla con sus condiciones medibles.', '']
-  let cat = null
-  for (const r of reglas) {
-    if (r.categoria_nombre !== cat) { cat = r.categoria_nombre; out.push(`## ${cat}`, '') }
-    const sub = r.subcategoria ? ` · ${r.subcategoria}` : ''
-    out.push(`### ${r.id}${sub} — ${limpia(r.enunciado)}`)
-    out.push(`Estado: ${r.estado}${r.prioridad != null ? ` · prioridad ${r.prioridad}` : ''}`)
-    if (r.condiciones?.length) {
-      out.push('Condiciones:')
-      for (const c of r.condiciones) out.push(`- ${c.variable} ${c.operador} ${c.valor}${c.timeframe && c.timeframe !== '-' ? ` (${c.timeframe})` : ''}`)
-    }
-    if (r.accion) out.push(`Acción: ${r.accion}`)
-    if (r.excepciones?.length) { out.push('Excepciones:'); r.excepciones.forEach(e => out.push(`- ${e}`)) }
-    if (r.nota) out.push(`Nota: ${r.nota}`)
-    if (r.pendiente) out.push(`PENDIENTE (no resuelto en el plan): ${r.pendiente}`)
-    out.push('')
-  }
-  return out.join('\n').trim() + '\n'
-}
+const reglasEnTexto = () => fs.readdirSync(DIR_REGLAS).filter(f => f.endsWith('.md')).sort()
+  .map(f => leer(path.join('reglas', f)).trim()).join('\n\n---\n\n') + '\n'
 const documentos = [
-  { nombre: 'reglas', origen: 'reglas.json', contenido: reglasATexto() },
+  { nombre: 'reglas', origen: 'reglas/*.md', contenido: reglasEnTexto() },
   { nombre: 'parametros', origen: 'PARAMETROS.md', contenido: leer('PARAMETROS.md') },
   { nombre: 'glosario', origen: 'GLOSARIO.md', contenido: leer('GLOSARIO.md') },
   { nombre: 'checklist', origen: 'CHECKLIST_DIARIA.md', contenido: leer('CHECKLIST_DIARIA.md') },

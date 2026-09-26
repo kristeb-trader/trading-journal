@@ -1,8 +1,9 @@
 # Metodología Chaumer — la estrategia que este journal registra
 
 > ⚠️ **Desde el 24/09/2026 la metodología es el plan de Chaumer**, no este documento:
-> **`chaumer/01_Plan/`** (se cambia solo con el sí de Kris, D-028). Las reglas son
-> `reglas.json`, y la checklist del día, `CHECKLIST_DIARIA.md`.
+> **`chaumer/01_Plan/`** (se cambia solo con el sí de Kris, D-028). Las reglas viven en
+> `reglas/`, un archivo por grupo (`reglas.json` se genera de ahí), y la checklist del día,
+> en `CHECKLIST_DIARIA.md`.
 >
 > El Journal trae el plan a `catalogo_reglas` con `scripts/plan/sincronizar.mjs`, en la
 > **etapa 2** de la disciplina, y lo enseña en **Estrategia de solo lectura**. Qué línea es

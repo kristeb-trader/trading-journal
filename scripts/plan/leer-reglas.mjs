@@ -2,7 +2,8 @@
  * El lector de las reglas del plan de Chaumer: chaumer/01_Plan/reglas/*.md → datos.
  *
  *   node scripts/plan/leer-reglas.mjs                     comprueba la plantilla y resume
- *   node scripts/plan/leer-reglas.mjs --salida <ruta>     además escribe el JSON en <ruta>
+ *   node scripts/plan/leer-reglas.mjs --escribir          además escribe chaumer/01_Plan/reglas.json
+ *   node scripts/plan/leer-reglas.mjs --salida <ruta>     … o en otra ruta
  *
  * Es la ÚNICA pieza que entiende el formato de los siete archivos de grupo. Todo lo demás
  * (portal, sincronizar.mjs, generar_ficha.py, el vigilante) lee el JSON que escribe esto.
@@ -230,17 +231,57 @@ export function leerReglas(dir = DIR_REGLAS) {
   return { grupos, reglas, errores }
 }
 
-/** El JSON que leen las máquinas (se escribe como reglas.json en la F2c). */
-export function aJson({ grupos, reglas }) {
+/**
+ * El valor vigente de cada parámetro de PARAMETROS.md, tal como se escribe en una frase: «80 puntos», «5 velas».
+ * Misma lectura que el portal (chaumer/04_Web/src/lib/parsers.mjs, parametros()): se quitan la anotación en
+ * cursiva del final —«*(desde 14/09/2026)*»— y la explicación tras la raya —«5 velas — es un TOPE…»—.
+ */
+export function valoresDeParametros(dirPlan = path.dirname(DIR_REGLAS)) {
+  const valores = new Map()
+  for (const linea of fs.readFileSync(path.join(dirPlan, 'PARAMETROS.md'), 'utf8').split(/\r?\n/)) {
+    if (!/^\|/.test(linea)) continue
+    const celdas = linea.split('|').slice(1, -1).map((c) => c.trim())
+    const nombre = (celdas[0] || '').match(/`([A-Z0-9_]+)`/)
+    if (!nombre || celdas.length < 2) continue
+    let valor = celdas[1].replace(/\*\*/g, '').trim()
+    valor = valor.replace(/\s*\*\([^)]*\)\*\s*$/, '')
+    const raya = valor.indexOf(' — ')
+    if (raya >= 0) valor = valor.slice(0, raya)
+    valores.set(nombre[1], valor.trim())
+  }
+  return valores
+}
+
+/** Una frase de una regla en texto plano, sin marcas de Markdown y con cada parámetro sustituido por su valor. */
+export function textoPlano(md, valores) {
+  let t = String(md || '')
+  const nombres = [...valores.keys()].sort((a, b) => b.length - a.length)
+  if (nombres.length) t = t.replace(new RegExp('`?\\b(' + nombres.join('|') + ')\\b`?', 'g'), (m, n) => valores.get(n))
+  return t
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')          // enlaces
+    .replace(/\*\*|__|`/g, '')
+    .replace(/(^|\s)[*_]([^*_\n]+)[*_](?=\s|[.,;:)]|$)/g, '$1$2')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** El JSON que leen las máquinas: chaumer/01_Plan/reglas.json. */
+export function aJson({ grupos, reglas }, valores = valoresDeParametros()) {
   const fusionadas = {}
   for (const r of reglas) for (const x of r.absorbe) fusionadas[x] = r.id
   return {
-    _leeme: 'GENERADO por scripts/plan/leer-reglas.mjs desde chaumer/01_Plan/reglas/*.md. No se edita a mano.',
+    _leeme: 'GENERADO por scripts/plan/leer-reglas.mjs desde chaumer/01_Plan/reglas/*.md. No se edita a mano: '
+      + 'se cambian los archivos de reglas/ y se vuelve a generar.',
     grupos: grupos.map(({ id, orden, nombre, descripcion, n }) => ({ id, orden, nombre, descripcion, n })),
     fusionadas,
-    reglas,
+    // `enunciado`: la regla en texto plano, con los parámetros ya resueltos, para quien no lee Markdown
+    // (el Journal, los títulos de los enlaces). La fuente sigue siendo `regla`.
+    reglas: reglas.map((r) => ({ ...r, enunciado: textoPlano(r.regla, valores) })),
   }
 }
+
+export const RUTA_JSON = path.join(path.dirname(DIR_REGLAS), 'reglas.json')
+export const serializar = (datos) => JSON.stringify(aJson(datos), null, 2) + '\n'
 
 // ── Uso por línea de órdenes ─────────────────────────────────────────────────
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -254,9 +295,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     process.exit(1)
   }
   console.log('✔ Todas cumplen la plantilla.')
-  if (i > 0) {
-    const ruta = path.resolve(process.argv[i + 1])
-    fs.writeFileSync(ruta, JSON.stringify(aJson(datos), null, 2) + '\n')
+  if (i > 0 || process.argv.includes('--escribir')) {
+    const ruta = i > 0 ? path.resolve(process.argv[i + 1]) : RUTA_JSON
+    fs.writeFileSync(ruta, serializar(datos))
     console.log(`JSON → ${path.relative(RAIZ, ruta)}`)
   }
 }
