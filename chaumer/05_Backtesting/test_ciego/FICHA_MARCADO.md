@@ -4,7 +4,7 @@
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
-**40 reglas.** Aquí van sin el porqué ni los ejemplos: solo lo que hay que aplicar.
+**38 reglas.** Aquí van sin el porqué ni los ejemplos: solo lo que hay que aplicar.
 
 ---
 
@@ -363,21 +363,7 @@ La vela que da la consecución de un traspaso **no cuenta a la vez** como rompim
 
 ---
 
-## Setup y entrada  (7)
-
-#### `R-23` · Selección de setup
-
-Toma el primer setup válido cuya orden se llene.
-
-**Cómo se aplica**
-
-- **Orden cronológico:** el primer setup que cumpla todas las condiciones necesarias se opera.
-- **Prohibido** compararlo con setups posteriores o esperar uno mejor.
-- Una vez llenada la orden, se ignora el resto de la sesión.
-
-**⚠️ Excepciones**
-
-- Un setup válido cuya orden caduque sin llenarse (`R-29`) no consume el cupo ni bloquea los siguientes.
+## Setup y entrada  (6)
 
 #### `R-24` · Tipo de orden y momento de colocación
 
@@ -503,17 +489,23 @@ Cumplidas las tres, ese rompimiento es la entrada — el cuarto paso de la Conti
 
 ---
 
-## Riesgo, orden y gestión  (7)
+## Riesgo, orden y gestión  (6)
 
-#### `R-28` · Máximo de operaciones por sesión
+#### `R-28` · Una operación, la primera que se llene, y ahí termina el día
 
-Ejecuta como máximo una operación por sesión.
+Opera el **primer setup válido** cuya orden se llene, y solo ése: como máximo `OPS_POR_SESION`. Al llenarse la orden **termina el día**: la operativa y el análisis.
 
 **Cómo se aplica**
 
-- **Órdenes llenadas por sesión ≤ `OPS_POR_SESION`.** El cupo se consume al llenarse la orden, acabe en objetivo o en stop.
-- **Una orden colocada y no llenada NO consume el cupo.**
-- Tras la primera orden llenada, **no se coloca ninguna orden más** esa sesión, aunque aparezcan setups válidos.
+- **El primero, sin comparar:** en orden cronológico, se opera el primer setup que cumpla todas las condiciones. **Prohibido** compararlo con setups posteriores o esperar uno mejor.
+- **El cupo:** órdenes llenadas por sesión ≤ `OPS_POR_SESION`. Se consume **al llenarse** la orden, acabe en objetivo o en stop. **Una orden colocada y no llenada NO consume el cupo.**
+- **Al llenarse:** se ajustan stop y objetivo (`R-31`) y se cierra el análisis. Solo queda esperar el resultado.
+- **Prohibido después del llenado:** colocar otra orden —aunque aparezcan setups válidos—, marcar zonas nuevas y buscar setups. El resto de la sesión se ignora.
+- **Al cerrar la operación:** bitácora, observaciones, pantallazo, y **cerrar NinjaTrader**.
+
+**⚠️ Excepciones**
+
+- Un setup válido cuya orden caduque sin llenarse (`R-29`) **no consume el cupo ni bloquea los siguientes**: se puede esperar otro setup dentro de la ventana.
 
 #### `R-29` · Caducidad de la orden pendiente
 
@@ -606,16 +598,6 @@ Una vez ajustados stop y target, **no se gestiona la posición. Nunca.**
 
 **Solo hay dos salidas: stop u objetivo.** No hay una tercera. Se deja que el mercado defina el resultado.
 
-#### `R-34` · Al llenarse la orden termina el análisis del día
-
-Al llenarse la orden termina el **análisis** del día, no solo la operativa.
-
-**Cómo se aplica**
-
-- **Al llenarse:** se ajustan stop y objetivo (`R-31`) y se cierra el análisis. Solo queda esperar el resultado.
-- **Prohibido después del llenado:** marcar zonas nuevas y buscar setups.
-- **Al cerrar la operación:** bitácora, observaciones, pantallazo, y **cerrar NinjaTrader**.
-
 ---
 
 ## Filtros de no-operar  (3)
@@ -673,7 +655,7 @@ Ejecuta la sesión siguiendo la checklist diaria **en orden**, y registra **toda
 |---|---|---|
 | **A** | **antes de abrir NinjaTrader** | `R-37` estado · `R-36` FOMC · `R-35` noticias |
 | **B** | premercado, desde `PREMERCADO_INICIO` | `R-03` · `R-15` · `R-09` · `R-12` · `R-13` |
-| **C** | ventana operativa | `R-23` · `R-25`/`R-26` · `R-32` filtros · `R-24` envío · `R-29` cancelación |
+| **C** | ventana operativa | `R-28` primer setup · `R-25`/`R-26` · `R-32` filtros · `R-24` envío · `R-29` cancelación |
 | **D** | tras el llenado | `R-31` ajuste · `R-33` no tocar · `R-28` cupo |
 
 - **El bloque A se contesta antes de abrir la plataforma.** Con el gráfico delante, `R-37` ya no es la misma pregunta.

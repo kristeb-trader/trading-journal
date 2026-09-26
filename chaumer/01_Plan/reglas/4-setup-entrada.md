@@ -2,27 +2,6 @@
 
 > cuándo se opera
 
-## R-23 · Selección de setup
-
-> Toma el primer setup válido cuya orden se llene.
-
-| | |
-|---|---|
-| Aplica a | Continuación · Reingreso |
-| Parámetros | — |
-| Relacionadas | R-28 · R-29 · R-34 |
-| Casos | G-22 |
-
-### Cómo se aplica
-
-- **Orden cronológico:** el primer setup que cumpla todas las condiciones necesarias se opera.
-- **Prohibido** compararlo con setups posteriores o esperar uno mejor.
-- Una vez llenada la orden, se ignora el resto de la sesión.
-
-### Excepciones
-
-- Un setup válido cuya orden caduque sin llenarse (`R-29`) no consume el cupo ni bloquea los siguientes.
-
 ## R-24 · Tipo de orden y momento de colocación
 
 > Entra siempre con orden stop en reposo colocada al cierre de la vela de rompimiento.

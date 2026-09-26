@@ -21,7 +21,7 @@
 |---|---|---|
 | **A** | **antes de abrir NinjaTrader** | `R-37` estado · `R-36` FOMC · `R-35` noticias |
 | **B** | premercado, desde `PREMERCADO_INICIO` | `R-03` · `R-15` · `R-09` · `R-12` · `R-13` |
-| **C** | ventana operativa | `R-23` · `R-25`/`R-26` · `R-32` filtros · `R-24` envío · `R-29` cancelación |
+| **C** | ventana operativa | `R-28` primer setup · `R-25`/`R-26` · `R-32` filtros · `R-24` envío · `R-29` cancelación |
 | **D** | tras el llenado | `R-31` ajuste · `R-33` no tocar · `R-28` cupo |
 
 - **El bloque A se contesta antes de abrir la plataforma.** Con el gráfico delante, `R-37` ya no es la misma pregunta.

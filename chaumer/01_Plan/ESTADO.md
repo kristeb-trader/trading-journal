@@ -2,7 +2,7 @@
 
 > **Archivo de arranque.** Léelo primero cada sesión. Las reglas, en `reglas/` (un archivo por grupo); las definiciones, en `GLOSARIO.md`.
 
-**v3.19** · 2026-09-26 · **40 reglas** · 🏁 FASE 1 CERRADA · 🔴 **TEST CIEGO EN MARCHA** · 🚧 FASE 2 en curso: portal web en `04_Web\`
+**v3.20** · 2026-09-26 · **38 reglas** · 🏁 FASE 1 CERRADA · 🔴 **TEST CIEGO EN MARCHA** · 🚧 FASE 2 en curso: portal web en `04_Web\`
 
 > 🔴 **El test ciego arrancó el 14/09/2026.** Protocolo en `05_Backtesting\test_ciego\LEEME_BACK_DIARIO.md`; diferencias en `DISCREPANCIAS.md`; las jornadas, en `GALERIA.md`.
 
@@ -12,9 +12,9 @@
 
 🚨 `P-29` el **test ciego** —en marcha desde el 14/09/2026, sin cerrar · 🚨 `P-21` **no hay regla de parada** · 🚨 falta toda la **capa de contextualización** · 🚨 `P-27` las cifras del backtesting **no miden la estrategia**.
 
-## Las 40 reglas, por grupo
+## Las 38 reglas, por grupo
 
-*El nombre de cada regla es el título de su apartado en `reglas/`. La regla entera, en su archivo.*
+*El nombre de cada regla es el título de su apartado en `reglas/`. La regla entera, en su archivo. Los códigos no se renumeran: los de una regla fusionada llevan a la que la absorbió (`R-23` y `R-34` → `R-28`).*
 
 ### 1 · Perímetro operativo (4) · `reglas/1-perimetro.md`
 
@@ -57,11 +57,10 @@
 
 *`R-16` + `R-12` + `R-17` + `R-18`, leídas en orden, son la secuencia del día: «Cómo se marca una jornada», al principio de `reglas/3-zonas.md`.*
 
-### 4 · Setup y entrada (7) · `reglas/4-setup-entrada.md`
+### 4 · Setup y entrada (6) · `reglas/4-setup-entrada.md`
 
 | ID | Regla |
 |---|---|
-| `R-23` | Selección de setup |
 | `R-24` | Tipo de orden y momento de colocación |
 | `R-25` | Setup Continuación |
 | `R-26` | Setup Reingreso |
@@ -69,17 +68,16 @@
 | `R-40` | Corrida fluida |
 | `R-41` | Punto de referencia |
 
-### 5 · Riesgo, orden y gestión (7) · `reglas/5-riesgo-gestion.md`
+### 5 · Riesgo, orden y gestión (6) · `reglas/5-riesgo-gestion.md`
 
 | ID | Regla |
 |---|---|
-| `R-28` | Máximo de operaciones por sesión |
+| `R-28` | Una operación, la primera que se llene, y ahí termina el día |
 | `R-29` | Caducidad de la orden pendiente |
 | `R-30` | Fin de ventana con posición abierta |
 | `R-31` | Configuración de ejecución (ATM `K1`) |
 | `R-32` | Stop y target |
 | `R-33` | No se gestiona |
-| `R-34` | Al llenarse la orden termina el análisis del día |
 
 ### 6 · Filtros de no-operar (3) · `reglas/6-filtros.md`
 

@@ -775,6 +775,7 @@ Colombia es **UTC−5 fijo**: no aplica horario de verano. Todo lo demás se mue
 | **3.13** | **2026-09-23** | 🕯️ **Confirmado el orden de la vela también para las órdenes.** Cuando una misma vela toca el nivel de la orden y el stop: azul, primero el mínimo; blanca, primero el máximo. Si llega antes a la orden se llena —y el stop puede saltar en esa misma vela—; si llega antes al stop, se cancela. El motor ya lo aplicaba desde el 14/09 como **propuesta del auditor sin confirmar**; la jornada del **23/09** es la primera en que decide el resultado (−28,25 frente a +47,50 leída al revés) y el operador la da por buena. Añadido a `R-29`. Sin cambios en el motor ni en la regresión. **40 reglas** |
 | **3.14** | **2026-09-26** | 🔧 **Correcciones sin cambio de metodología** (fase 1 de la reestructuración de las reglas, D-028, con el sí del operador). En la checklist: el stop de la Continuación dice ya **el extremo alcanzado desde que nació la zona hasta la vela de rompimiento**, como `R-32` desde el 27/08 (la tabla «Medir» seguía con la definición vieja); la nota de los filtros deja de contarlos; «IRI descartado» pasa a «Continuación descartada»; sale el campo de registro de `P-20`, cerrado el 23/09. En contextualización, los segundos `C-08` y `C-09` pasan a `C-11` y `C-12` (había dos de cada). En pendientes, la copia abierta de `P-22` se marca cerrada. En el estado, el umbral vigente, los casos de la galería y los elementos de contextualización. **Ninguna regla cambia.** | **40 reglas** |
 | **3.15** | **2026-09-26** | 🗂️ **Las reglas pasan a siete archivos de grupo** (`reglas/`), con una plantilla fija, y **el documento maestro desaparece**: la explicación de cada regla va a su «Por qué», los anexos y esta tabla de versiones, a `HISTORIAL.md`. `reglas.json` pasa a ser un archivo **generado**. Reestructuración de las reglas (F2), con el sí del operador (D-028). De 1.900 frases del plan anterior no se pierde ninguna. Seis contradicciones con la regla vigente se resuelven a favor de la vigente y quedan registradas arriba. **Ninguna regla cambia lo que dice.** | **40 reglas** |
+| **3.20** | **2026-09-26** | 🔗 **Primera fusión (F3): una operación, la primera que se llene, y ahí termina el día.** `R-28` absorbe `R-23` (selección de setup) y `R-34` (al llenarse termina el análisis), con el sí del operador. No cambia lo que se hace en el mercado: juntan ideas que ya eran una. Los códigos absorbidos llevan a `R-28`. | **38 reglas** |
 | **3.19** | **2026-09-26** | 🕯️ **«Vela interior» vuelve a ser el nombre del plan** para la vela que cabe entera dentro de la anterior (la que no hace nada), por decisión del operador (26/09/2026), igual que «vela envolvente» en la 3.18. La regla de la corrida ya lo usaba; el glosario lo daba por retirado y deja de hacerlo. **Ninguna regla cambia.** | **40 reglas** |
 | **3.18** | **2026-09-26** | 🕯️ **«Vela envolvente» vuelve a ser el nombre del plan** para la vela que hace máximo mayor y mínimo menor, por decisión del operador (26/09/2026). Las reglas ya lo usaban; el glosario lo daba por retirado desde el 26/08 y deja de hacerlo. La nota retirada, abajo. **Ninguna regla cambia.** | **40 reglas** |
 | **3.17** | **2026-09-26** | ✂️ **Se cierra la desviación de las zonas entre zonas** («sin límite de cantidad»), con el sí del operador. Desde el 27/08/2026 la regla de una sola zona por banda y por jornada hace lo mismo que Chaumer en vivo (*«en toda esta área, en toda la sesión»*): el plan ya no se aparta del curso en esto, y la nota decía lo contrario de la regla. Su texto, abajo. El «Por qué» de la regla del 50 % deja de citarla. **Ninguna regla cambia lo que dice.** | **40 reglas** |
@@ -3112,3 +3113,68 @@ vive ahora en **`_Historia\BITACORA.md`**.
 *El operador elige «vela interior» para la vela que hace máximo menor y mínimo mayor que la anterior —la que no hace nada—: es el nombre que usaba la regla de la corrida. En el glosario sale la nota que lo retiraba; las palabras del operador se quedan. La nota decía:*
 
 > ⚠️ **Nota de vocabulario.** El auditor la llamaba *"vela interior"*. Término retirado. Palabras del operador: *"esa vela que está entre la mitad de la vela anterior **no hace nada**, hay que esperar la siguiente vela para tomar una decisión"*.
+
+---
+
+## Fusiones (F3 de la reestructuración, desde el 26/09/2026)
+
+*Cada fusión junta reglas que decían lo mismo con otras palabras. La regla que absorbe conserva su código; las absorbidas no se borran: su código lleva a ella (`fusionadas` en `reglas.json`). Aquí queda el texto de antes, tal cual.*
+
+### `R-23` y `R-34` → `R-28` (plan 3.20)
+
+#### R-23 · Selección de setup
+
+> Toma el primer setup válido cuya orden se llene.
+
+| | |
+|---|---|
+| Aplica a | Continuación · Reingreso |
+| Parámetros | — |
+| Relacionadas | R-28 · R-29 · R-34 |
+| Casos | G-22 |
+
+##### Cómo se aplica
+
+- **Orden cronológico:** el primer setup que cumpla todas las condiciones necesarias se opera.
+- **Prohibido** compararlo con setups posteriores o esperar uno mejor.
+- Una vez llenada la orden, se ignora el resto de la sesión.
+
+##### Excepciones
+
+- Un setup válido cuya orden caduque sin llenarse (`R-29`) no consume el cupo ni bloquea los siguientes.
+#### R-28 · Máximo de operaciones por sesión
+
+> Ejecuta como máximo una operación por sesión.
+
+| | |
+|---|---|
+| Aplica a | Continuación · Reingreso |
+| Parámetros | `OPS_POR_SESION` |
+| Relacionadas | R-23 · R-29 · R-34 |
+| Casos | — |
+
+##### Cómo se aplica
+
+- **Órdenes llenadas por sesión ≤ `OPS_POR_SESION`.** El cupo se consume al llenarse la orden, acabe en objetivo o en stop.
+- **Una orden colocada y no llenada NO consume el cupo.**
+- Tras la primera orden llenada, **no se coloca ninguna orden más** esa sesión, aunque aparezcan setups válidos.
+#### R-34 · Al llenarse la orden termina el análisis del día
+
+> Al llenarse la orden termina el **análisis** del día, no solo la operativa.
+
+| | |
+|---|---|
+| Aplica a | Continuación · Reingreso |
+| Parámetros | — |
+| Relacionadas | R-28 · R-31 · R-33 |
+| Casos | G-11 · G-12 |
+
+##### Cómo se aplica
+
+- **Al llenarse:** se ajustan stop y objetivo (`R-31`) y se cierra el análisis. Solo queda esperar el resultado.
+- **Prohibido después del llenado:** marcar zonas nuevas y buscar setups.
+- **Al cerrar la operación:** bitácora, observaciones, pantallazo, y **cerrar NinjaTrader**.
+
+##### Por qué
+
+Palabras del operador (26/08/2026): *"ya no marco más zonas, no hago más análisis, no hago nada más"*. Va más allá de `R-28` (no más órdenes) y de `R-33` (no tocar la posición): **prohíbe seguir analizando**. Sin esta regla, el operador podría seguir marcando zonas mientras ve acercarse su stop, que es el estado mental donde se rompen los planes.

@@ -2,22 +2,33 @@
 
 > cuánto y hasta dónde
 
-## R-28 · Máximo de operaciones por sesión
+## R-28 · Una operación, la primera que se llene, y ahí termina el día
 
-> Ejecuta como máximo una operación por sesión.
+> Opera el **primer setup válido** cuya orden se llene, y solo ése: como máximo `OPS_POR_SESION`. Al llenarse la orden **termina el día**: la operativa y el análisis.
 
 | | |
 |---|---|
 | Aplica a | Continuación · Reingreso |
 | Parámetros | `OPS_POR_SESION` |
-| Relacionadas | R-23 · R-29 · R-34 |
-| Casos | — |
+| Relacionadas | R-29 · R-31 · R-33 |
+| Casos | G-11 · G-12 · G-22 |
+| Absorbe | R-23 · R-34 |
 
 ### Cómo se aplica
 
-- **Órdenes llenadas por sesión ≤ `OPS_POR_SESION`.** El cupo se consume al llenarse la orden, acabe en objetivo o en stop.
-- **Una orden colocada y no llenada NO consume el cupo.**
-- Tras la primera orden llenada, **no se coloca ninguna orden más** esa sesión, aunque aparezcan setups válidos.
+- **El primero, sin comparar:** en orden cronológico, se opera el primer setup que cumpla todas las condiciones. **Prohibido** compararlo con setups posteriores o esperar uno mejor.
+- **El cupo:** órdenes llenadas por sesión ≤ `OPS_POR_SESION`. Se consume **al llenarse** la orden, acabe en objetivo o en stop. **Una orden colocada y no llenada NO consume el cupo.**
+- **Al llenarse:** se ajustan stop y objetivo (`R-31`) y se cierra el análisis. Solo queda esperar el resultado.
+- **Prohibido después del llenado:** colocar otra orden —aunque aparezcan setups válidos—, marcar zonas nuevas y buscar setups. El resto de la sesión se ignora.
+- **Al cerrar la operación:** bitácora, observaciones, pantallazo, y **cerrar NinjaTrader**.
+
+### Excepciones
+
+- Un setup válido cuya orden caduque sin llenarse (`R-29`) **no consume el cupo ni bloquea los siguientes**: se puede esperar otro setup dentro de la ventana.
+
+### Por qué
+
+Palabras del operador (26/08/2026): *"ya no marco más zonas, no hago más análisis, no hago nada más"*. La regla va más allá de no abrir otra orden y de no tocar la posición (`R-33`): **prohíbe seguir analizando**. Sin ella, el operador podría seguir marcando zonas mientras ve acercarse su stop, que es el estado mental donde se rompen los planes.
 
 ## R-29 · Caducidad de la orden pendiente
 
@@ -154,7 +165,7 @@ Palabras del operador: *"siempre el target debe estar libre de zonas o debe siem
 |---|---|
 | Aplica a | Continuación · Reingreso |
 | Parámetros | — |
-| Relacionadas | R-30 · R-31 · R-34 |
+| Relacionadas | R-28 · R-30 · R-31 |
 | Casos | G-11 · G-12 |
 
 ### Cómo se aplica
@@ -177,24 +188,3 @@ Palabras del operador: *"siempre el target debe estar libre de zonas o debe siem
 > — Operador, 24/08/2026
 
 🔑 **Es la única regla del plan enunciada como prohibición absoluta**, sin excepciones. Y tiene un efecto que va más allá de la disciplina: convierte cada operación en un **experimento limpio**. Cuando se midan los resultados, medirán el setup — no la gestión. Sin esta regla, un plan mecánico no sería medible.
-
-## R-34 · Al llenarse la orden termina el análisis del día
-
-> Al llenarse la orden termina el **análisis** del día, no solo la operativa.
-
-| | |
-|---|---|
-| Aplica a | Continuación · Reingreso |
-| Parámetros | — |
-| Relacionadas | R-28 · R-31 · R-33 |
-| Casos | G-11 · G-12 |
-
-### Cómo se aplica
-
-- **Al llenarse:** se ajustan stop y objetivo (`R-31`) y se cierra el análisis. Solo queda esperar el resultado.
-- **Prohibido después del llenado:** marcar zonas nuevas y buscar setups.
-- **Al cerrar la operación:** bitácora, observaciones, pantallazo, y **cerrar NinjaTrader**.
-
-### Por qué
-
-Palabras del operador (26/08/2026): *"ya no marco más zonas, no hago más análisis, no hago nada más"*. Va más allá de `R-28` (no más órdenes) y de `R-33` (no tocar la posición): **prohíbe seguir analizando**. Sin esta regla, el operador podría seguir marcando zonas mientras ve acercarse su stop, que es el estado mental donde se rompen los planes.
