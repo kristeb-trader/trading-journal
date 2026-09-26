@@ -80,7 +80,7 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
     salir de una zona
   - el pendiente del test ciego sigue abierto aunque el test arrancó el 14/09; y los de la equivalencia del
     umbral y del data feed citan umbrales viejos (6.000, 2.000)
-- [ ] **F3** — las fusiones, 40 → 35. Hecha la 1 de 4 (plan 3.20: `R-28` absorbe `R-23` y `R-34`; 38 reglas). Faltan: solo hay dos salidas (`R-33` ← `R-30`), la vela de apertura (`R-07` ← `R-27`, y de paso la vela base en invierno) y repartir las seis precisiones de dibujo (`R-19`). Al cerrar la F3: sincronizar los documentos del Coach
+- [ ] **F3** — las fusiones, 40 → 35. Hechas 2 de 4: `R-28` absorbe `R-23` y `R-34` (3.20); `R-33` absorbe `R-30` (3.21); 37 reglas. Faltan: la vela de apertura (`R-07` ← `R-27`, y de paso la vela base en invierno) y repartir las seis precisiones de dibujo (`R-19`). Al cerrar la F3: sincronizar los documentos del Coach
 - [ ] **F4** — la ficha nueva del portal (y decidir si la cabecera pasa de «NQ» a «MNQ»)
 
 ### 🟡 El plan de Chaumer: lo que estaba «pendiente de Cowork» (25 sep, D-028)
