@@ -601,6 +601,11 @@ function existeCaso(id) {
   return _casos.has(id);
 }
 
+// Una regla fusionada (F3) se enlaza a la que la absorbió; el texto sigue diciendo el código que escribió el plan.
+function destino(id) {
+  return fusionadas()[id] ?? id;
+}
+
 function existeRegla(id) {
   if (!_enunciados) _enunciados = new Map(reglas().map((r) => [r.id, r.enunciado]));
   return _enunciados.has(id);
@@ -641,8 +646,8 @@ export function enriquecerHtml(html, { sinEnlaceA } = {}) {
     // de versiones anteriores —R-39 se elimino, y el 06/09/2026 se renumero
     // todo— y enlazarlos daba fichas inexistentes.
     .replace(/<code>(R-\d{1,2})<\/code>/g, (m, id) =>
-      (id === sinEnlaceA || !existeRegla(id)) ? m
-        : '<a class="ref" href="/reglas/' + id + '" title="' + enunciadoDe(id) + '">' + id + '</a>')
+      (id === sinEnlaceA || !existeRegla(destino(id))) ? m
+        : '<a class="ref" href="/reglas/' + destino(id) + '" title="' + enunciadoDe(destino(id)) + '">' + id + '</a>')
     .replace(/<code>(G-\d{1,2})<\/code>/g, (m, id) =>
       '<a class="ref" href="/galeria#' + id + '">' + id + '</a>');
 
@@ -666,8 +671,8 @@ export function enriquecerHtml(html, { sinEnlaceA } = {}) {
       });
     }
     s = s.replace(/(^|[^A-Za-z0-9-])(R-\d{1,2})\b/g, (m, pre, id) =>
-      (id === sinEnlaceA || !existeRegla(id)) ? m
-        : pre + '<a class="ref" href="/reglas/' + id + '" title="' + enunciadoDe(id) + '">' + id + '</a>');
+      (id === sinEnlaceA || !existeRegla(destino(id))) ? m
+        : pre + '<a class="ref" href="/reglas/' + destino(id) + '" title="' + enunciadoDe(destino(id)) + '">' + id + '</a>');
     s = s.replace(/(^|[^A-Za-z0-9-])(G-\d{1,2})\b/g, (m, pre, id) =>
       existeCaso(id)
         ? pre + '<a class="ref" href="/galeria#' + id + '">' + id + '</a>'

@@ -19,7 +19,9 @@ const { cods } = Astro.props;
 // El enunciado va en el título del enlace: al pasar por encima se sabe qué
 // regla es sin salir del módulo.
 const enunciados = new Map(P.reglas().map((r) => [r.id, r.enunciado]));
-const ids = cods.split('·').map((t) => t.trim()).filter(Boolean);
+// Un código de una regla fusionada (F3) se enseña y enlaza como la regla que lo absorbió, una sola vez.
+const fusionadas = P.fusionadas();
+const ids = [...new Set(cods.split('·').map((t) => t.trim()).filter(Boolean).map((id) => fusionadas[id] ?? id))];
 ---
 
 <span class="mono refs">
