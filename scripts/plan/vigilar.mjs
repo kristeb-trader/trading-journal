@@ -49,6 +49,8 @@ if (NUEVAS) {
   FUENTE = 'reglas.json'
 }
 const ids = new Set(reglas.map((r) => r.id))
+// Las reglas fusionadas (F3): su código no se renumera ni se borra, lleva a la que la absorbió. Citarlo no es un error.
+const fusionadas = new Set(reglas.flatMap((r) => r.absorbe || []))
 const DOCS = fs.readdirSync(PLAN).filter((f) => f.endsWith('.md'))
 // Los documentos que describen el plan de HOY. TRADING_PLAN_CHAUMER.md, GALERIA.md, PENDIENTES.md, HISTORIAL.md y
 // CIERRE_FASE_1.md cuentan también su historia, y citan a propósito códigos de versiones anteriores.
@@ -89,7 +91,7 @@ for (const f of DOCS.filter((f) => f !== 'HISTORIAL.md')) {
 {
   const fuentes = [[FUENTE, NUEVAS ? textoDeReglas() : JSON.stringify(reglas)], ...VIVOS.map((f) => [f, leer(f)])]
   for (const [f, t] of fuentes) {
-    const faltan = [...new Set(t.match(/\bR-\d{2}\b/g) || [])].filter((id) => !ids.has(id))
+    const faltan = [...new Set(t.match(/\bR-\d{2}\b/g) || [])].filter((id) => !ids.has(id) && !fusionadas.has(id))
     if (faltan.length) anota('2 · Reglas citadas que no existen', `${f}: ${faltan.join(', ')}`)
   }
 }
