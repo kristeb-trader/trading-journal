@@ -39,7 +39,7 @@ Todo el plan habla de velas **alcistas** y **bajistas**, nunca de verdes y rojas
 
 **Tamaño:** mínimo **2 velas** (origen + la que supera); máximo **ninguno** — la sobreextensión no es un parámetro operativo, es contextualización (`C-01`).
 
-**Lo que NO importa:** el **color** de la vela, y que cada vela haga máximos más altos — una vela que cabe dentro de la anterior **no corta** la corrida.
+**Lo que NO importa:** el **color** de la vela, y que cada vela haga máximos más altos — una **vela interior**, la que cabe dentro de la anterior, **no corta** la corrida.
 
 La corrida **nace mirando máximos** y **muere mirando mínimos**. Son dos criterios distintos y es intencionado.
 
@@ -92,16 +92,16 @@ La que hace **máximo mayor Y mínimo menor** que la anterior: cubre su rango co
 
 ---
 
-## VELA QUE NO HACE NADA
+## VELA INTERIOR  *(la que no hace nada)*
 
 La que hace **máximo menor Y mínimo mayor** que la anterior: cabe entera dentro de ella.
 
-> ⚠️ **Nota de vocabulario.** El auditor la llamaba *"vela interior"*. Término retirado. Palabras del operador: *"esa vela que está entre la mitad de la vela anterior **no hace nada**, hay que esperar la siguiente vela para tomar una decisión"*.
+Palabras del operador: *"esa vela que está entre la mitad de la vela anterior **no hace nada**, hay que esperar la siguiente vela para tomar una decisión"*.
 
 | | |
 |---|---|
 | **No declara dirección** | ni arriba ni abajo |
-| **No mueve el nivel vivo** | si la corrida es alcista, el máximo a batir sigue siendo el de la vela alta anterior. Una vela posterior que supere a la "que no hace nada" pero **no** al nivel vivo, **tampoco hace nada por arriba** |
+| **No mueve el nivel vivo** | si la corrida es alcista, el máximo a batir sigue siendo el de la vela alta anterior. Una vela posterior que supere a la vela interior pero **no** al nivel vivo, **tampoco hace nada por arriba** |
 | **PERO no se salta** | la corrida sigue muriendo comparando el mínimo contra la vela **inmediatamente anterior**, sea cual sea. Esto vale también con corrida viva |
 
 **Caso real:** 07/07/2026. La 8:32 no hace nada. La 8:33 supera el máximo de la 8:32 pero no el nivel vivo de la 8:31, así que por arriba no cuenta — y su mínimo **sí** es menor que el de la 8:32, así que **hace retroceso**.
@@ -396,7 +396,6 @@ Términos del curso o del auditor que **no** se usan en el plan, y por qué.
 |---|---|
 | Impulso | sinónimo de **corrida**; el plan usa solo «corrida» |
 | Punto de control | unificado en **punto de referencia** (14/09/2026) |
-| Vela interior | nombre del auditor, retirado: es la **vela que no hace nada** (arriba) |
 | Punto de reacción | = **zona vigente**, no es un término aparte (`P-13`) |
 | Sobreextendido | contextualización, no regla (`C-01`) |
 | Máximo volumen de sesión · volumen climático · volumen de parada | contextualización, no regla (`C-08`) |

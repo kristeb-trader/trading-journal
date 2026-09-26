@@ -2,7 +2,7 @@
 
 > **Archivo de arranque.** Léelo primero cada sesión. Las reglas, en `reglas/` (un archivo por grupo); las definiciones, en `GLOSARIO.md`.
 
-**v3.18** · 2026-09-26 · **40 reglas** · 🏁 FASE 1 CERRADA · 🔴 **TEST CIEGO EN MARCHA** · 🚧 FASE 2 en curso: portal web en `04_Web\`
+**v3.19** · 2026-09-26 · **40 reglas** · 🏁 FASE 1 CERRADA · 🔴 **TEST CIEGO EN MARCHA** · 🚧 FASE 2 en curso: portal web en `04_Web\`
 
 > 🔴 **El test ciego arrancó el 14/09/2026.** Protocolo en `05_Backtesting\test_ciego\LEEME_BACK_DIARIO.md`; diferencias en `DISCREPANCIAS.md`; las jornadas, en `GALERIA.md`.
 
