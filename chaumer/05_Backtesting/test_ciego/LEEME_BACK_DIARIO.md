@@ -42,8 +42,8 @@ Si algo de eso se te cruza por accidente, **dilo en la entrega**: ese día ya no
 **2 · Los datos:** `..\datos\dia\AAAA-MM-DD.txt`
 Formato `yyyyMMdd HHmmss;o;h;l;c;v`, **en UTC**, marca de **cierre** de vela.
 El gráfico del operador es hora Colombia: `Colombia = UTC − 5`.
-Ventana operativa **08:31–10:30 Col = 13:31–15:30 UTC**.
-El archivo arranca a las 00:00 UTC, que son las 19:00 Col de la noche anterior — el inicio del barrido de premercado. Todo lo anterior a las 13:31 UTC es premercado.
+Ventana operativa: **08:31–10:30 Col = 13:31–15:30 UTC** en el horario de verano de EE. UU. (hasta el 1/11/2026) · **09:31–11:30 Col = 14:31–16:30 UTC** en invierno (desde el 2/11/2026). `lector.py` la calcula sola.
+El archivo arranca a las 00:00 UTC, que son las 19:00 Col de la noche anterior — el inicio del barrido de premercado. Todo lo anterior a la apertura (13:31 UTC en verano, 14:31 UTC en invierno) es premercado.
 
 ---
 

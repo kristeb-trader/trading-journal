@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| **Versión** | v1.1 · 26/09/2026 |
-| **Estado** | ✅ **Diseño v1.1 aprobado por Kris** (26/09/2026) · ✅ F0 hecha · ⏳ F1 |
+| **Versión** | v1.2 · 26/09/2026 |
+| **Estado** | ✅ **Diseño v1.1 aprobado por Kris** (26/09/2026) · ✅ F0 · ✅ F1 · ⏳ F2 |
 | **Alcance** | `chaumer/01_Plan` (las reglas y los documentos que las rodean), sus consumidores (portal, Journal, Coach, NinjaTrader, motor, test ciego) y cómo se ven en el portal |
 | **Regla que manda** | D-028: nada de `01_Plan` cambia sin el sí de Kris, cambio a cambio. Este documento no cambia nada |
 
@@ -22,6 +22,13 @@
   quita entera (pasaba en R-40; 0 tablas vacías en las 56 páginas); `scripts/plan/vigilar.mjs` en modo
   informe da **13 hallazgos en 6 de los 7 apartados** — la lista de trabajo de la F1 y la F2. Los títulos
   de los subapartados arrastran historia («corregido 27/08/2026») hasta la F2.
+- **v1.2 · 26/09/2026** — **F1 hecha**, con el sí de Kris (plan 3.14). La checklist, el catálogo del Journal
+  (`p2_g_3891b80b` → `p2_g_6e7362a5`) y el documento del Coach ya dicen el stop bueno; C-08/C-09 repetidos →
+  C-11/C-12; P-22 cerrado; versiones 3.14 en los tres documentos; `ESTADO.md` con el umbral (8.000, decía
+  6.000), la galería (24 casos, decía 21) y la contextualización (11 elementos) al día. `lector.py` lee el
+  umbral de `PARAMETROS.md` (regresión: todo cuadra). El LEEME del test ciego, con la ventana de invierno.
+  Las cinco huellas del Coach cuadran; `catalogo_reglas` sigue con 90 activas y las mismas 9 casillas y
+  automáticas. El vigilante baja de 13 a **9 hallazgos**, todos de la F2.
 
 ---
 
@@ -344,7 +351,7 @@ El índice enseña el nombre corto y la regla con tildes. Se revisa en móvil.
 | Fase | Qué | Toca el plan | Qué hace Kris | Cómo se verifica |
 |---|---|---|---|---|
 | **F0 · Arreglos del portal** ✅ | el «Por qué» cortado (A1), los comentarios de «38», el vigilante en **modo informe** (enseña todo lo que falla, sin bloquear) | No | mirar una ficha, p. ej. R-40 | `npm run verificar`; las 40 fichas con su sección entera |
-| **F1 · Correcciones** | el stop de la checklist (A2), C-08/C-09 → C-11/C-12 y P-22 (A4), cuentas y versiones (B6), los pendientes de Cowork (los cuatro filtros, la línea de IRI, `ESTADO.md:120`), P-20 fuera de los campos de registro, `lector.py` lee `PARAMETROS.md`, la ventana de invierno del LEEME | Sí | el sí a la lista de cambios | vigilante en verde en esos puntos · `sincronizar.mjs` · regresión del motor |
+| **F1 · Correcciones** ✅ | el stop de la checklist (A2), C-08/C-09 → C-11/C-12 y P-22 (A4), cuentas y versiones (B6), los pendientes de Cowork (los cuatro filtros, la línea de IRI, `ESTADO.md:120`), P-20 fuera de los campos de registro, `lector.py` lee `PARAMETROS.md`, la ventana de invierno del LEEME | Sí | el sí a la lista de cambios | vigilante en verde en esos puntos · `sincronizar.mjs` · regresión del motor |
 | **F2 · La estructura nueva** | en 4 pasos: **2a** el lector y el vigilante completo · **2b** los siete archivos con **las 40 reglas, mismo contenido**, historia a `HISTORIAL.md`, tildes y parámetros por nombre · **2c** los consumidores (Coach, Journal, test ciego, portal con los parsers nuevos) y las instrucciones (`CLAUDE.md`) · **2d** glosario, checklist, pendientes y estado | Sí | revisar los siete archivos (uno por grupo) y dar el sí | **nada se pierde**: un script compara cada frase de hoy con dónde quedó · las huellas · la ficha del test ciego · `SELECT` de `catalogo_reglas` antes y después · tokens del Coach en `coach_uso` |
 | **F3 · Las fusiones** | 40 → 35 (§4.4), un commit `plan:` por fusión | Sí | el sí al texto de cada regla fusionada | el vigilante: ninguna condición de una absorbida se queda fuera · redirecciones del portal · `catalogo_reglas` |
 | **F4 · La ficha del portal** | ficha nueva, índice, móvil | No | mirarla | capturas antes/después · `vista.mjs` |

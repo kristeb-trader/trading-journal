@@ -66,7 +66,8 @@ Diseño aprobado: `docs/disenos/2026-09-25-reglas-chaumer.md` (v1.1). Las reglas
 grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vigilar.mjs`. **Una fase por sesión.**
 
 - [x] **F0** — el portal enseña el «Por qué» entero de las 40 reglas; el vigilante, en modo informe
-- [ ] **F1** — correcciones: el stop de la checklist, C-08/C-09 y P-22, versiones, los pendientes de abajo
+- [x] **F1** — correcciones (plan 3.14): el stop de la checklist, C-08/C-09 y P-22, versiones y cuentas, el motor
+  lee el umbral de `PARAMETROS.md`. El vigilante baja de 13 a 9 hallazgos, todos de la F2
 - [ ] **F2** — la estructura nueva (2a lector y vigilante · 2b los siete archivos · 2c consumidores · 2d
   glosario, checklist, pendientes y estado)
 - [ ] **F3** — las fusiones, 40 → 35
@@ -78,14 +79,14 @@ Cowork ya no existe: el plan se cambia desde aquí. **Todo lo que toque `chaumer
 Kris**, erratas incluidas, y va en su propio commit `plan: …`, con la versión subida y sincronizado (ver
 arriba). Venían de los dos buzones archivados en `docs/archivo/chaumer/`, donde está el detalle.
 
-- [ ] **Antes del 2/11** — `test_ciego/LEEME_BACK_DIARIO.md` solo da la ventana de verano (08:31–10:30 Col =
+- [x] **Antes del 2/11** — `test_ciego/LEEME_BACK_DIARIO.md` solo da la ventana de verano (08:31–10:30 Col =
   13:31–15:30 UTC). Añadir la de invierno: desde el 2/11, 09:31–11:30 Col = 14:31–16:30 UTC. No es del plan,
   pero sin esto el test ciego marca mal la hora
-- [ ] **Plan** · `CHECKLIST_DIARIA.md`: la nota de debajo de los filtros dice «los cuatro filtros» y son cinco.
+- [x] **Plan** · `CHECKLIST_DIARIA.md`: la nota de debajo de los filtros dice «los cuatro filtros» y son cinco.
   Propuesta (22/09): quitar el número, como ya hace el portal, o poner cinco
-- [ ] **Plan** · `CHECKLIST_DIARIA.md`, línea 70: «IRI descartado» → «Continuación descartada». Resto del cambio
+- [x] **Plan** · `CHECKLIST_DIARIA.md`, línea 70: «IRI descartado» → «Continuación descartada». Resto del cambio
   del 23/09; sale publicada en la checklist del portal
-- [ ] **Plan** · `ESTADO.md`, línea 120: remite a `04_Web\PENDIENTE_PORTAL.md`, que está archivado
+- [x] **Plan** · `ESTADO.md`, línea 120: remite a `04_Web\PENDIENTE_PORTAL.md`, que está archivado
 - [ ] **Kris** · revalidar el **8/07** vela a vela. El motor arreglado da un Reingreso bajista a las 8:38 con
   −64,75; el día estaba validado como NO OPERA. La duda es de un reingreso de una sola vela (la convención
   intravela). Si se confirma, julio cambia en −64,75 puntos

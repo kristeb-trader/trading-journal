@@ -4,17 +4,29 @@ LECTOR CHAUMER  ·  reescrito 2026-08-26 con las reglas confirmadas por el opera
 HERRAMIENTA DE AUDITORIA. No es una herramienta operativa.
 Vive en 05_Backtesting, fuera de 01_Plan.
 """
+import os, re
+
 TICK = 0.25
 STOP_MAX = 80.0
 
-# Umbral de volumen del premercado (PARAMETROS.md).
+# Umbral de volumen del premercado: se LEE de 01_Plan/PARAMETROS.md (desde el 26/09/2026;
+# antes iba escrito aqui y se quedaba viejo cuando el operador lo cambiaba).
 # PARAMETRO AJUSTABLE desde el 14/09/2026 (R-15): no es un numero fijo del metodo.
-#   MNQ  ->  8000   <- valor del plan desde el 14/09/2026
-#   MNQ  ->  6000   <- valor del 06/09 al 14/09/2026
 #   NQ   ->  2000   <- solo para releer el archivo historico 'NQ 09-26.Last.txt'
 # Para cambiarlo desde fuera:  lector.UMBRAL_VOL = 2000
 # Pendiente P-37: el criterio de ajuste lo fija el operador (cerrado 14/09/2026).
-UMBRAL_VOL = 8000
+def umbral_del_plan():
+    """El UMBRAL_VOL vigente en PARAMETROS.md. Si no lo encuentra, falla: no se inventa uno.
+    Sin __file__ (la regresion carga una version de git con exec) devuelve None: quien lo
+    carga asi fija el umbral en cada pasada (scripts/cadena/prueba_motor.py lo hace)."""
+    if '__file__' not in globals(): return None
+    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '01_Plan', 'PARAMETROS.md')
+    txt = open(ruta, encoding='utf-8').read()
+    m = re.search(r'\|\s*\*\*`UMBRAL_VOL`\*\*\s*\|\s*\*\*>\s*([\d.]+)\s*contratos en MNQ\*\*', txt)
+    if not m: raise ValueError('lector.py: no encuentro la fila UMBRAL_VOL en ' + ruta)
+    return int(m.group(1).replace('.', ''))
+
+UMBRAL_VOL = umbral_del_plan()
 PLAZO = 5            # velas para la consecucion
 
 # Dias de FOMC: solo se operan Reingresos, nunca Continuacion (antes IRI).
