@@ -31,6 +31,8 @@ REVISADAS = {
     # R-33 absorbe R-30 (plan 3.21)
     'no existe cierre por tiempo': 'la tabla de R-33: «Cerrar por hora — ❌ no existe»',
     'ninguna accion por hora': 'la regla de R-33: «Solo la cierran el stop o el objetivo, aunque termine la ventana operativa»',
+    # R-07 absorbe R-27 (plan 3.22)
+    'vela base de la ventana operativa': 'el título de antes; el nombre nuevo lo aprobó Kris',
 }
 
 def norm(t):
