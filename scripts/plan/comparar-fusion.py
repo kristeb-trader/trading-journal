@@ -2,12 +2,14 @@
 """
 ¿La regla fusionada dice todo lo que decían las que absorbe? (F3 de la reestructuración, 26/09/2026)
 
-    python scripts/plan/comparar-fusion.py R-28 [--ref <commit>]
+    python scripts/plan/comparar-fusion.py R-28 [--ref <commit>] [--en R-13,R-20,R-21]
 
 Lee la regla R-xx de chaumer/01_Plan/reglas/ tal como está ahora, con su fila «Absorbe», y las reglas de
 antes —ella misma y las absorbidas— tal como estaban en <ref> (por defecto HEAD, el último commit antes de
 la fusión). Cada frase de las de antes tiene que estar en la regla fusionada: tal cual, o con al menos el
 85 % de sus palabras (de 4 letras o más). Ignora tildes, mayúsculas y marcas de formato.
+Con --en, las frases se buscan además en esas reglas: es para cuando la fusión reparte la absorbida
+entre varias (R-19, las seis precisiones de dibujo).
 
 Aquí no cuenta el historial: la fusión copia el texto de antes en HISTORIAL.md, y buscar allí daría siempre
 verde. Lo que se mide es que la regla nueva conserve cada condición (diseño, §4.4). Las frases que no son una
@@ -33,6 +35,11 @@ REVISADAS = {
     'ninguna accion por hora': 'la regla de R-33: «Solo la cierran el stop o el objetivo, aunque termine la ventana operativa»',
     # R-07 absorbe R-27 (plan 3.22)
     'vela base de la ventana operativa': 'el título de antes; el nombre nuevo lo aprobó Kris',
+    # R-19 se reparte y R-09 absorbe el código (plan 3.23)
+    'como se dibuja una zona — seis precisiones': 'el título de la lista, que desaparece',
+    'seis detalles de dibujo que el operador corrigio al auditor': 'la presentación de la lista; «corrigió al auditor, casos 8/07 y 10/07» pasa a «Fuente» y al «Por qué» de R-09',
+    'precision caso que la fija': 'la cabecera de la tabla',
+    'una zona no queda invalidada por el rompimiento solo': 'R-21: «Solo rompimiento, sin consecución → la zona sigue vigente»',
 }
 
 def norm(t):
@@ -64,8 +71,10 @@ archivos = subprocess.check_output(['git', '-C', RAIZ, 'ls-tree', '--name-only',
 antes = reglas_de(subprocess.check_output(['git', '-C', RAIZ, 'show', f'{ref}:chaumer/01_Plan/reglas/{f}']).decode('utf-8')
                   for f in archivos)
 
-nueva = norm(ahora[rid])
-p_nueva = palabras(ahora[rid])
+en = sys.argv[sys.argv.index('--en') + 1].split(',') if '--en' in sys.argv else []
+destino = '\n'.join(ahora[x] for x in [rid] + en)
+nueva = norm(destino)
+p_nueva = palabras(destino)
 total, tal, reesc, rev, faltan = 0, 0, 0, 0, []
 for vieja in [rid] + absorbe:
     for linea in antes[vieja].split('\n'):
