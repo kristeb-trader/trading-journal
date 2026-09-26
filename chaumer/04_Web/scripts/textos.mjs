@@ -100,7 +100,7 @@ function aTexto(html) {
   return limpio(quitarMarcas(t));
 }
 
-const quitarMarcas = (t) => t.replace(/<[^>]+>/g, '');
+const quitarMarcas = (t) => t.replace(/<(?:\"[^\"]*\"|'[^']*'|[^'\">])*>/g, '');
 
 /** Todos los elementos de una etiqueta, con sus atributos y su interior. */
 function* elementos(html, etiqueta) {

@@ -12,15 +12,15 @@
 
 | Necesitas… | Abre |
 |---|---|
-| las reglas | primero `src\content\reglas_indice.md` — una línea por regla, 6 KB — y después `src\content\reglas.json`, **esa regla, no el archivo entero** (88 KB) |
+| las reglas | primero `src\content\reglas_indice.md` — una línea por regla — y después **el archivo de grupo** de esa regla en `..\01_Plan\reglas\` (o esa regla en `src\content\reglas.json`, que se genera de ahí) |
 | un número (stop, umbral, horario) | `src\content\plan\PARAMETROS.md` |
 | una definición | `src\content\plan\GLOSARIO.md` |
-| el porqué de una regla | **su sección** en `src\content\plan\TRADING_PLAN_CHAUMER.md` |
+| el porqué de una regla | su apartado **«Por qué»**, en la misma regla |
 | el texto que se ve en pantalla | `textos\` |
 | cómo se ve el portal | `DISENO_PORTAL.md` |
 | la bitácora de backtesting | `DISENO_BACKTESTING.md` — el diseño cerrado, y manda sobre el código |
 
-> ⚠️ **`TRADING_PLAN_CHAUMER.md` son 29.000 tokens. No lo abras entero — nunca.** Busca la sección.
+> ⚠️ **El documento maestro (`TRADING_PLAN_CHAUMER.md`) ya no existe** (26/09/2026): cada regla trae su explicación. Su historia está en `..\01_Plan\HISTORIAL.md`, que el portal no enseña.
 > ⚠️ **No edites nada de `src\content\`.** Se pisa en la siguiente compilación.
 > ⚠️ **No edites nada de `..\01_Plan\` desde una sesión del portal.** El plan se cambia en una sesión del plan, con el sí del operador y en su propio commit `plan:` (`..\CLAUDE.md`, «Quién hace qué»).
 

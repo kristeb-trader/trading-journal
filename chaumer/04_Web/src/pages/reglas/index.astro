@@ -50,7 +50,7 @@ function bloques(c) {
   <header class="cab entra">
     <h1>Reglas Trading Plan</h1>
     <p class="lead">
-      Las {reglas.length} del método, con sus condiciones medibles y su acción.
+      Las {reglas.length} del método: qué dice cada una, cómo se aplica y por qué.
       Sin adjetivos: solo ticks, puntos, número de velas y horas exactas.
     </p>
   </header>
@@ -92,14 +92,13 @@ function bloques(c) {
                   data-cat={r.categoria}
                   data-sub={r.subcategoria ?? ''}
                   data-tambien={tambien(r).join(' ')}
-                  data-txt={[r.id, r.enunciado, r.accion, r.nota].filter(Boolean).join(' ').toLowerCase()}>
+                  data-txt={[r.id, r.nombre, r.enunciado, r.como_se_aplica, r.porque].filter(Boolean).join(' ').toLowerCase()}>
                 <a href={`/reglas/${r.id}`}>
                   <span class="f-id mono">{r.id}</span>
-                  <span class="f-e">{r.enunciado}</span>
+                  {/* Texto plano: la fila entera es un enlace, y las pastillas de parámetro también lo son.
+                      Un enlace dentro de otro no existe en HTML: el navegador partía la fila. */}
+                  <span class="f-e"><b class="f-n">{r.nombre}</b><span class="f-r">{r.enunciado}</span></span>
                   <span class="f-met">
-                    <span class="met" title="Condiciones medibles">
-                      <Icono nombre="list-checks" />{r.condiciones.length}
-                    </span>
                     {casos.has(r.id) && (
                       <span class="met" title="Casos reales que la citan">
                         <Icono nombre="images" />{casos.get(r.id).length}
@@ -316,6 +315,8 @@ function bloques(c) {
     text-align: center;
   }
   .f-e { font-size: var(--t-3); color: var(--texto); line-height: 1.45; }
+  .f-n { display: block; font-weight: var(--peso-fuerte); color: var(--texto); }
+  .f-r { display: block; color: var(--texto-2); }
 
   .f-met { display: flex; align-items: center; gap: var(--e-3); }
   .met {

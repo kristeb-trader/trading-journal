@@ -279,14 +279,19 @@ body::after {
 
 /* Pastilla de parametro: el nombre mas el valor vigente, resuelto de
    PARAMETROS.md. En ningun sitio se escribe el numero a mano. */
+/* En línea, no inline-flex: un valor largo («19:00 hora Colombia (apertura de
+   Tokio)») tiene que poder partirse como el texto de alrededor, o en el móvil
+   se sale de la columna. `box-decoration-break: clone` repite borde y fondo en
+   cada trozo (26/09/2026, cuando las reglas pasaron a citar los parámetros). */
 .pastilla-par {
-  display: inline-flex; align-items: baseline; gap: var(--e-2);
+  display: inline;
   padding: 1px var(--e-2);
   border-radius: var(--radio-1);
   background: color-mix(in srgb, var(--info) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--info) 26%, transparent);
   font-family: var(--fuente-mono); font-size: 0.82em;
-  color: var(--info); white-space: nowrap;
+  color: var(--info); white-space: normal; overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
   transition: background var(--rapido), border-color var(--rapido);
 }
 .pastilla-par:hover {
@@ -294,7 +299,7 @@ body::after {
   border-color: color-mix(in srgb, var(--info) 55%, transparent);
   color: var(--info);
 }
-.pastilla-par .pp-v { color: var(--texto); font-weight: var(--peso-medio); }
+.pastilla-par .pp-v { color: var(--texto); font-weight: var(--peso-medio); margin-left: var(--e-2); }
 
 /* Referencia cruzada a otra regla o a un caso. */
 .ref {

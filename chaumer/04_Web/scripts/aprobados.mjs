@@ -67,7 +67,7 @@ function titulosDeLaPagina(ruta) {
   const html = fs.readFileSync(path.join(DIST, ruta, 'index.html'), 'utf8');
   const main = (html.match(/<main\b[\s\S]*<\/main>/i) || [html])[0];
   return [...main.matchAll(/<h([1-4])\b[^>]*>([\s\S]*?)<\/h\1>/gi)]
-    .map((m) => ({ nivel: Number(m[1]), texto: m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() }))
+    .map((m) => ({ nivel: Number(m[1]), texto: m[2].replace(/<(?:\"[^\"]*\"|'[^']*'|[^'\">])*>/g, ' ').replace(/\s+/g, ' ').trim() }))
     .filter((t) => t.texto);
 }
 

@@ -9,7 +9,7 @@
  * apuntando a otra regla**. Ningún comprobador de enlaces lo vio: los códigos
  * seguían existiendo, solo que ya no eran esa regla.
  *
- * Este script guarda una huella de qué enunciado tiene cada código
+ * Este script guarda una huella de qué nombre tiene cada código
  * (`referencias.lock.json`) y **falla si alguno cambia**. No sabe si una
  * referencia es la correcta —eso hay que leerlo— pero obliga a releerlas
  * justo cuando la numeración se mueve, que es cuando se rompen.
@@ -25,9 +25,11 @@ const WEB = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const RAIZ = path.dirname(WEB);
 const LOCK = path.join(WEB, 'scripts', 'referencias.lock.json');
 
-const reglas = JSON.parse(fs.readFileSync(path.join(RAIZ, '01_Plan', 'reglas.json'), 'utf8'));
+// La huella es el NOMBRE de cada regla (desde el 26/09/2026): es su identidad. Con el enunciado, mejorar la
+// redacción de una regla daba una falsa alarma de renumeración.
+const reglas = JSON.parse(fs.readFileSync(path.join(RAIZ, '01_Plan', 'reglas.json'), 'utf8')).reglas;
 const HOY = {};
-for (const r of reglas) HOY[r.id] = (r.enunciado || '').replace(/\s+/g, ' ').slice(0, 70);
+for (const r of reglas) HOY[r.id] = (r.nombre || '').replace(/\s+/g, ' ').slice(0, 70);
 
 // ── los códigos que el portal escribe a mano ───────────────────────────
 const usados = new Map();   // código → dónde aparece

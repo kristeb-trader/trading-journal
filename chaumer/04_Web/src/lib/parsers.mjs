@@ -37,18 +37,46 @@ export function sinNumeracion(texto) {
 
 // ─────────────────────────────────────────────────────────────── version
 export function version() {
-  const t = documento('TRADING_PLAN_CHAUMER.md');
-  const v = t.match(/\*\*Versi[oó]n:\*\*\s*([^\n—-]+)/i);
-  const f = t.match(/\*\*[UÚ]ltima actualizaci[oó]n:\*\*\s*([0-9-]+)/i);
-  return {
-    version: v ? v[1].replace(/\*\*/g, '').trim() : null,
-    fecha: f ? f[1].trim() : null,
-  };
+  // La cabecera de ESTADO.md: «**v3.15** · 2026-09-26 · **40 reglas** …». Hasta el 26/09/2026 se leía
+  // del documento maestro, que desde entonces ya no existe: las reglas viven en 01_Plan/reglas/.
+  const t = documento('ESTADO.md');
+  const m = t.match(/\*\*v(\d+\.\d+)\*\*\s*·\s*([0-9-]{10})/);
+  return { version: m ? m[1] : null, fecha: m ? m[2] : null };
 }
 
 // ─────────────────────────────────────────────────────────────── reglas
+let _reglas = null;
+/**
+ * Las reglas, en su orden de lectura. reglas.json lo GENERA scripts/plan/leer-reglas.mjs desde los siete
+ * archivos de 01_Plan/reglas/ (26/09/2026). Cada regla trae `regla` (Markdown), `como_se_aplica`,
+ * `si_no_se_cumple`, `excepciones` y `porque` (Markdown), y `enunciado`: la regla en texto plano, con los
+ * parámetros ya resueltos, para los títulos de los enlaces y los buscadores.
+ *
+ * Los nombres de antes —categoria, categoria_nombre, categoria_orden, subcategoria— siguen aquí como alias,
+ * para las páginas que ya los usan.
+ */
 export function reglas() {
-  return json('reglas.json');
+  if (_reglas) return _reglas;
+  const d = json('reglas.json');
+  if (!Array.isArray(d.reglas)) {
+    throw new Error('reglas.json no tiene el formato nuevo (un objeto con «reglas»). Genéralo con: '
+      + 'node scripts/plan/leer-reglas.mjs --escribir');
+  }
+  const grupos = new Map(d.grupos.map((g) => [g.id, g]));
+  _reglas = d.reglas.map((r) => ({
+    ...r,
+    categoria: r.grupo,
+    categoria_nombre: r.grupo_nombre,
+    categoria_orden: r.grupo_orden,
+    categoria_descripcion: grupos.get(r.grupo)?.descripcion ?? null,
+    subcategoria: r.apartado ? r.apartado.toLowerCase() : null,
+  }));
+  return _reglas;
+}
+
+/** Las reglas fusionadas en otra: { 'R-23': 'R-28', … }. Su código lleva a la que la absorbió. */
+export function fusionadas() {
+  return json('reglas.json').fusionadas || {};
 }
 
 /**
@@ -60,15 +88,15 @@ export function reglas() {
  * que el portal se invente un 2,00 que nadie ha confirmado.
  */
 export function valorPunto() {
+  // «Valores de MNQ: $2,00 por punto» — en «Cómo se aplica» de la regla del instrumento (26/09/2026; antes
+  // era la condición `valor_punto_MNQ` de reglas.json, que ya no tiene condiciones sueltas).
   for (const r of reglas()) {
-    for (const c of r.condiciones ?? []) {
-      if (c.variable !== 'valor_punto_MNQ') continue;
-      const n = Number(String(c.valor).replace(',', '.').match(/[\d.]+/)?.[0]);
-      if (Number.isFinite(n) && n > 0) return { valor: n, regla: r.id };
-    }
+    const m = String(r.como_se_aplica || '').match(/\$\s?(\d+[.,]\d+)\s+por punto/);
+    const n = m ? Number(m[1].replace(',', '.')) : NaN;
+    if (Number.isFinite(n) && n > 0) return { valor: n, regla: r.id };
   }
   throw new Error(
-    'reglas.json ya no declara valor_punto_MNQ. La bitacora de backtesting ' +
+    'Ninguna regla declara ya el valor del punto («$2,00 por punto»). La bitacora de backtesting ' +
     'saca de ahi el valor del punto y no lo puede inventar.',
   );
 }
@@ -543,6 +571,11 @@ function insertarDiagramas(md) {
 // ────────────────────────────────── markdown de los documentos a HTML
 /** Renderiza markdown y despues enriquece SOLO el texto, nunca las etiquetas,
  *  para no romper el HTML ya generado ni anidar enlaces dentro de enlaces. */
+/** Markdown de UNA línea —la regla bajo su título, en el índice— con parámetros y enlaces. */
+export function markdownLinea(md, opciones = {}) {
+  return enriquecerHtml(marked.parseInline(md || '', { mangle: false, headerIds: false }), opciones);
+}
+
 export function markdownRico(md, opciones = {}) {
   const html = marked.parse(insertarDiagramas(md || ''), { mangle: false, headerIds: false });
   return enriquecerHtml(html, opciones);
@@ -645,40 +678,12 @@ export function enriquecerHtml(html, { sinEnlaceA } = {}) {
 
 // ─────────────────────────────────────────────────────────────── diagramas
 export function diagramas() {
-  const partes = [{ archivo: 'TRADING_PLAN_CHAUMER.md', n: contarMermaid(documento('TRADING_PLAN_CHAUMER.md')) }];
-  for (const s of subfasesSueltas()) partes.push({ archivo: 'subfases/' + s.archivo, n: contarMermaid(s.texto) });
-  return partes.filter((p) => p.n > 0);
+  // Los diagramas mermaid vivían en los anexos del documento maestro y en subfases/. Desde el 26/09/2026
+  // están en 01_Plan/HISTORIAL.md, que el portal no enseña. Se cuentan los que queden en las reglas.
+  const n = reglas().reduce((a, r) => a + contarMermaid([r.como_se_aplica, r.porque].join('\n')), 0);
+  return n ? [{ archivo: 'reglas/', n }] : [];
 }
 
-
-// ──────────────────────────────── la regla dentro del documento largo
-/** Mapa id -> { titulo, cuerpo } con la seccion que explica cada regla en
- *  TRADING_PLAN_CHAUMER.md. No todas las reglas tienen una.
- *
- *  La seccion de una regla sigue por sus subtitulos hasta el siguiente titulo
- *  de su nivel o de uno mayor, o hasta la siguiente regla. Hasta el 26/09/2026
- *  se cortaba en el primer subtitulo y se perdian 24.000 caracteres: de R-40
- *  llegaba el 4 %, y de R-32 no llegaba «Donde va el stop». */
-export function seccionesDeReglas() {
-  const t = documento('TRADING_PLAN_CHAUMER.md');
-  const mapa = new Map();
-  const esRegla = (b) => tituloLimpio(b.titulo).match(/^(R-\d{1,2})\b/);
-  const bloques = partirPorEncabezado(t, [1, 2, 3, 4, 5, 6]);
-  bloques.forEach((b, i) => {
-    const m = (b.nivel === 2 || b.nivel === 3) && esRegla(b);
-    if (!m) return;
-    let cuerpo = b.cuerpo;
-    for (const s of bloques.slice(i + 1)) {
-      if (s.nivel <= b.nivel || esRegla(s)) break;
-      cuerpo += '#'.repeat(s.nivel) + ' ' + s.titulo + '\n' + s.cuerpo;
-    }
-    mapa.set(m[1], {
-      titulo: tituloLimpio(b.titulo).replace(/^R-\d{1,2}\s*[·-]?\s*/, ''),
-      cuerpo: cuerpo.trim(),
-    });
-  });
-  return mapa;
-}
 
 /** Casos de la galeria que citan cada regla. Calculado, no escrito a mano. */
 export function casosPorRegla() {

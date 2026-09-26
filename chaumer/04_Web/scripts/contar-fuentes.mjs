@@ -25,9 +25,9 @@ linea('categorias', cats.length);
 console.log('     ' + cats.map((c) => c.id + ' (' + c.n + ')').join(' · '));
 const conCampo = (c) => reglas.filter((r) => r[c] != null && r[c] !== ''
   && !(Array.isArray(r[c]) && r[c].length === 0)).length;
-console.log('     campos presentes: accion ' + conCampo('accion') + ' · prioridad ' + conCampo('prioridad')
-  + ' · nota ' + conCampo('nota') + ' · excepciones ' + conCampo('excepciones')
-  + ' · fuente ' + conCampo('fuente') + ' · pendiente ' + conCampo('pendiente'));
+console.log('     apartados presentes: si no se cumple ' + conCampo('si_no_se_cumple') + ' · excepciones '
+  + conCampo('excepciones') + ' · por qué ' + conCampo('porque') + ' · fuente ' + conCampo('fuente')
+  + ' · pendiente ' + conCampo('pendiente'));
 
 // Sub-fases, glosario y backtesting ya no se cuentan: sus lectores se
 // borraron el 22/09/2026 con la pagina que los usaba (tarea 9 de

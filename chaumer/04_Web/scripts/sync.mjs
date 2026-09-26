@@ -26,8 +26,8 @@ const DEST_ASSETS = path.join(WEB, 'public', 'assets');
 const TEST_CIEGO = path.join(RAIZ, '05_Backtesting', 'test_ciego', 'Back_claude');
 
 // Los documentos que el portal espera encontrar. Si falta uno, se avisa.
+// TRADING_PLAN_CHAUMER.md salió el 26/09/2026: las reglas viven en 01_Plan/reglas/ y llegan en reglas.json.
 const DOCUMENTOS = [
-  'TRADING_PLAN_CHAUMER.md',
   'CIERRE_FASE_1.md',
   'GLOSARIO.md',
   'PARAMETROS.md',
@@ -88,12 +88,13 @@ for (const doc of DOCUMENTOS) {
 const ORIGEN_REGLAS = path.join(PLAN, 'reglas.json');
 let reglas = [];
 if (!fs.existsSync(ORIGEN_REGLAS)) {
-  console.error('ABORTADO: no existe 01_Plan/reglas.json, que es la fuente de verdad.');
+  console.error('ABORTADO: no existe 01_Plan/reglas.json. Lo genera: node scripts/plan/leer-reglas.mjs --escribir');
   process.exit(1);
 }
 try {
-  reglas = JSON.parse(fs.readFileSync(ORIGEN_REGLAS, 'utf8'));
-  if (!Array.isArray(reglas)) throw new Error('se esperaba un array de reglas');
+  // Generado por scripts/plan/leer-reglas.mjs desde los siete archivos de 01_Plan/reglas/ (26/09/2026).
+  reglas = JSON.parse(fs.readFileSync(ORIGEN_REGLAS, 'utf8')).reglas;
+  if (!Array.isArray(reglas)) throw new Error('se esperaba un objeto con «reglas» (el formato del 26/09/2026)');
 } catch (e) {
   console.error('ABORTADO: reglas.json no es JSON valido -> ' + e.message);
   process.exit(1);
@@ -109,17 +110,16 @@ copiar(ORIGEN_REGLAS, path.join(DEST_CONTENIDO, 'reglas.json'));
     '# Índice de reglas',
     '',
     '> **Generado por `scripts/sync.mjs` desde `01_Plan/reglas.json`. No se edita.**',
-    '> Una línea por regla: número · grupo · enunciado. Para el detalle —condiciones,',
-    '> excepciones, nota— abre ESA regla en `reglas.json`, no el archivo entero.',
+    '> Una línea por regla: número · nombre · grupo · la regla. Para el detalle —cómo se aplica,',
+    '> excepciones, por qué— abre SU archivo de grupo en `01_Plan/reglas/`.',
     '',
     reglas.length + ' reglas.',
     '',
   ];
   for (const r of reglas) {
-    const grupo = (r.categoria_nombre || r.categoria || '—')
-      + (r.subcategoria ? ' (' + r.subcategoria + ')' : '');
+    const grupo = (r.grupo_nombre || r.grupo || '—') + (r.apartado ? ' (' + r.apartado.toLowerCase() + ')' : '');
     const enunciado = String(r.enunciado || '').replace(/\s+/g, ' ').trim();
-    lineas.push(r.id + ' · ' + grupo + ' · ' + enunciado);
+    lineas.push(r.id + ' · ' + r.nombre + ' · ' + grupo + ' · ' + enunciado);
   }
   fs.writeFileSync(
     destinoSeguro(path.join(DEST_CONTENIDO, 'reglas_indice.md')),

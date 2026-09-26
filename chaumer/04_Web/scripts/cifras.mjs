@@ -34,7 +34,7 @@ const todas = paginas(DIST);
 for (const archivo of todas) {
   const texto = fs.readFileSync(archivo, 'utf8')
     .replace(/<script[\s\S]*?<\/script>/g, ' ')
-    .replace(/<[^>]+>/g, ' ')
+    .replace(/<(?:\"[^\"]*\"|'[^']*'|[^'\">])*>/g, ' ')
     .replace(/&nbsp;/g, ' ')
     .replace(/\s+/g, ' ');
   for (const m of texto.matchAll(global)) {

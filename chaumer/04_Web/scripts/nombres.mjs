@@ -44,7 +44,7 @@ for (const archivo of todas) {
   const texto = fs.readFileSync(archivo, 'utf8')
     .replace(/<script[\s\S]*?<\/script>/g, ' ')
     .replace(/<style[\s\S]*?<\/style>/g, ' ')
-    .replace(/<[^>]+>/g, ' ')
+    .replace(/<(?:\"[^\"]*\"|'[^']*'|[^'\">])*>/g, ' ')
     .replace(/&quot;/g, '"').replace(/&#34;/g, '"').replace(/&nbsp;/g, ' ')
     .replace(/\s+/g, ' ')
     // las citas textuales se quedan como se dijeron

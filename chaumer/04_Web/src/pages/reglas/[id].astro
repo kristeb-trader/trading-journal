@@ -3,9 +3,11 @@
  * Ficha de una regla.
  *
  * REGLA DE ORO DE ESTA PANTALLA: un campo ausente NO SE DIBUJA. Nada de
- * guiones, nada de «sin excepciones», nada de bloques vacios. De las 40
- * reglas, 32 tienen accion y prioridad, 29 tienen nota, 6 tienen fuente y
- * solo 4 tienen excepciones de verdad (26/09/2026).
+ * guiones, nada de «sin excepciones», nada de bloques vacios.
+ *
+ * Desde el 26/09/2026 la ficha sigue la plantilla de las reglas (01_Plan/reglas/):
+ * nombre, la regla, cómo se aplica, si no se cumple, excepciones y por qué. Todo
+ * viene de la propia regla; el documento maestro ya no existe.
  *
  * Los nombres de parametro se convierten en pastillas con su valor vigente,
  * resuelto de PARAMETROS.md. Aqui no se escribe ningun numero a mano.
@@ -24,12 +26,8 @@ const i = todas.findIndex((r) => r.id === regla.id);
 const anterior = todas[i - 1] ?? null;
 const siguiente = todas[i + 1] ?? null;
 
-const seccion = P.seccionesDeReglas().get(regla.id) ?? null;
 const casos = P.casosPorRegla().get(regla.id) ?? [];
 const imagenes = P.imagenesDeReglas().get(regla.id) ?? [];
-
-const excepciones = Array.isArray(regla.excepciones)
-  ? regla.excepciones.filter((e) => e && String(e).trim()) : [];
 
 // El nombre del grupo sale del propio archivo de reglas, igual que en el
 // indice. Aqui hubo un mapa escrito a mano con las doce categorias viejas.
@@ -38,7 +36,8 @@ const etiquetaCat = (r) => {
   const base = r.categoria_nombre ?? r.categoria;
   return r.subcategoria ? `${base} · ${NOMBRE_SUB[r.subcategoria] ?? r.subcategoria}` : base;
 };
-const rico = (t) => P.enriquecer(t, { sinEnlaceA: regla.id });
+const op = { sinEnlaceA: regla.id };
+const md = (t) => P.markdownRico(t, op);
 ---
 
 <Marco titulo={regla.id} ancho="texto">
@@ -69,48 +68,35 @@ const rico = (t) => P.enriquecer(t, { sinEnlaceA: regla.id });
       <div class="f-meta">
         <span class="f-id mono">{regla.id}</span>
         <span class="f-cat">{etiquetaCat(regla)}</span>
-        {regla.prioridad && <span class="f-pri meta">prioridad {regla.prioridad}</span>}
+        {regla.aplica_a?.length > 0 && <span class="f-apl meta">{regla.aplica_a.join(' · ')}</span>}
       </div>
-      <h1 class="f-e" set:html={rico(regla.enunciado)} />
-      {regla.estado && <p class="f-estado meta">{regla.estado}</p>}
+      <h1 class="f-e">{regla.nombre}</h1>
+      <p class="f-regla" set:html={P.markdownLinea(regla.regla, op)} />
     </header>
 
-    {/* La explicacion del documento maestro va AQUI, entera. Antes habia un
-        enlace a /plan#R-xx, pero esa pagina solo tiene anclas de sub-fase:
-        el enlace caia al principio del documento y no llevaba a ningun
-        sitio. Comprobado el 06/09/2026 con scripts/enlaces.mjs. Esa pagina se
-        borro el 22/09/2026. */}
-    {seccion && (
+    <section class="bloque entra">
+      <h2>Cómo se aplica</h2>
+      <div class="md" set:html={md(regla.como_se_aplica)} />
+    </section>
+
+    {regla.si_no_se_cumple && (
       <section class="bloque entra">
-        <h2>Por qué dice esto</h2>
-        <p class="apunte">
-          Del documento maestro, sección <strong>{seccion.titulo}</strong>.
-        </p>
-        <div class="md" set:html={P.markdownRico(seccion.cuerpo, { sinEnlaceA: regla.id })} />
+        <h2>Si no se cumple</h2>
+        <div class="md" set:html={md(regla.si_no_se_cumple)} />
       </section>
     )}
 
-
-    {regla.accion && (
-      <section class="bloque entra">
-        <h2>Acción</h2>
-        <p class="cuerpo" set:html={rico(regla.accion)} />
-      </section>
-    )}
-
-    {excepciones.length > 0 && (
+    {regla.excepciones && (
       <section class="bloque entra">
         <h2>Excepciones</h2>
-        <ul class="excepciones">
-          {excepciones.map((e) => <li set:html={rico(e)} />)}
-        </ul>
+        <div class="md" set:html={md(regla.excepciones)} />
       </section>
     )}
 
-    {regla.nota && (
+    {regla.porque && (
       <section class="bloque entra">
-        <h2>Nota</h2>
-        <p class="cuerpo" set:html={rico(regla.nota)} />
+        <h2>Por qué</h2>
+        <div class="md" set:html={md(regla.porque)} />
       </section>
     )}
 
@@ -122,11 +108,10 @@ const rico = (t) => P.enriquecer(t, { sinEnlaceA: regla.id });
       <section class="bloque entra">
         <div class="aviso-p">
           <span class="ap-cab"><Icono nombre="warning-diamond" /> Tiene un punto abierto</span>
-          <p class="ap-x" set:html={rico(regla.pendiente)} />
+          <p class="ap-x" set:html={P.markdownLinea(regla.pendiente, op)} />
         </div>
       </section>
     )}
-
 
     {casos.length > 0 && (
       <section class="bloque entra">
@@ -152,27 +137,6 @@ const rico = (t) => P.enriquecer(t, { sinEnlaceA: regla.id });
         ))}
       </section>
     )}
-
-    <section class="bloque entra">
-      <h2>Condiciones medibles</h2>
-      <div class="tabla-scroll">
-        <table>
-          <thead>
-            <tr><th>Variable</th><th>Op.</th><th>Valor</th><th>Marco</th></tr>
-          </thead>
-          <tbody>
-            {regla.condiciones.map((c) => (
-              <tr>
-                <td class="c-var mono">{c.variable}</td>
-                <td class="c-op mono">{c.operador}</td>
-                <td set:html={rico(c.valor)} />
-                <td class="c-tf mono">{c.timeframe}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
   </article>
 
 </Marco>
@@ -198,14 +162,22 @@ const rico = (t) => P.enriquecer(t, { sinEnlaceA: regla.id });
     font-size: var(--t-1); color: var(--texto-3);
     letter-spacing: var(--track-etiqueta); text-transform: uppercase;
   }
-  .f-pri { margin-left: auto; }
+  .f-apl { margin-left: auto; }
   .f-e {
     margin: var(--e-5) 0 var(--e-3);
     font-size: var(--t-7); line-height: 1.25;
     /* Sin tope: `text-wrap: pretty` deja que el titular llene
        la columna como todo lo demas. */
   }
-  .f-estado { margin: 0; }
+  /* Una ruta larga en `código` o una tabla ancha no pueden empujar la página en el
+     móvil: el código se parte y la tabla se desplaza dentro de su caja. */
+  .ficha :global(.md code) { overflow-wrap: anywhere; }
+  .ficha :global(.md table) { display: block; max-width: 100%; overflow-x: auto; }
+
+  .f-regla {
+    margin: 0; max-width: var(--medida);
+    font-size: var(--t-5); line-height: 1.5; color: var(--texto-2);
+  }
 
   /* ── bloques ─────────────────────────────────────────────────────────── */
   .bloque { margin-bottom: var(--e-7); }
