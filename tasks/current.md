@@ -60,6 +60,18 @@ sesión**, con `/clear` entre una y otra.
 > ℹ️ **Un archivo nuevo que necesite la app** (fuera de `js/`, `css/` o `icons/`) hay que
 > añadirlo al `cp` de `.github/workflows/publicar-journal.yml`. Si no, dará 404 en producción.
 
+### 🟢 Reestructuración de las reglas de Chaumer (26 sep)
+
+Diseño aprobado: `docs/disenos/2026-09-25-reglas-chaumer.md` (v1.1). Las reglas pasan a siete archivos, uno por
+grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vigilar.mjs`. **Una fase por sesión.**
+
+- [x] **F0** — el portal enseña el «Por qué» entero de las 40 reglas; el vigilante, en modo informe
+- [ ] **F1** — correcciones: el stop de la checklist, C-08/C-09 y P-22, versiones, los pendientes de abajo
+- [ ] **F2** — la estructura nueva (2a lector y vigilante · 2b los siete archivos · 2c consumidores · 2d
+  glosario, checklist, pendientes y estado)
+- [ ] **F3** — las fusiones, 40 → 35
+- [ ] **F4** — la ficha nueva del portal (y decidir si la cabecera pasa de «NQ» a «MNQ»)
+
 ### 🟡 El plan de Chaumer: lo que estaba «pendiente de Cowork» (25 sep, D-028)
 
 Cowork ya no existe: el plan se cambia desde aquí. **Todo lo que toque `chaumer/01_Plan/` necesita el sí de

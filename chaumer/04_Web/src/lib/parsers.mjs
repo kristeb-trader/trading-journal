@@ -653,19 +653,30 @@ export function diagramas() {
 
 // ──────────────────────────────── la regla dentro del documento largo
 /** Mapa id -> { titulo, cuerpo } con la seccion que explica cada regla en
- *  TRADING_PLAN_CHAUMER.md. No todas las reglas tienen una. */
+ *  TRADING_PLAN_CHAUMER.md. No todas las reglas tienen una.
+ *
+ *  La seccion de una regla sigue por sus subtitulos hasta el siguiente titulo
+ *  de su nivel o de uno mayor, o hasta la siguiente regla. Hasta el 26/09/2026
+ *  se cortaba en el primer subtitulo y se perdian 24.000 caracteres: de R-40
+ *  llegaba el 4 %, y de R-32 no llegaba «Donde va el stop». */
 export function seccionesDeReglas() {
   const t = documento('TRADING_PLAN_CHAUMER.md');
   const mapa = new Map();
-  for (const b of partirPorEncabezado(t, [2, 3])) {
-    const limpio = tituloLimpio(b.titulo);
-    const m = limpio.match(/^(R-\d{1,2})\b/);
-    if (!m) continue;
+  const esRegla = (b) => tituloLimpio(b.titulo).match(/^(R-\d{1,2})\b/);
+  const bloques = partirPorEncabezado(t, [1, 2, 3, 4, 5, 6]);
+  bloques.forEach((b, i) => {
+    const m = (b.nivel === 2 || b.nivel === 3) && esRegla(b);
+    if (!m) return;
+    let cuerpo = b.cuerpo;
+    for (const s of bloques.slice(i + 1)) {
+      if (s.nivel <= b.nivel || esRegla(s)) break;
+      cuerpo += '#'.repeat(s.nivel) + ' ' + s.titulo + '\n' + s.cuerpo;
+    }
     mapa.set(m[1], {
-      titulo: limpio.replace(/^R-\d{1,2}\s*[·-]?\s*/, ''),
-      cuerpo: b.cuerpo.trim(),
+      titulo: tituloLimpio(b.titulo).replace(/^R-\d{1,2}\s*[·-]?\s*/, ''),
+      cuerpo: cuerpo.trim(),
     });
-  }
+  });
   return mapa;
 }
 

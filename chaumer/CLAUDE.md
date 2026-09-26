@@ -35,7 +35,7 @@ Si trabajando en otra cosa ves algo mal en el plan, **díselo al operador en ese
 
 ## Dónde está la verdad, y qué leer para cada cosa
 
-`01_Plan\reglas.json` es **la fuente de verdad legible por máquina**: 38 reglas ordenadas por grupo, con `categoria`, `categoria_nombre`, `categoria_orden` y —solo en zonas— `subcategoria` (`marcado` / `vigencia`). Siete grupos: perímetro (4) · estructura (4) · **zonas (14)** · setup y entrada (7) · riesgo y gestión (7) · filtros (3) · proceso (1).
+`01_Plan\reglas.json` es **la fuente de verdad legible por máquina**: 40 reglas ordenadas por grupo, con `categoria`, `categoria_nombre`, `categoria_orden` y —solo en zonas— `subcategoria` (`marcado` / `vigencia`). Siete grupos: perímetro (4) · estructura (4) · **zonas (14)** · setup y entrada (7) · riesgo y gestión (7) · filtros (3) · proceso (1).
 
 | Si la tarea es… | Lee SOLO |
 |---|---|

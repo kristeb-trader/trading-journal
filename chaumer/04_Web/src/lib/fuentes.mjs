@@ -75,11 +75,24 @@ function sinCifraEnNota(texto) {
 /** Para los .md: linea a linea. */
 function sinCifraEnMarkdown(md) {
   if (!CIFRA_BACKTESTING.test(md)) return md;
-  return md
+  const lineas = md
     .split('\n')
     .filter((linea) => !(/^\s*\|/.test(linea) && CIFRA_BACKTESTING.test(linea)))
-    .map((linea) => (CIFRA_BACKTESTING.test(linea) ? sinCifraEnFrases(linea) : linea))
-    .join('\n');
+    .map((linea) => (CIFRA_BACKTESTING.test(linea) ? sinCifraEnFrases(linea) : linea));
+  return sinTablasVacias(lineas).join('\n');
+}
+
+/** Una tabla que se ha quedado sin filas (solo cabecera y separador) se quita
+ *  entera: si no, la pagina enseña una cabecera colgando. Pasaba con «Lo que le
+ *  hizo al backtesting» de R-40, cuyas filas son todas cifras (26/09/2026). */
+function sinTablasVacias(lineas) {
+  const esFila = (l) => /^\s*\|/.test(l ?? '');
+  const esSeparador = (l) => /^\s*\|[\s:|-]+\|\s*$/.test(l ?? '');
+  return lineas.filter((l, i) => {
+    const cabeceraSola = esFila(l) && !esFila(lineas[i - 1]) && esSeparador(lineas[i + 1]) && !esFila(lineas[i + 2]);
+    const separadorSolo = esSeparador(l) && esFila(lineas[i - 1]) && !esFila(lineas[i - 2]) && !esFila(lineas[i + 1]);
+    return !cabeceraSola && !separadorSolo;
+  });
 }
 
 function sinCifraEnDatos(valor) {
