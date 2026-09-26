@@ -20,7 +20,7 @@
       "orden": 3,
       "nombre": "Zonas",
       "descripcion": "todo lo que tiene que ver con una zona",
-      "n": 14
+      "n": 13
     },
     {
       "id": "setup_entrada",
@@ -53,6 +53,7 @@
   ],
   "fusionadas": {
     "R-27": "R-07",
+    "R-19": "R-09",
     "R-23": "R-28",
     "R-34": "R-28",
     "R-30": "R-33"
@@ -325,8 +326,8 @@
       "relacionadas": [
         "R-06",
         "R-12",
+        "R-13",
         "R-16",
-        "R-19",
         "R-21"
       ],
       "casos": [
@@ -334,14 +335,17 @@
         "G-02",
         "G-03",
         "G-11",
-        "G-12"
+        "G-12",
+        "G-13"
       ],
       "apartado": "Marcado",
-      "fuente": null,
+      "fuente": "el dibujo: operador, casos 8/07 y 10/07/2026",
+      "absorbe": [
+        "R-19"
+      ],
       "pendiente": null,
-      "absorbe": [],
-      "como_se_aplica": "- **La vela designada:** la de **máximo más alto** (corrida alcista) o **mínimo más bajo** (corrida bajista), contando desde el origen de la corrida **hasta la vela que dispara el retroceso, ambas incluidas**.\n- **Cuándo:** al aparecer el retroceso (`R-06`), no antes.\n- **Los límites:** del borde del cuerpo al extremo de la mecha. En una resistencia, el límite inferior es el borde superior del cuerpo —el cierre si la vela es verde, la apertura si es roja— y el superior, el máximo de la vela.\n- **Vela sin mecha:** la zona es una línea en el extremo de la vela.\n- **Vela sin cuerpo** (apertura = cierre): el cuerpo mide cero; la zona va de ese precio a la punta de la mecha.\n- **El retroceso también marca zona:** el retroceso de una corrida alcista marca **soporte**, y el de una corrida bajista, **resistencia**. Sujeto a `R-12`: si el movimiento cruza el 50 % entre las zonas vecinas, no se marca.\n- **Se extiende hacia la derecha** a lo largo del gráfico.",
-      "porque": "La búsqueda de la vela extrema **incluye la vela que dispara el retroceso**: una vela puede hacer máximo mayor y mínimo menor a la vez —dispara el retroceso— y aun así ser la más alta del movimiento. Caso real: 10/07/2026, vela 8:36.\n\nLa definición de *zona* está en `GLOSARIO.md`.\n\nDiagramas: `../02_Assets/diagramas/R-09_zona.png` · `R-20_vigencia.png` · `R-10_extension_apendice.png`",
+      "como_se_aplica": "- **La vela designada:** la de **máximo más alto** (corrida alcista) o **mínimo más bajo** (corrida bajista), contando desde el origen de la corrida **hasta la vela que dispara el retroceso, ambas incluidas**.\n- **Cuándo:** al aparecer el retroceso (`R-06`), no antes.\n- **Los límites:** del borde del cuerpo al extremo de la mecha. En una resistencia, el límite inferior es el borde superior del cuerpo —el cierre si la vela es verde, la apertura si es roja— y el superior, el máximo de la vela.\n- **Vela sin mecha:** la zona es una línea en el extremo de la vela.\n- **Vela sin cuerpo** (apertura = cierre): el cuerpo mide cero; la zona va de ese precio a la punta de la mecha.\n- **El retroceso también marca zona:** el retroceso de una corrida alcista marca **soporte**, y el de una corrida bajista, **resistencia**. Sujeto a `R-12`: si el movimiento cruza el 50 % entre las zonas vecinas, no se marca.\n- **Se extiende hacia la derecha** a lo largo del gráfico.\n- **El rectángulo se dibuja desde la vela origen**, no desde la vela que confirma la zona.\n- **Cuando una vela hace máximo mayor y mínimo menor, el orden de lo que hace por dentro decide qué vela sostiene la zona.**",
+      "porque": "La búsqueda de la vela extrema **incluye la vela que dispara el retroceso**: una vela puede hacer máximo mayor y mínimo menor a la vez —dispara el retroceso— y aun así ser la más alta del movimiento. Caso real: 10/07/2026, vela 8:36.\n\n**El dibujo, sobre casos reales** que el operador corrigió al auditor:\n- **Desde la vela origen:** 8/07, la resistencia de la vela 8:33 arranca en la 8:33, no en la 8:36.\n- **El orden de lo que hace la vela por dentro:** 8/07, vela 8:36 (primero baja) frente a 10/07, vela 8:36 (primero sube).\n\nLa definición de *zona* está en `GLOSARIO.md`.\n\nDiagramas: `../02_Assets/diagramas/R-09_zona.png` · `R-20_vigencia.png` · `R-10_extension_apendice.png`",
       "si_no_se_cumple": null,
       "excepciones": null,
       "orden": 9,
@@ -363,8 +367,8 @@
       ],
       "relacionadas": [
         "R-11",
+        "R-13",
         "R-14",
-        "R-19",
         "R-21"
       ],
       "casos": [],
@@ -394,9 +398,9 @@
         "PLAZO_CONSECUCION"
       ],
       "relacionadas": [
+        "R-09",
         "R-10",
-        "R-14",
-        "R-19"
+        "R-14"
       ],
       "casos": [
         "G-15"
@@ -405,7 +409,7 @@
       "pendiente": "dos reglas de entrada asociadas, anotadas desde F1.3 y nunca confirmadas: «la zona apéndice alta solo sirve para largo» y «no se puede entrar entre zonas apéndices». Hoy el motor no las aplica",
       "fuente": null,
       "absorbe": [],
-      "como_se_aplica": "El rompimiento con cuerpo sin consecución se acaba de dos maneras, y vale **la que llegue primero** — el disparador es el plazo **resuelto**, no el plazo vencido (`R-14`):\n\n**Una ·** pasa el `PLAZO_CONSECUCION`, contado desde la vela siguiente a la del rompimiento, y la consecución no ha llegado.\n\n**Otra ·** antes de que se cumpla ese plazo, el mercado arma una **estructura completa en sentido contrario**: una vela que no da la consecución y se va en contra, otra que hace retroceso, y una tercera que no sigue ese retroceso y vuelve en el sentido de la primera. **La apéndice nace en esa tercera vela**, sin esperar más.\n\nEn cualquiera de los dos casos **la zona original no se toca** y nace una **segunda zona** sobre la mecha de la vela de rompimiento: un borde es el **borde del cuerpo** de esa vela, el otro es la **punta de su mecha**. Quedan **dos zonas**, la original y su apéndice.\n\nLa apéndice se dibuja **desde la vela de rompimiento**, su vela origen, aunque no quede marcada hasta ese momento. Es del **mismo gris** que cualquier otra zona (`R-19`, precisión 3).",
+      "como_se_aplica": "El rompimiento con cuerpo sin consecución se acaba de dos maneras, y vale **la que llegue primero** — el disparador es el plazo **resuelto**, no el plazo vencido (`R-14`):\n\n**Una ·** pasa el `PLAZO_CONSECUCION`, contado desde la vela siguiente a la del rompimiento, y la consecución no ha llegado.\n\n**Otra ·** antes de que se cumpla ese plazo, el mercado arma una **estructura completa en sentido contrario**: una vela que no da la consecución y se va en contra, otra que hace retroceso, y una tercera que no sigue ese retroceso y vuelve en el sentido de la primera. **La apéndice nace en esa tercera vela**, sin esperar más.\n\nEn cualquiera de los dos casos **la zona original no se toca** y nace una **segunda zona** sobre la mecha de la vela de rompimiento: un borde es el **borde del cuerpo** de esa vela, el otro es la **punta de su mecha**. Quedan **dos zonas**, la original y su apéndice.\n\nLa apéndice se dibuja **desde la vela de rompimiento**, su vela origen, aunque no quede marcada hasta ese momento. Es del **mismo gris** que cualquier otra zona (`R-09`).",
       "porque": "> 🔑 **La apéndice no nace por acción del precio sobre ella** — es el rastro de un rompimiento que se quedó sin terminar.\n\n**Es la misma regla que `R-10`, con un solo cambio.** Las dos arrancan igual —rompimiento sin consecución— y las dos se acaban con los mismos dos finales. Lo único que las separa es **dónde cierra la vela de rompimiento**: si el cierre se queda dentro, la zona **se estira** y sigue siendo una; si el cierre queda fuera, la original queda intacta y **nace la apéndice**. Por eso el texto es calcado. **Palabras del operador:** *\"la zona apéndice es básicamente igual que lo que pasa con una zona que se estira cuando hay rompimiento sin consecución. La diferencia es que en este caso el rompimiento no es con mecha, sino con cuerpo por fuera. Los casos son los mismos 2\"*.\n\nDiagramas: `../02_Assets/diagramas/apendice_caso1_plazo.png` *(por plazo)* y `../02_Assets/diagramas/apendice_caso2_estructura.png` *(por estructura contraria)*",
       "si_no_se_cumple": null,
       "excepciones": null,
@@ -460,8 +464,8 @@
       ],
       "parametros": [],
       "relacionadas": [
+        "R-09",
         "R-10",
-        "R-19",
         "R-21"
       ],
       "casos": [
@@ -471,8 +475,8 @@
       "fuente": null,
       "pendiente": null,
       "absorbe": [],
-      "como_se_aplica": "- **El disparador:** la zona candidata toca en cualquier punto una zona ya marcada **del mismo tipo**; el contacto de bordes cuenta.\n- **Crear una zona nueva está prohibido:** se estira la existente hasta el extremo más lejano de la candidata. Queda **una** zona.\n- **Se estira SOLO hacia el nuevo extremo;** el otro borde no se mueve. No se engloba.\n- **La zona estirada conserva su historial** de rompimientos y consecuciones (`R-21`).\n- **Candidata dentro de la existente:** sin cambios; no hay nada que extender.\n- **No se solapan zonas de tipo distinto** mientras una esté vigente: una zona viva ocupa su franja de precio.",
-      "porque": "Desviación consciente `D-08`: el curso recorta la zona nueva y deja dos zonas; el operador las une en una sola.",
+      "como_se_aplica": "- **El disparador:** la zona candidata toca en cualquier punto una zona ya marcada **del mismo tipo**; el contacto de bordes cuenta.\n- **Crear una zona nueva está prohibido:** se estira la existente hasta el extremo más lejano de la candidata. Queda **una** zona.\n- **Se estira SOLO hacia el nuevo extremo;** el otro borde no se mueve. No se engloba.\n- **La zona estirada conserva su historial** de rompimientos y consecuciones (`R-21`).\n- **Candidata dentro de la existente:** sin cambios; no hay nada que extender.\n- **No se solapan zonas de tipo distinto** mientras una esté vigente: una zona viva ocupa su franja de precio.\n- **Una resistencia superada cambia de papel a soporte** y sigue ocupando su franja.",
+      "porque": "Desviación consciente `D-08`: el curso recorta la zona nueva y deja dos zonas; el operador las une en una sola.\n\n**Caso real 8/07/2026, vela 8:43:** no se puede dibujar soporte donde ya vive la zona de la 8:37.",
       "si_no_se_cumple": null,
       "excepciones": null,
       "orden": 13,
@@ -493,18 +497,18 @@
         "PLAZO_CONSECUCION"
       ],
       "relacionadas": [
+        "R-09",
         "R-10",
         "R-11",
         "R-12",
-        "R-13",
-        "R-19"
+        "R-13"
       ],
       "casos": [],
       "apartado": "Marcado",
       "fuente": "operador",
       "pendiente": "`P-31`: el motor de auditoría todavía resuelve el plazo solo por vencimiento y no detecta la estructura contraria, en los dos caminos",
       "absorbe": [],
-      "como_se_aplica": "**Qué cuenta como «estructura completa al contrario» — tres velas.** Tomando como ejemplo un **soporte roto hacia abajo** (al revés para una resistencia rota hacia arriba):\n\n| Vela | Qué tiene que hacer | Condición medible |\n|---|---|---|\n| **1ª** | **no da la consecución y sube** | su mínimo **no pasa** del extremo de la vela de rompimiento |\n| **2ª** | **hace retroceso** | su mínimo es **MENOR** que el de la vela anterior **y NO pasa** del extremo de la vela de rompimiento |\n| **3ª** | **no sigue bajando: vuelve a subir** | aquí queda armada la estructura → **aquí se marca la zona** |\n\n- **Si el retroceso de la segunda vela pasa del extremo** de la vela de rompimiento, **ya no es un retroceso: es la consecución**. No hay apéndice ni estiramiento; la zona queda traspasada.\n- **Qué se marca:** exactamente lo mismo que al vencer el plazo — **solo cambia el momento**. Rompimiento con **mecha** → la zona original **se estira** hasta esa mecha (`R-10`). Rompimiento con **cuerpo** → nace la **zona apéndice**, del cuerpo de la vela de rompimiento hasta el final de su mecha (`R-11`). **Aplica igual a los dos caminos, sin excepción.**\n- **Dibujo:** la apéndice es **del mismo gris que cualquier otra zona** y se dibuja **desde la vela de rompimiento**, que es su vela origen — aunque **no esté marcada** hasta el momento en que la estructura queda armada (`R-19`, precisión 3).\n- **Simetría:** aplica igual hacia arriba. Resistencia rota **con cuerpo hacia arriba** + estructura **bajista** completa antes del plazo → la apéndice nace ahí mismo.\n- **Si no hay estructura contraria:** se espera al `PLAZO_CONSECUCION` y se aplica `R-10` o `R-11`.\n- **Si la zona nueva toca la existente,** `R-13` la convierte en extensión.",
+      "como_se_aplica": "**Qué cuenta como «estructura completa al contrario» — tres velas.** Tomando como ejemplo un **soporte roto hacia abajo** (al revés para una resistencia rota hacia arriba):\n\n| Vela | Qué tiene que hacer | Condición medible |\n|---|---|---|\n| **1ª** | **no da la consecución y sube** | su mínimo **no pasa** del extremo de la vela de rompimiento |\n| **2ª** | **hace retroceso** | su mínimo es **MENOR** que el de la vela anterior **y NO pasa** del extremo de la vela de rompimiento |\n| **3ª** | **no sigue bajando: vuelve a subir** | aquí queda armada la estructura → **aquí se marca la zona** |\n\n- **Si el retroceso de la segunda vela pasa del extremo** de la vela de rompimiento, **ya no es un retroceso: es la consecución**. No hay apéndice ni estiramiento; la zona queda traspasada.\n- **Qué se marca:** exactamente lo mismo que al vencer el plazo — **solo cambia el momento**. Rompimiento con **mecha** → la zona original **se estira** hasta esa mecha (`R-10`). Rompimiento con **cuerpo** → nace la **zona apéndice**, del cuerpo de la vela de rompimiento hasta el final de su mecha (`R-11`). **Aplica igual a los dos caminos, sin excepción.**\n- **Dibujo:** la apéndice es **del mismo gris que cualquier otra zona** y se dibuja **desde la vela de rompimiento**, que es su vela origen — aunque **no esté marcada** hasta el momento en que la estructura queda armada (`R-09`).\n- **Simetría:** aplica igual hacia arriba. Resistencia rota **con cuerpo hacia arriba** + estructura **bajista** completa antes del plazo → la apéndice nace ahí mismo.\n- **Si no hay estructura contraria:** se espera al `PLAZO_CONSECUCION` y se aplica `R-10` o `R-11`.\n- **Si la zona nueva toca la existente,** `R-13` la convierte en extensión.",
       "excepciones": "- Si el precio simplemente se va en sentido contrario **sin hacer retroceso en el medio**, no hay estructura: se espera al plazo. **Caso real 20/07/2026 — el contraejemplo que la delimita:** la vela 8:40 rompe el soporte de la 8:37 con cuerpo. Después el precio sube **cuatro velas seguidas** (8:42, 8:43, 8:44, 8:45) **sin hacer retroceso en el medio**, así que nunca llega a armar la estructura contraria. La apéndice nace por plazo vencido, en la **8:45**. Subir no basta: hace falta la estructura completa.",
       "porque": "El plazo existe para decidir cuándo un rompimiento sin consecución deja de estar en el aire. Si el mercado ya armó estructura al otro lado, eso ya está decidido y no hay nada que esperar. **No es un detalle de forma:** cambia **cuándo** nace el borde nuevo, y de ahí cuelga dónde va el stop.\n\n> 🔴 **La condición de la segunda vela es la que hace mecánica la regla.** Sin ella, cualquier vuelta del precio parecería una estructura.\n\n**Estructura** = retroceso nuevo que **sí** genera zona. El único retroceso que no genera zona es el bloqueado por `R-12`.\n\nDiagramas: `../02_Assets/diagramas/apendice_caso1_plazo.png` y `../02_Assets/diagramas/apendice_caso2_estructura.png` *(rompimiento con cuerpo)* · `../04_Web/public/conceptos/24-estructura-antes.png` *(rompimiento con mecha — el caso del estiramiento)*",
       "si_no_se_cumple": null,
@@ -651,40 +655,6 @@
       "enunciado": "Salir de una zona o de una banda es rompimiento más consecución, no geometría."
     },
     {
-      "id": "R-19",
-      "nombre": "Cómo se dibuja una zona — seis precisiones",
-      "grupo": "zonas",
-      "grupo_nombre": "Zonas",
-      "grupo_orden": 3,
-      "regla": "Seis detalles de dibujo que el operador corrigió al auditor sobre casos reales del 8 de julio.",
-      "aplica_a": [
-        "Continuación",
-        "Reingreso"
-      ],
-      "parametros": [],
-      "relacionadas": [
-        "R-08",
-        "R-09",
-        "R-13",
-        "R-16",
-        "R-20",
-        "R-21"
-      ],
-      "casos": [
-        "G-13"
-      ],
-      "apartado": "Marcado",
-      "fuente": "operador, casos 8/07 y 10/07",
-      "pendiente": null,
-      "absorbe": [],
-      "como_se_aplica": "| # | Precisión | Caso que la fija |\n|---|---|---|\n| 1 | **El rompimiento se lee por la MECHA, no por el cierre.** Basta pasar 1 tick del borde | 8/07 vela 8:37: cierra dentro de la zona, pero su mínimo baja de 29.277,50 → rompe |\n| 2 | Una zona **no queda invalidada por el rompimiento solo**: hace falta la vela de consecución | ver `R-20` |\n| 3 | El **rectángulo se dibuja desde la vela origen**, no desde la vela que confirma | 8/07: la resistencia de la vela 8:33 arranca en la 8:33, no en la 8:36 |\n| 4 | Se estira **solo hacia el nuevo extremo**; el otro borde no se mueve | ver `R-13` |\n| 5 | **No se solapan zonas de tipo distinto** mientras una esté vigente. Una resistencia superada **cambia de papel a soporte** y sigue ocupando su franja | 8/07 vela 8:43: no se puede dibujar soporte donde ya vive la zona de la 8:37 |\n| 6 | Cuando una vela hace máximo mayor **y** mínimo menor, **el orden de lo que hace por dentro decide** qué vela sostiene la zona | 8/07 vela 8:36 (primero baja) vs 10/07 vela 8:36 (primero sube) |",
-      "si_no_se_cumple": null,
-      "excepciones": null,
-      "porque": null,
-      "orden": 19,
-      "enunciado": "Seis detalles de dibujo que el operador corrigió al auditor sobre casos reales del 8 de julio."
-    },
-    {
       "id": "R-20",
       "nombre": "Rompimiento y consecución",
       "grupo": "zonas",
@@ -724,10 +694,10 @@
       "pendiente": null,
       "absorbe": [],
       "como_se_aplica": "- **Rompimiento:** un `TICK` más allá del borde de la zona. El cierre de la vela de rompimiento es irrelevante para que haya rompimiento — **la mecha basta**.\n- **Con cuerpo o con mecha:** el rompimiento es **con cuerpo** si el cierre queda más allá del borde traspasado; **con mecha**, si no.\n- **Consecución al alza:** máximo de la vela de rompimiento + 1 `TICK`. **A la baja:** mínimo de la vela de rompimiento − 1 `TICK`.\n- **El traspaso de la zona NO tiene plazo:** el rompimiento queda pendiente indefinidamente y la consecución lo confirma cuando llegue, aunque sea muchas velas después.\n- **El `PLAZO_CONSECUCION`**, contado desde la vela siguiente a la de rompimiento, gobierna solo **la geometría de la zona** (`R-10`, `R-11`, `R-14`) y **la vida de la orden** (`R-29`), no el traspaso. Las dos cosas ocurren sobre el **mismo** rompimiento: primero nace la apéndice o se estira la zona, y más tarde el traspaso se confirma igual.",
-      "porque": "**La consecución al alza ES la entrada de `R-24`.** El mismo motor sirve para matar una zona y para entrar al mercado.\n\nCaso real 13/07/2026: la consecución que traspasa la zona llega **25 velas** después del rompimiento.",
+      "porque": "**La consecución al alza ES la entrada de `R-24`.** El mismo motor sirve para matar una zona y para entrar al mercado.\n\nCaso real 13/07/2026: la consecución que traspasa la zona llega **25 velas** después del rompimiento.\n\n**Caso real 8/07/2026, vela 8:37:** cierra dentro de la zona, pero su mínimo baja de 29.277,50 → rompe. El rompimiento se lee por la mecha, no por el cierre.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 20,
+      "orden": 19,
       "enunciado": "Rompimiento es superar el borde de la zona por al menos un tick; consecución es superar por un tick el extremo de la vela de rompimiento. La consecución que traspasa una zona no tiene plazo."
     },
     {
@@ -761,7 +731,7 @@
       "si_no_se_cumple": null,
       "excepciones": null,
       "porque": null,
-      "orden": 21,
+      "orden": 20,
       "enunciado": "Una zona deja de tener efecto cuando ha sido superada en las dos direcciones."
     },
     {
@@ -791,7 +761,7 @@
       "porque": "Si no, la propia mecha de la vela de consecución —que suele ser grande y tocar los dos lados— dispara el rompimiento contrario, y las fechas de invalidación se adelantan sin motivo.\n\n**Caso real 13/07/2026:** el soporte de la vela 8:43 recibe su consecución bajista en la vela 8:52. Esa misma vela tiene un máximo de 29.573,50, por encima del techo de la zona. Con la regla, el rompimiento alcista se busca desde la 8:53 y aparece en la **8:58**, con consecución en la **8:59** → la zona queda inválida a las 8:59, que es lo que lee el operador.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 22,
+      "orden": 21,
       "enunciado": "La vela que da la consecución de un traspaso no cuenta a la vez como rompimiento del lado contrario. El rompimiento contrario se busca a partir de la vela siguiente."
     },
     {
@@ -826,7 +796,7 @@
       "si_no_se_cumple": null,
       "excepciones": null,
       "porque": null,
-      "orden": 23,
+      "orden": 22,
       "enunciado": "Entra siempre con orden stop en reposo colocada al cierre de la vela de rompimiento."
     },
     {
@@ -867,7 +837,7 @@
       "excepciones": "- Si se agota el `PLAZO_CONSECUCION` sin consecución, la **entrada** queda invalidada. El destino de la **zona** lo deciden `R-10` y `R-11`.",
       "porque": "> 🔑 **La Continuación es autocontenida:** el propio setup crea la zona que después rompe.\n\n**IRI** *(Impulso–Retroceso–Impulso)* es **la estructura**: una corrida deja su zona, el precio retrocede y la corrida siguiente rompe esa zona. **La Continuación es un IRI fluido (`R-40`) más su consecución**, que es la entrada.",
       "si_no_se_cumple": null,
-      "orden": 24,
+      "orden": 23,
       "enunciado": "Un IRI —corrida, retroceso, zona y rompimiento de esa zona— y su consecución. La consecución es la entrada."
     },
     {
@@ -907,7 +877,7 @@
       "porque": "> 🔑 **Es la contraria de la Continuación:** la Continuación opera el rompimiento que **funciona**; el Reingreso, el que **falló**. Es el único setup del plan con un segundo filtro de objetivo, y su orden muere solo por `R-29`.\n\n**Caso que SÍ es reingreso — 6/07/2026:** zona `R` 29.926,50–29.939,25. Rompe la vela 8:46; la 8:47 da la consecución subiendo a 29.967,25 y **esa misma vela** se desploma a 29.908,75, otra vez bajo la zona → reingreso válido, y la misma vela es consecución y vela de reingreso (`G-12`).\n\n**Caso que NO lo es — 13/07/2026:** zona `R` 29.652,25–29.666,75. Rompe la vela 9:25 (máx 29.677,25), consecución la vela 9:27 (máx 29.681,00) y el precio **sigue subiendo** hasta 29.724,00. Lo que hace la vela 9:41, catorce velas después, **no es un reingreso**.\n\nDiagrama: `02_Assets\\diagramas\\R-26_reingreso.png`",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 25,
+      "orden": 24,
       "enunciado": "Tras un rompimiento con consecución que falla, el precio recupera la zona entera y se opera en sentido contrario."
     },
     {
@@ -943,7 +913,7 @@
       "porque": "Es la traducción medible de «no es fluida» y «está lateral». Palabras del operador, 14/09/2026: *\"una corrida alcista fluida, un retroceso normal, y la siguiente corrida que sería la entrada\"*; *\"cuando el retroceso fue mayor que la corrida bajista, se genera zona de resistencia, y no se debería ingresar en un rompimiento directo\"*; *\"como no fue capaz de romper, el mercado va a estar lateral\"*.\n\n**Por qué el segundo paso arrastra al primero.** Si el rompimiento fue con mecha y la consecución no llegó, `R-10` estira la zona hasta la punta de esa mecha. Para que el IRI nuevo quede entero más allá, el precio tiene que pasar de esa punta — y eso **es** la consecución. Se dejan escritos los dos pasos porque así lo explica el operador.\n\n#### Los cuatro casos que la definieron\n\n**10/09/2026 — falla y se recupera.** La apertura sube 49,50 y el retroceso baja **65,75**: se pasa. Caen la resistencia de 8:32 y el soporte de 8:34. Después llega la secuencia entera —corrida de 79,75, retroceso de solo 32,25, y rompimiento— y su resistencia (29.125,75 – 29.137,50) queda **entera por encima** de la bloqueada (29.118,00 – 29.123,50). Ésa da la entrada del día: largo en 29.145,75, **+40,50 pts**.\n\n**14/09/2026 — falla y no se recupera.** La apertura baja 43,50 y el retroceso sube **53,25**: se pasa. La resistencia de 8:34 no se opera, y en toda la sesión no aparece otro IRI por encima de ella. **NO OPERA.**\n\n**16/07/2026 — la sesión que hubo que corregir.** La apertura sube 71,75 y el retroceso baja **132,25**: se pasa. El corto de 8:40 era el rompimiento directo del soporte que dejó ese retroceso. 🔴 **Esa sesión estaba validada con ese corto (+75,50 pts) desde el 01/09/2026.** El operador la revisó el 14/09 y la dio por mal marcada: *\"efectivamente está mal esa entrada, porque no fue un IRI bajista fluido; primero empezó alcista, y luego fue bajista. Esa primera entrada fue arriesgada, se debe esperar que genere otro IRI bajista.\"*\n\n**11/09/2026** no llega a plantearse: la sesión entera se quedó sin marcar una sola zona.\n\n#### El bloqueo de sentido, sobre casos reales\n\n**Caso de origen · 18/09/2026.** Abre bajista. La vela de **8:32** deja un retroceso de 38,00 contra una corrida de 29,00 → se acaban los cortos. Las velas de **8:49 y 8:50** rompen la zona de premercado con consecución → **rompimiento directo, no se opera**. La corrida de 8:52 deja el soporte 29.781,50 – 29.791,75, entero por debajo del terreno bloqueado; la de 8:55 lo rompe → **entrada en la de 8:56**, +31,00 pts. Palabras del operador: *\"ya no hay fluidez bajista, por lo tanto ya no pienso en cortos; espero que se rompa la zona de soporte, que haga otro IRI, y ahí sí entro\"*.\n\n**Primera jornada que lo ejercita entero · 21/09/2026.** Abre alcista. Se pierde a las **8:34** (retroceso de 44,25 contra corrida de 38,75) · rompimiento directo a las **8:37** · se recupera con un largo a las 8:49 que **se cancela antes de llenar** · se **vuelve a perder** a las **8:51** (20,00 contra 16,25) · segundo rompimiento directo a las **8:52** · se recupera con la entrada de las **8:59**, +23,75 pts.\n\n**Origen:** test ciego — jornadas del 10, 11 y 14 de septiembre de 2026, y la revisión del 16/07. Ver `05_Backtesting\\test_ciego\\DISCREPANCIAS.md`.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 26,
+      "orden": 25,
       "enunciado": "Solo se entra en el rompimiento de la zona de una corrida FLUIDA. Una corrida es fluida cuando la secuencia sale bien tres veces seguidas: la corrida deja su zona · el retroceso no se pasa · y la corrida siguiente rompe esa zona."
     },
     {
@@ -959,7 +929,7 @@
       "parametros": [],
       "relacionadas": [
         "R-06",
-        "R-19",
+        "R-20",
         "R-21",
         "R-26"
       ],
@@ -970,11 +940,11 @@
       "fuente": null,
       "pendiente": null,
       "absorbe": [],
-      "como_se_aplica": "- **Qué es un punto de referencia:** el **nivel de referencia de un retroceso** (`R-06`) — el mínimo más bajo si el retroceso baja, el máximo más alto si sube. Es el mismo vértice que ya dibuja el zigzag de corridas y retrocesos; no es un nivel nuevo.\n- **Cuántos hay:** **todos** los retrocesos dejan uno, se dibujen o no — el operador: *\"normalmente todos los retrocesos serían puntos de control\"*.\n- **Cuál manda:** el punto de referencia **vivo más cercano a la entrada** que quede **entre la entrada y el objetivo**. Los de fuera de ese tramo no estorban. No se limita al retroceso que originó la zona: vale cualquiera — por eso **una zona de premercado también puede dar reingreso**.\n- **Criterio de descarte:** si el objetivo **pasa** de ese nivel, el reingreso no se opera. Si cae **justo encima**, se opera: solo descarta pasarlo.\n- **Cuándo se rompe:** cuando una vela **CIERRA** más allá del nivel. El pinchazo de mecha **no** lo rompe. Roto, deja de contar y no estorba ningún objetivo a partir de ahí.\n- **Alcance:** **solo reingresos** (`R-26`). Las continuaciones (`R-25`) no lo miran.\n- **Con los otros filtros:** va junto al de **zonas vigentes** (`R-21`). Los dos tienen que pasar.\n- **Dibujo:** no se dibujan todos — el gráfico se llenaría. Se dibuja **solo cuando aparece un reingreso**, para comprobar si el objetivo está libre:\n\n| | |\n|---|---|\n| Vivo | flecha punteada, **naranja oscuro `#FF9A3C`**, contraste bajo, extendida hacia la derecha |\n| Roto | contraste más leve y **se corta una vela después** de la que lo rompió |\n\n> 🔴 **Ojo: aquí el rompimiento se lee por el CIERRE.** Es la única cosa del plan que **no** se rompe por la mecha. Una zona se rompe con que la mecha la pase por un tick (`R-19`, punto 1); un punto de referencia **necesita que una vela cierre más allá**. Si algún día esto se olvida, el filtro deja de funcionar: casi todos los puntos de referencia acaban pinchados por una mecha en algún momento.",
+      "como_se_aplica": "- **Qué es un punto de referencia:** el **nivel de referencia de un retroceso** (`R-06`) — el mínimo más bajo si el retroceso baja, el máximo más alto si sube. Es el mismo vértice que ya dibuja el zigzag de corridas y retrocesos; no es un nivel nuevo.\n- **Cuántos hay:** **todos** los retrocesos dejan uno, se dibujen o no — el operador: *\"normalmente todos los retrocesos serían puntos de control\"*.\n- **Cuál manda:** el punto de referencia **vivo más cercano a la entrada** que quede **entre la entrada y el objetivo**. Los de fuera de ese tramo no estorban. No se limita al retroceso que originó la zona: vale cualquiera — por eso **una zona de premercado también puede dar reingreso**.\n- **Criterio de descarte:** si el objetivo **pasa** de ese nivel, el reingreso no se opera. Si cae **justo encima**, se opera: solo descarta pasarlo.\n- **Cuándo se rompe:** cuando una vela **CIERRA** más allá del nivel. El pinchazo de mecha **no** lo rompe. Roto, deja de contar y no estorba ningún objetivo a partir de ahí.\n- **Alcance:** **solo reingresos** (`R-26`). Las continuaciones (`R-25`) no lo miran.\n- **Con los otros filtros:** va junto al de **zonas vigentes** (`R-21`). Los dos tienen que pasar.\n- **Dibujo:** no se dibujan todos — el gráfico se llenaría. Se dibuja **solo cuando aparece un reingreso**, para comprobar si el objetivo está libre:\n\n| | |\n|---|---|\n| Vivo | flecha punteada, **naranja oscuro `#FF9A3C`**, contraste bajo, extendida hacia la derecha |\n| Roto | contraste más leve y **se corta una vela después** de la que lo rompió |\n\n> 🔴 **Ojo: aquí el rompimiento se lee por el CIERRE.** Es la única cosa del plan que **no** se rompe por la mecha. Una zona se rompe con que la mecha la pase por un tick (`R-20`); un punto de referencia **necesita que una vela cierre más allá**. Si algún día esto se olvida, el filtro deja de funcionar: casi todos los puntos de referencia acaban pinchados por una mecha en algún momento.",
       "porque": "**Palabras del operador, 14/09/2026:** *\"Un punto de control es un retroceso que dice que en ese punto se puede volver a presentar como una zona que el precio lo puedan defender para evitar que lo rompan.\"* Y el 24/08/2026, con el mismo razonamiento: *\"pueden defender ese nivel y el trade le quita probabilidad, por lo tanto para un reingreso debe tener camino libre para el target\"*.\n\nNo es un nivel nuevo que haya que buscar: **es un vértice del zigzag de corridas y retrocesos que el plan ya dibuja**. Lo único que añade esta regla es que ese vértice, además de estar ahí, **tapa el objetivo de un reingreso**. Del dibujo, el operador: *\"la idea es tener el gráfico lo más limpio posible\"*.\n\n**Caso de origen · viernes 11/09/2026.** Reingreso bajista a las **9:01** sobre la zona de premercado de 8:29: entrada **29.440,25**, stop **29.475,00**, objetivo **29.405,50**, riesgo 34,75. El punto de referencia de la vela de **8:58**, en **29.423,00**, queda en medio — y el objetivo lo pasa. **Descartado.** El operador tampoco lo tomó. Sin esta regla el día habría dado +34,75 pts; con ella, la jornada es **NO OPERA**.\n\n**Origen:** test ciego del 14/09/2026 sobre la jornada del 11/09 — ver `05_Backtesting\\test_ciego\\DISCREPANCIAS.md`.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 27,
+      "orden": 26,
       "enunciado": "El objetivo de un reingreso no puede pasar del nivel de referencia de un retroceso anterior que siga vivo. Solo aplica al reingreso."
     },
     {
@@ -1012,7 +982,7 @@
       "excepciones": "- Un setup válido cuya orden caduque sin llenarse (`R-29`) **no consume el cupo ni bloquea los siguientes**: se puede esperar otro setup dentro de la ventana.",
       "porque": "Palabras del operador (26/08/2026): *\"ya no marco más zonas, no hago más análisis, no hago nada más\"*. La regla va más allá de no abrir otra orden y de no tocar la posición (`R-33`): **prohíbe seguir analizando**. Sin ella, el operador podría seguir marcando zonas mientras ve acercarse su stop, que es el estado mental donde se rompen los planes.",
       "si_no_se_cumple": null,
-      "orden": 28,
+      "orden": 27,
       "enunciado": "Opera el primer setup válido cuya orden se llene, y solo ése: como máximo 1 llenada. Al llenarse la orden termina el día: la operativa y el análisis."
     },
     {
@@ -1032,7 +1002,7 @@
       ],
       "relacionadas": [
         "R-02",
-        "R-19",
+        "R-09",
         "R-20",
         "R-28",
         "R-32"
@@ -1044,11 +1014,11 @@
       "fuente": null,
       "pendiente": null,
       "absorbe": [],
-      "como_se_aplica": "- **Se cancela al ocurrir lo PRIMERO de estas tres causas:**\n  1. **Pasa el `PLAZO_CONSECUCION` desde el rompimiento sin que llegue la consecución** — es decir, sin que el precio alcance el nivel de la orden.\n  2. **El precio vuelve al punto del stop**, tal como lo define `R-32`: el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento — no solo el extremo del retroceso que la originó.\n  3. Es la hora de `CANCELACION_FINAL`.\n- **NO cancela:** ⚠️ **la aparición de un retroceso nuevo.** Un retroceso nuevo deja la orden intacta.\n- **🔑 La caducidad se comprueba ANTES del llenado.** Pasado el plazo la orden ya no existe y no puede llenarse, aunque el precio toque el nivel en esa misma vela.\n- **🕯️ Cuando una misma vela toca el nivel de la orden y el stop,** se aplica el orden de la vela —el mismo de `R-19`, punto 6—: **vela azul, primero el mínimo; vela blanca, primero el máximo**. **Si llega antes al nivel de la orden, se llena**, y el stop puede saltar en esa misma vela. **Si llega antes al stop, la orden se cancela** sin llenarse.\n- **Al cancelar:** se descarta el setup. **El cupo de `R-28` no se consume**: se puede esperar un setup nuevo dentro de la ventana de `R-02`.",
+      "como_se_aplica": "- **Se cancela al ocurrir lo PRIMERO de estas tres causas:**\n  1. **Pasa el `PLAZO_CONSECUCION` desde el rompimiento sin que llegue la consecución** — es decir, sin que el precio alcance el nivel de la orden.\n  2. **El precio vuelve al punto del stop**, tal como lo define `R-32`: el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento — no solo el extremo del retroceso que la originó.\n  3. Es la hora de `CANCELACION_FINAL`.\n- **NO cancela:** ⚠️ **la aparición de un retroceso nuevo.** Un retroceso nuevo deja la orden intacta.\n- **🔑 La caducidad se comprueba ANTES del llenado.** Pasado el plazo la orden ya no existe y no puede llenarse, aunque el precio toque el nivel en esa misma vela.\n- **🕯️ Cuando una misma vela toca el nivel de la orden y el stop,** se aplica el orden de la vela —el mismo que decide qué vela sostiene la zona (`R-09`)—: **vela azul, primero el mínimo; vela blanca, primero el máximo**. **Si llega antes al nivel de la orden, se llena**, y el stop puede saltar en esa misma vela. **Si llega antes al stop, la orden se cancela** sin llenarse.\n- **Al cancelar:** se descarta el setup. **El cupo de `R-28` no se consume**: se puede esperar un setup nuevo dentro de la ventana de `R-02`.",
       "porque": "**La vuelta al stop.** Las palabras del operador el 27/08/2026 fueron *\"llega al mismo punto del retroceso, que sería el mismo punto del stop\"* — entonces coincidían. Desde que `R-32` se corrigió pueden **no** coincidir, y **manda el punto del stop**.\n\n**Un retroceso nuevo no cancela, caso real 9/07/2026:** orden puesta en la vela 8:43; cancelarla en la 8:45 por el retroceso nuevo era un error: con la regla correcta sigue viva y **se llena en la 8:46**, dentro del plazo.\n\n**El orden de la vela, caso de origen 23/09/2026:** vela azul de 8:36 — baja a 30.922,00 y llena el corto en 30.925,75, después sube a 30.957,00 y salta el stop en 30.954,00. Palabras del operador: *\"fue un stop válido, la vela primero bajó, hizo consecución y la misma vela después subió al stop\"*. Leída al revés, la orden se habría cancelado y el día habría sido otro: **75,75 puntos** de diferencia.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 29,
+      "orden": 28,
       "enunciado": "Mantén la orden pendiente hasta que se llene, hasta que se agote el plazo de consecución, hasta que el precio vuelva al punto del stop, o hasta el fin de la ventana."
     },
     {
@@ -1086,7 +1056,7 @@
       "porque": "🔑 **`ATM_DEFECTO` = `STOP_MAX` a propósito.** El stop provisional nunca debe ser más ajustado que el estructural: si lo fuera, el mercado podría sacar al operador de una operación todavía viva antes de que moviera el stop a mano. Si un día cambia `STOP_MAX`, hay que cambiar `ATM_DEFECTO` con él (`PARAMETROS.md`).\n\nRiesgo residual aceptado: la ventana de exposición manual tras el llenado, hasta que se ajustan stop y objetivo (`P-09`).",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 30,
+      "orden": 29,
       "enunciado": "Ejecuta con la ATM K1 al valor de 320 ticks y ajusta stop y target a mano tras el llenado, en ese orden."
     },
     {
@@ -1133,7 +1103,7 @@
       "porque": "**Caso real 7/07/2026:** el soporte de la vela 9:27 se rompe con la vela 9:36. El retroceso que lo originó (9:28–9:30) tenía su techo en 29.313,00, pero la vela 9:32 subió hasta **29.327,75**. Midiendo solo el retroceso, el riesgo habría sido de 71,50 pts; con todo lo que hizo el precio mientras la zona estuvo viva, es de **86,25 pts**, y **la entrada queda descartada por `STOP_MAX`**.\n\n**Geometría:** el stop del Reingreso mide contra la corrida que rompió la zona y falló — al **otro lado** de la zona. Incluye el ancho de la zona entera, así que **tiende a ser mayor** que el de una Continuación: el filtro de `STOP_MAX` muerde más en Reingreso.\n\nPalabras del operador: *\"siempre el target debe estar libre de zonas o debe siempre tener espacio de recorrido sin nada en contra\"*.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 31,
+      "orden": 30,
       "enunciado": "Ancla la regla en el nivel de entrada, mide el stop hasta su referencia estructural y pon el target a esa misma distancia."
     },
     {
@@ -1169,7 +1139,7 @@
       "porque": "> *\"Después de una entrada, y después de ajustar stop y target a sus respectivos niveles, no se toca nada, jamás. Se deja que el mercado haga lo suyo y defina su respectivo resultado. Repito, jamás se gestiona.\"*\n> — Operador, 24/08/2026\n\n🔑 **Es la única regla del plan enunciada como prohibición absoluta**, sin excepciones. Y tiene un efecto que va más allá de la disciplina: convierte cada operación en un **experimento limpio**. Cuando se midan los resultados, medirán el setup — no la gestión. Sin esta regla, un plan mecánico no sería medible.\n\nConsecuencia abierta: la sesión no tiene hora de cierre garantizada (`P-07`).",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 32,
+      "orden": 31,
       "enunciado": "Una vez ajustados stop y target, no se gestiona la posición. Nunca. Solo la cierran el stop o el objetivo, aunque termine la ventana operativa."
     },
     {
@@ -1200,7 +1170,7 @@
       "porque": "Una sola fuente evita el conflicto de dos calendarios que no siempre coinciden.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 33,
+      "orden": 32,
       "enunciado": "No operes en la ventana de ±5 minutos alrededor de una noticia roja de Forex Factory."
     },
     {
@@ -1232,7 +1202,7 @@
       "porque": "> 🔑 **Convive con `R-35` sin conflicto.** Un evento rojo de la Fed dispara las dos: el veto de Continuación durante todo el día **y** el bloqueo de `VENTANA_NOTICIA`. Misma fuente única, así que no hay dos calendarios que puedan discrepar.\n\n**La lógica del filtro:** el operador descarta el setup que **persigue continuación** y conserva el que **opera rompimientos fallidos** — justo el comportamiento que domina un mercado a la espera de la Fed.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 34,
+      "orden": 33,
       "enunciado": "En día de FOMC no se opera Continuación. Solo se permite Reingreso."
     },
     {
@@ -1259,7 +1229,7 @@
       "porque": "> ⚠️ **Es la única regla del plan sin criterio medible**, y la única que **un tercero no puede verificar**. Queda **fuera del alcance del test ciego**: ninguna captura podrá decir si se aplicó bien o mal.\n>\n> El operador la mantiene como criterio libre a propósito, y está registrado que lo es — no es un olvido ni un pendiente disfrazado.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 35,
+      "orden": 34,
       "enunciado": "No se opera estando enfermo o sin encontrarse bien mentalmente."
     },
     {
@@ -1292,7 +1262,7 @@
       "porque": "🔑 **Esta regla no añade criterio operativo.** Ordena las reglas del plan en la secuencia real del día, para que la sesión se ejecute leyendo de arriba abajo sin decidir nada.\n\n📓 **Lo que hace valioso este journal es que registra los días SIN operar y el porqué.** Casi ninguno lo hace, y es exactamente el dato que necesitan `P-01`, `P-21` y `D-09`. Sin él, esos pendientes no se cierran nunca.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 36,
+      "orden": 35,
       "enunciado": "Ejecuta la sesión siguiendo la checklist diaria en orden, y registra todas las sesiones, incluidas aquellas en que no se operó."
     }
   ]

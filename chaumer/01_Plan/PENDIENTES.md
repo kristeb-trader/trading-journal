@@ -3,7 +3,7 @@
 Lo que el plan tiene abierto y las desviaciones conscientes respecto al curso. **Los pendientes cerrados, con su
 resolución, están en `HISTORIAL.md`**: aquí solo queda lo que sigue abierto.
 
-> Actualizado: 2026-09-26 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **36 reglas** · **18 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-38`
+> Actualizado: 2026-09-26 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **35 reglas** · **18 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-38`
 >
 > 🚨 **Los cuatro huecos declarados del cierre:** ~~`P-29` test ciego no ejecutado~~ → **arrancó el 14/09/2026, primera jornada marcada: 10/09** · `P-21` sin regla de parada · falta la capa de contextualización · `P-27` las cifras del backtesting no miden la estrategia.
 

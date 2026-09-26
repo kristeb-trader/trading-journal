@@ -35,9 +35,11 @@ La zona nueva de fuera y la que se acaba de superar forman **otra banda**, y esa
 |---|---|
 | Aplica a | Continuación · Reingreso |
 | Parámetros | — |
-| Relacionadas | R-06 · R-12 · R-16 · R-19 · R-21 |
-| Casos | G-01 · G-02 · G-03 · G-11 · G-12 |
+| Relacionadas | R-06 · R-12 · R-13 · R-16 · R-21 |
+| Casos | G-01 · G-02 · G-03 · G-11 · G-12 · G-13 |
 | Apartado | Marcado |
+| Fuente | el dibujo: operador, casos 8/07 y 10/07/2026 |
+| Absorbe | R-19 |
 
 ### Cómo se aplica
 
@@ -48,10 +50,16 @@ La zona nueva de fuera y la que se acaba de superar forman **otra banda**, y esa
 - **Vela sin cuerpo** (apertura = cierre): el cuerpo mide cero; la zona va de ese precio a la punta de la mecha.
 - **El retroceso también marca zona:** el retroceso de una corrida alcista marca **soporte**, y el de una corrida bajista, **resistencia**. Sujeto a `R-12`: si el movimiento cruza el 50 % entre las zonas vecinas, no se marca.
 - **Se extiende hacia la derecha** a lo largo del gráfico.
+- **El rectángulo se dibuja desde la vela origen**, no desde la vela que confirma la zona.
+- **Cuando una vela hace máximo mayor y mínimo menor, el orden de lo que hace por dentro decide qué vela sostiene la zona.**
 
 ### Por qué
 
 La búsqueda de la vela extrema **incluye la vela que dispara el retroceso**: una vela puede hacer máximo mayor y mínimo menor a la vez —dispara el retroceso— y aun así ser la más alta del movimiento. Caso real: 10/07/2026, vela 8:36.
+
+**El dibujo, sobre casos reales** que el operador corrigió al auditor:
+- **Desde la vela origen:** 8/07, la resistencia de la vela 8:33 arranca en la 8:33, no en la 8:36.
+- **El orden de lo que hace la vela por dentro:** 8/07, vela 8:36 (primero baja) frente a 10/07, vela 8:36 (primero sube).
 
 La definición de *zona* está en `GLOSARIO.md`.
 
@@ -65,7 +73,7 @@ Diagramas: `../02_Assets/diagramas/R-09_zona.png` · `R-20_vigencia.png` · `R-1
 |---|---|
 | Aplica a | Continuación · Reingreso |
 | Parámetros | `PLAZO_CONSECUCION` |
-| Relacionadas | R-11 · R-14 · R-19 · R-21 |
+| Relacionadas | R-11 · R-13 · R-14 · R-21 |
 | Casos | — |
 | Apartado | Marcado |
 
@@ -97,7 +105,7 @@ Diagramas: `../04_Web/public/conceptos/05-sin-confirmar.png` (un soporte que cre
 |---|---|
 | Aplica a | Continuación · Reingreso |
 | Parámetros | `PLAZO_CONSECUCION` |
-| Relacionadas | R-10 · R-14 · R-19 |
+| Relacionadas | R-09 · R-10 · R-14 |
 | Casos | G-15 |
 | Apartado | Marcado |
 | Pendiente | dos reglas de entrada asociadas, anotadas desde F1.3 y nunca confirmadas: «la zona apéndice alta solo sirve para largo» y «no se puede entrar entre zonas apéndices». Hoy el motor no las aplica |
@@ -112,7 +120,7 @@ El rompimiento con cuerpo sin consecución se acaba de dos maneras, y vale **la 
 
 En cualquiera de los dos casos **la zona original no se toca** y nace una **segunda zona** sobre la mecha de la vela de rompimiento: un borde es el **borde del cuerpo** de esa vela, el otro es la **punta de su mecha**. Quedan **dos zonas**, la original y su apéndice.
 
-La apéndice se dibuja **desde la vela de rompimiento**, su vela origen, aunque no quede marcada hasta ese momento. Es del **mismo gris** que cualquier otra zona (`R-19`, precisión 3).
+La apéndice se dibuja **desde la vela de rompimiento**, su vela origen, aunque no quede marcada hasta ese momento. Es del **mismo gris** que cualquier otra zona (`R-09`).
 
 ### Por qué
 
@@ -157,7 +165,7 @@ El curso y Chaumer en vivo cierran el marcado entre dos zonas tras el primer ret
 |---|---|
 | Aplica a | Continuación · Reingreso |
 | Parámetros | — |
-| Relacionadas | R-10 · R-19 · R-21 |
+| Relacionadas | R-09 · R-10 · R-21 |
 | Casos | G-13 |
 | Apartado | Marcado |
 
@@ -169,10 +177,13 @@ El curso y Chaumer en vivo cierran el marcado entre dos zonas tras el primer ret
 - **La zona estirada conserva su historial** de rompimientos y consecuciones (`R-21`).
 - **Candidata dentro de la existente:** sin cambios; no hay nada que extender.
 - **No se solapan zonas de tipo distinto** mientras una esté vigente: una zona viva ocupa su franja de precio.
+- **Una resistencia superada cambia de papel a soporte** y sigue ocupando su franja.
 
 ### Por qué
 
 Desviación consciente `D-08`: el curso recorta la zona nueva y deja dos zonas; el operador las une en una sola.
+
+**Caso real 8/07/2026, vela 8:43:** no se puede dibujar soporte donde ya vive la zona de la 8:37.
 
 ## R-14 · El plazo de consecución es un tope, no una espera
 
@@ -182,7 +193,7 @@ Desviación consciente `D-08`: el curso recorta la zona nueva y deja dos zonas; 
 |---|---|
 | Aplica a | Continuación · Reingreso |
 | Parámetros | `PLAZO_CONSECUCION` |
-| Relacionadas | R-10 · R-11 · R-12 · R-13 · R-19 |
+| Relacionadas | R-09 · R-10 · R-11 · R-12 · R-13 |
 | Casos | — |
 | Apartado | Marcado |
 | Fuente | operador |
@@ -200,7 +211,7 @@ Desviación consciente `D-08`: el curso recorta la zona nueva y deja dos zonas; 
 
 - **Si el retroceso de la segunda vela pasa del extremo** de la vela de rompimiento, **ya no es un retroceso: es la consecución**. No hay apéndice ni estiramiento; la zona queda traspasada.
 - **Qué se marca:** exactamente lo mismo que al vencer el plazo — **solo cambia el momento**. Rompimiento con **mecha** → la zona original **se estira** hasta esa mecha (`R-10`). Rompimiento con **cuerpo** → nace la **zona apéndice**, del cuerpo de la vela de rompimiento hasta el final de su mecha (`R-11`). **Aplica igual a los dos caminos, sin excepción.**
-- **Dibujo:** la apéndice es **del mismo gris que cualquier otra zona** y se dibuja **desde la vela de rompimiento**, que es su vela origen — aunque **no esté marcada** hasta el momento en que la estructura queda armada (`R-19`, precisión 3).
+- **Dibujo:** la apéndice es **del mismo gris que cualquier otra zona** y se dibuja **desde la vela de rompimiento**, que es su vela origen — aunque **no esté marcada** hasta el momento en que la estructura queda armada (`R-09`).
 - **Simetría:** aplica igual hacia arriba. Resistencia rota **con cuerpo hacia arriba** + estructura **bajista** completa antes del plazo → la apéndice nace ahí mismo.
 - **Si no hay estructura contraria:** se espera al `PLAZO_CONSECUCION` y se aplica `R-10` o `R-11`.
 - **Si la zona nueva toca la existente,** `R-13` la convierte en extensión.
@@ -354,30 +365,6 @@ El mercado no está «fuera» de una zona ni de una banda por geometría, sino c
 
 **Caso real 7/07/2026:** la vela **8:52** rompe la zona apéndice de la vela 8:39 y la **8:54** hace la consecución dentro del plazo — rompimiento exitoso, así que en la 8:53 **no se marca soporte** pese a que hubo retroceso.
 
-## R-19 · Cómo se dibuja una zona — seis precisiones
-
-> Seis detalles de dibujo que el operador corrigió al auditor sobre casos reales del 8 de julio.
-
-| | |
-|---|---|
-| Aplica a | Continuación · Reingreso |
-| Parámetros | — |
-| Relacionadas | R-08 · R-09 · R-13 · R-16 · R-20 · R-21 |
-| Casos | G-13 |
-| Apartado | Marcado |
-| Fuente | operador, casos 8/07 y 10/07 |
-
-### Cómo se aplica
-
-| # | Precisión | Caso que la fija |
-|---|---|---|
-| 1 | **El rompimiento se lee por la MECHA, no por el cierre.** Basta pasar 1 tick del borde | 8/07 vela 8:37: cierra dentro de la zona, pero su mínimo baja de 29.277,50 → rompe |
-| 2 | Una zona **no queda invalidada por el rompimiento solo**: hace falta la vela de consecución | ver `R-20` |
-| 3 | El **rectángulo se dibuja desde la vela origen**, no desde la vela que confirma | 8/07: la resistencia de la vela 8:33 arranca en la 8:33, no en la 8:36 |
-| 4 | Se estira **solo hacia el nuevo extremo**; el otro borde no se mueve | ver `R-13` |
-| 5 | **No se solapan zonas de tipo distinto** mientras una esté vigente. Una resistencia superada **cambia de papel a soporte** y sigue ocupando su franja | 8/07 vela 8:43: no se puede dibujar soporte donde ya vive la zona de la 8:37 |
-| 6 | Cuando una vela hace máximo mayor **y** mínimo menor, **el orden de lo que hace por dentro decide** qué vela sostiene la zona | 8/07 vela 8:36 (primero baja) vs 10/07 vela 8:36 (primero sube) |
-
 ## R-20 · Rompimiento y consecución
 
 > Rompimiento es superar el borde de la zona por al menos un tick; consecución es superar por un tick el extremo de la vela de rompimiento. La consecución que **traspasa** una zona no tiene plazo.
@@ -403,6 +390,8 @@ El mercado no está «fuera» de una zona ni de una banda por geometría, sino c
 **La consecución al alza ES la entrada de `R-24`.** El mismo motor sirve para matar una zona y para entrar al mercado.
 
 Caso real 13/07/2026: la consecución que traspasa la zona llega **25 velas** después del rompimiento.
+
+**Caso real 8/07/2026, vela 8:37:** cierra dentro de la zona, pero su mínimo baja de 29.277,50 → rompe. El rompimiento se lee por la mecha, no por el cierre.
 
 ## R-21 · Vigencia e invalidación de una zona
 

@@ -170,7 +170,7 @@ Es la traducción medible de «no es fluida» y «está lateral». Palabras del 
 |---|---|
 | Aplica a | Reingreso |
 | Parámetros | — |
-| Relacionadas | R-06 · R-19 · R-21 · R-26 |
+| Relacionadas | R-06 · R-20 · R-21 · R-26 |
 | Casos | G-23 |
 
 ### Cómo se aplica
@@ -189,7 +189,7 @@ Es la traducción medible de «no es fluida» y «está lateral». Palabras del 
 | Vivo | flecha punteada, **naranja oscuro `#FF9A3C`**, contraste bajo, extendida hacia la derecha |
 | Roto | contraste más leve y **se corta una vela después** de la que lo rompió |
 
-> 🔴 **Ojo: aquí el rompimiento se lee por el CIERRE.** Es la única cosa del plan que **no** se rompe por la mecha. Una zona se rompe con que la mecha la pase por un tick (`R-19`, punto 1); un punto de referencia **necesita que una vela cierre más allá**. Si algún día esto se olvida, el filtro deja de funcionar: casi todos los puntos de referencia acaban pinchados por una mecha en algún momento.
+> 🔴 **Ojo: aquí el rompimiento se lee por el CIERRE.** Es la única cosa del plan que **no** se rompe por la mecha. Una zona se rompe con que la mecha la pase por un tick (`R-20`); un punto de referencia **necesita que una vela cierre más allá**. Si algún día esto se olvida, el filtro deja de funcionar: casi todos los puntos de referencia acaban pinchados por una mecha en algún momento.
 
 ### Por qué
 

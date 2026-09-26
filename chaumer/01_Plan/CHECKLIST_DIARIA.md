@@ -3,7 +3,7 @@
 > **Se ejecuta de arriba abajo. No se decide nada que no esté aquí.**
 > Cada línea cita su regla. Si una respuesta es **NO** donde dice parar, **se para** — no se evalúa, no se matiza.
 
-**Versión del plan:** 3.22 · 2026-09-26 · **36 reglas**
+**Versión del plan:** 3.23 · 2026-09-26 · **35 reglas**
 
 ---
 
@@ -47,11 +47,11 @@
 |---|---|---|
 | ☐ | ¿La zona candidata cae dentro de una **banda ya gastada** hoy? → **no se marca** | `R-17` |
 | ☐ | ¿Hay una zona viva con **rompimiento esperando consecución** entre el precio y la zona candidata? → **no se marca** | `R-18` |
-| ☐ | El rompimiento se lee por la **mecha**, no por el cierre | `R-19` |
+| ☐ | El rompimiento se lee por la **mecha**, no por el cierre | `R-20` |
 | ☐ | Una zona **no queda inválida** hasta que llega la **consecución** — y esa consecución **no tiene plazo** | `R-20`, `R-21` |
 | ☐ | La vela que confirma un traspaso **no abre** el rompimiento contrario: se busca desde la siguiente | `R-22` |
 | ☐ | Vencido el plazo sin consecución: **mecha → se estira** · **cuerpo → nace apéndice** | `R-10`, `R-11` |
-| ☐ | El rectángulo se dibuja **desde la vela origen** | `R-19` |
+| ☐ | El rectángulo se dibuja **desde la vela origen** | `R-09` |
 
 ### Identificar
 

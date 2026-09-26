@@ -38,7 +38,7 @@ Palabras del operador (26/08/2026): *"ya no marco más zonas, no hago más anál
 |---|---|
 | Aplica a | Continuación · Reingreso |
 | Parámetros | `PLAZO_CONSECUCION` · `CANCELACION_FINAL` |
-| Relacionadas | R-02 · R-19 · R-20 · R-28 · R-32 |
+| Relacionadas | R-02 · R-09 · R-20 · R-28 · R-32 |
 | Casos | G-14 |
 
 ### Cómo se aplica
@@ -49,7 +49,7 @@ Palabras del operador (26/08/2026): *"ya no marco más zonas, no hago más anál
   3. Es la hora de `CANCELACION_FINAL`.
 - **NO cancela:** ⚠️ **la aparición de un retroceso nuevo.** Un retroceso nuevo deja la orden intacta.
 - **🔑 La caducidad se comprueba ANTES del llenado.** Pasado el plazo la orden ya no existe y no puede llenarse, aunque el precio toque el nivel en esa misma vela.
-- **🕯️ Cuando una misma vela toca el nivel de la orden y el stop,** se aplica el orden de la vela —el mismo de `R-19`, punto 6—: **vela azul, primero el mínimo; vela blanca, primero el máximo**. **Si llega antes al nivel de la orden, se llena**, y el stop puede saltar en esa misma vela. **Si llega antes al stop, la orden se cancela** sin llenarse.
+- **🕯️ Cuando una misma vela toca el nivel de la orden y el stop,** se aplica el orden de la vela —el mismo que decide qué vela sostiene la zona (`R-09`)—: **vela azul, primero el mínimo; vela blanca, primero el máximo**. **Si llega antes al nivel de la orden, se llena**, y el stop puede saltar en esa misma vela. **Si llega antes al stop, la orden se cancela** sin llenarse.
 - **Al cancelar:** se descarta el setup. **El cupo de `R-28` no se consume**: se puede esperar un setup nuevo dentro de la ventana de `R-02`.
 
 ### Por qué

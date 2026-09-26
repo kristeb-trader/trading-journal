@@ -1,6 +1,6 @@
 # Proyecto Chaumer
 
-Metodología de trading de Alfredo Chaumer para **MNQ** en NinjaTrader 8, traducida a un plan mecánico de **36 reglas medibles**. Operador: **Christian**. Uso personal.
+Metodología de trading de Alfredo Chaumer para **MNQ** en NinjaTrader 8, traducida a un plan mecánico de **35 reglas medibles**. Operador: **Christian**. Uso personal.
 
 **Fase 1** 🏁 cerrada (el plan) · **Fase 2** 🚧 en curso (el portal, en `04_Web\`) · 🔴 **TEST CIEGO EN MARCHA** desde el 14/09/2026 — protocolo en `05_Backtesting\test_ciego\LEEME_BACK_DIARIO.md`.
 
@@ -35,7 +35,7 @@ Si trabajando en otra cosa ves algo mal en el plan, **díselo al operador en ese
 
 ## Dónde está la verdad, y qué leer para cada cosa
 
-**Las reglas viven en `01_Plan\reglas\`: siete archivos, uno por grupo, en el orden del día** — perímetro (4) · estructura (4) · **zonas (14)** · setup y entrada (5) · riesgo y gestión (5) · filtros (3) · proceso (1). Cada regla con la misma plantilla: la regla, cómo se aplica, si no se cumple, excepciones y por qué. Es **la única fuente**: se edita ahí y en ningún otro sitio (desde el 26/09/2026; diseño en `docs/disenos/2026-09-25-reglas-chaumer.md`, en la raíz del repositorio).
+**Las reglas viven en `01_Plan\reglas\`: siete archivos, uno por grupo, en el orden del día** — perímetro (4) · estructura (4) · **zonas (13)** · setup y entrada (5) · riesgo y gestión (5) · filtros (3) · proceso (1). Cada regla con la misma plantilla: la regla, cómo se aplica, si no se cumple, excepciones y por qué. Es **la única fuente**: se edita ahí y en ningún otro sitio (desde el 26/09/2026; diseño en `docs/disenos/2026-09-25-reglas-chaumer.md`, en la raíz del repositorio).
 
 `01_Plan\reglas.json` **se genera** a partir de ellos —`node scripts/plan/leer-reglas.mjs --escribir`, desde la raíz del repositorio— y **no se edita a mano**: lo leen el portal, el Journal y la ficha del test ciego. La historia del plan (cambios, fechas, notas de construcción) está en `01_Plan\HISTORIAL.md`, y **no se lee para trabajar**.
 

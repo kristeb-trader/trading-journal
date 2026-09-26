@@ -775,6 +775,7 @@ Colombia es **UTC−5 fijo**: no aplica horario de verano. Todo lo demás se mue
 | **3.13** | **2026-09-23** | 🕯️ **Confirmado el orden de la vela también para las órdenes.** Cuando una misma vela toca el nivel de la orden y el stop: azul, primero el mínimo; blanca, primero el máximo. Si llega antes a la orden se llena —y el stop puede saltar en esa misma vela—; si llega antes al stop, se cancela. El motor ya lo aplicaba desde el 14/09 como **propuesta del auditor sin confirmar**; la jornada del **23/09** es la primera en que decide el resultado (−28,25 frente a +47,50 leída al revés) y el operador la da por buena. Añadido a `R-29`. Sin cambios en el motor ni en la regresión. **40 reglas** |
 | **3.14** | **2026-09-26** | 🔧 **Correcciones sin cambio de metodología** (fase 1 de la reestructuración de las reglas, D-028, con el sí del operador). En la checklist: el stop de la Continuación dice ya **el extremo alcanzado desde que nació la zona hasta la vela de rompimiento**, como `R-32` desde el 27/08 (la tabla «Medir» seguía con la definición vieja); la nota de los filtros deja de contarlos; «IRI descartado» pasa a «Continuación descartada»; sale el campo de registro de `P-20`, cerrado el 23/09. En contextualización, los segundos `C-08` y `C-09` pasan a `C-11` y `C-12` (había dos de cada). En pendientes, la copia abierta de `P-22` se marca cerrada. En el estado, el umbral vigente, los casos de la galería y los elementos de contextualización. **Ninguna regla cambia.** | **40 reglas** |
 | **3.15** | **2026-09-26** | 🗂️ **Las reglas pasan a siete archivos de grupo** (`reglas/`), con una plantilla fija, y **el documento maestro desaparece**: la explicación de cada regla va a su «Por qué», los anexos y esta tabla de versiones, a `HISTORIAL.md`. `reglas.json` pasa a ser un archivo **generado**. Reestructuración de las reglas (F2), con el sí del operador (D-028). De 1.900 frases del plan anterior no se pierde ninguna. Seis contradicciones con la regla vigente se resuelven a favor de la vigente y quedan registradas arriba. **Ninguna regla cambia lo que dice.** | **40 reglas** |
+| **3.23** | **2026-09-26** | 🔗 **Cuarta fusión (F3): sale la lista de las seis precisiones de dibujo** (`R-19`), con el sí del operador. Cuatro ya estaban escritas en su regla; las dos que solo estaban allí —el rectángulo desde la vela origen, y el orden de lo que hace por dentro una vela de máximo mayor y mínimo menor— pasan a `R-09`, que absorbe el código. El cambio de papel de una resistencia superada, a `R-13`, y cada caso real, a su regla. **La F3 queda cerrada: 35 reglas.** | **35 reglas** |
 | **3.22** | **2026-09-26** | 🔗 **Tercera fusión (F3): la vela de apertura, origen sí, sesgo no.** `R-07` absorbe `R-27` (la vela de apertura no sesga la jornada), con el sí del operador. **Y un cambio aprobado aparte:** la vela de apertura es la **09:31** en el horario de invierno de EE. UU. (la regla decía 08:31 fijo; la ventana ya se movía con `R-02`). También en el glosario. `R-27` lleva a `R-07`. | **36 reglas** |
 | **3.21** | **2026-09-26** | 🔗 **Segunda fusión (F3): solo hay dos salidas, stop u objetivo.** `R-33` absorbe `R-30` (fin de ventana con posición abierta), con el sí del operador. No cambia lo que se hace en el mercado. `R-30` lleva a `R-33`. | **37 reglas** |
 | **3.20** | **2026-09-26** | 🔗 **Primera fusión (F3): una operación, la primera que se llene, y ahí termina el día.** `R-28` absorbe `R-23` (selección de setup) y `R-34` (al llenarse termina el análisis), con el sí del operador. No cambia lo que se hace en el mercado: juntan ideas que ya eran una. Los códigos absorbidos llevan a `R-28`. | **38 reglas** |
@@ -3283,3 +3284,109 @@ Consecuencia abierta: la sesión no tiene hora de cierre garantizada (`P-07`).
 **Palabras del operador (27/08/2026):** *"la dirección de la vela de apertura no quiere decir que toda la jornada va a ser en esa dirección, solo da el mayor grado de favorabilidad a un trade IRI en la apertura, pero no quiere decir que se sesgue y no pueda operar un trade IRI en dirección contraria."*
 
 **Caso real 9/07/2026:** la vela 8:31 es bajista, pero el mercado sube 190 puntos desde la 8:33. Con el sesgo puesto el día no daba nada; sin sesgo aparece el largo del rompimiento de la vela 8:43, que el operador **sí tomó**.
+
+### `R-19` → `R-09` (plan 3.23)
+
+*Las precisiones se repartieron: 1 → `R-20` (el caso) · 2 → `R-21` (ya estaba) · 3 → `R-09` · 4 → `R-13` (ya estaba) · 5 → `R-13` (el cambio de papel y el caso) · 6 → `R-09`. El diseño mandaba la 6 a `R-08`; se puso en `R-09` porque sus dos casos son con corrida viva, y `R-08` solo trata el caso sin corrida viva (y tiene abierto `P-24`). El texto de antes de las cuatro reglas que se tocaron:*
+
+#### R-19 · Cómo se dibuja una zona — seis precisiones
+
+> Seis detalles de dibujo que el operador corrigió al auditor sobre casos reales del 8 de julio.
+
+| | |
+|---|---|
+| Aplica a | Continuación · Reingreso |
+| Parámetros | — |
+| Relacionadas | R-08 · R-09 · R-13 · R-16 · R-20 · R-21 |
+| Casos | G-13 |
+| Apartado | Marcado |
+| Fuente | operador, casos 8/07 y 10/07 |
+
+##### Cómo se aplica
+
+| # | Precisión | Caso que la fija |
+|---|---|---|
+| 1 | **El rompimiento se lee por la MECHA, no por el cierre.** Basta pasar 1 tick del borde | 8/07 vela 8:37: cierra dentro de la zona, pero su mínimo baja de 29.277,50 → rompe |
+| 2 | Una zona **no queda invalidada por el rompimiento solo**: hace falta la vela de consecución | ver `R-20` |
+| 3 | El **rectángulo se dibuja desde la vela origen**, no desde la vela que confirma | 8/07: la resistencia de la vela 8:33 arranca en la 8:33, no en la 8:36 |
+| 4 | Se estira **solo hacia el nuevo extremo**; el otro borde no se mueve | ver `R-13` |
+| 5 | **No se solapan zonas de tipo distinto** mientras una esté vigente. Una resistencia superada **cambia de papel a soporte** y sigue ocupando su franja | 8/07 vela 8:43: no se puede dibujar soporte donde ya vive la zona de la 8:37 |
+| 6 | Cuando una vela hace máximo mayor **y** mínimo menor, **el orden de lo que hace por dentro decide** qué vela sostiene la zona | 8/07 vela 8:36 (primero baja) vs 10/07 vela 8:36 (primero sube) |
+#### R-09 · Marcar una zona
+
+> Marca la zona sobre la vela designada, desde el borde de su cuerpo hasta el extremo de su mecha, y extiéndela hacia la derecha.
+
+| | |
+|---|---|
+| Aplica a | Continuación · Reingreso |
+| Parámetros | — |
+| Relacionadas | R-06 · R-12 · R-16 · R-19 · R-21 |
+| Casos | G-01 · G-02 · G-03 · G-11 · G-12 |
+| Apartado | Marcado |
+
+##### Cómo se aplica
+
+- **La vela designada:** la de **máximo más alto** (corrida alcista) o **mínimo más bajo** (corrida bajista), contando desde el origen de la corrida **hasta la vela que dispara el retroceso, ambas incluidas**.
+- **Cuándo:** al aparecer el retroceso (`R-06`), no antes.
+- **Los límites:** del borde del cuerpo al extremo de la mecha. En una resistencia, el límite inferior es el borde superior del cuerpo —el cierre si la vela es verde, la apertura si es roja— y el superior, el máximo de la vela.
+- **Vela sin mecha:** la zona es una línea en el extremo de la vela.
+- **Vela sin cuerpo** (apertura = cierre): el cuerpo mide cero; la zona va de ese precio a la punta de la mecha.
+- **El retroceso también marca zona:** el retroceso de una corrida alcista marca **soporte**, y el de una corrida bajista, **resistencia**. Sujeto a `R-12`: si el movimiento cruza el 50 % entre las zonas vecinas, no se marca.
+- **Se extiende hacia la derecha** a lo largo del gráfico.
+
+##### Por qué
+
+La búsqueda de la vela extrema **incluye la vela que dispara el retroceso**: una vela puede hacer máximo mayor y mínimo menor a la vez —dispara el retroceso— y aun así ser la más alta del movimiento. Caso real: 10/07/2026, vela 8:36.
+
+La definición de *zona* está en `GLOSARIO.md`.
+
+Diagramas: `../02_Assets/diagramas/R-09_zona.png` · `R-20_vigencia.png` · `R-10_extension_apendice.png`
+#### R-13 · Superposición de zonas — se estira, no se duplica
+
+> Si la zona que ibas a marcar toca una existente, no marques una nueva: estira la existente.
+
+| | |
+|---|---|
+| Aplica a | Continuación · Reingreso |
+| Parámetros | — |
+| Relacionadas | R-10 · R-19 · R-21 |
+| Casos | G-13 |
+| Apartado | Marcado |
+
+##### Cómo se aplica
+
+- **El disparador:** la zona candidata toca en cualquier punto una zona ya marcada **del mismo tipo**; el contacto de bordes cuenta.
+- **Crear una zona nueva está prohibido:** se estira la existente hasta el extremo más lejano de la candidata. Queda **una** zona.
+- **Se estira SOLO hacia el nuevo extremo;** el otro borde no se mueve. No se engloba.
+- **La zona estirada conserva su historial** de rompimientos y consecuciones (`R-21`).
+- **Candidata dentro de la existente:** sin cambios; no hay nada que extender.
+- **No se solapan zonas de tipo distinto** mientras una esté vigente: una zona viva ocupa su franja de precio.
+
+##### Por qué
+
+Desviación consciente `D-08`: el curso recorta la zona nueva y deja dos zonas; el operador las une en una sola.
+#### R-20 · Rompimiento y consecución
+
+> Rompimiento es superar el borde de la zona por al menos un tick; consecución es superar por un tick el extremo de la vela de rompimiento. La consecución que **traspasa** una zona no tiene plazo.
+
+| | |
+|---|---|
+| Aplica a | Continuación · Reingreso |
+| Parámetros | `TICK` · `PLAZO_CONSECUCION` |
+| Relacionadas | R-10 · R-11 · R-14 · R-21 · R-24 · R-29 |
+| Casos | G-01 · G-02 · G-03 · G-04 · G-05 · G-06 · G-11 · G-12 · G-13 · G-16 |
+| Apartado | Vigencia |
+
+##### Cómo se aplica
+
+- **Rompimiento:** un `TICK` más allá del borde de la zona. El cierre de la vela de rompimiento es irrelevante para que haya rompimiento — **la mecha basta**.
+- **Con cuerpo o con mecha:** el rompimiento es **con cuerpo** si el cierre queda más allá del borde traspasado; **con mecha**, si no.
+- **Consecución al alza:** máximo de la vela de rompimiento + 1 `TICK`. **A la baja:** mínimo de la vela de rompimiento − 1 `TICK`.
+- **El traspaso de la zona NO tiene plazo:** el rompimiento queda pendiente indefinidamente y la consecución lo confirma cuando llegue, aunque sea muchas velas después.
+- **El `PLAZO_CONSECUCION`**, contado desde la vela siguiente a la de rompimiento, gobierna solo **la geometría de la zona** (`R-10`, `R-11`, `R-14`) y **la vida de la orden** (`R-29`), no el traspaso. Las dos cosas ocurren sobre el **mismo** rompimiento: primero nace la apéndice o se estira la zona, y más tarde el traspaso se confirma igual.
+
+##### Por qué
+
+**La consecución al alza ES la entrada de `R-24`.** El mismo motor sirve para matar una zona y para entrar al mercado.
+
+Caso real 13/07/2026: la consecución que traspasa la zona llega **25 velas** después del rompimiento.

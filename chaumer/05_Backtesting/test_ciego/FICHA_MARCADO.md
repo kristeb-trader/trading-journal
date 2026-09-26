@@ -4,7 +4,7 @@
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
-**36 reglas.** Aquí van sin el porqué ni los ejemplos: solo lo que hay que aplicar.
+**35 reglas.** Aquí van sin el porqué ni los ejemplos: solo lo que hay que aplicar.
 
 ---
 
@@ -148,7 +148,7 @@ Una **vela envolvente** es la que hace **máximo mayor Y mínimo menor** que la 
 
 ---
 
-## Zonas  (14)
+## Zonas  (13)
 
 ### — marcado —
 
@@ -165,6 +165,8 @@ Marca la zona sobre la vela designada, desde el borde de su cuerpo hasta el extr
 - **Vela sin cuerpo** (apertura = cierre): el cuerpo mide cero; la zona va de ese precio a la punta de la mecha.
 - **El retroceso también marca zona:** el retroceso de una corrida alcista marca **soporte**, y el de una corrida bajista, **resistencia**. Sujeto a `R-12`: si el movimiento cruza el 50 % entre las zonas vecinas, no se marca.
 - **Se extiende hacia la derecha** a lo largo del gráfico.
+- **El rectángulo se dibuja desde la vela origen**, no desde la vela que confirma la zona.
+- **Cuando una vela hace máximo mayor y mínimo menor, el orden de lo que hace por dentro decide qué vela sostiene la zona.**
 
 #### `R-10` · Estirar la zona · rompimiento con mecha sin consecución
 
@@ -196,7 +198,7 @@ El rompimiento con cuerpo sin consecución se acaba de dos maneras, y vale **la 
 
 En cualquiera de los dos casos **la zona original no se toca** y nace una **segunda zona** sobre la mecha de la vela de rompimiento: un borde es el **borde del cuerpo** de esa vela, el otro es la **punta de su mecha**. Quedan **dos zonas**, la original y su apéndice.
 
-La apéndice se dibuja **desde la vela de rompimiento**, su vela origen, aunque no quede marcada hasta ese momento. Es del **mismo gris** que cualquier otra zona (`R-19`, precisión 3).
+La apéndice se dibuja **desde la vela de rompimiento**, su vela origen, aunque no quede marcada hasta ese momento. Es del **mismo gris** que cualquier otra zona (`R-09`).
 
 #### `R-12` · Zonas entre zonas — la regla del 50 %
 
@@ -223,6 +225,7 @@ Si la zona que ibas a marcar toca una existente, no marques una nueva: estira la
 - **La zona estirada conserva su historial** de rompimientos y consecuciones (`R-21`).
 - **Candidata dentro de la existente:** sin cambios; no hay nada que extender.
 - **No se solapan zonas de tipo distinto** mientras una esté vigente: una zona viva ocupa su franja de precio.
+- **Una resistencia superada cambia de papel a soporte** y sigue ocupando su franja.
 
 #### `R-14` · El plazo de consecución es un tope, no una espera
 
@@ -240,7 +243,7 @@ El plazo de consecución (`PLAZO_CONSECUCION`) es un **tope, no una espera oblig
 
 - **Si el retroceso de la segunda vela pasa del extremo** de la vela de rompimiento, **ya no es un retroceso: es la consecución**. No hay apéndice ni estiramiento; la zona queda traspasada.
 - **Qué se marca:** exactamente lo mismo que al vencer el plazo — **solo cambia el momento**. Rompimiento con **mecha** → la zona original **se estira** hasta esa mecha (`R-10`). Rompimiento con **cuerpo** → nace la **zona apéndice**, del cuerpo de la vela de rompimiento hasta el final de su mecha (`R-11`). **Aplica igual a los dos caminos, sin excepción.**
-- **Dibujo:** la apéndice es **del mismo gris que cualquier otra zona** y se dibuja **desde la vela de rompimiento**, que es su vela origen — aunque **no esté marcada** hasta el momento en que la estructura queda armada (`R-19`, precisión 3).
+- **Dibujo:** la apéndice es **del mismo gris que cualquier otra zona** y se dibuja **desde la vela de rompimiento**, que es su vela origen — aunque **no esté marcada** hasta el momento en que la estructura queda armada (`R-09`).
 - **Simetría:** aplica igual hacia arriba. Resistencia rota **con cuerpo hacia arriba** + estructura **bajista** completa antes del plazo → la apéndice nace ahí mismo.
 - **Si no hay estructura contraria:** se espera al `PLAZO_CONSECUCION` y se aplica `R-10` o `R-11`.
 - **Si la zona nueva toca la existente,** `R-13` la convierte en extensión.
@@ -311,21 +314,6 @@ Salir de una zona o de una banda es rompimiento más consecución, no geometría
 
 - **No se marca ninguna zona al otro lado de una zona viva cuyo rompimiento esté todavía esperando su consecución.**
 - **Decide el extremo del movimiento, no el rectángulo** de la zona candidata: si el extremo pasa el borde de esa zona, no se marca — aunque el rectángulo de la zona nueva se solape con el de la vieja.
-
-#### `R-19` · Cómo se dibuja una zona — seis precisiones
-
-Seis detalles de dibujo que el operador corrigió al auditor sobre casos reales del 8 de julio.
-
-**Cómo se aplica**
-
-| # | Precisión | Caso que la fija |
-|---|---|---|
-| 1 | **El rompimiento se lee por la MECHA, no por el cierre.** Basta pasar 1 tick del borde | 8/07 vela 8:37: cierra dentro de la zona, pero su mínimo baja de 29.277,50 → rompe |
-| 2 | Una zona **no queda invalidada por el rompimiento solo**: hace falta la vela de consecución | ver `R-20` |
-| 3 | El **rectángulo se dibuja desde la vela origen**, no desde la vela que confirma | 8/07: la resistencia de la vela 8:33 arranca en la 8:33, no en la 8:36 |
-| 4 | Se estira **solo hacia el nuevo extremo**; el otro borde no se mueve | ver `R-13` |
-| 5 | **No se solapan zonas de tipo distinto** mientras una esté vigente. Una resistencia superada **cambia de papel a soporte** y sigue ocupando su franja | 8/07 vela 8:43: no se puede dibujar soporte donde ya vive la zona de la 8:37 |
-| 6 | Cuando una vela hace máximo mayor **y** mínimo menor, **el orden de lo que hace por dentro decide** qué vela sostiene la zona | 8/07 vela 8:36 (primero baja) vs 10/07 vela 8:36 (primero sube) |
 
 ### — vigencia —
 
@@ -478,7 +466,7 @@ Cumplidas las tres, ese rompimiento es la entrada — el cuarto paso de la Conti
 | Vivo | flecha punteada, **naranja oscuro `#FF9A3C`**, contraste bajo, extendida hacia la derecha |
 | Roto | contraste más leve y **se corta una vela después** de la que lo rompió |
 
-> 🔴 **Ojo: aquí el rompimiento se lee por el CIERRE.** Es la única cosa del plan que **no** se rompe por la mecha. Una zona se rompe con que la mecha la pase por un tick (`R-19`, punto 1); un punto de referencia **necesita que una vela cierre más allá**. Si algún día esto se olvida, el filtro deja de funcionar: casi todos los puntos de referencia acaban pinchados por una mecha en algún momento.
+> 🔴 **Ojo: aquí el rompimiento se lee por el CIERRE.** Es la única cosa del plan que **no** se rompe por la mecha. Una zona se rompe con que la mecha la pase por un tick (`R-20`); un punto de referencia **necesita que una vela cierre más allá**. Si algún día esto se olvida, el filtro deja de funcionar: casi todos los puntos de referencia acaban pinchados por una mecha en algún momento.
 
 ---
 
@@ -512,7 +500,7 @@ Mantén la orden pendiente hasta que se llene, hasta que se agote el plazo de co
   3. Es la hora de `CANCELACION_FINAL`.
 - **NO cancela:** ⚠️ **la aparición de un retroceso nuevo.** Un retroceso nuevo deja la orden intacta.
 - **🔑 La caducidad se comprueba ANTES del llenado.** Pasado el plazo la orden ya no existe y no puede llenarse, aunque el precio toque el nivel en esa misma vela.
-- **🕯️ Cuando una misma vela toca el nivel de la orden y el stop,** se aplica el orden de la vela —el mismo de `R-19`, punto 6—: **vela azul, primero el mínimo; vela blanca, primero el máximo**. **Si llega antes al nivel de la orden, se llena**, y el stop puede saltar en esa misma vela. **Si llega antes al stop, la orden se cancela** sin llenarse.
+- **🕯️ Cuando una misma vela toca el nivel de la orden y el stop,** se aplica el orden de la vela —el mismo que decide qué vela sostiene la zona (`R-09`)—: **vela azul, primero el mínimo; vela blanca, primero el máximo**. **Si llega antes al nivel de la orden, se llena**, y el stop puede saltar en esa misma vela. **Si llega antes al stop, la orden se cancela** sin llenarse.
 - **Al cancelar:** se descarta el setup. **El cupo de `R-28` no se consume**: se puede esperar un setup nuevo dentro de la ventana de `R-02`.
 
 #### `R-31` · Configuración de ejecución (ATM `K1`)
