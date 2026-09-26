@@ -60,26 +60,6 @@ Palabras del operador (26/08/2026): *"ya no marco más zonas, no hago más anál
 
 **El orden de la vela, caso de origen 23/09/2026:** vela azul de 8:36 — baja a 30.922,00 y llena el corto en 30.925,75, después sube a 30.957,00 y salta el stop en 30.954,00. Palabras del operador: *"fue un stop válido, la vela primero bajó, hizo consecución y la misma vela después subió al stop"*. Leída al revés, la orden se habría cancelado y el día habría sido otro: **75,75 puntos** de diferencia.
 
-## R-30 · Fin de ventana con posición abierta
-
-> Una operación abierta se gestiona hasta stop o target, aunque termine la ventana operativa.
-
-| | |
-|---|---|
-| Aplica a | Continuación · Reingreso |
-| Parámetros | `VENTANA_OPERATIVA` |
-| Relacionadas | R-02 · R-33 |
-| Casos | — |
-
-### Cómo se aplica
-
-- **El fin de la `VENTANA_OPERATIVA` prohíbe abrir; no obliga a cerrar.** No existe cierre por tiempo.
-- **Ninguna acción por hora:** solo el stop o el objetivo cierran la posición.
-
-### Por qué
-
-Consecuencia abierta: la sesión no tiene hora de cierre garantizada (`P-07`).
-
 ## R-31 · Configuración de ejecución (ATM `K1`)
 
 > Ejecuta con la ATM `K1` al valor de `ATM_DEFECTO` y ajusta stop y target a mano tras el llenado, en ese orden.
@@ -157,16 +137,17 @@ Riesgo residual aceptado: la ventana de exposición manual tras el llenado, hast
 
 Palabras del operador: *"siempre el target debe estar libre de zonas o debe siempre tener espacio de recorrido sin nada en contra"*.
 
-## R-33 · No se gestiona
+## R-33 · Solo hay dos salidas: stop u objetivo
 
-> Una vez ajustados stop y target, **no se gestiona la posición. Nunca.**
+> Una vez ajustados stop y target, **no se gestiona la posición. Nunca.** Solo la cierran el stop o el objetivo, **aunque termine la ventana operativa**.
 
 | | |
 |---|---|
 | Aplica a | Continuación · Reingreso |
-| Parámetros | — |
-| Relacionadas | R-28 · R-30 · R-31 |
+| Parámetros | `VENTANA_OPERATIVA` |
+| Relacionadas | R-02 · R-28 · R-31 |
 | Casos | G-11 · G-12 |
+| Absorbe | R-30 |
 
 ### Cómo se aplica
 
@@ -178,9 +159,10 @@ Palabras del operador: *"siempre el target debe estar libre de zonas o debe siem
 | **Cerrar a mano** | ❌ también si el precio no se mueve o va en contra |
 | **Cierre parcial** | ❌ `R-31` fija `CONTRATOS`: no hay nada que partir |
 | **Añadir** contratos | ❌ |
-| **Cerrar por hora** | ❌ no existe · `R-30` |
+| **Cerrar por hora** | ❌ no existe |
 
-**Solo hay dos salidas: stop u objetivo.** No hay una tercera. Se deja que el mercado defina el resultado.
+- **El fin de la `VENTANA_OPERATIVA` prohíbe abrir; no obliga a cerrar.** Una operación abierta sigue hasta stop u objetivo aunque la ventana haya terminado.
+- **Solo hay dos salidas: stop u objetivo.** No hay una tercera. Se deja que el mercado defina el resultado.
 
 ### Por qué
 
@@ -188,3 +170,5 @@ Palabras del operador: *"siempre el target debe estar libre de zonas o debe siem
 > — Operador, 24/08/2026
 
 🔑 **Es la única regla del plan enunciada como prohibición absoluta**, sin excepciones. Y tiene un efecto que va más allá de la disciplina: convierte cada operación en un **experimento limpio**. Cuando se midan los resultados, medirán el setup — no la gestión. Sin esta regla, un plan mecánico no sería medible.
+
+Consecuencia abierta: la sesión no tiene hora de cierre garantizada (`P-07`).

@@ -4,7 +4,7 @@
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
-**38 reglas.** Aquí van sin el porqué ni los ejemplos: solo lo que hay que aplicar.
+**37 reglas.** Aquí van sin el porqué ni los ejemplos: solo lo que hay que aplicar.
 
 ---
 
@@ -489,7 +489,7 @@ Cumplidas las tres, ese rompimiento es la entrada — el cuarto paso de la Conti
 
 ---
 
-## Riesgo, orden y gestión  (6)
+## Riesgo, orden y gestión  (5)
 
 #### `R-28` · Una operación, la primera que se llene, y ahí termina el día
 
@@ -521,15 +521,6 @@ Mantén la orden pendiente hasta que se llene, hasta que se agote el plazo de co
 - **🔑 La caducidad se comprueba ANTES del llenado.** Pasado el plazo la orden ya no existe y no puede llenarse, aunque el precio toque el nivel en esa misma vela.
 - **🕯️ Cuando una misma vela toca el nivel de la orden y el stop,** se aplica el orden de la vela —el mismo de `R-19`, punto 6—: **vela azul, primero el mínimo; vela blanca, primero el máximo**. **Si llega antes al nivel de la orden, se llena**, y el stop puede saltar en esa misma vela. **Si llega antes al stop, la orden se cancela** sin llenarse.
 - **Al cancelar:** se descarta el setup. **El cupo de `R-28` no se consume**: se puede esperar un setup nuevo dentro de la ventana de `R-02`.
-
-#### `R-30` · Fin de ventana con posición abierta
-
-Una operación abierta se gestiona hasta stop o target, aunque termine la ventana operativa.
-
-**Cómo se aplica**
-
-- **El fin de la `VENTANA_OPERATIVA` prohíbe abrir; no obliga a cerrar.** No existe cierre por tiempo.
-- **Ninguna acción por hora:** solo el stop o el objetivo cierran la posición.
 
 #### `R-31` · Configuración de ejecución (ATM `K1`)
 
@@ -580,9 +571,9 @@ Ancla la regla en el nivel de entrada, mide el stop hasta su referencia estructu
 
 > 🔴 **El objetivo NUNCA se acorta para que quepa.** No existe media entrada ni ratio reducido.
 
-#### `R-33` · No se gestiona
+#### `R-33` · Solo hay dos salidas: stop u objetivo
 
-Una vez ajustados stop y target, **no se gestiona la posición. Nunca.**
+Una vez ajustados stop y target, **no se gestiona la posición. Nunca.** Solo la cierran el stop o el objetivo, **aunque termine la ventana operativa**.
 
 **Cómo se aplica**
 
@@ -594,9 +585,10 @@ Una vez ajustados stop y target, **no se gestiona la posición. Nunca.**
 | **Cerrar a mano** | ❌ también si el precio no se mueve o va en contra |
 | **Cierre parcial** | ❌ `R-31` fija `CONTRATOS`: no hay nada que partir |
 | **Añadir** contratos | ❌ |
-| **Cerrar por hora** | ❌ no existe · `R-30` |
+| **Cerrar por hora** | ❌ no existe |
 
-**Solo hay dos salidas: stop u objetivo.** No hay una tercera. Se deja que el mercado defina el resultado.
+- **El fin de la `VENTANA_OPERATIVA` prohíbe abrir; no obliga a cerrar.** Una operación abierta sigue hasta stop u objetivo aunque la ventana haya terminado.
+- **Solo hay dos salidas: stop u objetivo.** No hay una tercera. Se deja que el mercado defina el resultado.
 
 ---
 

@@ -34,7 +34,7 @@
       "orden": 5,
       "nombre": "Riesgo, orden y gestión",
       "descripcion": "cuánto y hasta dónde",
-      "n": 6
+      "n": 5
     },
     {
       "id": "filtros",
@@ -53,7 +53,8 @@
   ],
   "fusionadas": {
     "R-23": "R-28",
-    "R-34": "R-28"
+    "R-34": "R-28",
+    "R-30": "R-33"
   },
   "reglas": [
     {
@@ -1075,36 +1076,6 @@
       "enunciado": "Mantén la orden pendiente hasta que se llene, hasta que se agote el plazo de consecución, hasta que el precio vuelva al punto del stop, o hasta el fin de la ventana."
     },
     {
-      "id": "R-30",
-      "nombre": "Fin de ventana con posición abierta",
-      "grupo": "riesgo_gestion",
-      "grupo_nombre": "Riesgo, orden y gestión",
-      "grupo_orden": 5,
-      "regla": "Una operación abierta se gestiona hasta stop o target, aunque termine la ventana operativa.",
-      "aplica_a": [
-        "Continuación",
-        "Reingreso"
-      ],
-      "parametros": [
-        "VENTANA_OPERATIVA"
-      ],
-      "relacionadas": [
-        "R-02",
-        "R-33"
-      ],
-      "casos": [],
-      "apartado": null,
-      "fuente": null,
-      "pendiente": null,
-      "absorbe": [],
-      "como_se_aplica": "- **El fin de la `VENTANA_OPERATIVA` prohíbe abrir; no obliga a cerrar.** No existe cierre por tiempo.\n- **Ninguna acción por hora:** solo el stop o el objetivo cierran la posición.",
-      "porque": "Consecuencia abierta: la sesión no tiene hora de cierre garantizada (`P-07`).",
-      "si_no_se_cumple": null,
-      "excepciones": null,
-      "orden": 31,
-      "enunciado": "Una operación abierta se gestiona hasta stop o target, aunque termine la ventana operativa."
-    },
-    {
       "id": "R-31",
       "nombre": "Configuración de ejecución (ATM `K1`)",
       "grupo": "riesgo_gestion",
@@ -1139,7 +1110,7 @@
       "porque": "🔑 **`ATM_DEFECTO` = `STOP_MAX` a propósito.** El stop provisional nunca debe ser más ajustado que el estructural: si lo fuera, el mercado podría sacar al operador de una operación todavía viva antes de que moviera el stop a mano. Si un día cambia `STOP_MAX`, hay que cambiar `ATM_DEFECTO` con él (`PARAMETROS.md`).\n\nRiesgo residual aceptado: la ventana de exposición manual tras el llenado, hasta que se ajustan stop y objetivo (`P-09`).",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 32,
+      "orden": 31,
       "enunciado": "Ejecuta con la ATM K1 al valor de 320 ticks y ajusta stop y target a mano tras el llenado, en ese orden."
     },
     {
@@ -1186,40 +1157,44 @@
       "porque": "**Caso real 7/07/2026:** el soporte de la vela 9:27 se rompe con la vela 9:36. El retroceso que lo originó (9:28–9:30) tenía su techo en 29.313,00, pero la vela 9:32 subió hasta **29.327,75**. Midiendo solo el retroceso, el riesgo habría sido de 71,50 pts; con todo lo que hizo el precio mientras la zona estuvo viva, es de **86,25 pts**, y **la entrada queda descartada por `STOP_MAX`**.\n\n**Geometría:** el stop del Reingreso mide contra la corrida que rompió la zona y falló — al **otro lado** de la zona. Incluye el ancho de la zona entera, así que **tiende a ser mayor** que el de una Continuación: el filtro de `STOP_MAX` muerde más en Reingreso.\n\nPalabras del operador: *\"siempre el target debe estar libre de zonas o debe siempre tener espacio de recorrido sin nada en contra\"*.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 33,
+      "orden": 32,
       "enunciado": "Ancla la regla en el nivel de entrada, mide el stop hasta su referencia estructural y pon el target a esa misma distancia."
     },
     {
       "id": "R-33",
-      "nombre": "No se gestiona",
+      "nombre": "Solo hay dos salidas: stop u objetivo",
       "grupo": "riesgo_gestion",
       "grupo_nombre": "Riesgo, orden y gestión",
       "grupo_orden": 5,
-      "regla": "Una vez ajustados stop y target, **no se gestiona la posición. Nunca.**",
+      "regla": "Una vez ajustados stop y target, **no se gestiona la posición. Nunca.** Solo la cierran el stop o el objetivo, **aunque termine la ventana operativa**.",
       "aplica_a": [
         "Continuación",
         "Reingreso"
       ],
-      "parametros": [],
+      "parametros": [
+        "VENTANA_OPERATIVA"
+      ],
       "relacionadas": [
+        "R-02",
         "R-28",
-        "R-30",
         "R-31"
       ],
       "casos": [
         "G-11",
         "G-12"
       ],
+      "absorbe": [
+        "R-30"
+      ],
       "apartado": null,
       "fuente": null,
       "pendiente": null,
-      "absorbe": [],
-      "como_se_aplica": "| Queda prohibido, sin excepción | |\n|---|---|\n| Mover el **stop** | ❌ en cualquier dirección |\n| Mover el **objetivo** | ❌ en cualquier dirección |\n| **Breakeven** manual | ❌ |\n| **Cerrar a mano** | ❌ también si el precio no se mueve o va en contra |\n| **Cierre parcial** | ❌ `R-31` fija `CONTRATOS`: no hay nada que partir |\n| **Añadir** contratos | ❌ |\n| **Cerrar por hora** | ❌ no existe · `R-30` |\n\n**Solo hay dos salidas: stop u objetivo.** No hay una tercera. Se deja que el mercado defina el resultado.",
-      "porque": "> *\"Después de una entrada, y después de ajustar stop y target a sus respectivos niveles, no se toca nada, jamás. Se deja que el mercado haga lo suyo y defina su respectivo resultado. Repito, jamás se gestiona.\"*\n> — Operador, 24/08/2026\n\n🔑 **Es la única regla del plan enunciada como prohibición absoluta**, sin excepciones. Y tiene un efecto que va más allá de la disciplina: convierte cada operación en un **experimento limpio**. Cuando se midan los resultados, medirán el setup — no la gestión. Sin esta regla, un plan mecánico no sería medible.",
+      "como_se_aplica": "| Queda prohibido, sin excepción | |\n|---|---|\n| Mover el **stop** | ❌ en cualquier dirección |\n| Mover el **objetivo** | ❌ en cualquier dirección |\n| **Breakeven** manual | ❌ |\n| **Cerrar a mano** | ❌ también si el precio no se mueve o va en contra |\n| **Cierre parcial** | ❌ `R-31` fija `CONTRATOS`: no hay nada que partir |\n| **Añadir** contratos | ❌ |\n| **Cerrar por hora** | ❌ no existe |\n\n- **El fin de la `VENTANA_OPERATIVA` prohíbe abrir; no obliga a cerrar.** Una operación abierta sigue hasta stop u objetivo aunque la ventana haya terminado.\n- **Solo hay dos salidas: stop u objetivo.** No hay una tercera. Se deja que el mercado defina el resultado.",
+      "porque": "> *\"Después de una entrada, y después de ajustar stop y target a sus respectivos niveles, no se toca nada, jamás. Se deja que el mercado haga lo suyo y defina su respectivo resultado. Repito, jamás se gestiona.\"*\n> — Operador, 24/08/2026\n\n🔑 **Es la única regla del plan enunciada como prohibición absoluta**, sin excepciones. Y tiene un efecto que va más allá de la disciplina: convierte cada operación en un **experimento limpio**. Cuando se midan los resultados, medirán el setup — no la gestión. Sin esta regla, un plan mecánico no sería medible.\n\nConsecuencia abierta: la sesión no tiene hora de cierre garantizada (`P-07`).",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 34,
-      "enunciado": "Una vez ajustados stop y target, no se gestiona la posición. Nunca."
+      "orden": 33,
+      "enunciado": "Una vez ajustados stop y target, no se gestiona la posición. Nunca. Solo la cierran el stop o el objetivo, aunque termine la ventana operativa."
     },
     {
       "id": "R-35",
@@ -1249,7 +1224,7 @@
       "porque": "Una sola fuente evita el conflicto de dos calendarios que no siempre coinciden.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 35,
+      "orden": 34,
       "enunciado": "No operes en la ventana de ±5 minutos alrededor de una noticia roja de Forex Factory."
     },
     {
@@ -1281,7 +1256,7 @@
       "porque": "> 🔑 **Convive con `R-35` sin conflicto.** Un evento rojo de la Fed dispara las dos: el veto de Continuación durante todo el día **y** el bloqueo de `VENTANA_NOTICIA`. Misma fuente única, así que no hay dos calendarios que puedan discrepar.\n\n**La lógica del filtro:** el operador descarta el setup que **persigue continuación** y conserva el que **opera rompimientos fallidos** — justo el comportamiento que domina un mercado a la espera de la Fed.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 36,
+      "orden": 35,
       "enunciado": "En día de FOMC no se opera Continuación. Solo se permite Reingreso."
     },
     {
@@ -1308,7 +1283,7 @@
       "porque": "> ⚠️ **Es la única regla del plan sin criterio medible**, y la única que **un tercero no puede verificar**. Queda **fuera del alcance del test ciego**: ninguna captura podrá decir si se aplicó bien o mal.\n>\n> El operador la mantiene como criterio libre a propósito, y está registrado que lo es — no es un olvido ni un pendiente disfrazado.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 37,
+      "orden": 36,
       "enunciado": "No se opera estando enfermo o sin encontrarse bien mentalmente."
     },
     {
@@ -1341,7 +1316,7 @@
       "porque": "🔑 **Esta regla no añade criterio operativo.** Ordena las reglas del plan en la secuencia real del día, para que la sesión se ejecute leyendo de arriba abajo sin decidir nada.\n\n📓 **Lo que hace valioso este journal es que registra los días SIN operar y el porqué.** Casi ninguno lo hace, y es exactamente el dato que necesitan `P-01`, `P-21` y `D-09`. Sin él, esos pendientes no se cierran nunca.",
       "si_no_se_cumple": null,
       "excepciones": null,
-      "orden": 38,
+      "orden": 37,
       "enunciado": "Ejecuta la sesión siguiendo la checklist diaria en orden, y registra todas las sesiones, incluidas aquellas en que no se operó."
     }
   ]

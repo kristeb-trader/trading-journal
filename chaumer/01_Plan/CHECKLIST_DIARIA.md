@@ -3,7 +3,7 @@
 > **Se ejecuta de arriba abajo. No se decide nada que no esté aquí.**
 > Cada línea cita su regla. Si una respuesta es **NO** donde dice parar, **se para** — no se evalúa, no se matiza.
 
-**Versión del plan:** 3.20 · 2026-09-26 · **38 reglas**
+**Versión del plan:** 3.21 · 2026-09-26 · **37 reglas**
 
 ---
 
@@ -119,7 +119,7 @@
 | ☐ | 🛑 **NO SE TOCA NADA MÁS. JAMÁS.** Ni breakeven, ni cierre manual, ni parcial, ni añadir | `R-33` |
 | ☐ | Solo hay dos salidas: **stop o target** | `R-33` |
 | ☐ | Cupo consumido. **No más órdenes hoy**, aunque aparezcan setups válidos | `R-28` |
-| ☐ | El fin de ventana **no obliga a cerrar** una posición abierta | `R-30` |
+| ☐ | El fin de ventana **no obliga a cerrar** una posición abierta | `R-33` |
 
 ---
 

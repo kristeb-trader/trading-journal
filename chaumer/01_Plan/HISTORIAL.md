@@ -775,6 +775,7 @@ Colombia es **UTC−5 fijo**: no aplica horario de verano. Todo lo demás se mue
 | **3.13** | **2026-09-23** | 🕯️ **Confirmado el orden de la vela también para las órdenes.** Cuando una misma vela toca el nivel de la orden y el stop: azul, primero el mínimo; blanca, primero el máximo. Si llega antes a la orden se llena —y el stop puede saltar en esa misma vela—; si llega antes al stop, se cancela. El motor ya lo aplicaba desde el 14/09 como **propuesta del auditor sin confirmar**; la jornada del **23/09** es la primera en que decide el resultado (−28,25 frente a +47,50 leída al revés) y el operador la da por buena. Añadido a `R-29`. Sin cambios en el motor ni en la regresión. **40 reglas** |
 | **3.14** | **2026-09-26** | 🔧 **Correcciones sin cambio de metodología** (fase 1 de la reestructuración de las reglas, D-028, con el sí del operador). En la checklist: el stop de la Continuación dice ya **el extremo alcanzado desde que nació la zona hasta la vela de rompimiento**, como `R-32` desde el 27/08 (la tabla «Medir» seguía con la definición vieja); la nota de los filtros deja de contarlos; «IRI descartado» pasa a «Continuación descartada»; sale el campo de registro de `P-20`, cerrado el 23/09. En contextualización, los segundos `C-08` y `C-09` pasan a `C-11` y `C-12` (había dos de cada). En pendientes, la copia abierta de `P-22` se marca cerrada. En el estado, el umbral vigente, los casos de la galería y los elementos de contextualización. **Ninguna regla cambia.** | **40 reglas** |
 | **3.15** | **2026-09-26** | 🗂️ **Las reglas pasan a siete archivos de grupo** (`reglas/`), con una plantilla fija, y **el documento maestro desaparece**: la explicación de cada regla va a su «Por qué», los anexos y esta tabla de versiones, a `HISTORIAL.md`. `reglas.json` pasa a ser un archivo **generado**. Reestructuración de las reglas (F2), con el sí del operador (D-028). De 1.900 frases del plan anterior no se pierde ninguna. Seis contradicciones con la regla vigente se resuelven a favor de la vigente y quedan registradas arriba. **Ninguna regla cambia lo que dice.** | **40 reglas** |
+| **3.21** | **2026-09-26** | 🔗 **Segunda fusión (F3): solo hay dos salidas, stop u objetivo.** `R-33` absorbe `R-30` (fin de ventana con posición abierta), con el sí del operador. No cambia lo que se hace en el mercado. `R-30` lleva a `R-33`. | **37 reglas** |
 | **3.20** | **2026-09-26** | 🔗 **Primera fusión (F3): una operación, la primera que se llene, y ahí termina el día.** `R-28` absorbe `R-23` (selección de setup) y `R-34` (al llenarse termina el análisis), con el sí del operador. No cambia lo que se hace en el mercado: juntan ideas que ya eran una. Los códigos absorbidos llevan a `R-28`. | **38 reglas** |
 | **3.19** | **2026-09-26** | 🕯️ **«Vela interior» vuelve a ser el nombre del plan** para la vela que cabe entera dentro de la anterior (la que no hace nada), por decisión del operador (26/09/2026), igual que «vela envolvente» en la 3.18. La regla de la corrida ya lo usaba; el glosario lo daba por retirado y deja de hacerlo. **Ninguna regla cambia.** | **40 reglas** |
 | **3.18** | **2026-09-26** | 🕯️ **«Vela envolvente» vuelve a ser el nombre del plan** para la vela que hace máximo mayor y mínimo menor, por decisión del operador (26/09/2026). Las reglas ya lo usaban; el glosario lo daba por retirado desde el 26/08 y deja de hacerlo. La nota retirada, abajo. **Ninguna regla cambia.** | **40 reglas** |
@@ -3178,3 +3179,56 @@ vive ahora en **`_Historia\BITACORA.md`**.
 ##### Por qué
 
 Palabras del operador (26/08/2026): *"ya no marco más zonas, no hago más análisis, no hago nada más"*. Va más allá de `R-28` (no más órdenes) y de `R-33` (no tocar la posición): **prohíbe seguir analizando**. Sin esta regla, el operador podría seguir marcando zonas mientras ve acercarse su stop, que es el estado mental donde se rompen los planes.
+
+### `R-30` → `R-33` (plan 3.21)
+
+#### R-30 · Fin de ventana con posición abierta
+
+> Una operación abierta se gestiona hasta stop o target, aunque termine la ventana operativa.
+
+| | |
+|---|---|
+| Aplica a | Continuación · Reingreso |
+| Parámetros | `VENTANA_OPERATIVA` |
+| Relacionadas | R-02 · R-33 |
+| Casos | — |
+
+##### Cómo se aplica
+
+- **El fin de la `VENTANA_OPERATIVA` prohíbe abrir; no obliga a cerrar.** No existe cierre por tiempo.
+- **Ninguna acción por hora:** solo el stop o el objetivo cierran la posición.
+
+##### Por qué
+
+Consecuencia abierta: la sesión no tiene hora de cierre garantizada (`P-07`).
+#### R-33 · No se gestiona
+
+> Una vez ajustados stop y target, **no se gestiona la posición. Nunca.**
+
+| | |
+|---|---|
+| Aplica a | Continuación · Reingreso |
+| Parámetros | — |
+| Relacionadas | R-28 · R-30 · R-31 |
+| Casos | G-11 · G-12 |
+
+##### Cómo se aplica
+
+| Queda prohibido, sin excepción | |
+|---|---|
+| Mover el **stop** | ❌ en cualquier dirección |
+| Mover el **objetivo** | ❌ en cualquier dirección |
+| **Breakeven** manual | ❌ |
+| **Cerrar a mano** | ❌ también si el precio no se mueve o va en contra |
+| **Cierre parcial** | ❌ `R-31` fija `CONTRATOS`: no hay nada que partir |
+| **Añadir** contratos | ❌ |
+| **Cerrar por hora** | ❌ no existe · `R-30` |
+
+**Solo hay dos salidas: stop u objetivo.** No hay una tercera. Se deja que el mercado defina el resultado.
+
+##### Por qué
+
+> *"Después de una entrada, y después de ajustar stop y target a sus respectivos niveles, no se toca nada, jamás. Se deja que el mercado haga lo suyo y defina su respectivo resultado. Repito, jamás se gestiona."*
+> — Operador, 24/08/2026
+
+🔑 **Es la única regla del plan enunciada como prohibición absoluta**, sin excepciones. Y tiene un efecto que va más allá de la disciplina: convierte cada operación en un **experimento limpio**. Cuando se midan los resultados, medirán el setup — no la gestión. Sin esta regla, un plan mecánico no sería medible.
