@@ -406,7 +406,7 @@ se caen antes incluso de mirar el objetivo.
 Hoy da lo mismo porque los tres estaban descartados por otro lado. **El día que uno de esos sea el
 único setup de la jornada, hay que tener decidido si se opera o no.** Sin decidir.
 
-→ **Pendiente abierto el 28/09/2026:** `P-38` en `01_Plan\PENDIENTES.md`.
+→ **Pendiente abierto y cerrado el 28/09/2026** (`P-38`, plan 3.27): revisados los tres vela a vela, **ninguno es reingreso**. Las tres velas son azules: la vuelta bajo la zona llegó **antes** de la consecución. Operador: *"para pensar en un reingreso es solo después de que falla una consecución"*. Escrito en la regla del Reingreso; el motor, ajustado.
 
 ---
 
