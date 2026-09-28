@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Versión** | v1.6 · 28/09/2026 |
-| **Estado** | ✅ **Diseño v1.1 aprobado por Kris** (26/09/2026) · ✅ F0 · ✅ F1 · ✅ 2a · ✅ 2b · ✅ 2c · ✅ 2d — **F2 cerrada** · ✅ F3 — **35 reglas** · ✅ F4 (falta decidir la cabecera NQ → MNQ) |
+| **Estado** | ✅ **Diseño v1.1 aprobado por Kris** (26/09/2026) · ✅ F0 · ✅ F1 · ✅ 2a · ✅ 2b · ✅ 2c · ✅ 2d — **F2 cerrada** · ✅ F3 — **35 reglas** · ✅ F4 — **reestructuración terminada** |
 | **Alcance** | `chaumer/01_Plan` (las reglas y los documentos que las rodean), sus consumidores (portal, Journal, Coach, NinjaTrader, motor, test ciego) y cómo se ven en el portal |
 | **Regla que manda** | D-028: nada de `01_Plan` cambia sin el sí de Kris, cambio a cambio. Este documento no cambia nada |
 
@@ -96,7 +96,7 @@
   en la que la absorbió. La ficha no pinta la línea «Diagramas: ../02_Assets/…» del plan (rutas de archivo).
   Capturas antes/después: corrida fluida 2.892 → 2.565 px en escritorio, 5.475 → 4.000 px en el móvil.
   **De paso, un defecto previo:** en el móvil, la caja «Por grupo» estiraba el menú de todas las páginas de
-  reglas de 69 a 463 px; ahora va en fila. `npm run verificar`: 0 fallos. Queda la decisión de §6.2 (cabecera).
+  reglas de 69 a 463 px; ahora va en fila. `npm run verificar`: 0 fallos. **§6.2 decidido por Kris (28/09):** la cabecera y el título de las pestañas dicen «Trading Plan de Futuros MNQ».
 ---
 
 ## 1 · En una frase
