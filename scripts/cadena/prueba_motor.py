@@ -49,7 +49,7 @@ def dias_de(mod, path):
 def main():
     ref = sys.argv[1] if len(sys.argv) > 1 else 'HEAD'
     viejo, nuevo = motor_de_git(ref), motor_del_disco()
-    FED = set(viejo.FOMC)
+    FED = set(nuevo.FOMC)   # los de dias_fed.txt (28/09/2026): la versión de git cargada con exec no los lee
     fallos = 0
 
     fuentes = [(p, 8000) for p in sorted(glob.glob(os.path.join(BT, 'datos', 'dia', '*.txt')))]

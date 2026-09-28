@@ -29,11 +29,19 @@ def umbral_del_plan():
 UMBRAL_VOL = umbral_del_plan()
 PLAZO = 5            # velas para la consecucion
 
-# Dias de FOMC: solo se operan Reingresos, nunca Continuacion (antes IRI).
-# Julio 2026 confirmado por el operador (26/08/2026). Agosto: PENDIENTE de confirmar.
-FOMC = {'20260708','20260729','20260916'}
-# Desde el 24/09/2026 la cadena diaria del Trading Journal (scripts/cadena/subir_dia.py) sustituye
-# esta lista por la de Fechas Especiales (tipo fomc), igual que hace con UMBRAL_VOL.
+# Dias de FOMC (R-36): la sesion entera, solo Reingresos (confirmado por el operador 28/09/2026).
+# Desde el 28/09/2026 se LEEN de dias_fed.txt, la copia de Fechas Especiales del Trading Journal
+# que reescribe scripts/cadena/subir_dia.py. Antes iban escritos aqui y se quedaban atras: faltaban
+# el 19/08 (actas) y el 28/08 (Jackson Hole). La cadena diaria, ademas, los fija en cada pasada.
+def dias_fed():
+    """Las fechas de dias_fed.txt como 'AAAAMMDD'. Sin __file__ (la regresion carga una version
+    de git con exec) devuelve las tres de julio-septiembre que habia escritas hasta el 28/09."""
+    if '__file__' not in globals(): return {'20260708','20260729','20260916'}
+    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dias_fed.txt')
+    return {ln.split()[0].replace('-', '') for ln in open(ruta, encoding='utf-8')
+            if ln.strip() and not ln.startswith('#')}
+
+FOMC = dias_fed()
 
 def cargar(path):
     V=[]

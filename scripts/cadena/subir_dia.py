@@ -89,8 +89,22 @@ def umbral_del_plan():
     return int(m.group(1).replace('.', '')), datetime.date(int(m.group(4)), int(m.group(3)), int(m.group(2)))
 
 
+DIAS_FED = os.path.join(BT, 'dias_fed.txt')
+
+
 def dias_fed():
-    filas = sb('GET', 'catalogo_fechas?tipo=eq.fomc&activa=eq.true&select=fecha')
+    """Los días de Fed de Fechas Especiales. De paso deja al día dias_fed.txt, la copia que lee
+    lector.py cuando corre fuera de la cadena (regresión, gráficos, test ciego): 28/09/2026."""
+    filas = sb('GET', 'catalogo_fechas?tipo=eq.fomc&activa=eq.true&select=fecha,nombre&order=fecha')
+    try:
+        cab = [ln for ln in open(DIAS_FED, encoding='utf-8') if ln.startswith('#')]
+        antes = [ln for ln in open(DIAS_FED, encoding='utf-8') if ln.strip() and not ln.startswith('#')]
+    except FileNotFoundError:
+        cab, antes = ['# Días de Fed (R-36): copia de Fechas Especiales. La reescribe scripts/cadena/subir_dia.py.\n'], []
+    ahora = [f"{f['fecha']}  {f.get('nombre') or ''}".rstrip() + '\n' for f in filas]
+    if ahora != antes:
+        with open(DIAS_FED, 'w', encoding='utf-8', newline='\n') as fh: fh.writelines(cab + ahora)
+        log(f'dias_fed.txt al día con Fechas Especiales ({len(ahora)} días)')
     return {f['fecha'].replace('-', '') for f in filas}
 
 
