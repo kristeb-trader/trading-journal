@@ -77,10 +77,15 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
 - [x] **Visto en la 2d, corregido con el sí de Kris:** la zona nueva, en su regla (plan 3.24); los pendientes con textos
   viejos, al día (3.25)
 - [ ] **Kris, del test ciego:** decidir si las 10 jornadas (10 → 23/09) sirven para el criterio de cierre (9 de 10
-  coincidencias) o hace falta otra tanda con las reglas ya fijas. Aparte: la tabla «Test ciego — día por día» de la
-  galería solo tiene 3 de las 10, y `DISCREPANCIAS.md` llega hasta el 18/09; tres casos marcados «las reglas no cubren
-  el caso» (16, 17 y 18/09) no abrieron pendiente, como pide su protocolo
-- [x] **F3** — las fusiones, 40 → **35** (planes 3.20–3.23, cada una con el sí de Kris; la vela de apertura, a las 09:31 en invierno). Los documentos del Coach, sincronizados: ~122 KB. **Kris/Claude:** mirar en `coach_uso` el consumo de la próxima sesión del Coach
+  coincidencias) o hace falta otra tanda con las reglas ya fijas
+- [ ] **Borrador del plan 3.26, SIN COMMIT (28/09), en espera de Kris.** En el árbol de trabajo: la tabla del test
+  ciego de `GALERIA.md` con las 10 jornadas, `DISCREPANCIAS.md` con el 21, 22 y 23, y los tres casos «no cubren» como
+  pendientes (`P-38` reingreso de una sola vela · `P-23` ampliado con la vela de apertura de un tick · `P-39`
+  rompimiento en el premercado, y una línea en `P-34`), más versión e historial. Vigilante estricto en verde. Falta que
+  Kris diga: **(1)** si el 22/09 marcó lo mismo (largo 8:37, TARGET 8:51, +44,50 — solo consta el marcado de Claude);
+  **(2)** si lo del 17/09 va dentro de `P-23` o como pendiente propio. Después: commit `plan:` con su sincronización, y
+  commit aparte de `DISCREPANCIAS.md`
+- [x] **F3** — las fusiones, 40 → **35** (planes 3.20–3.23, cada una con el sí de Kris; la vela de apertura, a las 09:31 en invierno). Los documentos del Coach, sincronizados: ~122 KB. **Kris/Claude:** mirar en `coach_uso` el consumo de la próxima sesión del Coach (28/09: todavía ninguna desde la del 24/09)
 - [x] **F4** — la ficha nueva del portal (28/09, `a5f9847`) y, de paso, el menú del móvil en las páginas de reglas. La cabecera del portal ya dice «Futuros MNQ» (Kris, 28/09). **La reestructuración de las reglas está terminada**
 
 ### 🟡 El plan de Chaumer: lo que estaba «pendiente de Cowork» (25 sep, D-028)
