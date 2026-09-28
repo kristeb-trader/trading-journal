@@ -3,7 +3,7 @@
 Lo que el plan tiene abierto y las desviaciones conscientes respecto al curso. **Los pendientes cerrados, con su
 resolución, están en `HISTORIAL.md`**: aquí solo queda lo que sigue abierto.
 
-> Actualizado: 2026-09-28 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **35 reglas** · **18 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-40`
+> Actualizado: 2026-09-28 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **35 reglas** · **17 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-40`
 >
 > 🚨 **Los cuatro huecos declarados del cierre:** `P-29` test ciego: **en marcha desde el 14/09/2026, 10 jornadas marcadas (10 → 23/09), sin evaluar contra el criterio de cierre** · `P-21` sin regla de parada · falta la capa de contextualización · `P-27` las cifras del backtesting no miden la estrategia.
 
@@ -60,14 +60,6 @@ El motor de backtesting **no tiene filtro de noticias rojas** (`R-35`). Todos lo
 ---
 
 ## Abiertos · dudas de método
-
-### `P-23` · Vela de apertura sin cuerpo — ABIERTO 2026-08-26
-
-`R-07` declara la dirección del día por el cuerpo de la **08:31**: cierre por encima de la apertura → alcista; por debajo → bajista. **No cubre el empate**: cierre exactamente igual a la apertura.
-
-**Frecuencia:** por medir sobre las 39 sesiones. Probablemente muy raro en la vela de apertura, que suele tener cuerpo grande.
-
-**Estado:** ⏳ pendiente.
 
 ### `P-24` · ¿Sobra `R-08`? — ABIERTO 2026-08-26
 

@@ -81,13 +81,16 @@ Diagrama: `../02_Assets/diagramas/R-06_retroceso.png`
 | Relacionadas | R-05 · R-06 · R-08 · R-40 |
 | Casos | G-12 · G-14 |
 | Fuente | el sesgo: operador, caso 9/07/2026 |
-| Pendiente | P-23: cierre exactamente igual a la apertura · cuánto pesa la «mayor favorabilidad» del sentido de la apertura: el operador pidió dejarlo para la fase de contexto (`C-11`) |
+| Pendiente | cuánto pesa la «mayor favorabilidad» del sentido de la apertura: el operador pidió dejarlo para la fase de contexto (`C-11`) |
 | Absorbe | R-27 |
 
 ### Cómo se aplica
 
 - **Las velas anteriores a la ventana son premercado** —la 08:30 y anteriores en verano; la 09:30 y anteriores en invierno—. No sirven como `n−1` para `R-05` ni para `R-06`, ni para nada.
-- **La dirección NO la declara la vela siguiente.** La declara la propia vela de apertura, por la posición de su cierre respecto de su apertura.
+- **La dirección NO la declara la vela siguiente.** La declara la propia vela de apertura, por la posición de su cierre respecto de su apertura — salvo si la vela de apertura no tiene cuerpo:
+- **Vela de apertura sin cuerpo** (cierra donde abrió): no declara dirección. La declara **la primera vela siguiente que pase de su máximo o de su mínimo**: si pasa del **máximo**, el día inicia **alcista**; si pasa del **mínimo**, **bajista**. Las velas que se quedan dentro de su rango no dicen nada.
+- **Si esa vela pasa de los dos**, manda lo que hizo **primero**, según su color, igual que en el resto del plan: vela **azul**, primero el mínimo → **bajista**; vela **blanca**, primero el máximo → **alcista**.
+- **La vela de apertura sigue siendo la vela origen** también sin cuerpo: la corrida se mide desde su **máximo** si el día inicia bajista, o desde su **mínimo** si inicia alcista.
 - **Es la vela origen.** La corrida se mide desde su **mínimo** si es alcista, desde su **máximo** si es bajista.
 - Desde la vela siguiente en adelante manda `R-05` con normalidad, comparando **siempre contra la vela inmediatamente anterior**.
 - **Puede sostener zona** como cualquier otra vela.
@@ -98,6 +101,8 @@ Diagrama: `../02_Assets/diagramas/R-06_retroceso.png`
 **Casos reales:** 06/07, 07/07 y 10/07 de 2026 — las tres sesiones abren con la 08:31 alcista, y las zonas ya validadas por el operador salen idénticas con esta redacción.
 
 **Origen sí, sesgo no.** Palabras del operador (27/08/2026): *"la dirección de la vela de apertura no quiere decir que toda la jornada va a ser en esa dirección, solo da el mayor grado de favorabilidad a un trade IRI en la apertura, pero no quiere decir que se sesgue y no pueda operar un trade IRI en dirección contraria."*
+
+**Sin cuerpo** (28/09/2026, cierra `P-23`). En las 60 jornadas con datos no ha pasado ninguna vez; lo más cerca, el 17/09, con un tick de cuerpo. Decidido por el operador sobre dos ejemplos dibujados: *"la dirección la da la vela siguiente"*, comparándose con la vela de apertura, y la corrida se mide desde la vela de apertura. Si la siguiente pasa de los dos extremos: *"sería bajista, porque en la vela de las 08:32 lo primero que hizo fue bajar, entonces el precio inicia bajista y luego sube"* (vela azul). Si se queda dentro: *"la segunda vela no dice nada, pero la tercera fue alcista, entonces el precio inicia alcista"* — alcista porque **pasó del máximo** de la vela de apertura, no por su color.
 
 **Caso real 9/07/2026:** la vela 8:31 es bajista, pero el mercado sube 190 puntos desde la 8:33. Con el sesgo puesto el día no daba nada; sin sesgo aparece el largo del rompimiento de la vela 8:43, que el operador **sí tomó**.
 
