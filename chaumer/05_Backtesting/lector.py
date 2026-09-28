@@ -579,6 +579,13 @@ def detectar_setups(res, solo_reingresos=False):
             if   d=='arriba' and k['h']>=zhi and k['l']<zlo: nd=-1
             elif d=='abajo'  and k['l']<=zlo and k['h']>zhi: nd=+1
             else: continue
+            # CONFIRMADO POR EL OPERADOR 28/09/2026 (R-26, cierra P-38): si la consecucion
+            # llega en ESTA misma vela, solo es reingreso si la consecucion fue primero.
+            # Lo dice el color, como en R-09 y R-29: bajista -> vela blanca (maximo
+            # primero); alcista -> vela azul (minimo primero). Sin cuerpo: la consecucion
+            # cuenta, pero esta vela no es de reingreso; se mira lo que viene despues.
+            if z.i_consec == i and not ((k['c'] < k['o']) if nd < 0 else (k['c'] > k['o'])):
+                continue
             seg=range(z.roto[1], i+1)
             st = max(D[j]['h'] for j in seg) if nd<0 else min(D[j]['l'] for j in seg)
             e  = k['l']-TICK if nd<0 else k['h']+TICK
