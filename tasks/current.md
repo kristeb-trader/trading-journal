@@ -74,10 +74,12 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
   27/08 el plan hace lo mismo que Chaumer, banda a banda
 - [x] «Vela envolvente» y «vela interior» son los nombres del plan (Kris, 26/09; planes 3.18 y 3.19): el
   glosario deja de darlos por retirados y ya dice lo mismo que las reglas
-- [ ] **Visto en la 2d, sin tocar** (es del plan: con el sí de Kris):
-  - la regla de la vela base dice 08:31 fijo; desde el 2/11 (invierno) es la de las 09:31
-  - el pendiente del test ciego sigue abierto aunque el test arrancó el 14/09; y los de la equivalencia del
-    umbral y del data feed citan umbrales viejos (6.000, 2.000)
+- [x] **Visto en la 2d, corregido con el sí de Kris:** la zona nueva, en su regla (plan 3.24); los pendientes con textos
+  viejos, al día (3.25)
+- [ ] **Kris, del test ciego:** decidir si las 10 jornadas (10 → 23/09) sirven para el criterio de cierre (9 de 10
+  coincidencias) o hace falta otra tanda con las reglas ya fijas. Aparte: la tabla «Test ciego — día por día» de la
+  galería solo tiene 3 de las 10, y `DISCREPANCIAS.md` llega hasta el 18/09; tres casos marcados «las reglas no cubren
+  el caso» (16, 17 y 18/09) no abrieron pendiente, como pide su protocolo
 - [x] **F3** — las fusiones, 40 → **35** (planes 3.20–3.23, cada una con el sí de Kris; la vela de apertura, a las 09:31 en invierno). Los documentos del Coach, sincronizados: ~122 KB. **Kris/Claude:** mirar en `coach_uso` el consumo de la próxima sesión del Coach
 - [x] **F4** — la ficha nueva del portal (28/09, `a5f9847`) y, de paso, el menú del móvil en las páginas de reglas. La cabecera del portal ya dice «Futuros MNQ» (Kris, 28/09). **La reestructuración de las reglas está terminada**
 
