@@ -115,7 +115,7 @@ Con `P-25` cerrado queda escrita, por primera vez y en un solo sitio, la secuenc
 - **Contradice a `R-15`**, que dice que la zona de premercado se comporta *exactamente igual* que cualquier otra.
 - **Detectado el 11/09/2026:** el reingreso de las 9:01 lo encontré a mano; el motor no lo ve.
 - **Hermano del mismo fallo:** en día de FOMC pasa lo mismo por otra vía — el bloque de continuación se salta entero, así que tampoco se anotan rompimientos y **el motor no puede ver ningún reingreso en día de FOMC**, que es justo el único setup permitido esos días. Arreglarlo hace aparecer una operación el **8 de julio**, sesión ya validada como NO OPERA, así que **no se toca sin decidirlo con el operador**.
-  ✅ **Esta mitad se arregló el 24/09/2026**, con el sí del operador: el motor anota los rompimientos también en día de Fed y solo se salta la orden de Continuación. El 8/07 aparece un Reingreso bajista a las 8:38 con −64,75, **pendiente de que el operador lo revalide vela a vela**.
+  ✅ **Esta mitad se arregló el 24/09/2026**, con el sí del operador: el motor anota los rompimientos también en día de Fed y solo se salta la orden de Continuación. El 8/07 aparece un Reingreso bajista a las 8:38 con −64,75: **el operador lo revalidó el 28/09 y es válido** (julio pasa a −142,50 en 6).
 - **Estado:** ⏳ pendiente **la mitad de premercado**: `lector.py` sigue sin anotar el rompimiento de una zona que no nace de una corrida. No bloquea operar — bloquea el backtesting.
 
 ---

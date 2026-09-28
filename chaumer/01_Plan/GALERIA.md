@@ -364,7 +364,9 @@ Stop y target marcados a **43 puntos** cada uno — **1:1 correcto** (`R-32`) y 
 
 ## G-13 · 🔴 SESIÓN COMPLETA · 8 JULIO 2026 · el día que reescribió el marcado de zonas
 
-**FOMC.** Solo se permiten Reingresos (`R-36`) y no hubo ninguno válido → **NO OPERA**.
+**FOMC.** Solo se permiten Reingresos (`R-36`). **Reingreso bajista a las 8:38 → STOP 8:41, −64,75 pts.** Sobre la resistencia de la 8:33: la 8:36 la rompe, la 8:37 —blanca— da la consecución y se desploma por debajo de la zona en la misma vela (como el 6/07, `G-12`). Entrada 29.273,25, stop 29.338,00, objetivo 29.208,50.
+
+> 🔴 **Revalidado por el operador el 28/09/2026.** Hasta entonces este día figuraba como **NO OPERA**: el motor no veía reingresos en día de Fed (arreglado el 24/09) y el reingreso no se había mirado. El operador, vela a vela: *"sí, es válido"*.
 
 El valor de este día no está en la operativa sino en el marcado. El operador corrigió al auditor **seis veces**, vela por vela, y de ahí salió `R-19` entera y buena parte de `R-18`.
 
@@ -639,12 +641,14 @@ De aquí sale además el término **corrida fluida**, que es el que gobierna aho
 ## Resumen del backtesting día por día — remarcado el 14/09/2026 (11 días)
 
 > 🔴 **Esta tabla se rehízo el 14/09/2026** al reescribirse la regla de la corrida fluida. Cuatro días pierden su operación y uno la cambia. Lo que decía antes está justo debajo, para no perder el rastro.
+>
+> 🔴 **Y el 28/09/2026 el 8 de julio pasa de NO OPERA a un reingreso con −64,75**, revalidado por el operador. El total pasa de −77,75 en 5 a **−142,50 en 6**.
 
 | Día | Setup | Resultado | Puntos |
 |---|---|---|---|
 | **6 jul** | Reingreso bajista 8:48 | STOP 8:51 | **−58,75** |
 | **7 jul** | *(retirado el 14/09 — corrida no fluida)* | NO OPERA | — |
-| **8 jul** | — FOMC | NO OPERA | — |
+| **8 jul** | Reingreso bajista 8:38 *(día de Fed; revalidado el 28/09)* | STOP 8:41 | **−64,75** |
 | **9 jul** | *(retirado el 14/09 — corrida no fluida)* | NO OPERA | — |
 | **10 jul** | Continuación alcista 8:38 | STOP 8:40 | **−53,50** |
 | **13 jul** | Reingreso bajista 10:04 | **TARGET 10:09** | **+28,50** |
@@ -653,7 +657,7 @@ De aquí sale además el término **corrida fluida**, que es el que gobierna aho
 | **16 jul** | *(la bajista de 8:40 se retira el 14/09 — la corrida no era fluida)* | NO OPERA | — |
 | **17 jul** | Continuación alcista 9:04 *(la bajista de 8:44 se retira el 14/09)* | STOP 9:05 | **−50,25** |
 | **20 jul** | *(la bajista de 8:58 se retira el 14/09 — corrida no fluida)* | NO OPERA | — |
-| | | **Total** | **−77,75 pts en 5 operaciones** |
+| | | **Total** | **−142,50 pts en 6 operaciones** |
 
 ## Test ciego — día por día
 
