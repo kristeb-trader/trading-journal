@@ -176,6 +176,7 @@ El curso y Chaumer en vivo cierran el marcado entre dos zonas tras el primer ret
 - **Se estira SOLO hacia el nuevo extremo;** el otro borde no se mueve. No se engloba.
 - **La zona estirada conserva su historial** de rompimientos y consecuciones (`R-21`).
 - **Candidata dentro de la existente:** sin cambios; no hay nada que extender.
+- **Si no se tocan, son dos zonas,** aunque las separe un tick. No hay distancia mínima que las junte.
 - **No se solapan zonas de tipo distinto** mientras una esté vigente: una zona viva ocupa su franja de precio.
 - **Una resistencia superada cambia de papel a soporte** y sigue ocupando su franja.
 
@@ -184,6 +185,8 @@ El curso y Chaumer en vivo cierran el marcado entre dos zonas tras el primer ret
 Desviación consciente `D-08`: el curso recorta la zona nueva y deja dos zonas; el operador las une en una sola.
 
 **Caso real 8/07/2026, vela 8:43:** no se puede dibujar soporte donde ya vive la zona de la 8:37.
+
+**Sin tocarse, dos zonas** (28/09/2026, cierra `P-28`). Palabras del operador: *"si no se tocan son dos"*. No es un caso raro: en 52 jornadas con datos hay 43 parejas de zonas del mismo tipo vivas a la vez a 5 puntos o menos, alguna a un solo tick (4/08, 0,25 puntos). Y a veces decide el día: el 10/09 la resistencia de la 8:37 queda 2,25 puntos por encima de la de la 8:32, que estaba bloqueada; por ser dos, la de la 8:37 queda **entera más allá** y da la entrada del día (`R-40`), +40,50.
 
 ## R-14 · El plazo de consecución es un tope, no una espera
 
