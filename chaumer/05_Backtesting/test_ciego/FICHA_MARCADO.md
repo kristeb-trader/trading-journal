@@ -4,7 +4,7 @@
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
-**35 reglas.** Aquí van sin el porqué ni los ejemplos: solo lo que hay que aplicar.
+**34 reglas.** Aquí van sin el porqué ni los ejemplos: solo lo que hay que aplicar.
 
 ---
 
@@ -88,7 +88,7 @@ Opera siempre con `CONTRATOS`. El tamaño no cambia por capital, racha ni convic
 
 ---
 
-## Estructura del precio  (4)
+## Estructura del precio  (3)
 
 #### `R-05` · Corrida (= impulso)
 
@@ -137,17 +137,6 @@ La primera vela de la ventana operativa —la **08:31** hora Colombia en el hora
 - Desde la vela siguiente en adelante manda `R-05` con normalidad, comparando **siempre contra la vela inmediatamente anterior**.
 - **Puede sostener zona** como cualquier otra vela.
 - **No sesga la jornada: se buscan entradas de continuación en los dos sentidos.** Cada tramo, suba o baje, deja su zona al terminar, y esa zona sirve para entrar **a favor de ese tramo**: una zona nacida al final de una subida se opera larga cuando se rompe hacia arriba; una nacida al final de una bajada, corta cuando se rompe hacia abajo.
-
-#### `R-08` · Vela envolvente sin corrida viva
-
-Una **vela envolvente** es la que hace **máximo mayor Y mínimo menor** que la anterior. Cuando aparece **sin corrida viva**, no declara dirección: pasa a ser la nueva vela origen y la dirección la da la vela siguiente.
-
-**Cómo se aplica**
-
-- Sin corrida viva, si `máximo[n] > máximo[n−1]` **y** `mínimo[n] < mínimo[n−1]` → la vela `n` es el **nuevo origen**. Se evalúa `n+1` contra `n`.
-- Si `n+1` **también** es envolvente, se repite: `n+1` pasa a origen y decide `n+2`. Sin límite de repeticiones.
-- La corrida se mide desde el extremo de la **última** vela origen.
-- **NO aplica con corrida viva.** Ahí manda `R-05`: mínimo menor **mata** la corrida, sea envolvente o no.
 
 ---
 
