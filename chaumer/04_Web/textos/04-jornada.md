@@ -46,12 +46,6 @@ La primera vela después de la apertura — la de las 08:31 en horario de verano
 - **Las velas anteriores** — No sirven de referencia. La estructura del día empieza aquí
 - **¿Puede sostener una zona?** — Sí
 
-#### La vela que abarca a la anterior R-08
-
-Hay un caso que rompe la cuenta: una vela que hace a la vez máximo más alto y mínimo más bajo que la anterior, sin que haya un movimiento vivo. Esa vela **no declara dirección**: pasa a ser la nueva vela origen, y la dirección la da la siguiente.
-
-Si la siguiente vuelve a hacer lo mismo, se repite el mismo criterio, sin límite. Con un movimiento ya vivo esto no aplica: manda el movimiento.
-
 #### Por dónde empieza el día R-27
 
 Que la primera vela declare una dirección no significa que haya que operar en ese sentido toda la mañana.
