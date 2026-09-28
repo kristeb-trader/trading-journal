@@ -3,7 +3,7 @@
 > **Se ejecuta de arriba abajo. No se decide nada que no esté aquí.**
 > Cada línea cita su regla. Si una respuesta es **NO** donde dice parar, **se para** — no se evalúa, no se matiza.
 
-**Versión del plan:** 3.25 · 2026-09-28 · **35 reglas**
+**Versión del plan:** 3.26 · 2026-09-28 · **35 reglas**
 
 ---
 
