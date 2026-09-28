@@ -78,13 +78,16 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
   viejos, al día (3.25)
 - [ ] **Kris, del test ciego:** decidir si las 10 jornadas (10 → 23/09) sirven para el criterio de cierre (9 de 10
   coincidencias) o hace falta otra tanda con las reglas ya fijas
-- [ ] **Borrador del plan 3.26, SIN COMMIT (28/09), en espera de Kris.** En el árbol de trabajo: la tabla del test
-  ciego de `GALERIA.md` con las 10 jornadas, `DISCREPANCIAS.md` con el 21, 22 y 23, y los tres casos «no cubren» como
-  pendientes (`P-38` reingreso de una sola vela · `P-23` ampliado con la vela de apertura de un tick · `P-39`
-  rompimiento en el premercado, y una línea en `P-34`), más versión e historial. Vigilante estricto en verde. Falta que
-  Kris diga: **(1)** si el 22/09 marcó lo mismo (largo 8:37, TARGET 8:51, +44,50 — solo consta el marcado de Claude);
-  **(2)** si lo del 17/09 va dentro de `P-23` o como pendiente propio. Después: commit `plan:` con su sincronización, y
-  commit aparte de `DISCREPANCIAS.md`
+- [x] **El registro del test ciego, al día** (plan 3.26, `31e2a4a`): las 10 jornadas en la galería y en
+  `DISCREPANCIAS.md`; el 22/09 confirmado; el 17/09 decidido (un tick de cuerpo basta); pendientes nuevos `P-38` y `P-39`
+- [ ] **Antes del backtesting, cerrar los pendientes de método** (acordado con Kris el 28/09). Orden: **A** · decisiones
+  de Kris, una a una — reingreso de una sola vela (`P-38`, en curso) · rompimiento en el premercado (`P-39`) · vela de
+  apertura sin cuerpo (`P-23`) · la Fed, toda la sesión o solo el anuncio (`P-26`) · ¿sobra la vela envolvente? (`P-24`)
+  · zonas del mismo tipo muy cerca (`P-28`) · revalidar el 8/07. **B** · el motor, después de A: resolución anticipada
+  (`P-31`), banda y turno (`P-33`), rompimientos de premercado (`P-34`), calendario de noticias (`P-27`), umbral NQ/MNQ
+  (`P-32`; Kris exporta el premercado de MNQ de julio). Luego congelar versión, 10 jornadas de test ciego con reglas
+  fijas, y entonces el backtesting. **C** (se cierran con el backtesting: parada, mín/máx de premercado, retroceso
+  mínimo) y **D** (Apex, cierre sin hora, conexión, términos del curso) no lo bloquean
 - [x] **F3** — las fusiones, 40 → **35** (planes 3.20–3.23, cada una con el sí de Kris; la vela de apertura, a las 09:31 en invierno). Los documentos del Coach, sincronizados: ~122 KB. **Kris/Claude:** mirar en `coach_uso` el consumo de la próxima sesión del Coach (28/09: todavía ninguna desde la del 24/09)
 - [x] **F4** — la ficha nueva del portal (28/09, `a5f9847`) y, de paso, el menú del móvil en las páginas de reglas. La cabecera del portal ya dice «Futuros MNQ» (Kris, 28/09). **La reestructuración de las reglas está terminada**
 

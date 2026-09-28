@@ -406,6 +406,8 @@ se caen antes incluso de mirar el objetivo.
 Hoy da lo mismo porque los tres estaban descartados por otro lado. **El día que uno de esos sea el
 único setup de la jornada, hay que tener decidido si se opera o no.** Sin decidir.
 
+→ **Pendiente abierto el 28/09/2026:** `P-38` en `01_Plan\PENDIENTES.md`.
+
 ---
 
 # Jueves 17 de septiembre de 2026 — coincidimos · el día entero cuelga de un tick
@@ -455,6 +457,11 @@ que aparecen en su lugar se caen los dos por objetivo tapado.
 **Tres ticks de diferencia en la vela de apertura separan tres jornadas distintas.** No es que la
 regla esté mal: es que hoy cayó justo en el filo, y conviene saber si eso se acepta tal cual o si la
 vela base necesita un cuerpo mínimo para declarar dirección. Sin decidir.
+
+→ **Decidido el 28/09/2026 — no abre pendiente.** El operador: *"la vela de apertura fue bajista, entonces el
+día inicia bajista"*. Un tick de cuerpo basta para declarar la dirección: no hay cuerpo mínimo. Sigue abierto solo el
+empate exacto —apertura igual a cierre—, que ya era `P-23`. Frecuencia medida ese día sobre 53 jornadas (julio a
+septiembre): 2 con un cuerpo de un punto o menos en la vela de apertura —el 17 y el 18/09— y ninguna con cuerpo cero.
 
 ---
 
@@ -567,3 +574,87 @@ banda entera**, no solo el rectángulo de la zona muerta.
 - 🔴 **Sigue abierto** el agujero del premercado en el motor: no anota los rompimientos de esas zonas,
   y encima los que ve los sitúa mal porque no mira las velas anteriores a la apertura.
 
+→ **Pendientes, 28/09/2026:** lo que no cubrían las reglas quedó escrito el 21/09, así que no abre pendiente.
+Lo que sí queda abierto: `P-39`, si cuenta un rompimiento hecho en el premercado —el de la vela de 8:30—, y
+la parte del motor, sumada a `P-34`. Los dos en `01_Plan\PENDIENTES.md`.
+
+
+---
+
+# Lunes 21 de septiembre de 2026 — la fluidez se pierde y se recupera dos veces
+
+> 📝 **Escrita el 28/09/2026**, al poner este registro al día. Los números salen del motor, que los reproduce
+> hoy igual que el plan los recoge como caso de la regla de la corrida fluida (versión 3.11, 21/09/2026).
+
+**Sin noticias rojas. No es día de Fed.**
+
+**Veredicto: Continuación alcista, +23,75 pts = +47,50 USD.**
+
+| | |
+|---|---|
+| Dirección de la vela de apertura | **alcista** (8:31, abre 30.222,00 · cierra 30.253,25) |
+| Premercado | **sin zonas** — la vela más fuerte hizo 4.444 (7:45) |
+| Entrada | largo · orden tras la vela de 8:58 · se llena en la de **8:59** en **30.418,25** |
+| Stop | **30.394,50** · Objetivo **30.442,00** · riesgo **23,75 pts** |
+| Resultado | **TARGET a las 9:14** · +23,75 pts |
+
+**La primera jornada que ejercita entero el bloqueo de sentido**, escrito ese mismo día a partir del 18/09:
+
+1. Se pierde a las **8:34**: retroceso de 44,25 contra una corrida de 38,75.
+2. **Rompimiento directo** a las **8:37**, sobre la resistencia de la apertura — no se opera.
+3. Se recupera: largo a las **8:49**, que **se cancela antes de llenar** (el precio vuelve al punto del stop a las 8:51).
+4. Se **vuelve a perder** a las **8:51**: 20,00 contra 16,25.
+5. **Segundo rompimiento directo** a las **8:52**. Ahí mismo aparece un reingreso bajista que se cae porque el
+   objetivo choca con el soporte de 8:48.
+6. Se recupera con la entrada de las **8:59**.
+
+---
+
+# Martes 22 de septiembre de 2026 — coincidimos
+
+> 📝 **Escrita el 28/09/2026**, al poner este registro al día. Solo se había guardado el marcado de Claude
+> (`Back_claude\2026-09-22.png`); el operador confirma el 28/09 que marcó lo mismo.
+
+**Sin noticias rojas. No es día de Fed.**
+
+**Veredicto: Continuación alcista, +44,50 pts = +89,00 USD.**
+
+| | |
+|---|---|
+| Dirección de la vela de apertura | **alcista** (8:31, abre 30.764,50 · cierra 30.813,50) |
+| Premercado | **sin zonas** — la vela más fuerte hizo 7.238 (4:53), por debajo del umbral de 8.000 |
+| Zonas | resistencia **30.859,25 – 30.868,25** (vela 8:34) · soporte **30.842,25 – 30.853,75** (vela 8:35) |
+| Entrada | largo · orden tras la vela de 8:36 · se llena en la de **8:37** en **30.886,75** |
+| Stop | **30.842,25** · Objetivo **30.931,25** · riesgo **44,50 pts** |
+| Resultado | **TARGET a las 8:51** · +44,50 pts |
+
+---
+
+# Miércoles 23 de septiembre de 2026 — coincidimos · la orden se llena y salta el stop en la misma vela
+
+> 📝 **Escrita el 28/09/2026**, al poner este registro al día. El caso y las palabras del operador están en el
+> plan desde el 23/09 (versión 3.13).
+
+**Sin noticias rojas. No es día de Fed.**
+
+**Veredicto: Continuación bajista, −28,25 pts = −56,50 USD.**
+
+| | |
+|---|---|
+| Dirección de la vela de apertura | **bajista** (8:31, abre 31.006,25 · cierra 30.965,25) |
+| Premercado | **sin zonas** — la vela más fuerte hizo 3.990 (8:26) |
+| Zonas | soporte **30.927,25 – 30.938,75** (vela 8:33) · resistencia **30.951,75 – 30.954,00** (vela 8:35) |
+| Entrada | corto · orden tras la vela de 8:35 · se llena en la de **8:36** en **30.925,75** |
+| Stop | **30.954,00** · Objetivo **30.897,50** · riesgo **28,25 pts** |
+| Resultado | **STOP a las 8:36**, en la misma vela del llenado · −28,25 pts |
+
+## 🟡 Las reglas no cubrían el caso — y se decidió ese mismo día
+
+La vela de 8:36 es azul y toca en el mismo minuto el nivel de la orden y el stop: baja a 30.922,00 (llena el
+corto) y sube a 30.957,00 (salta el stop). El motor aplicaba desde el 14/09, como **propuesta sin confirmar**,
+el orden de la vela también a las órdenes: azul, primero el mínimo. **Es la primera jornada en que eso decide
+el resultado**: leída al revés, la orden se cancela y el día da +47,50.
+
+El operador la da por buena: *"fue un stop válido, la vela primero bajó, hizo consecución y la misma vela
+después subió al stop"*. **Confirmado el 23/09/2026** y escrito en la regla de caducidad de la orden (versión
+3.13). No abre pendiente.
