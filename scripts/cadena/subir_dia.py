@@ -108,6 +108,25 @@ def dias_fed():
     return {f['fecha'].replace('-', '') for f in filas}
 
 
+NOTICIAS_ROJAS = os.path.join(BT, 'noticias_rojas.txt')
+
+
+def noticias_rojas():
+    """Deja al día noticias_rojas.txt, la copia de sesion_noticias (hora Colombia) que lee
+    lector.py para la regla de la noticia roja (R-35): 28/09/2026."""
+    filas = sb('GET', 'sesion_noticias?select=sesion_date,hora,nombre&order=sesion_date,hora')
+    try:
+        cab = [ln for ln in open(NOTICIAS_ROJAS, encoding='utf-8') if ln.startswith('#')]
+        antes = [ln for ln in open(NOTICIAS_ROJAS, encoding='utf-8') if ln.strip() and not ln.startswith('#')]
+    except FileNotFoundError:
+        cab, antes = ['# Noticias rojas (R-35), hora Colombia: copia de sesion_noticias. La reescribe scripts/cadena/subir_dia.py.\n'], []
+    ahora = [f"{f['sesion_date']}  {str(f['hora'])[:5]}  {f.get('nombre') or ''}".rstrip() + '\n' for f in filas]
+    if ahora != antes:
+        with open(NOTICIAS_ROJAS, 'w', encoding='utf-8', newline='\n') as fh: fh.writelines(cab + ahora)
+        log(f'noticias_rojas.txt al día con el Journal ({len(ahora)} noticias)')
+        lector.NOTICIAS = lector.noticias_rojas()
+
+
 def noticias_fed(fecha):
     filas = sb('GET', f'sesion_noticias?sesion_date=eq.{fecha}&select=hora,nombre')
     return [f"{str(n['hora'])[:5]} {n['nombre']}" for n in filas
@@ -288,6 +307,7 @@ def main(argv):
     except Exception as e:
         log(f'❌ {e}: no se sube nada (el umbral no se inventa)'); return 1
     fed_set = dias_fed()
+    noticias_rojas()
     if '--pendientes' in argv:
         n = int(argv[argv.index('--dias') + 1]) if '--dias' in argv else 10
         fechas = pendientes(n, huella_motor)

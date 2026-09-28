@@ -1,0 +1,30 @@
+# Noticias rojas (R-35): copia de las que Kris anota en el Journal (sesion_noticias), en HORA COLOMBIA.
+# La lee lector.py. La reescribe scripts/cadena/subir_dia.py cada vez que corre, si cambiaron.
+# No se edita a mano: se anotan en el Diario de la sesión. Un día sin noticias cuenta como día sin noticia roja.
+2026-06-03  09:00  ISM Services PMI
+2026-06-05  07:30  Unemployment Rate
+2026-06-10  07:30  Core CPI m/m
+2026-06-11  07:30  Core PPI m/m
+2026-06-17  13:00  FOMC Economic Projections
+2026-06-17  13:30  FOMC Press Conference
+2026-06-25  07:30  Core PCE Price Index m/m
+2026-07-01  09:00  ISM Manufacturing PMI
+2026-07-02  07:30  Average Hourly Earnings m/m
+2026-07-06  09:00  ISM Services PMI
+2026-07-08  13:00  FOMC Meeting Minutes
+2026-07-09  07:30  Unemployment Claims
+2026-07-14  07:30  Core CPI m/m · Core CPI y/y · CPI m/m · CPI y/y
+2026-07-14  09:00  Fed Chairman Warsh Testifies
+2026-07-15  07:30  Core PPI m/m · PPI m/m
+2026-07-15  09:00  Fed Chairman Warsh Testifies
+2026-08-03  09:00  ISM Manufacturing PMI
+2026-08-12  07:30  Core CPI m/m
+2026-08-13  07:30  Core PPI m/m
+2026-08-19  13:00  FOMC Meeting Minutes
+2026-08-26  07:30  Core PCE Price Index m/m
+2026-08-28  09:00  Fed Chairman Warsh Speaks
+2026-08-28  12:00  Jackson Hole Symposium
+2026-09-01  10:00  ISM Manufacturing PMI
+2026-09-04  07:30  Unemployment Rate
+2026-09-10  07:30  Core PPI m/m
+2026-09-16  13:00  FOMC Economic Projections

@@ -43,6 +43,38 @@ def dias_fed():
 
 FOMC = dias_fed()
 
+# Noticias rojas (R-35): de T-5 a T+5 no se coloca ninguna orden; una pendiente se retira al entrar
+# T-5 y se vuelve a colocar pasado T+5 si el setup sigue vivo. Desde el 28/09/2026 se LEEN de
+# noticias_rojas.txt, la copia de las noticias que Kris anota en el Journal (sesion_noticias),
+# en hora Colombia; la reescribe scripts/cadena/subir_dia.py. Un dia sin noticias anotadas cuenta
+# como dia sin noticia roja.
+VENTANA_NOTICIA = 5
+def noticias_rojas():
+    """{'AAAAMMDD': [minutos del dia, hora Colombia]}. Sin __file__ (la regresion carga una
+    version de git con exec) no hay noticias: el motor anterior al 28/09 no las aplicaba."""
+    if '__file__' not in globals(): return {}
+    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'noticias_rojas.txt')
+    out = {}
+    for ln in open(ruta, encoding='utf-8'):
+        if not ln.strip() or ln.startswith('#'): continue
+        f, h = ln.split()[:2]
+        out.setdefault(f.replace('-', ''), []).append(int(h[:2]) * 60 + int(h[3:5]))
+    return out
+
+NOTICIAS = noticias_rojas()
+
+def _minutos(k): c = col(k); return (c // 100) * 60 + c % 100
+
+def _noticia(dia, t, margen_ini):
+    """La hora (minutos) de la noticia cuya ventana contiene t, o None. margen_ini=5 para colocar
+    una orden al cierre de la vela t (T-5..T+5); 4 para la vela (t-1, t] con la orden viva, que
+    toca la ventana si t-1 < T+5 y t > T-5."""
+    for T in NOTICIAS.get(dia, []):
+        if T - margen_ini <= t <= T + VENTANA_NOTICIA: return T
+    return None
+
+def _hhmm(m): return f"{m // 60}:{m % 60:02d}"
+
 def cargar(path):
     V=[]
     for ln in open(path,encoding='utf-8'):
@@ -558,9 +590,22 @@ def _veto_R40(res, z):
     if '_fluidez' not in res: res['_fluidez'] = _mapa_fluidez(res)
     return not res['_fluidez'].get(z.i_org, False)
 
+def o_pausa(o): return o.get('pausa') is not None
+
+def _colocar(o, tag, ev, dia, k):
+    """R-35: una orden que se colocaria dentro de la ventana de una noticia roja se aplaza."""
+    T = _noticia(dia, _minutos(k), VENTANA_NOTICIA)
+    if T is None:
+        ev.append(tag+"  ✓ orden enviada")
+    else:
+        o['pausa']=T
+        ev.append(tag+f"  ✓ setup válido · la orden se aplaza: ventana de la noticia roja de las {_hhmm(T)} (R-35)")
+    return o
+
 def detectar_setups(res, solo_reingresos=False):
     D,Z,b,fin,retros = res['D'],res['Z'],res['b'],res['fin'],res['retros']
     ev=[]; orden=None; trade=None
+    dia = D[b]['d']
     # reingresos evaluados en la jornada: (vela, entrada, objetivo, sentido).
     # R-41: los puntos de control SOLO se dibujan cuando se presenta un reingreso.
     res['reingresos']=[]
@@ -584,11 +629,27 @@ def detectar_setups(res, solo_reingresos=False):
                     z.rein_ok=False
 
         # ---------- llenado / caducidad ----------
+        T_vela = _noticia(dia, _minutos(k), 4) if orden and not trade else None
+        if orden and not trade and o_pausa(orden) and T_vela is None:
+            # R-35: pasado T+5 se vuelve a colocar si el setup sigue vivo. Si con la orden retirada
+            # el precio paso del nivel de entrada, ya no hay orden stop que poner (PROPUESTA del
+            # motor, 28/09/2026: la regla no lo dice; pendiente de confirmar por el operador).
+            if orden.get('cruzo'):
+                ev.append(f"{hh(k)}  orden no se recoloca — el precio pasó de la entrada ({orden['e']:.2f}) "
+                          f"mientras estaba retirada por la noticia"); orden=None
+            else:
+                ev.append(f"{hh(k)}  orden recolocada pasada la noticia de las {_hhmm(orden.pop('pausa'))}")
         if orden and not trade:
             o=orden
             # La caducidad se mira ANTES del llenado: pasado el plazo la orden ya no existe.
             if i - o['i'] > PLAZO:
                 ev.append(f"{hh(k)}  orden cancelada — 5 velas sin consecución"); orden=None
+            elif T_vela is not None or o_pausa(o):
+                # R-35: dentro de la ventana la orden no esta puesta: no se llena.
+                if not o_pausa(o):
+                    o['pausa']=T_vela
+                    ev.append(f"{hh(k)}  orden retirada — ventana de la noticia roja de las {_hhmm(T_vela)} (R-35)")
+                if (k['h']>=o['e']) if o['dir']>0 else (k['l']<=o['e']): o['cruzo']=True
             elif (((k['l'] <= o['s']) and (k['c'] >= k['o'])) if o['dir']>0
                   else ((k['h'] >= o['s']) and (k['c'] <  k['o']))):
                 # CONFIRMADO POR EL OPERADOR 23/09/2026 (R-29) — era propuesta desde el 14/09.
@@ -649,7 +710,7 @@ def detectar_setups(res, solo_reingresos=False):
                     o, motivo = None, f"el objetivo pasa del punto de referencia {pr:.2f}" 
             tag=(f"{hh(k)}  REINGRESO {'bajista' if nd<0 else 'alcista'} · entrada {e:.2f} · stop {st:.2f}"
                  + (f" · objetivo {t:.2f} · riesgo {r:.2f}" if t else ""))
-            if o: ev.append(tag+"  ✓ orden enviada"); orden=o
+            if o: orden=_colocar(o, tag, ev, dia, k)
             else: ev.append(tag+f"  ✗ descartado — {motivo}")
             break
         if orden: continue
@@ -690,7 +751,7 @@ def detectar_setups(res, solo_reingresos=False):
             o,motivo,t,r=_evaluar(Z,i,'Continuación',nd,e,st)
             tag=(f"{hh(k)}  CONTINUACIÓN {'alcista' if nd>0 else 'bajista'} · entrada {e:.2f} · stop {st:.2f}"
                  + (f" · objetivo {t:.2f} · riesgo {r:.2f}" if t else ""))
-            if o: ev.append(tag+"  ✓ orden enviada"); orden=o
+            if o: orden=_colocar(o, tag, ev, dia, k)
             else: ev.append(tag+f"  ✗ descartado — {motivo}")
             break
     return ev, trade
