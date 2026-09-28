@@ -107,11 +107,19 @@ class Zona:
 def zonas_premercado(V):
     Z=[]
     ini = apertura_utc(V[0]['d']) if V else 1331   # el premercado acaba en la apertura (24/09/2026)
+    # R-15, CONFIRMADO POR EL OPERADOR 28/09/2026 (cierra P-39): el COLOR dice DONDE va la
+    # zona (alcista -> mecha superior, bajista -> mecha inferior); la APERTURA de la primera
+    # vela de la ventana dice si es soporte o resistencia: por debajo -> 'S', por encima ->
+    # 'R'. Si abre DENTRO, la zona es 'P' (ni una cosa ni la otra) hasta que el precio salga
+    # de ella con rompimiento + consecucion. Lo anterior a la apertura no cuenta.
+    ap = next((k['o'] for k in V if hm(k)>=ini), None)
     for i,k in enumerate(V):
         if hm(k)>=ini: break
         if k['v']<=UMBRAL_VOL: continue
-        if k['c']>=k['o']: lo,hi=z_res(k); Z.append(Zona(lo,hi,'R',i,f"{col(k)//100}:{k['t'][2:4]} pm"))
-        else:              lo,hi=z_sop(k); Z.append(Zona(lo,hi,'S',i,f"{col(k)//100}:{k['t'][2:4]} pm"))
+        lo,hi = z_res(k) if k['c']>=k['o'] else z_sop(k)
+        if ap is None: tipo = 'R' if k['c']>=k['o'] else 'S'
+        else:          tipo = 'S' if hi < ap else ('R' if lo > ap else 'P')
+        Z.append(Zona(lo,hi,tipo,i,f"{col(k)//100}:{k['t'][2:4]} pm"))
     return Z
 
 # ------------------------------------------------------- filtro zonas entre zonas
@@ -232,7 +240,10 @@ def leer_sesion(V, dia):
     piv=[(b, D[b]['l'] if alc else D[b]['h'])]   # zigzag de corridas y retrocesos
 
     fin = S[-1]
-    for i in range(b+1, fin+1):
+    # R-15 (28/09/2026): todo se lee desde la primera vela de la ventana, y eso incluye
+    # a la propia vela base: tambien ella puede romper una zona de premercado. Por eso la
+    # vigencia arranca en b; la estructura (corrida/retroceso), en b+1.
+    for i in range(b, fin+1):
         k=D[i]; p=D[i-1]
         for z in Z:                                   # vigencia, en cada vela
             if z.fin is not None or z.i > i: continue
@@ -250,6 +261,15 @@ def leer_sesion(V, dia):
                     if d=='arriba': z.arriba=True
                     else:           z.abajo=True
                     z.pend=None; resuelto=True
+                    if z.tipo=='P':
+                        # R-15 (28/09/2026): la zona de premercado dentro de la que abrio la
+                        # ventana toma su papel al salir: por arriba soporte, por abajo
+                        # resistencia. Nace ahi, con el precio a un lado y sin traspasos.
+                        z.tipo = 'S' if d=='arriba' else 'R'
+                        z.arriba=False; z.abajo=False
+                        log.append(f"{col(k)//100}:{k['t'][2:4]} la zona de premercado "
+                                   f"{z.lo:.2f}-{z.hi:.2f} sale {d}: queda como "
+                                   f"{'soporte' if z.tipo=='S' else 'resistencia'}")
                 elif not hecho and i-ir >= PLAZO:
                     # VENCIO EL PLAZO SIN CONSECUCION (operador 27/08/2026):
                     #   rompimiento con MECHA  → la zona se ESTIRA hasta esa mecha
@@ -314,13 +334,17 @@ def leer_sesion(V, dia):
                 # (operador 27/08/2026, 13 de julio: 8:58 y 9:18)
                 # una zona nace con el precio a UN lado: ese lado es su casa y no cuenta.
                 # ROMPIMIENTO = pasar 1 tick del borde, la mecha basta (el cierre da igual).
-                if z.tipo=='R':
+                if z.tipo=='P':
+                    if   k['h'] > z.hi: z.pend=('arriba',i,k['h'],False)
+                    elif k['l'] < z.lo: z.pend=('abajo',i,k['l'],False)
+                elif z.tipo=='R':
                     if   not z.arriba and k['h'] > z.hi: z.pend=('arriba',i,k['h'],False)
                     elif z.arriba and not z.abajo and k['l'] < z.lo: z.pend=('abajo',i,k['l'],False)
                 else:
                     if   not z.abajo and k['l'] < z.lo: z.pend=('abajo',i,k['l'],False)
                     elif z.abajo and not z.arriba and k['h'] > z.hi: z.pend=('arriba',i,k['h'],False)
             if z.arriba and z.abajo: z.fin=i
+        if i==b: continue                              # la vela base solo cuenta para la vigencia
         if estado=='corrida':
             muere = (k['l'] < p['l']) if alc else (k['h'] > p['h'])
             nuevo_ext = (k['h'] > D[ext]['h']) if alc else (k['l'] < D[ext]['l'])
