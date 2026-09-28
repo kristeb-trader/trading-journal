@@ -354,6 +354,7 @@ Tras una corrida **alcista**:
 
 - **No se marca ninguna zona al otro lado de una zona viva cuyo rompimiento esté todavía esperando su consecución.**
 - **Decide el extremo del movimiento, no el rectángulo** de la zona candidata: si el extremo pasa el borde de esa zona, no se marca — aunque el rectángulo de la zona nueva se solape con el de la vieja.
+- **La prohibición se levanta cuando llega la consecución:** entonces la zona nueva se marca sobre la vela del **nuevo extremo**, no sobre la que rompió.
 
 ### Por qué
 

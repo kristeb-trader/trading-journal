@@ -1,6 +1,6 @@
 # FICHA DE MARCADO — generada automáticamente
 
-> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-09-26 con `generar_ficha.py`.
+> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-09-28 con `generar_ficha.py`.
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
@@ -314,6 +314,7 @@ Salir de una zona o de una banda es rompimiento más consecución, no geometría
 
 - **No se marca ninguna zona al otro lado de una zona viva cuyo rompimiento esté todavía esperando su consecución.**
 - **Decide el extremo del movimiento, no el rectángulo** de la zona candidata: si el extremo pasa el borde de esa zona, no se marca — aunque el rectángulo de la zona nueva se solape con el de la vieja.
+- **La prohibición se levanta cuando llega la consecución:** entonces la zona nueva se marca sobre la vela del **nuevo extremo**, no sobre la que rompió.
 
 ### — vigencia —
 
