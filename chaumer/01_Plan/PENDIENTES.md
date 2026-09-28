@@ -3,7 +3,7 @@
 Lo que el plan tiene abierto y las desviaciones conscientes respecto al curso. **Los pendientes cerrados, con su
 resolución, están en `HISTORIAL.md`**: aquí solo queda lo que sigue abierto.
 
-> Actualizado: 2026-09-28 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **35 reglas** · **20 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-40`
+> Actualizado: 2026-09-28 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **35 reglas** · **19 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-40`
 >
 > 🚨 **Los cuatro huecos declarados del cierre:** `P-29` test ciego: **en marcha desde el 14/09/2026, 10 jornadas marcadas (10 → 23/09), sin evaluar contra el criterio de cierre** · `P-21` sin regla de parada · falta la capa de contextualización · `P-27` las cifras del backtesting no miden la estrategia.
 
@@ -97,20 +97,6 @@ El motor de backtesting **no tiene filtro de noticias rojas** (`R-35`). Todos lo
 Cuando dos zonas del mismo tipo quedan **cerca pero sin tocarse**, `R-13` no dice nada: no se estira una sobre otra, quedan dos. Caso observado: 8/07/2026, zonas de las velas 9:16 y 9:21, separadas 1,25 puntos.
 
 **Estado:** ⏳ pendiente.
-
-### `P-38` · El reingreso de una sola vela, cuando el color de la vela dice lo contrario — ABIERTO 2026-09-28
-
-`R-26` admite que **la misma vela** dé la consecución del rompimiento y sea la vela de reingreso (caso del 6/07, `G-12`). No dice qué pasa cuando el **orden de la vela** —azul, primero el mínimo; blanca, primero el máximo; el de `R-09`, que desde el 23/09 vale también para las órdenes (`R-29`)— pone la vuelta a la zona **antes** que la consecución: un reingreso bajista en una vela azul, o uno alcista en una blanca. Leído así, la consecución no llegó primero y no habría reingreso.
-
-**Caso de origen · 16/09/2026, día de Fed.** Los tres reingresos del día —8:46, 9:00 y 10:09, los tres bajistas— son de una sola vela, y las tres velas son azules. Ese día no decidió nada: los tres se caían igual por el objetivo (dos por un soporte en medio, uno por el punto de referencia). Ver `05_Backtesting\test_ciego\DISCREPANCIAS.md`.
-
-**Lo que no toca:** el 6/07 y el 8/07 —el reingreso bajista de las 8:37, pendiente de revalidar— también son de una sola vela, pero en vela **blanca**: ahí el orden de la vela pone primero la consecución, así que se decida lo que se decida, siguen igual.
-
-**Qué hace hoy el motor:** acepta el reingreso de una sola vela sin mirar su color.
-
-**Lo que falta decidir:** si la vela que da la consecución y vuelve a atravesar la zona abre el reingreso siempre, o solo cuando su color dice que la consecución llegó primero.
-
-**Estado:** ⏳ pendiente. Hay que tenerlo decidido antes del día en que un reingreso así sea el único setup de la jornada.
 
 ### `P-39` · ¿Cuenta un rompimiento hecho en el premercado? — ABIERTO 2026-09-28
 

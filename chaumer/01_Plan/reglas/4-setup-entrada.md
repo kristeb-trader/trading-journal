@@ -65,7 +65,7 @@
 |---|---|
 | Aplica a | Reingreso |
 | Parámetros | `TICK` · `PLAZO_CONSECUCION` |
-| Relacionadas | R-20 · R-24 · R-25 · R-29 · R-41 |
+| Relacionadas | R-09 · R-20 · R-24 · R-25 · R-29 · R-41 |
 | Casos | G-05 · G-06 · G-08 · G-09 · G-12 · G-16 |
 
 ### Cómo se aplica
@@ -81,6 +81,8 @@
 - **🔴 El reingreso es inmediato o no es.** La ventana de reingreso se abre con la vela de consecución y **se cierra en cuanto el precio supera el extremo de esa vela de consecución**. Si el precio sigue de largo en el sentido del rompimiento, aunque sea un tick, **el rompimiento quedó bueno y ya no hay reingreso posible sobre esa zona** — por mucho que el precio vuelva a pasar por ella más tarde.
 - **El `PLAZO_CONSECUCION` de `R-20` no aplica al reingreso:** su límite es la ventana inmediata de arriba.
 - **🔑 La misma vela puede cerrar el rompimiento fallido y abrir el reingreso.** Si la vela que da la **consecución** del rompimiento se da la vuelta dentro del mismo minuto, atraviesa la zona entera y sale por el borde contrario, **esa misma vela es a la vez consecución y vela de reingreso**. No se exige una vela posterior.
+- **🕯️ Pero solo si la consecución llegó primero.** Solo se piensa en reingreso **después** de que llega la consecución. Cuando la consecución y la vuelta a través de la zona caen en la misma vela, el orden lo dice su color —el mismo criterio que para las zonas (`R-09`) y para la orden (`R-29`)—: **vela blanca, primero el máximo; vela azul, primero el mínimo**. Un reingreso **bajista** de una sola vela necesita vela **blanca** (primero la consecución arriba, después la vuelta abajo); uno **alcista**, vela **azul**. Si el color dice lo contrario, el precio atravesó la zona **antes** de la consecución: no es un rompimiento que falla, y **en esa vela no hay reingreso**.
+- **Vela de consecución sin cuerpo** (apertura = cierre): la consecución **cuenta** —el precio pasó del extremo de la vela de rompimiento, sea cual sea el color—, pero sin color no se sabe qué llegó primero, así que **esa vela no es vela de reingreso**: se mira lo que hace el precio después.
 - **Dirección:** contraria al rompimiento fallido.
 - **Filtro propio — el punto de referencia (`R-41`):** el objetivo tiene que quedar del lado de dentro del nivel de referencia de **cualquier retroceso vivo** que quede entre la entrada y el objetivo; ese nivel muere cuando una vela **cierra** más allá. Si el objetivo lo pasa, **el reingreso es inválido y no se opera**.
 - **La orden:** Stop Market al cierre de la vela de reingreso, en el nivel de consecución. **Se comprueba el punto de referencia antes de enviarla.**
@@ -92,6 +94,8 @@
 **Caso que SÍ es reingreso — 6/07/2026:** zona `R` 29.926,50–29.939,25. Rompe la vela 8:46; la 8:47 da la consecución subiendo a 29.967,25 y **esa misma vela** se desploma a 29.908,75, otra vez bajo la zona → reingreso válido, y la misma vela es consecución y vela de reingreso (`G-12`).
 
 **Caso que NO lo es — 13/07/2026:** zona `R` 29.652,25–29.666,75. Rompe la vela 9:25 (máx 29.677,25), consecución la vela 9:27 (máx 29.681,00) y el precio **sigue subiendo** hasta 29.724,00. Lo que hace la vela 9:41, catorce velas después, **no es un reingreso**.
+
+**Caso que NO lo es, en una sola vela — 16/09/2026, tres veces:** 8:46, 9:00 y 10:09. Las tres velas son azules: bajan primero bajo la zona y después suben y dan la consecución. Palabras del operador: *"para pensar en un reingreso es solo después de que falla una consecución"*. Las tres tenían además el camino tapado: una zona pegada y el punto de referencia de la 8:59 en la de 9:00, y el de la 10:07 en la de 10:09. Y sobre la vela sin cuerpo, 28/09/2026: *"independientemente del color, si el precio sube por encima de la vela de rompimiento, pues sí hubo consecución; toca revisar qué hace después para saber qué hacer"*.
 
 Diagrama: `02_Assets\diagramas\R-26_reingreso.png`
 
