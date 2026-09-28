@@ -84,7 +84,7 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
   de Kris, una a una — ~~reingreso de una sola vela~~ (`P-38`, **cerrado** 28/09, plan 3.27) · ~~rompimiento en el premercado~~ (`P-39`, **cerrado** 28/09, plan
   3.28: el papel de la zona de premercado lo da la apertura) · ~~vela de apertura sin cuerpo~~ (`P-23`, **cerrado** 28/09, plan 3.29) · ~~la Fed~~ (`P-26`, **cerrado**: la sesión entera) · ~~¿sobra la vela envolvente?~~ (`P-24`, **cerrado**: `R-08` retirada, la absorbe `R-07`; plan 3.30, 34 reglas)
   · ~~zonas del mismo tipo muy cerca~~ (`P-28`, **cerrado**: si no se tocan son dos; plan 3.31) · ~~revalidar el 8/07~~ (**hecho**: válido, julio −142,50 en 6). **B** · el motor, después de A: resolución anticipada
-  (`P-31`), banda y turno (`P-33`), rompimientos de premercado (`P-34`), calendario de noticias y de Fed (`P-27`; la lista fija `FOMC` de `lector.py` no tiene el 19/08 ni el 28/08, que sí están en Fechas Especiales: con ellos, el 19/08 no opera), umbral NQ/MNQ
+  (`P-31`), banda y turno (`P-33`), rompimientos de premercado (`P-34`), calendario de noticias y de Fed (`P-27`) — **la mitad de Fed, hecha el 28/09**: `lector.py` lee `dias_fed.txt`, la copia de Fechas Especiales que reescribe la cadena; el 19/08 ya no opera. **Falta:** las noticias rojas, y que Kris decida si el «Day 1» de las reuniones cuenta como día de Fed y complete actas y discursos de Powell que faltan en Fechas Especiales, umbral NQ/MNQ
   (`P-32`; Kris exporta el premercado de MNQ de julio). Luego congelar versión, 10 jornadas de test ciego con reglas
   fijas, y entonces el backtesting. **C** (se cierran con el backtesting: parada, mín/máx de premercado, retroceso
   mínimo) y **D** (Apex, cierre sin hora, conexión, términos del curso) no lo bloquean
@@ -92,7 +92,7 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
   dice «el cierre si la vela es verde, la apertura si es roja»; el plan habla de velas **azules** y **blancas**
 - [ ] **Kris, efecto del motor ajustado el 28/09** (reingreso de una sola vela): cambian 3 operaciones de días **no**
   validados — 23/07 (Reingreso −17,00 → Continuación bajista +32,25), 03/08 (Reingreso +11,25 → NO OPERA) y **24/09**
-  (Reingreso bajista 8:49 +21,50 → NO OPERA). La ficha del 24/09 en `motor_fichas` se queda como la marcó el motor ese día
+  (Reingreso bajista 8:49 +21,50 → NO OPERA). ⚠️ **Corregido el 28/09:** la ficha del 24/09 en `motor_fichas` **no** se queda como estaba: `subir_dia.py --pendientes` rehace las fichas de los últimos 10 días cuando cambia la huella del motor, así que la próxima pasada del AddOn la reescribe con el motor nuevo (NO OPERA)
 - [x] **F3** — las fusiones, 40 → **35** (planes 3.20–3.23, cada una con el sí de Kris; la vela de apertura, a las 09:31 en invierno). Los documentos del Coach, sincronizados: ~122 KB. **Kris/Claude:** mirar en `coach_uso` el consumo de la próxima sesión del Coach (28/09: todavía ninguna desde la del 24/09)
 - [x] **F4** — la ficha nueva del portal (28/09, `a5f9847`) y, de paso, el menú del móvil en las páginas de reglas. La cabecera del portal ya dice «Futuros MNQ» (Kris, 28/09). **La reestructuración de las reglas está terminada**
 
