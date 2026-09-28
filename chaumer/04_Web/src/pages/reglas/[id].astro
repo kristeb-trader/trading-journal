@@ -11,6 +11,10 @@
  *
  * Los nombres de parametro se convierten en pastillas con su valor vigente,
  * resuelto de PARAMETROS.md. Aqui no se escribe ningun numero a mano.
+ *
+ * Desde el 28/09/2026 (F4, diseño §4.7): el titulo y la navegacion dicen el NOMBRE de la regla y el codigo va
+ * pequeño; un «Por qué» largo enseña su primer parrafo y pliega el resto; «En el gráfico» junta diagramas y
+ * casos reales, y al final van las relacionadas, con su nombre.
  */
 import Marco from '../../componentes/Marco.astro';
 import Icono from '../../componentes/Icono.astro';
@@ -38,24 +42,45 @@ const etiquetaCat = (r) => {
 };
 const op = { sinEnlaceA: regla.id };
 const md = (t) => P.markdownRico(t, op);
+
+const porId = new Map(todas.map((r) => [r.id, r]));
+const relacionadas = (regla.relacionadas ?? []).map((id) => porId.get(id)).filter(Boolean);
+
+// Un «Por qué» largo se lee a trozos: se enseña el primer parrafo (y el siguiente, si el primero es un
+// subtitulo) y el resto se pliega. Por debajo de LARGO no se pliega nada: plegar tres lineas estorba mas.
+const LARGO = 900;
+function partirPorque(t) {
+  // La linea «Diagrama(s): ../02_Assets/…» del plan son rutas de archivo para quien trabaja con el plan: aquí los
+  // diagramas ya salen dibujados en «En el gráfico», y las rutas no le dicen nada a quien lee la ficha.
+  t = String(t || '').split('\n').filter((l) => !/^Diagramas?:\s/.test(l.trim())).join('\n');
+  const trozos = t.trim().split(/\n\s*\n/);
+  let n = 1;
+  while (n < trozos.length && /^#{1,6}\s/.test(trozos[n - 1])) n++;
+  const intro = trozos.slice(0, n).join('\n\n');
+  const resto = trozos.slice(n).join('\n\n');
+  return resto.length > LARGO ? { intro, resto } : { intro: t, resto: '' };
+}
+const porque = regla.porque ? partirPorque(regla.porque) : null;
+const palabrasResto = porque?.resto ? porque.resto.split(/\s+/).filter(Boolean).length : 0;
+const corto = (nombre) => (nombre.length > 38 ? nombre.slice(0, 36).replace(/\s+\S*$/, '') + '…' : nombre);
 ---
 
-<Marco titulo={regla.id} ancho="texto">
+<Marco titulo={regla.nombre} ancho="texto">
   <nav class="paso" aria-label="Regla anterior y siguiente">
     {anterior
       ? <a class="paso-a" href={`/reglas/${anterior.id}`}>
           <Icono nombre="caret-left" />
           <span class="paso-c">
-            <span class="meta">Anterior</span>
-            <span class="paso-t">{anterior.id}</span>
+            <span class="meta">Anterior · <span class="mono">{anterior.id}</span></span>
+            <span class="paso-t" title={anterior.nombre}>{corto(anterior.nombre)}</span>
           </span>
         </a>
       : <span />}
     {siguiente && (
       <a class="paso-a der" href={`/reglas/${siguiente.id}`}>
         <span class="paso-c">
-          <span class="meta">Siguiente</span>
-          <span class="paso-t">{siguiente.id}</span>
+          <span class="meta">Siguiente · <span class="mono">{siguiente.id}</span></span>
+          <span class="paso-t" title={siguiente.nombre}>{corto(siguiente.nombre)}</span>
         </span>
         <Icono nombre="caret-right" />
       </a>
@@ -93,10 +118,16 @@ const md = (t) => P.markdownRico(t, op);
       </section>
     )}
 
-    {regla.porque && (
+    {porque && (
       <section class="bloque entra">
         <h2>Por qué</h2>
-        <div class="md" set:html={md(regla.porque)} />
+        <div class="md" set:html={md(porque.intro)} />
+        {porque.resto && (
+          <details class="mas">
+            <summary><span class="mas-t">Seguir leyendo</span> <span class="meta">{palabrasResto} palabras más</span></summary>
+            <div class="md" set:html={md(porque.resto)} />
+          </details>
+        )}
       </section>
     )}
 
@@ -113,28 +144,38 @@ const md = (t) => P.markdownRico(t, op);
       </section>
     )}
 
-    {casos.length > 0 && (
+    {(imagenes.length > 0 || casos.length > 0) && (
       <section class="bloque entra">
-        <h2>Casos reales que la citan</h2>
-        <ul class="casos">
-          {casos.map((c) => (
-            <li><a href={`/galeria#${c.id}`}><span class="mono">{c.id}</span> {c.titulo}</a></li>
-          ))}
-        </ul>
-      </section>
-    )}
-
-    {imagenes.length > 0 && (
-      <section class="bloque entra">
-        <h2>{imagenes.length === 1 ? 'Diagrama' : 'Diagramas'}</h2>
+        <h2>En el gráfico</h2>
         {imagenes.map((im) => (
           <figure class="fig">
-            <div class="marco-gr"><img src={im.url} alt={`Diagrama de ${regla.id}`} loading="lazy" /></div>
+            <div class="marco-gr"><img src={im.url} alt={`Diagrama de ${regla.nombre}`} loading="lazy" /></div>
             <figcaption class="meta">
               {im.papel === 'contraejemplo' ? 'Contraejemplo: marcado que NO es válido' : 'Diagrama de la regla'}
             </figcaption>
           </figure>
         ))}
+        {casos.length > 0 && (
+          <>
+            <h3 class="sub">Casos reales que la citan</h3>
+            <ul class="casos">
+              {casos.map((c) => (
+                <li><a href={`/galeria#${c.id}`}><span class="mono">{c.id}</span> {c.titulo}</a></li>
+              ))}
+            </ul>
+          </>
+        )}
+      </section>
+    )}
+
+    {relacionadas.length > 0 && (
+      <section class="bloque entra">
+        <h2>Relacionadas</h2>
+        <ul class="rel">
+          {relacionadas.map((r) => (
+            <li><a href={`/reglas/${r.id}`}><span class="mono">{r.id}</span> {r.nombre}</a></li>
+          ))}
+        </ul>
       </section>
     )}
   </article>
@@ -152,12 +193,8 @@ const md = (t) => P.markdownRico(t, op);
   /* ── cabecera ────────────────────────────────────────────────────────── */
   .f-cab { margin-bottom: var(--e-7); }
   .f-meta { display: flex; align-items: center; gap: var(--e-3); flex-wrap: wrap; }
-  .f-id {
-    font-size: var(--t-3); font-weight: var(--peso-max); color: var(--acento);
-    padding: var(--e-1) var(--e-3);
-    border-radius: var(--radio-1);
-    background: color-mix(in srgb, var(--acento) 14%, transparent);
-  }
+  /* El codigo va pequeño (diseño §4.7): lo que se lee es el nombre. */
+  .f-id { font-size: var(--t-1); color: var(--texto-3); }
   .f-cat {
     font-size: var(--t-1); color: var(--texto-3);
     letter-spacing: var(--track-etiqueta); text-transform: uppercase;
@@ -199,6 +236,31 @@ const md = (t) => P.markdownRico(t, op);
   .casos .mono { color: var(--texto-3); font-size: var(--t-2); }
 
   .fuente { margin: calc(-1 * var(--e-5)) 0 var(--e-7); }
+
+  /* ── «Por qué» plegado y relacionadas ────────────────────────────────── */
+  .mas { margin-top: var(--e-4); }
+  .mas summary {
+    display: inline-flex; align-items: baseline; gap: var(--e-3);
+    cursor: pointer; list-style: none;
+    padding: var(--e-2) var(--e-4);
+    border-radius: var(--radio-2);
+    border: 1px solid var(--vidrio-borde);
+    background: var(--vidrio-fondo);
+  }
+  .mas summary::-webkit-details-marker { display: none; }
+  .mas summary:hover { border-color: var(--n-600); }
+  .mas-t { color: var(--acento); font-size: var(--t-3); }
+  .mas[open] summary { margin-bottom: var(--e-5); }
+  .mas[open] .mas-t::after { content: ' ·  plegar'; color: var(--texto-3); }
+  .sub {
+    margin: var(--e-6) 0 var(--e-3);
+    font-size: var(--t-1); font-weight: var(--peso-fuerte); color: var(--texto-3);
+  }
+  .rel { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e-2); font-size: var(--t-3); }
+  .rel a { display: inline-flex; gap: var(--e-3); }
+  /* El código no se parte: en el móvil salía «G-» arriba y «03» abajo. */
+  .rel .mono, .casos .mono { color: var(--texto-3); font-size: var(--t-2); flex: none; white-space: nowrap; }
+  @media print { .mas summary { display: none; } .mas > .md { display: block; } }
 
   /* ── punto abierto ───────────────────────────────────────────────────── */
   .aviso-p {
@@ -249,5 +311,5 @@ const md = (t) => P.markdownRico(t, op);
     position: static; opacity: 1;
     margin-top: var(--e-8);
   }
-  .paso-t { font-family: var(--fuente-mono); font-size: var(--t-3); color: var(--texto); }
+  .paso-t { font-size: var(--t-3); color: var(--texto); }
 </style>

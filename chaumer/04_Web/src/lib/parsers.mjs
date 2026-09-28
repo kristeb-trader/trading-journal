@@ -694,7 +694,9 @@ export function diagramas() {
 export function casosPorRegla() {
   const mapa = new Map();
   for (const c of galeria()) {
-    for (const id of c.reglas) {
+    // La galería cita los códigos que había cuando se escribió el caso: uno fusionado (F3) cuenta para la regla
+    // que lo absorbió, y un caso que cita las dos no sale dos veces.
+    for (const id of new Set(c.reglas.map(destino))) {
       if (!mapa.has(id)) mapa.set(id, []);
       mapa.get(id).push({ id: c.id, titulo: c.titulo });
     }

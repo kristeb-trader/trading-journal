@@ -488,6 +488,13 @@ const activa = (href: string) =>
           white-space: nowrap;
         }
         .nav-x { overflow: visible; text-overflow: clip; }
+        /* Los grupos de reglas, en fila como el resto de la tira. En columna, la caja medía 418 px y estiraba el
+           menú entero a 463 px en todas las páginas de reglas, con los botones perdidos en medio (28/09/2026). */
+        .sub-caja { display: flex; margin: 0; border: 0; background: none; overflow: visible; }
+        .sub-cab { display: none; }
+        .sub { display: flex; gap: var(--e-1); padding: 0; }
+        .sub2 { display: none; }
+        .sub-i { white-space: nowrap; }
         .contenido { padding: var(--e-6) var(--e-4) var(--e-8); }
         .pie { padding: var(--e-5) var(--e-4); }
       }
