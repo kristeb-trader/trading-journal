@@ -3,15 +3,17 @@
 Lo que el plan tiene abierto y las desviaciones conscientes respecto al curso. **Los pendientes cerrados, con su
 resolución, están en `HISTORIAL.md`**: aquí solo queda lo que sigue abierto.
 
-> Actualizado: 2026-09-26 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **35 reglas** · **18 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-38`
+> Actualizado: 2026-09-28 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **35 reglas** · **18 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-38`
 >
-> 🚨 **Los cuatro huecos declarados del cierre:** ~~`P-29` test ciego no ejecutado~~ → **arrancó el 14/09/2026, primera jornada marcada: 10/09** · `P-21` sin regla de parada · falta la capa de contextualización · `P-27` las cifras del backtesting no miden la estrategia.
+> 🚨 **Los cuatro huecos declarados del cierre:** `P-29` test ciego: **en marcha desde el 14/09/2026, 10 jornadas marcadas (10 → 23/09), sin evaluar contra el criterio de cierre** · `P-21` sin regla de parada · falta la capa de contextualización · `P-27` las cifras del backtesting no miden la estrategia.
 
 ---
 
 ## 🚨 Abiertos · los cuatro huecos declarados
 
-### `P-29` · El test ciego NO se ejecutó — HUECO DECLARADO
+### `P-29` · El test ciego: en marcha, sin evaluar — HUECO DECLARADO
+
+**Hoy (28/09/2026):** el test arrancó el 14/09/2026 con la jornada del 10/09. Van **10 jornadas** marcadas a ciegas —10, 11, 14, 15, 16, 17, 18, 21, 22 y 23 de septiembre; los gráficos, en `05_Backtesting\test_ciego\Back_claude\`— y las diferencias con el operador están en `DISCREPANCIAS.md`. **Si estas jornadas sirven para el criterio de `F1.11` (9 de 10 coincidencias con el plan tal como está escrito) está sin decidir**: las reglas cambiaron durante el propio test (`R-40` y `R-41` salieron de él). Hasta decidirlo, el hueco sigue abierto.
 
 La fase 1 se cierra **sin ejecutar `F1.11`**, por decisión explícita del operador el 01/09/2026.
 
@@ -25,7 +27,7 @@ La fase 1 se cierra **sin ejecutar `F1.11`**, por decisión explícita del opera
 
 **Cómo se puede cerrar más adelante:** ejecutar el test **contra el portal** de la fase 2 — dar diez gráficos sin etiquetar a alguien que solo tenga el portal delante. Sería a la vez la validación del plan y la del portal.
 
-**Estado:** 🚨 abierto · **hueco declarado, no olvido**.
+**Estado:** 🚨 abierto · **hueco declarado, no olvido** · el test está en marcha, pero el criterio de cierre no se ha evaluado.
 
 ### 🚨 P-21 · No existe regla de parada — HUECO DECLARADO
 - **Estado:** el operador confirma el 24/08/2026 que **no tiene ninguna regla de parada**, y decide dejarlo abierto a propósito para decidirlo con datos reales.
@@ -114,7 +116,7 @@ Cuando dos zonas del mismo tipo quedan **cerca pero sin tocarse**, `R-13` no dic
 
 ### `P-32` · El umbral de volumen de premercado cambió de instrumento, y la equivalencia no está verificada
 
-Con el NQ fuera del plan, el umbral de premercado pasa a ser **> 6.000 contratos en MNQ**. Antes se leía sobre NQ, **> 2.000**.
+Con el NQ fuera del plan, el umbral de premercado se lee sobre MNQ: hoy `UMBRAL_VOL` *(> 6.000 del 06/09 al 14/09/2026; > 8.000 desde entonces)*. Antes se leía sobre NQ, **> 2.000**.
 
 **Lo que no sabemos:** si las dos cifras marcan **las mismas velas**. Nunca se comprobó con datos.
 
@@ -125,11 +127,11 @@ Con el NQ fuera del plan, el umbral de premercado pasa a ser **> 6.000 contratos
 | | |
 |---|---|
 | Las 11 sesiones validadas | se marcaron con **NQ > 2.000**, sobre datos de NQ |
-| Lo que dice el plan desde hoy | **MNQ > 6.000** |
+| Lo que dice el plan | `UMBRAL_VOL`, sobre MNQ |
 | Datos de MNQ para comprobarlo | **no los tenemos** |
 | El motor de backtesting | sigue leyendo NQ, porque es el dato que hay — y así se queda |
 
-**Cómo se cierra:** exportar de NinjaTrader el premercado de MNQ de esos mismos 11 días y comprobar si las velas que superan 6.000 en MNQ son las mismas que superaban 2.000 en NQ. Si no coinciden, hay que decidir el umbral bueno **antes** del backtesting de un año.
+**Cómo se cierra:** exportar de NinjaTrader el premercado de MNQ de esos mismos 11 días y comprobar si las velas que superan `UMBRAL_VOL` en MNQ son las mismas que superaban 2.000 en NQ. Si no coinciden, hay que decidir el umbral bueno **antes** del backtesting de un año.
 
 **Estado:** ⏳ pendiente. **No bloquea operar**, pero sí bloquea dar por buena cualquier cifra agregada de premercado.
 
@@ -150,7 +152,8 @@ Con `P-25` cerrado queda escrita, por primera vez y en un solo sitio, la secuenc
 - **Contradice a `R-15`**, que dice que la zona de premercado se comporta *exactamente igual* que cualquier otra.
 - **Detectado el 11/09/2026:** el reingreso de las 9:01 lo encontré a mano; el motor no lo ve.
 - **Hermano del mismo fallo:** en día de FOMC pasa lo mismo por otra vía — el bloque de continuación se salta entero, así que tampoco se anotan rompimientos y **el motor no puede ver ningún reingreso en día de FOMC**, que es justo el único setup permitido esos días. Arreglarlo hace aparecer una operación el **8 de julio**, sesión ya validada como NO OPERA, así que **no se toca sin decidirlo con el operador**.
-- **Estado:** ⏳ pendiente. No bloquea operar — bloquea el backtesting.
+  ✅ **Esta mitad se arregló el 24/09/2026**, con el sí del operador: el motor anota los rompimientos también en día de Fed y solo se salta la orden de Continuación. El 8/07 aparece un Reingreso bajista a las 8:38 con −64,75, **pendiente de que el operador lo revalide vela a vela**.
+- **Estado:** ⏳ pendiente **la mitad de premercado**: `lector.py` sigue sin anotar el rompimiento de una zona que no nace de una corrida. No bloquea operar — bloquea el backtesting.
 
 ---
 
@@ -203,7 +206,7 @@ Con `P-25` cerrado queda escrita, por primera vez y en un solo sitio, la secuenc
 
 ### P-10 · Nombre de la conexión de datos
 - **Falta:** el proveedor concreto seleccionado en el menú de conexión de NT8 (Rithmic / Tradovate / Continuum / Kinetick).
-- **Por qué importa:** el umbral de ≥2.000 contratos es un número absoluto. Aunque el volumen de futuros lo reporta el CME y es prácticamente idéntico entre feeds, queda documentado para reproducibilidad.
+- **Por qué importa:** el umbral de volumen del premercado (`UMBRAL_VOL`) es un número absoluto. Aunque el volumen de futuros lo reporta el CME y es prácticamente idéntico entre feeds, queda documentado para reproducibilidad.
 - **Sub-fase:** F1.0 (rellenar cuando el operador lo tenga a mano)
 
 ### P-12 · El retroceso se queda sin tamaño mínimo — coste no cuantificado

@@ -775,6 +775,7 @@ Colombia es **UTC−5 fijo**: no aplica horario de verano. Todo lo demás se mue
 | **3.13** | **2026-09-23** | 🕯️ **Confirmado el orden de la vela también para las órdenes.** Cuando una misma vela toca el nivel de la orden y el stop: azul, primero el mínimo; blanca, primero el máximo. Si llega antes a la orden se llena —y el stop puede saltar en esa misma vela—; si llega antes al stop, se cancela. El motor ya lo aplicaba desde el 14/09 como **propuesta del auditor sin confirmar**; la jornada del **23/09** es la primera en que decide el resultado (−28,25 frente a +47,50 leída al revés) y el operador la da por buena. Añadido a `R-29`. Sin cambios en el motor ni en la regresión. **40 reglas** |
 | **3.14** | **2026-09-26** | 🔧 **Correcciones sin cambio de metodología** (fase 1 de la reestructuración de las reglas, D-028, con el sí del operador). En la checklist: el stop de la Continuación dice ya **el extremo alcanzado desde que nació la zona hasta la vela de rompimiento**, como `R-32` desde el 27/08 (la tabla «Medir» seguía con la definición vieja); la nota de los filtros deja de contarlos; «IRI descartado» pasa a «Continuación descartada»; sale el campo de registro de `P-20`, cerrado el 23/09. En contextualización, los segundos `C-08` y `C-09` pasan a `C-11` y `C-12` (había dos de cada). En pendientes, la copia abierta de `P-22` se marca cerrada. En el estado, el umbral vigente, los casos de la galería y los elementos de contextualización. **Ninguna regla cambia.** | **40 reglas** |
 | **3.15** | **2026-09-26** | 🗂️ **Las reglas pasan a siete archivos de grupo** (`reglas/`), con una plantilla fija, y **el documento maestro desaparece**: la explicación de cada regla va a su «Por qué», los anexos y esta tabla de versiones, a `HISTORIAL.md`. `reglas.json` pasa a ser un archivo **generado**. Reestructuración de las reglas (F2), con el sí del operador (D-028). De 1.900 frases del plan anterior no se pierde ninguna. Seis contradicciones con la regla vigente se resuelven a favor de la vigente y quedan registradas arriba. **Ninguna regla cambia lo que dice.** | **40 reglas** |
+| **3.25** | **2026-09-28** | 🧾 **Pendientes al día**, con el sí del operador: el del test ciego dice que está en marcha (10 jornadas, del 10 al 23/09) y sin evaluar contra su criterio de cierre —sigue abierto, es un hueco declarado—; el de la equivalencia del umbral y el del data feed citan `UMBRAL_VOL` en vez de 6.000 y 2.000; el del motor con las zonas de premercado separa la mitad de los días de Fed, arreglada el 24/09, de la de premercado, que sigue abierta. Los textos de antes, abajo. **Ninguna regla cambia.** | **35 reglas** |
 | **3.24** | **2026-09-28** | 📝 **La regla de salir de una zona (`R-18`) dice dónde nace la zona nueva:** cuando llega la consecución, sobre la vela del nuevo extremo, no sobre la que rompió. Solo lo decía el glosario; la regla lo aplicaba en su caso del 8/07 (el soporte nace sobre la vela 9:16) sin escribirlo. Con el sí del operador. No cambia lo que se marca. | **35 reglas** |
 | **3.23** | **2026-09-26** | 🔗 **Cuarta fusión (F3): sale la lista de las seis precisiones de dibujo** (`R-19`), con el sí del operador. Cuatro ya estaban escritas en su regla; las dos que solo estaban allí —el rectángulo desde la vela origen, y el orden de lo que hace por dentro una vela de máximo mayor y mínimo menor— pasan a `R-09`, que absorbe el código. El cambio de papel de una resistencia superada, a `R-13`, y cada caso real, a su regla. **La F3 queda cerrada: 35 reglas.** | **35 reglas** |
 | **3.22** | **2026-09-26** | 🔗 **Tercera fusión (F3): la vela de apertura, origen sí, sesgo no.** `R-07` absorbe `R-27` (la vela de apertura no sesga la jornada), con el sí del operador. **Y un cambio aprobado aparte:** la vela de apertura es la **09:31** en el horario de invierno de EE. UU. (la regla decía 08:31 fijo; la ventana ya se movía con `R-02`). También en el glosario. `R-27` lleva a `R-07`. | **36 reglas** |
@@ -3391,3 +3392,22 @@ Desviación consciente `D-08`: el curso recorta la zona nueva y deja dos zonas; 
 **La consecución al alza ES la entrada de `R-24`.** El mismo motor sirve para matar una zona y para entrar al mercado.
 
 Caso real 13/07/2026: la consecución que traspasa la zona llega **25 velas** después del rompimiento.
+
+---
+
+## Textos de `PENDIENTES.md` que dejaron de ser verdad (plan 3.25, 28/09/2026)
+
+*Cada línea, tal como estaba antes de corregirla.*
+
+- > Actualizado: 2026-09-26 ·
+- ~~`P-29` test ciego no ejecutado~~ → **arrancó el 14/09/2026, primera jornada marcada: 10/09**
+- ### `P-29` · El test ciego NO se ejecutó — HUECO DECLARADO
+- 
+- La fase 1 se cierra
+- **Estado:** 🚨 abierto · **hueco declarado, no olvido**.
+- Con el NQ fuera del plan, el umbral de premercado pasa a ser **> 6.000 contratos en MNQ**. Antes se leía sobre NQ, **> 2.000**.
+- | Lo que dice el plan desde hoy | **MNQ > 6.000** |
+- comprobar si las velas que superan 6.000 en MNQ son las mismas que superaban 2.000 en NQ.
+- - **Por qué importa:** el umbral de ≥2.000 contratos es un número absoluto.
+- Arreglarlo hace aparecer una operación el **8 de julio**, sesión ya validada como NO OPERA, así que **no se toca sin decidirlo con el operador**.
+- - **Estado:** ⏳ pendiente. No bloquea operar — bloquea el backtesting.
