@@ -222,15 +222,33 @@ def leer_sesion(V, dia):
     if len(S)<30: return None   # no es una jornada americana completa
     b=S[0]                                   # indice de la vela base 08:31
     base=D[b]
-    if base['c']==base['o']:
-        return dict(error='vela base sin cuerpo (P-23)')
     alc = base['c']>base['o']                # direccion del dia
+    decide=None
+    if base['c']==base['o']:
+        # R-07, CONFIRMADO POR EL OPERADOR 28/09/2026 (cierra P-23): sin cuerpo, la direccion la
+        # da la primera vela siguiente que pase del maximo (alcista) o del minimo (bajista) de la
+        # vela base; las de dentro no dicen nada. Si pasa de los dos, manda lo que hizo primero,
+        # por su color: azul = minimo primero -> bajista; blanca = maximo primero -> alcista.
+        # La vela base sigue siendo la vela origen.
+        for j in S[1:]:
+            kj=D[j]; up=kj['h']>base['h']; dn=kj['l']<base['l']
+            if not (up or dn): continue
+            if up and dn:
+                if kj['c']==kj['o']:
+                    return dict(error='vela base sin cuerpo y la que la supera por los dos lados tampoco tiene cuerpo')
+                alc = kj['c']<kj['o']
+            else:
+                alc = up
+            decide=j; break
+        if decide is None:
+            return dict(error='vela base sin cuerpo y ninguna vela de la ventana sale de su rango')
 
     ref_actual=None; z_pend=None
     rangos=[]        # bandas entre zonas ya resueltas: una sola zona por banda y por jornada
     log=[]
     log.append(f"{col(base)//100:02d}:{base['t'][2:4]} vela base {'ALCISTA' if alc else 'BAJISTA'} "
-               f"(abre {base['o']:.2f} cierra {base['c']:.2f})")
+               f"(abre {base['o']:.2f} cierra {base['c']:.2f})"
+               + (f" · sin cuerpo: decide la de {col(D[decide])//100}:{D[decide]['t'][2:4]}" if decide is not None else ""))
 
     estado='corrida'
     ini=b                                    # primera vela de la corrida (origen)
