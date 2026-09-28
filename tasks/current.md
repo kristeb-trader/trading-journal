@@ -83,7 +83,7 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
 - [ ] **Antes del backtesting, cerrar los pendientes de método** (acordado con Kris el 28/09). Orden: **A** · decisiones
   de Kris, una a una — ~~reingreso de una sola vela~~ (`P-38`, **cerrado** 28/09, plan 3.27) · ~~rompimiento en el premercado~~ (`P-39`, **cerrado** 28/09, plan
   3.28: el papel de la zona de premercado lo da la apertura) · ~~vela de apertura sin cuerpo~~ (`P-23`, **cerrado** 28/09, plan 3.29) · ~~la Fed~~ (`P-26`, **cerrado**: la sesión entera) · ~~¿sobra la vela envolvente?~~ (`P-24`, **cerrado**: `R-08` retirada, la absorbe `R-07`; plan 3.30, 34 reglas)
-  · ~~zonas del mismo tipo muy cerca~~ (`P-28`, **cerrado**: si no se tocan son dos; plan 3.31) · revalidar el 8/07. **B** · el motor, después de A: resolución anticipada
+  · ~~zonas del mismo tipo muy cerca~~ (`P-28`, **cerrado**: si no se tocan son dos; plan 3.31) · ~~revalidar el 8/07~~ (**hecho**: válido, julio −142,50 en 6). **B** · el motor, después de A: resolución anticipada
   (`P-31`), banda y turno (`P-33`), rompimientos de premercado (`P-34`), calendario de noticias y de Fed (`P-27`; la lista fija `FOMC` de `lector.py` no tiene el 19/08 ni el 28/08, que sí están en Fechas Especiales: con ellos, el 19/08 no opera), umbral NQ/MNQ
   (`P-32`; Kris exporta el premercado de MNQ de julio). Luego congelar versión, 10 jornadas de test ciego con reglas
   fijas, y entonces el backtesting. **C** (se cierran con el backtesting: parada, mín/máx de premercado, retroceso
@@ -110,9 +110,8 @@ arriba). Venían de los dos buzones archivados en `docs/archivo/chaumer/`, donde
 - [x] **Plan** · `CHECKLIST_DIARIA.md`, línea 70: «IRI descartado» → «Continuación descartada». Resto del cambio
   del 23/09; sale publicada en la checklist del portal
 - [x] **Plan** · `ESTADO.md`, línea 120: remite a `04_Web\PENDIENTE_PORTAL.md`, que está archivado
-- [ ] **Kris** · revalidar el **8/07** vela a vela. El motor arreglado da un Reingreso bajista a las 8:38 con
-  −64,75; el día estaba validado como NO OPERA. La duda es de un reingreso de una sola vela (la convención
-  intravela). Si se confirma, julio cambia en −64,75 puntos
+- [x] **Kris** · el **8/07** revalidado vela a vela (28/09, plan 3.32): el Reingreso bajista de las 8:38 es válido,
+  −64,75. Julio pasa de −77,75 en 5 a **−142,50 en 6**
 - [ ] **Diagramas**, revisados por Kris uno a uno: `09-zona-volumen.png` (y su copia
   `02_Assets/diagramas/R-15_premercado_volumen.png`) lleva dibujado el umbral de 2.000; el vigente es más
   de 8.000 en MNQ (pendiente desde el 08/09). Y los **siete diagramas de reglas de agosto**, que se van del
