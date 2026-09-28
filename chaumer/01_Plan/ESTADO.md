@@ -2,7 +2,7 @@
 
 > **Archivo de arranque.** Léelo primero cada sesión. Las reglas, en `reglas/` (un archivo por grupo); las definiciones, en `GLOSARIO.md`.
 
-**v3.29** · 2026-09-28 · **35 reglas** · 🏁 FASE 1 CERRADA · 🔴 **TEST CIEGO EN MARCHA** · 🚧 FASE 2 en curso: portal web en `04_Web\`
+**v3.30** · 2026-09-28 · **34 reglas** · 🏁 FASE 1 CERRADA · 🔴 **TEST CIEGO EN MARCHA** · 🚧 FASE 2 en curso: portal web en `04_Web\`
 
 > 🔴 **El test ciego arrancó el 14/09/2026.** Protocolo en `05_Backtesting\test_ciego\LEEME_BACK_DIARIO.md`; diferencias en `DISCREPANCIAS.md`; las jornadas, en `GALERIA.md`.
 
@@ -12,7 +12,7 @@
 
 🚨 `P-29` el **test ciego** —en marcha desde el 14/09/2026, sin cerrar · 🚨 `P-21` **no hay regla de parada** · 🚨 falta toda la **capa de contextualización** · 🚨 `P-27` las cifras del backtesting **no miden la estrategia**.
 
-## Las 35 reglas, por grupo
+## Las 34 reglas, por grupo
 
 *El nombre de cada regla es el título de su apartado en `reglas/`. La regla entera, en su archivo. Los códigos no se renumeran: los de una regla fusionada llevan a la que la absorbió (`R-23` y `R-34` → `R-28` · `R-30` → `R-33` · `R-27` → `R-07` · `R-19` → `R-09`).*
 
@@ -25,14 +25,13 @@
 | `R-03` | Plantilla de gráfico |
 | `R-04` | Tamaño de posición |
 
-### 2 · Estructura del precio (4) · `reglas/2-estructura.md`
+### 2 · Estructura del precio (3) · `reglas/2-estructura.md`
 
 | ID | Regla |
 |---|---|
 | `R-05` | Corrida (= impulso) |
 | `R-06` | Retroceso |
 | `R-07` | La vela de apertura: origen sí, sesgo no |
-| `R-08` | Vela envolvente sin corrida viva |
 
 ### 3 · Zonas (13) · `reglas/3-zonas.md`
 

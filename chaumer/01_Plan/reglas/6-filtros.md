@@ -52,6 +52,8 @@ Una sola fuente evita el conflicto de dos calendarios que no siempre coinciden.
 
 > 🔑 **Convive con `R-35` sin conflicto.** Un evento rojo de la Fed dispara las dos: el veto de Continuación durante todo el día **y** el bloqueo de `VENTANA_NOTICIA`. Misma fuente única, así que no hay dos calendarios que puedan discrepar.
 
+**El alcance es la sesión entera** (28/09/2026, cierra `P-26`). Palabras del operador: *"la Fed es toda la sesión, es decir, que ese día solo reingresos"*. Cuentan también las actas: el 8/07 ya estaba validado así, y el 19/08 Chaumer no operó *"Día FOMC"*.
+
 **La lógica del filtro:** el operador descarta el setup que **persigue continuación** y conserva el que **opera rompimientos fallidos** — justo el comportamiento que domina un mercado a la espera de la Fed.
 
 ## R-37 · Estado del operador

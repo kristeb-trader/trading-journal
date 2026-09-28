@@ -3,7 +3,7 @@
 Lo que el plan tiene abierto y las desviaciones conscientes respecto al curso. **Los pendientes cerrados, con su
 resolución, están en `HISTORIAL.md`**: aquí solo queda lo que sigue abierto.
 
-> Actualizado: 2026-09-28 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **35 reglas** · **17 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-40`
+> Actualizado: 2026-09-28 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **34 reglas** · **15 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-40`
 >
 > 🚨 **Los cuatro huecos declarados del cierre:** `P-29` test ciego: **en marcha desde el 14/09/2026, 10 jornadas marcadas (10 → 23/09), sin evaluar contra el criterio de cierre** · `P-21` sin regla de parada · falta la capa de contextualización · `P-27` las cifras del backtesting no miden la estrategia.
 
@@ -60,29 +60,6 @@ El motor de backtesting **no tiene filtro de noticias rojas** (`R-35`). Todos lo
 ---
 
 ## Abiertos · dudas de método
-
-### `P-24` · ¿Sobra `R-08`? — ABIERTO 2026-08-26
-
-`R-08` se escribió para *"vela que hace máximo mayor y mínimo menor **cuando no hay corrida viva**"*, y decía que no declara dirección: la da la siguiente vela.
-
-**Dos cosas la dejan en el aire el mismo día en que se escribió:**
-
-1. **`R-07` reescrita** hace que en la apertura **siempre haya corrida viva desde la 08:31**. Y a partir de ahí el mercado está siempre o en corrida o en retroceso — nunca en un hueco. Si eso es cierto, **el supuesto de `R-08` no ocurre nunca**.
-2. **El operador describió el caso al revés** el 26/08/2026: *"hace rompimiento tanto arriba como abajo, funcionaría como rompimiento y como retroceso"* — es decir, **hace las dos cosas**, no ninguna.
-
-**Lectura probable:** la frase del operador describe el caso **con corrida viva**, que `R-05` + `R-09` ya resuelven (mata la corrida, es la primera vela del retroceso, y si es la más alta marca la zona — la 8:36 del 10/07). En ese caso `R-08` no contradice nada: simplemente cubre un hueco vacío y **se borra**.
-
-**Riesgo si no se cierra:** una regla confirmada que describe un caso inexistente, o peor, que contradice al operador en el caso que sí existe.
-
-⚠️ **No tocar `R-08` sin respuesta del operador** (regla permanente 6 del proyecto).
-
-**Estado:** ⏳ pendiente.
-
-### `P-26` · ¿El FOMC bloquea toda la sesión o solo el anuncio? — ABIERTO 2026-08-27
-
-`R-36` dice **día entero**. No está verificado contra el criterio real del operador ni contra su bitácora. Y falta saber **si hubo FOMC en agosto de 2026** — julio está confirmado (8 y 29).
-
-**Estado:** ⏳ pendiente.
 
 ### `P-28` · Separación mínima entre zonas del mismo tipo — ABIERTO 2026-08-27
 

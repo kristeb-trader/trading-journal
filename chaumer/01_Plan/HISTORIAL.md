@@ -775,6 +775,7 @@ Colombia es **UTC−5 fijo**: no aplica horario de verano. Todo lo demás se mue
 | **3.13** | **2026-09-23** | 🕯️ **Confirmado el orden de la vela también para las órdenes.** Cuando una misma vela toca el nivel de la orden y el stop: azul, primero el mínimo; blanca, primero el máximo. Si llega antes a la orden se llena —y el stop puede saltar en esa misma vela—; si llega antes al stop, se cancela. El motor ya lo aplicaba desde el 14/09 como **propuesta del auditor sin confirmar**; la jornada del **23/09** es la primera en que decide el resultado (−28,25 frente a +47,50 leída al revés) y el operador la da por buena. Añadido a `R-29`. Sin cambios en el motor ni en la regresión. **40 reglas** |
 | **3.14** | **2026-09-26** | 🔧 **Correcciones sin cambio de metodología** (fase 1 de la reestructuración de las reglas, D-028, con el sí del operador). En la checklist: el stop de la Continuación dice ya **el extremo alcanzado desde que nació la zona hasta la vela de rompimiento**, como `R-32` desde el 27/08 (la tabla «Medir» seguía con la definición vieja); la nota de los filtros deja de contarlos; «IRI descartado» pasa a «Continuación descartada»; sale el campo de registro de `P-20`, cerrado el 23/09. En contextualización, los segundos `C-08` y `C-09` pasan a `C-11` y `C-12` (había dos de cada). En pendientes, la copia abierta de `P-22` se marca cerrada. En el estado, el umbral vigente, los casos de la galería y los elementos de contextualización. **Ninguna regla cambia.** | **40 reglas** |
 | **3.15** | **2026-09-26** | 🗂️ **Las reglas pasan a siete archivos de grupo** (`reglas/`), con una plantilla fija, y **el documento maestro desaparece**: la explicación de cada regla va a su «Por qué», los anexos y esta tabla de versiones, a `HISTORIAL.md`. `reglas.json` pasa a ser un archivo **generado**. Reestructuración de las reglas (F2), con el sí del operador (D-028). De 1.900 frases del plan anterior no se pierde ninguna. Seis contradicciones con la regla vigente se resuelven a favor de la vigente y quedan registradas arriba. **Ninguna regla cambia lo que dice.** | **40 reglas** |
+| **3.30** | **2026-09-28** | 🧹 **Sale la regla de la vela envolvente sin corrida viva (`R-08`); la absorbe `R-07`**, con el sí del operador sobre un ejemplo dibujado. Con corrida viva no hacía falta (`R-05` y el orden de la vela); sin corrida viva, que solo pasa con la vela de apertura sin cuerpo, decía lo contrario de lo decidido en 3.29. El término «vela envolvente» sigue en el glosario. **Cierra `P-24`.** Y **cierra `P-26`**: el día de Fed es la sesión entera, solo reingresos (*"la Fed es toda la sesión"*); `R-36` ya lo decía. Sin cambios en el motor (nunca aplicó `R-08`). | **34 reglas** |
 | **3.29** | **2026-09-28** | 🕯️ **La vela de apertura sin cuerpo** (`R-07`), con el sí del operador. No declara dirección: la declara la primera vela siguiente que pase de su máximo (alcista) o de su mínimo (bajista); las que se quedan dentro no dicen nada; si esa vela pasa de los dos, manda lo que hizo primero según su color. La vela de apertura sigue siendo la vela origen. No ha pasado en ninguna de las 60 jornadas con datos. **Cierra `P-23`.** El motor, que ese día se paraba, ya lo resuelve; sin cambios en la regresión. | **35 reglas** |
 | **3.28** | **2026-09-28** | 🌅 **El papel de la zona de premercado lo decide la apertura, no el color** (`R-15`), con el sí del operador. El color dice sobre qué mecha va la zona; la apertura de la primera vela de la ventana, si es soporte (por debajo) o resistencia (por encima); si abre dentro, ninguno hasta que el precio salga con rompimiento + consecución. Todo se lee desde la primera vela de la ventana: lo anterior no cuenta. Caso: 18/09, la zona de 8:29 (no «07:29»: errata del registro) era soporte desde la apertura y resistencia desde las 8:50. Glosario y checklist al día; el caso del 18/09 en `R-17` corregido (el punto 8 no cambia). **Cierra `P-39`**, y con él la línea de `P-34` sobre los rompimientos de premercado vistos tarde. El motor, ajustado: 7 de 18 zonas de premercado cambian de papel en 60 jornadas; ninguna operación validada cambia. | **35 reglas** |
 | **3.27** | **2026-09-28** | 🕯️ **El reingreso de una sola vela, solo si la consecución llegó primero** (`R-26`), con el sí del operador. Solo se piensa en reingreso **después** de que llega la consecución; si la consecución y la vuelta caen en la misma vela, lo dice su color, como para las zonas y la orden: reingreso bajista, vela blanca; alcista, vela azul. Vela de consecución sin cuerpo: la consecución cuenta, pero esa vela no es de reingreso; se mira lo que viene después. Caso: los tres reingresos que veía el motor el 16/09 (8:46, 9:00, 10:09), velas azules; ninguno lo era. **Cierra `P-38`.** El motor, ajustado; la regresión no cambia ningún resultado. | **35 reglas** |
@@ -3399,6 +3400,41 @@ Caso real 13/07/2026: la consecución que traspasa la zona llega **25 velas** de
 
 ---
 
+### `R-08` → `R-07` (plan 3.30) — retirada
+
+*No es una fusión de dos textos que dicen lo mismo: `R-08` sale porque su caso ya no existe, o existe solo donde `R-07` decide otra cosa. Su código lleva a `R-07`.*
+
+#### R-08 · Vela envolvente sin corrida viva
+
+> Una **vela envolvente** es la que hace **máximo mayor Y mínimo menor** que la anterior. Cuando aparece **sin corrida viva**, no declara dirección: pasa a ser la nueva vela origen y la dirección la da la vela siguiente.
+
+| | |
+|---|---|
+| Aplica a | Continuación · Reingreso |
+| Parámetros | — |
+| Relacionadas | R-05 · R-07 |
+| Casos | G-12 |
+| Pendiente | P-24: con R-07 puede no ocurrir nunca |
+
+### Cómo se aplica
+
+- Sin corrida viva, si `máximo[n] > máximo[n−1]` **y** `mínimo[n] < mínimo[n−1]` → la vela `n` es el **nuevo origen**. Se evalúa `n+1` contra `n`.
+- Si `n+1` **también** es envolvente, se repite: `n+1` pasa a origen y decide `n+2`. Sin límite de repeticiones.
+- La corrida se mide desde el extremo de la **última** vela origen.
+- **NO aplica con corrida viva.** Ahí manda `R-05`: mínimo menor **mata** la corrida, sea envolvente o no.
+
+### Por qué
+
+Caso real: la vela 8:36 del 10/07/2026 era envolvente dentro de una corrida viva y no generó ninguna duda.
+
+**Frecuencia medida** (39 sesiones, ventana operativa): **763 velas envolventes**, de las cuales **384 caen dentro de corrida viva** (`R-05` ya resuelve) y **379 caen donde nacería la corrida** — unas 10 por sesión. Son estas últimas las que `R-08` resuelve.
+
+#### De `R-07`, el aviso que se quita con ella
+
+> ⚠️ **Consecuencia sobre `R-08`.** `R-08` se escribió para *"cuando no hay corrida viva"*. Con `R-07` así, en la apertura **siempre hay corrida viva desde la vela de apertura**, y a partir de ahí el mercado está siempre o en corrida o en retroceso. **El supuesto de `R-08` puede no ocurrir nunca** → `P-24`, pendiente de resolver con el operador antes de tocar `R-08`.
+
+---
+
 ## Textos de `PENDIENTES.md` que dejaron de ser verdad (plan 3.25, 28/09/2026)
 
 *Cada línea, tal como estaba antes de corregirla.*
@@ -3458,12 +3494,6 @@ Caso real 13/07/2026: la consecución que traspasa la zona llega **25 velas** de
 
 - ✅ **CERRADO 28/09/2026 por decisión del operador**, revisando el 18/09 vela a vela: lo anterior a la primera vela de la ventana **no cuenta**, y el papel de la zona de premercado lo decide **dónde abre el mercado**, no el color. Escrito en `R-15`; `R-07` («no sirven ni para nada») ya decía lo mismo.
 
-## Textos de `PENDIENTES.md` que dejaron de ser verdad (plan 3.28, 28/09/2026)
-
-*Cada línea, tal como estaba antes de corregirla.*
-
-- - **Y los que ve, los sitúa mal (18/09/2026):** el motor recorre las velas desde la apertura, así que un rompimiento hecho en el premercado no lo ve. Aquel día la zona se rompió en la vela de 08:30 y el motor lo situó en la de 8:32, con la consecución en la de 8:41 —diecinueve velas tarde—. Cómo arreglarlo depende de `P-39`.
-
 #### ✅ P-23 · Vela de apertura sin cuerpo — **CERRADO 28/09/2026** (plan 3.29)
 
 `R-07` declara la dirección del día por el cuerpo de la **08:31**: cierre por encima de la apertura → alcista; por debajo → bajista. **No cubre el empate**: cierre exactamente igual a la apertura.
@@ -3473,3 +3503,36 @@ Caso real 13/07/2026: la consecución que traspasa la zona llega **25 velas** de
 **Estado:** ⏳ pendiente.
 
 - ✅ **CERRADO 28/09/2026 por decisión del operador**, sobre dos ejemplos dibujados: la dirección la da la primera vela siguiente que pase del máximo o del mínimo de la vela de apertura; si pasa de los dos, lo que hizo primero según su color; la corrida se mide desde la vela de apertura. Escrito en `R-07`.
+
+#### ✅ P-24 · ¿Sobra `R-08`? — **CERRADO 28/09/2026** (plan 3.30)
+
+`R-08` se escribió para *"vela que hace máximo mayor y mínimo menor **cuando no hay corrida viva**"*, y decía que no declara dirección: la da la siguiente vela.
+
+**Dos cosas la dejan en el aire el mismo día en que se escribió:**
+
+1. **`R-07` reescrita** hace que en la apertura **siempre haya corrida viva desde la 08:31**. Y a partir de ahí el mercado está siempre o en corrida o en retroceso — nunca en un hueco. Si eso es cierto, **el supuesto de `R-08` no ocurre nunca**.
+2. **El operador describió el caso al revés** el 26/08/2026: *"hace rompimiento tanto arriba como abajo, funcionaría como rompimiento y como retroceso"* — es decir, **hace las dos cosas**, no ninguna.
+
+**Lectura probable:** la frase del operador describe el caso **con corrida viva**, que `R-05` + `R-09` ya resuelven (mata la corrida, es la primera vela del retroceso, y si es la más alta marca la zona — la 8:36 del 10/07). En ese caso `R-08` no contradice nada: simplemente cubre un hueco vacío y **se borra**.
+
+**Riesgo si no se cierra:** una regla confirmada que describe un caso inexistente, o peor, que contradice al operador en el caso que sí existe.
+
+⚠️ **No tocar `R-08` sin respuesta del operador** (regla permanente 6 del proyecto).
+
+**Estado:** ⏳ pendiente.
+
+- ✅ **CERRADO 28/09/2026 por decisión del operador**, sobre un ejemplo dibujado: `R-08` se retira y la absorbe `R-07`. Con corrida viva no hacía falta; sin corrida viva contradecía lo decidido para la vela de apertura sin cuerpo (3.29).
+
+#### ✅ P-26 · ¿El FOMC bloquea toda la sesión o solo el anuncio? — **CERRADO 28/09/2026** (plan 3.30)
+
+`R-36` dice **día entero**. No está verificado contra el criterio real del operador ni contra su bitácora. Y falta saber **si hubo FOMC en agosto de 2026** — julio está confirmado (8 y 29).
+
+**Estado:** ⏳ pendiente.
+
+- ✅ **CERRADO 28/09/2026 por decisión del operador:** *"la Fed es toda la sesión, es decir, que ese día solo reingresos"*. Es lo que ya decía `R-36`. Las actas cuentan como día de Fed (8/07, 19/08).
+
+## Textos de `PENDIENTES.md` que dejaron de ser verdad (plan 3.28, 28/09/2026)
+
+*Cada línea, tal como estaba antes de corregirla.*
+
+- - **Y los que ve, los sitúa mal (18/09/2026):** el motor recorre las velas desde la apertura, así que un rompimiento hecho en el premercado no lo ve. Aquel día la zona se rompió en la vela de 08:30 y el motor lo situó en la de 8:32, con la consecución en la de 8:41 —diecinueve velas tarde—. Cómo arreglarlo depende de `P-39`.

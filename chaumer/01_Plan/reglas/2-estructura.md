@@ -10,7 +10,7 @@
 |---|---|
 | Aplica a | Continuación · Reingreso |
 | Parámetros | `TICK` |
-| Relacionadas | R-06 · R-08 |
+| Relacionadas | R-06 · R-07 |
 | Casos | G-11 · G-12 |
 
 ### Cómo se aplica
@@ -78,11 +78,11 @@ Diagrama: `../02_Assets/diagramas/R-06_retroceso.png`
 |---|---|
 | Aplica a | Continuación · Reingreso |
 | Parámetros | `VENTANA_OPERATIVA` |
-| Relacionadas | R-05 · R-06 · R-08 · R-40 |
+| Relacionadas | R-05 · R-06 · R-40 |
 | Casos | G-12 · G-14 |
 | Fuente | el sesgo: operador, caso 9/07/2026 |
 | Pendiente | cuánto pesa la «mayor favorabilidad» del sentido de la apertura: el operador pidió dejarlo para la fase de contexto (`C-11`) |
-| Absorbe | R-27 |
+| Absorbe | R-27 · R-08 |
 
 ### Cómo se aplica
 
@@ -104,31 +104,6 @@ Diagrama: `../02_Assets/diagramas/R-06_retroceso.png`
 
 **Sin cuerpo** (28/09/2026, cierra `P-23`). En las 60 jornadas con datos no ha pasado ninguna vez; lo más cerca, el 17/09, con un tick de cuerpo. Decidido por el operador sobre dos ejemplos dibujados: *"la dirección la da la vela siguiente"*, comparándose con la vela de apertura, y la corrida se mide desde la vela de apertura. Si la siguiente pasa de los dos extremos: *"sería bajista, porque en la vela de las 08:32 lo primero que hizo fue bajar, entonces el precio inicia bajista y luego sube"* (vela azul). Si se queda dentro: *"la segunda vela no dice nada, pero la tercera fue alcista, entonces el precio inicia alcista"* — alcista porque **pasó del máximo** de la vela de apertura, no por su color.
 
+**Absorbe a la antigua regla de la vela envolvente sin corrida viva** (28/09/2026, plan 3.30, cierra `P-24`). Decía que una vela con máximo mayor y mínimo menor que la anterior, **sin corrida viva**, no declara dirección y pasa a ser la nueva vela origen. Con esta regla, desde la vela de apertura siempre hay corrida o retroceso: el único momento sin corrida viva es la vela de apertura **sin cuerpo**, y ahí el operador decidió otra cosa —la vela de apertura sigue siendo el origen y, si la siguiente pasa de los dos extremos, manda su color—. Con corrida viva, el caso lo resuelven `R-05` y el orden de la vela (`R-09`). Retirada con el sí del operador sobre un ejemplo dibujado; su texto, en `HISTORIAL.md`.
+
 **Caso real 9/07/2026:** la vela 8:31 es bajista, pero el mercado sube 190 puntos desde la 8:33. Con el sesgo puesto el día no daba nada; sin sesgo aparece el largo del rompimiento de la vela 8:43, que el operador **sí tomó**.
-
-> ⚠️ **Consecuencia sobre `R-08`.** `R-08` se escribió para *"cuando no hay corrida viva"*. Con `R-07` así, en la apertura **siempre hay corrida viva desde la vela de apertura**, y a partir de ahí el mercado está siempre o en corrida o en retroceso. **El supuesto de `R-08` puede no ocurrir nunca** → `P-24`, pendiente de resolver con el operador antes de tocar `R-08`.
-
-## R-08 · Vela envolvente sin corrida viva
-
-> Una **vela envolvente** es la que hace **máximo mayor Y mínimo menor** que la anterior. Cuando aparece **sin corrida viva**, no declara dirección: pasa a ser la nueva vela origen y la dirección la da la vela siguiente.
-
-| | |
-|---|---|
-| Aplica a | Continuación · Reingreso |
-| Parámetros | — |
-| Relacionadas | R-05 · R-07 |
-| Casos | G-12 |
-| Pendiente | P-24: con R-07 puede no ocurrir nunca |
-
-### Cómo se aplica
-
-- Sin corrida viva, si `máximo[n] > máximo[n−1]` **y** `mínimo[n] < mínimo[n−1]` → la vela `n` es el **nuevo origen**. Se evalúa `n+1` contra `n`.
-- Si `n+1` **también** es envolvente, se repite: `n+1` pasa a origen y decide `n+2`. Sin límite de repeticiones.
-- La corrida se mide desde el extremo de la **última** vela origen.
-- **NO aplica con corrida viva.** Ahí manda `R-05`: mínimo menor **mata** la corrida, sea envolvente o no.
-
-### Por qué
-
-Caso real: la vela 8:36 del 10/07/2026 era envolvente dentro de una corrida viva y no generó ninguna duda.
-
-**Frecuencia medida** (39 sesiones, ventana operativa): **763 velas envolventes**, de las cuales **384 caen dentro de corrida viva** (`R-05` ya resuelve) y **379 caen donde nacería la corrida** — unas 10 por sesión. Son estas últimas las que `R-08` resuelve.

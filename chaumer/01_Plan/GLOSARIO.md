@@ -86,9 +86,9 @@ La que hace **máximo mayor Y mínimo menor** que la anterior: cubre su rango co
 | Estado | Qué pasa | Quién manda |
 |---|---|---|
 | **Con corrida viva** | El mínimo menor **mata la corrida**. Es ya la primera vela del retroceso. Sin ambigüedad | `R-05` |
-| **Sin corrida viva** | **No declara dirección.** Pasa a ser la nueva vela origen y decide la siguiente. Si esa también es envolvente, se repite | `R-08` |
+| **Sin corrida viva** | Solo pasa con la **vela de apertura sin cuerpo**, antes de que haya dirección: si la vela que la supera pasa de los dos extremos, **manda su color** (azul → bajista, blanca → alcista) y la vela de apertura sigue siendo el origen | `R-07` |
 
-**Regla:** `R-08` · ⚠️ **En revisión** — ver `P-24`
+**Regla:** `R-05` con corrida viva · `R-07` sin ella. La regla propia de la envolvente sin corrida viva (`R-08`) **se retiró el 28/09/2026**: la absorbe `R-07`.
 
 ---
 
