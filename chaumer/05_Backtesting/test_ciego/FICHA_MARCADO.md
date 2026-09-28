@@ -129,7 +129,10 @@ La primera vela de la ventana operativa —la **08:31** hora Colombia en el hora
 **Cómo se aplica**
 
 - **Las velas anteriores a la ventana son premercado** —la 08:30 y anteriores en verano; la 09:30 y anteriores en invierno—. No sirven como `n−1` para `R-05` ni para `R-06`, ni para nada.
-- **La dirección NO la declara la vela siguiente.** La declara la propia vela de apertura, por la posición de su cierre respecto de su apertura.
+- **La dirección NO la declara la vela siguiente.** La declara la propia vela de apertura, por la posición de su cierre respecto de su apertura — salvo si la vela de apertura no tiene cuerpo:
+- **Vela de apertura sin cuerpo** (cierra donde abrió): no declara dirección. La declara **la primera vela siguiente que pase de su máximo o de su mínimo**: si pasa del **máximo**, el día inicia **alcista**; si pasa del **mínimo**, **bajista**. Las velas que se quedan dentro de su rango no dicen nada.
+- **Si esa vela pasa de los dos**, manda lo que hizo **primero**, según su color, igual que en el resto del plan: vela **azul**, primero el mínimo → **bajista**; vela **blanca**, primero el máximo → **alcista**.
+- **La vela de apertura sigue siendo la vela origen** también sin cuerpo: la corrida se mide desde su **máximo** si el día inicia bajista, o desde su **mínimo** si inicia alcista.
 - **Es la vela origen.** La corrida se mide desde su **mínimo** si es alcista, desde su **máximo** si es bajista.
 - Desde la vela siguiente en adelante manda `R-05` con normalidad, comparando **siempre contra la vela inmediatamente anterior**.
 - **Puede sostener zona** como cualquier otra vela.

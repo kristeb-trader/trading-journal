@@ -82,7 +82,7 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
   `DISCREPANCIAS.md`; el 22/09 confirmado; el 17/09 decidido (un tick de cuerpo basta); pendientes nuevos `P-38` y `P-39`
 - [ ] **Antes del backtesting, cerrar los pendientes de método** (acordado con Kris el 28/09). Orden: **A** · decisiones
   de Kris, una a una — ~~reingreso de una sola vela~~ (`P-38`, **cerrado** 28/09, plan 3.27) · ~~rompimiento en el premercado~~ (`P-39`, **cerrado** 28/09, plan
-  3.28: el papel de la zona de premercado lo da la apertura) · vela de apertura sin cuerpo (`P-23`, **el siguiente**) · la Fed, toda la sesión o solo el anuncio (`P-26`) · ¿sobra la vela envolvente? (`P-24`)
+  3.28: el papel de la zona de premercado lo da la apertura) · ~~vela de apertura sin cuerpo~~ (`P-23`, **cerrado** 28/09, plan 3.29) · la Fed, toda la sesión o solo el anuncio (`P-26`, **el siguiente**) · ¿sobra la vela envolvente? (`P-24`)
   · zonas del mismo tipo muy cerca (`P-28`) · revalidar el 8/07. **B** · el motor, después de A: resolución anticipada
   (`P-31`), banda y turno (`P-33`), rompimientos de premercado (`P-34`), calendario de noticias y de Fed (`P-27`; la lista fija `FOMC` de `lector.py` no tiene el 19/08 ni el 28/08, que sí están en Fechas Especiales: con ellos, el 19/08 no opera), umbral NQ/MNQ
   (`P-32`; Kris exporta el premercado de MNQ de julio). Luego congelar versión, 10 jornadas de test ciego con reglas
