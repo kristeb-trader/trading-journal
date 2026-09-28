@@ -3,7 +3,7 @@
 > **Se ejecuta de arriba abajo. No se decide nada que no esté aquí.**
 > Cada línea cita su regla. Si una respuesta es **NO** donde dice parar, **se para** — no se evalúa, no se matiza.
 
-**Versión del plan:** 3.27 · 2026-09-28 · **35 reglas**
+**Versión del plan:** 3.28 · 2026-09-28 · **35 reglas**
 
 ---
 
@@ -26,7 +26,7 @@
 |---|---|---|
 | ☐ | Gráfico abierto: **MNQ, 1 minuto**, único indicador **Volume Up Down** | `R-03`, `R-01` |
 | ☐ | Escanear desde `PREMERCADO_INICIO` hasta la apertura americana | `R-15` |
-| ☐ | Toda vela que **supere el umbral de volumen** → marcar zona. **Alcista → resistencia · Bajista → soporte** | `R-15` |
+| ☐ | Toda vela que **supere el umbral de volumen** → marcar zona. **Alcista → sobre la mecha superior · Bajista → sobre la mecha inferior** | `R-15` |
 | ☐ | ⚠️ **Mirar el umbral vigente en `PARAMETROS.md` antes de empezar:** `UMBRAL_VOL`. Es un parámetro ajustable, y **no se cambia con la sesión empezada** | `R-15`, `P-37` |
 | ☐ | Se marcan **todas** las que superen el umbral, no solo los extremos | `R-15`, `D-09` |
 | ☐ | Límites de cada zona: **del borde del cuerpo a la punta de la mecha** | `R-09` |
@@ -45,6 +45,7 @@
 
 | ☐ | Comprobación | Regla |
 |---|---|---|
+| ☐ | **Al abrir:** cada zona de premercado **por debajo** del precio de apertura → **soporte**; **por encima** → **resistencia**. Si abre **dentro**, no es ninguna de las dos hasta que el precio salga con rompimiento + consecución. Lo anterior a la apertura no cuenta | `R-15` |
 | ☐ | ¿La zona candidata cae dentro de una **banda ya gastada** hoy? → **no se marca** | `R-17` |
 | ☐ | ¿Hay una zona viva con **rompimiento esperando consecución** entre el precio y la zona candidata? → **no se marca** | `R-18` |
 | ☐ | El rompimiento se lee por la **mecha**, no por el cierre | `R-20` |

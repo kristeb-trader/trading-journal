@@ -248,7 +248,9 @@ Diagramas: `../02_Assets/diagramas/apendice_caso1_plazo.png` y `../02_Assets/dia
 - **No confundir con el sombreado gris** del indicador Premercado.1, que empieza a las 15:00 Col del día anterior y llega a las 08:30 Col: es **solo visual** y no define dónde se buscan zonas.
 - **El umbral:** `UMBRAL_VOL`, sobre la barra del indicador Volume Up Down (`R-03`). Es un **parámetro ajustable**, no un número fijo del método: lo fija el operador y **no se cambia con la sesión empezada**.
 - **Se marcan TODAS las velas que superen el umbral,** sin seleccionar. No solo el extremo del grupo; `R-13` fusiona las que se tocan.
-- **El color decide el tipo:** vela alcista → **resistencia** sobre la mecha superior; vela bajista → **soporte** sobre la mecha inferior.
+- **El color decide dónde va la zona:** vela alcista → sobre la **mecha superior**; vela bajista → sobre la **mecha inferior**.
+- **La apertura decide si es soporte o resistencia.** Con la apertura de la primera vela de la ventana (`R-07`): la zona que queda **por debajo** es **soporte**; la que queda **por encima**, **resistencia**. Si esa vela abre **dentro** de una zona, la zona no es ni una cosa ni la otra hasta que el precio salga de ella con **rompimiento y consecución** (`R-18`): si sale por arriba queda soporte, y si sale por abajo, resistencia.
+- **Todo se lee desde la primera vela de la ventana,** ella incluida. Lo que haga el precio con una zona de premercado **antes** de la apertura no cuenta: ni rompimientos ni consecuciones.
 - **Los límites:** del borde del cuerpo al extremo de la mecha, igual que `R-09`.
 - **Después se comporta como cualquier zona:** `R-21`, `R-10`, `R-11`, `R-12`, `R-13` y `R-14` aplican sin excepción. También hace de **borde de banda** para `R-17`.
 
@@ -258,9 +260,11 @@ Diagramas: `../02_Assets/diagramas/apendice_caso1_plazo.png` y `../02_Assets/dia
 
 ### Por qué
 
-Es la **única forma de que nazca una zona sin corrida ni retroceso**. A diferencia de `R-09`, aquí el **color** de la vela decide si es soporte o resistencia. El corte en la apertura no es arbitrario: ese volumen en un minuto es raro en premercado y corriente en sesión.
+Es la **única forma de que nazca una zona sin corrida ni retroceso**. A diferencia de `R-09`, aquí el **color** de la vela decide sobre qué mecha va la zona; si es soporte o resistencia lo decide **dónde abre el mercado**. El corte en la apertura no es arbitrario: ese volumen en un minuto es raro en premercado y corriente en sesión.
 
 **Por qué desde las 19:00 y no antes.** Verificado con datos el 10/07/2026: escaneando desde las 15:00 salen 3 velas sobre el umbral; desde las 19:00 sale 1, la que el operador marcó. Las 2 de más son la subasta de cierre del efectivo del día anterior.
+
+**El papel lo da la apertura, caso de origen 18/09/2026** (28/09/2026, cierra `P-39`). La vela de 8:29 (8.658 contratos, azul) deja la zona 29.796,75 – 29.808,75. La 8:30 —todavía premercado— la rompe con cuerpo, y la 8:31 hace la consecución. Hasta el 28/09 el plan la trataba como resistencia por el color. El operador: *"las zonas de premercado se clasifican dependiendo de cómo abra el precio en la apertura: las que estén por debajo del precio de apertura son soporte, y las que estén por encima son resistencias; el recorrido se toma siempre con la vela de las 08:31, desde ahí se inicia la operativa, la marcación y todo lo que se debe hacer"*. La 8:31 abre en 29.814,75, por encima: es **soporte**. A las 8:49–8:50 el precio la rompe hacia abajo con consecución y pasa a ser **resistencia**. Si la apertura cae dentro: *"toca esperar qué hace el precio, si la rompe, para saber después cómo se categoriza esa zona"* — con rompimiento y consecución. Sobre las 60 jornadas con datos, 7 de las 18 zonas de premercado cambian de papel respecto a la lectura por color; en ninguna abre la ventana dentro de una zona.
 
 Desviación consciente `D-09`: *Parámetros Chaumer* dice *"solo marcamos los extremos"*; el operador marca todas, y `R-13` fusiona las que se tocan.
 
@@ -335,7 +339,7 @@ Tras una corrida **alcista**:
 
 **Caso real 14/07/2026 — la banda con borde de premercado:** el soporte de la vela 8:36 (29.685,00–29.693,00) por abajo y la resistencia de premercado de la vela de las 19:31 (29.901,25–29.908,25) por arriba forman una banda de 208,25 puntos con mitad en **29.797,13**. El primer retroceso dentro es el de la vela **8:39**, que sube a **29.798,00** — se pasa de la mitad por **0,875 puntos (3½ ticks)** → no se marca y la banda queda cerrada. Entre las 8:41 y las 9:10 no se marca **nada**. El operador confirma el marcado idéntico.
 
-**Caso real 18/09/2026 — el punto 8, y por qué hizo falta escribirlo.** La zona de premercado (29.796,75 – 29.808,75) queda **inválida a las 8:50**. A las 8:54 el auditor marcó una resistencia de 29.804,75 – 29.805,75 justo encima de ella, dentro de la banda que va del soporte de la vela 8:52 (techo 29.791,75) al piso de la apéndice (29.840,75). **El punto 5 ya lo prohibía**, pero el motor no lo veía: contaba el turno solo con las zonas **activas** y solo cuando evaluaba una candidata con vecinas vivas a los dos lados. Palabras del operador: *"una zona inválida ya no cuenta como zona, pero acuérdate de la regla de zonas entre zonas… igual cuando esas zonas ya son inválidas, no se marcan más zonas entre ese espacio"*. Y sobre el alcance, preguntado con el gráfico delante: **se cierra la banda entera**, no solo el rectángulo de la zona muerta.
+**Caso real 18/09/2026 — el que hizo escribir el punto 8.** Palabras del operador: *"una zona inválida ya no cuenta como zona, pero acuérdate de la regla de zonas entre zonas… igual cuando esas zonas ya son inválidas, no se marcan más zonas entre ese espacio"*; y sobre el alcance, preguntado con el gráfico delante: **se cierra la banda entera**, no solo el rectángulo de la zona muerta. El punto 8 sigue en pie y lo ilustran el 10/07 (8:56) y el 10/09 (9:07). ⚠️ **El 18/09 ya no es ejemplo de él** (28/09/2026): con el papel de la zona de premercado decidido por la apertura (`R-15`), esa zona no queda inválida a las 8:50 —desde la 8:31 solo se cruzó hacia abajo— y pasa a ser resistencia. La resistencia de 29.804,75 – 29.805,75 de la vela 8:54 no se marca porque cae **encima** de ella (`R-13`).
 
 ## R-18 · Salir de una zona es rompimiento + consecución
 

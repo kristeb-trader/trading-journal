@@ -181,10 +181,11 @@ La **única** forma en que puede nacer una zona sin que haya corrida ni retroces
 |---|---|
 | **Ventana** | desde `PREMERCADO_INICIO` (la apertura de Tokio, 09:00 JST) hasta la **apertura del mercado americano** (= inicio de `R-02`). Fuera de ella **no marca nada** |
 | **Cuántas** | **todas** las velas que superen el umbral, sin seleccionar |
-| **Dirección** | vela **alcista** → **RESISTENCIA** en la mecha **superior** · vela **bajista** → **SOPORTE** en la mecha **inferior** |
+| **Dónde va** | vela **alcista** → en la mecha **superior** · vela **bajista** → en la mecha **inferior** |
+| **Papel** | lo decide la **apertura** de la primera vela de la ventana: **por debajo → SOPORTE** · **por encima → RESISTENCIA** · si abre **dentro**, ninguno hasta que el precio salga con rompimiento + consecución (por arriba → soporte, por abajo → resistencia). Lo anterior a la apertura no cuenta |
 | **Después** | **idéntica a cualquier otra zona**, incluido hacer de **borde de banda** |
 
-> ⚠️ **El color manda aquí, y en `R-09` no.** En la zona por estructura el color de la vela es **irrelevante** — decide la estructura. En la zona de premercado el color **decide si es soporte o resistencia**.
+> ⚠️ **Aquí el color dice dónde va la zona; la apertura, qué papel tiene.** En la zona por estructura (`R-09`) el color de la vela es **irrelevante** — decide la estructura. En la zona de premercado el color **decide sobre qué mecha va**, y si es soporte o resistencia lo decide **dónde abre el mercado** (28/09/2026; hasta entonces lo decidía el color).
 
 > ⚠️ **Dos ventanas distintas — no confundirlas.** El **sombreado gris** del indicador `Premercado.1` empieza a las **15:00 Col del día anterior** y es **solo visual**. El escaneo de `R-15` empieza en `PREMERCADO_INICIO`. **El sombreado NO define dónde se buscan zonas.**
 

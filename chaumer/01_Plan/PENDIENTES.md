@@ -3,7 +3,7 @@
 Lo que el plan tiene abierto y las desviaciones conscientes respecto al curso. **Los pendientes cerrados, con su
 resolución, están en `HISTORIAL.md`**: aquí solo queda lo que sigue abierto.
 
-> Actualizado: 2026-09-28 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **35 reglas** · **19 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-40`
+> Actualizado: 2026-09-28 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **35 reglas** · **18 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-40`
 >
 > 🚨 **Los cuatro huecos declarados del cierre:** `P-29` test ciego: **en marcha desde el 14/09/2026, 10 jornadas marcadas (10 → 23/09), sin evaluar contra el criterio de cierre** · `P-21` sin regla de parada · falta la capa de contextualización · `P-27` las cifras del backtesting no miden la estrategia.
 
@@ -98,16 +98,6 @@ Cuando dos zonas del mismo tipo quedan **cerca pero sin tocarse**, `R-13` no dic
 
 **Estado:** ⏳ pendiente.
 
-### `P-39` · ¿Cuenta un rompimiento hecho en el premercado? — ABIERTO 2026-09-28
-
-`R-07` dice que las velas anteriores a la ventana son premercado y **no sirven "ni para nada"**. Pero una zona de premercado (`R-15`) puede romperse **antes** de que abra la ventana, y el operador lo cuenta.
-
-**Caso de origen · 18/09/2026.** La resistencia de premercado 29.796,75 – 29.808,75 (vela de 07:29, 8.658 contratos) se rompe **con cuerpo en la vela de 08:30** —premercado— y tiene su consecución en la de **08:31**, la primera de la ventana. El operador la da por traspasada antes de abrir y, desde ahí, trabajando como **soporte**. Con esa lectura, lo de las 8:49 era un rompimiento directo y no un reingreso, y la jornada coincidió. Ver `05_Backtesting\test_ciego\DISCREPANCIAS.md`.
-
-**Lo que falta decidir:** si una vela del premercado cuenta como vela de rompimiento —y como consecución, si las dos caen antes de la ventana— de una zona de premercado; y hasta dónde hacia atrás se mira. Se decida lo que se decida, `R-07` y `R-15` tienen que decir lo mismo.
-
-**Estado:** ⏳ pendiente. De la respuesta depende cómo se arregla la mitad de premercado de `P-34`.
-
 ---
 
 ## Abiertos · el motor y el backtesting
@@ -163,7 +153,6 @@ Con `P-25` cerrado queda escrita, por primera vez y en un solo sitio, la secuenc
 - **Detectado el 11/09/2026:** el reingreso de las 9:01 lo encontré a mano; el motor no lo ve.
 - **Hermano del mismo fallo:** en día de FOMC pasa lo mismo por otra vía — el bloque de continuación se salta entero, así que tampoco se anotan rompimientos y **el motor no puede ver ningún reingreso en día de FOMC**, que es justo el único setup permitido esos días. Arreglarlo hace aparecer una operación el **8 de julio**, sesión ya validada como NO OPERA, así que **no se toca sin decidirlo con el operador**.
   ✅ **Esta mitad se arregló el 24/09/2026**, con el sí del operador: el motor anota los rompimientos también en día de Fed y solo se salta la orden de Continuación. El 8/07 aparece un Reingreso bajista a las 8:38 con −64,75, **pendiente de que el operador lo revalide vela a vela**.
-- **Y los que ve, los sitúa mal (18/09/2026):** el motor recorre las velas desde la apertura, así que un rompimiento hecho en el premercado no lo ve. Aquel día la zona se rompió en la vela de 08:30 y el motor lo situó en la de 8:32, con la consecución en la de 8:41 —diecinueve velas tarde—. Cómo arreglarlo depende de `P-39`.
 - **Estado:** ⏳ pendiente **la mitad de premercado**: `lector.py` sigue sin anotar el rompimiento de una zona que no nace de una corrida. No bloquea operar — bloquea el backtesting.
 
 ---
