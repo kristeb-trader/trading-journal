@@ -39,7 +39,7 @@
 Lo que está por hacer vive en `tasks/current.md` (raíz del repo). Dos cosas que siguen en pie desde `PENDIENTE_PORTAL.md`:
 
 - **No toques `..\02_Assets\diagramas\` ni el manifiesto que asigna diagramas a reglas.** Los siete diagramas de reglas de agosto se van del portal cuando estén rehechos; hasta entonces, mover archivos es trabajo tirado.
-- **No apliques las cuatro fusiones de reglas** (38 → 33). Sin decidir.
+- **Las fusiones de reglas ya están hechas** (F3, 26/09/2026: 40 → 35). Un código de una regla absorbida no se borra: su dirección redirige a la que la absorbió (`astro.config.mjs`, desde `fusionadas` de `reglas.json`) y los textos que lo citan enlazan allí.
 
 ---
 
