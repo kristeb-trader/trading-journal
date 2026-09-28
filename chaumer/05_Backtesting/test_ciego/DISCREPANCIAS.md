@@ -487,7 +487,7 @@ operación, pero el auditor llegó dando tres rodeos y hubo que deshacerlos uno 
 | | |
 |---|---|
 | Dirección de la vela de apertura | **bajista** (8:31, abre 29.814,75 · cierra 29.813,75) |
-| Premercado | **una zona** — la vela de las 07:29 hizo **8.658** contratos, alcista → resistencia **29.796,75 – 29.808,75** |
+| Premercado | **una zona** — la vela de las **8:29** hizo **8.658** contratos → **29.796,75 – 29.808,75**. *(Decía «07:29» y «resistencia»: la hora era una errata, y desde el 28/09 el papel lo decide la apertura — la 8:31 abre por encima, así que es **soporte**.)* |
 | Entrada | corto · rompe la vela de 8:55 · se llena en la de **8:56** en **29.774,75** |
 | Stop | **29.805,75** · Objetivo **29.743,75** · riesgo **31,00 pts** |
 | Resultado | **TARGET a las 9:03** · +31,00 pts |
@@ -577,6 +577,8 @@ banda entera**, no solo el rectángulo de la zona muerta.
 → **Pendientes, 28/09/2026:** lo que no cubrían las reglas quedó escrito el 21/09, así que no abre pendiente.
 Lo que sí queda abierto: `P-39`, si cuenta un rompimiento hecho en el premercado —el de la vela de 8:30—, y
 la parte del motor, sumada a `P-34`. Los dos en `01_Plan\PENDIENTES.md`.
+
+→ **Cerrado el 28/09/2026** (`P-39`, plan 3.28), revisando el día vela a vela: lo anterior a la 8:31 **no cuenta**. La zona de premercado es soporte porque la 8:31 abre por encima de ella, y desde las 8:50 pasa a ser resistencia. El marcado del día y su entrada no cambian. Operador: *"el recorrido se toma siempre con la vela de las 08:31, desde ahí se inicia la operativa, la marcación y todo lo que se debe hacer"*.
 
 
 ---
