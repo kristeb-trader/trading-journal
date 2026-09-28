@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| **Versión** | v1.5 · 26/09/2026 |
-| **Estado** | ✅ **Diseño v1.1 aprobado por Kris** (26/09/2026) · ✅ F0 · ✅ F1 · ✅ 2a · ✅ 2b · ✅ 2c · ✅ 2d — **F2 cerrada** · ✅ F3 — **35 reglas** · ⏳ F4 |
+| **Versión** | v1.6 · 28/09/2026 |
+| **Estado** | ✅ **Diseño v1.1 aprobado por Kris** (26/09/2026) · ✅ F0 · ✅ F1 · ✅ 2a · ✅ 2b · ✅ 2c · ✅ 2d — **F2 cerrada** · ✅ F3 — **35 reglas** · ✅ F4 (falta decidir la cabecera NQ → MNQ) |
 | **Alcance** | `chaumer/01_Plan` (las reglas y los documentos que las rodean), sus consumidores (portal, Journal, Coach, NinjaTrader, motor, test ciego) y cómo se ven en el portal |
 | **Regla que manda** | D-028: nada de `01_Plan` cambia sin el sí de Kris, cambio a cambio. Este documento no cambia nada |
 
@@ -90,6 +90,13 @@
     las 9 casillas y automáticas y las 2.528 marcas, intactas. La disciplina no se mueve.
   - **Coach:** sincronizado al cerrar la F3, como estaba previsto: las cinco huellas cuadran byte a byte y el plan
     que lee pasa de 135 a ~122 KB. El consumo real se medirá en `coach_uso` con la próxima sesión.
+- **v1.6 · 28/09/2026** — **F4 hecha** (`a5f9847`). La ficha sigue §4.7: nombre en el título y en la navegación, el
+  código pequeño; el «Por qué» largo enseña su primer párrafo y pliega el resto (4 fichas); «En el gráfico» junta
+  diagramas y casos reales; «Relacionadas» con su nombre (34 fichas). Los casos que citan una regla absorbida salen
+  en la que la absorbió. La ficha no pinta la línea «Diagramas: ../02_Assets/…» del plan (rutas de archivo).
+  Capturas antes/después: corrida fluida 2.892 → 2.565 px en escritorio, 5.475 → 4.000 px en el móvil.
+  **De paso, un defecto previo:** en el móvil, la caja «Por grupo» estiraba el menú de todas las páginas de
+  reglas de 69 a 463 px; ahora va en fila. `npm run verificar`: 0 fallos. Queda la decisión de §6.2 (cabecera).
 ---
 
 ## 1 · En una frase

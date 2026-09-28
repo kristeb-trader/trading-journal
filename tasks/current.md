@@ -81,7 +81,7 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
   - el pendiente del test ciego sigue abierto aunque el test arrancó el 14/09; y los de la equivalencia del
     umbral y del data feed citan umbrales viejos (6.000, 2.000)
 - [x] **F3** — las fusiones, 40 → **35** (planes 3.20–3.23, cada una con el sí de Kris; la vela de apertura, a las 09:31 en invierno). Los documentos del Coach, sincronizados: ~122 KB. **Kris/Claude:** mirar en `coach_uso` el consumo de la próxima sesión del Coach
-- [ ] **F4** — la ficha nueva del portal (y decidir si la cabecera pasa de «NQ» a «MNQ»)
+- [x] **F4** — la ficha nueva del portal (28/09, `a5f9847`) y, de paso, el menú del móvil en las páginas de reglas. **Falta Kris:** ¿la cabecera del portal pasa de «Futuros NQ» a «Futuros MNQ»?
 
 ### 🟡 El plan de Chaumer: lo que estaba «pendiente de Cowork» (25 sep, D-028)
 
