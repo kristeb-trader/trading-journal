@@ -76,8 +76,6 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
   glosario deja de darlos por retirados y ya dice lo mismo que las reglas
 - [ ] **Visto en la 2d, sin tocar** (es del plan: con el sí de Kris):
   - la regla de la vela base dice 08:31 fijo; desde el 2/11 (invierno) es la de las 09:31
-  - «la zona nueva se marca sobre la vela del nuevo extremo» solo lo dice el glosario: su sitio es la regla de
-    salir de una zona
   - el pendiente del test ciego sigue abierto aunque el test arrancó el 14/09; y los de la equivalencia del
     umbral y del data feed citan umbrales viejos (6.000, 2.000)
 - [x] **F3** — las fusiones, 40 → **35** (planes 3.20–3.23, cada una con el sí de Kris; la vela de apertura, a las 09:31 en invierno). Los documentos del Coach, sincronizados: ~122 KB. **Kris/Claude:** mirar en `coach_uso` el consumo de la próxima sesión del Coach
