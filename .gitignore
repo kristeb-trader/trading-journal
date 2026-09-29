@@ -8,22 +8,22 @@
 .DS_Store
 Thumbs.db
 
-# Material de trabajo personal (PDFs, CSV/XLSX, exportes) — no es código
-Otros/
+# El material con que arrancó el journal (mayo 2026: chat, CSV/XLSX, PDFs): archivado
+# en disco, nunca en el repositorio (docs/disenos/2026-09-29-orden-raiz.md)
+docs/archivo/inicio-journal/
+
+# Windows: el icono de la carpeta (desktop.ini lleva la ruta E:\ y TJ.ico solo lo usa él)
+desktop.ini
+icons/TJ.ico
 
 # Caché local de wrangler (se regenera solo)
 .wrangler/
 
 # --- chaumer/ ---------------------------------------------------------------
-# Traido del .gitignore del repositorio Trading_Plan (24/09/2026, fase 3 de la
-# unificacion). Las reglas que alli valian a cualquier profundidad van como
-# chaumer/**/… para que sigan valiendo en las subcarpetas.
-
-# material de terceros y archivos grandes: PDFs y video de Chaumer. Nunca al
-# repositorio (derechos, y GitHub rechaza archivos de mas de 100 MB)
-chaumer/00_Guias/
+# Las reglas que valen a cualquier profundidad van como chaumer/**/…
 
 # trabajo interno cerrado: se conserva en disco, no en el repositorio
+# (hoy, claude/motor/_Historia)
 chaumer/**/_Historia/
 
 # material de terceros archivado (transcripciones de Chaumer, capturas): en disco,

@@ -45,7 +45,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Montar la carpeta publicada
-        # create-icons.html no va: es la herramienta que generó icons/, no parte de la app.
         run: |
           mkdir _site
           cp -r index.html favicon.svg manifest.json sw.js js css icons _site/
