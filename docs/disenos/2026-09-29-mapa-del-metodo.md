@@ -1,0 +1,260 @@
+# El mapa del método — una página nueva en el portal
+
+**Versión:** v1 · **Estado:** 🟡 **PENDIENTE DE APROBACIÓN.** Nada implementado.
+**Escrito:** 29/09/2026. **Alcance:** el portal (`chaumer/04_Web`), una página nueva.
+
+| Versión | Fecha | Qué cambió |
+|---|---|---|
+| v1 | 29/09/2026 | Primera versión, escrita después de una maqueta funcional revisada por Kris |
+
+---
+
+## 1. Qué problema resuelve
+
+El portal enseña las 34 reglas como **una lista filtrada por grupo** (`src/pages/reglas/index.astro`).
+Funciona para buscar un dato concreto. No sirve para lo otro: **ver el método entero y cómo
+encajan sus piezas.**
+
+Los datos para enseñarlo ya están y no se usan:
+
+- Los 7 grupos de `reglas.json` **vienen ordenados** (`orden` 1–7): son una secuencia, no un montón.
+- Las reglas traen `relacionadas`: **123 enlaces**, de los cuales **46 cruzan de un grupo a otro**.
+
+Una lista no puede enseñar eso. Un mapa sí. Y hay un hallazgo que sale solo al dibujarlo:
+**Setup y entrada tiene 17 cruces**, casi el triple que cualquier otra pieza. Es la que toca todo
+lo demás, y en la lista no se ve.
+
+## 2. Dónde vive, y qué NO toca
+
+**Una página nueva: `/mapa`.** Enlazada desde la portada. **Ni una línea de las demás páginas.**
+
+Esto resuelve una contradicción real. `src/estilos/tokens.css` declara, con fecha 02/09/2026:
+
+> *"Minimalism & Swiss: limpio, espacioso, rejilla, jerarquía clara. (…) Es un portal de consulta:
+> lo primero es encontrar, no impresionar."*
+
+El mapa es lo contrario: su trabajo **es** impresionar, porque no se usa para buscar un dato sino
+para ver la forma del método. Las dos cosas conviven **porque son páginas distintas con oficios
+distintos**. La dirección del 02/09 sigue vigente para el resto del portal.
+
+Si el mapa no convence, se borra el archivo y no queda rastro.
+
+## 3. La forma
+
+Se toma de `musar-skill-tree-navigator.vercel.app`, que Kris eligió como referencia, **con los
+tokens de este portal**. Dos niveles y un detalle.
+
+### 3.1 Nivel 1 · el hub
+
+Un **núcleo** central (tarjeta con patillas de integrado) y **7 nodos hexagonales** en corona:
+arriba el paso 1, la columna derecha los pasos 2-3-4, la izquierda los 7-6-5. Se lee en el sentido
+de las agujas del reloj y **es el orden real de la jornada.**
+
+Del núcleo salen **haces de tres pistas** hacia cada nodo, con trazado ortogonal.
+
+Cada nodo lleva: `PASO n · X CRUCES` · el nombre · insignia de dos letras + número de reglas · la
+descripción del grupo.
+
+### 3.2 Nivel 2 · la pieza
+
+Las reglas del grupo en **filas de 5**, con etiqueta `FILA 01`, `FILA 02`… a la izquierda.
+
+Las relaciones **no se dibujan en línea recta**: se enrutan **por debajo de la fila, en carriles
+apilados**, el de menor recorrido en el carril de arriba. Ese es el patrón que produce el aspecto
+de circuito impreso, y es lo que hace legible un grupo con 13 reglas y 30 relaciones.
+
+**Menú lateral** (290 px) con las 7 piezas: insignia hexagonal del color de la pieza, nombre
+completo, `PASO n · X CRUCES` y la cuenta. La activa lleva barra lateral con halo.
+
+**Al posarse en una regla:** se apagan las demás y solo quedan encendidos ella, sus relacionadas y
+los carriles que las unen.
+
+### 3.3 Nivel 3 · la regla
+
+Ventana con el identificador, el grupo, el nombre, el resumen, las etiquetas y **un botón que
+lleva a `/reglas/[id]`**, que es la página que ya existe. El mapa **no duplica** el contenido de
+las reglas: es una puerta.
+
+## 4. Los datos: todos reales
+
+Regla 1 del portal: *"Ningún número escrito a mano."* Se cumple.
+
+| En pantalla | De dónde sale |
+|---|---|
+| `PASO 3 · 6 CRUCES` | `grupos[].orden` y las `relacionadas` que apuntan fuera del grupo |
+| `ZO · 13` | Sigla derivada del `id` del grupo + `grupos[].n` |
+| «todo lo que tiene que ver con una zona» | `grupos[].descripcion` |
+| `34` del núcleo | Las reglas vigentes de `reglas.json` |
+| Carriles entre reglas | `reglas[].relacionadas` |
+| `AMBOS · 2 PAR` | `aplica_a` y `parametros` |
+
+**No se inventan códigos decorativos.** La referencia los usa (`MS.03 · 0x1F7`); aquí cada cifra
+dice algo verdadero. Decisión de Kris, 29/09/2026.
+
+## 5. El lenguaje de movimiento
+
+Medido y ajustado sobre la maqueta con Kris delante. Las curvas ya existen en `tokens.css`.
+
+| Pieza | Valor |
+|---|---|
+| **Barrido** al cambiar de nivel | 1150 ms, `cubic-bezier(.35,0,.3,1)`, de `-100%` a `215%` |
+| **Entrada de cada nodo** | 0,44 s con `--curva-salida`, escalonado **30 ms**, tope en 13 |
+| **Entrada del menú** | 0,5 s, escalonado **38 ms** |
+| **Cámara: bajar de nivel** | acercarse ×1,9 en **210 ms** → recolocar (`y−46`, `z×0,86`) → asentar **620 ms** |
+| **Cámara: subir** | alejarse ×0,68 en 210 ms → llegar a `z×2,2` sobre el nodo → asentar **600 ms** |
+| **Entre piezas hermanas** | **sin zoom**, solo fundido: 150 ms + 120 de espera + 380 de asentamiento |
+| **Atenuado durante el cambio** | a **0,3**, nunca a 0 — ver §7 |
+| **Dibujado de las pistas** | **760 px/s** (velocidad, no duración) |
+| **Pulso ambiental** | **150 px/s**, solo en pistas ya dibujadas del todo |
+| **Latido del núcleo** | 4,2 s |
+
+**La dirección del zoom codifica la jerarquía:** bajar es acercarse, subir es alejarse, y entre
+hermanos no hay zoom porque no se cambia de nivel. Eso es lo que hace que se sienta un espacio y
+no una web.
+
+**Las pistas usan velocidad, no duración fija.** Con duración fija un recorrido largo va disparado
+y uno corto lentísimo; con velocidad constante el ojo lo lee como algo físico.
+
+### La receta del brillo
+
+Cuatro capas por pista, en este orden. Una sola línea gruesa de color **no** da el efecto:
+
+1. Traza base apagada — el color al 15 % de opacidad, 1,1 px.
+2. Halo — el color al 24 %, `shadowBlur` 8, 3 px de grosor.
+3. Filamento — el color mezclado un 35 % con blanco, al 95 %, 1,25 px, sin sombra.
+4. Punto de luz viajando, solo si la pista está dibujada entera.
+
+## 6. El contrato innegociable
+
+Tres cosas que van en el diseño desde el principio, no parcheadas después.
+
+### 6.1 `prefers-reduced-motion`, también en JavaScript
+
+`src/estilos/base.css:215` apaga `transition` y `animation` de todo. **Eso no alcanza a tres
+cosas**, y hay que resolverlas a mano:
+
+| No lo cubre | Qué hacer |
+|---|---|
+| El bucle `requestAnimationFrame` del canvas | Consultar la media query en JS y pintar el estado final, sin bucle |
+| `element.animate()` (el barrido) | No lanzarlo |
+| Las interpolaciones sobre `performance.now()` (la cámara) | Saltar al encuadre final |
+
+Con movimiento reducido **la página sigue siendo utilizable y llega al mismo sitio**: sin
+animación, no sin función.
+
+### 6.2 Modo congelado para el verificador
+
+`npm run verificar` saca vistas con puppeteer. Un canvas que nunca se queda quieto da capturas
+distintas cada vez y **se pierde el verificador**: deja de poder distinguirse un fallo de
+maquetación de un fotograma cualquiera.
+
+`?sin-movimiento` deja todo en su estado final y estable. El verificador lo usa.
+
+### 6.3 Enlace profundo y versión sin JavaScript
+
+- **El estado va en la URL** (`/mapa?pieza=zonas`) con `history.pushState`, se lee al arrancar y
+  se atiende el botón «atrás». **Un mapa al que no se puede enlazar no sirve en un portal de
+  consulta**: Alfredo tiene que poder guardarlo en favoritos o recibir un enlace a una pieza.
+- **Sin JavaScript queda la lista de siempre**, navegable y completa. Nunca una página en blanco.
+
+> La página de referencia **no cumple ninguna de las dos**: no tiene `prefers-reduced-motion` en
+> ningún archivo, ni `pushState`, ni hash. Son los dos defectos que **no** se copian.
+
+## 7. Lo que la maqueta enseñó
+
+Cinco fallos reales encontrados al construirla. Van escritos porque se habrían colado igual en la
+implementación.
+
+1. **El modo congelado pintaba una sola vez.** Con movimiento reducido, el canvas se pintaba al
+   arrancar y nunca más: al cambiar de pantalla quedaban dibujadas **las pistas de la anterior**
+   encima de la nueva. Al cambiar de estado hay que repintar aunque esté congelado.
+2. **Atenuar a 0 deja la pantalla en blanco.** El primer intento fundía el mundo a 0 antes del
+   cambio: medio segundo de negro, y el efecto se percibía como «no hay animación». Se atenúa a
+   **0,3** y el barrido tapa el cambio.
+3. **`backdrop-filter` con `opacity: 0` sigue pintando.** El menú oculto tapaba el mapa con su
+   rectángulo desenfocado. Hace falta `visibility: hidden`.
+4. **El hover no puede pasar por un re-render completo.** Si al pasar el ratón se reconstruye el
+   mundo, se destruye y recrea el nodo bajo el cursor, eso vuelve a disparar el `mouseover`, y es
+   un bucle infinito. El hover escribe directo en el DOM del tooltip.
+5. **Centrar la caja no es centrar el contenido.** Un relleno asimétrico (150 px a la izquierda
+   por las etiquetas de fila, 60 a la derecha) dejaba el flujo 90 px corrido. El relleno va
+   simétrico.
+
+## 8. Arquitectura
+
+Sin dependencias nuevas. Astro sirve la página; dentro es una isla de JavaScript propio.
+
+```
+src/pages/mapa.astro          la página: datos desde reglas.json en tiempo de compilación
+src/estilos/mapa.css          estilos propios del mapa (no tocan base.css)
+src/lib/mapa/camara.mjs       cámara con interpolación (pan + zoom)      ~4 KB
+src/lib/mapa/pistas.mjs       dibujado en canvas: brillo, revelado, pulso ~7 KB
+src/lib/mapa/disposicion.mjs  posiciones del hub y de las filas, y los carriles
+src/lib/mapa/mapa.mjs         estado, transiciones, teclado, URL
+```
+
+**Tres capas superpuestas** compartiendo **una sola** transformación de cámara, escrita
+imperativamente (no re-renderizando el árbol en cada fotograma):
+
+| Capa | Qué lleva |
+|---|---|
+| Fondo | La rejilla, muy tenue |
+| Conexiones | Un `<canvas>`, **no SVG**: cientos de líneas en SVG matan al navegador |
+| Mundo | Los nodos, en DOM normal — así son enfocables y accesibles |
+
+Rendimiento: **un solo** `requestAnimationFrame`, `will-change: transform` solo en las capas que
+se mueven, densidad de píxeles del canvas limitada a **2**.
+
+## 9. Fases
+
+| Fase | Qué | Cómo se verifica |
+|---|---|---|
+| **1 · Motor y contrato** | Cámara, canvas, las tres capas, **y desde el minuto uno** §6 entero: movimiento reducido en JS, `?sin-movimiento`, `pushState`, degradación sin JS | Se recorre a 60 fps · `?sin-movimiento` da dos capturas idénticas · sin JS sale la lista · `/mapa?pieza=zonas` abre donde debe |
+| **2 · El hub** | Núcleo, corona de 7, haces de pistas, patillas | Nombres, cuentas y cruces contrastados contra `reglas.json` · ni un número a mano |
+| **3 · El descenso** | Las tres transiciones con las cifras de §5, el barrido y las entradas escalonadas | El zoom va en la dirección correcta en cada una · entre hermanas no hay zoom |
+| **4 · La pieza** | Filas, carriles apilados, menú lateral, hover con apagado, ventana de detalle | Los carriles no se solapan en ninguna de las 7 piezas · cada nodo enlaza a su `/reglas/[id]` |
+| **5 · Cierre** | Teclado, foco visible, táctil, móvil, enlace desde la portada | `npm run verificar` limpio · recorrible solo con teclado |
+
+**Teclado** (fase 5): flechas o `WASD` mover · `+`/`−` zoom · `F`, `0`, `Inicio` reencuadrar ·
+`Escape` cerrar o subir · `[` `]` pieza anterior y siguiente. Con una guarda al principio: si el
+foco está en un campo de texto, no se mueve el mapa.
+
+## 10. Lo que NO se hace
+
+- **Desbloquear y progreso.** La referencia es un árbol de habilidades que se van ganando. Las 34
+  reglas aplican todas, todos los días: convertirlas en una progresión las trivializa.
+- **Duplicar el contenido de las reglas.** El mapa es una puerta a `/reglas/[id]`.
+- **Tocar `01_Plan/`.** El mapa solo lee lo que `npm run sync` deja en `src/content/`.
+- **Cambiar la estética del resto del portal.** §2.
+- **Dependencias nuevas.** La referencia empezó con Three.js desde un CDN y lo tiraron por la
+  misma razón que aquí: sin paso de compilación. Canvas2D hace lo mismo en 7 KB.
+
+## 11. Decisión pendiente
+
+**El color dentro de una pieza.** Las 13 reglas de Zonas comparten el color del grupo y Kris lo ve
+monótono. Darles tonos distintos sería decoración que miente: son de la misma pieza. Lo honesto es
+variar la **intensidad** según un dato real. Contados sobre `reglas.json`:
+
+| Opción | Qué hay de verdad | Sirve para |
+|---|---|---|
+| **Por nº de relaciones** *(recomendada)* | De 2 a 6 por regla; las más conectadas brillan más | **Las 7 piezas** |
+| Por apartado | **Solo Zonas** tiene apartados (`Marcado` / `Vigencia`); los otros 6 grupos lo traen a `null` | 1 de 7 |
+| Por `aplica_a` | 29 reglas son «ambos», 3 solo Continuación y 2 solo Reingreso. **En Zonas las 13 son «ambos»** | Casi nada |
+| Por `bloquea_go` | **Sin comprobar**: está en `catalogo_reglas` (Supabase), no en `reglas.json`. Sería lo más útil — qué reglas impiden operar — pero hay que ver si el portal puede leerlo | Por confirmar |
+
+> ⚠️ **Corrección.** Al revisar el diseño contra los datos, dos afirmaciones que había escrito eran
+> falsas: que `aplica_a` no tenía variedad (sí la tiene, aunque poca: 5 de 34) y que el apartado
+> servía como eje general (solo existe en Zonas). Por eso cambia la recomendación.
+
+**No bloquea las fases 1-3.** Se decide antes de la 4.
+
+## 12. La maqueta
+
+Vive fuera del repositorio, en el scratchpad de la sesión:
+`…/scratchpad/proto/` — `index.html` (la maqueta), `EL-METODO-maqueta.html` (archivo suelto que
+Kris revisó, con los datos dentro y un bucle de demostración), y los capturadores.
+
+**No es código de producción**: es lo que se usó para decidir las cifras de §5 y encontrar los
+fallos de §7. Se tira cuando la fase 1 esté hecha.
+
+Hay una entrada `proto` en `.claude/launch.json` para servirla. **Se quita al cerrar este diseño.**
