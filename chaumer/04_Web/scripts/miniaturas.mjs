@@ -25,10 +25,9 @@ const PUBLICO = path.join(WEB, 'public');
 const MIN = path.join(PUBLICO, 'min');
 const HUELLAS = path.join(MIN, 'huellas.json');
 
-const { testCiego, sesiones, ejemplos } = P.casosReales();
+const { sesiones, ejemplos } = P.casosReales();
 const urls = [...new Set([
-  ...testCiego.map((x) => (x.jornada ? x.jornada.imagen : x.caso && x.caso.imagen)),
-  ...sesiones.map((c) => c.imagen),
+  ...sesiones.map((x) => (x.jornada ? x.jornada.imagen : x.caso && x.caso.imagen)),
   ...ejemplos.map((c) => c.imagen),
 ].filter(Boolean))];
 

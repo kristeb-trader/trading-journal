@@ -1,19 +1,20 @@
 ---
 /**
- * /test-ciego ya no es una pagina: desde el 22/09/2026 el test ciego es el
- * primer bloque de «Casos reales» (a peticion del operador). Esto solo
- * redirige, para que un enlace guardado no caiga en la portada.
+ * /test-ciego ya no es una pagina: desde el 22/09/2026 vive en «Casos reales»,
+ * y desde el 28/09/2026 no se llama test ciego sino Sesiones (a peticion del
+ * operador). Esto solo redirige, para que un enlace guardado no caiga en la
+ * portada.
  *
  * Una jornada que venia con su fecha —/test-ciego#2026-09-10— sigue
  * llegando a su tarjeta: la galeria tiene la misma ancla.
  */
-const destino = '/galeria/#test-ciego';
+const destino = '/galeria/#sesiones';
 ---
 
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <title>Test ciego · ahora en Casos reales</title>
+    <title>Sesiones · ahora en Casos reales</title>
     <meta name="robots" content="noindex" />
     <meta http-equiv="refresh" content={`0; url=${destino}`} />
     <link rel="canonical" href="/galeria/" />
@@ -22,6 +23,6 @@ const destino = '/galeria/#test-ciego';
     </script>
   </head>
   <body>
-    <p>El test ciego está ahora en <a href="/galeria/#test-ciego">Casos reales</a>.</p>
+    <p>Las sesiones están en <a href="/galeria/#sesiones">Casos reales</a>.</p>
   </body>
 </html>

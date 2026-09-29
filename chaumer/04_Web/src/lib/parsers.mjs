@@ -158,12 +158,13 @@ export function galeria() {
     .map((b) => {
       const limpio = tituloLimpio(b.titulo);
       const id = limpio.match(/^(G-\d{1,2})/)[1].toUpperCase();
-      // Un caso del test ciego sin imagen propia lleva el grafico de su
-      // jornada: la fecha esta en su titulo y en el nombre del archivo, asi
-      // que sigue siendo una asociacion por nombre, no un suplente.
-      const fechaTest = /TEST CIEGO/i.test(limpio) ? fechaDeTitulo(limpio) : null;
-      const deTest = fechaTest ? jornadasTestCiego().find((j) => j.fecha === fechaTest) : null;
-      const img = manifiesto.casos[id] || (deTest ? { url: deTest.url, actual: true } : null);
+      // Un caso de una Sesion lleva el grafico de su jornada, que dibuja el
+      // motor con el estandar vigente: la fecha esta en su titulo y en el
+      // nombre del archivo, asi que sigue siendo una asociacion por nombre, no
+      // un suplente. Gana sobre la imagen de 02_Assets (28/09/2026).
+      const fecha = esTituloDeSesion(limpio) ? fechaDeTitulo(limpio) : null;
+      const deSesion = fecha ? jornadasSesiones().find((j) => j.fecha === fecha) : null;
+      const img = (deSesion ? { url: deSesion.url, actual: true } : null) || manifiesto.casos[id] || null;
       // El caso termina donde empieza una seccion de primer nivel: en el plan,
       // «# LO QUE ESTA GALERIA VALIDA» y «NO TIENE TODAVIA» son de la galeria
       // entera y caian dentro de G-11, la primera sesion de julio.
@@ -179,7 +180,7 @@ export function galeria() {
     });
 }
 
-// ─────────────────────────────────────────────────────────────── test ciego
+// ─────────────────────────────────────────────────────────────── sesiones
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const dos = (n) => String(n).padStart(2, '0');
@@ -192,26 +193,31 @@ function fechaDeTitulo(titulo) {
   return mes < 0 ? null : m[3] + '-' + dos(mes + 1) + '-' + dos(m[1]);
 }
 
-function jornadasTestCiego() {
-  try { return json('test_ciego.json'); } catch { return []; }
+/**
+ * ¿Es un caso de una Sesion? Desde el 28/09/2026 el plan las titula «SESIÓN · …»;
+ * antes, «SESIÓN COMPLETA · …» (julio) y «TEST CIEGO · …» (septiembre). Se
+ * aceptan los tres para que el portal no dependa del orden de los cambios.
+ */
+function esTituloDeSesion(titulo) {
+  return /TEST CIEGO|SESI[OÓ]N/i.test(titulo);
+}
+
+function jornadasSesiones() {
+  try { return json('sesiones.json'); } catch { return []; }
 }
 
 /**
- * Las jornadas del test ciego: una por grafico de Back_claude, la mas nueva
- * primero.
- *
- * El veredicto en texto sale SOLO del plan: de la tabla «Test ciego — dia por
- * dia» de GALERIA.md y del caso de la galeria, si la jornada tiene uno. Si el
- * plan todavia no la documenta, la jornada sale solo con su grafico —cuya
- * cabecera ya dice si hubo operacion—. Aqui no se redacta ningun veredicto.
+ * Las tablas «día por día» de GALERIA.md: «| **10 sep** | setup | resultado | puntos |».
+ * Una por mes, cada una bajo su encabezado de nivel 2 («Sesiones de julio — día
+ * por día»…; antes «Resumen del backtesting día por día» y «Test ciego — día por
+ * día»). De cada bloque, SOLO la primera tabla: la de debajo es la de antes del
+ * 14/09/2026, que se conserva como historia. Clave: MM-DD.
  */
-export function testCiego() {
-  // La tabla del plan: «| **10 sep** | setup | resultado | puntos |»
+function tablasDiaPorDia() {
   const tabla = new Map();
-  const bloque = partirPorEncabezado(documento('GALERIA.md'), [2])
-    .find((b) => /^test ciego/i.test(tituloLimpio(b.titulo)));
-  if (bloque) {
-    // Solo la primera tabla: la de debajo es la de julio, que no es esto.
+  const bloques = partirPorEncabezado(documento('GALERIA.md'), [2])
+    .filter((b) => /d[ií]a por d[ií]a/i.test(tituloLimpio(b.titulo)));
+  for (const bloque of bloques) {
     const primera = bloque.cuerpo.split(/\n\s*\n(?=\s*[^|\s])/)[0];
     for (const linea of primera.split('\n')) {
       if (!/^\s*\|/.test(linea) || /^\s*\|\s*-/.test(linea)) continue;
@@ -220,39 +226,78 @@ export function testCiego() {
       if (!m) continue;
       const mes = MESES.findIndex((x) => x.startsWith(m[2].toLowerCase()));
       if (mes < 0) continue;
-      tabla.set(dos(mes + 1) + '-' + dos(m[1]), { setup: c[1], resultado: c[2], puntos: c[3] });
+      const clave = dos(mes + 1) + '-' + dos(m[1]);
+      if (!tabla.has(clave)) tabla.set(clave, { setup: c[1], resultado: c[2], puntos: c[3] });
     }
   }
+  return tabla;
+}
 
-  const casos = galeria().filter((c) => /TEST CIEGO/i.test(c.titulo));
+/**
+ * El setup tal como va en la tarjeta: sin cursivas ni comillas de codigo. Las
+ * notas entre parentesis del plan («(día de Fed; revalidado el 28/09)») se
+ * quitan cuando hubo operacion; si la fila es solo la nota (un NO OPERA), la
+ * nota ES el motivo y se queda, sin los parentesis.
+ */
+function setupDeTarjeta(texto, opero) {
+  const plano = String(texto || '').replace(/[*`]/g, '').trim();
+  const sinNotas = plano.replace(/\s*\([^)]*\)/g, '').trim();
+  if (opero && sinNotas) return sinNotas;
+  return (sinNotas || plano.replace(/^\(|\)$/g, '')).trim();
+}
+
+/**
+ * Las Sesiones: una por grafico de 05_Backtesting/claude/, la mas nueva primero.
+ * Unificadas el 28/09/2026 a peticion del operador: julio (marcadas con el
+ * operador delante) y septiembre en adelante (sin ver lo que hizo el) son lo
+ * mismo.
+ *
+ * El veredicto sale del plan si el plan tiene el dia en su tabla; si no, del
+ * .json que el motor deja junto al grafico. Aqui no se redacta ninguno.
+ *
+ *   veredicto.resultado   TARGET / STOP / NO OPERA, sin la hora de salida
+ *   veredicto.puntos      «+40,50», «−23,25» o null
+ *   veredicto.setup       «Continuación alcista 8:40», o el motivo si no opera
+ */
+export function sesiones() {
+  const tabla = tablasDiaPorDia();
+  const casos = galeria().filter((c) => esTituloDeSesion(c.titulo));
   const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
-  return jornadasTestCiego().map((j) => {
+  return jornadasSesiones().map((j) => {
     const [a, m, d] = j.fecha.split('-').map(Number);
     const dia = dias[new Date(Date.UTC(a, m - 1, d)).getUTCDay()];
     const caso = casos.find((c) => fechaDeTitulo(c.titulo) === j.fecha) || null;
-    const fila = tabla.get(dos(m) + '-' + dos(d)) || null;
+    const fila = tabla.get(dos(m) + '-' + dos(d)) || j.motor || null;
+    let veredicto = null;
+    if (fila) {
+      const palabra = (String(fila.resultado).match(/TARGET|STOP|NO OPERA/i) || [String(fila.resultado)])[0].toUpperCase();
+      const opero = palabra === 'TARGET' || palabra === 'STOP';
+      const pts = String(fila.puntos || '').trim();
+      veredicto = {
+        resultado: palabra,
+        puntos: opero && pts && pts !== '—' ? pts : null,
+        setup: setupDeTarjeta(fila.setup, opero),
+        fuente: tabla.has(dos(m) + '-' + dos(d)) ? 'plan' : 'motor',
+      };
+    }
     return {
       fecha: j.fecha,
       titulo: dia[0].toUpperCase() + dia.slice(1) + ' ' + d + ' de ' + MESES[m - 1] + ' de ' + a,
       imagen: j.url,
-      veredicto: fila,
+      veredicto,
       caso: caso ? { id: caso.id, lema: caso.titulo.split(/\s+·\s+/).slice(-1)[0] } : null,
     };
   }).reverse();
 }
 
 /**
- * Casos reales: la galeria y el test ciego, en una sola pagina y en tres
- * bloques. Pedido por el operador el 22/09/2026: «son lo mismo, casos de
- * backtesting hechos desde Claude».
+ * Casos reales: las Sesiones y los ejemplos del metodo, en una sola pagina y en
+ * dos bloques (hasta el 28/09/2026 eran tres: test ciego, sesiones y ejemplos).
  *
- *   testCiego   las jornadas del test ciego, la mas reciente primero. Si una
- *               tiene caso en la galeria (por la fecha del titulo), va UNA vez,
- *               con el texto del caso dentro. Un caso del test ciego sin
- *               grafico de jornada entra igual, como caso.
- *   sesiones    los casos de «SESION COMPLETA»: las de julio, marcadas con el
- *               operador delante.
+ *   sesiones    una por jornada, la mas reciente primero. Si tiene caso en la
+ *               galeria (por la fecha del titulo), va UNA vez, con el texto del
+ *               caso dentro. Un caso de sesion sin grafico entra igual, como caso.
  *   ejemplos    el resto: un caso por setup, filtro o descarte.
  *
  * El reparto se lee del titulo que da el plan; aqui no se clasifica nada a
@@ -260,25 +305,21 @@ export function testCiego() {
  */
 export function casosReales() {
   const casos = galeria();
-  const jornadas = testCiego();
-  const esTest = (c) => /TEST CIEGO/i.test(c.titulo);
-  const esSesion = (c) => /SESI[OÓ]N COMPLETA/i.test(c.titulo);
+  const jornadas = sesiones();
   const enJornada = new Set(jornadas.filter((j) => j.caso).map((j) => j.caso.id));
 
-  const testCiegoBloque = [
+  const bloqueSesiones = [
     ...jornadas.map((j) => ({
       jornada: j,
       caso: j.caso ? casos.find((c) => c.id === j.caso.id) || null : null,
     })),
-    ...casos.filter((c) => esTest(c) && !enJornada.has(c.id)).map((c) => ({ jornada: null, caso: c })),
+    ...casos.filter((c) => esTituloDeSesion(c.titulo) && !enJornada.has(c.id)).map((c) => ({ jornada: null, caso: c })),
   ];
-  const sesiones = casos.filter((c) => !esTest(c) && esSesion(c));
-  const ejemplos = casos.filter((c) => !esTest(c) && !esSesion(c));
+  const ejemplos = casos.filter((c) => !esTituloDeSesion(c.titulo));
   return {
-    testCiego: testCiegoBloque,
-    sesiones,
+    sesiones: bloqueSesiones,
     ejemplos,
-    total: testCiegoBloque.length + sesiones.length + ejemplos.length,
+    total: bloqueSesiones.length + ejemplos.length,
   };
 }
 

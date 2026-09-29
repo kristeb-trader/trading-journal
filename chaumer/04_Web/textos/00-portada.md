@@ -20,5 +20,5 @@ Un método para operar trading de Futuros, enfocado en el Nasdaq: traducido a re
 ### Por dónde entrar
 
 - El plan operativo El método completo en ocho módulos, en el orden real de la jornada: desde el premercado hasta el cierre de la operación. PremercadoMarcación de zonasSetups operativosJornada operativa **8** módulos
-- Las reglas Cada decisión del método escrita con sus condiciones medibles. Sin adjetivos: ticks, puntos, velas y horas exactas. PerímetroEstructuraZonasSetupRiesgoFiltrosProceso **40** reglas
-- Casos reales Sesiones de verdad, marcadas vela a vela: las que se operaron, las que se descartaron y por qué. Test ciegoSesionesEjemplos **30** casos
+- Las reglas Cada decisión del método escrita con sus condiciones medibles. Sin adjetivos: ticks, puntos, velas y horas exactas. PerímetroEstructuraZonasSetupRiesgoFiltrosProceso **34** reglas
+- Casos reales Sesiones de verdad, marcadas vela a vela: las que se operaron, las que se descartaron y por qué. SesionesEjemplos **34** casos

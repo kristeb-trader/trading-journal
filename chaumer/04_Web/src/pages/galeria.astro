@@ -1,17 +1,23 @@
 ---
 /**
- * Casos reales — la galeria y el test ciego, en una sola pagina.
+ * Casos reales — las Sesiones y los ejemplos del metodo, en una sola pagina.
  *
- * Unificadas el 22/09/2026 a peticion del operador: «son lo mismo, casos de
- * backtesting hechos desde Claude». Tres bloques, en este orden:
+ * Dos bloques, en este orden:
  *
- *   1. Test ciego        las jornadas marcadas a ciegas, la mas reciente
- *                        primero. Las que tienen caso en la galeria salen
- *                        UNA vez, con el texto del caso dentro.
- *   2. Sesiones          las completas de julio, marcadas con el operador.
- *   3. Ejemplos          un caso por setup, filtro o descarte.
+ *   1. Sesiones          una por jornada, la mas reciente primero: las de julio
+ *                        (marcadas con el operador delante) y, desde
+ *                        septiembre, las que marca Claude sin ver lo que hizo el.
+ *                        Unificadas el 28/09/2026 a peticion del operador: hasta
+ *                        entonces eran dos pestanas, «Test ciego» y «Sesiones de
+ *                        julio». Las que tienen caso en la galeria salen UNA vez,
+ *                        con el texto del caso dentro.
+ *   2. Ejemplos          un caso por setup, filtro o descarte.
  *
  * El reparto lo hace P.casosReales() leyendo el titulo que da el plan.
+ *
+ * LA TARJETA DE UNA SESION (28/09/2026): la fecha arriba, el grafico, el
+ * resultado con su color y los PUNTOS (no la hora de salida), y el setup en un
+ * solo color, sin los puntos. El codigo G-xx y el lema van en el visor.
  *
  * INDICE Y VISOR (propuesta aprobada por el operador el 22/09/2026). La
  * pagina media 46 pantallas: todas las graficas y todos los textos abiertos a
@@ -22,8 +28,8 @@
  *
  * Las anclas no cambian: /galeria#G-xx (las fichas de regla y las
  * observaciones enlazan asi) y /galeria#AAAA-MM-DD abren el visor en ese
- * caso. /galeria#sesiones abre esa pestana. La direccion vieja /test-ciego
- * redirige a la primera.
+ * caso. /galeria#sesiones abre esa pestana; /galeria#test-ciego, la direccion
+ * de antes del 28/09/2026, tambien. /test-ciego redirige aqui.
  *
  * La imagen de un caso se resuelve SOLO por nombre de archivo, y las graficas
  * de sesiones/ ganan siempre porque llevan el estandar visual vigente. Un
@@ -37,11 +43,11 @@ import Icono from '../componentes/Icono.astro';
 import * as P from '../lib/parsers.mjs';
 import { miniatura } from '../lib/miniaturas.mjs';
 
-const { testCiego, sesiones, ejemplos, total } = P.casosReales();
+const { sesiones, ejemplos, total } = P.casosReales();
 
 // Las rutas de archivo del plan son para quien lo escribe: «**Archivo:** `…png`
-// · **Reglas:** …» en la galeria y «**Gráfico:** `05_Backtesting\…png`» en el
-// test ciego. A quien lee no le dicen nada (la grafica ya esta al lado), las
+// · **Reglas:** …» en la galeria y «**Gráfico:** `05_Backtesting\…png`» en las
+// sesiones. A quien lee no le dicen nada (la grafica ya esta al lado), las
 // reglas ya van al pie de cada caso, y una ruta sin espacios abria huecos
 // enormes en el texto justificado. Se quitan solo aqui; el plan no se toca.
 const sinRutas = (md) => md
@@ -52,10 +58,12 @@ const conHtml = (c) => (c ? { ...c, html: P.markdownRico(sinRutas(c.cuerpo)) } :
 // En la tarjeta, el nombre del bloque sobra: ya lo dice la pestana.
 const corto = (t) => t
   .replace(/\b(?:LA\s+)?SESI[OÓ]N COMPLETA\s*·\s*/i, '')
-  .replace(/\bTEST CIEGO\s*·\s*/i, '');
+  .replace(/\b(?:TEST CIEGO|SESI[OÓ]N)\s*·\s*/i, '');
 
 // El color del resultado solo distingue tres palabras que el plan ya escribe.
 const tono = (r) => (/TARGET/i.test(r) ? 'ok' : /STOP/i.test(r) ? 'mal' : 'aviso');
+// En la pildora van los puntos, no la hora de salida: «STOP −28,25».
+const pildora = (v) => (v.puntos ? `${v.resultado} ${v.puntos}` : v.resultado);
 
 /** Todo lo que necesitan la tarjeta y el visor, con la misma forma. */
 function deJornada({ jornada: j, caso }) {
@@ -68,11 +76,10 @@ function deJornada({ jornada: j, caso }) {
     titulo: j ? j.titulo : c.titulo,
     cortoHtml: P.tituloAHtml(j ? j.titulo : corto(c.titulo)),
     lema: c && j ? j.caso.lema : null,
-    res: v ? { texto: v.resultado, tono: tono(v.resultado) } : null,
+    res: v ? { texto: pildora(v), tono: tono(v.resultado) } : null,
     setup: v ? v.setup : null,
-    puntos: v && v.puntos && v.puntos !== '—' ? v.puntos : null,
     img, mini: miniatura(img),
-    alt: `Gráfico del test ciego: ${j ? j.titulo : c.titulo}`,
+    alt: `Gráfico de la sesión: ${j ? j.titulo : c.titulo}`,
     caso: c,
     marca: null,
   };
@@ -83,7 +90,7 @@ function deCaso(caso) {
     id: c.id, alias: null,
     titulo: c.titulo,
     cortoHtml: P.tituloAHtml(corto(c.titulo)),
-    lema: null, res: null, setup: null, puntos: null,
+    lema: null, res: null, setup: null,
     img: c.imagen, mini: miniatura(c.imagen),
     alt: `Gráfico del caso ${c.id}: ${c.titulo}`,
     caso: c,
@@ -91,15 +98,9 @@ function deCaso(caso) {
   };
 }
 
-// Si todas las sesiones son de julio, la pestana lo dice; si algun dia hay de
-// otro mes, pasa a llamarse por lo que son.
-const soloJulio = sesiones.length > 0 && sesiones.every((c) => /JULIO/i.test(c.titulo));
-
 const bloques = [
-  { id: 'test-ciego', titulo: 'Test ciego', corto: 'Test ciego', items: testCiego.map(deJornada),
-    lead: 'Cada jornada la marca Claude a ciegas, sin saber qué hizo el operador, y después se contrastan las dos lecturas. La más reciente primero. El gráfico lo genera la herramienta de auditoría: su cabecera dice si hubo operación.' },
-  { id: 'sesiones', titulo: soloJulio ? 'Sesiones de julio' : 'Sesiones completas', corto: 'Sesiones', items: sesiones.map(deCaso),
-    lead: 'Sesiones completas marcadas con el operador delante, corrigiendo vela a vela.' },
+  { id: 'sesiones', titulo: 'Sesiones', corto: 'Sesiones', items: sesiones.map(deJornada),
+    lead: 'Cada jornada, marcada vela a vela con el plan: las de julio, con el operador delante; desde septiembre, sin ver lo que hizo él. La más reciente primero. El gráfico lo dibuja la herramienta de auditoría.' },
   { id: 'ejemplos', titulo: 'Ejemplos del método', corto: 'Ejemplos', items: ejemplos.map(deCaso),
     lead: 'Un caso por cada setup, filtro o descarte del método.' },
 ].filter((b) => b.items.length > 0);
@@ -157,18 +158,17 @@ const reglasCitadas = [...new Set(todos.flatMap((it) => (it.caso ? it.caso.regla
           <li class="ficha" id={it.id} data-ficha data-reglas={it.caso ? it.caso.reglas.join(' ') : ''}>
             {it.alias && <span class="ancla" id={it.alias} data-alias={it.alias}></span>}
             <a class="f-a" href={`#${it.id}`} data-abrir={it.id}>
+              {/* Una sesion: la fecha arriba, el grafico, el resultado y el setup. */}
+              {it.res && <p class="f-t" set:html={it.cortoHtml} />}
               {it.mini && (
                 <span class="f-fig"><img src={it.mini} alt="" loading="lazy" decoding="async" /></span>
               )}
               <span class="f-cab">
-                {it.caso && <span class="c-id mono">{it.caso.id}</span>}
+                {!it.res && it.caso && <span class="c-id mono">{it.caso.id}</span>}
                 {it.res && <span class:list={['j-res', it.res.tono]}>{it.res.texto}</span>}
               </span>
-              <p class="f-t" set:html={it.cortoHtml} />
-              {it.setup && (
-                <p class="f-set">{it.setup}{it.puntos && <span class="mono"> · {it.puntos} pts</span>}</p>
-              )}
-              {it.lema && <p class="f-lema">{it.lema}</p>}
+              {!it.res && <p class="f-t" set:html={it.cortoHtml} />}
+              {it.setup && <p class="f-set">{it.setup}</p>}
             </a>
           </li>
         ))}
@@ -229,7 +229,6 @@ const reglasCitadas = [...new Set(todos.flatMap((it) => (it.caso ? it.caso.regla
                     <p class="d-ver">
                       <span class="etiqueta">Veredicto</span>
                       <span>{it.setup}</span>
-                      {it.puntos && <span class="d-pts mono">{it.puntos} pts</span>}
                     </p>
                   )}
 
@@ -290,8 +289,14 @@ const reglasCitadas = [...new Set(todos.flatMap((it) => (it.caso ? it.caso.regla
     function visibles(panel) {
       return fichas.filter(function (f) { return !f.hidden && panel.contains(f); });
     }
-    function idDeHash() {
+    // Direcciones de antes del 28/09/2026: la pestana del test ciego es ahora Sesiones.
+    var VIEJAS = { 'test-ciego': 'sesiones' };
+    function hashActual() {
       var h = decodeURIComponent(location.hash.slice(1));
+      return VIEJAS[h] || h;
+    }
+    function idDeHash() {
+      var h = hashActual();
       return dets[h] ? h : alias[h] || null;
     }
 
@@ -316,7 +321,7 @@ const reglasCitadas = [...new Set(todos.flatMap((it) => (it.caso ? it.caso.regla
     });
 
     // ── filtro por regla ────────────────────────────────────────────────
-    // Una jornada del test ciego sin caso no cita reglas: con un filtro
+    // Una sesion sin caso no cita reglas: con un filtro
     // puesto se oculta. Cada pestana cuenta lo que queda en su bloque.
     filtro.addEventListener('change', function () {
       var id = filtro.value;
@@ -492,13 +497,13 @@ const reglasCitadas = [...new Set(todos.flatMap((it) => (it.caso ? it.caso.regla
       var id = idDeHash();
       if (id) { abrir(id, false); return; }
       ocultar();
-      var h = decodeURIComponent(location.hash.slice(1));
+      var h = hashActual();
       if (document.querySelector('[data-panel="' + h + '"]')) activar(h, false);
     });
 
     // Al llegar: el enlace dice que caso abrir, o que pestana.
     var inicial = idDeHash();
-    var h0 = decodeURIComponent(location.hash.slice(1));
+    var h0 = hashActual();
     if (inicial) abrir(inicial, false);
     else if (document.querySelector('[data-panel="' + h0 + '"]')) activar(h0, false);
   })();
@@ -605,8 +610,8 @@ const reglasCitadas = [...new Set(todos.flatMap((it) => (it.caso ? it.caso.regla
   .f-a:hover { transform: translateY(-2px); }
   .ficha:target .f-a, .ficha:has(.ancla:target) .f-a { box-shadow: var(--halo-azul); }
 
-  /* Todas las graficas en la misma caja, para que la rejilla no baile: la
-     del test ciego y las de la galeria no tienen la misma proporcion. */
+  /* Todas las graficas en la misma caja, para que la rejilla no baile: las
+     de las sesiones y las de los ejemplos no tienen la misma proporcion. */
   .f-fig {
     display: block;
     aspect-ratio: 1.9;
@@ -623,7 +628,6 @@ const reglasCitadas = [...new Set(todos.flatMap((it) => (it.caso ? it.caso.regla
   .f-a p { margin: 0; max-width: none; }
   .f-t { font-size: var(--t-3); font-weight: var(--peso-fuerte); line-height: var(--alto-corto); }
   .f-set { font-size: var(--t-2); color: var(--texto-2); }
-  .f-lema { font-size: var(--t-2); color: var(--texto-3); }
 
   .c-id {
     font-size: var(--t-1); font-weight: var(--peso-fuerte); color: var(--acento);
@@ -727,7 +731,6 @@ const reglasCitadas = [...new Set(todos.flatMap((it) => (it.caso ? it.caso.regla
     display: flex; align-items: baseline; gap: var(--e-3); flex-wrap: wrap;
     margin: 0 0 var(--e-4); max-width: none;
   }
-  .d-pts { color: var(--texto-2); }
   .d-md { font-size: var(--t-3); }
   .d-pie {
     display: flex; align-items: baseline; gap: var(--e-3); flex-wrap: wrap;

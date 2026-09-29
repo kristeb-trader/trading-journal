@@ -4,9 +4,9 @@
  * 01_Plan/  -> src/content/
  * 02_Assets/ -> public/assets/
  *
- * 05_Backtesting/claude/ -> public/assets/test-ciego/
+ * 05_Backtesting/claude/ -> public/assets/sesiones/  (+ src/content/sesiones.json)
  *
- * REGLA DURA: abre `01_Plan/`, `02_Assets/` y el test ciego en SOLO LECTURA y aborta si algun
+ * REGLA DURA: abre `01_Plan/`, `02_Assets/` y las Sesiones en SOLO LECTURA y aborta si algun
  * destino cae fuera de `04_Web/`. El plan no se toca nunca desde aqui.
  *
  * Lo copiado esta en .gitignore: es derivado. El original vive en el repositorio.
@@ -22,8 +22,9 @@ const PLAN = path.join(RAIZ, '01_Plan');
 const ASSETS = path.join(RAIZ, '02_Assets');
 const DEST_CONTENIDO = path.join(WEB, 'src', 'content');
 const DEST_ASSETS = path.join(WEB, 'public', 'assets');
-// Los graficos del test ciego diario, uno por jornada (test_ciego/LEEME_BACK_DIARIO.md).
-const TEST_CIEGO = path.join(RAIZ, '05_Backtesting', 'claude');
+// Las Sesiones: un grafico por jornada, AAAA-MM-DD.png, y a su lado el veredicto del
+// motor, AAAA-MM-DD.json (05_Backtesting/claude/protocolo/LEEME.md).
+const SESIONES = path.join(RAIZ, '05_Backtesting', 'claude');
 
 // Los documentos que el portal espera encontrar. Si falta uno, se avisa.
 // TRADING_PLAN_CHAUMER.md salió el 26/09/2026: las reglas viven en 01_Plan/reglas/ y llegan en reglas.json.
@@ -189,23 +190,32 @@ fs.writeFileSync(
   'utf8',
 );
 
-// --------------------------------------------------------------- test ciego
+// ---------------------------------------------------------------- sesiones
 // Solo lectura, como el plan. Se copia solo lo que se llama AAAA-MM-DD.png:
-// la fecha del nombre es lo unico que dice a que jornada pertenece. Lo demas
-// de la carpeta (el LEEME) no viaja.
+// la fecha del nombre es lo unico que dice a que jornada pertenece. Si al lado
+// esta AAAA-MM-DD.json, es el veredicto del motor: el portal lo usa solo si el
+// plan todavia no tiene ese dia en su tabla. Lo demas (protocolo/, motor/) no viaja.
 const jornadas = [];
-if (fs.existsSync(TEST_CIEGO)) {
-  for (const f of fs.readdirSync(TEST_CIEGO).sort()) {
+if (fs.existsSync(SESIONES)) {
+  for (const f of fs.readdirSync(SESIONES).sort()) {
     const m = f.match(/^(\d{4}-\d{2}-\d{2})\.png$/i);
     if (!m) continue;
-    copiar(path.join(TEST_CIEGO, f), path.join(DEST_ASSETS, 'test-ciego', f));
-    jornadas.push({ fecha: m[1], url: '/assets/test-ciego/' + f });
+    copiar(path.join(SESIONES, f), path.join(DEST_ASSETS, 'sesiones', f));
+    let motor = null;
+    const vj = path.join(SESIONES, m[1] + '.json');
+    if (fs.existsSync(vj)) {
+      try {
+        const v = JSON.parse(fs.readFileSync(vj, 'utf8'));
+        motor = { setup: v.setup, resultado: v.resultado, puntos: v.puntos };
+      } catch { aviso('veredicto ilegible: 05_Backtesting/claude/' + m[1] + '.json'); }
+    }
+    jornadas.push({ fecha: m[1], url: '/assets/sesiones/' + f, motor });
   }
 } else {
-  aviso('no existe 05_Backtesting/claude: la pagina del test ciego saldra vacia');
+  aviso('no existe 05_Backtesting/claude: la pestana de Sesiones saldra vacia');
 }
 fs.writeFileSync(
-  path.join(DEST_CONTENIDO, 'test_ciego.json'),
+  path.join(DEST_CONTENIDO, 'sesiones.json'),
   JSON.stringify(jornadas, null, 2) + '\n',
   'utf8',
 );
@@ -217,7 +227,7 @@ console.log('  reglas.json   ' + reglas.length + ' reglas');
 console.log('  indice        src/content/reglas_indice.md');
 console.log('  subfases      ' + subfases);
 console.log('  imagenes      ' + imagenes.length);
-console.log('  test ciego    ' + jornadas.length + ' jornadas');
+console.log('  sesiones      ' + jornadas.length + ' jornadas');
 console.log('  manifiesto    ' + Object.keys(manifiesto.reglas).length + ' reglas con imagen · '
   + Object.keys(manifiesto.casos).length + ' casos con imagen · '
   + manifiesto.sueltas.length + ' sueltas');
