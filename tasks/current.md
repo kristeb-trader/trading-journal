@@ -37,7 +37,6 @@ Rescatados de `chaumer/04_Web/ESTADO_FASE_2.md` al archivarlo (28/09, D-030). Es
 
 ## Con fecha (las hace Claude)
 
-- Primer Coach de un día con ficha del motor: que la caché se siga leyendo (`coach_uso.cache_leida` > 0)
 - **28/10** (Fed): la ficha sale con `dia_fed` y el motor ve reingresos
 - **2/11** (invierno): vela base 9:31; el AddOn exporta a las 11:32
 - **≈10/12** (cambio de contrato): el AddOn pasa solo a `MNQ 03-27`
