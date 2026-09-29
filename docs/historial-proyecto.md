@@ -52,7 +52,7 @@
 - **Cifras al día:** el índice de migraciones (86 archivos), el mapa del código del `CLAUDE.md` y el backlog.
 - **Respaldo diario en OneDrive** (Kris, por un disco que falla): `scripts/herramientas/respaldo.ps1` copia el proyecto
   entero —con `.git` y lo que git ignora, como el backtesting manual— más la configuración y el código propio de
-  NinjaTrader y los skills y la memoria de Claude a `E:\OneDrive\CerebroCerebro_Proyectos7_Proyectos\Journal Trading\`. Solo añade,
+  NinjaTrader y los skills y la memoria de Claude a `E:\OneDrive\Cerebro\07_Proyectos\Journal Trading\`. Solo añade,
   nunca borra; sin claves. Tarea de Windows «TradingJournal - respaldo», a las 11:00 o al encender. La copia vieja de
   agosto que había allí, apartada en `_copia-2026-08-09\`. Cómo restaurar: la cabecera del script.
 
