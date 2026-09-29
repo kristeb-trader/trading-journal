@@ -347,6 +347,9 @@ const Metrics = (() => {
     const stops   = nonBETrades.filter(isLossTrade).length
     const winRate = nonBETrades.length > 0 ? (targets / nonBETrades.length * 100).toFixed(1) : 0
     const netPnl = trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
+    // Puntos por precio (db.js): la unidad del calendario. No se multiplican por
+    // contratos, así que pueden ir en negativo con el P&L en positivo.
+    const netPts = trades.reduce((s, t) => s + (puntosDeTrade(t) || 0), 0)
     const streak = calcStreak(trades)
     const { best, worst } = bestWorstDay(trades)
     const sinSetupDates = sesiones
@@ -562,7 +565,15 @@ const Metrics = (() => {
     const ratioTS  = stops > 0 ? (targets / stops).toFixed(2) : targets > 0 ? '∞' : '—'
 
     const cards = [
-      { label: 'P&L Neto', value: fmtDinero(netPnl), icon: 'ti-currency-dollar', color: netPnl >= 0 ? 'green' : 'red', sub: `Promedio: ${fmtDinero(avgPnl)}/día` },
+      {
+        // Los puntos mandan y el P&L real va debajo, siempre a la vista: son dos
+        // lecturas verdaderas y distintas (diseño de los cuatro calendarios, §3.2).
+        label: 'Puntos netos',
+        value: `${netPts < 0 ? '−' : netPts > 0 ? '+' : ''}${fmtPuntos(netPts)}<small class="metric-unidad">pts</small>`,
+        icon: 'ti-currency-dollar',
+        color: netPts > 0 ? 'green' : netPts < 0 ? 'red' : 'neutral',
+        sec: `<span class="${netPnl > 0 ? 'pos' : netPnl < 0 ? 'neg' : ''}">${fmtDinero(netPnl)}</span> · ${fmtDinero(avgPnl)}/día`,
+      },
       { label: 'Disciplina', value: `${disciplinaProceso}%`, icon: 'ti-checkup-list', color: disciplinaProceso >= 80 ? 'green' : disciplinaProceso >= 50 ? 'warning' : 'red', sub: chkItemsTotal > 0 ? `${chkItemsOk}/${chkItemsTotal} ítems de checklist${trendDisc}` : 'Sin días operados', clickable: true, action: 'disc-detail' },
       { label: 'Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días${costoErrores > 0 ? ` · ≈ <span style="color:var(--red)">-$${fmtMiles(costoErrores)}</span>` : ''}${trendErr}` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
       // El desglose T/S vive ahora en su propia tarjeta, así que aquí va el tamaño
@@ -600,6 +611,7 @@ const Metrics = (() => {
           <div class="metric-label">${c.label} ${c.clickable ? '<i class="ti ti-chevron-right" style="font-size:0.75rem;opacity:0.5"></i>' : ''}</div>
           <div class="metric-value color-${c.color}">${c.value}</div>
           ${c.sub ? `<div class="metric-sub">${c.sub}</div>` : ''}
+          ${c.sec ? `<div class="metric-sec">${c.sec}</div>` : ''}
         </div>
       </div>`).join('')
 
@@ -681,10 +693,15 @@ const Metrics = (() => {
   }
 
   // Curva de equity del mes seleccionado (sección Calendario)
+  // En PUNTOS, como el resto del calendario; el P&L real del día, en el tooltip.
   function renderCalEquity(trades) {
-    const byDate = {}
-    trades.forEach(t => { if (t.trade_date) byDate[t.trade_date] = (byDate[t.trade_date] || 0) + (parseFloat(t.profit) || 0) })
-    pintarEquity('calEquityChart', { porDia: byDate, unidad: '$' })
+    const pts = {}, usd = {}
+    trades.forEach(t => {
+      if (!t.trade_date) return
+      pts[t.trade_date] = (pts[t.trade_date] || 0) + (puntosDeTrade(t) || 0)
+      usd[t.trade_date] = (usd[t.trade_date] || 0) + (parseFloat(t.profit) || 0)
+    })
+    pintarEquity('calEquityChart', { porDia: pts, unidad: 'pts', pie: d => `P&L  ${fmtDinero(usd[d])}` })
   }
 
   // La curva de equity, reutilizable: la pintan "Mío" y la vista de Chaumer,

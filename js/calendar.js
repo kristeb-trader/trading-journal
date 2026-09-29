@@ -106,6 +106,13 @@ const Calendar = (() => {
     return trades.reduce((sum, t) => sum + (parseFloat(t.profit) || 0), 0)
   }
 
+  // Puntos del día por precio (puntosDeTrade, db.js): la unidad del calendario.
+  function dayPts(trades) {
+    if (!trades || trades.length === 0) return null
+    return trades.reduce((sum, t) => sum + (puntosDeTrade(t) || 0), 0)
+  }
+  const fmtPtsCal = v => `${v < 0 ? '−' : v > 0 ? '+' : ''}${fmtPuntos(v)}`
+
   // ¿La sesión cuenta como día con actividad? Operó, o no operó pero sí se conectó
   // a analizar (se_conecto). Se omiten solo los días sin operar y sin conexión.
   function seConecto(s) { return !s.no_opero || s.se_conecto !== false }
@@ -218,10 +225,16 @@ const Calendar = (() => {
       errores = '<div class="cal-tip-ok"><i class="ti ti-circle-check"></i> Sin errores</div>'
     }
 
+    // P&L real del día, bajo los puntos: con varios contratos no dicen lo mismo.
+    const pnl = dayPnl(trades)
+    const pnlFila = pnl === null ? '' :
+      `<div class="cal-tip-fila"><span class="cal-tip-lab">P&amp;L</span><span class="cal-tip-val"><span class="${pnl > 0 ? 'pos' : pnl < 0 ? 'neg' : ''}">${fmtDinero(pnl)}</span></span></div>`
+
     return `
       <div class="cal-tip-fecha">${fecha}</div>
       <div class="cal-tip-fila"><span class="cal-tip-lab">Setup</span><span class="cal-tip-val">${setup}</span></div>
       <div class="cal-tip-fila"><span class="cal-tip-lab">Puntos</span><span class="cal-tip-val">${puntos}</span></div>
+      ${pnlFila}
       <div class="cal-tip-sep"></div>
       <div class="cal-tip-lab">Errores</div>
       ${errores}`
@@ -287,6 +300,7 @@ const Calendar = (() => {
       weekNum++
       const weekDays = []
       let weekPnl = 0
+      let weekPts = 0
       let weekTrades = 0
 
       for (let d = 0; d < 5; d++) {
@@ -296,6 +310,7 @@ const Calendar = (() => {
         if (inMonth) {
           const trades = tradesCache[dateStr] || []
           weekPnl += trades.reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
+          weekPts += dayPts(trades) || 0
           weekTrades += trades.length
         }
         ptr.setDate(ptr.getDate() + 1)
@@ -338,9 +353,14 @@ const Calendar = (() => {
         if (isFuture) cellClass += esEspecial ? ' future-especial' : ' future'
         if (isToday) cellClass += ' today'
 
+        // Los PUNTOS mandan (diseño de los cuatro calendarios, §5.1) y el P&L real
+        // va debajo: cuentan cosas distintas, porque los puntos no se multiplican
+        // por contratos. El color de la celda sigue saliendo del resultado.
         const pnl = dayPnl(trades)
+        const pts = dayPts(trades)
         const pnlHtml = pnl !== null
-          ? `<div class="cal-pnl ${pnl >= 0 ? 'positive' : 'negative'}">${fmtDinero(pnl)}</div>`
+          ? `<div class="cal-pnl ${pts >= 0 ? 'positive' : 'negative'}">${fmtPtsCal(pts)}</div>
+             <div class="cal-usd">${fmtDinero(pnl)}</div>`
           : ''
         // Los días futuros solo son clicables si son fecha especial (modal informativo)
         const clickable = (!isFuture || esEspecial) ? `data-date="${dateStr}" style="cursor:pointer"` : ''
@@ -419,10 +439,10 @@ const Calendar = (() => {
       if (hasMonthDays) {
         if (weekTrades > 0) {
           html += `
-            <div class="cal-cell cal-week-summary ${weekPnl >= 0 ? 'week-positive' : 'week-negative'}">
+            <div class="cal-cell cal-week-summary ${weekPts >= 0 ? 'week-positive' : 'week-negative'}">
               <div class="week-label">Semana ${weekNum}</div>
-              <div class="week-pnl ${weekPnl >= 0 ? 'positive' : 'negative'}">${fmtDinero(weekPnl)}</div>
-              <div class="week-trades">${weekTrades} trade${weekTrades !== 1 ? 's' : ''}</div>
+              <div class="week-pnl ${weekPts >= 0 ? 'positive' : 'negative'}">${fmtPtsCal(weekPts)}</div>
+              <div class="week-trades">${fmtDinero(weekPnl)} · ${weekTrades} trade${weekTrades !== 1 ? 's' : ''}</div>
             </div>`
         } else {
           html += `
@@ -439,6 +459,7 @@ const Calendar = (() => {
     // Total mensual — widget de ancho completo al pie del grid
     const totalPnl = Object.values(tradesCache).flat()
       .reduce((s, t) => s + (parseFloat(t.profit) || 0), 0)
+    const totalPts = dayPts(Object.values(tradesCache).flat()) || 0
     const monthName = MONTHS_ES[currentMonth - 1]
     // Trade real = target o stop, excluyendo B.E. (no cuenta días sin entradas)
     const esTradeReal = t => tradeOutcome(t) !== null
@@ -447,10 +468,11 @@ const Calendar = (() => {
     // "sin entradas"; omite solo los días sin operar y sin conexión).
     const diasActividad = diasConActividad()
     html += `
-      <div class="cal-month-total-widget ${totalPnl >= 0 ? 'positive' : 'negative'}">
+      <div class="cal-month-total-widget ${totalPts >= 0 ? 'positive' : 'negative'}">
         <span class="cmt-label">TOTAL ${monthName.toUpperCase()} ${currentYear}</span>
         <span class="cmt-sub">${diasActividad} día${diasActividad !== 1 ? 's' : ''} · ${totalTrades} trade${totalTrades !== 1 ? 's' : ''}</span>
-        <span class="cmt-amount ${totalPnl >= 0 ? 'positive' : 'negative'}">${fmtDinero(totalPnl)}</span>
+        <span class="cmt-amount ${totalPts >= 0 ? 'positive' : 'negative'}">${fmtPtsCal(totalPts)} pts
+          <small class="cmt-usd">${fmtDinero(totalPnl)}</small></span>
       </div>`
 
     grid.innerHTML = html
