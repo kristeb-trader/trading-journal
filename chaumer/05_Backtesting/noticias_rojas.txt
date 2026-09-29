@@ -24,7 +24,7 @@
 2026-08-26  07:30  Core PCE Price Index m/m
 2026-08-28  09:00  Fed Chairman Warsh Speaks
 2026-08-28  12:00  Jackson Hole Symposium
-2026-09-01  10:00  ISM Manufacturing PMI
+2026-09-01  09:00  ISM Manufacturing PMI
 2026-09-04  07:30  Unemployment Rate
 2026-09-10  07:30  Core PPI m/m
 2026-09-16  13:00  FOMC Economic Projections

@@ -631,14 +631,24 @@ def detectar_setups(res, solo_reingresos=False):
         # ---------- llenado / caducidad ----------
         T_vela = _noticia(dia, _minutos(k), 4) if orden and not trade else None
         if orden and not trade and o_pausa(orden) and T_vela is None:
-            # R-35: pasado T+5 se vuelve a colocar si el setup sigue vivo. Si con la orden retirada
-            # el precio paso del nivel de entrada, ya no hay orden stop que poner (PROPUESTA del
-            # motor, 28/09/2026: la regla no lo dice; pendiente de confirmar por el operador).
-            if orden.get('cruzo'):
-                ev.append(f"{hh(k)}  orden no se recoloca — el precio pasó de la entrada ({orden['e']:.2f}) "
-                          f"mientras estaba retirada por la noticia"); orden=None
+            # R-35, CONFIRMADO POR EL OPERADOR 28/09/2026: pasado T+5 se entra solo si el setup sigue
+            # vivo y cumpliendo reglas; si no, se espera otro setup. Si con la orden retirada el precio
+            # paso del nivel de entrada, ya no hay orden stop que poner (mercado y limite, prohibidas).
+            # Los filtros se vuelven a pasar con las zonas de ahora.
+            o = orden; motivo = None
+            if o.get('cruzo'):
+                motivo = f"el precio pasó de la entrada ({o['e']:.2f}) mientras estaba retirada"
             else:
-                ev.append(f"{hh(k)}  orden recolocada pasada la noticia de las {_hhmm(orden.pop('pausa'))}")
+                o2, m2, t2, _ = _evaluar(Z, i, o['tipo'], o['dir'], o['e'], o['s'])
+                if o2 is None: motivo = m2
+                elif o['tipo'] == 'Reingreso':
+                    pr = _punto_de_referencia(res, i, o['e'], t2, o['dir'])
+                    if pr is not None: motivo = f"el objetivo pasa del punto de referencia {pr:.2f}"
+            T0 = o.pop('pausa')
+            if motivo:
+                ev.append(f"{hh(k)}  orden no se recoloca tras la noticia de las {_hhmm(T0)} — {motivo}"); orden=None
+            else:
+                ev.append(f"{hh(k)}  orden recolocada pasada la noticia de las {_hhmm(T0)}")
         if orden and not trade:
             o=orden
             # La caducidad se mira ANTES del llenado: pasado el plazo la orden ya no existe.
