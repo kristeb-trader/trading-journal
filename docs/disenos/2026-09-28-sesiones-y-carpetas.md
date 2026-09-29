@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Versión** | v1 |
-| **Estado** | ✅ Implementado (28/09/2026) — falta retirar los gráficos viejos de julio, con el visto bueno de Kris |
+| **Estado** | ✅ Implementado y publicado (28/09/2026) |
 | **Fecha** | 28/09/2026 |
 | **Decidido con Kris** | el motor va dentro de `claude/` · el término «test ciego» sale también del plan |
 
@@ -269,5 +269,4 @@ Lo de §3.5. Commit: `docs: sesiones y dos carpetas (D-029)`.
   regresión contra el commit anterior da 48 de 48 días iguales. Viene de los arreglos del motor de la tarde
   del 28/09, que llegaron después de la ficha de las 15:32.
 
-**Pendiente:** retirar `chaumer/02_Assets/galeria/sesiones/` (los 11 gráficos viejos de julio) cuando Kris dé
-el visto bueno a los nuevos. Hasta entonces el portal ya enseña los nuevos (el de la jornada gana).
+**Retirados** los 11 gráficos viejos de julio (`chaumer/02_Assets/galeria/sesiones/`), con el visto bueno de Kris a los nuevos (28/09/2026). Quedan en el historial de git.
