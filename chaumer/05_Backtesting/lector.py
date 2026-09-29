@@ -131,6 +131,8 @@ class Zona:
         self.rein_ok=False                        # ventana de reingreso abierta
         self.ref=None                             # punto de referencia
         self.de_corrida=False                     # la creo una corrida (no un retroceso)
+        self.pm=False                             # zona de premercado (R-15)
+        self.i_papel=None                         # vela en que una zona 'P' tomo su papel
         self.dir=0                                # sentido de esa corrida: +1 / -1
         self.r_ini=None; self.r_fin=None          # retroceso que la origina
         self.hist=[(i,lo,hi)]                     # geometria a lo largo del dia
@@ -159,7 +161,8 @@ def zonas_premercado(V):
         lo,hi = z_res(k) if k['c']>=k['o'] else z_sop(k)
         if ap is None: tipo = 'R' if k['c']>=k['o'] else 'S'
         else:          tipo = 'S' if hi < ap else ('R' if lo > ap else 'P')
-        Z.append(Zona(lo,hi,tipo,i,f"{col(k)//100}:{k['t'][2:4]} pm"))
+        z=Zona(lo,hi,tipo,i,f"{col(k)//100}:{k['t'][2:4]} pm"); z.pm=True
+        Z.append(z)
     return Z
 
 # ------------------------------------------------------- filtro zonas entre zonas
@@ -324,7 +327,7 @@ def leer_sesion(V, dia):
                         # ventana toma su papel al salir: por arriba soporte, por abajo
                         # resistencia. Nace ahi, con el precio a un lado y sin traspasos.
                         z.tipo = 'S' if d=='arriba' else 'R'
-                        z.arriba=False; z.abajo=False
+                        z.arriba=False; z.abajo=False; z.i_papel=i
                         log.append(f"{col(k)//100}:{k['t'][2:4]} la zona de premercado "
                                    f"{z.lo:.2f}-{z.hi:.2f} sale {d}: queda como "
                                    f"{'soporte' if z.tipo=='S' else 'resistencia'}")
@@ -611,7 +614,7 @@ def detectar_setups(res, solo_reingresos=False):
     res['reingresos']=[]
     def hh(k): return f"{col(k)//100}:{k['t'][2:4]}"
 
-    for i in range(b+1, fin+1):
+    for i in range(b, fin+1):
         k=D[i]
 
         # ---------- consecucion de rompimientos previos ----------
@@ -627,6 +630,28 @@ def detectar_setups(res, solo_reingresos=False):
                 if (z.roto[0]=='arriba' and k['h'] > z.consec_ext) or \
                    (z.roto[0]=='abajo'  and k['l'] < z.consec_ext):
                     z.rein_ok=False
+
+        # ---------- rompimiento de las zonas de premercado (R-15, cierra la mitad de P-34) ----------
+        # Hasta el 28/09/2026 un rompimiento solo se anotaba en el bloque de Continuacion, que exige
+        # zona de corrida: el de una zona de premercado no se anotaba nunca y el motor no podia ver un
+        # Reingreso sobre ella (11/09/2026, 9:01). R-15: se comporta como cualquier zona, asi que se
+        # anota con el mismo criterio que las de corrida — la resistencia hacia arriba, el soporte
+        # hacia abajo, una vez por zona —, en cualquier vela de la ventana, la base incluida, y
+        # aunque haya una orden puesta. Solo sirve para el Reingreso: la Continuacion necesita el IRI
+        # que crea su zona (R-25), y una zona de premercado no nace de ninguna corrida.
+        # Una zona 'P' (la ventana abrio dentro) no tiene papel hasta que sale: su rompimiento se
+        # busca desde la vela siguiente a la que se lo dio (R-22). Su salida no se anota como
+        # rompimiento: el plan no dice si puede fallar y dar Reingreso.
+        for z in Z:
+            if not z.pm or z.roto or (z.fin is not None and z.fin < i): continue
+            if z.tipo=='P' or (z.i_papel is not None and i <= z.i_papel): continue
+            zlo,zhi=z.en(i)
+            if   z.tipo=='R' and k['l']<=zhi and k['h'] > zhi+TICK/2: z.roto=('arriba',i,k['h'])
+            elif z.tipo=='S' and k['h']>=zlo and k['l'] < zlo-TICK/2: z.roto=('abajo', i,k['l'])
+            else: continue
+            ev.append(f"{hh(k)}  rompimiento de {z} — zona de premercado: sin Continuación, "
+                      f"queda para el Reingreso")
+        if i==b: continue                              # la vela base solo cuenta para esos rompimientos
 
         # ---------- llenado / caducidad ----------
         T_vela = _noticia(dia, _minutos(k), 4) if orden and not trade else None

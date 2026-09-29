@@ -8,7 +8,8 @@ de git (por defecto HEAD) con el del disco, día a día, sobre todos los datos d
 
 Un día no Fed tiene que dar EXACTAMENTE lo mismo (zonas, eventos y operación). Los días
 de Fed se imprimen aparte: ahí se espera que cambie lo que el cambio pretendía cambiar.
-Además comprueba apertura_utc() y simula un día de invierno (horas +1 h).
+Además comprueba apertura_utc(), que se anota el rompimiento de las zonas de premercado
+(P-34, 28/09/2026) y simula un día de invierno (horas +1 h).
 Sale con código 1 si algo no cuadra.
 """
 import os, sys, glob, subprocess, types, importlib.util
@@ -83,6 +84,14 @@ def main():
                         ('20270312', 1431), ('20270315', 1331)):
         got = nuevo.apertura_utc(d); ok = got == esperado; fallos += not ok
         print(f'  {"✅" if ok else "❌"} {d} → {got} (esperado {esperado})')
+
+    print('=== Zonas de premercado: su rompimiento se anota (P-34, 28/09/2026) ===')
+    for fecha, hora, vela in (('2026-09-11', '8:47', '8:29 pm'), ('2026-09-18', '8:49', '8:29 pm')):
+        V, _ = dias_de(nuevo, os.path.join(BT, 'datos', 'dia', fecha + '.txt'))
+        r = correr(nuevo, V, fecha.replace('-', ''), 8000, False)
+        ok = any(e.startswith(hora + ' ') and 'rompimiento' in e and f'(vela {vela})' in e for e in r['eventos'])
+        fallos += not ok
+        print(f'  {"✅" if ok else "❌"} {fecha}: rompimiento a las {hora} de la zona de la vela {vela}')
 
     print('=== Invierno simulado: el 23/09 con las horas +1 h, como si fuera el 4/11 ===')
     V, _ = dias_de(nuevo, os.path.join(BT, 'datos', 'dia', '2026-09-23.txt'))

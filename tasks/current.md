@@ -94,8 +94,24 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
     (el 14-15/07 tampoco: el 15/07 validado se queda como está)
   - [x] **Noticias rojas** (28/09): `lector.py` aplica `R-35` con `noticias_rojas.txt`, copia de `sesion_noticias`
     (hora Colombia) que reescribe la cadena. Sin cambios en los 52 días con datos
-  - [ ] **Siguiente: los rompimientos de las zonas de premercado** (`P-34`, la mitad que queda): el motor solo anota
-    rompimientos de zonas nacidas de corrida, así que no ve continuaciones ni reingresos sobre zonas de premercado
+  - [x] **Rompimientos de las zonas de premercado** (28/09, `P-34`, la mitad que quedaba): `lector.py` los anota con
+    el mismo criterio que los de las zonas de corrida (resistencia hacia arriba, soporte hacia abajo, una vez por
+    zona), desde la vela base y aunque haya orden puesta. Solo alimentan el Reingreso: la Continuación sigue pidiendo
+    su IRI. **Ninguna operación cambia** en los 52 días con datos; 8 días ganan eventos (rompimientos y reingresos
+    descartados). La regresión comprueba el 11/09 (8:47) y el 18/09 (8:49). `PENDIENTES.md` sigue diciendo
+    «pendiente»: marcarlo cerrado es un cambio del plan y necesita el sí de Kris
+  - [ ] **Kris · el 11/09 sigue sin su reingreso de las 9:01**, y ya no por el premercado: el motor exige que la
+    consecución del rompimiento llegue en 5 velas, y ese día llegó en la 13.ª (8:47 → 9:00). El plan dice que el
+    traspaso no tiene plazo y que el plazo no aplica al reingreso. Quitando el tope sale el reingreso tal cual se
+    encontró a mano (29.440,25 / 29.475,00, descartado por el punto de referencia 29.423,00), aparecen 11 avisos
+    de reingreso más en otros 8 días, todos descartados salvo dos órdenes (23/07, que no llega a llenarse, y 24/07),
+    y cambia **una** operación: **24/07**, Reingreso alcista 9:21, **+38,00**
+    (día no validado). Decidir si la consecución del reingreso tiene tope de 5 velas
+  - [ ] **Kris · ¿puede una zona de premercado dar Continuación?** `R-25` dice que no hay Continuación sin la zona que
+    crea su propia corrida; `R-15` pone «Aplica a: Continuación · Reingreso» y `R-40` habla de no operar el
+    rompimiento de una zona de premercado cuando se pierde la fluidez, como si con fluidez se pudiera. El motor
+    sigue a `R-25`. Relacionado: la salida de una zona que abrió con la ventana dentro (ningún día de los 60 hasta
+    hoy) no se anota como rompimiento que pueda fallar
   - [ ] Resolver el plazo de consecución antes de la 5.ª vela cuando se arma la estructura contraria (`P-31`)
   - [ ] Comprobar el marcado contra la secuencia de banda y turno, con julio delante (`P-33`)
   - [ ] Umbral de volumen NQ frente a MNQ (`P-32`): **Kris** exporta de NinjaTrader el premercado de MNQ de los 11
