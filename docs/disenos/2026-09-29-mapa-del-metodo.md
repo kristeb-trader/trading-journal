@@ -1,11 +1,12 @@
 # El mapa del método — una página nueva en el portal
 
-**Versión:** v1 · **Estado:** 🟡 **PENDIENTE DE APROBACIÓN.** Nada implementado.
+**Versión:** v1.1 · **Estado:** ✅ **IMPLEMENTADO el 29/09/2026.** Las 5 fases, verificadas.
 **Escrito:** 29/09/2026. **Alcance:** el portal (`chaumer/04_Web`), una página nueva.
 
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 29/09/2026 | Primera versión, escrita después de una maqueta funcional revisada por Kris |
+| v1.1 | 29/09/2026 | **Aprobado e implementado.** Tres correcciones del §11 contra los datos reales, y §13 con lo que cambió al construirlo |
 
 ---
 
@@ -248,6 +249,45 @@ variar la **intensidad** según un dato real. Contados sobre `reglas.json`:
 
 **No bloquea las fases 1-3.** Se decide antes de la 4.
 
+## 13. Qué cambió al implementarlo
+
+Tres decisiones que el diseño no fijaba y se tomaron con el código delante.
+
+**El mapa no usa `Marco`.** Es la única página del portal que no lo hace. `Marco` trae su propio
+rail de secciones, y con el menú de piezas del mapa habría dos menús laterales peleándose. La
+página lleva su propia cabecera, con la insignia enlazando a la portada y un «Ver como lista» que
+lleva a `/reglas`.
+
+**La puerta de la portada no es una cuarta tarjeta.** La rejilla es de tres columnas y el operador
+fijó esas tres puertas el 06/09; una cuarta quedaría sola en una segunda fila. El mapa va en su
+propio bloque ancho debajo, que además le pega: no se entra a buscar un dato, se entra a ver la
+forma del método.
+
+**Las siglas de las piezas se derivan del nombre**, no se escriben a mano. Si el plan renombra un
+grupo, la insignia le sigue sola.
+
+### Un fallo que encontró la verificación
+
+Con `prefers-reduced-motion`, el mapa acababa **al 82 % en vez de al 95 %**, y desplazado. La
+causa: sin bucle de fotogramas, nadie aplicaba la transformación después del último salto de
+cámara, así que se quedaba donde la dejó el penúltimo. La cámara ahora avisa de cada cambio que no
+viene del bucle (`Camara.alCambiar`).
+
+No se habría visto mirando la pantalla: salió de comprobar el contrato del §6 con la media query
+emulada.
+
+### Lo verificado
+
+| Qué | Resultado |
+|---|---|
+| Comprobaciones de `/mapa` (normales y con movimiento reducido) | **20/20** en los dos modos |
+| `?sin-movimiento` | Dos capturas con 1,4 s de diferencia, **idénticas** |
+| Sin JavaScript | Las **34 reglas** enlazadas, ninguna página en blanco |
+| Enlace profundo `?pieza=filtros` | Abre su pieza, y el botón «atrás» del navegador funciona |
+| Zoom mínimo dentro de una pieza | **95 %**, nunca menos |
+| `npm run verificar` | **57 páginas, 0 fallos** en enlaces, maquetación, parámetros, cifras, nombres, referencias y vista |
+| Consola | Sin errores |
+
 ## 12. La maqueta
 
 Vive fuera del repositorio, en el scratchpad de la sesión:
@@ -257,4 +297,4 @@ Kris revisó, con los datos dentro y un bucle de demostración), y los capturado
 **No es código de producción**: es lo que se usó para decidir las cifras de §5 y encontrar los
 fallos de §7. Se tira cuando la fase 1 esté hecha.
 
-Hay una entrada `proto` en `.claude/launch.json` para servirla. **Se quita al cerrar este diseño.**
+Hubo una entrada `proto` en `.claude/launch.json` para servirla; **se quitó al cerrar** (29/09/2026).

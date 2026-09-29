@@ -1,0 +1,375 @@
+/**
+ * El mapa del método. Solo esta página.
+ *
+ * No toca base.css ni tokens.css: todos los valores salen de los tokens del
+ * portal. La aurora y las tipografías ya las pone base.css.
+ *
+ * Prefijo `mp-` para que ninguna regla se escape a otra página.
+ */
+
+body.con-mapa {
+  overflow: hidden;
+  height: 100dvh;
+}
+
+/* ═══ las tres capas ═══════════════════════════════════════════════════ */
+
+.mp-lienzo {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+.mp-lienzo.arrastrando { cursor: grabbing; }
+
+.mp-rejilla {
+  position: absolute;
+  left: -6000px; top: -6000px; width: 12000px; height: 12000px;
+  transform-origin: 0 0;
+  will-change: transform;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(76, 141, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(76, 141, 255, 0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.mp-capa-pistas { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.mp-capa-pistas canvas { position: absolute; inset: 0; display: block; }
+
+.mp-mundo {
+  position: absolute; left: 0; top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  z-index: 2;
+}
+
+/* ═══ nodos ════════════════════════════════════════════════════════════ */
+
+/* El envoltorio hace la entrada; el botón, el hover. Separados a propósito:
+   si la animación de entrada viviera en el botón, al acabar pisaría el
+   `transform` del hover. */
+.mp-env {
+  position: absolute;
+  animation: mp-entra-nodo 0.44s var(--curva-salida) both;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes mp-entra-nodo {
+  from { opacity: 0; transform: translateY(14px) scale(0.965); }
+}
+
+.mp-hex {
+  position: absolute; inset: 0;
+  border: 0; padding: 0;
+  background: var(--b);
+  cursor: pointer;
+  clip-path: polygon(26px 0, calc(100% - 26px) 0, 100% 50%,
+                     calc(100% - 26px) 100%, 26px 100%, 0 50%);
+  transition: transform var(--normal), filter var(--normal), opacity var(--rapido);
+}
+.mp-hex:hover { transform: translateY(-3px) scale(1.015); filter: brightness(1.3); }
+.mp-hex:focus-visible { outline: 2px solid var(--acento); outline-offset: 4px; }
+.mp-hex--apagada { opacity: 0.26; }
+
+.mp-hex__in {
+  position: absolute; inset: 1.5px;
+  background: var(--f);
+  clip-path: polygon(26px 0, calc(100% - 26px) 0, 100% 50%,
+                     calc(100% - 26px) 100%, 26px 100%, 0 50%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 12px 34px;
+  font-family: var(--fuente);
+  color: var(--texto);
+  text-align: center;
+}
+.mp-hex__m {
+  font-family: var(--fuente-mono); font-size: 10px;
+  letter-spacing: var(--track-etiqueta); color: var(--cd);
+  text-transform: uppercase;
+}
+.mp-hex__n {
+  font-size: 18px; font-weight: var(--peso-max); letter-spacing: 0.02em;
+  color: var(--c); text-transform: uppercase; margin: 7px 0 6px; line-height: 1.12;
+}
+.mp-hex__f { display: flex; align-items: center; gap: 9px; }
+.mp-hex__b {
+  width: 26px; height: 29px; display: grid; place-items: center;
+  font-family: var(--fuente-mono); font-size: 9px; font-weight: var(--peso-fuerte);
+  color: var(--c); border: 1px solid var(--cb);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.mp-hex__c {
+  font-size: 28px; font-weight: var(--peso-max); letter-spacing: var(--track-cifra);
+  color: var(--texto); font-variant-numeric: tabular-nums; line-height: 1;
+}
+.mp-hex__d {
+  margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--cb); width: 74%;
+  font-family: var(--fuente-mono); font-size: 9.5px; color: var(--texto-3);
+}
+
+/* una regla dentro de una pieza */
+.mp-hex--regla .mp-hex__in { padding: 11px 32px; justify-content: space-between; }
+.mp-hex--regla .mp-hex__m { font-size: 9.5px; }
+.mp-hex__r {
+  font-size: 13.5px; font-weight: var(--peso-fuerte); line-height: 1.3;
+  color: var(--c); margin: 7px 0 0;
+}
+.mp-hex__p {
+  font-family: var(--fuente-mono); font-size: 8px;
+  letter-spacing: var(--track-etiqueta); color: var(--texto-3);
+  border: 1px solid var(--cb); border-radius: 2px; padding: 2px 6px;
+  align-self: center; text-transform: uppercase;
+}
+
+.mp-fila {
+  position: absolute; white-space: nowrap;
+  font-family: var(--fuente-mono); font-size: 9px;
+  letter-spacing: 0.17em; color: var(--c); text-transform: uppercase;
+}
+.mp-fila i { display: block; height: 1px; background: var(--c); opacity: 0.5; margin-top: 5px; }
+
+/* ═══ el núcleo ════════════════════════════════════════════════════════ */
+
+.mp-nucleo {
+  position: absolute;
+  border: 1px solid rgba(76, 141, 255, 0.45);
+  border-radius: var(--radio-4);
+  background: linear-gradient(165deg, rgba(76, 141, 255, 0.11), rgba(15, 18, 24, 0.94) 55%), #0D1017;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  animation: mp-latido 4.2s ease-in-out infinite;
+}
+@keyframes mp-latido {
+  0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 0 58px -16px rgba(76,141,255,.42); }
+  50%      { box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 0 104px -10px rgba(76,141,255,.78); }
+}
+.mp-nucleo__t {
+  font-family: var(--fuente-mono); font-size: 10.5px; letter-spacing: 0.16em;
+  color: var(--texto-3); text-transform: uppercase;
+}
+.mp-nucleo__n {
+  font-size: 54px; font-weight: var(--peso-max); letter-spacing: -0.04em;
+  color: var(--info); line-height: 1; margin: 9px 0 5px; font-variant-numeric: tabular-nums;
+}
+.mp-nucleo__s { font-size: var(--t-2); color: var(--texto-2); }
+.mp-nucleo__e {
+  margin-top: 13px; font-family: var(--fuente-mono); font-size: 9.5px;
+  letter-spacing: 0.13em; color: var(--texto-2);
+  border: 1px solid var(--borde); border-radius: var(--radio-1); padding: 5px 11px;
+  text-transform: uppercase;
+}
+
+/* ═══ cromo ════════════════════════════════════════════════════════════ */
+
+.mp-cab {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+  display: flex; align-items: center; gap: 13px; padding: 13px 22px;
+}
+.mp-cab__l {
+  width: 30px; height: 34px; display: grid; place-items: center;
+  font-family: var(--fuente-mono); font-size: 10px; font-weight: var(--peso-fuerte);
+  color: var(--n-950); background: var(--acento); text-decoration: none;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.mp-cab__t { font-size: var(--t-5); font-weight: var(--peso-max); letter-spacing: 0.04em; }
+.mp-cab__s {
+  display: block; font-family: var(--fuente-mono); font-size: 10px;
+  letter-spacing: 0.13em; color: var(--texto-3); text-transform: uppercase;
+}
+.mp-cab__r { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.mp-salir {
+  font-family: var(--fuente-mono); font-size: 10px; letter-spacing: 0.11em;
+  padding: 9px 14px; border: 1px solid var(--borde); border-radius: var(--radio-1);
+  color: var(--texto-2); text-decoration: none; text-transform: uppercase;
+  transition: background var(--rapido), color var(--rapido), border-color var(--rapido);
+}
+.mp-salir:hover { background: var(--elevado); color: var(--texto); border-color: var(--n-600); }
+
+.mp-menu {
+  position: fixed; left: 0; top: 66px; bottom: 0; width: 290px; z-index: 9;
+  padding: 18px 16px; display: flex; flex-direction: column; gap: 3px;
+  background: linear-gradient(90deg, rgba(10, 13, 19, 0.88), rgba(10, 13, 19, 0));
+  backdrop-filter: var(--desenfoque);
+}
+.mp-menu[hidden] { display: none; }
+.mp-menu__t {
+  font-family: var(--fuente-mono); font-size: 9.5px; letter-spacing: 0.19em;
+  color: var(--texto-3); margin: 0 0 14px; padding-left: 8px; text-transform: uppercase;
+}
+.mp-menu__i {
+  position: relative; display: flex; align-items: center; gap: 13px;
+  border: 0; background: none; cursor: pointer; width: 100%;
+  padding: 10px 12px 10px 9px; min-height: 60px;
+  text-align: left; /* alineacion-ok: es un boton con varias palabras, centrado se leeria mal */
+  border-radius: var(--radio-1);
+  animation: mp-entra-menu 0.5s var(--curva-salida) both;
+  animation-delay: var(--rd, 0ms);
+  transition: background var(--rapido), transform var(--rapido);
+}
+@keyframes mp-entra-menu { from { opacity: 0; transform: translateX(-16px); } }
+.mp-menu__i::after {
+  content: ""; position: absolute; left: 58px; right: 12px; bottom: 0; height: 1px;
+  background: var(--borde-sutil);
+}
+.mp-menu__i:last-child::after { display: none; }
+.mp-menu__i:hover { background: rgba(255, 255, 255, 0.055); transform: translateX(4px); }
+.mp-menu__i:focus-visible { outline: 2px solid var(--acento); outline-offset: -2px; }
+.mp-menu__i.activa { background: linear-gradient(90deg, var(--rs), transparent 76%); }
+.mp-menu__i.activa::before {
+  content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--rc); box-shadow: 0 0 16px var(--rs);
+}
+.mp-menu__h {
+  width: 40px; height: 45px; flex: none; display: grid; place-items: center;
+  background: var(--rb);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.mp-menu__h i {
+  display: grid; place-items: center; width: 36px; height: 41px;
+  background: #0B0E14; font-style: normal;
+  font-family: var(--fuente-mono); font-size: 11px; font-weight: var(--peso-fuerte);
+  color: var(--rc);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  transition: background var(--normal), color var(--normal);
+}
+.mp-menu__i.activa .mp-menu__h i { background: var(--rc); color: var(--n-950); }
+.mp-menu__b { flex: 1; min-width: 0; }
+.mp-menu__n { display: block; font-size: var(--t-3); line-height: 1.25; color: var(--texto-2); }
+.mp-menu__i.activa .mp-menu__n { color: var(--rc); font-weight: var(--peso-medio); }
+.mp-menu__d {
+  display: block; font-family: var(--fuente-mono); font-size: 9px;
+  letter-spacing: 0.09em; color: var(--texto-3); margin-top: 5px; text-transform: uppercase;
+}
+.mp-menu__c {
+  font-family: var(--fuente-mono); font-size: 19px; font-weight: var(--peso-fuerte);
+  color: var(--texto-3); font-variant-numeric: tabular-nums;
+  transition: color var(--normal);
+}
+.mp-menu__i.activa .mp-menu__c, .mp-menu__i:hover .mp-menu__c { color: var(--rc); }
+
+.mp-hud { position: fixed; right: 22px; bottom: 20px; z-index: 10; display: flex; align-items: center; gap: 7px; }
+.mp-hud button, .mp-volver {
+  border: 1px solid var(--borde); background: rgba(19, 23, 31, 0.8);
+  color: var(--texto-2); font-family: var(--fuente-mono); font-size: 11px;
+  border-radius: var(--radio-1); min-height: var(--alto-control); min-width: 44px;
+  padding: 0 12px; cursor: pointer;
+  transition: background var(--rapido), color var(--rapido);
+}
+.mp-hud button:hover, .mp-volver:hover { background: var(--elevado); color: var(--texto); }
+.mp-zoom {
+  font-family: var(--fuente-mono); font-size: 10px; color: var(--texto-3);
+  min-width: 44px; text-align: center; font-variant-numeric: tabular-nums;
+}
+.mp-volver {
+  position: fixed; left: 22px; bottom: 74px; z-index: 10;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.mp-volver[hidden] { display: none; }
+.mp-estado { position: fixed; left: 22px; bottom: 20px; z-index: 10; display: flex; align-items: baseline; gap: 10px; }
+.mp-estado__n { font-size: var(--t-7); font-weight: var(--peso-max); color: var(--info); font-variant-numeric: tabular-nums; }
+.mp-estado__t { font-family: var(--fuente-mono); font-size: 10px; letter-spacing: 0.13em; color: var(--texto-2); text-transform: uppercase; }
+.mp-ayuda {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; z-index: 8;
+  font-family: var(--fuente-mono); font-size: 10.5px; letter-spacing: 0.1em;
+  color: var(--texto-3); pointer-events: none; text-transform: uppercase; margin: 0;
+}
+.mp-ayuda[hidden] { display: none; }
+
+.mp-barrido {
+  position: fixed; left: 0; right: 0; top: 0; height: 46%; z-index: 25;
+  pointer-events: none; opacity: 0;
+  background: linear-gradient(180deg,
+    transparent 0%, rgba(120, 190, 255, 0.05) 62%, rgba(150, 210, 255, 0.30) 92%,
+    rgba(210, 238, 255, 0.95) 99%, rgba(210, 238, 255, 1) 100%);
+  box-shadow: 0 0 34px 6px rgba(120, 190, 255, 0.45);
+}
+
+/* ═══ globo y ficha ════════════════════════════════════════════════════ */
+
+.mp-pista {
+  position: fixed; z-index: 20; width: 320px; padding: 14px 16px;
+  pointer-events: none; opacity: 0;
+  background: rgba(13, 16, 23, 0.97);
+  border: 1px solid var(--tb); border-radius: var(--radio-1);
+  box-shadow: var(--sombra-3);
+  transition: opacity var(--rapido);
+}
+.mp-pista.visible { opacity: 1; }
+.mp-pista__m { font-family: var(--fuente-mono); font-size: 9.5px; letter-spacing: 0.11em; color: var(--tc); margin: 0; text-transform: uppercase; }
+.mp-pista__t { font-size: var(--t-4); font-weight: var(--peso-fuerte); margin: 7px 0; }
+.mp-pista__d { font-size: var(--t-2); color: var(--texto-2); line-height: 1.55; margin: 0; }
+
+.mp-velo {
+  position: fixed; inset: 0; z-index: 30; background: rgba(6, 9, 14, 0.8);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.mp-velo[hidden] { display: none; }
+.mp-ficha {
+  width: min(560px, 100%); background: #0D1017;
+  border: 1px solid var(--mb); border-radius: var(--radio-2);
+  padding: 26px 28px; box-shadow: 0 30px 80px rgba(3, 5, 9, 0.8);
+  animation: mp-entra-ficha 0.26s var(--curva-salida) both;
+}
+@keyframes mp-entra-ficha { from { opacity: 0; transform: translateY(14px) scale(0.985); } }
+.mp-ficha__c { display: flex; align-items: center; gap: 10px; margin-bottom: 13px; }
+.mp-ficha__id { font-family: var(--fuente-mono); font-size: var(--t-2); letter-spacing: 0.1em; color: var(--mc); }
+.mp-ficha__g {
+  font-family: var(--fuente-mono); font-size: 9px; letter-spacing: 0.11em; color: var(--texto-3);
+  border: 1px solid var(--borde); border-radius: 3px; padding: 3px 8px; text-transform: uppercase;
+}
+.mp-ficha__t { font-size: var(--t-7); font-weight: var(--peso-fuerte); letter-spacing: var(--track-titulo); margin: 0 0 13px; line-height: 1.24; }
+.mp-ficha__d { font-size: var(--t-3); color: var(--texto-2); line-height: var(--alto-linea); margin: 0 0 20px; }
+.mp-ficha__k { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 22px; }
+.mp-k {
+  font-family: var(--fuente-mono); font-size: 9.5px; letter-spacing: 0.06em; color: var(--texto-2);
+  border: 1px solid var(--borde); border-radius: 3px; padding: 5px 10px;
+}
+.mp-ficha__a { display: flex; gap: 10px; border-top: 1px solid var(--borde); padding-top: 18px; }
+.mp-b1 {
+  flex: 1; min-height: var(--alto-control); display: grid; place-items: center;
+  border: 0; border-radius: var(--radio-1); background: var(--mc); color: var(--n-950);
+  font-family: var(--fuente-mono); font-size: 11px; letter-spacing: 0.09em;
+  font-weight: var(--peso-fuerte); cursor: pointer; text-decoration: none; text-transform: uppercase;
+}
+.mp-b2 {
+  min-height: var(--alto-control); padding: 0 20px;
+  border: 1px solid var(--borde); border-radius: var(--radio-1); background: none;
+  color: var(--texto-2); font-family: var(--fuente-mono); font-size: 11px;
+  letter-spacing: 0.09em; cursor: pointer; text-transform: uppercase;
+}
+.mp-b2:hover { background: var(--elevado); color: var(--texto); }
+
+/* ═══ sin JavaScript ═══════════════════════════════════════════════════ */
+
+/* El mapa es una forma de ver algo que ya existe. Sin JavaScript queda la
+   lista de siempre, completa y navegable. Nunca una página en blanco. */
+.mp-respaldo { max-width: var(--ancho); margin: 0 auto; padding: var(--e-6) var(--e-5) var(--e-9); }
+.mp-respaldo[hidden] { display: none; }
+.mp-respaldo h1 { margin-top: 0; }
+.mp-respaldo .aviso { color: var(--texto-2); font-size: var(--t-3); margin-bottom: var(--e-6); }
+.mp-respaldo h2 { font-size: var(--t-6); margin: var(--e-6) 0 var(--e-2); }
+.mp-respaldo ul { list-style: none; padding: 0; margin: 0; }
+.mp-respaldo li { padding: var(--e-2) 0; border-bottom: 1px solid var(--borde-sutil); }
+.mp-respaldo a { color: var(--texto); }
+.mp-respaldo .cod { font-family: var(--fuente-mono); font-size: var(--t-2); color: var(--texto-3); margin-right: var(--e-2); }
+
+/* ═══ responsive ═══════════════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+  .mp-menu { width: 100%; top: auto; bottom: 0; height: auto; max-height: 46dvh; overflow-y: auto;
+    background: rgba(10, 13, 19, 0.96); border-top: 1px solid var(--borde); }
+  .mp-menu__i { min-height: 54px; }
+  .mp-volver { bottom: auto; top: 68px; }
+  .mp-estado, .mp-ayuda { display: none; }
+}
+
+/* ═══ movimiento reducido ══════════════════════════════════════════════ */
+
+/* Esto apaga lo que es CSS. Lo que NO alcanza —el bucle del canvas, el
+   barrido con element.animate() y la cámara sobre performance.now()— lo
+   resuelve mapa.mjs consultando la misma media query. */
+@media (prefers-reduced-motion: reduce) {
+  .mp-env, .mp-menu__i, .mp-nucleo, .mp-ficha { animation: none !important; }
+  .mp-hex, .mp-menu__i, .mp-pista { transition: none !important; }
+}

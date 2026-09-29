@@ -1,0 +1,155 @@
+---
+/**
+ * El mapa del método.
+ *
+ * Diseño: docs/disenos/2026-09-29-mapa-del-metodo.md
+ *
+ * Es la única página del portal que no usa `Marco`: el mapa ocupa la
+ * pantalla entera y `Marco` ya trae su propio rail de secciones, así que
+ * habría dos menús laterales peleándose. Lleva su propia cabecera con una
+ * salida clara al portal.
+ *
+ * Todo lo que se ve sale de `reglas.json`. Ningún número escrito a mano.
+ */
+import * as P from '../lib/parsers.mjs';
+import '../estilos/tokens.css';
+import '../estilos/base.css';
+import '../estilos/mapa.css';
+
+const reglas = P.reglas();
+const grupos = P.categorias();
+
+/** Dos letras por pieza, para la insignia. Se derivan del nombre, no se
+ *  escriben a mano: si el plan renombra un grupo, esto le sigue. */
+function sigla(nombre) {
+  const palabras = nombre
+    .replace(/[^\p{L}\s]/gu, ' ')
+    .split(/\s+/)
+    .filter((p) => p.length > 2 && !['del', 'las', 'los', 'para', 'por'].includes(p.toLowerCase()));
+  if (palabras.length >= 2) return (palabras[0][0] + palabras[1][0]).toUpperCase();
+  return nombre.slice(0, 2).toUpperCase();
+}
+
+/** Cuántas relaciones de esta pieza apuntan a una regla de OTRA pieza. Es la
+ *  cifra que enseña qué pieza toca todo lo demás. */
+function cruces(gid) {
+  let n = 0;
+  for (const r of reglas.filter((x) => x.categoria === gid)) {
+    for (const o of (r.relacionadas || [])) {
+      const d = reglas.find((y) => y.id === o);
+      if (d && d.categoria !== gid) n += 1;
+    }
+  }
+  return n;
+}
+
+const datos = {
+  grupos: grupos.map((g) => ({
+    id: g.id,
+    orden: g.orden,
+    nombre: g.nombre,
+    desc: g.descripcion || '',
+    n: g.n,
+    sigla: sigla(g.nombre),
+    cruces: cruces(g.id),
+  })),
+  reglas: reglas.map((r) => ({
+    id: r.id,
+    nombre: r.nombre,
+    grupo: r.categoria,
+    rel: r.relacionadas || [],
+    aplica: r.aplica_a || [],
+    params: (r.parametros || []).length,
+    resumen: (r.regla || '').replace(/\*\*/g, '').slice(0, 180),
+  })),
+};
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="robots" content="noindex" />
+    <title>El mapa del método · Trading Plan de Futuros MNQ</title>
+  </head>
+
+  <body>
+    <header class="mp-cab">
+      <a class="mp-cab__l" href="/" aria-label="Volver al portal">CH</a>
+      <span>
+        <span class="mp-cab__t">El método</span>
+        <span class="mp-cab__s" id="mapa-sub">Metodología Chaumer</span>
+      </span>
+      <span class="mp-cab__r">
+        <span class="mp-cab__s" id="mapa-ctx">El recorrido de la jornada</span>
+        <a class="mp-salir" href="/reglas">Ver como lista</a>
+      </span>
+    </header>
+
+    <nav class="mp-menu" id="mapa-menu" aria-label="Las piezas del método" hidden></nav>
+
+    <div class="mp-lienzo" id="mapa">
+      <div class="mp-rejilla" id="mapa-rejilla" aria-hidden="true"></div>
+      <div class="mp-capa-pistas" id="mapa-pistas" aria-hidden="true"></div>
+      <div class="mp-mundo" id="mapa-mundo"></div>
+    </div>
+
+    <div class="mp-barrido" id="mapa-barrido" aria-hidden="true"></div>
+    <div class="mp-pista" id="mapa-pista" role="tooltip" aria-hidden="true"></div>
+
+    <button class="mp-volver" type="button" id="mapa-volver" hidden>← El método completo</button>
+
+    <div class="mp-estado">
+      <span class="mp-estado__n" id="mapa-cifra">{reglas.length}</span>
+      <span class="mp-estado__t" id="mapa-cifra-txt">reglas en vigor</span>
+    </div>
+
+    <p class="mp-ayuda" id="mapa-ayuda">Elige una pieza para abrir sus reglas</p>
+
+    <div class="mp-hud">
+      <button type="button" id="mapa-menos" aria-label="Alejar">−</button>
+      <span class="mp-zoom" id="mapa-zoom" aria-live="off">100%</span>
+      <button type="button" id="mapa-mas" aria-label="Acercar">+</button>
+      <button type="button" id="mapa-ajustar">Ajustar</button>
+    </div>
+
+    <div class="mp-velo" id="mapa-velo" role="dialog" aria-modal="true"
+         aria-labelledby="mapa-ficha-t" hidden>
+      <div class="mp-ficha" id="mapa-ficha"></div>
+    </div>
+
+    {/* Sin JavaScript el mapa no existe, pero el contenido sí: queda la lista
+        completa, con su enlace a cada regla. */}
+    <main class="mp-respaldo" id="mapa-respaldo">
+      <h1>El método, pieza a pieza</h1>
+      <p class="aviso">
+        El mapa navegable necesita JavaScript. Mientras tanto, aquí están las
+        {reglas.length} reglas en sus {grupos.length} piezas, en el orden de la jornada.
+      </p>
+      {datos.grupos.map((g) => (
+        <section>
+          <h2>{g.orden}. {g.nombre} <span class="cod">{g.n}</span></h2>
+          <ul>
+            {datos.reglas.filter((r) => r.grupo === g.id).map((r) => (
+              <li>
+                <span class="cod">{r.id}</span>
+                <a href={`/reglas/${r.id}`}>{r.nombre}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </main>
+
+    {/* Los datos se sirven ya resueltos: se calculan al compilar, no en el
+        navegador. El módulo del mapa va en un <script> normal para que Astro
+        lo empaquete con sus importaciones. */}
+    <script is:inline set:html={`window.__MAPA_DATOS=${JSON.stringify(datos)};`} />
+    <script>
+      import { iniciarMapa } from '../lib/mapa/mapa.mjs';
+      iniciarMapa(window['__MAPA_DATOS']);
+    </script>
+  </body>
+</html>

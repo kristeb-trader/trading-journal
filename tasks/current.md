@@ -23,6 +23,20 @@ Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md
 La publicación automática funciona desde el 29/09: el AddOn exportó a las 10:32 en `claude\motor\datos\dia\` y
 el puente subió el día solo (`6461e1a`).
 
+## El mapa del método — implementado, queda una decisión
+
+`/mapa`: el método como mapa navegable (núcleo, las 7 piezas en corona y las reglas de cada una
+con sus relaciones), enlazado desde la portada. Las 5 fases dentro y verificadas el 29/09: 20/20
+comprobaciones en modo normal y con movimiento reducido, `npm run verificar` limpio (57 páginas),
+y sin JavaScript queda la lista de las 34 reglas. Diseño: `docs/disenos/2026-09-29-mapa-del-metodo.md`.
+
+- [ ] **Decidir el color dentro de una pieza** — **Kris**. Hoy las 13 reglas de Zonas comparten el
+  tono del grupo y se ve monótono. La recomendación es variar la intensidad por **número de
+  relaciones**: es el único eje con datos en las siete piezas (el apartado solo existe en Zonas y
+  `aplica_a` casi no varía). El §11 del diseño lo compara.
+- [ ] **El móvil**, sin mirar de verdad: solo la reordenación básica del menú. Un mapa de este
+  tamaño en un teléfono merece su propia decisión.
+
 ## Portal de Alfredo
 
 Rescatados de `chaumer/04_Web/ESTADO_FASE_2.md` al archivarlo (28/09, D-030). Estaban ahí desde el 24/09.

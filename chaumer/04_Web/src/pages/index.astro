@@ -17,6 +17,11 @@
 import Marco from '../componentes/Marco.astro';
 import BannerTerminal from '../componentes/BannerTerminal.astro';
 import TarjetasInicio from '../componentes/TarjetasInicio.astro';
+import Icono from '../componentes/Icono.astro';
+import * as P from '../lib/parsers.mjs';
+
+const grupos = P.categorias();
+const reglas = P.reglas().length;
 ---
 
 <Marco titulo="Inicio">
@@ -29,10 +34,64 @@ import TarjetasInicio from '../componentes/TarjetasInicio.astro';
     <h2 class="rotulo">Por dónde entrar</h2>
     <TarjetasInicio variante="rejilla" />
   </section>
+
+  {/* El mapa no es una cuarta puerta: la rejilla es de tres y el operador
+      las fijó así. Va en su propio bloque, que además es lo que le pega:
+      no se entra a buscar un dato, se entra a ver la forma del método. */}
+  <section class="bloque">
+    <a class="mapa-puerta" href="/mapa">
+      <span class="mp-ic" aria-hidden="true"><Icono nombre="graph" /></span>
+      <span class="mp-txt">
+        <span class="mp-t">El método, de un vistazo</span>
+        <span class="mp-s">
+          Las {grupos.length} piezas y sus {reglas} reglas como un mapa que se recorre:
+          el orden de la jornada y qué regla depende de cuál.
+        </span>
+      </span>
+      <span class="mp-n">{grupos.length}<i>piezas</i></span>
+      <span class="mp-fl" aria-hidden="true"><Icono nombre="arrow-right" /></span>
+    </a>
+  </section>
 </Marco>
 
 <style>
   .bloque { margin-top: var(--e-8); }
+
+  /* ── la puerta del mapa ─────────────────────────────────────────────── */
+  .mapa-puerta {
+    display: grid; align-items: center; gap: var(--e-5);
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    padding: var(--e-5) var(--e-6);
+    border: 1px solid var(--vidrio-borde); border-radius: var(--radio-4);
+    background: linear-gradient(120deg, rgba(76,141,255,.10), rgba(56,189,212,.05) 46%,
+                rgba(255,255,255,0) 72%), var(--vidrio-fondo);
+    backdrop-filter: var(--desenfoque);
+    color: var(--texto); text-decoration: none;
+    transition: border-color var(--normal), box-shadow var(--normal), transform var(--normal);
+  }
+  .mapa-puerta:hover { border-color: rgba(76,141,255,.42); box-shadow: var(--halo-azul); transform: translateY(-2px); }
+  .mp-ic {
+    display: grid; place-items: center; width: 46px; height: 46px; --i: 1.45rem;
+    color: var(--acento); border: 1px solid rgba(76,141,255,.3); border-radius: var(--radio-2);
+    background: var(--acento-flojo);
+  }
+  .mp-t { display: block; font-size: var(--t-6); font-weight: var(--peso-fuerte); letter-spacing: var(--track-titulo); }
+  .mp-s { display: block; margin-top: var(--e-1); font-size: var(--t-3); color: var(--texto-2); line-height: 1.5; }
+  .mp-n {
+    font-size: var(--t-8); font-weight: var(--peso-max); color: var(--acento);
+    letter-spacing: var(--track-cifra); line-height: 1; text-align: right;
+  }
+  .mp-n i { display: block; font-style: normal; font-size: var(--t-1); font-weight: var(--peso-normal);
+    color: var(--texto-3); letter-spacing: var(--track-etiqueta); text-transform: uppercase; margin-top: var(--e-1); }
+  .mp-fl { display: grid; place-items: center; --i: 1.1rem; color: var(--texto-3); transition: transform var(--normal), color var(--normal); }
+  .mapa-puerta:hover .mp-fl { transform: translateX(4px); color: var(--acento); }
+
+  @media (max-width: 640px) {
+    .mapa-puerta { grid-template-columns: auto minmax(0, 1fr); }
+    .mp-n, .mp-fl { grid-column: 2; text-align: left; } /* alineacion-ok: en movil la cifra cae bajo el texto */
+    .mp-n { margin-top: var(--e-2); }
+    .mp-fl { display: none; }
+  }
   .rotulo {
     margin: 0 0 var(--e-5);
     font-size: var(--t-2); color: var(--texto-3);
