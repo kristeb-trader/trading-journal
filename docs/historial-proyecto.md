@@ -2893,6 +2893,10 @@ Commits: `272b5ea` · `57006aa` · `804a1dc` y el de la 6c.
 - **`chaumer/` en orden:** 6 documentos y `_Historia/` al archivo (con un `LEEME` de en qué miente cada uno),
   `DESPLIEGUE` reescrito, 53 archivos borrados que no usaba nadie, y una regla: en `chaumer/` no nacen documentos.
   Plan 3.35: dos rutas al día.
+- **`CLAUDE.md` de la raíz, de 237 a 167 líneas (17,3 → 12,0 KB)**: invariantes en una línea con su puntero,
+  la sección `chaumer/` reducida a lo transversal (el resto lo carga `chaumer/CLAUDE.md`), la tabla de datos sin la
+  historia de cada fila. Corregidas dos cosas que mentían: las cifras de la deuda visual (contradecían a
+  `estilos.md`) y la fila de la metodología, que apuntaba al rulebook de la etapa 1.
 
 **Verificado:** la regresión del motor antes y después de la mudanza (48 de 48); `npm run verificar` sin fallos
 tras cada fase; los documentos del Coach, con su huella sha256 comprobada en la BD; la publicación automática,

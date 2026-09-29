@@ -5,59 +5,32 @@ Dashboard personal de operativa diaria en NQ/MNQ Futures (1 min), Metodología C
 
 ## Invariantes
 
-Lo que no se toca sin aprobación explícita. Una línea cada una; el detalle se carga solo
-al abrir el archivo afectado.
+Lo que no se toca sin aprobación explícita. Una línea cada una; el porqué, en el puntero.
 
-- **Disciplina** — el criterio vive SOLO en `js/db.js`. Estuvo duplicado en 4 sitios y se
-  desincronizó. Detalle: `.claude/rules/disciplina.md` · paso a paso: `docs/Disciplina.md`.
-- **Disciplina por etapa (24 sep)** — un día cuenta las reglas de **su etapa**
-  (`catalogo_reglas.etapa`, `disciplina_etapas`), **activas o no**. `activa` solo decide qué se
-  ve para marcar. Desactivar una regla nunca cambia el pasado (le pasó a `rr_1a1`).
-- **P&L** — `trades.profit` es **NETO** (comisión round-trip ya descontada);
-  `commission` es el round-trip total. Unificado jun 2026.
-- **Riesgo en PUNTOS, no en dólares** — MNQ = $2/punto, NQ = $20/punto. Normalizar mal el
-  MAE lo infla ×10 en NQ y ya llevó a una conclusión falsa.
-- **Horas: NinjaTrader está en hora de Colombia (UTC-5), no ET.** Convertir a ET antes de
-  razonar sobre RTH o premercado. Ya causó 2 bugs. Detalle:
-  `.claude/rules/ninjatrader.md`.
-- **Fechas: `hoyISO()` / `isoLocal()` de `db.js`, NUNCA
-  `new Date().toISOString().slice(0,10)`.** `toISOString` pasa a UTC y Colombia va 5 h por
-  detrás: a partir de las 19:00 locales devuelve ya el día siguiente, y el journal se
-  escribe de noche. Sí es correcto sobre una fecha anclada al mediodía
-  (`new Date(f + 'T12:00:00')`), que absorbe el desfase — por eso `getWeekKey` y `mondayOf`
-  se quedan como están.
-- **Guardar sesión** — `upsertSesion` manda el payload al Worker `/api/session`, que lo
-  escribe TAL CUAL como columnas de `sesiones`. Una clave que no sea columna revienta el
-  guardado entero (PGRST204). `checklist` y `noticiasRojas` van fuera del destructuring.
-- **Coach IA** — prompt caching por prefijo, la gráfica no se persiste, el historial va
-  cortado a la fecha analizada. En días de la etapa 2 el system lleva **primero** el plan de
-  Chaumer entero (`plan_documentos`), igual para todos los días. Detalle: `.claude/rules/coach.md`.
-- **Sesión Operativa** — nada interactivo funciona dentro de `#sessionFieldset` en modo
-  lectura; los trades del día NO se filtran por cuenta principal. Detalle:
-  `.claude/rules/sesion.md`.
-- **Navegación: 6 botones, ni uno más** — en móvil se reparten el ancho a partes iguales
-  (`flex: 1`, ~64 px cada uno en 390 px); el 7º los estrecha hasta recortar las etiquetas.
-  Una sección nueva va a las tarjetas de **Otros** (`Otros.ITEMS` en `app.js`) **y** a
-  `Nav.PADRE`: sin la segunda, la barra se queda entera apagada al entrar en ella.
-- **Un solo título por pantalla**, el de la barra superior. Las secciones NO llevan `<h2>`
-  propio: el dato variable (mes, filtro, rango) va a `Nav.setContexto(seccion, texto)`.
-  Y los controles de sección (filtro de cuentas, flechas de mes) **viven en esa misma
-  barra**: se declaran en `Nav.HERRAMIENTAS`, no en el markup de la sección.
-- **Importes: `fmtMiles` / `fmtDinero` de `db.js`, nunca `toFixed(0)`.** Sin decimales y
-  con separador de miles (2212 → `2.212`). Se agrupa a mano porque `toLocaleString('es-ES')`
-  **no agrupa los números de 4 dígitos** (CLDR del español) y devolvía `"2212"`.
-- **Cada tabla de trades tiene UN rol (18 sep):** `trades` es el journal de la **cuenta
-  principal**, con una sola etiqueta (`Sim101`; la real guardada en `cuenta_origen`);
-  `apex_trades` es la contabilidad de **todas** las cuentas de Apex, con su nombre real.
-  Una operación hecha en una cuenta de Apex mientras era la principal está en las dos, con
-  roles distintos. **`apex.js` NO lee `trades`** — si vuelve a concatenarla, esos trades se
-  cuentan dos veces y se infla el **drawdown consumido**, que es lo que decide si la cuenta
-  se quema. Diseño: `docs/disenos/2026-09-18-cuenta-unica-en-trades.md`.
-- **Cerrado y no se reabre (24 jul)** — las 6 reglas con filas de relleno en feb–may
-  (`rei_zona`, `chk_contexto`, `chk_no_mover`, `rr_1a1`, `stop_max_puntos`,
-  `target_sin_zonas`) se quedan como están. Limpiarlas bajaría la disciplina global de
-  81,5% a 75,1% y rompería la comparabilidad. La disciplina de feb–may está inflada **por
-  diseño aceptado**. Motivo completo: `docs/decisiones.md`.
+- **Disciplina** — el criterio vive SOLO en `js/db.js`, y un día cuenta las reglas de **su etapa**,
+  activas o no (`activa` solo decide qué se ve para marcar). `.claude/rules/disciplina.md` · D-004, D-024.
+- **P&L** — `trades.profit` es **NETO**; `commission` es el round-trip total. D-002.
+- **Riesgo en PUNTOS, no en dólares** — MNQ = $2/punto, NQ = $20/punto. D-005.
+- **Horas: NinjaTrader va en hora de Colombia (UTC-5), no ET.** Convertir a ET antes de razonar
+  sobre RTH o premercado. `.claude/rules/ninjatrader.md`.
+- **Fechas: `hoyISO()` / `isoLocal()` de `db.js`, NUNCA `new Date().toISOString().slice(0,10)`**:
+  pasa a UTC y desde las 19:00 locales da ya el día siguiente. Sobre una fecha anclada al mediodía
+  (`new Date(f + 'T12:00:00')`) sí vale — por eso `getWeekKey` y `mondayOf` se quedan así.
+- **Guardar sesión** — el Worker escribe el payload TAL CUAL en `sesiones`: una clave que no sea
+  columna revienta el guardado entero. `.claude/rules/sesion.md`.
+- **Coach IA** — caché por prefijo, la gráfica no se persiste, historial cortado a la fecha; en la
+  etapa 2 el plan de Chaumer va **primero** en el system. `.claude/rules/coach.md`.
+- **Sesión Operativa** — nada interactivo dentro de `#sessionFieldset` en modo lectura; los trades
+  del día no se filtran por cuenta principal. `.claude/rules/sesion.md`.
+- **Navegación: 6 botones, ni uno más** (el 7º recorta las etiquetas en móvil). Una sección nueva va
+  a `Otros.ITEMS` **y** a `Nav.PADRE` (sin la segunda, la barra se queda apagada).
+- **Un solo título por pantalla**, el de la barra: las secciones no llevan `<h2>`; el dato variable va
+  a `Nav.setContexto()` y los controles de sección a `Nav.HERRAMIENTAS`.
+- **Importes: `fmtMiles` / `fmtDinero` de `db.js`, nunca `toFixed(0)`** — sin decimales y con miles
+  (`2.212`); `toLocaleString('es-ES')` no agrupa los números de 4 dígitos.
+- **Cada tabla de trades tiene UN rol:** `trades` = journal de la cuenta principal; `apex_trades` =
+  todas las de Apex. **`apex.js` NO lee `trades`**: contaría dos veces e inflaría el drawdown. D-019.
+- **Cerrado y no se reabre** — las 6 reglas con relleno en feb–may se quedan como están. D-007.
 
 ## Verificación
 
@@ -70,18 +43,9 @@ Nunca "debería funcionar". En orden:
 4. Si se tocó `NinjaTrader/*.cs`: avisar a Kris de que hay que **recompilar en NT8** — no
    basta con el push.
 
-### El preview no pide contraseña: modo local
-
-**Nunca se le pide la contraseña a Kris para verificar**, ni siquiera si la sesión caduca:
-se cae solo a la copia local y se sigue. Manda la sesión real si la hay; si no, arranca
-`js/dev.local.js` (gitignoreado, con banda ámbar); `?login` fuerza el login.
-
-⚠️ **La copia local es una foto, no un espejo.** Vale para maquetación e interacción; para
-afirmar que un número es correcto **hoy**, el punto 3 — un `SELECT` por el MCP, que tampoco
-necesita login. Detalle: `.claude/rules/modo-local.md`.
-
-El bot de Telegram **se despliega solo** al hacer push a `main` que toque
-`TelegramBot/**` (GitHub Actions). No hace falta `wrangler deploy` a mano.
+**El preview no pide contraseña**, nunca, ni aunque la sesión caduque: cae solo a la copia local
+(`js/dev.local.js`, banda ámbar; `?login` fuerza el login). ⚠️ **Es una foto, no un espejo**: vale
+para maquetación; un número de **hoy** se afirma con el paso 3. `.claude/rules/modo-local.md`.
 
 ## Diseño
 
@@ -93,10 +57,9 @@ sobre la implementación.** Ya pasó que se implementara otra cosa y hubo que re
 
 - **Supabase** (PostgreSQL), proyecto `jothoslozctflfrnysrx`. **RLS activo en todas las
   tablas**: política `auth_all` para `authenticated`; `anon` sin políticas. Bot, Worker e
-  indicadores NT8 usan `service_role`. **El portal** lee con un rol propio,
-  `portal_lector`, que solo ve las vistas `portal_*` (D-023). **Excepción a propósito:
-  `motor_fichas`** lleva la política `candado`, no `auth_all` — es el candado del motor
-  (D-026). "Normalizarla" lo abre sin dar ningún error.
+  indicadores NT8 usan `service_role`. **El portal** lee con su rol `portal_lector`, que solo
+  ve las vistas `portal_*` (D-023). **Excepción a propósito: `motor_fichas`** lleva la
+  política `candado`, no `auth_all` (D-026). "Normalizarla" lo abre sin dar ningún error.
 - **El esquema se consulta con `list_tables` del MCP**, no con un documento. Aquí solo va
   lo que el esquema no dice.
 - **Migraciones:** `docs/migrations/`, nombre `YYYY-MM-DD-descripcion.sql`. **Las aplica
@@ -106,52 +69,45 @@ sobre la implementación.** Ya pasó que se implementara otra cosa y hubo que re
   + política `auth_all` + grants a `service_role`.
 - **Reglas: soft-delete** (`activa=false`), nunca borrado físico — hay historial con FK.
 
-Lo que el esquema no cuenta y hay que saber:
-
 | Tabla | Lo que no se ve mirando las columnas |
 |---|---|
-| `sesion_checklist` | 1 fila = sesión × regla. **Sin fila = N/A**, no cuenta en disciplina. Sin triggers de materialización desde el 16 ago: la sesión nace **limpia** |
-| `catalogo_reglas` | Rulebook canónico. `bloquea_go`, `aplica_si` (siempre/dia_fomc/hay_noticia) y `evidencia` (auto/declarada) son los 3 ejes que deciden si una regla se evalúa. `setup` NULL = común a todos. **`etapa`** decide en qué disciplina cuenta (activa o no); `activa` solo, si se ve para marcar. La etapa 2 (`origen` plan_*) la escribe **solo** `scripts/plan/sincronizar.mjs` desde `chaumer/01_Plan`: no se edita a mano ni desde la app |
-| `diagnostico_errores` | `regla_codigo` = la regla que ese error contradice → la disciplina la cuenta incumplida **aunque la casilla esté marcada**. NULL = psicológico, no toca el checklist |
-| `sesion_noticias` | UNIQUE (fecha, hora): una noticia por hora. El CPI publica 4 cifras a las 7:30 pero es **un** evento con **una** ventana (±5 min sobre la entrada) |
-| `objetivos` | Fila única. `cuenta_principal` es la cuenta que alimenta P&L/Análisis/Coach; se elige en Datos y la lee el indicador NT8 al arrancar. `limite_perdida_dia` está **obsoleto** (el riesgo se mide en puntos) |
-| `chaumer_operativas` | Comparador. **Solo el lado de Chaumer**: el de Kris se LEE de `sesiones`+`trades`, nunca se copia aquí. `hora_entrada` va en **hora Colombia**, igual que `trades.entry_time`: se restan tal cual, **sin** `horaEt()` (era ET hasta el 17 sep; D-017). `puntos` en **PUNTOS**, no en dólares. El veredicto del día no se guarda: se calcula |
-| `bt_*` (cabecera, jornadas, operaciones) | La **bitácora de backtesting** (fase 4 de la unificación Chaumer): nunca se mezcla con `trades` ni `apex_trades`. `pnl` **neto y congelado** al guardar, no se recalcula; cada jornada congela instrumento, contratos, `valor_punto` y comisión; `puntos` siempre positivo (el signo lo da `resultado`); `hora` en hora Colombia; una jornada sin operaciones es un día sin entrada. `imagen` = dirección de Cloudinary. Se escribe con la función `bt_guardar_jornada` (jornada + operaciones en una transacción; calcula el P&L). Una jornada que se corrige **conserva** sus valores congelados. El portal la lee por `portal_bt_cabecera` / `portal_bt_jornadas` |
-| `plan_documentos` | Los 5 documentos del plan que lee el Coach. Los escribe **solo** `scripts/plan/sincronizar.mjs` (SQL por el MCP, verificado por `huella` sha256). Sin copia editable: el texto se edita en `chaumer/01_Plan` |
-| `coach_uso` | Una fila por llamada del Coach: tokens, coste (USD) y `codigos_quitados`. **Sin texto** de la conversación. Mide si la caché funciona y cuánto cuesta el mes |
-| `motor_fichas` | Lo que marcó el motor de Chaumer cada día (fase 7). La escribe **solo** `scripts/cadena/subir_dia.py` (`service_role`), que lanza el AddOn `CadenaDiaria` a las 10:32 (11:32 en invierno). **Candado:** `authenticated` solo la lee si el día está registrado; `motor_estado(fecha)` dice si la hay sin enseñarla. `velas` (las del día, en UTC) son para el agente: el Coach no las lee. Horas en hora Colombia, precios en puntos |
-| `sesiones` | `registrada_at` = el **primer** guardado del Diario o del bot (un trigger la congela) y abre el candado de `motor_fichas`; `diario_editado_at` = el último. NinjaTrader nunca las manda. `setup` (texto) y `setup_codigo` los sincroniza el trigger `fn_sync_setup_codigo`, escriba quien escriba. La columna `noticias` se retiró de la UI el 16 ago y su contenido se migró a `sesion_noticias`; **la columna sigue existiendo**. `soportes_naranja` / `resistencias_naranja` (jsonb) las escribe el **AddOn** en premercado desde el 16 ago: el bot ya NO las manda: si las mandara (en `[]`) las **borraría** por la noche, igual que pasaría con los niveles de precio |
+| `sesion_checklist` | 1 fila = sesión × regla. **Sin fila = N/A**, no cuenta en disciplina. La sesión nace **limpia** (D-013) |
+| `catalogo_reglas` | Rulebook canónico. Tres ejes deciden si una regla se evalúa: `bloquea_go`, `aplica_si` (siempre/dia_fomc/hay_noticia), `evidencia` (auto/declarada). `setup` NULL = común. **`etapa`** decide en qué disciplina cuenta. La etapa 2 (`origen` plan_*) la escribe **solo** `scripts/plan/sincronizar.mjs`: ni a mano ni desde la app |
+| `diagnostico_errores` | `regla_codigo` = la regla que el error contradice → cuenta incumplida **aunque la casilla esté marcada**. NULL = psicológico |
+| `sesion_noticias` | UNIQUE (fecha, hora): el CPI son 4 cifras a las 7:30 pero **un** evento con **una** ventana (±5 min) |
+| `objetivos` | Fila única. `cuenta_principal` alimenta P&L/Análisis/Coach y la lee el indicador NT8. `limite_perdida_dia`, **obsoleto** |
+| `chaumer_operativas` | **Solo el lado de Chaumer**: el de Kris se lee de `sesiones`+`trades`. `hora_entrada` en hora Colombia, **sin** `horaEt()` (D-017); `puntos` en puntos. El veredicto se calcula, no se guarda |
+| `bt_*` | La bitácora de backtesting: nunca se mezcla con `trades` ni `apex_trades`. Se escribe con `bt_guardar_jornada` (una transacción, calcula el P&L). `pnl` **neto y congelado**: una jornada corregida **conserva** sus valores; `puntos` siempre positivo (el signo, `resultado`); `hora` en hora Colombia. El portal lee `portal_bt_*` |
+| `plan_documentos` | Los 5 documentos del plan que lee el Coach. **Solo** `scripts/plan/sincronizar.mjs` (SQL por el MCP, `huella` sha256); el texto se edita en `chaumer/01_Plan` |
+| `coach_uso` | Una fila por llamada del Coach: tokens, coste y `codigos_quitados`. **Sin texto** |
+| `motor_fichas` | Lo que marcó el motor cada día. **Solo** `scripts/cadena/subir_dia.py` (`service_role`), a las 10:32 (11:32 en invierno). **Candado:** `authenticated` solo la lee si el día está registrado; `motor_estado(fecha)` dice si la hay sin enseñarla. `velas` (UTC) son para el agente: el Coach no las lee. Horas Colombia, precios en puntos |
+| `sesiones` | `registrada_at` = el **primer** guardado (un trigger la congela): abre el candado de `motor_fichas` y decide qué gráficos del motor se publican; `diario_editado_at` = el último. `setup` y `setup_codigo` los sincroniza `fn_sync_setup_codigo`. La columna `noticias` existe pero no se usa (va a `sesion_noticias`). Los **niveles de precio** (indicador `SupabaseDailyLevels`) **y las zonas naranjas** (AddOn) **los escribe NinjaTrader**: si el bot o el formulario los mandaran, en `[]`, los **borrarían** |
 
 ## Lenguaje visual
 
-- **Tokens:** `css/styles.css`, bloque `:root` (26). Iconos: Tabler Icons · Gráficas:
-  Chart.js (ambos por CDN).
-- **Cada color semántico tiene DOS valores**: `base` para bordes y fondos, `-txt` para
-  texto sobre oscuro (la base no contrasta). Usar la base en un `color:` es el error
-  típico.
-- ⚠️ **Al tocar UI: usar el token, NUNCA el hex.**
-- ⚠️ **Deuda:** conviven dos lenguajes visuales (el nuevo solo está en la pestaña Diario)
-  y quedan 45 literales sin tokenizar.
-- **Tabla completa, superficies y detalle de la deuda: `.claude/rules/estilos.md`** — se
-  carga solo al abrir `css/**` o `index.html`.
+- **Tokens:** `css/styles.css`, bloque `:root`. Iconos: Tabler Icons · Gráficas: Chart.js (CDN).
+- **Cada color semántico tiene DOS valores**: `base` para bordes y fondos, `-txt` para texto sobre
+  oscuro. Usar la base en un `color:` es el error típico. ⚠️ **Al tocar UI: el token, NUNCA el hex.**
+- ⚠️ **Deuda:** conviven dos lenguajes visuales y quedan literales sin tokenizar.
+- **Tabla completa, superficies y cifras de la deuda: `.claude/rules/estilos.md`** — carga sola al
+  abrir `css/**` o `index.html`.
 
 ## Stack y URLs
 
 | Capa | Qué |
 |---|---|
-| Frontend | HTML + JS vanilla — GitHub Pages |
+| Frontend | HTML + JS vanilla — GitHub Pages, se publica solo al hacer push (`.claude/rules/publicacion.md`) |
 | BD | Supabase (PostgreSQL) |
 | Proxy IA | Cloudflare Worker `broad-hall-c53f.kristerock.workers.dev` |
 | Análisis IA | Claude API `claude-opus-5-5` (`js/coach.js`) — adaptive thinking, effort low, prompt caching; consumo en `coach_uso` (D-025) |
 | Imágenes | Cloudinary (`dq4n7bjta` / preset `trading-journal`) |
-| Bot | Telegram → Cloudflare Worker #2 + KV |
+| Bot | Telegram → Cloudflare Worker #2 + KV. **Se despliega solo** al hacer push que toque `TelegramBot/**` |
 | NT8 | Indicadores C# en `NinjaTrader/` |
 
 - Producción: `https://kristeb-trader.github.io/trading-journal`
 - Supabase: `https://jothoslozctflfrnysrx.supabase.co`
 - Repo: `https://github.com/kristeb-trader/trading-journal` (**público**, `main`). Lo que se
-  sube lo puede leer cualquiera, `chaumer/` incluido: nunca claves en el código. Motivo y
-  qué queda a la vista: D-022
+  sube lo puede leer cualquiera, `chaumer/` incluido: nunca claves en el código. D-022
 
 ## Mapa del código
 
@@ -171,53 +127,27 @@ js/chaumer.js     Comparador Chaumer vs yo (pestañas Diferencias y Registrar)
 js/backtesting.js Bitácora de backtesting: registrar, corregir, borrar (bt_*)
 js/account-filter.js  Filtro de cuentas compartido (nombre COMPLETO)
 css/styles.css    Dark mode + responsive
-NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) ·
-                  ChecklistChaumer (checklist en el gráfico) ·
-                  RR (herramienta de dibujo: Risk Reward en PUNTOS, clon de @RiskReward) ·
-                  CadenaDiaria (AddOn: exporta el día al cerrar la ventana y lanza el puente)
-scripts/cadena/   El puente de la cadena diaria: motor → gráfico → ficha en Supabase
-TelegramBot/      Bot (Cloudflare Worker). Se despliega solo al hacer push
+NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) · ChecklistChaumer ·
+                  RR (Risk Reward en PUNTOS) · CadenaDiaria (AddOn: exporta el día y lanza el puente)
+scripts/cadena/   El puente de la cadena diaria: motor → gráfico → ficha en Supabase → portal
+TelegramBot/      Bot (Cloudflare Worker)
 ```
-
-**Sesión Operativa** (`section-register`, menú "Sesión") = una pantalla, 3 pestañas, una
-sola fecha. `Nav.go('coach')` y `Nav.go('historial')` son alias que abren esta sección en
-su pestaña — no romperlos.
 
 ## La carpeta `chaumer/`
 
-El proyecto Chaumer —el plan de trading de Alfredo Chaumer, el **portal** para Alfredo y el
-motor de backtesting—, traído con su historia el 24 sep (`git subtree`; antes, repositorio
-`Trading_Plan`). Diseño: `docs/disenos/2026-09-24-unificacion-chaumer.md`.
+El plan de trading de Alfredo Chaumer, su **portal** y las **Sesiones** del motor, traídos el 24 sep
+(`docs/disenos/2026-09-24-unificacion-chaumer.md`). **Tiene sus propias reglas** —`chaumer/CLAUDE.md` y `chaumer/04_Web/CLAUDE.md`—,
+que se cargan al abrir sus archivos. Desde fuera, lo que no puede fallar:
 
-- **Tiene sus propias reglas:** `chaumer/CLAUDE.md` (las cinco que no se negocian) y
-  `chaumer/04_Web/CLAUDE.md` (el portal). Valen dentro de esa carpeta.
-- **`chaumer/01_Plan/` se cambia solo con el sí de Kris, cambio a cambio** — erratas
-  incluidas (D-028; Cowork ya no existe). Cada cambio en su commit `plan: …`, nunca
-  mezclado con portal o Journal, y no está cerrado hasta sincronizarlo (`sincronizar.mjs`,
-  los dos SQL, huellas, `npm run verificar`). Lo que se vea del plan trabajando en otra
-  cosa se le dice a Kris en el momento o va a `tasks/current.md`: no se corrige de paso.
-- **El portal es otra web** (Astro, Cloudflare Pages, `plan-operativo-nq.pages.dev`): el
-  invariante de "vanilla, sin frameworks" no le aplica. Se publica solo con
-  `.github/workflows/publicar-portal.yml`, que usa secretos **propios**
-  (`PORTAL_CLOUDFLARE_*`), no el `CLOUDFLARE_API_TOKEN` del bot.
-- **Alfredo ve el portal y nada más.** Nada del Journal (cuentas, P&L, Apex, sesiones,
-  disciplina, coach) llega al portal. GitHub Pages no publica `chaumer/` (fase 1), **pero el
-  repositorio es público** (D-022): lo que hay en `chaumer/` se puede leer en GitHub.
-- Lo pesado y lo de terceros (velas, vídeos, gráficos del backtesting) está en disco y
-  **fuera de git**: ver el bloque `chaumer/` del `.gitignore`.
-- **En `chaumer/` no se crean documentos nuevos** (D-030): diseños, pendientes, decisiones e
-  historia van a su sitio del Journal; lo que ya no vale, a `docs/archivo/chaumer/`. La tabla,
-  en `chaumer/CLAUDE.md`.
+- **`chaumer/01_Plan/` se cambia solo con el sí de Kris, cambio a cambio**, en su commit `plan: …` y
+  sincronizado (`sincronizar.mjs`, huellas, `npm run verificar`). Lo que se vea mal, se le dice.
+- **El portal es otra web** (Astro, Cloudflare Pages): el "vanilla" no le aplica. Se publica solo, con
+  sus propios secretos. **Alfredo ve el portal y nada más**; el repositorio, en cambio, es público.
+- **En `chaumer/` no se crean documentos nuevos** (D-030): cada cosa a su sitio del Journal.
 
 ## Estado
 
-Todas las secciones funcionando. **El menú son 6 botones** — Calendario · Disciplina ·
-Análisis · Sesión · Apex · **Otros** —, y las otras 8 secciones se abren desde las tarjetas
-de **Otros**, repartidas en dos grupos: *Consultar* (Trades · Imágenes · Experimentos ·
-Chaumer · Backtesting) y *Configurar* (Estrategia · Datos · Fechas Especiales). Ahí vive también
-**Ajustes** (claves y objetivos, tema, seguridad, cerrar sesión).
-
-**Qué está en marcha y qué falta: `tasks/current.md`.**
+Todas las secciones funcionando. **Qué está en marcha y qué falta: `tasks/current.md`.**
 
 ## Dónde está lo demás
 
@@ -226,7 +156,7 @@ Chaumer · Backtesting) y *Configurar* (Estrategia · Datos · Fechas Especiales
 | En qué estamos y qué falta | `tasks/current.md` · `tasks/backlog.md` |
 | **Por qué** se decidió algo así | `docs/decisiones.md` |
 | Cómo se calcula la disciplina, con ejemplo real | `docs/Disciplina.md` |
-| La metodología Chaumer (setups, reglas duras) | `docs/metodologia-chaumer.md` |
+| La metodología Chaumer (el plan vigente) | `chaumer/01_Plan/` — `docs/metodologia-chaumer.md` es el rulebook de la etapa 1 |
 | Qué pasó y cuándo | `docs/historial-proyecto.md` |
 | Diseños aprobados | `docs/disenos/` |
 | Estado de las migraciones | `docs/migrations/INDICE.md` |
