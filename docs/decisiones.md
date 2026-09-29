@@ -10,6 +10,39 @@
 
 ---
 
+## D-031 — El portal no consulta `prefers-reduced-motion`
+
+**Decisión (Kris, 29/09/2026).** El portal se anima **siempre**, sin preguntar al sistema
+operativo. Se quitaron todas las consultas de la media query: la regla general de `base.css`, la
+de la cinta del banner, la de las tarjetas de la portada, la del revelado en `Marco.astro` y la
+del mapa.
+
+**Motivo.** El Windows de Kris pedía movimiento reducido —medido en su máquina: `matchMedia
+('(prefers-reduced-motion: reduce)').matches` daba `true`— y el portal se veía **congelado** en
+Chrome y en Edge: la cinta de precios parada, el mapa sin animación. En el iPhone, que no tiene la
+preferencia activada, todo se movía. El interruptor de Windows no aparecía donde debería
+(`VisualFXSetting = 3`, personalizado), y Kris pidió resolverlo en el portal.
+
+**Referencia.** La página que sirvió de guía para el mapa
+(`musar-skill-tree-navigator.vercel.app`) tampoco la consulta: cero apariciones en sus 16 archivos
+CSS y sus 7 de JavaScript.
+
+**Lo que se pierde, dicho claro.** Quien tenga esa preferencia activada por necesidad —el
+movimiento puede provocar mareo real— ya no tiene forma de apagar la animación del portal. Se le
+advirtió antes de hacerlo y lo confirmó. Alfredo también entra al portal.
+
+**Alternativas descartadas:**
+- *Dejarlo como estaba* y que Kris encendiera el interruptor de Windows: no lo encontraba, y era
+  su portal.
+- *Punto medio* (apagar solo el movimiento grande y ambiental, mantener los cambios cortos de
+  estado): se le ofreció y eligió el comportamiento completo.
+
+**Lo que SÍ se conserva:** `?sin-movimiento`. Deja el mapa en su estado final y estable, y es lo
+que usa `npm run verificar` (`scripts/vista.mjs` lo añade al visitar `/mapa`) para que sus
+capturas sean reproducibles. Sin eso, el vigilante mediría un fotograma distinto en cada pasada.
+
+---
+
 ## D-030 — En `chaumer/` no nacen documentos; lo que ya no vale se archiva
 
 **Decisión (Kris, 29/09/2026).** `chaumer/` se queda con lo que de verdad se usa: el plan, las imágenes que

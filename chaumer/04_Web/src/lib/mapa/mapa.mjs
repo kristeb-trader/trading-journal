@@ -5,15 +5,17 @@
  *
  * Tres cosas que NO son opcionales y por eso estan aqui desde el principio:
  *
- *   1. `prefers-reduced-motion` tambien en JavaScript. La regla de base.css
- *      apaga transiciones y animaciones, pero NO alcanza a un bucle de
- *      canvas, ni a element.animate(), ni a una interpolacion sobre
- *      performance.now(). Con movimiento reducido la pagina sigue llevando al
- *      mismo sitio: sin animacion, no sin funcion.
+ *   1. Un modo quieto de verdad, que no solo apaga CSS: para el bucle del
+ *      canvas, no lanza element.animate() y salta al encuadre final. Sin eso,
+ *      quedaria dibujada la pantalla anterior encima de la nueva.
  *   2. `?sin-movimiento` para `npm run verificar`. Un canvas que nunca se
  *      queda quieto da capturas distintas cada vez y se pierde el vigilante.
  *   3. El estado va en la URL. Un mapa al que no se puede enlazar no sirve en
  *      un portal de consulta.
+ *
+ * Lo que YA NO hace: consultar `prefers-reduced-motion`. El operador lo pidió
+ * el 29/09/2026 (D-031) para que el portal se anime siempre, como la pagina
+ * que le sirvio de referencia.
  */
 
 import { Camara, transformacion } from './camara.mjs';
@@ -49,8 +51,11 @@ const ZOOM_MIN = 0.2, ZOOM_MAX = 2.2;
 
 export function iniciarMapa(datos) {
   const q = new URLSearchParams(location.search);
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const quieta = reduce || q.has('sin-movimiento');
+  /* Quieto SOLO a peticion expresa. `npm run verificar` abre el mapa con
+     `?sin-movimiento` para que sus capturas sean reproducibles; una persona
+     ve siempre el movimiento. (`navigator.webdriver` se probo y no vale: no
+     todas las herramientas lo ponen.) */
+  const quieta = q.has('sin-movimiento');
 
   const el = {
     lienzo: document.getElementById('mapa'),
@@ -73,6 +78,9 @@ export function iniciarMapa(datos) {
   };
   if (!el.lienzo) return;
   document.body.classList.add('con-mapa');
+  // El parametro tiene que parar TAMBIEN las animaciones de CSS (el latido
+  // del nucleo es infinito). Antes lo hacia la media query; ahora, esta clase.
+  if (quieta) document.body.classList.add('mapa-quieto');
   if (el.respaldo) el.respaldo.hidden = true;
 
   /* ── datos ─────────────────────────────────────────────────────────── */
@@ -127,6 +135,10 @@ export function iniciarMapa(datos) {
 
   function construirHub() {
     el.mundo.innerHTML = '';
+    // Se monta fuera del arbol y se inserta de una vez: si no, cada
+    // appendChild invalida estilo y maquetacion, y con nodos recortados
+    // (clip-path) eso se paga caro justo en mitad de la transicion.
+    const lote = document.createDocumentFragment();
     const d = D.disponerHub(G);
     pos = d.pos; caja = d.caja;
 
@@ -138,7 +150,7 @@ export function iniciarMapa(datos) {
       + '<span class="mp-nucleo__n">' + R.length + '</span>'
       + '<span class="mp-nucleo__s">reglas en ' + G.length + ' piezas</span>'
       + '<span class="mp-nucleo__e">Metodología Chaumer</span>';
-    el.mundo.appendChild(nucleo);
+    lote.appendChild(nucleo);
 
     for (const g of G) {
       const p = pos[g.id];
@@ -169,9 +181,10 @@ export function iniciarMapa(datos) {
       b.addEventListener('focus', () => { /* el foco no abre el globo: molestaria al tabular */ });
 
       env.appendChild(b);
-      el.mundo.appendChild(env);
+      lote.appendChild(env);
     }
 
+    el.mundo.appendChild(lote);
     pistas.poner(D.pistasHub(G, pos), D.patillas(AZUL));
   }
 
@@ -179,6 +192,7 @@ export function iniciarMapa(datos) {
 
   function construirPieza(gid) {
     el.mundo.innerHTML = '';
+    const lote = document.createDocumentFragment();
     botones = {};
     const g = porId[gid];
     const suyas = reglasDe(gid);
@@ -221,7 +235,7 @@ export function iniciarMapa(datos) {
       b.addEventListener('mouseleave', () => { ocultarPista(); resaltar(null); });
       botones[r.id] = b;
       env.appendChild(b);
-      el.mundo.appendChild(env);
+      lote.appendChild(env);
     });
 
     for (let f = 0; f < d.filas; f++) {
@@ -230,8 +244,10 @@ export function iniciarMapa(datos) {
       e.setAttribute('aria-hidden', 'true');
       e.style.cssText = 'left:-118px;top:' + (f * D.REGLA_FILA + 26) + 'px;--c:' + rgba(g.luz, 0.6);
       e.innerHTML = 'Fila ' + String(f + 1).padStart(2, '0') + '<i></i>';
-      el.mundo.appendChild(e);
+      lote.appendChild(e);
     }
+
+    el.mundo.appendChild(lote);
 
     lineasVista = D.carriles(suyas, pos, g.rgb);
     resaltar(null);

@@ -1,6 +1,6 @@
 # El mapa del método — una página nueva en el portal
 
-**Versión:** v1.2 · **Estado:** ✅ **CERRADO el 29/09/2026.** Las 5 fases y la decisión de color.
+**Versión:** v1.3 · **Estado:** ✅ **CERRADO el 29/09/2026.** Las 5 fases, el color y D-031.
 **Escrito:** 29/09/2026. **Alcance:** el portal (`chaumer/04_Web`), una página nueva.
 
 | Versión | Fecha | Qué cambió |
@@ -8,6 +8,7 @@
 | v1 | 29/09/2026 | Primera versión, escrita después de una maqueta funcional revisada por Kris |
 | v1.1 | 29/09/2026 | **Aprobado e implementado.** Tres correcciones del §11 contra los datos reales, y §13 con lo que cambió al construirlo |
 | v1.2 | 29/09/2026 | Decidido el color (§11): por número de relaciones. Zonas y Proceso diario se intercambian el tono. La transición se vuelve a comparar con la referencia y se suaviza (§14) |
+| v1.3 | 29/09/2026 | **D-031: el portal deja de consultar `prefers-reduced-motion`.** El §6.1 cambia de sentido y se reescribe. Y §15: el rendimiento del bucle, medido y mejorado |
 
 ---
 
@@ -130,19 +131,24 @@ Cuatro capas por pista, en este orden. Una sola línea gruesa de color **no** da
 
 Tres cosas que van en el diseño desde el principio, no parcheadas después.
 
-### 6.1 `prefers-reduced-motion`, también en JavaScript
+### 6.1 El modo quieto ~~y `prefers-reduced-motion`~~
 
-`src/estilos/base.css:215` apaga `transition` y `animation` de todo. **Eso no alcanza a tres
-cosas**, y hay que resolverlas a mano:
+> ⚠️ **Cambiado el 29/09/2026 (D-031).** Este apartado decía que el mapa consultaría
+> `prefers-reduced-motion`. **Ya no lo hace, ni él ni el resto del portal**: el Windows de Kris la
+> pedía y el portal se veía congelado. El porqué y lo que se pierde, en `docs/decisiones.md`.
 
-| No lo cubre | Qué hacer |
+Lo que **sí** queda, y sigue siendo necesario: un modo quieto de verdad, que no se limita a apagar
+CSS. Apagar solo `transition` y `animation` **no alcanza a tres cosas**, y por eso el modo quieto
+vive en JavaScript:
+
+| No lo cubre el CSS | Qué hace el modo quieto |
 |---|---|
-| El bucle `requestAnimationFrame` del canvas | Consultar la media query en JS y pintar el estado final, sin bucle |
-| `element.animate()` (el barrido) | No lanzarlo |
-| Las interpolaciones sobre `performance.now()` (la cámara) | Saltar al encuadre final |
+| El bucle `requestAnimationFrame` del canvas | No lo arranca; pinta el estado final |
+| `element.animate()` (el barrido) | No lo lanza |
+| Las interpolaciones sobre `performance.now()` (la cámara) | Salta al encuadre final |
 
-Con movimiento reducido **la página sigue siendo utilizable y llega al mismo sitio**: sin
-animación, no sin función.
+Se activa **solo con `?sin-movimiento`**, y además una clase en el `body` apaga las animaciones
+CSS del mapa (el latido del núcleo es infinito y haría que cada captura saliera distinta).
 
 ### 6.2 Modo congelado para el verificador
 
@@ -321,6 +327,38 @@ referencia.
 
 **Y el flujo se asienta 70 px por encima del centro**, para que la primera fila quede a la altura
 de la vista y se empiece a leer por arriba.
+
+## 15. El rendimiento del bucle
+
+Al quitar la consulta de la preferencia, el mapa pasó a animarse también en las pruebas, y eso
+destapó algo que antes quedaba tapado: **la cámara no interpolaba, saltaba.**
+
+Medido con el reloj de la página, muestreando los fotogramas:
+
+| | Antes | Después |
+|---|---|---|
+| Fotograma mediano | 18,4 ms | **8,3 ms** |
+| Fotograma medio | 32,1 ms | **13,5 ms** |
+| Fotogramas de más de 50 ms | 3 | **1** |
+
+Dos causas, las dos quitadas:
+
+1. **`shadowBlur` en cada trazo.** Se aplicaba a tres capas por pista: con treinta pistas son
+   noventa trazos desenfocados por fotograma. El halo se hace ahora con dos trazos anchos y
+   translúcidos, que cuestan una fracción. El punto de luz sí conserva la sombra: es uno por
+   pista, no noventa.
+2. **`backdrop-filter` en el menú.** Desenfocar 290 px por todo el alto se recalcula con cada
+   fotograma del mapa que hay debajo. Sobre fondo oscuro, un degradado opaco se ve igual.
+
+Además, la vista se monta en un `DocumentFragment` y se inserta de una vez, en lugar de añadir
+dieciséis nodos al árbol vivo.
+
+**Lo que queda sin resolver, dicho claro:** sigue habiendo **un** fotograma largo (~730 ms) en el
+primer pintado de una vista. Se reproduce igual en el sitio compilado que en desarrollo, así que
+no es cosa del servidor. La sospecha es que es del navegador sin ventana, que rasteriza por
+software y paga caro los recortes (`clip-path`) de los 26 hexágonos; **no se pudo comprobar con
+GPU** porque el panel del navegador pausa los fotogramas cuando está oculto. Si en una máquina real
+se nota un tirón al entrar en una pieza, el siguiente sospechoso es ese.
 
 ## 12. La maqueta
 

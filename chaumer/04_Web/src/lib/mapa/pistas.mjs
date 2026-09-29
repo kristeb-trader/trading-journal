@@ -134,6 +134,7 @@ Pistas.prototype.pintar = function () {
   ctx.clearRect(0, 0, w, h);
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
+  ctx.shadowBlur = 0;
 
   const t = this.reloj();
   const largo = this.quieta ? Infinity : (t - this.reveladoEn) * VEL_REVELADO;
@@ -171,12 +172,15 @@ Pistas.prototype.una = function (L, t, largo, aP) {
   trazar(ctx, vis, aP);
   ctx.restore();
 
-  // 2 · halo
+  // 2 · halo — en dos trazos anchos y translucidos, no con `shadowBlur`.
+  //     Desenfocar noventa trazos por fotograma ahogaba el bucle justo al
+  //     entrar en una pieza (medido: un fotograma de 912 ms).
   ctx.save();
-  ctx.strokeStyle = rgba(L.rgb, 0.24 * k);
-  ctx.shadowColor = rgba(L.rgb, 0.7 * k);
-  ctx.shadowBlur = 8;
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = rgba(L.rgb, 0.09 * k);
+  ctx.lineWidth = 7;
+  trazar(ctx, vis, aP);
+  ctx.strokeStyle = rgba(L.rgb, 0.2 * k);
+  ctx.lineWidth = 3.4;
   trazar(ctx, vis, aP);
   ctx.restore();
 
@@ -193,6 +197,7 @@ Pistas.prototype.una = function (L, t, largo, aP) {
   // 4 · el pulso, solo cuando la pista ya esta dibujada del todo
   if (dibujado >= total) {
     const sp = aP(puntoEn(pts, d, (t * VEL_PULSO) + (L.fase || 0)));
+    // El punto de luz sí lleva sombra: es UNO por pista, no noventa.
     ctx.save();
     ctx.fillStyle = '#fff';
     ctx.shadowColor = rgba(L.rgb, 1);

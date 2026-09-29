@@ -193,7 +193,10 @@ await hoja.setViewport({ width: ANCHO, height: ALTO });
 
 const fallos = [];
 for (const ruta of rutas) {
-  await hoja.goto('http://127.0.0.1:' + puerto + ruta, { waitUntil: 'networkidle0' });
+  // El mapa se anima solo y nunca se queda quieto: sin esto, cada pasada
+  // mediria un fotograma distinto y el vigilante dejaria de servir.
+  const quieto = ruta.startsWith('/mapa') ? '?sin-movimiento' : '';
+  await hoja.goto('http://127.0.0.1:' + puerto + ruta + quieto, { waitUntil: 'networkidle0' });
   for (const f of await hoja.evaluate(medir)) fallos.push([ruta, ...f]);
 }
 

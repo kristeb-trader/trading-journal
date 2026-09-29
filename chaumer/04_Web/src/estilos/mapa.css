@@ -189,8 +189,10 @@ body.con-mapa {
 .mp-menu {
   position: fixed; left: 0; top: 66px; bottom: 0; width: 290px; z-index: 9;
   padding: 18px 16px; display: flex; flex-direction: column; gap: 3px;
-  background: linear-gradient(90deg, rgba(10, 13, 19, 0.88), rgba(10, 13, 19, 0));
-  backdrop-filter: var(--desenfoque);
+  /* Sin `backdrop-filter`: desenfocar 290 px por todo el alto se recalcula
+     con cada fotograma del mapa que hay debajo, y era el mayor coste de la
+     transición. Sobre un fondo oscuro, un degradado opaco se ve igual. */
+  background: linear-gradient(90deg, rgba(10, 13, 19, 0.96) 62%, rgba(10, 13, 19, 0));
 }
 .mp-menu[hidden] { display: none; }
 .mp-menu__t {
@@ -366,12 +368,24 @@ body.con-mapa {
   .mp-estado, .mp-ayuda { display: none; }
 }
 
-/* ═══ movimiento reducido ══════════════════════════════════════════════ */
+/* ═══ el modo quieto ═══════════════════════════════════════════════════ */
 
-/* Esto apaga lo que es CSS. Lo que NO alcanza —el bucle del canvas, el
-   barrido con element.animate() y la cámara sobre performance.now()— lo
-   resuelve mapa.mjs consultando la misma media query. */
-@media (prefers-reduced-motion: reduce) {
-  .mp-env, .mp-menu__i, .mp-nucleo, .mp-ficha { animation: none !important; }
-  .mp-hex, .mp-menu__i, .mp-pista { transition: none !important; }
-}
+/* `?sin-movimiento` lo activa desde mapa.mjs. El JavaScript para el bucle del
+   canvas y la cámara; esto para lo que es CSS, sobre todo el latido del
+   núcleo, que es infinito y haría que cada captura saliera distinta. */
+.mapa-quieto .mp-env,
+.mapa-quieto .mp-menu__i,
+.mapa-quieto .mp-nucleo,
+.mapa-quieto .mp-ficha { animation: none !important; }
+.mapa-quieto .mp-hex,
+.mapa-quieto .mp-menu__i,
+.mapa-quieto .mp-pista { transition: none !important; }
+
+/* ═══ movimiento ═══════════════════════════════════════════════════════
+
+   El mapa NO consulta `prefers-reduced-motion`: decisión del operador del
+   29/09/2026 (D-031), igual que el resto del portal. Se anima siempre.
+
+   Lo que sí queda: `?sin-movimiento` deja todo en su estado final, y el mapa
+   se congela solo cuando lo maneja un navegador automatizado, para que
+   `npm run verificar` siga dando capturas reproducibles. */

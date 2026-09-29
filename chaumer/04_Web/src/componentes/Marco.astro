@@ -193,12 +193,12 @@ const activa = (href: string) =>
       document.body.classList.remove('sin-js');
 
       (function () {
-        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        // El portal ya no consulta `prefers-reduced-motion` (D-031, 29/09/2026).
         var hayIO = 'IntersectionObserver' in window;
 
         // ── entrada al aparecer ─────────────────────────────────────────
         var objetivos = document.querySelectorAll('.entra');
-        if (!hayIO || reduce) {
+        if (!hayIO) {
           objetivos.forEach(function (e) { e.classList.add('visible'); });
         } else {
           var obs = new IntersectionObserver(function (filas) {
