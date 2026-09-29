@@ -17,7 +17,7 @@
 | ⚠️ **sin registro** | Aplicada con `execute_sql` o a mano. Funcionó, pero no dejó rastro |
 | ✅ **previa al registro** | De antes de que existiera la práctica (jun – 15 jul 2026) |
 
-**Estado a 2026-09-29:** 86 archivos = 26 con registro en Supabase + 4 aplicadas sin
+**Estado a 2026-09-29:** 87 archivos = 27 con registro en Supabase + 4 aplicadas sin
 registrar (ago) + 56 previas a la práctica.
 
 ## Migraciones
@@ -110,6 +110,7 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-09-24-fed-day1-a-otro.sql` | ✅ MCP | el 27/10 y el 8/12 ("FOMC Day 1") pasan de `fomc` a `otro`: Fechas Especiales = días con evento rojo de la Fed |
 | `2026-09-25-plan-sin-cowork.sql` | ✅ MCP | el comentario de `plan_documentos` deja de decir que el plan lo edita Cowork (D-028). Solo el texto del comentario |
 | `2026-09-28-fed-actas-y-day1.sql` | ✅ MCP | Fechas Especiales, completa hacia atrás con el calendario oficial de la Fed: los 10 "FOMC Day 1" anteriores al 24/09 pasan a `otro` y entran las 15 actas que faltaban (2025–2026). 34 días de Fed. Efecto aceptado: disciplina de abril, el 08/04 |
+| `2026-09-29-motor-estados-rango.sql` | ✅ MCP | función `motor_estados(desde, hasta)`: el estado de la ficha del motor de un rango (`bloqueada` si el día no está registrado), para el calendario de Claude. Solo `(fecha, estado)`; la política `candado` no se toca. `authenticated` y `service_role` |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.

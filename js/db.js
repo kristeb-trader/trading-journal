@@ -1050,6 +1050,25 @@ const DB = {
     return data || 'sin_ficha'
   },
 
+  // El mismo estado para un rango, en una llamada (calendario de Claude). Solo dice
+  // qué días tienen ficha y si están cerrados; los datos siguen tras el candado.
+  async motorEstados(desde, hasta) {
+    const { data, error } = await supa.rpc('motor_estados', { p_desde: desde, p_hasta: hasta })
+    if (error) throw error
+    return data || []
+  },
+
+  // Las operaciones del motor de un rango. La política `candado` devuelve solo los
+  // días registrados: los cerrados no llegan, y motorEstados dice cuáles son.
+  async getMotorRango(desde, hasta) {
+    const { data, error } = await supa.from('motor_fichas')
+      .select('fecha, estado, dia_fed, grafico_url, operacion:ficha->operacion')
+      .gte('fecha', desde).lte('fecha', hasta)
+      .order('fecha')
+    if (error) throw error
+    return data || []
+  },
+
   // Sin `velas` (~48 KB/día): son para el agente de backtesting, el Journal no las lee.
   async getFichaMotor(fecha) {
     const { data, error } = await supa.from('motor_fichas')
