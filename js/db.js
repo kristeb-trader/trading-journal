@@ -143,6 +143,14 @@ function fmtDinero(n, { masEnPositivo = true } = {}) {
   const signo = v < 0 ? '−' : (masEnPositivo ? '+' : '')
   return `${signo}$${fmtMiles(v)}`
 }
+// Puntos SIN signo, con coma decimal y miles con punto: 40.5 → "40,5" ·
+// 1234.25 → "1.234,25". Los puntos llevan cuartos (0,25): redondearlos como un
+// importe perdería el dato. El signo lo pone quien llama.
+function fmtPuntos(n) {
+  const v = Math.round(Math.abs(parseFloat(n) || 0) * 100) / 100
+  const [ent, dec] = String(v).split('.')
+  return ent.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (dec ? ',' + dec : '')
+}
 
 // ── Fecha local en 'YYYY-MM-DD' ──────────────────────────────────────────────
 // NUNCA usar `new Date().toISOString().slice(0,10)` para obtener "hoy":

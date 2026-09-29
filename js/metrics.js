@@ -681,13 +681,22 @@ const Metrics = (() => {
   }
 
   // Curva de equity del mes seleccionado (sección Calendario)
-  let calEquityInst = null
   function renderCalEquity(trades) {
-    const ctx = document.getElementById('calEquityChart')
-    if (!ctx || typeof Chart === 'undefined') return
-    if (calEquityInst) { calEquityInst.destroy(); calEquityInst = null }
     const byDate = {}
     trades.forEach(t => { if (t.trade_date) byDate[t.trade_date] = (byDate[t.trade_date] || 0) + (parseFloat(t.profit) || 0) })
+    pintarEquity('calEquityChart', { porDia: byDate, unidad: '$' })
+  }
+
+  // La curva de equity, reutilizable: la pintan "Mío" y la vista de Chaumer,
+  // Claude y el manual (calendarios.js), así que una mejora llega a las dos.
+  //   porDia → { 'YYYY-MM-DD': valor del día }   unidad → '$' | 'pts'
+  //   pie(fecha) → línea extra bajo "Del día" en el tooltip (opcional)
+  const equityInst = {}
+  function pintarEquity(canvasId, { porDia, unidad = '$', pie = null }) {
+    const ctx = document.getElementById(canvasId)
+    if (!ctx || typeof Chart === 'undefined') return
+    if (equityInst[canvasId]) { equityInst[canvasId].destroy(); delete equityInst[canvasId] }
+    const byDate = porDia
     const dates = Object.keys(byDate).sort()
     let cum = 0
     const data = dates.map(d => { cum += byDate[d]; return parseFloat(cum.toFixed(2)) })
@@ -809,7 +818,11 @@ const Metrics = (() => {
       },
     }
 
-    const money = v => `${v < 0 ? '−' : '+'}$${fmtMiles(v)}`
+    // En puntos, con coma decimal (+29,5); en dinero, sin decimales (+$2.212).
+    const money = unidad === 'pts'
+      ? v => `${v < 0 ? '−' : '+'}${fmtPuntos(v)}`
+      : v => `${v < 0 ? '−' : '+'}$${fmtMiles(v)}`
+    const conUnidad = v => (unidad === 'pts' ? `${money(v)} pts` : money(v))
 
     // Ancho de la etiqueta final, medido antes de crear la gráfica para reservarle
     // el margen derecho exacto. Sin trades no hay etiqueta ni margen.
@@ -820,7 +833,7 @@ const Metrics = (() => {
       return Math.ceil(m.measureText(money(data.at(-1))).width) + TAG_PAD * 2 + TAG_GAP + 2
     })()
 
-    calEquityInst = new Chart(ctx, {
+    equityInst[canvasId] = new Chart(ctx, {
       type: 'line',
       data: { labels: dates.map(etiquetaDia), datasets: [{
         label: 'P&L Acumulado', data,
@@ -857,11 +870,13 @@ const Metrics = (() => {
             footerColor: TINTA2, footerFont: { size: 11, weight: '500' }, footerMarginTop: 4,
             callbacks: {
               title: items => items[0]?.label?.toUpperCase() || '',
-              label: c => `Acumulado  ${money(c.raw)}`,
+              label: c => `Acumulado  ${conUnidad(c.raw)}`,
               labelTextColor: c => colorDe(c.raw),
               footer: items => {
                 const i = items[0]?.dataIndex
-                return i == null ? '' : `Del día  ${money(byDate[dates[i]])}`
+                if (i == null) return ''
+                const extra = pie ? pie(dates[i]) : ''
+                return [`Del día  ${conUnidad(byDate[dates[i]])}`, extra].filter(Boolean)
               },
             },
           },
@@ -883,7 +898,7 @@ const Metrics = (() => {
               color: c => (c.tick.value === 0 ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.035)'),
             },
             ticks: { color: TINTA3, font: { size: 10 }, maxTicksLimit: 5, padding: 6,
-                     callback: v => `${v < 0 ? '−' : ''}$${fmtMiles(v)}` },
+                     callback: v => `${v < 0 ? '−' : ''}${unidad === 'pts' ? fmtPuntos(v) : `$${fmtMiles(v)}`}` },
           },
         },
       },
@@ -943,5 +958,5 @@ const Metrics = (() => {
     rerender()
   }
 
-  return { init, reload: init, rerender, setObjetivos }
+  return { init, reload: init, rerender, setObjetivos, pintarEquity }
 })()

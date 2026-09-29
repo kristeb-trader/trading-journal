@@ -473,7 +473,7 @@ body[data-modo-local]::before {
 .dd-group-rate { font-size: 0.7rem; color: var(--text3); font-variant-numeric: tabular-nums; }
 
 .calendar-legend {
-  display: flex; gap: 16px; margin-bottom: 26px;
+  display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 26px;
   font-size: 0.82rem; color: var(--text2);
 }
 .legend-item { display: flex; align-items: center; gap: 5px; }
@@ -486,12 +486,16 @@ body[data-modo-local]::before {
 .dot.festivo  { background: rgba(56,131,246,0.75); }
 .dot.fomc     { background: rgba(194,137,72,0.85); }
 
+/* `minmax(0, 1fr)` y no `1fr`: con `1fr` una columna crece hasta su contenido
+   más ancho (un badge largo, el P&L bajo los puntos) y en el móvil la rejilla se
+   salía por la derecha, cortando la columna Semana. */
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr) minmax(90px, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(90px, 1fr);
   gap: 5px;
   margin-bottom: 20px;
 }
+.calendar-grid > .cal-cell { min-width: 0; }
 .cal-header {
   text-align: center; font-size: 0.78rem;
   color: var(--text3); font-weight: 600;
@@ -683,7 +687,7 @@ body[data-modo-local]::before {
 }
 .cmt-label { font-size: 0.85rem; color: var(--text); font-weight: 600; letter-spacing: 0.02em; }
 .cmt-sub { font-size: 0.78rem; color: var(--text3); }
-.cmt-amount { margin-left: auto; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.cmt-amount { margin-left: auto; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .cmt-amount.positive { color: var(--accent); }
 .cmt-amount.negative { color: var(--red); }
 
@@ -796,6 +800,30 @@ body[data-modo-local]::before {
   display: flex; align-items: center; justify-content: center;
   color: var(--text3); font-size: 0.85rem;
 }
+
+/* Vista completa (Chaumer, Claude, manual) y "Mío" en puntos: el P&L va debajo,
+   pequeño, sin competir con los puntos. */
+.metrics-grid-compact .metric-sec {
+  margin-top: 6px; font-size: 0.7rem; color: var(--text3); font-variant-numeric: tabular-nums;
+}
+.metrics-grid-compact .metric-sec .pos { color: var(--accent-txt); }
+.metrics-grid-compact .metric-sec .neg { color: var(--red-txt); }
+.metrics-grid-compact .metric-sec .hub-calc { margin-left: 2px; }
+.metric-unidad { font-size: 0.7rem; font-weight: 600; color: var(--text3); margin-left: 3px; letter-spacing: 0; }
+.cal-usd {
+  text-align: center; font-size: 0.68rem; font-weight: 600; color: var(--text3);
+  font-variant-numeric: tabular-nums; margin-top: -2px;
+}
+.cmt-usd { display: block; text-align: right; font-size: 0.72rem; font-weight: 600; color: var(--text3); letter-spacing: 0; }
+.cal-leyenda-nota { margin-left: auto; color: var(--text3); font-size: 0.75rem; }
+/* El recuadro fijo (al clicar un día) sí admite clics: lleva "Ver gráfico". */
+.cal-tip.fijo { pointer-events: auto; }
+.cal-tip-obs { margin-top: 6px; font-size: 0.74rem; }
+.cal-tip-link {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: var(--violet-txt); font-weight: 600; text-decoration: none;
+}
+.cal-tip-link:hover { text-decoration: underline; }
 
 /* Celular: un cuadro por fila, y el mini calendario pasa a una tira de un color
    por día — cuatro calendarios a este ancho no se leen (diseño §4.2). */
@@ -3051,7 +3079,7 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
   .sidebar { width: 60px; }
   .sidebar .logo span, .sidebar .nav-item span { display: none; }
   .main-content { margin-left: 60px; }
-  .calendar-grid { gap: 3px; grid-template-columns: repeat(5, 1fr) minmax(70px, 1fr); }
+  .calendar-grid { gap: 3px; grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(70px, 1fr); }
   .cal-cell { min-height: 60px; padding: 4px 5px; }
   .metrics-grid { grid-template-columns: repeat(2, 1fr); }
 }
@@ -3130,7 +3158,7 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
   /* Calendar */
   .calendar-grid {
     gap: 2px;
-    grid-template-columns: repeat(5, 1fr) minmax(56px, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(56px, 1fr);
     font-size: 0.7rem;
   }
   .cal-cell { min-height: 56px; padding: 3px 4px; }
@@ -3181,7 +3209,7 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 @media (max-width: 480px) {
   .metrics-grid { grid-template-columns: 1fr 1fr; }
   .calendar-grid {
-    grid-template-columns: repeat(5, 1fr) minmax(48px, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(48px, 1fr);
     font-size: 0.65rem;
   }
   .cal-cell { min-height: 46px; padding: 2px 3px; }

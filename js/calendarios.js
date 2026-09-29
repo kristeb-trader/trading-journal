@@ -40,13 +40,9 @@ const Calendarios = (() => {
   const mesNombre = (y, m) => `${MESES[m - 1]} ${y}`
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1)
 
-  // Puntos con coma decimal y miles con punto: 40.5 → "+40,5" · -1234.25 → "−1.234,25"
-  function fmtPts(v, { signo = true } = {}) {
-    const n = Math.round(Math.abs(v) * 100) / 100
-    const [ent, dec] = String(n).split('.')
-    const txt = ent.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (dec ? ',' + dec : '')
-    return `${v < 0 ? '−' : v > 0 && signo ? '+' : ''}${txt}`
-  }
+  // Puntos con su signo: 40.5 → "+40,5" · -1234.25 → "−1.234,25" (fmtPuntos, db.js)
+  const fmtPts = (v, { signo = true } = {}) =>
+    `${v < 0 ? '−' : v > 0 && signo ? '+' : ''}${fmtPuntos(v)}`
   const clsSigno = v => (v > 0 ? 'pos' : v < 0 ? 'neg' : '')
   // "08:41:00" → "8:41"
   const horaCorta = h => (h ? String(h).slice(0, 5).replace(/^0/, '') : '')
@@ -63,13 +59,12 @@ const Calendarios = (() => {
       DB.motorEstados('2000-01-01', hoy).catch(aviso('motor_estados')),
       DB.getMotorRango('2000-01-01', hoy).catch(aviso('motor_fichas')),
       DB.getBacktesting().catch(aviso('backtesting')),
-    ]).then(([chaumer, estados, motor, bt]) => ({
-      chaumer, estados, motor,
-      manual: bt ? bt.jornadas : null,
+    ]).then(([chaumer, estados, motor, bt]) => {
       // Los datos de inicio del backtesting ponen el precio del punto al P&L
       // calculado. Sin ellos, los del plan: MNQ, 1 contrato, $1,02.
-      cab: { valor_punto: 2, contratos: 1, comision: 1.02, ...(bt && bt.cabecera || {}) },
-    }))
+      cabActual = { valor_punto: 2, contratos: 1, comision: 1.02, ...(bt && bt.cabecera || {}) }
+      return { chaumer, estados, motor, manual: bt ? bt.jornadas : null, cab: cabActual }
+    })
     return fuentes
   }
 
@@ -423,6 +418,7 @@ const Calendarios = (() => {
 
   function mostrar(v) {
     vista = v
+    ocultarTip()
     $('calHub').classList.toggle('hidden', v !== 'hub')
     $('calMio').classList.toggle('hidden', v !== 'mio')
     $('calFuente').classList.toggle('hidden', !(v in FUENTE) || v === 'hub' || v === 'mio')
@@ -447,8 +443,254 @@ const Calendarios = (() => {
     }
   }
 
-  // Placeholder de la fase 3: la vista completa de Chaumer, Claude y el manual.
-  function renderFuente() {}
+  // ── Vista completa de Chaumer, Claude y el manual (diseño §5.2) ─────────
+  // Las mismas piezas que "Mío" —.metric-card, .cal-cell, la curva y el recuadro
+  // del día—, con lo que cada fuente tiene: sin disciplina, errores ni desglose.
+  const CLASE_DIA = {
+    target: 'day-target', stop: 'day-stop', mixed: 'day-mixed', be: 'day-be',
+    'sin-entradas': 'day-sin-setup', 'no-opero': 'day-sin-setup', 'sin-op': 'day-sin-setup',
+    bloqueado: 'day-no-trade', error: 'day-no-trade', festivo: 'day-festivo', fomc: 'day-fomc',
+  }
+  const BADGE = {
+    'no-opero':  ['badge-sinsetup', 'ti-eye-off',        'No operó'],
+    'sin-op':    ['badge-sinsetup', 'ti-eye-off',        'Sin operación'],
+    bloqueado:   ['badge-noopero',  'ti-lock',           'Registra tu día'],
+    error:       ['badge-noopero',  'ti-alert-circle',   'Error del motor'],
+    be:          ['badge-be',       'ti-scale',          'B.E.'],
+    festivo:     ['badge-festivo',  'ti-building-bank',  'Festivo'],
+    fomc:        ['badge-fomc',     'ti-chart-candle',   'FOMC'],
+  }
+  const LEYENDA = {
+    chaumer: [['green', 'Target'], ['red', 'Stop'], ['sinsetup', 'No operó'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
+    claude:  [['green', 'Target'], ['red', 'Stop'], ['sinsetup', 'Sin operación'], ['gray', 'Registra tu día'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
+    manual:  [['green', 'Target'], ['red', 'Stop'], ['sinsetup', 'Sin operación'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
+  }
+
+  let diasVista = {}   // fecha → día, de la vista abierta (lo lee el recuadro)
+  let fuenteVista = null
+
+  async function diasFuente(id, y, m) {
+    const d = await (fuentes || cargarFuentes())
+    if (id === 'chaumer') return d.chaumer && diasChaumer(d.chaumer, y, m, d.cab)
+    if (id === 'claude')  return d.estados && diasClaude(d.estados, d.motor, y, m, d.cab)
+    if (id === 'manual')  return d.manual && diasManual(d.manual, y, m)
+    return null
+  }
+
+  function habilesHastaHoy(y, m, esp) {
+    const hoy = hoyISO()
+    return semanasDelMes(y, m).flat().filter(f => f && f <= hoy && esp[f] !== 'festivo').length
+  }
+
+  const ptsDe = d => d.ops.reduce((s, o) => s + o.puntos, 0)
+  const pnlDe = d => d.ops.reduce((s, o) => s + o.pnl, 0)
+
+  function tarjetasFuente(f, dias, y, m, esp) {
+    const r = resumen(dias)
+    const conRes = r.targets + r.stops
+    const acierto = conRes ? Math.round(r.targets / conRes * 100) : null
+    const ratio = r.stops ? (r.targets / r.stops).toFixed(2).replace('.', ',') : r.targets ? '∞' : '—'
+    const calc = f.calc ? ' <span class="hub-calc">calc.</span>' : ''
+    const tono = v => (v > 0 ? 'green' : v < 0 ? 'red' : 'neutral')
+    const cards = [
+      { label: 'Puntos netos', value: r.n ? `${fmtPts(r.puntos)}<small class="metric-unidad">pts</small>` : '—',
+        color: r.n ? tono(r.puntos) : 'neutral',
+        sec: r.n ? `<span class="${clsSigno(r.pnl)}">${fmtDinero(r.pnl)}</span>${calc} · ${fmtPts(r.puntos / r.n)} pts/op.` : 'Sin operaciones' },
+      { label: 'Acierto', value: acierto == null ? '—' : `${acierto}%`,
+        color: acierto == null ? 'neutral' : acierto >= 50 ? 'green' : 'red',
+        sec: r.n ? `sobre ${conRes} operaciones${r.be ? ` · ${r.be} en B.E.` : ''}` : 'Sin operaciones' },
+      { label: 'Targets / Stops', color: 'neutral',
+        value: `<span class="ts-t">${r.targets}</span><span class="ts-sep">/</span><span class="ts-s">${r.stops}</span>`,
+        tono: r.targets > r.stops ? 'green' : r.stops > r.targets ? 'red' : 'neutral',
+        sec: `Ratio T/S: ${ratio}` },
+      { label: 'Días operados', value: `${r.diasOp}`, color: 'neutral',
+        sec: `de ${habilesHastaHoy(y, m, esp)} días hábiles` },
+    ]
+    return cards.map(c => `
+      <div class="metric-card" data-tono="${c.tono || c.color}">
+        <div class="metric-body">
+          <div class="metric-label">${c.label}</div>
+          <div class="metric-value color-${c.color}">${c.value}</div>
+          <div class="metric-sec">${c.sec}</div>
+        </div>
+      </div>`).join('')
+  }
+
+  function cuadricula(f, dias, y, m, esp) {
+    const hoy = hoyISO()
+    let html = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Semana'].map((d, i) =>
+      `<div class="cal-header${i === 5 ? ' cal-header-week' : ''}">${d}</div>`).join('')
+
+    semanasDelMes(y, m).forEach((semana, i) => {
+      let sPts = 0, sPnl = 0, sOps = 0
+      semana.forEach(fe => {
+        if (!fe) { html += '<div class="cal-cell empty-cell"></div>'; return }
+        const d = dias[fe]
+        const futuro = fe > hoy
+        const estado = d ? d.estado : esp[fe] || null
+        let cls = 'cal-cell'
+        if (estado) cls += ` ${CLASE_DIA[estado] || ''}`
+        if (futuro) cls += esp[fe] ? ' future-especial' : ' future'
+        if (fe === hoy) cls += ' today'
+
+        let cifra = ''
+        if (d && d.ops.length) {
+          const p = ptsDe(d), usd = pnlDe(d)
+          sPts += p; sPnl += usd; sOps += d.ops.length
+          cifra = `<div class="cal-pnl ${p >= 0 ? 'positive' : 'negative'}">${fmtPts(p)}</div>
+                   <div class="cal-usd">${fmtDinero(usd)}</div>`
+        }
+        // Badge: el de la fuente; si no hay, el de la fecha especial.
+        const b = BADGE[d && !d.ops.length ? d.estado : ''] || (!d?.ops.length && BADGE[esp[fe]])
+          || (d?.estado === 'be' && BADGE.be)
+        const badge = b ? `<div class="cal-status-badge ${b[0]}"><i class="ti ${b[1]}"></i> ${b[2]}</div>` : ''
+        const dir = d?.ops.length && d.ops[0].res !== 'be' ? (() => {
+          const sube = d.ops.every(o => /alcista|largo/i.test(`${o.setup} ${o.dir || ''}`))
+          const baja = d.ops.every(o => /bajista|corto/i.test(`${o.setup} ${o.dir || ''}`))
+          return sube ? '<div class="cal-icon-dir dir-long"><i class="ti ti-trending-up"></i></div>'
+            : baja ? '<div class="cal-icon-dir dir-short"><i class="ti ti-trending-down"></i></div>' : ''
+        })() : ''
+        const clicable = !futuro && d ? ` data-date="${fe}" style="cursor:pointer"` : ''
+        html += `<div class="${cls}"${clicable}>
+                   <div class="cal-day-num">${+fe.slice(8)}</div>${cifra}${badge}${dir}</div>`
+      })
+      html += sOps
+        ? `<div class="cal-cell cal-week-summary ${sPts >= 0 ? 'week-positive' : 'week-negative'}">
+             <div class="week-label">Semana ${i + 1}</div>
+             <div class="week-pnl ${sPts >= 0 ? 'positive' : 'negative'}">${fmtPts(sPts)}</div>
+             <div class="week-trades">${fmtDinero(sPnl)} · ${sOps} op.</div>
+           </div>`
+        : `<div class="cal-cell cal-week-summary week-empty">
+             <div class="week-label">Semana ${i + 1}</div>
+             <div class="week-pnl" style="color:var(--text3)">—</div>
+           </div>`
+    })
+
+    const r = resumen(dias)
+    html += `
+      <div class="cal-month-total-widget ${r.puntos >= 0 ? 'positive' : 'negative'}">
+        <span class="cmt-label">TOTAL ${MESES[m - 1].toUpperCase()} ${y}</span>
+        <span class="cmt-sub">${r.diasOp} día${r.diasOp !== 1 ? 's' : ''} · ${r.n} operaci${r.n !== 1 ? 'ones' : 'ón'}</span>
+        <span class="cmt-amount ${r.puntos >= 0 ? 'positive' : 'negative'}">${fmtPts(r.puntos)} pts
+          <small class="cmt-usd">${fmtDinero(r.pnl)}${f.calc ? ' calc.' : ''}</small></span>
+      </div>`
+    return html
+  }
+
+  async function renderFuente(id) {
+    const f = FUENTE[id]
+    const y = Calendar.getYear(), m = Calendar.getMonth()
+    const token = ++pedido
+    const [dias, esp] = await Promise.all([diasFuente(id, y, m), especialesDe(y)])
+    if (token !== pedido || vista !== id) return
+    ocultarTip()
+    fuenteVista = f
+    diasVista = dias || {}
+
+    $('fuenteMetrics').innerHTML = dias == null
+      ? '<div class="hub-vacio"><i class="ti ti-cloud-off"></i> No se pudo cargar</div>'
+      : tarjetasFuente(f, dias, y, m, esp)
+    $('fuenteLeyenda').innerHTML = LEYENDA[id].map(([c, t]) =>
+      `<span class="legend-item"><span class="dot ${c}"></span> ${t}</span>`).join('') +
+      (f.calc ? `<span class="legend-item cal-leyenda-nota">P&amp;L calculado a ${cabTexto()}</span>` : '')
+    const grid = $('fuenteGrid')
+    grid.innerHTML = cuadricula(f, diasVista, y, m, esp)
+    grid.querySelectorAll('[data-date]').forEach(cell => {
+      cell.addEventListener('click', e => { e.stopPropagation(); mostrarTip(cell, true) })
+      if (conRaton) {
+        cell.addEventListener('mouseenter', () => mostrarTip(cell, false))
+        cell.addEventListener('mouseleave', () => { if (!tipFijo) ocultarTip() })
+      }
+    })
+
+    const porDia = {}
+    Object.values(diasVista).forEach(d => { if (d.ops.length) porDia[d.fecha] = ptsDe(d) })
+    Metrics.pintarEquity('fuenteEquity', {
+      porDia, unidad: 'pts',
+      pie: fe => `${f.calc ? 'P&L calc.' : 'P&L'}  ${fmtDinero(pnlDe(diasVista[fe]))}`,
+    })
+  }
+
+  let cabActual = null
+  function cabTexto() {
+    const c = cabActual || { valor_punto: 2, contratos: 1, comision: 1.02 }
+    const n = Number(c.contratos) || 1
+    return `${n} contrato${n !== 1 ? 's' : ''} · $${String(c.valor_punto).replace('.', ',')}/punto · ` +
+           `$${Number(c.comision).toFixed(2).replace('.', ',')} de comisión`
+  }
+
+  // ── Recuadro del día ─────────────────────────────────────────────────────
+  // Al pasar el ratón, como en "Mío". Al clicar (y en el celular, donde no hay
+  // ratón) se queda fijo y admite clics: Claude lleva ahí "Ver gráfico".
+  const conRaton = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches
+  let tipFijo = false
+
+  function tipHtml(fe) {
+    const d = diasVista[fe]
+    if (!d) return null
+    const f = new Date(`${fe}T12:00:00`)
+    const fila = (lab, val) => `<div class="cal-tip-fila"><span class="cal-tip-lab">${lab}</span><span class="cal-tip-val">${val}</span></div>`
+    let html = `<div class="cal-tip-fecha">${DIAS[f.getDay()]} ${f.getDate()} ${MES_CORTO[f.getMonth()]} · ${fuenteVista.nombre}</div>`
+    if (d.estado === 'bloqueado') {
+      html += `<div class="cal-tip-muted"><i class="ti ti-lock"></i> Registra tu día para ver lo que marcó el motor</div>`
+      return html
+    }
+    if (!d.ops.length) {
+      html += `<div class="cal-tip-muted">${esc(d.nota || 'Sin operación')}</div>`
+    }
+    d.ops.forEach((o, i) => {
+      if (i) html += '<div class="cal-tip-sep"></div>'
+      const setup = [o.setup, o.dir && !/alcista|bajista/i.test(o.setup) ? o.dir.toLowerCase() : '']
+        .filter(Boolean).join(' ')
+      html += fila('Setup', `${esc(setup || '—')}${o.hora ? ` <span class="cal-tip-muted">· ${esc(o.hora)}</span>` : ''}`)
+      html += fila('Resultado', { target: 'Target', stop: 'Stop', be: 'B.E.' }[o.res])
+      html += fila('Puntos', `<span class="${clsSigno(o.puntos)}">${fmtPts(o.puntos)} pts</span>`)
+      html += fila(fuenteVista.calc ? 'P&L calc.' : 'P&L', `<span class="${clsSigno(o.pnl)}">${fmtDinero(o.pnl)}</span>`)
+      if (o.obs) html += `<div class="cal-tip-muted cal-tip-obs">${esc(o.obs)}</div>`
+    })
+    if (d.url) {
+      html += `<div class="cal-tip-sep"></div>
+        <a class="cal-tip-link" href="${esc(d.url)}" target="_blank" rel="noopener"><i class="ti ti-photo"></i> Ver gráfico</a>`
+    }
+    return html
+  }
+
+  function tipEl() {
+    let el = $('calTipFuente')
+    if (!el) {
+      el = document.createElement('div')
+      el.id = 'calTipFuente'
+      el.className = 'cal-tip'
+      el.setAttribute('role', 'tooltip')
+      document.body.appendChild(el)
+      window.addEventListener('scroll', ocultarTip, { passive: true, capture: true })
+      document.addEventListener('click', e => { if (tipFijo && !el.contains(e.target)) ocultarTip() })
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') ocultarTip() })
+    }
+    return el
+  }
+
+  function mostrarTip(cell, fijo) {
+    const html = tipHtml(cell.dataset.date)
+    if (!html) return
+    const el = tipEl()
+    el.innerHTML = html
+    el.classList.add('visible')
+    el.classList.toggle('fijo', fijo)
+    tipFijo = fijo
+    const r = cell.getBoundingClientRect()
+    const w = el.offsetWidth, h = el.offsetHeight, mg = 8
+    let x = Math.max(mg, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - mg))
+    let y = r.top - h - 8
+    if (y < mg) y = r.bottom + 8
+    el.style.left = `${Math.round(x)}px`
+    el.style.top  = `${Math.round(y)}px`
+  }
+
+  function ocultarTip() {
+    tipFijo = false
+    $('calTipFuente')?.classList.remove('visible', 'fijo')
+  }
 
   // ── API ──────────────────────────────────────────────────────────────────
   async function init() {
