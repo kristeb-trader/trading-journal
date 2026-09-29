@@ -210,6 +210,27 @@ def comparar(manual, auto, d):
 def huella(texto): return hashlib.sha256(texto.encode('utf-8')).hexdigest()
 
 
+def veredicto(estado, ficha):
+    """Lo que el portal pone en la tarjeta de la Sesión, con la forma de las tablas de GALERIA.md:
+    «Continuación bajista 9:20» · STOP / TARGET / NO OPERA · «−67,25». None si no hay nada que enseñar."""
+    if estado != 'ok': return None
+    op = ficha.get('operacion')
+    if not op:
+        return {'setup': 'el motor no encontró operación en la ventana', 'resultado': 'NO OPERA', 'puntos': '—'}
+    pts = f"{op['puntos']:+.2f}".replace('.', ',').replace('-', '−')
+    return {'setup': f"{op['setup']} {op['sentido']} {op['hora']}", 'resultado': op['resultado'], 'puntos': pts}
+
+
+def guardar_sesion(fecha, estado, ficha):
+    """AAAA-MM-DD.json junto al gráfico, en claude/: el veredicto del motor para el portal (28/09/2026).
+    Si el plan tiene el día en su tabla, en el portal manda el plan."""
+    v = veredicto(estado, ficha)
+    if not v: return
+    with open(os.path.join(SESIONES, f'{fecha}.json'), 'w', encoding='utf-8', newline='\n') as fh:
+        json.dump({'fecha': fecha, **v, 'fuente': 'motor'}, fh, ensure_ascii=False, indent=2)
+        fh.write('\n')
+
+
 # ── Un día ──────────────────────────────────────────────────────────────────────
 def archivos(fecha):
     m, a = os.path.join(DIA_MANUAL, f'{fecha}.txt'), os.path.join(DIA_AUTO, f'{fecha}.txt')
@@ -250,6 +271,7 @@ def procesar(fecha, umbral, desde, fed_set, huella_motor):
         if (t2 and {k: t2[k] for k in ('e', 's', 't', 'res')}) != (t and {k: t[k] for k in ('e', 's', 't', 'res')}):
             raise RuntimeError('el gráfico y la ficha no dan la misma operación')
         grafico = subir_grafico(png, fecha)
+        guardar_sesion(fecha, estado, ficha)
         ficha['motor'] = {'umbral_vol': umbral, 'dia_fed': fed, 'huella': huella_motor}
     velas = velas_del_dia(path, d)
     fila = {'fecha': fecha, 'estado': estado, 'instrumento': instrumento(path), 'umbral_vol': umbral,
