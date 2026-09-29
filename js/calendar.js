@@ -175,13 +175,8 @@ const Calendar = (() => {
   const escTip = s => String(s ?? '').replace(/[&<>"']/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 
-  // Puntos de un trade por el movimiento del PRECIO, no por el P&L: es la medida
-  // de riesgo del proyecto, y no depende de cuántos contratos se usaron.
-  const puntosTrade = t => {
-    const e = parseFloat(t.entry_price), s = parseFloat(t.exit_price)
-    if (isNaN(e) || isNaN(s)) return null
-    return t.market_pos === 'Short' ? e - s : s - e
-  }
+  // Puntos por PRECIO, no por P&L (db.js): los mismos que suma Calendarios.
+  const puntosTrade = puntosDeTrade
   const fmtPts = p => {
     const n = Number(Math.abs(p).toFixed(2)).toString().replace('.', ',')
     return `${p > 0 ? '+' : p < 0 ? '−' : ''}${n}`
@@ -516,12 +511,24 @@ const Calendar = (() => {
     Modal.openDay(dateStr, AccountFilter.filter('calendar', trades), sesion)
   }
 
+  // El mes vive aquí y es UNO para los cuatro calendarios: la pantalla principal
+  // y las vistas de Chaumer, Claude y el manual lo leen con getYear/getMonth.
   function navigate(delta) {
     currentMonth += delta
     if (currentMonth > 12) { currentMonth = 1; currentYear++ }
     if (currentMonth < 1) { currentMonth = 12; currentYear-- }
+    alCambiarMes()
+  }
+
+  function irAMes(y, m) {
+    currentYear = y; currentMonth = m
+    alCambiarMes()
+  }
+
+  function alCambiarMes() {
     load()
     if (typeof Metrics !== 'undefined') Metrics.rerender()
+    if (typeof Calendarios !== 'undefined') Calendarios.alCambiarMes()
   }
 
   async function init() {
@@ -551,6 +558,8 @@ const Calendar = (() => {
       onChange: () => {
         load()
         if (typeof Metrics !== 'undefined') Metrics.rerender()
+        // El filtro solo cambia "Mío", pero su cuadro también está en la principal.
+        if (typeof Calendarios !== 'undefined') Calendarios.alCambiarMes()
       },
     })
 
@@ -561,5 +570,5 @@ const Calendar = (() => {
     await load()
   }
 
-  return { init, load, getYear: () => currentYear, getMonth: () => currentMonth, calcCMEHolidays }
+  return { init, load, irAMes, getYear: () => currentYear, getMonth: () => currentMonth, calcCMEHolidays }
 })()

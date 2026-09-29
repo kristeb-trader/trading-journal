@@ -720,8 +720,11 @@ const Metrics = (() => {
     // existe hasta que Chart.js la mide.
     const corteCero = chart => {
       const a = chart.chartArea, y = chart.scales.y
-      if (!a || !y) return null
+      // Sin alto (el calendario "Mío" se pinta oculto tras la pantalla de los
+      // cuatro): el corte daría NaN y addColorStop revienta la carga entera.
+      if (!a || !y || !(a.bottom - a.top > 0)) return null
       const z = (y.getPixelForValue(0) - a.top) / (a.bottom - a.top)
+      if (!Number.isFinite(z)) return null
       return Math.min(1, Math.max(0, z))
     }
     const linea = c => {

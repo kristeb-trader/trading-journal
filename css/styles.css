@@ -687,6 +687,128 @@ body[data-modo-local]::before {
 .cmt-amount.positive { color: var(--accent); }
 .cmt-amount.negative { color: var(--red); }
 
+/* ── Cuatro calendarios: la pantalla principal (calendarios.js) ───────────
+   Diseño: docs/disenos/2026-09-29-cuatro-calendarios.md. Cada cuadro declara su
+   color con dos variables locales (`--c` texto, `--c-base` bordes), el mismo
+   patrón que las tarjetas de Otros: el componente no sabe cuántos colores hay.
+   Los tintes de las celdas salen de los tokens con color-mix, sin rgba a mano. */
+.hc-accent { --c: var(--accent-txt); --c-base: var(--accent); }
+.hc-blue   { --c: var(--blue-txt);   --c-base: var(--blue); }
+.hc-violet { --c: var(--violet-txt); --c-base: var(--violet); }
+.hc-neutro { --c: var(--text2);      --c-base: var(--text3); }
+
+.hub-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px; margin-bottom: 24px;
+}
+.hub-card {
+  position: relative; overflow: hidden; cursor: pointer;
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 16px 16px 14px;
+  display: flex; flex-direction: column; gap: 12px;
+  transition: border-color var(--transition), transform var(--transition);
+}
+/* El filete superior del color de la fuente, como las tarjetas KPI. */
+.hub-card::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--c);
+}
+.hub-card:hover, .hub-card:focus-visible {
+  border-color: color-mix(in srgb, var(--c-base) 55%, transparent);
+  transform: translateY(-1px); outline: none;
+}
+.hub-card-head { display: flex; align-items: center; gap: 8px; }
+.hub-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+.hub-icono { color: var(--c); font-size: 1rem; }
+.hub-nombre { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text); }
+.hub-abrir {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.75rem; font-weight: 600; color: var(--text3);
+  transition: color var(--transition);
+}
+.hub-card:hover .hub-abrir, .hub-card:focus-visible .hub-abrir { color: var(--c); }
+
+.hub-cifras { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.hub-pts {
+  font-size: 1.9rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--text2);
+}
+.hub-pts small { font-size: 0.8rem; font-weight: 600; color: var(--text3); margin-left: 4px; letter-spacing: 0; }
+.hub-pts.pos { color: var(--accent-txt); }
+.hub-pts.neg { color: var(--red-txt); }
+.hub-sec { display: flex; align-items: baseline; gap: 10px; font-size: 0.85rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text2); }
+.hub-sec .pos { color: var(--accent-txt); }
+.hub-sec .neg { color: var(--red-txt); }
+.hub-calc {
+  font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text3); border: 1px solid var(--border); border-radius: 4px; padding: 1px 4px; margin-left: -4px;
+}
+.hub-ts { font-size: 0.95rem; font-weight: 700; }
+.hub-ts .ts-t { color: var(--accent-txt); }
+.hub-ts .ts-s { color: var(--red-txt); }
+.hub-ts .ts-sep { color: var(--text3); font-weight: 300; margin: 0 3px; }
+.hub-muted { color: var(--text3); font-weight: 500; }
+.hub-cifras-vacias .hub-pts { color: var(--text3); font-weight: 500; }
+.hub-ir {
+  font-size: 0.78rem; font-weight: 600; color: var(--c);
+  background: none; border: none; padding: 0; cursor: pointer;
+}
+.hub-ir:hover { text-decoration: underline; }
+.hub-vacio { color: var(--text3); font-size: 0.85rem; display: flex; align-items: center; gap: 6px; padding: 24px 0; }
+
+/* Mini calendario: un vistazo, sin iconos ni badges. */
+.hub-mini { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.hub-mini-cab { text-align: center; font-size: 0.62rem; font-weight: 700; color: var(--text3); padding-bottom: 2px; }
+.hub-dia {
+  position: relative; min-height: 38px; border-radius: 7px;
+  background: var(--bg2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+}
+.hub-dia.hueco { background: transparent; border-color: transparent; }
+.hub-dia.futuro { opacity: 0.35; }
+.hub-dia.hoy { border-color: var(--c); }
+.hub-dia-n { position: absolute; top: 3px; left: 5px; font-size: 0.58rem; color: var(--text3); line-height: 1; }
+.hub-dia-p { font-size: 0.74rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.hub-dia.est-target { background: color-mix(in srgb, var(--accent) 16%, transparent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+.hub-dia.est-target .hub-dia-p { color: var(--accent-txt); }
+.hub-dia.est-stop   { background: color-mix(in srgb, var(--red) 15%, transparent);    border-color: color-mix(in srgb, var(--red) 35%, transparent); }
+.hub-dia.est-stop .hub-dia-p { color: var(--red-txt); }
+.hub-dia.est-mixed  { background: color-mix(in srgb, var(--warning) 15%, transparent); border-color: color-mix(in srgb, var(--warning) 35%, transparent); }
+.hub-dia.est-mixed .hub-dia-p { color: var(--warning-txt); }
+.hub-dia.est-be .hub-dia-p { color: var(--text2); }
+.hub-dia.est-sin-entradas { background: color-mix(in srgb, var(--violet) 10%, transparent); border-color: color-mix(in srgb, var(--violet) 28%, transparent); }
+.hub-dia.est-no-opero, .hub-dia.est-sin-op, .hub-dia.est-error { background: var(--bg3); opacity: 0.6; }
+.hub-dia.est-bloqueado { background: var(--bg3); border-style: dashed; }
+.hub-dia.est-bloqueado .hub-dia-p { color: var(--text3); font-size: 0.8rem; }
+.hub-dia.est-festivo { background: color-mix(in srgb, var(--blue) 10%, transparent); border-color: color-mix(in srgb, var(--blue) 25%, transparent); }
+.hub-dia.est-fomc    { background: color-mix(in srgb, var(--warning) 10%, transparent); border-color: color-mix(in srgb, var(--warning) 28%, transparent); }
+
+/* Curva comparada */
+.hub-curva-card .chart-header { flex-wrap: wrap; gap: 8px 16px; }
+.hub-curva-leyenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.78rem; color: var(--text2); }
+.hub-ley { display: inline-flex; align-items: center; gap: 6px; }
+.hub-ley b { font-variant-numeric: tabular-nums; }
+.hub-ley b.pos { color: var(--accent-txt); }
+.hub-ley b.neg { color: var(--red-txt); }
+.hub-curva-lienzo { position: relative; height: 260px; }
+.hub-curva-lienzo.vacio canvas { display: none; }
+.hub-curva-lienzo.vacio::after {
+  content: attr(data-vacio); position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text3); font-size: 0.85rem;
+}
+
+/* Celular: un cuadro por fila, y el mini calendario pasa a una tira de un color
+   por día — cuatro calendarios a este ancho no se leen (diseño §4.2). */
+@media (max-width: 768px) {
+  .hub-grid { grid-template-columns: 1fr; gap: 12px; }
+  .hub-mini { display: flex; flex-wrap: wrap; gap: 3px; }
+  .hub-mini-cab, .hub-dia.hueco { display: none; }
+  .hub-dia { min-height: 0; width: 14px; height: 14px; border-radius: 3px; }
+  .hub-dia-n, .hub-dia-p { display: none; }
+  .hub-pts { font-size: 1.6rem; }
+  .hub-curva-lienzo { height: 220px; }
+}
+
 /* ── Metrics ─────────────────────────────────────────────────────────── */
 .period-selector { display: flex; gap: 4px; }
 .period-btn {

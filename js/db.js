@@ -94,6 +94,15 @@ function tradeOutcome(t) {
 const isWinTrade = t => tradeOutcome(t) === 'win'
 const isLossTrade = t => tradeOutcome(t) === 'loss'
 
+// Puntos de un trade por el movimiento del PRECIO, no por el P&L: es la medida de
+// riesgo del proyecto (D-005) y no depende de cuántos contratos se usaron. Por eso
+// un mes puede ir en negativo en puntos y en positivo en dinero. null sin precios.
+function puntosDeTrade(t) {
+  const e = parseFloat(t.entry_price), s = parseFloat(t.exit_price)
+  if (isNaN(e) || isNaN(s)) return null
+  return t.market_pos === 'Short' ? e - s : s - e
+}
+
 // ── Ventana de bloqueo por noticia roja (±5 min) ──────────────────────────
 // Minutos del día de una hora 'HH:MM' o 'HH:MM:SS' (ET). null si inválida.
 function _minsOfTime(s) {

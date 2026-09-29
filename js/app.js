@@ -542,6 +542,15 @@ const Nav = {
     document.getElementById('connectionStatus')?.classList.toggle('hidden', !cfg.conexion)
   },
 
+  // Un "volver" DENTRO de una sección, sin cambiar de sección: el Calendario lo usa
+  // para ir de la vista completa de un calendario a la pantalla de los cuatro.
+  // El chevron de la barra es el mismo que el de las subsecciones de Otros; esto
+  // solo le da otra acción. `go()` lo limpia al cambiar de sección.
+  setVolver(fn) {
+    this._volver = fn || null
+    document.getElementById('navBack')?.classList.toggle('hidden', !this._volver && !this._padreActual)
+  },
+
   setContexto(sectionId, txt) {
     this.CONTEXTO[sectionId] = txt || ''
     if (this._actual === sectionId) this._pintaContexto(sectionId)
@@ -566,6 +575,7 @@ const Nav = {
     // El chevron de volver solo tiene sentido dentro de una subsección.
     document.getElementById('navBack')?.classList.toggle('hidden', !padre)
     this._padreActual = padre
+    this._volver = null
     this._actual = sectionId
     this._pintaContexto(sectionId)
     this._pintaHerramientas(sectionId)
@@ -574,7 +584,7 @@ const Nav = {
     if (!this.initialized.has(sectionId)) {
       this.initialized.add(sectionId)
       try {
-        if (sectionId === 'calendar') { await Calendar.init(); await Metrics.init() }
+        if (sectionId === 'calendar') { await Calendar.init(); await Metrics.init(); await Calendarios.init() }
         if (sectionId === 'trades') await TradesTable.init()
         if (sectionId === 'register') { SessionForm.init(); SessionForm.onShow() }
         if (sectionId === 'gallery') await Gallery.init()
@@ -591,6 +601,9 @@ const Nav = {
       } catch (err) {
         Toast.show('Error cargando sección: ' + err.message, 'error')
       }
+    } else if (sectionId === 'calendar') {
+      // El botón Calendario abre siempre la pantalla de los cuatro (diseño §6).
+      Calendarios.alEntrar()
     } else if (sectionId === 'experimentos') {
       Experimentos.reload()
     } else if (sectionId === 'apex') {
@@ -629,7 +642,8 @@ const Nav = {
       document.getElementById('sidebar').classList.toggle('collapsed')
     })
     document.getElementById('navBack')?.addEventListener('click', () => {
-      if (this._padreActual) this.go(this._padreActual)
+      if (this._volver) this._volver()
+      else if (this._padreActual) this.go(this._padreActual)
     })
   }
 }
