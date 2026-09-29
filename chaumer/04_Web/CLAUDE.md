@@ -16,9 +16,9 @@
 | un número (stop, umbral, horario) | `src\content\plan\PARAMETROS.md` |
 | una definición | `src\content\plan\GLOSARIO.md` |
 | el porqué de una regla | su apartado **«Por qué»**, en la misma regla |
-| el texto que se ve en pantalla | `textos\` |
-| cómo se ve el portal | `DISENO_PORTAL.md` |
-| la bitácora de backtesting | `DISENO_BACKTESTING.md` — el diseño cerrado, y manda sobre el código |
+| cómo se ve el portal | el código (`src\pages\`, `src\estilos\tokens.css`) y las reglas de abajo. El diseño original (31/08) está archivado en `docs/archivo/chaumer/`: ya no describe el portal |
+| la bitácora de backtesting | `docs/disenos/2026-09-09-bitacora-backtesting.md` (raíz del repo) — el diseño cerrado, y manda sobre el código |
+| cómo se publica, los secretos, las observaciones en D1 | `DESPLIEGUE.md` |
 
 > ⚠️ **El documento maestro (`TRADING_PLAN_CHAUMER.md`) ya no existe** (26/09/2026): cada regla trae su explicación. Su historia está en `..\01_Plan\HISTORIAL.md`, que el portal no enseña.
 > ⚠️ **No edites nada de `src\content\`.** Se pisa en la siguiente compilación.
@@ -65,7 +65,6 @@ src\componentes\    Marco (la plantilla), Modulo, Marca, Observaciones…
 src\lib\parsers.mjs   convierte los .md del plan en datos — el archivo delicado
 src\estilos\        tokens.css (las variables) + base.css
 src\content\        🚫 generado, no tocar
-textos\             el texto redactado, para que Alfredo lo corrija
 public\conceptos\   los diagramas didácticos (1760×880)
 public\assets\      🚫 generado por el sync
 scripts\            sync, diagramas, y los verificadores
@@ -80,6 +79,9 @@ scripts\            sync, diagramas, y los verificadores
 3. **Nada de `CONTEXTUALIZACION.md` se convierte en regla.** Son recordatorios de criterio, nunca condiciones automáticas.
 4. **El portal no manda órdenes ni se conecta a la cuenta.**
 5. **Nunca uses códigos de regla al hablarle al operador.** En la página sí; en el chat no.
+6. **Cero claves en el paquete, nada de escritura directa desde el navegador.** Lo que lee datos lo hace una función de `functions\api\` con un secreto de Cloudflare (`DESPLIEGUE.md`).
+7. **Una imagen se asocia solo por el nombre del archivo.** Un caso de una sesión lleva el gráfico de su fecha (`05_Backtesting\claude\AAAA-MM-DD.png`); una regla o un ejemplo, su prefijo (`R-xx_…`, `G-xx_…`) en `02_Assets\`. El campo `**Archivo:**` del plan no se usa. Sin imagen, el caso sale igual: nada de suplentes.
+8. **Los códigos del texto se enlazan solos** al renderizar (`markdownRico`, `src\lib\parsers.mjs`): no se escriben enlaces a mano.
 
 ---
 
@@ -102,4 +104,4 @@ Si uno está mal o falta, díselo al operador con el nombre del archivo y qué l
 
 ## Publicar
 
-`DESPLIEGUE.md` tiene el detalle. El portal es **privado** hasta que el operador diga lo contrario.
+**Solo, al hacer push a `main`** (GitHub Actions). El portal es **de entrada libre** y el repositorio, **público**. El detalle —secretos, observaciones en D1, cerrar la puerta— en `DESPLIEGUE.md`.

@@ -28,6 +28,18 @@ Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md
 - [ ] Mañana, en `Documentos\NinjaTrader 8\cadena-diaria\registro.txt`: que el AddOn escribió las velas en
   `claude\motor\datos\dia\` y no volvió a crear la carpeta vieja
 
+## Portal de Alfredo
+
+Rescatados de `chaumer/04_Web/ESTADO_FASE_2.md` al archivarlo (28/09, D-030). Estaban ahí desde el 24/09.
+
+- [ ] **Crear la clave del operador** para ver y borrar las observaciones desde fuera del portal:
+  `npx wrangler pages secret put CLAVE_OPERADOR --project-name=plan-operativo-nq` — **Kris** (`chaumer/04_Web/DESPLIEGUE.md`)
+- [ ] **Alfredo no puede dejar observaciones en los ocho módulos** (premercado, zonas, setups, jornada, entrada,
+  filtros, dentro y riesgo): solo en casos reales y vocabulario, y `/observaciones` es de solo lectura. Es la razón
+  de ser del portal
+- [ ] Simplificar la prosa de los casos reales, que todavía suena a auditoría
+- [ ] Pasarle la dirección a Alfredo — **Kris**, cuando termine su revisión del portal
+
 ## Con fecha (las hace Claude)
 
 - Primer Coach de un día con ficha del motor: que la caché se siga leyendo (`coach_uso.cache_leida` > 0)
