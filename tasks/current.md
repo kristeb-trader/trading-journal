@@ -60,96 +60,38 @@ sesión**, con `/clear` entre una y otra.
 > ℹ️ **Un archivo nuevo que necesite la app** (fuera de `js/`, `css/` o `icons/`) hay que
 > añadirlo al `cp` de `.github/workflows/publicar-journal.yml`. Si no, dará 404 en producción.
 
-### 🟢 Reestructuración de las reglas de Chaumer (26 sep)
+### 🟢 Backtesting de Chaumer (desde el 29 sep)
 
-Diseño aprobado: `docs/disenos/2026-09-25-reglas-chaumer.md` (v1.1). Las reglas pasan a siete archivos, uno por
-grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vigilar.mjs`. **Una fase por sesión.**
+Las reglas están cerradas (reestructuración terminada el 28/09; resumen en `docs/historial-proyecto.md`).
+**Decisión de Kris (28/09):** no se abre más lista de pendientes antes de empezar. Se hace el backtesting y
+**cada duda se resuelve cuando aparezca en un día concreto**, con ese día delante. Lo que cambie el motor lleva
+su regresión (`python scripts/cadena/prueba_motor.py`); lo que cambie el plan, el sí de Kris y su commit `plan:`.
 
-- [x] **F0** — el portal enseña el «Por qué» entero de las 40 reglas; el vigilante, en modo informe
-- [x] **F1** — correcciones (plan 3.14): el stop de la checklist, C-08/C-09 y P-22, versiones y cuentas, el motor
-  lee el umbral de `PARAMETROS.md`. El vigilante baja de 13 a 9 hallazgos, todos de la F2
-- [x] **F2** — 2a (lector y vigilante), 2b (los siete archivos), 2c (consumidores; plan 3.15) y 2d (glosario,
-  checklist, pendientes y estado; plan 3.16). Vigilante estricto en verde
-- [x] La desviación «zonas entre zonas sin límite de cantidad», **cerrada** (plan 3.17, `c3ac598`): desde el
-  27/08 el plan hace lo mismo que Chaumer, banda a banda
-- [x] «Vela envolvente» y «vela interior» son los nombres del plan (Kris, 26/09; planes 3.18 y 3.19): el
-  glosario deja de darlos por retirados y ya dice lo mismo que las reglas
-- [x] **Visto en la 2d, corregido con el sí de Kris:** la zona nueva, en su regla (plan 3.24); los pendientes con textos
-  viejos, al día (3.25)
-- [ ] **Kris, del test ciego:** decidir si las 10 jornadas (10 → 23/09) sirven para el criterio de cierre (9 de 10
-  coincidencias) o hace falta otra tanda con las reglas ya fijas
-- [x] **El registro del test ciego, al día** (plan 3.26, `31e2a4a`): las 10 jornadas en la galería y en
-  `DISCREPANCIAS.md`; el 22/09 confirmado; el 17/09 decidido (un tick de cuerpo basta); pendientes nuevos `P-38` y `P-39`
-- [x] **A · Los pendientes de método, cerrados el 28/09** con Kris, uno a uno (planes 3.26–3.33): reingreso de una
-  sola vela (`P-38`) · el papel de la zona de premercado lo da la apertura (`P-39`) · vela de apertura sin cuerpo
-  (`P-23`) · la Fed, la sesión entera (`P-26`) · `R-08` retirada, 34 reglas (`P-24`) · zonas del mismo tipo que no se
-  tocan son dos (`P-28`) · el 8/07 revalidado (julio **−142,50 en 6**) · tras la noticia roja, la orden vuelve solo si
-  el setup cumple todas las reglas (`R-35`)
-- [ ] **B · El motor, antes del backtesting.** Una cosa por sesión, cada una con su regresión
-  (`python scripts/cadena/prueba_motor.py`) y sin tocar el plan salvo con el sí de Kris:
-  - [x] **Días de Fed** (28/09): `lector.py` lee `chaumer/05_Backtesting/dias_fed.txt`, copia de Fechas Especiales que
-    reescribe la cadena. Fechas Especiales, completa hacia atrás con el calendario oficial de la Fed (migración
-    `2026-09-28-fed-actas-y-day1`: 34 días, los «Day 1» a `otro`, 15 actas; la disciplina de abril baja un punto por
-    el 08/04, aceptado). **Decidido por Kris:** las comparecencias y los discursos del presidente **no** se añaden
-    (el 14-15/07 tampoco: el 15/07 validado se queda como está)
-  - [x] **Noticias rojas** (28/09): `lector.py` aplica `R-35` con `noticias_rojas.txt`, copia de `sesion_noticias`
-    (hora Colombia) que reescribe la cadena. Sin cambios en los 52 días con datos
-  - [x] **Rompimientos de las zonas de premercado** (28/09, `P-34`, la mitad que quedaba): `lector.py` los anota con
-    el mismo criterio que los de las zonas de corrida (resistencia hacia arriba, soporte hacia abajo, una vez por
-    zona), desde la vela base y aunque haya orden puesta. Solo alimentan el Reingreso: la Continuación sigue pidiendo
-    su IRI. **Ninguna operación cambia** en los 52 días con datos; 8 días ganan eventos (rompimientos y reingresos
-    descartados). La regresión comprueba el 11/09 (8:47) y el 18/09 (8:49). `PENDIENTES.md` sigue diciendo
-    «pendiente»: marcarlo cerrado es un cambio del plan y necesita el sí de Kris
-  - [ ] **Kris · el 11/09 sigue sin su reingreso de las 9:01**, y ya no por el premercado: el motor exige que la
-    consecución del rompimiento llegue en 5 velas, y ese día llegó en la 13.ª (8:47 → 9:00). El plan dice que el
-    traspaso no tiene plazo y que el plazo no aplica al reingreso. Quitando el tope sale el reingreso tal cual se
-    encontró a mano (29.440,25 / 29.475,00, descartado por el punto de referencia 29.423,00), aparecen 11 avisos
-    de reingreso más en otros 8 días, todos descartados salvo dos órdenes (23/07, que no llega a llenarse, y 24/07),
-    y cambia **una** operación: **24/07**, Reingreso alcista 9:21, **+38,00**
-    (día no validado). Decidir si la consecución del reingreso tiene tope de 5 velas
-  - [ ] **Kris · ¿puede una zona de premercado dar Continuación?** `R-25` dice que no hay Continuación sin la zona que
-    crea su propia corrida; `R-15` pone «Aplica a: Continuación · Reingreso» y `R-40` habla de no operar el
-    rompimiento de una zona de premercado cuando se pierde la fluidez, como si con fluidez se pudiera. El motor
-    sigue a `R-25`. Relacionado: la salida de una zona que abrió con la ventana dentro (ningún día de los 60 hasta
-    hoy) no se anota como rompimiento que pueda fallar
-  - [ ] Resolver el plazo de consecución antes de la 5.ª vela cuando se arma la estructura contraria (`P-31`)
-  - [ ] Comprobar el marcado contra la secuencia de banda y turno, con julio delante (`P-33`)
-  - [ ] Umbral de volumen NQ frente a MNQ (`P-32`): **Kris** exporta de NinjaTrader el premercado de MNQ de los 11
-    días de julio
-- [ ] **Después de B:** congelar la versión del plan, 10 jornadas nuevas de test ciego con las reglas fijas, y entonces
-  el backtesting de un año. Lo de **C** (regla de parada, mín/máx de premercado, retroceso mínimo) se cierra con el
-  backtesting; lo de **D** (Apex, cierre sin hora, conexión, términos del curso) no lo bloquea
-- [ ] **Kris, para aclarar el texto de `R-36`:** dice que es día de Fed el de un evento rojo de la Fed, «decisión de
-  tipos, actas o discursos de Powell»; el 28/09 se decidió no añadir comparecencias ni discursos del presidente.
-  Ajustar el texto a lo que se hace, con su sí
-- [ ] **Errata del plan, vista el 28/09** (corregir con el sí de Kris, en su commit `plan:`): `R-09`, en «Los límites»,
-  dice «el cierre si la vela es verde, la apertura si es roja»; el plan habla de velas **azules** y **blancas**
-- [ ] **Kris, efecto del motor ajustado el 28/09** (reingreso de una sola vela): cambian 3 operaciones de días **no**
-  validados — 23/07 (Reingreso −17,00 → Continuación bajista +32,25), 03/08 (Reingreso +11,25 → NO OPERA) y **24/09**
-  (Reingreso bajista 8:49 +21,50 → NO OPERA). ⚠️ **Corregido el 28/09:** la ficha del 24/09 en `motor_fichas` **no** se queda como estaba: `subir_dia.py --pendientes` rehace las fichas de los últimos 10 días cuando cambia la huella del motor, así que la próxima pasada del AddOn la reescribe con el motor nuevo (NO OPERA)
-- [x] **F3** — las fusiones, 40 → **35** (planes 3.20–3.23, cada una con el sí de Kris; la vela de apertura, a las 09:31 en invierno). Los documentos del Coach, sincronizados: ~122 KB. **Kris/Claude:** mirar en `coach_uso` el consumo de la próxima sesión del Coach (28/09: todavía ninguna desde la del 24/09)
-- [x] **F4** — la ficha nueva del portal (28/09, `a5f9847`) y, de paso, el menú del móvil en las páginas de reglas. La cabecera del portal ya dice «Futuros MNQ» (Kris, 28/09). **La reestructuración de las reglas está terminada**
+- [ ] **Arrancar en una sesión nueva:** decidir con Kris qué backtesting (el manual de `05_01_Operativo`, con
+  116 gráficos de 2025, o el del motor) y con qué datos. El motor tiene velas del 01/07 al 25/08/2026
+  (`NQ 09-26.Last.txt`) y los días del test ciego desde el 10/09: **para un año hacen falta las velas de 1 minuto
+  de MNQ de ese año**, exportadas de NinjaTrader
 
-### 🟡 El plan de Chaumer: lo que estaba «pendiente de Cowork» (25 sep, D-028)
+**Dudas ya vistas — no son tareas.** Están aquí para reconocerlas cuando salgan en un día, no para resolverlas
+antes. El registro del método (con los huecos declarados, que no se borran) sigue en `chaumer/01_Plan/PENDIENTES.md`.
 
-Cowork ya no existe: el plan se cambia desde aquí. **Todo lo que toque `chaumer/01_Plan/` necesita el sí de
-Kris**, erratas incluidas, y va en su propio commit `plan: …`, con la versión subida y sincronizado (ver
-arriba). Venían de los dos buzones archivados en `docs/archivo/chaumer/`, donde está el detalle.
-
-- [x] **Antes del 2/11** — `test_ciego/LEEME_BACK_DIARIO.md` solo da la ventana de verano (08:31–10:30 Col =
-  13:31–15:30 UTC). Añadir la de invierno: desde el 2/11, 09:31–11:30 Col = 14:31–16:30 UTC. No es del plan,
-  pero sin esto el test ciego marca mal la hora
-- [x] **Plan** · `CHECKLIST_DIARIA.md`: la nota de debajo de los filtros dice «los cuatro filtros» y son cinco.
-  Propuesta (22/09): quitar el número, como ya hace el portal, o poner cinco
-- [x] **Plan** · `CHECKLIST_DIARIA.md`, línea 70: «IRI descartado» → «Continuación descartada». Resto del cambio
-  del 23/09; sale publicada en la checklist del portal
-- [x] **Plan** · `ESTADO.md`, línea 120: remite a `04_Web\PENDIENTE_PORTAL.md`, que está archivado
-- [x] **Kris** · el **8/07** revalidado vela a vela (28/09, plan 3.32): el Reingreso bajista de las 8:38 es válido,
-  −64,75. Julio pasa de −77,75 en 5 a **−142,50 en 6**
-- [ ] **Diagramas**, revisados por Kris uno a uno: `09-zona-volumen.png` (y su copia
-  `02_Assets/diagramas/R-15_premercado_volumen.png`) lleva dibujado el umbral de 2.000; el vigente es más
-  de 8.000 en MNQ (pendiente desde el 08/09). Y los **siete diagramas de reglas de agosto**, que se van del
-  portal cuando estén rehechos; después, unificar las carpetas de imágenes
+- **Plazo de la consecución del reingreso.** El motor le pone tope de 5 velas; el plan dice que el traspaso no
+  tiene plazo. Caso: 11/09, reingreso de las 9:01 (consecución en la 13.ª vela). Sin tope cambia el 24/07 (+38,00)
+- **¿Una zona de premercado da Continuación?** `R-25` dice que no; `R-15` y `R-40` lo dejan abierto. El motor
+  dice que no. Tampoco anota como rompimiento la salida de una zona que abrió con la ventana dentro
+- **Resolución anticipada del plazo** (`P-31`) y **marcado por banda y turno** (`P-33`): el motor no está
+  comprobado en esos dos puntos
+- **Umbral de volumen MNQ frente a NQ** (`P-32`): los días de julio se marcaron con el de NQ
+- **Tres operaciones que cambió el motor el 28/09** (días no validados): 23/07 (−17,00 → +32,25), 03/08
+  (+11,25 → NO OPERA) y 24/09 (+21,50 → NO OPERA)
+- **Test ciego:** sin decidir si las 10 jornadas (10 → 23/09) cierran el criterio de 9 de 10
+- **Textos del plan desfasados** (con el sí de Kris): la errata de colores de `R-09` («verde/roja» por
+  azul/blanca); `R-36` nombra los discursos de Powell y se decidió no contarlos; `PENDIENTES.md` da por no
+  hechos el filtro de noticias rojas del motor (`P-27`) y los rompimientos de premercado (`P-34`), que ya lo están
+- **Diagramas por rehacer:** el del volumen de premercado (dibuja 2.000; vale más de 8.000) y los siete de agosto
+- **Se cierran con los números del backtesting:** regla de parada, mín/máx de premercado, retroceso mínimo
+  (falta la comisión real por contrato MNQ)
+- **No bloquean:** reglas de Apex, sesión sin hora de cierre, nombre de la conexión, términos del curso
 
 ### 🟢 Empezar a cargar las operativas de Chaumer (19 ago)
 

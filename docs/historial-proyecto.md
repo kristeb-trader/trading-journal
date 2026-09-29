@@ -2877,6 +2877,27 @@ Commits: `f20786d` · `21b82c0` · `221379d` · `29496d7` · `3bbaffa` · `fb32a
 
 Commits: `272b5ea` · `57006aa` · `804a1dc` y el de la 6c.
 
+## Checkpoint 2026-09-28 — Las reglas de Chaumer, cerradas: se pasa al backtesting
+
+Diseño: `docs/disenos/2026-09-25-reglas-chaumer.md` (v1.6). **La reestructuración está terminada:** las reglas
+viven en siete archivos por grupo con una plantilla fija, `reglas.json` se genera y el vigilante pasa en modo
+estricto. Cinco fases: F0 (el «Por qué» entero en el portal) · F1 (correcciones) · F2 (los siete archivos y
+sus consumidores) · F3 (fusiones, 40 → 35) · F4 (la ficha nueva del portal). Después, con Kris uno a uno, los
+pendientes de método (planes 3.26–3.33): reingreso de una sola vela, el papel de la zona de premercado lo da la
+apertura, vela de apertura sin cuerpo, la Fed la sesión entera, una regla retirada (**34 reglas**), el 8/07
+revalidado (julio **−142,50 en 6**) y la orden tras la noticia roja.
+
+El motor, el 28/09: lee los días de Fed de Fechas Especiales (completada hacia atrás con el calendario oficial),
+aplica las noticias rojas y anota los rompimientos de las zonas de premercado. Ninguno cambió una operación
+validada, y cada uno pasó su regresión (`scripts/cadena/prueba_motor.py`).
+
+**Decisión de Kris:** no se abre otra lista de pendientes antes de empezar. Se hace el backtesting y cada duda
+se resuelve cuando aparezca en un día concreto. Las dudas ya vistas quedan en `tasks/current.md` como
+referencia, no como tareas; también se cerró ahí la sección de lo que venía de Cowork (todo hecho salvo los
+diagramas, que pasan a esa lista).
+
+---
+
 ## Checkpoint 2026-09-25c — Cowork deja de existir: el plan se trabaja desde Claude Code
 
 Kris decidió que el plan de Chaumer, el test ciego, el motor y los diagramas se trabajen desde aquí. `01_Plan`
