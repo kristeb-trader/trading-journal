@@ -2,7 +2,7 @@
  * nombres.mjs — que el nombre viejo del setup no vuelva a salir.
  *
  * El 23/09/2026 el operador renombro el setup IRI a Continuacion, alcista o
- * bajista, y quito la etiqueta Apertura (CAMBIO_IRI_A_CONTINUACION.md). IRI
+ * bajista, y quito la etiqueta Apertura (docs/archivo/chaumer/CAMBIO_IRI_A_CONTINUACION.md). IRI
  * sigue existiendo, pero nombra la ESTRUCTURA —impulso, retroceso, impulso—,
  * asi que no se puede prohibir la palabra: «esperar un IRI nuevo entero mas
  * alla» es correcto.

@@ -1,5 +1,7 @@
 # Bitácora de backtesting operativo — diseño cerrado
 
+> Vivía en `chaumer/04_Web/DISENO_BACKTESTING.md`; desde el 29/09/2026 está aquí, con los demás diseños (D-030).
+
 **Cerrado con el operador el 09/09/2026.** Este archivo es la referencia:
 si el código y este documento se contradicen, manda este documento.
 

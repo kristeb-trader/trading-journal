@@ -25,7 +25,10 @@ chaumer/00_Guias/
 
 # trabajo interno cerrado: se conserva en disco, no en el repositorio
 chaumer/**/_Historia/
-chaumer/03_Materia_Prima/transcripciones/
+
+# material de terceros archivado (transcripciones de Chaumer, capturas): en disco,
+# nunca en el repositorio, que es publico (D-022, D-030)
+docs/archivo/chaumer/materia-prima/
 
 # datos de mercado exportados de NinjaTrader
 chaumer/05_Backtesting/claude/motor/datos/
@@ -43,12 +46,6 @@ chaumer/04_Web/src/content/
 chaumer/04_Web/public/assets/
 chaumer/04_Web/public/min/
 chaumer/04_Web/public/_detector.js
-
-# imagenes que caen en textos/ al corregir contenido: se copian a public/
-chaumer/04_Web/textos/*.jfif
-chaumer/04_Web/textos/*.jpg
-chaumer/04_Web/textos/*.jpeg
-chaumer/04_Web/textos/*.png
 
 # Cloudflare en local: .dev.vars lleva CLAVE_OPERADOR para probar en el equipo;
 # .wrangler/ es la base y el almacen simulados

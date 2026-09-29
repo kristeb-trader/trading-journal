@@ -139,7 +139,7 @@ export function categorias() {
  * Reglas que viven en una categoria pero contestan tambien desde otra.
  *
  * Declarado a mano porque el archivo de reglas no lo dice: sale de
- * `01_Plan/PROPUESTA_LIMPIEZA_REGLAS.md`, punto 4. Hoy es un solo caso — la
+ * `docs/archivo/chaumer/cowork/PROPUESTA_LIMPIEZA_REGLAS.md`, punto 4. Hoy es un solo caso — la
  * regla del rompimiento y la consecucion define como muere una zona Y como se
  * entra, asi que tiene que aparecer en los dos sitios.
  *

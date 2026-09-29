@@ -4,7 +4,7 @@
 // curva de capital, las cifras y la tabla por meses las enseña el portal de
 // Chaumer, que lee estas mismas tablas en solo lectura (vistas `portal_bt_*`).
 // Diseño: docs/disenos/2026-09-24-unificacion-chaumer.md (fase 4b) y
-// chaumer/04_Web/DISENO_BACKTESTING.md.
+// docs/disenos/2026-09-09-bitacora-backtesting.md.
 //
 // Reglas que no se rompen aquí:
 //   · No hay metodología: no se valida si una operación cumple el plan. Es un
