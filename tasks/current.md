@@ -80,14 +80,32 @@ grupo, con una plantilla fija; lo demás se genera y lo revisa `scripts/plan/vig
   coincidencias) o hace falta otra tanda con las reglas ya fijas
 - [x] **El registro del test ciego, al día** (plan 3.26, `31e2a4a`): las 10 jornadas en la galería y en
   `DISCREPANCIAS.md`; el 22/09 confirmado; el 17/09 decidido (un tick de cuerpo basta); pendientes nuevos `P-38` y `P-39`
-- [ ] **Antes del backtesting, cerrar los pendientes de método** (acordado con Kris el 28/09). Orden: **A** · decisiones
-  de Kris, una a una — ~~reingreso de una sola vela~~ (`P-38`, **cerrado** 28/09, plan 3.27) · ~~rompimiento en el premercado~~ (`P-39`, **cerrado** 28/09, plan
-  3.28: el papel de la zona de premercado lo da la apertura) · ~~vela de apertura sin cuerpo~~ (`P-23`, **cerrado** 28/09, plan 3.29) · ~~la Fed~~ (`P-26`, **cerrado**: la sesión entera) · ~~¿sobra la vela envolvente?~~ (`P-24`, **cerrado**: `R-08` retirada, la absorbe `R-07`; plan 3.30, 34 reglas)
-  · ~~zonas del mismo tipo muy cerca~~ (`P-28`, **cerrado**: si no se tocan son dos; plan 3.31) · ~~revalidar el 8/07~~ (**hecho**: válido, julio −142,50 en 6). **B** · el motor, después de A: resolución anticipada
-  (`P-31`), banda y turno (`P-33`), rompimientos de premercado (`P-34`), calendario de noticias y de Fed (`P-27`) — **la mitad de Fed, hecha el 28/09**: `lector.py` lee `dias_fed.txt`, la copia de Fechas Especiales que reescribe la cadena; el 19/08 ya no opera. Fechas Especiales completa hacia atrás con el calendario oficial de la Fed (28/09, migración `2026-09-28-fed-actas-y-day1`): 34 días; los «Day 1» a `otro`; entran 15 actas; la disciplina de abril baja un punto por el 08/04 (aceptado por Kris). Las **noticias rojas**, en el motor el 28/09: `lector.py` aplica R-35 con `noticias_rojas.txt` (copia de `sesion_noticias`, hora Colombia, que reescribe la cadena); sin cambios en los 52 días con datos. ISM del 01/09 corregido por Kris a las 9:00; recolocación confirmada por Kris (solo si el setup sigue vivo y cumpliendo reglas; si no, otro setup) y pendiente de escribir en R-35 con su sí · **Kris:** las comparecencias de Warsh del 14 y 15/07/2026, que anotaste en rojo, ¿van a Fechas Especiales como día de Fed? Y **Kris** mira en Forex Factory cuáles salieron en rojo de las comparecencias semestrales (11-12/02/2025, 24-25/06/2025, 14-15/07/2026) y los discursos del presidente (Jackson Hole 22/08/2025 y cinco de 2025), para cargarlos, umbral NQ/MNQ
-  (`P-32`; Kris exporta el premercado de MNQ de julio). Luego congelar versión, 10 jornadas de test ciego con reglas
-  fijas, y entonces el backtesting. **C** (se cierran con el backtesting: parada, mín/máx de premercado, retroceso
-  mínimo) y **D** (Apex, cierre sin hora, conexión, términos del curso) no lo bloquean
+- [x] **A · Los pendientes de método, cerrados el 28/09** con Kris, uno a uno (planes 3.26–3.33): reingreso de una
+  sola vela (`P-38`) · el papel de la zona de premercado lo da la apertura (`P-39`) · vela de apertura sin cuerpo
+  (`P-23`) · la Fed, la sesión entera (`P-26`) · `R-08` retirada, 34 reglas (`P-24`) · zonas del mismo tipo que no se
+  tocan son dos (`P-28`) · el 8/07 revalidado (julio **−142,50 en 6**) · tras la noticia roja, la orden vuelve solo si
+  el setup cumple todas las reglas (`R-35`)
+- [ ] **B · El motor, antes del backtesting.** Una cosa por sesión, cada una con su regresión
+  (`python scripts/cadena/prueba_motor.py`) y sin tocar el plan salvo con el sí de Kris:
+  - [x] **Días de Fed** (28/09): `lector.py` lee `chaumer/05_Backtesting/dias_fed.txt`, copia de Fechas Especiales que
+    reescribe la cadena. Fechas Especiales, completa hacia atrás con el calendario oficial de la Fed (migración
+    `2026-09-28-fed-actas-y-day1`: 34 días, los «Day 1» a `otro`, 15 actas; la disciplina de abril baja un punto por
+    el 08/04, aceptado). **Decidido por Kris:** las comparecencias y los discursos del presidente **no** se añaden
+    (el 14-15/07 tampoco: el 15/07 validado se queda como está)
+  - [x] **Noticias rojas** (28/09): `lector.py` aplica `R-35` con `noticias_rojas.txt`, copia de `sesion_noticias`
+    (hora Colombia) que reescribe la cadena. Sin cambios en los 52 días con datos
+  - [ ] **Siguiente: los rompimientos de las zonas de premercado** (`P-34`, la mitad que queda): el motor solo anota
+    rompimientos de zonas nacidas de corrida, así que no ve continuaciones ni reingresos sobre zonas de premercado
+  - [ ] Resolver el plazo de consecución antes de la 5.ª vela cuando se arma la estructura contraria (`P-31`)
+  - [ ] Comprobar el marcado contra la secuencia de banda y turno, con julio delante (`P-33`)
+  - [ ] Umbral de volumen NQ frente a MNQ (`P-32`): **Kris** exporta de NinjaTrader el premercado de MNQ de los 11
+    días de julio
+- [ ] **Después de B:** congelar la versión del plan, 10 jornadas nuevas de test ciego con las reglas fijas, y entonces
+  el backtesting de un año. Lo de **C** (regla de parada, mín/máx de premercado, retroceso mínimo) se cierra con el
+  backtesting; lo de **D** (Apex, cierre sin hora, conexión, términos del curso) no lo bloquea
+- [ ] **Kris, para aclarar el texto de `R-36`:** dice que es día de Fed el de un evento rojo de la Fed, «decisión de
+  tipos, actas o discursos de Powell»; el 28/09 se decidió no añadir comparecencias ni discursos del presidente.
+  Ajustar el texto a lo que se hace, con su sí
 - [ ] **Errata del plan, vista el 28/09** (corregir con el sí de Kris, en su commit `plan:`): `R-09`, en «Los límites»,
   dice «el cierre si la vela es verde, la apertura si es roja»; el plan habla de velas **azules** y **blancas**
 - [ ] **Kris, efecto del motor ajustado el 28/09** (reingreso de una sola vela): cambian 3 operaciones de días **no**
