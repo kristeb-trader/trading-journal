@@ -29,7 +29,7 @@ Esta capa **es, por definición, decidir a ojo**. Y este proyecto nació de una 
 
 Dos consecuencias que conviene no olvidar:
 
-1. **El test ciego de `F1.11` solo puede validar los parámetros.** Si la contextualización es lo que decide operar o no —y en Chaumer lo es: en las 4 sesiones grabadas no operó 2 días por contexto— las divergencias en esas capturas no significarán que el plan esté mal escrito.
+1. **Las sesiones de validación de `F1.11` solo pueden validar los parámetros.** Si la contextualización es lo que decide operar o no —y en Chaumer lo es: en las 4 sesiones grabadas no operó 2 días por contexto— las divergencias en esas capturas no significarán que el plan esté mal escrito.
 2. **Es la puerta por la que vuelven los Errores 1 y 5** de `Guia_Sesion_Chaumer_NQ_v4.pdf`. Los dos fueron decisiones de contexto tomadas en caliente.
 
 La capa está separada y con nombre precisamente para eso: **para que el operador sepa en todo momento en qué modo está decidiendo.**

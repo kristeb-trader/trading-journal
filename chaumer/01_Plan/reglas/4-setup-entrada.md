@@ -164,7 +164,7 @@ Es la traducción medible de «no es fluida» y «está lateral». Palabras del 
 
 **Primera jornada que lo ejercita entero · 21/09/2026.** Abre alcista. Se pierde a las **8:34** (retroceso de 44,25 contra corrida de 38,75) · rompimiento directo a las **8:37** · se recupera con un largo a las 8:49 que **se cancela antes de llenar** · se **vuelve a perder** a las **8:51** (20,00 contra 16,25) · segundo rompimiento directo a las **8:52** · se recupera con la entrada de las **8:59**, +23,75 pts.
 
-**Origen:** test ciego — jornadas del 10, 11 y 14 de septiembre de 2026, y la revisión del 16/07. Ver `05_Backtesting\test_ciego\DISCREPANCIAS.md`.
+**Origen:** sesiones de septiembre — jornadas del 10, 11 y 14 de septiembre de 2026, y la revisión del 16/07. Ver `05_Backtesting\claude\protocolo\DISCREPANCIAS.md`.
 
 ## R-41 · Punto de referencia
 
@@ -203,4 +203,4 @@ No es un nivel nuevo que haya que buscar: **es un vértice del zigzag de corrida
 
 **Caso de origen · viernes 11/09/2026.** Reingreso bajista a las **9:01** sobre la zona de premercado de 8:29: entrada **29.440,25**, stop **29.475,00**, objetivo **29.405,50**, riesgo 34,75. El punto de referencia de la vela de **8:58**, en **29.423,00**, queda en medio — y el objetivo lo pasa. **Descartado.** El operador tampoco lo tomó. Sin esta regla el día habría dado +34,75 pts; con ella, la jornada es **NO OPERA**.
 
-**Origen:** test ciego del 14/09/2026 sobre la jornada del 11/09 — ver `05_Backtesting\test_ciego\DISCREPANCIAS.md`.
+**Origen:** sesiones de septiembre, el 14/09/2026 sobre la jornada del 11/09 — ver `05_Backtesting\claude\protocolo\DISCREPANCIAS.md`.

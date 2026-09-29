@@ -273,7 +273,7 @@ Desviación consciente `D-09`: *Parámetros Chaumer* dice *"solo marcamos los ex
 
 > 🔵 **El umbral es un parámetro, no un número del método.** Decisión del operador, con sus palabras: *"vamos a dejar en reglas que el umbral del volumen del premercado va a ser paramétrico, porque eso depende de la volatilidad del momento"*. El valor vive en `PARAMETROS.md` y la regla cita el nombre, no la cifra.
 >
-> 🔴 **No es un ajuste fino, es un interruptor:** en la primera jornada del test ciego (10/09/2026), dos umbrales distintos dan dos días distintos. Por eso lo fija el operador sin criterio medible, a propósito (`P-37`), y **nunca con la sesión empezada**: sin esa línea, el umbral se podría mover *después* de ver el día, y eso convertiría el backtesting en ajuste a posteriori.
+> 🔴 **No es un ajuste fino, es un interruptor:** en la primera de las sesiones de septiembre (10/09/2026), dos umbrales distintos dan dos días distintos. Por eso lo fija el operador sin criterio medible, a propósito (`P-37`), y **nunca con la sesión empezada**: sin esa línea, el umbral se podría mover *después* de ver el día, y eso convertiría el backtesting en ajuste a posteriori.
 >
 > ⚠️ La equivalencia entre el umbral de MNQ y el antiguo de NQ **no está verificada** con datos, y las 11 sesiones validadas se marcaron con el umbral de NQ sobre datos de NQ — ver `P-32`.
 

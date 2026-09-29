@@ -2,15 +2,15 @@
 
 > **Archivo de arranque.** Léelo primero cada sesión. Las reglas, en `reglas/` (un archivo por grupo); las definiciones, en `GLOSARIO.md`.
 
-**v3.33** · 2026-09-28 · **34 reglas** · 🏁 FASE 1 CERRADA · 🔴 **TEST CIEGO EN MARCHA** · 🚧 FASE 2 en curso: portal web en `04_Web\`
+**v3.34** · 2026-09-28 · **34 reglas** · 🏁 FASE 1 CERRADA · 🔴 **SESIONES EN MARCHA** · 🚧 FASE 2 en curso: portal web en `04_Web\`
 
-> 🔴 **El test ciego arrancó el 14/09/2026.** Protocolo en `05_Backtesting\test_ciego\LEEME_BACK_DIARIO.md`; diferencias en `DISCREPANCIAS.md`; las jornadas, en `GALERIA.md`.
+> 🔴 **Las sesiones de validación arrancaron el 14/09/2026.** Protocolo en `05_Backtesting\claude\protocolo\LEEME.md`; diferencias en `DISCREPANCIAS.md`; las jornadas, en `GALERIA.md`.
 
 ## ⚠️ Advertencia de uso
 
 **El plan está escrito y contrastado, no probado.** Los cuatro huecos declarados del cierre de la fase 1 siguen escritos en `PENDIENTES.md` y en `CIERRE_FASE_1.md`, y de ahí no se borran:
 
-🚨 `P-29` el **test ciego** —en marcha desde el 14/09/2026, sin cerrar · 🚨 `P-21` **no hay regla de parada** · 🚨 falta toda la **capa de contextualización** · 🚨 `P-27` las cifras del backtesting **no miden la estrategia**.
+🚨 `P-29` las **sesiones de validación** —en marcha desde el 14/09/2026, sin cerrar · 🚨 `P-21` **no hay regla de parada** · 🚨 falta toda la **capa de contextualización** · 🚨 `P-27` las cifras del backtesting **no miden la estrategia**.
 
 ## Las 34 reglas, por grupo
 
@@ -106,7 +106,7 @@
 
 🚧 **Fase 2 en curso — el portal web**, en `04_Web\`, construido desde Claude Code contra `reglas.json`. Instrucciones en `CLAUDE.md` (raíz) y `04_Web\CLAUDE.md`. Lo que queda por hacer está en `tasks/current.md`, en la raíz del repositorio (desde el 25/09/2026, D-028).
 
-**Aplazado, con fecha por decidir:** la capa de contextualización · el backtesting de un año · el bot de NinjaTrader · el test ciego, que puede ejecutarse **contra el portal**.
+**Aplazado, con fecha por decidir:** la capa de contextualización · el backtesting de un año · el bot de NinjaTrader · las sesiones de validación, que pueden hacerse **contra el portal**.
 
 ## Reglas permanentes del proyecto
 

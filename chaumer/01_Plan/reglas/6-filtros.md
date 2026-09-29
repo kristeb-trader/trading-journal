@@ -76,6 +76,6 @@ Una sola fuente evita el conflicto de dos calendarios que no siempre coinciden.
 
 ### Por qué
 
-> ⚠️ **Es la única regla del plan sin criterio medible**, y la única que **un tercero no puede verificar**. Queda **fuera del alcance del test ciego**: ninguna captura podrá decir si se aplicó bien o mal.
+> ⚠️ **Es la única regla del plan sin criterio medible**, y la única que **un tercero no puede verificar**. Queda **fuera del alcance de las sesiones de validación**: ninguna captura podrá decir si se aplicó bien o mal.
 >
 > El operador la mantiene como criterio libre a propósito, y está registrado que lo es — no es un olvido ni un pendiente disfrazado.

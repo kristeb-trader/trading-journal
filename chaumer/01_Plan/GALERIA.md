@@ -5,7 +5,7 @@
 
 **Abierta:** 2026-08-24 · **24 casos documentados** · gráficos NQ y MNQ 09-26, 1 minuto
 >
-> 🔴 **`G-22` en adelante son del TEST CIEGO** — marcados sin ver lo que hizo el operador, y contrastados después. Son los únicos casos que no se construyeron mirando la respuesta. Gráficos en `05_Backtesting\test_ciego\Back_claude\`.
+> 🔴 **`G-22` en adelante son sesiones de septiembre** — marcadas sin ver lo que hizo el operador, y contrastadas después. Son los únicos casos que no se construyeron mirando la respuesta. Gráficos en `05_Backtesting\claude\`.
 
 ---
 
@@ -221,9 +221,9 @@ Stop y target marcados a **43 puntos** cada uno — **1:1 correcto** (`R-32`) y 
 
 ---
 
-## G-11 · 🔴 LA SESIÓN COMPLETA · 10 JULIO 2026 · primer caso con PÉRDIDA REAL
+## G-11 · 🔴 SESIÓN · 10 JULIO 2026 · primer caso con PÉRDIDA REAL
 
-**Archivo:** `../05_Backtesting/G-11_10jul_operacion.png` · **Reglas:** todas las del ciclo operativo
+**Archivo:** `05_Backtesting\claude\2026-07-10.png` · **Reglas:** todas las del ciclo operativo
 
 > **Único caso de la galería reconstruido al tick desde datos exactos de NinjaTrader**, vela a vela y en directo con el operador.
 
@@ -308,7 +308,7 @@ Stop y target marcados a **43 puntos** cada uno — **1:1 correcto** (`R-32`) y 
 
 ---
 
-## G-12 · 🔴 LA SESIÓN COMPLETA · 6 JULIO 2026 · una Continuación rechazada y un Reingreso operado sobre la MISMA zona
+## G-12 · 🔴 SESIÓN · 6 JULIO 2026 · una Continuación rechazada y un Reingreso operado sobre la MISMA zona
 
 **Archivo:** `../02_Assets/galeria/L6_sesion_completa.png` · **Reglas:** `R-15`, `R-07`, `R-05`, `R-06`, `R-09`, `R-16`, `R-12`, `R-20`, `R-31`, `R-26`, `R-32`, `R-34`
 
@@ -362,7 +362,7 @@ Stop y target marcados a **43 puntos** cada uno — **1:1 correcto** (`R-32`) y 
 
 ---
 
-## G-13 · 🔴 SESIÓN COMPLETA · 8 JULIO 2026 · el día que reescribió el marcado de zonas
+## G-13 · 🔴 SESIÓN · 8 JULIO 2026 · el día que reescribió el marcado de zonas
 
 **FOMC.** Solo se permiten Reingresos (`R-36`). **Reingreso bajista a las 8:38 → STOP 8:41, −64,75 pts.** Sobre la resistencia de la 8:33: la 8:36 la rompe, la 8:37 —blanca— da la consecución y se desploma por debajo de la zona en la misma vela (como el 6/07, `G-12`). Entrada 29.273,25, stop 29.338,00, objetivo 29.208,50.
 
@@ -385,7 +385,7 @@ El valor de este día no está en la operativa sino en el marcado. El operador c
 
 ---
 
-## G-14 · 🔴 SESIÓN COMPLETA · 9 JULIO 2026 · el día que quitó el sesgo de dirección
+## G-14 · 🔴 SESIÓN · 9 JULIO 2026 · el día que quitó el sesgo de dirección
 
 **Operación:** Continuación alcista · entrada **29.871,50** · stop **29.811,75** · objetivo 29.931,25 · riesgo **59,75 pts** → **STOP** en la vela de las 8:50 · **−59,75 pts = −119,50 USD**
 
@@ -403,7 +403,7 @@ El valor de este día no está en la operativa sino en el marcado. El operador c
 
 ---
 
-## G-15 · 🔴 SESIÓN COMPLETA · 7 JULIO 2026 · la zona apéndice y el stop que descarta la entrada
+## G-15 · 🔴 SESIÓN · 7 JULIO 2026 · la zona apéndice y el stop que descarta la entrada
 
 **Operación:** Continuación bajista · entrada **29.226,00** · stop **29.282,50** · objetivo 29.169,50 · riesgo **56,50 pts** → **STOP** en la vela de las 9:48 · **−56,50 pts = −113,00 USD**
 
@@ -417,7 +417,7 @@ El valor de este día no está en la operativa sino en el marcado. El operador c
 
 ---
 
-## G-16 · 🟢 SESIÓN COMPLETA · 13 JULIO 2026 · el reingreso bueno, y el que no lo era
+## G-16 · 🟢 SESIÓN · 13 JULIO 2026 · el reingreso bueno, y el que no lo era
 
 **Operación:** Reingreso bajista · entrada **29.724,00** · stop **29.752,50** · objetivo 29.695,50 · riesgo **28,50 pts** → **TARGET** en la vela de las 10:09 · **+28,50 pts = +57,00 USD**
 
@@ -437,7 +437,7 @@ El valor de este día no está en la operativa sino en el marcado. El operador c
 
 ---
 
-## G-17 · ⚪ SESIÓN COMPLETA · 14 JULIO 2026 · el día que se decidió por tres ticks y medio
+## G-17 · ⚪ SESIÓN · 14 JULIO 2026 · el día que se decidió por tres ticks y medio
 
 **Operación:** ninguna. **NO HAY OPERACIÓN en toda la ventana.** 5 zonas marcadas · 3 vigentes al cierre de las 10:30.
 
@@ -458,7 +458,7 @@ El valor de este día no está en la operativa sino en el marcado. El operador c
 
 ---
 
-## G-18 · 🟢 SESIÓN COMPLETA · 15 JULIO 2026 · la primera Continuación ganadora, y una vela que hace dos cosas a la vez
+## G-18 · 🟢 SESIÓN · 15 JULIO 2026 · la primera Continuación ganadora, y una vela que hace dos cosas a la vez
 
 **Operación:** Continuación bajista · entrada **29.910,25** · stop **29.966,50** · objetivo 29.854,00 · riesgo **56,25 pts** → **TARGET** en la vela de las 8:39 · **+56,25 pts = +112,50 USD**
 
@@ -482,7 +482,7 @@ La vela **8:37** se queda a **cuatro ticks** de llenar (mínimo 29.911,25). El r
 
 ---
 
-## G-19 · 🟢 SESIÓN COMPLETA · 16 JULIO 2026 · segunda ganadora, con el stop al 94 % del máximo
+## G-19 · 🟢 SESIÓN · 16 JULIO 2026 · segunda ganadora, con el stop al 94 % del máximo
 
 > 🔴 **RETIRADA EL 14/09/2026.** Esta operación **ya no existe** con las reglas de hoy. La apertura sube 71,75 puntos y el retroceso baja **132,25**: el retroceso se pasa, así que el soporte que deja no se opera en rompimiento directo. El corto de 8:40 era exactamente eso.
 >
@@ -512,7 +512,7 @@ La vela **8:37** se queda a **cuatro ticks** de llenar (mínimo 29.911,25). El r
 
 ---
 
-## G-20 · 🔴 SESIÓN COMPLETA · 17 JULIO 2026 · la que rompe la racha, y el corte del marcado en el llenado
+## G-20 · 🔴 SESIÓN · 17 JULIO 2026 · la que rompe la racha, y el corte del marcado en el llenado
 
 **Operación:** Continuación bajista · entrada **28.434,75** · stop **28.512,00** · objetivo 28.357,50 · riesgo **77,25 pts** → **STOP** en la vela de las 8:49 · **−77,25 pts = −154,50 USD**
 
@@ -538,7 +538,7 @@ Aparecía dibujado un soporte nacido con la vela de las **8:45** — **después 
 
 ---
 
-## G-21 · 🟢 SESIÓN COMPLETA · 20 JULIO 2026 · dos órdenes canceladas antes de la buena
+## G-21 · 🟢 SESIÓN · 20 JULIO 2026 · dos órdenes canceladas antes de la buena
 
 **Operación:** Continuación bajista · entrada **29.018,25** · stop **29.072,75** · objetivo 28.963,75 · riesgo **54,50 pts** → **TARGET** en la vela de las 9:02 · **+54,50 pts = +109,00 USD**
 
@@ -564,12 +564,12 @@ El soporte de la vela **8:37** (29.126,25 – 29.130,25) lo **rompe la vela 8:40
 
 ---
 
-## G-22 · 🟢 TEST CIEGO · JUEVES 10 SEPTIEMBRE 2026 · la entrada que llega antes no siempre es la buena
+## G-22 · 🟢 SESIÓN · JUEVES 10 SEPTIEMBRE 2026 · la entrada que llega antes no siempre es la buena
 
 **Operación:** Continuación alcista · entrada **29.145,75** a las 8:40 · stop **29.105,25** · objetivo 29.186,25 · riesgo **40,50 pts** → **TARGET** en la vela siguiente · **+40,50 pts = +81,00 USD**
-**Gráfico:** `05_Backtesting\test_ciego\Back_claude\2026-09-10.png` · **Noticias:** precios al productor 7:30, fuera de la ventana · **Sin Fed**
+**Gráfico:** `05_Backtesting\claude\2026-09-10.png` · **Noticias:** precios al productor 7:30, fuera de la ventana · **Sin Fed**
 
-**Primera jornada del test ciego, y la que trajo dos reglas.**
+**Primera de las sesiones de septiembre, y la que trajo dos reglas.**
 
 El día abre alcista: la 8:31 va de 29.089,50 a 29.118,25. La corrida muere en la 8:33 y deja la **resistencia de 8:32 en 29.118,00 – 29.123,50**. La 8:36 la rompe y la 8:37 da la consecución: el plan, tal como estaba escrito, mandaba entrar en **29.133,00** con stop en **29.057,75** — riesgo **75,25 pts**, el 94 % del tope.
 
@@ -592,10 +592,10 @@ La estructura siguiente sí cumple: corrida de 8:34 a 8:37 de **79,75 pts** cont
 
 ---
 
-## G-23 · ⚪ TEST CIEGO · VIERNES 11 SEPTIEMBRE 2026 · el día que se decidió en la primera vela
+## G-23 · ⚪ SESIÓN · VIERNES 11 SEPTIEMBRE 2026 · el día que se decidió en la primera vela
 
 **Resultado: NO OPERA.** Coinciden operador y marcado.
-**Gráfico:** `05_Backtesting\test_ciego\Back_claude\2026-09-11.png` · **Noticias:** inflación al consumidor 7:30, fuera de la ventana · **Sin Fed**
+**Gráfico:** `05_Backtesting\claude\2026-09-11.png` · **Noticias:** inflación al consumidor 7:30, fuera de la ventana · **Sin Fed**
 
 **Cero zonas marcadas en toda la sesión. 26 candidatas, 26 descartadas.**
 
@@ -613,10 +613,10 @@ El motivo del operador: *"había un punto de control en contra"*. El mínimo de 
 
 ---
 
-## G-24 · ⚪ TEST CIEGO · LUNES 14 SEPTIEMBRE 2026 · el día que reescribió la regla
+## G-24 · ⚪ SESIÓN · LUNES 14 SEPTIEMBRE 2026 · el día que reescribió la regla
 
 **Resultado: NO OPERA.** El operador tampoco operó.
-**Gráfico:** `05_Backtesting\\test_ciego\\Back_claude\\2026-09-14.png` · **Sin noticias rojas · Sin Fed** · Premercado sin una sola zona: la vela más fuerte de la noche hizo 4.407 contratos.
+**Gráfico:** `05_Backtesting\claude\2026-09-14.png` · **Sin noticias rojas · Sin Fed** · Premercado sin una sola zona: la vela más fuerte de la noche hizo 4.407 contratos.
 
 **El día se resuelve en las cuatro primeras velas.** La apertura baja de 28.924,00 a 28.880,50 — **43,50 puntos**. Y el retroceso sube hasta 28.933,75 — **53,25**. El retroceso se pasa.
 
@@ -638,7 +638,7 @@ De aquí sale además el término **corrida fluida**, que es el que gobierna aho
 
 ---
 
-## Resumen del backtesting día por día — remarcado el 14/09/2026 (11 días)
+## Sesiones de julio — día por día (remarcadas el 14/09/2026, 11 días)
 
 > 🔴 **Esta tabla se rehízo el 14/09/2026** al reescribirse la regla de la corrida fluida. Cuatro días pierden su operación y uno la cambia. Lo que decía antes está justo debajo, para no perder el rastro.
 >
@@ -659,7 +659,7 @@ De aquí sale además el término **corrida fluida**, que es el que gobierna aho
 | **20 jul** | *(la bajista de 8:58 se retira el 14/09 — corrida no fluida)* | NO OPERA | — |
 | | | **Total** | **−142,50 pts en 6 operaciones** |
 
-## Test ciego — día por día
+## Sesiones de septiembre — día por día
 
 | Día | Setup | Resultado | Puntos |
 |---|---|---|---|

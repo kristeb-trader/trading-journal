@@ -675,7 +675,7 @@ Ejecuta la sesión siguiendo la checklist diaria **en orden**, y registra **toda
 
 > 🔵 **`UMBRAL_VOL` es el único parámetro que el operador cambia a mano durante la vida del plan.** El resto se fijaron una vez. Éste depende de la volatilidad del momento, y por eso vive aquí y no dentro de la regla. **`P-37` cerrado el 14/09/2026 sin criterio medible, a propósito:** *"dejemos que quede paramétrico"*. Lo fija el operador, igual que `R-37` es criterio libre. 🔴 **La condición que lo hace seguro: el umbral NUNCA se cambia con la sesión empezada**, y cada cambio se anota con su fecha en la fila de abajo. Sin eso, el umbral se podría mover *después* de ver el día.
 >
-> El cambio del **14/09/2026** salió del test ciego: el 10/09 la vela más fuerte del premercado hizo **7.799** contratos. Con el umbral en 6.000 nacían cuatro soportes que desviaban todo el marcado de la mañana; con 8.000 el premercado no deja ninguna zona y el día se lee limpio.
+> El cambio del **14/09/2026** salió de las sesiones de septiembre: el 10/09 la vela más fuerte del premercado hizo **7.799** contratos. Con el umbral en 6.000 nacían cuatro soportes que desviaban todo el marcado de la mañana; con 8.000 el premercado no deja ninguna zona y el día se lee limpio.
 
 | Parámetro | Valor actual | Dónde actúa |
 |---|---|---|

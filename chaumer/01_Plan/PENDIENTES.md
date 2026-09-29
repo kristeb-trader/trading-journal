@@ -3,17 +3,17 @@
 Lo que el plan tiene abierto y las desviaciones conscientes respecto al curso. **Los pendientes cerrados, con su
 resolución, están en `HISTORIAL.md`**: aquí solo queda lo que sigue abierto.
 
-> Actualizado: 2026-09-28 · 🏁 fase 1 cerrada · 🔴 **test ciego EN MARCHA** — **34 reglas** · **14 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-40`
+> Actualizado: 2026-09-28 · 🏁 fase 1 cerrada · 🔴 **sesiones de validación EN MARCHA** — **34 reglas** · **14 pendientes abiertos** · **11 desviaciones** · numeración libre a partir de `P-40`
 >
-> 🚨 **Los cuatro huecos declarados del cierre:** `P-29` test ciego: **en marcha desde el 14/09/2026, 10 jornadas marcadas (10 → 23/09), sin evaluar contra el criterio de cierre** · `P-21` sin regla de parada · falta la capa de contextualización · `P-27` las cifras del backtesting no miden la estrategia.
+> 🚨 **Los cuatro huecos declarados del cierre:** `P-29` sesiones de validación: **en marcha desde el 14/09/2026, 10 jornadas marcadas (10 → 23/09), sin evaluar contra el criterio de cierre** · `P-21` sin regla de parada · falta la capa de contextualización · `P-27` las cifras del backtesting no miden la estrategia.
 
 ---
 
 ## 🚨 Abiertos · los cuatro huecos declarados
 
-### `P-29` · El test ciego: en marcha, sin evaluar — HUECO DECLARADO
+### `P-29` · Las sesiones de validación: en marcha, sin evaluar — HUECO DECLARADO
 
-**Hoy (28/09/2026):** el test arrancó el 14/09/2026 con la jornada del 10/09. Van **10 jornadas** marcadas a ciegas —10, 11, 14, 15, 16, 17, 18, 21, 22 y 23 de septiembre; los gráficos, en `05_Backtesting\test_ciego\Back_claude\`— y las diferencias con el operador están en `DISCREPANCIAS.md`. **Si estas jornadas sirven para el criterio de `F1.11` (9 de 10 coincidencias con el plan tal como está escrito) está sin decidir**: las reglas cambiaron durante el propio test (`R-40` y `R-41` salieron de él). Hasta decidirlo, el hueco sigue abierto.
+**Hoy (28/09/2026):** las sesiones de validación arrancaron el 14/09/2026 con la jornada del 10/09. Van **10 jornadas** marcadas a ciegas —10, 11, 14, 15, 16, 17, 18, 21, 22 y 23 de septiembre; los gráficos, en `05_Backtesting\claude\`— y las diferencias con el operador están en `DISCREPANCIAS.md`. **Las sesiones de julio no cuentan para este hueco**: se marcaron con el operador delante. **Si estas jornadas sirven para el criterio de `F1.11` (9 de 10 coincidencias con el plan tal como está escrito) está sin decidir**: las reglas cambiaron durante las propias sesiones (`R-40` y `R-41` salieron de ellas). Hasta decidirlo, el hueco sigue abierto.
 
 La fase 1 se cierra **sin ejecutar `F1.11`**, por decisión explícita del operador el 01/09/2026.
 
@@ -25,9 +25,9 @@ La fase 1 se cierra **sin ejecutar `F1.11`**, por decisión explícita del opera
 
 **Argumento a favor de cerrar igual, registrado:** el plan dejó de moverse. De 2-3 reglas tocadas por día al principio, a **cero** los días 15 y 20 de julio. En el 20 de julio la duda del operador se resolvió aplicando reglas ya escritas.
 
-**Cómo se puede cerrar más adelante:** ejecutar el test **contra el portal** de la fase 2 — dar diez gráficos sin etiquetar a alguien que solo tenga el portal delante. Sería a la vez la validación del plan y la del portal.
+**Cómo se puede cerrar más adelante:** hacer las sesiones **contra el portal** de la fase 2 — dar diez gráficos sin etiquetar a alguien que solo tenga el portal delante. Sería a la vez la validación del plan y la del portal.
 
-**Estado:** 🚨 abierto · **hueco declarado, no olvido** · el test está en marcha, pero el criterio de cierre no se ha evaluado.
+**Estado:** 🚨 abierto · **hueco declarado, no olvido** · las sesiones están en marcha, pero el criterio de cierre no se ha evaluado.
 
 ### 🚨 P-21 · No existe regla de parada — HUECO DECLARADO
 - **Estado:** el operador confirma el 24/08/2026 que **no tiene ninguna regla de parada**, y decide dejarlo abierto a propósito para decidirlo con datos reales.
