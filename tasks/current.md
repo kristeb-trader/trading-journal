@@ -23,8 +23,6 @@ Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md
 - [ ] **Mañana (29/09), en `%LOCALAPPDATA%\TradingJournal\cadena\registro.txt`:** la primera publicación
   automática de verdad — `publicar: 29/09 subido al portal`. Si pone «el push falló», es que git no tiene
   credenciales cuando lo lanza NinjaTrader (sin consola): mirarlo entonces
-- [ ] Recompilar `CadenaDiaria` en NT8 cuando se abra el editor (solo cambia el valor por defecto de la
-  carpeta; manda `cadena-diaria.json`)
 - [ ] Mañana, en `Documentos\NinjaTrader 8\cadena-diaria\registro.txt`: que el AddOn escribió las velas en
   `claude\motor\datos\dia\` y no volvió a crear la carpeta vieja
 
