@@ -2,6 +2,29 @@
 
 > Ideas sin fecha ni compromiso. Cuando una se activa, pasa a `current.md`.
 
+## Por comprobar
+
+Cosas hechas que no se pudieron probar del todo. Ninguna bloquea.
+
+- **Kris, en NinjaTrader:** que `ChecklistChaumer` enseña la casilla nueva de la etapa 2 (sin recompilar)
+- **Datos, con la sesión iniciada:** agregar, renombrar, borrar, activar/desactivar y arrastrar para
+  reordenar; que el orden se guarde `1, 2, 3…` (`docs/disenos/2026-08-19-otros-y-datos.md` § 6.1)
+- **Ajustes:** el cambio de contraseña real y Cerrar sesión (probados sin ejecutarlos)
+- **A ojo, la UI del 16 ago:** los controles en la barra superior en móvil, y el alto de la imagen en la
+  vista del día (`46vh` escritorio, `34vh` móvil)
+
+## Comparador Chaumer vs yo
+
+Terminado; vive de cargar días en **Otros › Chaumer › Registrar** (también los que él no operó). Queda
+decidir con datos si un día con mismo setup y resultado pero la mitad de puntos cuenta «Igual» o
+«Ejecución» (`veredicto()` en `js/chaumer.js`). Diseño: `docs/disenos/2026-08-19-chaumer-vs-yo.md` (v8).
+
+## Seguridad y repositorio
+
+El repositorio es **público** (D-022). Cuando haya presupuesto: GitHub Pro y pasarlo a privado. Aparte:
+proteger el portal (Cloudflare Access) y ver qué devuelve `/api/backtesting/export`, que responde 200
+sin sesión.
+
 ## Apex Tracker
 
 - **El filtro de cuentas no distingue una cuenta renovada.** Calendario, Trades y Análisis
@@ -24,7 +47,20 @@ marcada "Pendiente". Los números están medidos, para no tener que volver a med
 
 Orden para retomarlo: consolidar en tokens → migrar **pantalla completa por pantalla
 completa** → encender el interruptor al final. Va junto con la deuda del doble lenguaje
-visual de abajo; son el mismo trabajo.
+visual; son el mismo trabajo. El lenguaje nuevo (16 ago) solo está en **Diario**: faltan Coach, Días
+anteriores y el resto. Se migra **por pantalla completa**, y los literales de color casi iguales se
+unifican al migrar cada pantalla, no en bloque (cambian píxeles).
+
+## Journal
+
+- **Trigger para cuando la cuenta principal sea una de Apex.** Desde el 18 sep `apex.js` no lee `trades`
+  (D-019): antes de ese cambio, un trigger `after insert` en `trades` que replique a `apex_trades` si
+  `account` está en `apex_cuentas`. Mientras la principal sea `Sim101`, no hace falta. Fase 4 de
+  `docs/disenos/2026-09-18-cuenta-unica-en-trades.md`
+- **Modal del día:** distinguir el ítem que un error tumbó del que nunca se marcó (`_checklistDia` ya expone
+  `roto`; falta el render)
+- **Coach:** pasarle el catálogo de recomendaciones para que no invente nombres nuevos (última pieza de la 4B)
+- **Rendimiento:** el modal del día carga lento. Medir antes de tocar
 
 ## Métricas que faltan
 

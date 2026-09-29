@@ -2893,8 +2893,32 @@ validada, y cada uno pasó su regresión (`scripts/cadena/prueba_motor.py`).
 
 **Decisión de Kris:** no se abre otra lista de pendientes antes de empezar. Se hace el backtesting y cada duda
 se resuelve cuando aparezca en un día concreto. Las dudas ya vistas quedan en `tasks/current.md` como
-referencia, no como tareas; también se cerró ahí la sección de lo que venía de Cowork (todo hecho salvo los
-diagramas, que pasan a esa lista).
+referencia. El mismo día `tasks/current.md` se dejó en lo mínimo: lo terminado, aquí; ideas y
+comprobaciones sueltas, a `backlog.md`.
+
+**Dudas ya vistas, para reconocerlas cuando salgan en el backtesting** (no son tareas; el registro del
+método sigue en `chaumer/01_Plan/PENDIENTES.md`, donde los huecos declarados no se borran):
+
+- **Plazo de la consecución del reingreso.** El motor le pone tope de 5 velas; el plan dice que el traspaso
+  no tiene plazo. Caso: 11/09, reingreso de las 9:01 (consecución en la 13.ª vela; sin tope sale tal cual se
+  vio a mano, descartado por el punto de referencia 29.423,00). Sin tope cambia el 24/07: Reingreso alcista
+  9:21, +38,00
+- **¿Una zona de premercado da Continuación?** `R-25` dice que no; `R-15` («Aplica a: Continuación ·
+  Reingreso») y `R-40` lo dejan abierto. El motor dice que no. Tampoco anota como rompimiento la salida de
+  una zona que abrió con la ventana dentro (ningún día hasta hoy)
+- **Resolución anticipada del plazo** (`P-31`) y **marcado por banda y turno** (`P-33`): el motor no está
+  comprobado en esos dos puntos. **Umbral MNQ frente a NQ** (`P-32`): julio se marcó con el de NQ
+- **Tres operaciones que cambió el motor el 28/09** (días no validados, reingreso de una sola vela): 23/07
+  (Reingreso −17,00 → Continuación bajista +32,25), 03/08 (+11,25 → NO OPERA), 24/09 (+21,50 → NO OPERA)
+- **Test ciego:** sin decidir si las 10 jornadas (10 → 23/09) cierran el criterio de 9 de 10
+- **Textos del plan desfasados** (con el sí de Kris): `R-09` dice «verde/roja» por azul/blanca; `R-36` nombra
+  los discursos de Powell y se decidió no contarlos; `PENDIENTES.md` da por no hechos el filtro de noticias
+  del motor (`P-27`) y los rompimientos de premercado (`P-34`)
+- **Diagramas por rehacer:** el del volumen de premercado (dibuja 2.000; vale más de 8.000 en MNQ) y los
+  siete de agosto; después, unificar las carpetas de imágenes
+- **Se cierran con los números del backtesting:** regla de parada, mín/máx de premercado, retroceso mínimo
+  (falta la comisión real por contrato MNQ). **No bloquean:** Apex, sesión sin hora de cierre, nombre de la
+  conexión, términos del curso
 
 ---
 
