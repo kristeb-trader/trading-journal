@@ -161,11 +161,11 @@ for (const rel of imagenes) {
     const papel = /(^|\/)invalidos\//i.test(rel) ? 'contraejemplo' : 'diagrama';
     (manifiesto.reglas[id] = manifiesto.reglas[id] || []).push({ url, papel });
   } else if (caso) {
+    // Un ejemplo del metodo (G-xx en 02_Assets/galeria). Los casos de una sesion
+    // llevan el grafico de su jornada (05_Backtesting/claude/), que gana en
+    // parsers.galeria(); la carpeta galeria/sesiones/ ya no existe (29/09/2026).
     const id = caso[1].toUpperCase();
-    // Las de sesiones/ llevan el estandar visual actual y ganan siempre.
-    const actual = /(^|\/)galeria\/sesiones\//i.test(rel);
-    const previo = manifiesto.casos[id];
-    if (!previo || (actual && !previo.actual)) manifiesto.casos[id] = { url, actual };
+    if (!manifiesto.casos[id]) manifiesto.casos[id] = { url, actual: false };
   } else {
     manifiesto.sueltas.push(url);
   }

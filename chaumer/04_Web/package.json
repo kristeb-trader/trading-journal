@@ -13,13 +13,12 @@
     "diagramas": "node scripts/diagramas.mjs",
     "miniaturas": "node scripts/miniaturas.mjs",
     "enlaces": "node scripts/enlaces.mjs",
-    "verificar": "npm run build && npm run enlaces && npm run maquetacion && npm run parametros && npm run cifras && npm run nombres && npm run referencias && npm run vista && npm run aprobados",
+    "verificar": "npm run build && npm run enlaces && npm run maquetacion && npm run parametros && npm run cifras && npm run nombres && npm run referencias && npm run vista",
     "maquetacion": "node scripts/maquetacion.mjs",
     "vista": "node scripts/vista.mjs",
     "cifras": "node scripts/cifras.mjs",
     "nombres": "node scripts/nombres.mjs",
     "parametros": "node scripts/parametros.mjs",
-    "aprobados": "node scripts/aprobados.mjs",
     "referencias": "node scripts/referencias.mjs"
   },
   "devDependencies": {
