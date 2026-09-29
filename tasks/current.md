@@ -18,6 +18,15 @@ El motor corre sobre cualquier día del que haya velas de 1 minuto; lo que limit
 
 Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md`, checkpoint del 28/09.
 
+**Las Sesiones (D-029, 28/09):** `chaumer/05_Backtesting/` es `kris/` (el backtesting a mano) y `claude/`
+(un gráfico por día + su `.json`; el protocolo del chat «Backtesting» en `claude/protocolo/LEEME.md`).
+- [ ] Los gráficos que el motor deja cada día en `claude/` se suben con un commit por la noche, cuando el día
+  ya está registrado: el portal solo cambia con el push
+- [ ] Recompilar `CadenaDiaria` en NT8 cuando se abra el editor (solo cambia el valor por defecto de la
+  carpeta; manda `cadena-diaria.json`)
+- [ ] Mañana, en `Documentos\NinjaTrader 8\cadena-diaria\registro.txt`: que el AddOn escribió las velas en
+  `claude\motor\datos\dia\` y no volvió a crear la carpeta vieja
+
 ## Con fecha (las hace Claude)
 
 - Primer Coach de un día con ficha del motor: que la caché se siga leyendo (`coach_uso.cache_leida` > 0)

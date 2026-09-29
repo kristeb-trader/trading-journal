@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Versión** | v1 |
-| **Estado** | 🟢 Aprobado (28/09/2026) — en implementación |
+| **Estado** | ✅ Implementado (28/09/2026) — falta retirar los gráficos viejos de julio, con el visto bueno de Kris |
 | **Fecha** | 28/09/2026 |
 | **Decidido con Kris** | el motor va dentro de `claude/` · el término «test ciego» sale también del plan |
 
@@ -244,3 +244,30 @@ Lo de §3.5. Commit: `docs: sesiones y dos carpetas (D-029)`.
 | Un enlace viejo del portal cae en la portada | las cuatro direcciones antiguas se prueban en F3 |
 | El motor contradice a la tabla del plan | F2 lo enseña; manda el plan, y la diferencia se te pregunta |
 | Git crece con un PNG al día | ~130 KB/día, ~33 MB/año; aceptable. Si molesta, se revisa |
+
+---
+
+## 6. Cómo quedó (28/09/2026)
+
+| Fase | Commit | Verificado |
+|---|---|---|
+| F1 · carpetas y rutas | `0d3e0ab` | sintaxis; regresión del motor (HEAD contra el disco); `subir_dia.py 2026-09-25` escribe en `claude/` y su fila de `motor_fichas` da lo mismo (`SELECT`); `npm run build` |
+| F2 · gráficos | `8d34978` | las 21 sesiones de julio y septiembre, motor × tabla del plan: **21 de 21 iguales** |
+| F3 · portal | `ebc55d2` | `npm run verificar` 0 fallos; capturas en escritorio, visor y móvil (390 px, sin scroll horizontal); `/galeria#test-ciego`, `/test-ciego`, `/test-ciego#2026-09-10` y `/galeria#2026-09-10` llegan a su sitio |
+| F4 · plan 3.34 | `9c25f3f` | `vigilar --estricto` sin avisos; los 4 documentos del Coach que cambian, aplicados y con la huella = sha256 del contenido en la BD; el SQL del catálogo, idéntico al anterior (no se reaplicó); `npm run verificar` 0 fallos |
+| F5 · documentación | el de este cambio | — |
+
+**Desviaciones del diseño, dichas:**
+- **P2 llevó una línea más de la lista:** el cuerpo de G-22 («Primera jornada del test ciego…» → «Primera de
+  las sesiones de septiembre…»). Es del mismo caso que P2 renombra.
+- **No se tocó** la línea `**Archivo:**` de G-12 (`../02_Assets/galeria/L6_sesion_completa.png`): no estaba en
+  la lista y no nombra el test ciego. El portal no la usa.
+- **Los documentos del Coach se aplicaron como `replace` sobre el texto de la BD**, no con el SQL entero de
+  137 KB: la BD estaba exactamente como el último commit (comprobado por huella), y el resultado se comprobó
+  con el sha256 de cada documento.
+- **El 24/09 cambia en el motor** (de «Reingreso TARGET +21,50» a «sin operación»). No es de esta mudanza: la
+  regresión contra el commit anterior da 48 de 48 días iguales. Viene de los arreglos del motor de la tarde
+  del 28/09, que llegaron después de la ficha de las 15:32.
+
+**Pendiente:** retirar `chaumer/02_Assets/galeria/sesiones/` (los 11 gráficos viejos de julio) cuando Kris dé
+el visto bueno a los nuevos. Hasta entonces el portal ya enseña los nuevos (el de la jornada gana).

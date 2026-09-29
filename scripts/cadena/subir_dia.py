@@ -96,7 +96,7 @@ DIAS_FED = os.path.join(BT, 'dias_fed.txt')
 
 def dias_fed():
     """Los días de Fed de Fechas Especiales. De paso deja al día dias_fed.txt, la copia que lee
-    lector.py cuando corre fuera de la cadena (regresión, gráficos, test ciego): 28/09/2026."""
+    lector.py cuando corre fuera de la cadena (regresión, gráficos, Sesiones): 28/09/2026."""
     filas = sb('GET', 'catalogo_fechas?tipo=eq.fomc&activa=eq.true&select=fecha,nombre&order=fecha')
     try:
         cab = [ln for ln in open(DIAS_FED, encoding='utf-8') if ln.startswith('#')]
@@ -145,7 +145,7 @@ def origen(z):
 
 
 def avisos_del_motor(r, corte_z):
-    """El agujero conocido del motor que se puede detectar (LEEME_BACK_DIARIO.md): el plazo de un
+    """El agujero conocido del motor que se puede detectar (claude/protocolo/LEEME.md): el plazo de un
     rompimiento sin consecución. El otro (la secuencia de marcado de la jornada) NO se calcula: hacerlo
     exigiría definir aquí la secuencia, y eso es metodología del plan. El Coach lo recuerda siempre."""
     D, av = r['D'], []

@@ -10,6 +10,38 @@
 
 ---
 
+## D-029 — «Test ciego» pasa a llamarse Sesiones, y `05_Backtesting` se queda en dos carpetas
+
+**Decisión (Kris, 28/09/2026).** Las sesiones de julio y las del test ciego de septiembre son lo mismo:
+días marcados vela a vela con el plan. Desde hoy se llaman **Sesiones**, en el portal, en el plan (3.34) y
+en el código.
+- **El portal** las enseña en una sola pestaña, con la misma tarjeta: la fecha arriba, el gráfico, el
+  resultado con su color y los **puntos** (no la hora de salida), y el setup en un solo color.
+- **`05_Backtesting/`** tiene dos carpetas y nada más: `kris/` (su backtesting a mano, imágenes fuera de
+  git) y `claude/` (un `AAAA-MM-DD.png` por día con su `.json`, más `protocolo/` y `motor/`, que incluye
+  los datos). El motor dibuja el gráfico del día ahí, en vez de en AppData.
+- **El gráfico lo dibuja siempre el motor.** El resultado de la tarjeta: el de la tabla del plan si el día
+  está en ella; si no, el del `.json` del motor. Julio y septiembre se redibujaron con el motor de hoy y
+  dan, los 21 días, lo mismo que las tablas.
+- **El hueco declarado `P-29` sigue abierto** con otro nombre, «las sesiones de validación», y dice por
+  escrito que las de julio no cuentan para cerrarlo: se marcaron con el operador delante.
+- Lo que ya estaba escrito (este archivo, `HISTORIAL.md`, `CIERRE_FASE_1.md`, D-026 y D-028) **conserva
+  el nombre de entonces**.
+
+**Motivo.** Siete sitios para lo mismo (`05_01_Operativo`, `05_02`, `test_ciego`, `Back_claude`, `mio`,
+el motor suelto, `datos`, más AppData y `02_Assets/galeria/sesiones`) y dos pestañas del portal que
+enseñaban lo mismo con tarjetas distintas. Los gráficos viejos, además, ya no decían lo que dice el plan.
+
+**Consecuencias asumidas.**
+- Un PNG al día entra en git (~130 KB; ~33 MB al año). El candado del motor se mantiene porque nada se
+  publica solo: el portal cambia al hacer push, por la noche.
+- `CadenaDiaria.cs` lleva la ruta nueva como valor por defecto; manda `cadena-diaria.json`, así que
+  recompilar en NT8 no es urgente.
+
+**Diseño:** `docs/disenos/2026-09-28-sesiones-y-carpetas.md`.
+
+---
+
 ## D-028 — El plan de Chaumer se trabaja desde Claude Code; Cowork deja de existir
 
 **Decisión (Kris, 25/09/2026).** El plan (`chaumer/01_Plan`), el test ciego, `lector.py`/`dia.py` y los

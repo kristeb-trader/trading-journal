@@ -85,8 +85,8 @@ exportación de NinjaTrader, motor y subida. Esa cadena se construye una sola ve
 
 | | |
 |---|---|
-| `05_Backtesting\lector.py` · `motor.py` · `dia.py` · `dibujo.py` | motor de marcado de zonas, detección de setups y gráfica estándar |
-| `05_Backtesting\datos\NQ 09-26.Last.txt` | datos de mercado al minuto, formato `yyyyMMdd HHmmss;o;h;l;c;v`, **en UTC** |
+| `05_Backtesting\claude\motor\lector.py` · `dia.py` (y en `_Historia\`, `motor.py` · `dibujo.py`) | motor de marcado de zonas, detección de setups y gráfica estándar |
+| `05_Backtesting\claude\motor\datos\NQ 09-26.Last.txt` | datos de mercado al minuto, formato `yyyyMMdd HHmmss;o;h;l;c;v`, **en UTC** |
 | `01_Plan\reglas.json` | las 38 reglas en formato legible por máquina |
 
 > ⚠️ **Las velas van marcadas al CIERRE.** La vela de la apertura americana es la

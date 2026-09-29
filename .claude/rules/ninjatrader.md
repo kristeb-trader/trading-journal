@@ -59,7 +59,7 @@ día **sin archivo** en `datos\dia\` lo pide con `BarsRequest` y lo escribe como
 - **Configuración:** `Documentos\NinjaTrader 8\cadena-diaria.json` (la relee cada minuto: cambiarla no
   pide recompilar). **Registro:** `Documentos\NinjaTrader 8\cadena-diaria\registro.txt`.
 - **Si algo no cuadra**, `subir_dia.py --comparar` compara línea a línea la carpeta `datos\dia_auto\`
-  con `datos\dia\`: para volver a verificar, se apunta la configuración a `dia_auto` unos días y se
+  con `datos\dia\` (las dos en `chaumer\05_Backtesting\claude\motor\` desde el 28/09/2026): para volver a verificar, se apunta la configuración a `dia_auto` unos días y se
   exporta a mano en paralelo. Verificado así el 24–25/09: 6 de 6 días idénticos.
 
 ## Routing de trades (`SupabaseAutoExport`)

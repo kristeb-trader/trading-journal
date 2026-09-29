@@ -40,7 +40,7 @@ if (NUEVAS) {
   reglas = leidas.reglas
   FUENTE = 'reglas/'
   for (const e of leidas.errores) anota('0 · Plantilla de las reglas', e)
-  // reglas.json lo leen el portal, el Journal y el test ciego: tiene que ser el de los archivos de hoy.
+  // reglas.json lo leen el portal, el Journal y la ficha de las Sesiones: tiene que ser el de los archivos de hoy.
   if (!leidas.errores.length && (!fs.existsSync(RUTA_JSON) || fs.readFileSync(RUTA_JSON, 'utf8') !== serializar(leidas))) {
     anota('0 · Plantilla de las reglas', 'reglas.json no está al día con reglas/: node scripts/plan/leer-reglas.mjs --escribir')
   }

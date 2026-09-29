@@ -95,7 +95,7 @@ sobre la implementación.** Ya pasó que se implementara otra cosa y hubo que re
   tablas**: política `auth_all` para `authenticated`; `anon` sin políticas. Bot, Worker e
   indicadores NT8 usan `service_role`. **El portal** lee con un rol propio,
   `portal_lector`, que solo ve las vistas `portal_*` (D-023). **Excepción a propósito:
-  `motor_fichas`** lleva la política `candado`, no `auth_all` — es el candado del test ciego
+  `motor_fichas`** lleva la política `candado`, no `auth_all` — es el candado del motor
   (D-026). "Normalizarla" lo abre sin dar ningún error.
 - **El esquema se consulta con `list_tables` del MCP**, no con un documento. Aquí solo va
   lo que el esquema no dice.

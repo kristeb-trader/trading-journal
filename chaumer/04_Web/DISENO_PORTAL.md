@@ -202,11 +202,11 @@ Un solo campo que filtra a la vez por **texto libre** (enunciado, condiciones, a
 2. `02_Assets\galeria\G-xx_*.png` — anterior al estándar; solo si no hay versión en `sesiones\`
 3. **Sin imagen** → el caso se muestra igual, solo con su texto
 
-⚠️ El campo `**Archivo:**` de `GALERIA.md` **no se usa para resolver la imagen**: en `G-11` apunta a `../05_Backtesting/G-11_10jul_operacion.png`, que no existe ahí. La resolución es por prefijo `G-xx` sobre el árbol real de `02_Assets\`.
+⚠️ El campo `**Archivo:**` de `GALERIA.md` **no se usa para resolver la imagen**. La resolución es por nombre: un caso de una sesión lleva el gráfico de su fecha (`05_Backtesting\claude\AAAA-MM-DD.png`, desde el 28/09/2026); los ejemplos, por prefijo `G-xx` sobre el árbol real de `02_Assets\`.
 
 **Filtro por regla:** se extraen los `R-xx` citados en cada caso y se construye el índice en los dos sentidos.
 
-**Índice y visor** *(22/09/2026, sustituye al lightbox)*: la página es una rejilla de miniaturas por pestañas (test ciego · sesiones · ejemplos) y cada caso se estudia en un `<dialog>` modal con la gráfica a la izquierda y el texto al lado, con flechas, teclado, deslizar y `Esc`. Las miniaturas las genera `scripts/miniaturas.mjs` en `public/min/`. Sin librería.
+**Índice y visor** *(22/09/2026, sustituye al lightbox)*: la página es una rejilla de miniaturas por pestañas (sesiones · ejemplos; hasta el 28/09/2026, test ciego · sesiones · ejemplos) y cada caso se estudia en un `<dialog>` modal con la gráfica a la izquierda y el texto al lado, con flechas, teclado, deslizar y `Esc`. Las miniaturas las genera `scripts/miniaturas.mjs` en `public/min/`. Sin librería.
 
 ---
 

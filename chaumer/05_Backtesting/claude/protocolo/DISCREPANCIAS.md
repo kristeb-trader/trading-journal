@@ -1,4 +1,7 @@
-# DISCREPANCIAS — test ciego diario
+# DISCREPANCIAS — sesiones de validación
+
+> Hasta el 28/09/2026 esto se llamaba «test ciego». Lo escrito antes conserva el nombre de entonces;
+> los gráficos `Back_claude\…` que se citan están ahora en `05_Backtesting\claude\`.
 
 Una entrada por día en que Claude y el operador no marcaron igual.
 Los días en que coincidieron **no se escriben aquí**: se anotan en el registro y ya.

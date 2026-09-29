@@ -1,6 +1,8 @@
 # Registro de backtesting manual — instrucciones para Claude Code
 
-**Arranca siempre desde esta carpeta (`05_01_Operativo`).** Las instrucciones generales del proyecto están en `..\..\CLAUDE.md`.
+**Arranca siempre desde esta carpeta (`kris`).** Las instrucciones generales del proyecto están en `..\..\CLAUDE.md`.
+
+*(Hasta el 28/09/2026 esta carpeta era `05_01_Operativo`, con las imágenes en `Back_2025\`.)*
 
 ---
 
@@ -10,7 +12,9 @@
 
 **NO es un motor de backtesting.** No lee datos de mercado. No aplica reglas. No marca zonas. No calcula si hubo setup. No detecta nada. Si te encuentras escribiendo lógica de la metodología, **te saliste del encargo: para y pregunta.**
 
-El backtesting automático —el que sí usa el motor— es la segunda fase y vive en la carpeta de al lado, `05_02_Operativo_Contexto`. **No la toques.**
+El backtesting de Claude —las Sesiones, el que sí usa el motor— vive en la carpeta de al lado, `..\claude\`. **No la toques.**
+
+**Las imágenes** de esta carpeta, una por día (`AAAA-MM-DD.png`), se quedan **en disco, fuera de git**: crecen cada día y en git quedarían para siempre en el historial. Aquí va también la captura del operador de un día de sesión, para comparar: **Claude no la abre hasta haber entregado su marcado** (`..\claude\protocolo\LEEME.md`).
 
 ---
 
@@ -20,8 +24,7 @@ El backtesting automático —el que sí usa el motor— es la segunda fase y vi
 |---|---|
 | `..\..\01_Plan\` | El plan. Solo lectura, siempre. |
 | `..\..\04_Web\` | El portal. Otra vía, otro encargo. |
-| `..\05_02_Operativo_Contexto\` | La fase siguiente. Vacía a propósito. |
-| `..\lector.py` · `..\dia.py` | El motor de auditoría. **Este módulo no lo usa ni lo importa.** |
+| `..\claude\` | Las Sesiones de Claude, el motor y los datos. **Este módulo no los usa ni los importa.** |
 
 Los cuatro huecos que bloquean el backtesting automático **no bloquean esto**: un módulo que guarda decisiones ya tomadas no depende de que el motor esté bien.
 
