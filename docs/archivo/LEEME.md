@@ -23,6 +23,14 @@ Para el estado real: `CLAUDE.md` (raíz) y `docs/historial-proyecto.md`.
 Archivado el 2026-08-16. Motivo y criterio:
 `docs/disenos/2026-08-16-reestructuracion.md` §2.2.
 
+## El orden de la raíz (29/09/2026)
+
+| Archivo | En qué miente |
+|---|---|
+| `historial-hasta-2026-08-15.md` | La primera mitad del historial. Hasta «Estado actual del proyecto» es una foto de mayo–junio: Coach con `claude-sonnet-4-6`, «repositorio privado», el esquema y las carpetas de mayo. Las fases 1–22 y los checkpoints de junio al 11/08 son historia verdadera de su fecha |
+
+Motivo y criterio: `docs/disenos/2026-09-29-orden-raiz.md`.
+
 ## `chaumer/` — los dos buzones de Cowork
 
 | Archivo | Por qué no sirve hoy |

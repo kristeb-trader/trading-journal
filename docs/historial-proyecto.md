@@ -2,2156 +2,416 @@
 
 **Última actualización:** 2026-09-29
 
+> **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
+> estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
+> `tasks/current.md`.
+>
+> Lo anterior al 16/08/2026 —la foto del sistema de mayo, las fases 1–22 y los checkpoints de junio al
+> 11/08— está en `docs/archivo/historial-hasta-2026-08-15.md`.
+
 | Fecha | Checkpoint |
 |---|---|
 | 2026-09-29 | Sesiones en vez de test ciego, dos carpetas de backtesting, y `chaumer/` en orden |
 | 2026-09-28 | Las reglas de Chaumer, cerradas: se pasa al backtesting |
 | 2026-09-25c | Cowork deja de existir: el plan se trabaja desde Claude Code |
-| 2026-09-25b | Fase 8: el portal suelta R2 — unificación Chaumer completa |
+| 2026-09-25b | Fase 8: el portal suelta R2, y la unificación termina |
 | 2026-09-25 | Fase 7: la cadena diaria |
+| 2026-09-24b | Fase 6: el Coach con el plan de Chaumer y Claude Opus 5.5 |
 | 2026-09-24 | Unificación Chaumer: fases 1–3 y el repositorio público |
 | 2026-09-23 | Curva de equity verde/roja y tooltip del día |
 | 2026-09-19 | El journal: una sola cuenta, regularizado a ±$160 |
 | 2026-09-18 | Dos setups: Continuación y Reingreso |
 | 2026-09-17 | Chaumer: la lista día a día y la hora Colombia |
 | 2026-09-14 | Apex-15 renovada: dos tarjetas con el mismo número |
-| 2026-08-31 | Motivos sin cubrir, FOMC del desglose y P&L de la celda |
+| 2026-08-31b | Motivos sin cubrir, FOMC del desglose y P&L de la celda |
 | 2026-08-31 | El checklist dejó de marcarse solo · zonas naranjas al AddOn · RR en puntos |
 | 2026-08-23 | Tarjetas KPI y curva de equity del Calendario |
-| 2026-08-19 | Otros y Datos rediseñados, modo local y comparador de Chaumer |
+| 2026-08-19 | Otros y Datos rediseñados, modo local, y el comparador de Chaumer |
 | 2026-08-18 | Trades fantasma: el replay de ejecuciones de NinjaTrader |
-| 2026-08-16d | Cuenta Apex-15, importes con miles y vista del día |
+| 2026-08-16d | Cuenta Apex-15, formato de importes y vista del día |
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
-| 2026-08-11 | Coach IA: fuga temporal del historial |
-| 2026-08-03b | Rediseño del checklist y de la disciplina |
-| 2026-08-03 | Calendario: fechas futuras + la verdad de la disciplina |
-
-Los anteriores, en orden, más abajo. Las fases 1–22 están antes de los checkpoints.
-
-> **Qué es este archivo:** la narrativa de qué pasó y cuándo. Para el estado actual,
-> `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que
-> falta, `tasks/current.md`.
 
 ---
 
-## Descripción general
+## Checkpoint 2026-09-29 — Sesiones en vez de test ciego, dos carpetas de backtesting, y `chaumer/` en orden
 
-Dashboard semi-profesional para registro, análisis y visualización de operativa diaria en NQ/MNQ Futures (temporalidad 1 minuto), siguiendo la **Metodología Chaumer**. Combina captura automática de trades desde NinjaTrader 8, registro manual de contexto vía web y Telegram, análisis con IA (Claude Sonnet), e imágenes del día en Cloudinary. Arquitectura 100% serverless, costo ~$0.40/mes.
+**Qué se cerró** (diseños `2026-09-28-sesiones-y-carpetas.md` y `2026-09-28-orden-chaumer.md`; D-029 y D-030):
 
----
+- **Sesiones.** «Test ciego» y «Sesiones de julio» son una sola cosa: una pestaña en el portal, con la misma
+  tarjeta (fecha, gráfico, resultado con sus puntos, setup). Plan 3.34: el término sale del plan; `P-29` sigue
+  abierto como «las sesiones de validación». Los 21 gráficos de julio y septiembre, redibujados con el motor de hoy:
+  21 de 21 iguales a las tablas del plan.
+- **`05_Backtesting/` = `kris/` + `claude/`** (sesiones, `protocolo/`, `motor/` con los datos). El motor dibuja el
+  gráfico del día ahí, y **lo publica solo si el día ya está registrado** (el candado del motor); no sube nada si
+  GitHub va por delante o hay commits locales sin subir.
+- **`chaumer/` en orden:** 6 documentos y `_Historia/` al archivo (con un `LEEME` de en qué miente cada uno),
+  `DESPLIEGUE` reescrito, 53 archivos borrados que no usaba nadie, y una regla: en `chaumer/` no nacen documentos.
+  Plan 3.35: dos rutas al día.
+- **`CLAUDE.md` de la raíz, de 237 a 167 líneas (17,3 → 12,0 KB)**: invariantes en una línea con su puntero,
+  la sección `chaumer/` reducida a lo transversal (el resto lo carga `chaumer/CLAUDE.md`), la tabla de datos sin la
+  historia de cada fila. Corregidas dos cosas que mentían: las cifras de la deuda visual (contradecían a
+  `estilos.md`) y la fila de la metodología, que apuntaba al rulebook de la etapa 1.
 
-## Servicios y credenciales
+**Verificado:** la regresión del motor antes y después de la mudanza (48 de 48); `npm run verificar` sin fallos
+tras cada fase; los documentos del Coach, con su huella sha256 comprobada en la BD; la publicación automática,
+contra un repositorio de prueba.
 
-| Servicio | Identificador / URL clave | Credencial |
-|---|---|---|
-| Supabase | `https://jothoslozctflfrnysrx.supabase.co` | Anon key en `js/config.js` y en `SupabaseAutoExport.cs` |
-| GitHub Pages | `kristeb-trader.github.io/trading-journal` | Token GitHub del usuario |
-| Cloudflare Worker #1 (proxy IA) | `broad-hall-c53f.kristerock.workers.dev` | Claude API key como variable de entorno |
-| Cloudflare Worker #2 (bot) | `trading-journal-bot.kristerock.workers.dev` | Variables de entorno en el Worker |
-| Cloudflare KV | Namespace: `trading-journal-bot-kv` / ID: `3dd631773a6041c1a97a8e9a8f861067` | Sin credenciales propias |
-| Cloudflare Account | ID: `03b9d27f14f490d9a295bf4c924c7326` | — |
-| Cloudinary | Cloud name: `dq4n7bjta` / Preset: `trading-journal` (Unsigned) | En `js/config.js` |
-| Claude API | Modelo: `claude-sonnet-4-6` | En `localStorage` del browser y en Worker #1 |
-| Telegram Bot | Chat ID autorizado: `372127764` | Token en variable `BOT_TOKEN` del Worker #2 |
-
-> **Nota de seguridad:** La API key de Claude se guarda en `localStorage` del navegador, no en el código fuente. El repositorio es privado pero se sigue esta práctica por seguridad.
-
----
-
-## Stack tecnológico
-
-| Componente | Tecnología |
-|---|---|
-| Base de datos | Supabase (PostgreSQL) |
-| Frontend / Dashboard | HTML + JS vanilla (sin frameworks) |
-| Hosting | GitHub Pages (rama `main`) |
-| Proxy IA | Cloudflare Worker #1 |
-| Análisis IA | Claude API — `claude-sonnet-4-6` — ~$0.02/diagnóstico, ~$0.40/mes |
-| Almacenamiento imágenes | Cloudinary |
-| Exportación automática NT8 | Indicador C# — `SupabaseAutoExport.cs` |
-| Registro alternativo | Telegram Bot vía Cloudflare Worker #2 + KV |
-
-**Paleta visual:**
-- Background dark: `#1a1a18`
-- Accent verde trading: `#1D9E75`
-- Stop/error: `#E24B4A`
-- Warning: `#BA7517`
-- Tipografía: Segoe UI / system-ui
-- Componentes: cards con border-radius 10px, sombras suaves, transiciones 150ms
-- Iconos: Tabler Icons (CDN)
-- Gráficas: Chart.js (CDN)
+**Pendiente:** la primera publicación automática lanzada por NinjaTrader (29/09, 10:32) y recompilar
+`CadenaDiaria` en NT8 — `tasks/current.md`.
 
 ---
 
-## Estructura de carpetas del repositorio
+## Checkpoint 2026-09-28 — Las reglas de Chaumer, cerradas: se pasa al backtesting
 
-```
-trading-journal/
-├── index.html                        ← Shell SPA + modales
-├── favicon.svg                       ← Icono velas japonesas verde/rojo
-├── css/
-│   └── styles.css                    ← Dark mode completo
-├── js/
-│   ├── config.js                     ← Credenciales (NO exponer públicamente)
-│   ├── db.js                         ← Capa de datos Supabase (todas las queries)
-│   ├── calendar.js                   ← Calendario mensual interactivo
-│   ├── metrics.js                    ← KPIs y métricas generales
-│   ├── table.js                      ← Tabla de trades paginada
-│   ├── form.js                       ← Formulario de sesión diaria + experimentos
-│   ├── charts.js                     ← 6 gráficas con Chart.js
-│   ├── gallery.js                    ← Galería de imágenes con slots vacíos
-│   ├── data.js                       ← Gestor de catálogos (errores, emociones, experimentos)
-│   ├── estrategia.js                 ← Reglas por setup + estrategia general Chaumer (FASE 10)
-│   ├── experimentos.js               ← Laboratorio de Experimentos: veredictos + matriz (FASE 15)
-│   ├── apex.js                       ← Apex Tracker: cuentas de fondeo + auto-carga NT8 (FASE 16)
-│   ├── coach.js                      ← Coach IA — flujo 3 etapas (FASE 5+)
-│   └── app.js                        ← Boot, navegación SPA, modales, lightbox
-├── NinjaTrader/
-│   ├── SupabaseAutoExport.cs         ← Indicador C# de trades (routing por cuenta, FASE 18)
-│   └── SupabaseDailyLevels.cs        ← Indicador C# de niveles diarios OHLC/overnight (FASE 18)
-├── TelegramBot/
-│   ├── worker.js                     ← Cloudflare Worker del bot
-│   └── wrangler.toml                 ← Config KV binding
-└── docs/
-    ├── historial-proyecto.md         ← Este archivo
-    ├── plan-disciplina-fases.md      ← Plan de Disciplina/Reglas/Errores por fases (Bloques 1-5)
-    ├── arquitectura-funcional.md
-    ├── arquitectura-tecnica.md
-    ├── manual-tecnico.md
-    ├── manual-usuario.md
-    └── migrations/                   ← SQL por correr en Supabase (1 archivo por cambio de BD)
-```
+Diseño: `docs/disenos/2026-09-25-reglas-chaumer.md` (v1.6). **La reestructuración está terminada:** las reglas
+viven en siete archivos por grupo con una plantilla fija, `reglas.json` se genera y el vigilante pasa en modo
+estricto. Cinco fases: F0 (el «Por qué» entero en el portal) · F1 (correcciones) · F2 (los siete archivos y
+sus consumidores) · F3 (fusiones, 40 → 35) · F4 (la ficha nueva del portal). Después, con Kris uno a uno, los
+pendientes de método (planes 3.26–3.33): reingreso de una sola vela, el papel de la zona de premercado lo da la
+apertura, vela de apertura sin cuerpo, la Fed la sesión entera, una regla retirada (**34 reglas**), el 8/07
+revalidado (julio **−142,50 en 6**) y la orden tras la noticia roja.
 
----
+El motor, el 28/09: lee los días de Fed de Fechas Especiales (completada hacia atrás con el calendario oficial),
+aplica las noticias rojas y anota los rompimientos de las zonas de premercado. Ninguno cambió una operación
+validada, y cada uno pasó su regresión (`scripts/cadena/prueba_motor.py`).
 
-## Base de datos — Esquema final (Mayo 2026)
+**Decisión de Kris:** no se abre otra lista de pendientes antes de empezar. Se hace el backtesting y cada duda
+se resuelve cuando aparezca en un día concreto. Las dudas ya vistas quedan en `tasks/current.md` como
+referencia. El mismo día `tasks/current.md` se dejó en lo mínimo: lo terminado, aquí; ideas y
+comprobaciones sueltas, a `backlog.md`.
 
-### Tabla `trades`
+**Dudas ya vistas, para reconocerlas cuando salgan en el backtesting** (no son tareas; el registro del
+método sigue en `chaumer/01_Plan/PENDIENTES.md`, donde los huecos declarados no se borran):
 
-```sql
-CREATE TABLE trades (
-  trade_number   BIGSERIAL PRIMARY KEY,
-  account        TEXT,
-  instrument     TEXT,
-  trade_date     DATE,
-  entry_time     TIME,
-  exit_time      TIME,
-  entry_price    NUMERIC,
-  exit_price     NUMERIC,
-  strategy       TEXT,
-  qty            INTEGER,
-  market_pos     TEXT,
-  exit_name      TEXT,
-  resultado      TEXT,               -- "target" / "stop" / "otro"
-  profit         NUMERIC,
-  cum_net_profit NUMERIC,            -- calculado por trigger
-  commission     NUMERIC DEFAULT 0,
-  mae            NUMERIC,
-  mfe            NUMERIC,
-  etd            NUMERIC,
-  bars           INTEGER
-);
-```
-
-> **Nota P&L (normalizado — Jun 2026):** convención única **NETO**. `profit` = neto (comisión round-trip descontada) en todo el histórico y en el live. `commission` = round-trip (suma de todas las patas). El script C# v2.2 (2026-06-02) acumula la comisión de entrada + salida + scaling y envía profit neto. Los 7 trades "era live" previos se normalizaron por SQL (`docs/migrations/2026-06-02-normalizar-pnl-live.sql`).
-
-### Tabla `sesiones`
-
-```sql
-id, sesion_date (DATE UNIQUE),
-contexto, num_corrida, velas_corrida, puntos_retroceso,
-zonas_contra (BOOLEAN), setup,
--- Checklist Fase 1 — Pre-sesión (siempre visible)
-chk_cuenta_pa (BOOLEAN DEFAULT false), chk_noticias, chk_zonas,
--- Checklist Fase 2 — Lectura del setup (solo cuando sí se operó)
-chk_5velas, chk_consecucion, chk_estructura,
--- Checklist Fase 3 — Ejecución (solo cuando sí se operó)
-chk_orden,
-analisis_trader, resumen_ia, imagen_url,
-no_opero (BOOLEAN), motivo_no_opero,
--- Fuente única de estado emocional y confianza (Fase 2A)
-estado_emocional_id (FK → catalogo_emociones),
-nivel_confianza (INTEGER 1-5),
--- Setup no tomado
-setup_valido_no_tomado (BOOLEAN DEFAULT FALSE),
-motivo_no_entrada (TEXT),
-setup_observado (TEXT),
--- Premercado / contexto técnico (Fase 12 + niveles de ayer Fase 18)
-precio_apertura_ayer, precio_max_ayer, precio_min_ayer, precio_cierre_ayer (NUMERIC),  -- PDO/PDH/PDL/PDC
-precio_apertura, precio_max_pre, precio_min_pre (NUMERIC),
-soportes_naranja (JSONB), resistencias_naranja (JSONB),  -- hasta 5 líneas naranjas c/u
-noticias (TEXT),
-se_conecto (BOOLEAN DEFAULT true),  -- distingue los 2 "no operé"
--- Disciplina por fases (Fase 21 — Bloque 1)
-alerta_riesgo_vista (BOOLEAN),  -- true=impulsividad, false=falla analítica, null=sin exceso
-created_at, updated_at
-```
-
-> **Fase 2A:** `estado_emocional_id` y `nivel_confianza` son la **fuente única** de emoción/confianza. Las columnas duplicadas en `diagnosticos_diarios` fueron eliminadas.
-> **Fase 4D:** `zona_naranja_habia`, `zona_naranja_reaccion`, `zona_naranja_nota` fueron eliminadas y migradas a `diagnostico_experimentos`.
-> **Fase 12:** premercado para enriquecer el análisis IA. `se_conecto` distingue: no operé sin conectarme (caso 1, mínimo) vs me conecté sin setup válido (caso 2, sí pide premercado + análisis). Los puntos del rango premercado se calculan (max−min), no se almacenan.
-> **Fase 18:** `precio_apertura_ayer`/`precio_max_ayer`/`precio_min_ayer` (PDO/PDH/PDL) completan el OHLC de ayer. Los **escribe el indicador `SupabaseDailyLevels`** en NT8, no el formulario web ni el bot.
-> **Fase 21:** `chk_cuenta_pa` es el 7º ítem del checklist (Fase 1). `alerta_riesgo_vista` registra si el trader vio que el retroceso superaba su stop máximo antes de entrar (impulsividad vs falla analítica). El checklist se reorganizó en 3 fases del proceso (la fase es metadata de código, no columna).
-
-### Tabla `diagnosticos_diarios`
-
-```sql
-CREATE TABLE diagnosticos_diarios (
-  id                      BIGSERIAL PRIMARY KEY,
-  sesion_date             DATE UNIQUE NOT NULL,
-  -- Etapa 1 (Análisis Técnico)
-  sec_contexto            TEXT,
-  sec_desarrollo          TEXT,
-  sec_validacion          TEXT,
-  -- Etapa 3 (Diagnóstico Final)
-  sec_veredicto           TEXT,      -- columna dedicada (Fase 1 Coach)
-  sec_errores             TEXT,
-  sec_aprendizaje         TEXT,
-  sec_resumen_compacto    TEXT,      -- alimenta el historial de 60 días al Coach
-  -- Estructurado
-  setups_json             JSONB DEFAULT '[]',
-  -- Estado emocional de cierre (solo en diagnosticos — Fase 2A)
-  estado_emocional_fin_id BIGINT REFERENCES catalogo_emociones(id),
-  -- Patrones
-  patron_detectado        BOOLEAN DEFAULT false,
-  patron_descripcion      TEXT,
-  -- Chat
-  chat_messages           JSONB DEFAULT '[]',
-  modelo_usado            TEXT,
-  created_at              TIMESTAMPTZ DEFAULT now(),
-  updated_at              TIMESTAMPTZ DEFAULT now()
-);
-```
-
-> **Fase 2A:** Se eliminaron `estado_emocional_id` y `nivel_confianza` (ahora solo en `sesiones`). Se conserva `estado_emocional_fin_id` (emoción de cierre pertenece al diagnóstico).
-
-### Tabla `catalogo_errores` (antes `catalogo_casuisticas`)
-
-```sql
-CREATE TABLE catalogo_errores (
-  id      BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  nombre  TEXT NOT NULL,           -- nombre breve del error (1-4 palabras)
-  tipo    TEXT,                    -- psicologico | analitico | operativo | marcado
-  activa  BOOLEAN DEFAULT true,
-  orden   INTEGER DEFAULT 0
-);
-```
-
-### Tabla `diagnostico_errores` (antes `errores_sesion`)
-
-```sql
-CREATE TABLE diagnostico_errores (
-  id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  sesion_date DATE NOT NULL,
-  error       TEXT NOT NULL,        -- nombre corto (del catálogo o libre)
-  tipo        TEXT,
-  resultado   TEXT,                 -- T | S (para días no operados)
-  origen      TEXT DEFAULT 'manual',-- manual | ia | ambos
-  descripcion TEXT,                 -- detalle largo del error ese día
-  catalogo_id         BIGINT REFERENCES catalogo_errores(id),
-  recomendacion_id    BIGINT REFERENCES catalogo_recomendaciones(id),
-  recomendacion_ia    TEXT,          -- recomendación generada por la IA ese día
-  recomendacion_manual TEXT,         -- nota/ajuste del trader
-  fase                SMALLINT,      -- 1 Pre-sesión | 2 Lectura | 3 Ejecución (Fase 21 — Bloque 3)
-  regla_vista         BOOLEAN,       -- true=impulsividad, false=falla analítica, null=N/A (Fase 21)
-  created_at          TIMESTAMPTZ DEFAULT now()
-);
-```
-
-> Registro unificado de errores (manual + IA). El modal del calendario muestra chips compactos (nombre corto) con detalle desplegable al clic. Función alias `casuistica:error` mantiene compatibilidad con código existente.
-> **Fase 21 (Bloque 3):** `fase` y `regla_vista` conectan cada error con la fase del proceso y con la distinción psicológica impulsividad (vio la regla y la violó) vs falla analítica (no la vio a tiempo). El Coach IA los asigna automáticamente (formato de error del prompt pasa de 6 a 8 partes); el parser es retro-compatible con las líneas viejas de 6 partes.
-
-### Tabla `catalogo_emociones`
-
-```sql
-id, nombre, emoji, orden, activa (BOOLEAN DEFAULT true)
-```
-
-### Tabla `estrategia_chaumer`
-
-```sql
-id, seccion, titulo, contenido, orden, activa (BOOLEAN DEFAULT true), updated_at
--- Secciones: antes_sesion, premercado, apertura, mecanica_entrada,
---            gestion_zona, filtros, volumen, regla_de_oro, configuracion_visual
-```
-
-### Tabla `setup_reglas` (Fase 10)
-
-```sql
-CREATE TABLE setup_reglas (
-  id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  setup        TEXT NOT NULL,                 -- iri_apertura | iri_continuacion | reingreso
-  direccion    TEXT NOT NULL DEFAULT 'ambas', -- alcista | bajista | ambas
-  activacion   TEXT,   -- contexto: cuándo aparece este setup
-  secuencia    TEXT,   -- estructura de velas (IRI, consecución, reingreso…)
-  entrada      TEXT,   -- gatillo y nivel exacto de entrada
-  stop         TEXT,   -- ubicación y tamaño del stop
-  gestion      TEXT,   -- target, R:R mínimo, gestión de zona
-  invalidacion TEXT,   -- filtros / qué invalida el setup
-  notas        TEXT,   -- observaciones que evolucionan
-  activa       BOOLEAN DEFAULT true,
-  orden        INTEGER DEFAULT 0,
-  updated_at   TIMESTAMPTZ DEFAULT now(),
-  UNIQUE (setup, direccion)
-);
--- SQL + seed del Reingreso: docs/migrations/2026-06-01-setup-reglas.sql
-```
-
-> 3 setups × 3 direcciones (común/alcista/bajista) = hasta 9 filas. El upsert usa `onConflict: 'setup,direccion'`. El Coach IA lee esta tabla en su system prompt para validar entradas contra las reglas escritas del trader.
-
-### Tabla `objetivos` (Fase 3B)
-
-```sql
-CREATE TABLE objetivos (
-  id                 SMALLINT PRIMARY KEY DEFAULT 1,
-  stop_max_usd       NUMERIC DEFAULT 120,
-  max_trades_dia     INTEGER DEFAULT 2,
-  pnl_objetivo_dia   NUMERIC,
-  limite_perdida_dia NUMERIC,
-  updated_at         TIMESTAMPTZ DEFAULT now(),
-  CONSTRAINT objetivos_single_row CHECK (id = 1)
-);
-```
-
-### Tabla `catalogo_recomendaciones` (Fase 4B)
-
-```sql
-CREATE TABLE catalogo_recomendaciones (
-  id      bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  nombre  text NOT NULL,           -- nombre breve (1-4 palabras)
-  tipo    text,                    -- psicologico | analitico | operativo | marcado
-  activa  boolean DEFAULT true,
-  orden   integer DEFAULT 0
-);
-```
-
-### Tabla `catalogo_experimentos` (Fase 4D)
-
-```sql
-CREATE TABLE catalogo_experimentos (
-  id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  nombre      TEXT NOT NULL,
-  descripcion TEXT,
-  activo      BOOLEAN DEFAULT true,
-  orden       INTEGER DEFAULT 0
-);
--- Primer experimento: "Zona naranja" (migrado desde zona_naranja_* de sesiones)
-```
-
-### Tabla `diagnostico_experimentos` (Fase 4D · renombrada en Fase 13)
-
-```sql
--- Antes: experimento_registros. Renombrada a diagnostico_experimentos (Fase 13)
--- por consistencia con diagnostico_errores.
-CREATE TABLE diagnostico_experimentos (
-  id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  sesion_date     DATE NOT NULL,
-  experimento_id  BIGINT NOT NULL REFERENCES catalogo_experimentos(id),
-  presente        BOOLEAN DEFAULT false,  -- ¿la condición apareció ese día?
-  resultado       TEXT,              -- T | S
-  valor           NUMERIC,           -- $ propio del experimento (T +, S −) — Fase 15
-  nota            TEXT,
-  created_at      TIMESTAMPTZ DEFAULT now(),
-  UNIQUE (sesion_date, experimento_id)
-);
-```
-
-> Estadística de decisión: con ≥ 20 casos con resultado → sugerencia automática (adoptar / descartar / neutro). Sin umbral mínimo, los datos no son concluyentes.
-> **Fase 13:** la tabla legado `sesion_casuisticas` (errores viejos, duplicados en `diagnostico_errores`) fue **eliminada**. Las condiciones de mercado que estaban registradas como errores (Contra Resistencia, Contra Máximo Premercado, 3ª Corrida, etc.) se **migraron a experimentos** con su T/S.
-
-### Tabla `fomc_dates`
-
-```sql
-CREATE TABLE fomc_dates (
-  date        DATE PRIMARY KEY,
-  description TEXT DEFAULT 'FOMC Meeting'
-);
--- Fechas cargadas: 2025-2026 (migraciones 2026-06-17-fomc-dates-*.sql)
-```
-
-### Tablas Apex Tracker (Fase 16)
-
-```sql
--- Cuentas de evaluación / PA de Apex
-CREATE TABLE apex_cuentas (
-  id, nombre, numero_cuenta,
-  tamano, balance_inicial, drawdown_max, profit_target,
-  safety_net_balance, piso_congelado,   -- safety net: congela el threshold tras tocarlo
-  min_dias, contratos_max,
-  estado,            -- evaluacion | recuperacion | critico | safety_net | aprobada | pa | quemada
-  fecha_inicio, activa, notas, created_at,
-  plan_perfil DEFAULT 'moderado',       -- conservador | moderado | agresivo  (Fase 16, plan dinámico)
-  plan_ritmo  DEFAULT 'equilibrado'     -- config del plan persistida en BD (sincroniza dispositivos)
-);
-
--- Registro diario MANUAL por cuenta (cuentas sin auto-export)
-CREATE TABLE apex_registros (
-  id, cuenta_id (FK → apex_cuentas ON DELETE CASCADE),
-  fecha, pnl_dia, balance, threshold, contratos, nota, created_at,
-  UNIQUE (cuenta_id, fecha)
-);
-
--- Trades individuales auto-exportados de NT8 (cuentas de evaluación)
-CREATE TABLE apex_trades (
-  id, account, instrument, market_pos, qty,
-  entry_price, exit_price, entry_time, exit_time, exit_name,
-  profit (NETO), commission, mae, mfe, etd, bars,
-  trade_date, resultado, created_at
-);
--- Tabla SEPARADA de `trades` para no mezclar dinero real (PA) con evaluación.
-```
-
-> **Apex Tracker (Fase 16):** `apex_cuentas` define los parámetros de cada prueba (drawdown, target, safety net). Los días de cada cuenta se obtienen de **dos fuentes combinadas**: registro manual (`apex_registros`) y/o derivados de trades (`apex_trades` para evaluación; tabla `trades` para la PA real fondeada). El indicador NT8 hace **routing automático por nombre de cuenta**: cuentas `PA-*` → `trades` + Telegram; cuentas de evaluación Apex → `apex_trades` sin notificar.
+- **Plazo de la consecución del reingreso.** El motor le pone tope de 5 velas; el plan dice que el traspaso
+  no tiene plazo. Caso: 11/09, reingreso de las 9:01 (consecución en la 13.ª vela; sin tope sale tal cual se
+  vio a mano, descartado por el punto de referencia 29.423,00). Sin tope cambia el 24/07: Reingreso alcista
+  9:21, +38,00
+- **¿Una zona de premercado da Continuación?** `R-25` dice que no; `R-15` («Aplica a: Continuación ·
+  Reingreso») y `R-40` lo dejan abierto. El motor dice que no. Tampoco anota como rompimiento la salida de
+  una zona que abrió con la ventana dentro (ningún día hasta hoy)
+- **Resolución anticipada del plazo** (`P-31`) y **marcado por banda y turno** (`P-33`): el motor no está
+  comprobado en esos dos puntos. **Umbral MNQ frente a NQ** (`P-32`): julio se marcó con el de NQ
+- **Tres operaciones que cambió el motor el 28/09** (días no validados, reingreso de una sola vela): 23/07
+  (Reingreso −17,00 → Continuación bajista +32,25), 03/08 (+11,25 → NO OPERA), 24/09 (+21,50 → NO OPERA)
+- **Test ciego:** sin decidir si las 10 jornadas (10 → 23/09) cierran el criterio de 9 de 10
+- **Textos del plan desfasados** (con el sí de Kris): `R-09` dice «verde/roja» por azul/blanca; `R-36` nombra
+  los discursos de Powell y se decidió no contarlos; `PENDIENTES.md` da por no hechos el filtro de noticias
+  del motor (`P-27`) y los rompimientos de premercado (`P-34`)
+- **Diagramas por rehacer:** el del volumen de premercado (dibuja 2.000; vale más de 8.000 en MNQ) y los
+  siete de agosto; después, unificar las carpetas de imágenes
+- **Se cierran con los números del backtesting:** regla de parada, mín/máx de premercado, retroceso mínimo
+  (falta la comisión real por contrato MNQ). **No bloquean:** Apex, sesión sin hora de cierre, nombre de la
+  conexión, términos del curso
 
 ---
 
-## Historial de cambios a la tabla `trades`
+## Checkpoint 2026-09-25c — Cowork deja de existir: el plan se trabaja desde Claude Code
 
-| Tipo | Detalle |
-|---|---|
-| 🔄 Tabla recreada | `DROP TABLE trades` → `CREATE TABLE trades` nuevo esquema |
-| ✏️ Renombrado | `id` → `trade_number` |
-| 🔀 Separación | `entry_time TIMESTAMPTZ` → `trade_date DATE` + `entry_time TIME` + `exit_time TIME` |
-| 🆕 Columnas nuevas | `strategy`, `etd` |
-| 🗑️ Columnas eliminadas | `entry_name`, `created_at` |
-| 🔧 Trigger actualizado | `WHERE (trade_date, entry_time) < (NEW.trade_date, NEW.entry_time)` |
-| 📦 Datos cargados | 64 trades históricos desde `Trades_2026_V2.csv` |
-
-**Datos históricos:**
-- 64 trades | Cuenta: `PA-APEX-232411-03` | Fechas: 03/02/2026 – 08/05/2026
-- Instrumentos: `MNQ 03-26` y `MNQ 06-26`
+Kris decidió que el plan de Chaumer, el test ciego, el motor y los diagramas se trabajen desde aquí. `01_Plan`
+deja de ser de solo lectura: cada cambio necesita el sí de Kris (erratas incluidas), va en su propio commit
+`plan:` y se cierra sincronizado. Se reescribieron las instrucciones que asignaban cosas a Cowork (`CLAUDE.md`,
+los dos de `chaumer/`, la regla del Coach, `sincronizar.mjs`, el texto del Coach y el de Estrategia, el LEEME
+del test ciego —que gana una regla de ceguera para Claude Code— y varios comentarios) y el comentario de
+`plan_documentos` en la BD. Los dos buzones, `PROPUESTAS_AL_PLAN.md` y `PENDIENTE_PORTAL.md`, se archivaron
+en `docs/archivo/chaumer/`, y lo que tenían abierto pasó a `tasks/current.md`. D-028.
 
 ---
 
-## FASE 1 — Infraestructura base y base de datos
+## Checkpoint 2026-09-25b — Fase 8: el portal suelta R2, y la unificación termina
 
-- Proyecto Supabase creado, tablas `trades`, `sesiones`, `reglas`
-- 64 trades históricos importados vía CSV
-- Repositorio GitHub creado, GitHub Pages habilitado sobre rama `main`
-- RLS deshabilitado en tablas principales (proyecto personal)
-
----
-
-## FASE 2 — Dashboard web completo
-
-### Módulos JS
-
-| Archivo | Rol |
-|---|---|
-| `js/config.js` | Credenciales Supabase y Cloudinary |
-| `js/db.js` | Capa de datos: todas las queries a Supabase |
-| `js/calendar.js` | Calendario mensual con navegación, colores, festivos CME, FOMC |
-| `js/metrics.js` | KPIs, disciplina, métricas cuantitativas |
-| `js/table.js` | Tabla de trades paginada, filtrable |
-| `js/form.js` | Formulario sesión diaria + experimentos dinámicos |
-| `js/charts.js` | 6 gráficas Chart.js |
-| `js/gallery.js` | Galería de imágenes por mes con lightbox |
-| `js/data.js` | Gestor de catálogos (errores, emociones, experimentos) |
-| `js/coach.js` | Coach IA — flujo 3 etapas |
-| `js/app.js` | Boot, navegación SPA, modales, lightbox |
-
-### Colores del calendario
-
-| Estado | Color | Badge |
-|--------|-------|-------|
-| Target | 🟢 Verde | — |
-| Stop | 🔴 Rojo | — |
-| Break Even | ⬜ Gris | B.E. |
-| No operé | ⬜ Gris oscuro | No operé |
-| Sin entradas | 🟣 Violeta | Sin entradas |
-| Setup válido no tomado | 🟣 Violeta | ⚠️ Setup válido — no entré |
-| Festivo | 🔵 Azul | Festivo |
-| FOMC | 🟡 Ámbar | FOMC |
+La fase iba a mudar las observaciones de Alfredo a Supabase y apagar D1 y R2. La revisión contra el código lo
+cambió: en D1 había **0 observaciones** y **ninguna línea** usaba R2 desde la fase 4. Kris decidió dejar las
+observaciones en D1 (mudarlas obligaba a que la llave del portal escribiera en Supabase, contra D-023). El portal
+suelta R2 (el bucket sigue en Cloudflare, sin borrar) y la copia local de D1 gana la tabla que le faltaba.
+D-027. Con esto, **las 8 fases de la unificación Chaumer están cerradas**.
 
 ---
 
-## FASE 3 — Indicador C# para NinjaTrader 8
+## Checkpoint 2026-09-25 — Fase 7: la cadena diaria
 
-`NinjaTrader/SupabaseAutoExport.cs` — exporta trades cerrados automáticamente a Supabase.
+Diseño: `docs/disenos/2026-09-24-cadena-diaria.md` (v1.8) · D-026. **Kris deja de exportar a mano:** cada
+día a las 10:32 un AddOn de NinjaTrader exporta las velas, el motor de Chaumer marca el día y la ficha
+llega al Coach, que no la enseña hasta que Kris registra su lectura.
 
-- `State.DataLoaded`: suscribe a `ExecutionUpdate` de la cuenta configurada
-- Fusión ATM: ventana 3 segundos para acumular ejecuciones múltiples
-- **Endpoint:** `POST https://jothoslozctflfrnysrx.supabase.co/rest/v1/trades`
-- `commission` v2.2 (2026-06-02): `tradeCommission` acumula `ex.Commission` de **todas las patas** (entrada + salida + scaling + cierres parciales) → round-trip real. `profit` se envía **neto** (bruto − comisión). Antes (v2.1) solo leía la pata de salida → guardaba medio valor. El cambio se gatilló porque NT 8.1.7.0 empezó a reportar $0.65/pata (antes devolvía 0).
+- **7a · el motor.** `lector.py` sigue a Nueva York (desde el 2/11 habría tomado una vela de premercado
+  como vela base) y en día de Fed ve reingresos. Regresión: 46 días no Fed idénticos. El 8/07 da ahora un
+  Reingreso −64,75 y se llevó a Cowork.
+- **7b · la BD.** `sesiones.registrada_at` (congelada por trigger) y `diario_editado_at`; `motor_fichas`
+  con el candado del test ciego: la única tabla con RLS que no es `auth_all`, a propósito.
+- **7c · el puente.** `scripts/cadena/subir_dia.py` importa el motor sin copiarlo, sube el gráfico a
+  Cloudinary y la ficha a Supabase. 10 fichas del 10 al 23/09.
+- **7d · el Journal.** Tarjeta "Lo que marcó el motor" en el Coach y la sección en su contexto, sin
+  códigos del plan y presentada como auditoría.
+- **7e · el AddOn.** `CadenaDiaria.cs`, escrito en C# 5 para compilarlo fuera de NinjaTrader. La primera
+  noche recuperó solo 5 días; el 25/09 exportó a las 10:32:42. **6 de 6 días idénticos** a la
+  exportación manual, línea a línea.
 
----
-
-## FASE 4 — Bot de Telegram (v4.0)
-
-**Flujo:** Telegram → Webhook → Cloudflare Worker #2 → KV → Supabase
-
-**Máquina de estados v4.0:**
-```
-OPERO → (no) MOTIVO → fin
-      → (sí) EMOCION → CONFIANZA → CONTEXTO → CORRIDA → VELAS → ZONAS_CONTRA
-              → SETUP → CHECKLIST → REFLEXION
-```
-
----
-
-## FASE 5 — Coach IA (Análisis Chaumer)
-
-### Flujo en 3 etapas (rediseño completo)
-
-El Coach IA opera en un flujo secuencial de 3 etapas, con el **chat de coaching como paso opcional**:
-
-```
-┌─ ETAPA 1 ─────────────────────────────────────┐
-│  [ Análisis Técnico ]                          │
-│   → 🌍 Contexto                               │
-│   → 📈 Desarrollo de sesión                   │
-│   → ✅ Validación de setups (sin veredicto)   │
-└────────────────────────────────────────────────┘
-              ↓ se desbloquea
-┌─ ETAPA 2 ─────────────────────────────────────┐
-│  💬 Chat de coaching (OPCIONAL)               │
-│   [ Cerrar sesión ] → notifica Etapa 3        │
-└────────────────────────────────────────────────┘
-              ↓ habilitado desde Etapa 1
-┌─ ETAPA 3 ─────────────────────────────────────┐
-│  [ Generar Diagnóstico ]  ← 2ª llamada IA    │
-│   → 🎯 Veredicto de setup (VÁLIDA/INVÁLIDA)  │
-│   → ⚠️ Errores detectados                    │
-│   → 🎓 Aprendizaje del día                   │
-│   → 📋 Resumen para diario                   │
-│  [ Lista de confirmación de errores ]         │
-└────────────────────────────────────────────────┘
-[ Guardar ] — siempre visible
-```
-
-**El chat es opcional:** el Diagnóstico se habilita directamente tras el Análisis Técnico. Si se usa el chat, el diagnóstico integra todo lo conversado.
-
-### Modelo y configuración
-
-| Parámetro | Valor |
-|---|---|
-| Modelo | `claude-sonnet-4-6` |
-| Max tokens | 3000 |
-| Proxy | `broad-hall-c53f.kristerock.workers.dev/api/claude` |
-| Etapas | 2 llamadas IA por sesión completa |
-
-### Errores detectados por la IA — formato estructurado
-
-La IA devuelve cada error en formato `NombreCorto | tipo | resultado | detalle`:
-
-```
-Miedo | psicologico | T | No tomé la entrada; el precio llegó al target.
-Error de Marcación | marcado | ninguno | Marqué la zona 10 pts arriba del nivel correcto.
-```
-
-- **NombreCorto:** si coincide con el catálogo de errores → usa ese nombre exacto. Si es nuevo → lo crea en `catalogo_errores`.
-- **resultado:** T/S solo para días no operados (¿qué habría pasado?). `ninguno` para días operados.
-
-### Lista de confirmación de errores
-
-Tras generar el diagnóstico, aparece una lista pre-marcada con los errores detectados:
-- ✅ Checkbox para confirmar/desmarcar
-- Selector de tipo (🧠/📐/⚙️/🗺️) editable
-- Badge T/S clickable (toggle) para errores de días no operados
-- Badge "nuevo" si el nombre no está en el catálogo
-- Badge "ya registrado" si ya existe ese día
-- Botón ▾ para ver el detalle largo
-- Al guardar, solo los marcados entran al registro
-
-### Sistema prompt — datos incluidos
-
-| Fuente | Contenido |
-|---|---|
-| `estrategia_chaumer` | Estrategia Chaumer completa (8+ secciones) |
-| `setup_reglas` | Reglas documentadas por setup (valida entradas contra reglas escritas) |
-| `diagnosticos_diarios` (60 días) | Historial compacto de resúmenes |
-| `diagnostico_errores` histórico | Patrones repetidos (≥2 = ⚠️, ≥3 = 🚨) |
-| `sesiones` del día | Emoción inicio, confianza, contexto, setup, checklist |
-| `trades` del día | P&L, targets, stops, BEs |
-| `diagnostico_errores` del día | Errores manuales registrados |
-| `experimento_registros` | Experimentos presentes ese día y su resultado |
-| `catalogo_errores` | Vocabulario controlado para naming de errores |
-
-### Guardar diagnóstico — tabla `diagnosticos_diarios`
-
-Upsert por `sesion_date` con:
-- Secciones de Etapa 1: `sec_contexto`, `sec_desarrollo`, `sec_validacion`
-- Secciones de Etapa 3: `sec_veredicto`, `sec_errores`, `sec_aprendizaje`, `sec_resumen_compacto`
-- `setups_json`, `estado_emocional_fin_id`, `patron_detectado`
-- `chat_messages` (conversación completa)
-
-Adicionalmente: errores confirmados → `diagnostico_errores` con `origen='ia'` y dedup contra manuales del día.
-
-### Historial de conversaciones
-
-Al cargar una fecha pasada con diagnóstico guardado, el chat restaura la conversación completa con separador visual `── Conversación del DD/MMM/YYYY ──`.
+**Lo que enseñó:** el diseño viejo (10:45 fijo y una tarea de Windows) se rompía el 2/11; y un candado en
+JavaScript no protege nada si la app lee con `auth_all`.
 
 ---
 
-## FASE 6 — Mejoras UX (Mayo 2026)
+## Checkpoint 2026-09-24b — Fase 6: el Coach con el plan de Chaumer y Claude Opus 5.5
 
-### Formulario de sesión
+- **6a** — El Worker `broad-hall-c53f` al repositorio (`workers/proxy-ia/`), sin claves escritas. Pasa
+  el cuerpo tal cual: el cambio de modelo no necesitó tocarlo. No reenvía `anthropic-beta`.
+- **6b** — `plan_documentos` (los 5 documentos, 138 K caracteres) y `coach_uso`. Se cargaron por el
+  MCP con el SQL del sincronizador, en trozos, comprobando cada trozo con su sha256: un salto de línea
+  perdido en el glosario lo cazó la huella. El Coach manda el plan como primer bloque del system en
+  días de la etapa 2, con Opus 5.5, un vigilante de códigos y el aviso de negativa.
+- **Prueba real (24/09):** 88.235 tokens escritos en caché en el análisis y leídos en el chat y el
+  diagnóstico; 0,92 USD la sesión. El análisis juzgó con el plan: stop 11 puntos más corto que el que
+  marca el plan (desde que nace la zona) → entrada inválida.
+- **6c** — Documentos (`.claude/rules/coach.md`, `CLAUDE.md`, D-025) y un arreglo visto de paso:
+  `parsearSetupsJson` cortaba el resumen del veredicto en la palabra «setup» y guardaba los `**`.
 
-**Checklist separado:**
-
-| Grupo | Ítems | Visibilidad |
-|---|---|---|
-| Pre-Sesión | Calendario económico · Zonas vigentes | Siempre |
-| Operativo | Orden · 5 Velas · Consecución · Estructura | Solo cuando sí se operó |
-
-**Renombrado de etiquetas:**
-
-| Antes | Después |
-|---|---|
-| "Estado emocional" | "¿Cómo llegué?" |
-| "Confianza" | "Confianza pre-sesión" |
-| Nuevo campo | "¿Cómo terminé?" (emoción de cierre) |
-
-**Setup válido no tomado:** bloque adicional con setup observado, motivo de no entrada (Duda/Miedo/Zona naranja/Desconfianza/Otro).
-
-### Correcciones Coach IA
-
-| Corrección | Detalle |
-|---|---|
-| Modelo correcto | `claude-sonnet-4-6` |
-| Secciones vacías | Fallback: texto completo en CONTEXTO si parseo falla |
-| Reset al navegar | `Coach.refresh()` limpia el panel |
-| Botón guardar | Aparece arriba y abajo del chat |
-| Auto-carga imagen | `autoCargarImagen(url)` desde `sesion.imagen_url` |
+Commits: `272b5ea` · `57006aa` · `804a1dc` y el de la 6c.
 
 ---
 
-## FASE 7 — Limpieza del modelo de datos (Fase 2 del rediseño)
+## Checkpoint 2026-09-24 — Unificación Chaumer: fases 1–3 y el repositorio público
 
-### 2A — Fuente única de emoción/confianza
+Diseño: `docs/disenos/2026-09-24-unificacion-chaumer.md` (v1.4). **Un solo proyecto por
+debajo, dos webs por encima:** el proyecto Chaumer entra en el Journal y el portal queda como
+la pantalla de Alfredo.
 
-- `estado_emocional_id` + `nivel_confianza` → **solo en `sesiones`** (momento operativo)
-- `estado_emocional_fin_id` → **solo en `diagnosticos_diarios`** (reflexión de cierre)
-- Eliminadas las columnas redundantes de `diagnosticos_diarios`
+### Fase 1 · GitHub Pages publica solo la aplicación
 
-### 2B — Taxonomía de errores unificada
+Pages servía la rama `main` entera: `CLAUDE.md`, `docs/`, `NinjaTrader/` daban 200.
+`publicar-journal.yml` monta una carpeta con `index.html`, `js/`, `css/`, `icons/`,
+`favicon.svg`, `manifest.json` y `sw.js`, y solo publica eso. Kris cambió *Source* a
+**GitHub Actions** antes del push. Lo privado da 404; la app carga en escritorio y en móvil.
 
-- Columna `tipo` agregada a `catalogo_errores`
-- Tipos: `psicologico` | `analitico` | `operativo` | `marcado`
-- Selector de tipo inline en el gestor de catálogo (se guarda automáticamente al cambiar)
+### Fase 3 · `chaumer/` con sus 115 commits
 
-### 2C — Tabla estructurada de errores
+`git subtree add` desde `Trading_Plan`. `01_Plan`, `02_Assets` y `05_Backtesting`, idénticos
+byte a byte a la carpeta vieja. El portal se publica solo con `publicar-portal.yml`
+(secretos propios `PORTAL_CLOUDFLARE_*`; la misma cuenta que el bot) y las 56 páginas salieron
+idénticas a las de antes. Dos cosas que solo aparecieron al mudar:
 
-- `diagnostico_errores`: el Coach escribe una fila por error (con tipo) en lugar de `errores_json` frágil
-- `detectarPatrones()` y el historial leen de la tabla estructurada
-- **Bug corregido:** `patron_detectado` (siempre `false`) ahora compara con el histórico real
+- **El espacio de "Trading Journal".** Cinco scripts del portal sacaban su carpeta con
+  `URL.pathname`, que deja `%20`: `npm run verificar` fallaba. Ahora `fileURLToPath`.
+- **CRLF.** Git en Windows sacaba `chaumer/` con CRLF, la huella de los diagramas cambiaba y se
+  redibujaban. `.gitattributes`: `chaumer/** text=auto eol=lf`.
 
----
+### El repositorio era público (D-022)
 
-## FASE 8 — Métricas cuantitativas (Fase 3 del rediseño)
+`CLAUDE.md` decía "privado"; no lo era desde su creación. Al subir `chaumer/`, el plan de
+Alfredo quedó legible en GitHub. Pasarlo a privado **tumbó el Journal** (Pages no publica
+privados con la cuenta gratuita) y lo **desactivó**. Kris lo dejó público hasta tener
+presupuesto para GitHub Pro; hubo que reactivar Pages y relanzar la publicación. El portal ya
+enseñaba sin contraseña casi todo el plan (con `noindex`).
 
-### 3A — Disciplina dividida en 2 métricas
-
-| Métrica | Qué mide | Fuente |
-|---|---|---|
-| **Disciplina de Proceso** | % de ítems de checklist cumplidos (días operados) | `sesiones.chk_*` |
-| **Tasa de Errores** | % días con al menos un error · desglose por tipo | `diagnostico_errores` |
-
-**Modal Tasa de Errores:** barras por tipo (🧠/📐/⚙️/🗺️) + chips de origen (manual/IA/ambos) + barras por nombre.
-
-### 3B — Objetivos y cumplimiento de reglas
-
-**Panel de configuración:** ⚙ Ajustes → "Objetivos y reglas" → 4 campos guardados en BD (`objetivos`):
-- Stop máximo por trade ($)
-- Máximo de trades por día
-- Objetivo de P&L diario ($)
-- Límite de pérdida diario ($)
-
-**Card "Cumplimiento de Reglas %":**
-- Calcula: `(reglas cumplidas) / (3 × días operados) × 100`
-- 3 reglas evaluadas: stops dentro del límite · días dentro del máx de trades · días sin romper límite de pérdida
-- Stop respetado: medido por proxy del profit realizado en trades con stop (Opción A)
-- Click → modal con desglose: stops dentro del límite, días sin sobre-operar, días sin romper límite, días que lograron el objetivo (informativo, no cuenta para disciplina)
+Commits: `f20786d` · `21b82c0` · `221379d` · `29496d7` · `3bbaffa` · `fb32a92` · `b984823` ·
+`dffd562` · `31133c0`.
 
 ---
 
-## FASE 9 — Errores tipificados + Estadísticas nuevas + Experimentos (Fase 4 del rediseño)
-
-### 4A — Registro unificado de errores
-
-**Modelo final: `catalogo_errores` + `diagnostico_errores`**
-
-- `catalogo_errores`: maestro de nombres breves + tipo (renombrado de `catalogo_casuisticas`)
-- `diagnostico_errores`: ocurrencias con nombre corto + `descripcion` larga + `resultado` T/S + `origen` + `catalogo_id` (renombrado de `errores_sesion`)
-- Tabla legado `diagnostico_errores` anterior (solo IA, texto plano) eliminada
-
-**Display compacto en modal del calendario:**
-- Chips: `emoji-tipo NombreCorto · 🤖/🤝 origen · T/S`
-- Clic en chip → despliega el detalle completo de ese día
-
-**IA auto-tipifica y crea catálogo:**
-- Formato: `NombreCorto | tipo | resultado | detalle`
-- Si el nombre ya está en el catálogo → usa ese nombre exacto (sin duplicar)
-- Si es nuevo → badge "nuevo" en la confirmación → al guardar se crea en `catalogo_errores`
-- Dedup: si IA detecta lo mismo que ya registraste manualmente → marca `origen='ambos'`, no duplica
-
-### 4B — Catálogo de recomendaciones
-
-**Modelo:** `catalogo_recomendaciones` (maestro) + columnas `recomendacion_id`, `recomendacion_ia`, `recomendacion_manual` en `diagnostico_errores`.
-
-**Formato IA extendido a 6 partes por error:**
-```
-NombreError | tipo | resultado | detalleError | NombreRec | textoRec
-```
-- `NombreRec`: si existe en el catálogo → enlaza. Si es nuevo → badge "nueva" → se crea al confirmar.
-- `textoRec`: acción concreta específica para ese día.
-
-**Lista de confirmación (Coach):** muestra recomendación IA debajo de cada error (en verde) + campo editable para la nota manual del trader. Al guardar: `recomendacion_ia` + `recomendacion_manual` se persisten en `diagnostico_errores`.
-
-**Modal del calendario:** el detalle desplegable del error incluye la recomendación IA y la nota manual.
-
-**Ajustes → Recomendaciones:** gestiona el catálogo (agregar, activar/desactivar, tipo inline editable).
-
-### 4C — Estadísticas nuevas
-
-**Card "Días limpios":**
-- Valor: racha actual de días consecutivos sin errores
-- Sub: X/Y días sin errores en el período
-- Modal: barra visual %, lista de días con errores
-
-**Card "Dejé de ganar":**
-- Valor: targets dejados pasar (errores con `resultado='T'` en días no operados)
-- Sub: XT · YS dejados pasar
-- Modal: lista por día (error + resultado)
-- La IA llena `resultado` T/S automáticamente para días no operados; el trader lo confirma/corrige en la lista
-
-### 4D — Experimentos (reglas en prueba)
-
-**Sistema dinámico** que reemplaza los campos `zona_naranja_*` hardcodeados:
-
-**Formulario de sesión → sección "🧪 Experimentos activos":**
-- Lista dinámica de experimentos activos del catálogo
-- Por cada uno: toggle "¿Se presentó?" → si sí: botones T/S + nota libre
-- **Se guarda automáticamente** al cambiar (no requiere botón guardar)
-
-**Ajustes → "Catálogo de Experimentos":**
-- Agregar / activar / desactivar experimentos
-- Primer experimento: "Zona naranja" (migrado desde `zona_naranja_*`)
-
-**Card "Experimentos" en Métricas:**
-- Muestra cuántos experimentos tienen datos suficientes para decidir
-- Modal con % target por experimento y conteo de muestras
-- Sugerencia automática con ≥ 20 casos:
-  - ≥ 60% target → ✅ "Candidato a regla: considera adoptarlo"
-  - ≤ 35% target → ❌ "Descartar: no aporta como filtro"
-  - Entre 35%-60% → ⚖️ "Neutro: sin evidencia suficiente"
-
----
-
-## FASE 10 — Módulo de Reglas por Setup
-
-**Motivación:** El Coach IA diagnosticó (2026-06-01) que operar un setup sin reglas escritas es una fuente de error, no de ventaja. Esta fase cierra esa brecha de forma estructural.
-
-### Nueva sección principal "Estrategia"
-
-- "Estrategia" sale de ser una **pestaña del Coach IA** y pasa a ser **sección principal** del menú lateral (entre *Registrar* y *Datos*, ícono 📖 `ti-book-2`).
-- Módulo nuevo `js/estrategia.js`. Lazy-init en `Nav.go('estrategia')`.
-- La sección contiene **dos bloques**:
-  1. **Reglas por Setup** (módulo nuevo)
-  2. **Estrategia general Chaumer** (editor movido tal cual desde el Coach)
-- La pestaña "Estrategia" del Coach fue **eliminada** (`renderEstrategia` removida de `coach.js`).
-
-### Reglas por Setup
-
-**3 setups** (tarjetas), cada uno con **toggle de dirección** Común / Alcista / Bajista:
-
-| Setup | Key | Descripción |
-|---|---|---|
-| IRI en Apertura | `iri_apertura` | Primer impulso tras rompimiento del rango de premercado |
-| IRI en Continuación | `iri_continuacion` | Continuación clásica Impulso·Retroceso·Impulso desde zona |
-| Reingreso | `reingreso` | Reentrada tras consecución fallida + reversión + rompimiento del retroceso |
-
-**7 campos estructurados por setup+dirección:** activación/contexto, secuencia/estructura, entrada, stop, gestión/target, invalidación/filtros, notas.
-
-- Persisten en `setup_reglas` vía `DB.saveSetupRegla` (upsert por `setup,direccion`).
-- **Memoria por dirección:** al cambiar de toggle, los cambios sin guardar de la dirección anterior se conservan en memoria.
-- Guardado explícito por tarjeta (botón "Guardar reglas").
-- **Caso base pre-cargado:** Reingreso (Común) con la secuencia capturada por el Coach el 2026-06-01 (reingreso alcista 09:08 → TARGET en simulación).
-
-### Coach IA — integración
-
-- `buildSystemPrompt` agrega un bloque **"REGLAS DE SETUPS DOCUMENTADAS POR EL TRADER"** (`cargarReglasSetup`).
-- El Coach valida cada entrada contra estas reglas y **advierte si un setup no tiene reglas escritas** (no operar en real sin reglas documentadas y testeadas).
-- `Coach.clearCache()` expuesto para invalidar la caché de estrategia al editar reglas/secciones desde la nueva sección.
-
----
-
-## FASE 11 — Historial como sección propia
-
-**Continuación de la limpieza del Coach IA** (tras sacar Estrategia en Fase 10).
-
-- "Historial" sale de ser **pestaña del Coach IA** y pasa a **sección principal** del menú (entre *Anual* y *Coach IA*, ícono 🕐 `ti-history`).
-- El Coach IA **ya no tiene barra de tabs**: es un flujo único de análisis (Estrategia e Historial ahora son secciones propias).
-
-### Acoplamiento — render se queda en `coach.js`
-
-A diferencia de Estrategia (módulo independiente), el render del Historial **permanece en `coach.js`** porque está acoplado al Coach: al hacer clic en un día carga ese diagnóstico en el panel de análisis. Se expone `Coach.renderHistorial()` para que `Nav.go('historial')` lo invoque (y se re-renderiza en cada visita para reflejar diagnósticos nuevos).
-
-### Flujo Historial → Coach (sin doble carga)
-
-- Clic en un día → `verDiagnostico(date)` setea `pendingDate` y llama `Nav.go('coach')`.
-- `init()` y `refresh()` honran `pendingDate` (cargan esa fecha; si no, hoy/coachDate) y lo limpian. Evita la condición de carrera de cargar dos fechas a la vez.
-- `cargarFecha()` sincroniza el `coachDatePicker` con la fecha cargada.
-- Eliminados: `switchTab`, listeners de tabs, CSS muerto de `.coach-tabs` / `.coach-tab-btn`.
-
----
-
-## FASE Extra — UX Coach IA + Skill de trabajo (3 Jun 2026)
-
-- **Coach IA — navegación día a día:** botones `‹ ›` junto al date picker para ir al día anterior/siguiente. `shiftWeekday()` **salta sábados y domingos**. El botón "adelante" se deshabilita si el próximo día hábil sería futuro. El picker se conserva para saltar a cualquier fecha.
-- **Coach IA — diagnóstico duplicado (fix):** (A) regla en el prompt para que la IA no emita el diagnóstico estructurado durante el chat; (B) al restaurar el chat de una fecha, se filtran los mensajes de orquestación (instrucción + respuesta de análisis/diagnóstico) para que no se dupliquen con sus paneles.
-- **Resumen del diario:** se quitan los backticks con que la IA envuelve la línea (`limpiarResumen`).
-- **Skill global `flujo-desarrollo`** (en `~/.claude/skills/`): captura el flujo de trabajo (analizar→aprobar→implementar→verificar→commit, español, conventional commits, verificación real, UI moderna). Reutilizable en los 3 proyectos (Trading Journal, app IA, finanzas).
-
----
-
-## FASE 12 — Premercado / contexto técnico
-
-Captura el contexto técnico del premercado para enriquecer el análisis de la IA. **Web + Telegram + IA.**
-
-- **Campos** (en `sesiones`): cierre ayer, apertura, máx/mín premercado (+ rango auto-calculado), hasta 5 líneas naranjas de soporte y 5 de resistencia (progresivas), noticias.
-- **Dos "no operé"** (`se_conecto`): caso 1 (no me conecté → mínimo) vs caso 2 (me conecté sin setup → pide premercado + análisis).
-- **Web:** sección "🌅 Premercado" en Registrar Sesión (`form.js`), líneas naranjas que se revelan una a una al llenarse.
-- **Telegram (`worker.js`):** flujo de premercado tras "¿Operaste?"; líneas naranjas por comas; `/skip` en cada paso; pregunta "¿Te conectaste a analizar?" para el caso 2.
-- **IA:** bloque "PREMERCADO / CONTEXTO TÉCNICO" en el system prompt del Coach.
-- **Fix de despliegue del bot:** `wrangler deploy` borraba las Variables del dashboard (quedaba `SUPABASE_URL` undefined → no leía emociones ni guardaba sesiones). Se definieron en `wrangler.toml` `[vars]` para que persistan. `BOT_TOKEN` queda como Secret.
-
-> **Pendiente:** verificar que el Worker `/api/session` (no versionado) pase los campos de premercado al guardar desde la **web** (el bot ya guarda OK).
-
----
-
-## FASE 13 — Limpieza del modelo de errores / experimentos
-
-- **Modal del día rediseñado** (3 pestañas: 🖼 Gráfica · 📌 Resumen · 📊 Operativa). El Resumen es visual "de un vistazo": estado, P&L, emoción in→cierre, confianza, veredicto, ✅Bien/⚠️A mejorar, 💡Para la próxima, y botón "Ver diagnóstico completo" → Coach. Usa `diagnosticos_diarios` (antes no se cargaba). Arregla el bug de días `no_opero` con diagnóstico que no mostraban resumen.
-- **Limpieza `diagnostico_errores`:** 5 fechas viejas (abr–may) tenían el texto del diagnóstico partido en ~60 fragmentos en el campo `error`. Se reconstruyeron a filas limpias (error = nombre de catálogo, descripción = texto completo), creando ~9 entradas de catálogo nuevas (Rabia, FOMO, Ansiedad, Sobreconfianza, etc.).
-- **Tabla `sesion_casuisticas` eliminada** (legado de errores, 100% duplicada en `diagnostico_errores`).
-- **`experimento_registros` → `diagnostico_experimentos`** (rename por consistencia).
-- **Condiciones de mercado migradas a experimentos:** ~18 ocurrencias que estaban como errores (Contra Resistencia, Contra Máximo Premercado, 3ª Corrida, Contra Máximo de la Apertura, etc.) se movieron a experimentos con su T/S, creando los experimentos faltantes. Verificado: 0 pérdida de datos.
-- **Fix filtro de cuenta (modal del calendario):** `openDayModal` ahora filtra los trades por la cuenta seleccionada en el dropdown (`accountFilterCalendar`) antes de abrir el modal — antes el Resumen y Operativa sumaban todas las cuentas. Además, fix pre-existente: "Todas las cuentas" no persistía (la restauración no reconocía `'all'` porque `allAccountsList` solo tiene cuentas reales) → revertía a PA-APEX al recargar/navegar. Ahora `'all'` persiste.
-- **Fix puntos de retroceso (4 Jun):** se calculaba como `|P&L de TODAS las cuentas / 2|` (mezclaba Apex + Sim). Ahora el modal lo deriva de los trades ya filtrados por cuenta (`|P&L cuenta / 2|`), y `updateRetroceso` (form) filtra por la cuenta persistida antes de calcular. Corregido el dato del 2026-06-04 en BD (74 → 47).
-
----
-
-## FASE 14 — Errores (renombrado) + métricas de costo y tendencias (5-10 Jun)
-
-- **Renombrado global "Casuísticas" → "Errores"** en toda la UI (5266a5c... `533765a`). El concepto pasa a llamarse explícitamente *errores* (la función alias `casuistica:error` se mantiene por compatibilidad de código).
-- **Experimentos en Registrar — rediseño:** dropdown + botones T/S en lugar de lista hardcodeada; sección "Tipificación" renombrada.
-- **Experimentos en días no operados con conexión:** si me conecté a analizar (aunque no operé) ya puedo registrar el resultado T/S de los experimentos del día.
-- **Checklist Pre-Sesión movido** antes del bloque de "motivo de no operación".
-- **Métricas (drill-down):** modal de Errores con desglose navegable y títulos dinámicos; **costo $ de errores**, tendencias, experimentos vs base (tasa de acierto base del período) y recurrencia.
-- **Fixes:** color/signo de "Peor Día" según el P&L real; nav inferior mobile scrollable horizontal; filtro de cuenta carga PA-APEX por defecto en la primera visita; `CLAUDE.md` agregado como contexto automático.
-- **Coach:** auto-aplica el diagnóstico cuando la IA lo genera dentro del chat.
-
----
-
-## FASE 15 — Laboratorio de Experimentos (sección propia, 12 Jun)
-
-Los experimentos salen de ser solo unas cards en Métricas y pasan a **sección principal** (`js/experimentos.js`).
-
-- **Dashboard de decisión:** tarjetas de veredicto por experimento (adoptar / descartar / neutro) con umbrales `MIN_MUESTRAS=20`, `UMBRAL_ADOPTAR=60%`, `UMBRAL_DESCARTAR=35%`.
-- **Matriz cronológica** tipo Excel (fechas × experimentos) para ver el patrón en el tiempo.
-- **Clic en tarjeta** → modal con todas las fechas de ese experimento; permite **editar el valor de registros históricos** desde el modal.
-- **Valor propio en $** por experimento (`diagnostico_experimentos.valor`): target/stop de la prueba, independiente del P&L del día (T → +, S → −). Migración `2026-06-12-valor-experimentos.sql`.
-
----
-
-## FASE 16 — Apex Tracker (12-16 Jun)
-
-Nueva sección **Apex Tracker** (`js/apex.js`) para seguir las pruebas de fondeo Apex sin mezclarlas con la operativa real.
-
-- **Tablas nuevas:** `apex_cuentas` (parámetros de cada prueba: drawdown, target, safety net, piso congelado, contratos máx, estado), `apex_registros` (registro diario manual) y `apex_trades` (trades individuales auto-exportados de NT8 para cuentas de evaluación). Migraciones `2026-06-12-apex-tracker.sql`, `2026-06-13-apex-trades.sql`.
-- **Cards por cuenta** con rediseño moderno: balance / threshold / espacio al drawdown, progreso al target, hitos, estado (Evaluación, En recuperación, Crítico, Safety net, Aprobada, PA, **Quemada** en rojo).
-- **Dos zonas:** PA (fondeada) vs cuentas de evaluación.
-- **Vista de detalle por cuenta** con gráfica y análisis de riesgo.
-- **Auto-carga de trades desde NinjaTrader (fase 2):** la app deriva los días (P&L, balance, threshold) desde `apex_trades`; comisiones por lado en el indicador.
-- **Plan dinámico para pasar la prueba:** perfil de riesgo + ritmo (`plan_perfil`, `plan_ritmo`) persistidos **en BD** para sincronizar entre dispositivos (antes en localStorage); alerta de contratos máximos. Migración `2026-06-13-apex-plan-config.sql`.
-- **La PA real** (`PA-APEX-232411-03`) deriva sus días recientes de la tabla `trades` (journal), no de `apex_trades`. Historial reconstruido desde el Excel oficial de Apex.
-
----
-
-## FASE 17 — Análisis unificado (Análisis + Anual, 13 Jun)
-
-`js/charts.js` se reescribe: las antiguas secciones "Análisis" y "Resumen Anual" se **fusionan en una sola sección adaptativa** con selector de período **Mes / Trimestre / Anual**.
-
-- Selectores directos de mes/trimestre/año en el navegador; layout tipo Anual.
-- Gráficas adaptativas según el período; el **capital inicial** se gestiona en la sección Datos (`annual_capital_inicial` en localStorage).
-- **Rediseño UX de gráficas:** donut con leyenda legible, P&L por hora (franja horaria local), curva de equity con puntos coloreados por signo, export PDF/imagen, barras sin corte. Fix: las gráficas se adaptan al ancho con `minmax(0, …)`.
-
----
-
-## FASE 18 — Indicadores NT8: routing por cuenta + SupabaseDailyLevels (16-18 Jun)
-
-- **Routing automático por nombre de cuenta** en `SupabaseAutoExport.cs`: cuentas `PA-*` → tabla `trades` + notificación a Telegram; cuentas de evaluación Apex → `apex_trades` **sin** notificar. Una sola instancia captura **varias cuentas** con selección (v3.0); el dropdown lista solo cuentas activas.
-- **Nuevo indicador `SupabaseDailyLevels.cs`:** sube automáticamente el OHLC de ayer (PDO/PDH/PDL/PDC) y la apertura, escribiendo en las columnas `precio_*_ayer` de `sesiones`. v2.0 calcula **RTH vs overnight** clasificando cada vela por su hora ET (ONH/ONL overnight). Migraciones `2026-06-17-sesiones-apertura-ayer.sql`, `2026-06-17-sesiones-max-min-ayer.sql`.
-- **Telegram:** el bot **ya no pide ni guarda** premercado/cierre/apertura — esos niveles los pone el indicador. Esto evita duplicación y errores manuales.
-
----
-
-## FASE 19 — Coach IA: futuro continuo + niveles de referencia (15-17 Jun)
-
-- **Futuro continuo:** el Coach trata NQ/MNQ como un único futuro continuo (no distingue contratos 03-26/06-26 al analizar la serie).
-- **Niveles PDH/PDL en premercado** y **datos de referencia ordenados** (PDO/PDH/PDL/PDC/PDR) en el bloque de contexto del system prompt.
-- **Analizar únicamente la cuenta PA real** (`PA-APEX-232411-03`): el Coach no mezcla trades de evaluación/sim en su análisis.
-
----
-
-## FASE 20 — Calendario rediseñado (15-18 Jun)
-
-- **Título hero central** + métricas compactas tipo **chips** arriba, en una sola fila; se quita el selector de período y la card de Experimentos del calendario.
-- **Equity del mes** y **P&L Neto Total** del calendario (totales sin decimales, con color por signo).
-- Ajustes de espaciado (título→métricas→leyenda) y se quita el mes redundante entre las flechas (ya sale en el título).
-- **Días FOMC:** los automáticos se ven igual que el FOMC manual; un día FOMC operado conserva el fondo FOMC con borde del color del resultado.
-
----
-
-## FASE 21 — Disciplina / Reglas / Errores por 3 fases (Bloques 1-5, 19-21 Jun)
-
-Reestructuración para conectar **Disciplina, Reglas y Errores** bajo un eje común: las **3 fases del proceso**. Plan completo en `docs/plan-disciplina-fases.md`.
-
-**Eje — 3 fases:** Fase 1 Pre-sesión · Fase 2 Lectura del setup (la más débil) · Fase 3 Ejecución.
-**Mapeo del checklist (7 ítems):** F1 = `chk_cuenta_pa`, `chk_noticias`, `chk_zonas`; F2 = `chk_5velas`, `chk_estructura`, `chk_consecucion`; F3 = `chk_orden`.
-
-- **Bloque 1 — Alerta de riesgo proactiva:** si `puntos_retroceso × 2` (riesgo en $) supera `objetivos.stop_max_usd`, el formulario alerta **antes de guardar** y pregunta "¿la viste?". Campo `alerta_riesgo_vista` → `true` impulsividad (psicológico) / `false` falla analítica (proceso). El Coach distingue ambos casos. Migración `2026-06-19-sesiones-alerta-riesgo.sql`.
-- **Bloque 2 — Checklist por 3 fases:** formulario reorganizado en Fase 1/2/3; nuevo ítem `chk_cuenta_pa` (7º). Métrica "**Cumplimiento por fase**" en el modal de Disciplina (dónde está la fuga del proceso). Migración `2026-06-19-sesiones-chk-cuenta-pa.sql`.
-- **Bloque 3 — Modelo de error unificado:** columnas `fase` + `regla_vista` en `diagnostico_errores`. Parte A: selector de fase manual + badge de fase en la lista + "Errores por fase" en el modal. Parte B: el Coach IA asigna fase + regla_vista (formato de error pasa de 6 a 8 partes; parser retro-compatible). Migración `2026-06-19-errores-fase-regla.sql`.
-- **Bloque 4 — Métricas conectadas:** banner de **racha de disciplina** (días operados consecutivos con checklist 100%) en el modal de Disciplina; bloque "**Reglas: impulsividad vs análisis**" en el modal de Errores. Solo `metrics.js` + `db.js`.
-- **Bloque 5 — Registrar por fases (UX):** cada fase del checklist es columna vertebral con acento de color y **badge de progreso en vivo** (0/3 → 3/3, verde al completar).
-
----
-
-## FASE 22 — Registrar: cards + modo lectura/editar (19-21 Jun)
-
-- **Formulario en secciones** (cards): cada bloque del Registrar en su propia tarjeta para un diseño más moderno; ítem "Cuenta PA" y campos overnight/rangos.
-- **Modo lectura por defecto:** al abrir una sesión existente (desde el calendario o la tabla de Trades) el formulario se abre **bloqueado** (envuelto en un `<fieldset>` deshabilitado, que cubre también los controles dinámicos). El botón del modal del calendario ahora dice **"Ver sesión"**.
-- **Nuevo botón "Editar sesión"** en el encabezado de la sección: desbloquea el formulario y muestra Guardar / Limpiar. Un día **sin** sesión abre directamente en modo edición para crear.
-
----
-
-## Checklist — Por 3 fases del proceso (Fase 21)
-
-### Fase 1 — Pre-sesión (siempre visible)
-
-| Campo DB | Descripción |
-|---|---|
-| `chk_cuenta_pa` | Cuenta PA correcta/activa verificada |
-| `chk_noticias` | Calendario económico verificado (sin noticia roja) |
-| `chk_zonas` | Zonas vigentes verificadas |
-
-### Fase 2 — Lectura del setup (solo cuando sí se operó)
-
-| Campo DB | Descripción |
-|---|---|
-| `chk_5velas` | Máx 5 velas en corrida (auto-invalida si `velas_corrida > 5`) |
-| `chk_consecucion` | Zona marcada con rompimiento + consecución + retroceso |
-| `chk_estructura` | Estructura IRI fluida |
-
-### Fase 3 — Ejecución (solo cuando sí se operó)
-
-| Campo DB | Descripción |
-|---|---|
-| `chk_orden` | Orden precolocada a tiempo |
-
----
-
-## Mapa visual del gráfico (en `estrategia_chaumer`)
-
-| Color | Elemento |
-|---|---|
-| Gris | Zonas S/R — ÚNICAS zonas válidas de la estrategia |
-| Rojo (línea) | Mínimo de premercado |
-| Verde (línea) | Máximo de premercado |
-| Naranja (zonas/flechas) | Puntos de referencia experimentales — NO son reglas |
-| Blanco (líneas) | Referencias temporalidad superior (5 min) |
-| Azul punteado (volumen) | Velas premercado con volumen alto |
-| Herramienta R/R | Anchor gris · Risk salmón · Reward verde lima — NO son zonas de mercado |
-
----
-
-## Notas sobre la Metodología Chaumer
-
-- **Regla de las 5 velas:** máximo 5 velas en el impulso. Sin excepciones.
-- **Marcación de zonas:** solo con rompimiento + consecución + retroceso confirmado.
-- **Zonas vigentes en target:** ninguna zona vigente entre entrada y target.
-- **Orden precolocada:** lista antes del cierre de la vela de rompimiento.
-- **FOMC / Noticias rojas:** no operar en días Fed. No entrar 5 min antes de noticias rojas.
-- **Stop máximo:** 60 puntos / $120 por trade.
-- **Ratio mínimo:** 1:1.
-- **Temporalidad principal:** 1 minuto en NQ/MNQ Futures.
-- **Zona naranja:** experimento activo en prueba. Con ≥ 20 casos el sistema emitirá sugerencia automática de adoptar o descartar.
-
----
-
-## Estado actual del proyecto
-
-### ✅ Funcionando
-
-**Dashboard web (secciones):**
-- Calendario + Métricas, Trades, Registrar Sesión (cards + modo lectura/editar), Análisis (unificado Mes/Trimestre/Anual), Experimentos (Laboratorio), Apex Tracker, Galería/Imágenes, Historial, Coach IA, Estrategia, Datos/Catálogos
-
-**Coach IA:**
-- Flujo en 3 etapas (Análisis Técnico → Chat opcional → Diagnóstico)
-- 2 llamadas a Claude por sesión completa
-- Lista de confirmación de errores con nombre corto + detalle + T/S
-- Auto-crea entradas en el catálogo de errores para nombres nuevos
-- Dedup automático contra errores manuales del día
-- Restaura conversación guardada al cargar fechas pasadas
-
-**Métricas cuantitativas:**
-- P&L · Tasa de Acierto · Disciplina de Proceso (7 ítems, **cumplimiento por fase**) · Tasa de Errores
-- Cumplimiento de Reglas · Días Limpios · Dejé de Ganar · costo $ de errores
-- **Racha de disciplina** · impulsividad vs falla analítica · errores por fase
-- Mejor/Peor día · Max Drawdown · Profit Factor · Avg Win/Loss
-
-**Apex Tracker (Fase 16):**
-- Cuentas de fondeo con parámetros (drawdown, target, safety net, piso congelado, estado)
-- Días derivados de auto-export NT8 (`apex_trades`) + registro manual (`apex_registros`)
-- PA real deriva de `trades`; plan dinámico (perfil + ritmo) sincronizado en BD
-
-**Indicadores NT8:**
-- `SupabaseAutoExport.cs` — routing por nombre de cuenta (PA→`trades`+Telegram, eval→`apex_trades`); multi-cuenta v3.0
-- `SupabaseDailyLevels.cs` — niveles diarios OHLC + overnight (RTH vs ON por hora ET) a `sesiones`
-
-**Experimentos (`diagnostico_experimentos` + `catalogo_experimentos`):**
-- ~16 condiciones bajo prueba: Zona naranja/blanca, Contra Resistencia/Soporte/Máx/Mín Premercado/Apertura/Histórico, 3ª Corrida, Reingreso, Mercado/Rompimiento Extendido, Target Largo, etc.
-- Cada una acumula T/S; con ≥ 20 casos sugiere adoptar/descartar
-- `presente` marca si la condición apareció ese día (solo presentes cuentan)
-
-**Reglas por Setup (Fase 10):**
-- Sección Estrategia con reglas estructuradas por setup + dirección
-- Coach IA valida entradas contra las reglas escritas
-- Reingreso documentado como caso base; IRI Apertura/Continuación listos para llenar
-
-### ⚠️ Pendiente / A tener en cuenta
-
-- ✅ **P&L y comisiones (RESUELTO Jun 2026):** convención NETO unificada. Script v2.2 envía profit neto + comisión round-trip; los 7 trades live previos normalizados por SQL.
-- ✅ **Migraciones 2026-06-19 (RESUELTO Jul 2026):** `2026-06-19-sesiones-chk-cuenta-pa.sql` y `2026-06-19-sesiones-alerta-riesgo.sql` ya corridas. Tras cualquier `ALTER TABLE` ejecutar `NOTIFY pgrst, 'reload schema';`.
-- ✅ **Worker web `/api/session` (RESUELTO Jul 2026):** guarda OK los campos nuevos (`chk_cuenta_pa`, `alerta_riesgo_vista`, premercado y `hora_noticia_roja`) al registrar desde la web.
-- 🤖 **Recomendaciones tipificadas en Coach IA (Fase 4B):** pendiente de implementar.
-- 🔒 **Seguridad RLS (pendiente):** las tablas tienen RLS deshabilitado ("UNRESTRICTED"). Es intencional para proyecto personal, pero la `anon key` viaja en el JS público de GitHub Pages → con RLS off da acceso total. Pendiente endurecer con RLS + políticas si se comparte la URL o crece el proyecto.
-- El bot de Telegram no genera análisis IA ni soporta imágenes.
-- `trade_number` y `etd` quedan NULL en trades auto-exportados desde NT8.
-- **Recomendaciones en Coach IA (Fase 4B):** columnas de recomendaciones tipificadas y catálogo — pendiente de implementar.
-
-### 🔜 Próximas mejoras planificadas
-
-- 🔒 Endurecer seguridad con RLS + políticas (ver Pendiente arriba)
-- Estadísticas de "dejé de ganar" en dólares (requiere campo de target planeado)
-- Resumen IA en bot de Telegram
-- Backup periódico BD (Supabase scheduled exports)
-
----
-
-## Checkpoint 2026-06-30 — Hitos completados (movidos desde CLAUDE.md)
-
-> Estos ítems estaban en la sección "Pendientes" de CLAUDE.md pero ya están COMPLETADOS.
-> Se conservan aquí como registro; el detalle vive en los planes/migraciones citados.
-
-- **📕 Unificación del Rulebook — COMPLETADO (2026-06-26).** 4 tablas (`setup_reglas`,
-  `estrategia_chaumer`, `checklist_items` + la muerta `reglas`) unificadas en la canónica
-  **`reglas`**. Plan: `docs/plan-unificacion-reglas.md`. Migraciones:
-  `2026-06-26-reglas-unificacion-fase1.sql`, `...-fase4-archivar.sql`, `...-modelo-final.sql`.
-  Modelo: 3 capas (filosofia/proceso/riesgo); `setup` (iri/reingreso) etiqueta en proceso
-  Fase 2; `tipo` dura/blanda; checklist = `es_checklist`+`fase`. Stop en PUNTOS
-  (`objetivos.stop_max_puntos`, default 80). Reglas DURAS: stop≤80, R:R 1:1 (nunca mover
-  stop/target), target sin zonas en contra.
-- **🤖 Coach IA — análisis rediseñado (2026-06-26).** Las 3 secciones (Contexto/Desarrollo/
-  Validación) se renderizan en tarjetas (chip de sesgo, línea de tiempo, checklist de setup);
-  prompt breve, sin volcar datos crudos, con bloque "NO ADIVINES precios".
-- **⚙️ Bot Telegram — auto-deploy activo (2026-06-26):** GitHub Action despliega el bot en
-  cada push a `TelegramBot/**` (secret `CLOUDFLARE_API_TOKEN`).
-- **🔒 Blindaje de seguridad (RLS + Auth) — COMPLETADO (2026-06-24).** RLS activo en todas
-  las tablas; web vía login Supabase Auth (`authenticated`); bot, Worker `/api/session` e
-  indicadores NT8 con `service_role`. `anon` bloqueada. Plan: `docs/plan-seguridad-rls.md`.
-  **NO usar "Resolve issue" de Supabase** (rompe las políticas). Tablas nuevas: activar RLS
-  + política `auth_all`. Export NT8 verificado (2026-06-25); grants service_role en
-  `docs/migrations/2026-06-25-grants-service-role.sql`. Routing: cuentas sin prefijo `PA-`
-  → `apex_trades` sin Telegram; `PA-*` → `trades` + Telegram.
-- **Reestructuración Disciplina/Reglas/Errores por fases — COMPLETA (Bloques 1-5,
-  2026-06-19).** Ver `docs/plan-disciplina-fases.md`.
-
----
-
-## Checkpoint 2026-07-02 — Disciplina, métricas coherentes y ventana de noticia roja
-
-- **📊 Coherencia de métricas (COMPLETADO).** Clasificador global `tradeOutcome`
-  (`db.js`): un trade no-BE sin `resultado` target/stop (p. ej. cerrado `close`) se
-  clasifica por el **signo del P&L** → coherente con el color del día. Aplicado en
-  acierto/target/stop de todas las vistas. El conteo de "trades" es no-BE (reales) e
-  idéntico en calendario y análisis.
-- **📅 Calendario (COMPLETADO).** Color del día por P&L cuando no hay `resultado`;
-  día FOMC **operado** toma el color del resultado (la marca FOMC queda solo en el
-  badge), FOMC sin operar mantiene el ámbar; "días con actividad" = operados ∪
-  conectados/analizados. Eliminado el código muerto `renderMonthlySummary`.
-- **🎯 Disciplina unificada (COMPLETADO).** Cálculo canónico único
-  (`calcDisciplinaStats` en `db.js`) usado por calendario, análisis y dashboard →
-  mismo % en las tres. Consciente de fase y **no penaliza ítems sin registrar**
-  (reglas nuevas en días previos = N/A). Cobertura por ítem en el dashboard.
-- **🖥️ Dashboard de Disciplina (COMPLETADO).** Sección propia + ítem de nav
-  "Disciplina"; estructura tipo semáforo por fase, racha, errores por tipo/causa raíz;
-  selector de período (Mes/Trimestre/Todo) + navegación de mes. Las tarjetas
-  "Disciplina" y "Errores" del calendario abren el dashboard (se retiraron los modales).
-- **🚫 Ventana de noticia roja (COMPLETADO).** La hora se registra **por día** en
-  `sesiones.hora_noticia_roja` (Registrar sesión web + AddOn NT `ChecklistChaumer`, que
-  muestra alerta en vivo "NO OPERAR" ±5 min, bloquea GO y auto-marca `chk_noticias`).
-  **Verificación automática** en la web: cruza la hora con `entry_time` de los trades
-  para detectar si se operó en la ventana (modal del día + stat en el dashboard). Regla
-  movida a Fase 1; columna vieja `reglas.hora_noticia` eliminada.
-- **📕 Reglas y Estrategia (COMPLETADO).** Rediseño con pestañas por capa; "Proceso"
-  renombrada a **"Reglas"** con filtro por fase; Fase 2 separada en subgrupos
-  **IRI / Reingreso**; reordenamiento por flechas; `stop_max_puntos` movido a Fase 2.
-- **📝 Registrar sesión (COMPLETADO).** Checklist por fases en **tarjetas** con títulos
-  grandes; Fase 2/3 se ocultan cuando "No operé Hoy" (aplican solo si hubo operación).
-- **🖧 NinjaTrader (COMPLETADO).** `SupabaseDailyLevels` corregido: el envío estaba
-  atado a `State==Realtime` en una transición que ocurre en histórico → ahora guarda el
-  nivel pendiente y lo envía al entrar a tiempo real, con logging del resultado.
-- **🎨 UX.** Scrollbars más gruesas y visibles en toda la app.
-- Migraciones: `2026-06-30-reglas-hora-noticia.sql`,
-  `2026-07-01-reglas-mover-fase-hora-sesion.sql`,
-  `2026-07-02-drop-reglas-hora-noticia.sql`, + carga manual de un trade de Apex 13.
-- **🖧 AddOn `ChecklistChaumer` — checklist por setup (7 Jul).** Selector **IRI |
-  Reingreso** (persistido en el config local) que filtra la Fase 2: ítems comunes +
-  los del setup elegido (Fase 1 y 3 comunes, incl. reglas de riesgo). Cada fase en
-  **tarjeta** con barra de acento de color y badge de progreso `n/m`. El GO exige el
-  100% de los ítems *visibles*; cambiar de setup no borra marcas (estado en
-  `Item.Checked`, se escriben todas las claves al JSONB). Migración
-  `2026-07-07-checklist-setup-orden.sql`: `chk_contexto` pasa a común (aplica a ambos
-  setups), orden canónico del checklist (AddOn = web) y título de consecución
-  "= entrada".
-
----
-
-## Checkpoint 2026-07-08 — Checklist normalizado en `sesion_checklist`
-
-Rediseño del modelo de datos del checklist: de un JSONB por sesión a una tabla
-relacional. Motivado por preferencia del usuario (BD 100% normalizada, sin JSON).
-
-- **`reglas` → `catalogo_reglas`.** El catálogo único de reglas (por capas/fases;
-  `es_checklist=true` = checklist) se renombra por coherencia con los demás
-  `catalogo_*`. 8 queries en `db.js`, el AddOn y coach/estrategia actualizados.
-- **Nueva tabla `sesion_checklist`** (1 fila = sesión × regla de checklist). FK a
-  `sesiones(sesion_date)` (CASCADE) y a `catalogo_reglas(codigo)`. Reemplaza al JSONB
-  `sesiones.checklist` y a las columnas `chk_*` (que se dropean aparte).
-- **Triggers "todo true por defecto"** (no dañar disciplina): sesión nueva materializa
-  las reglas de checklist en `true`; regla nueva se backfillea en todas las sesiones en
-  `true`. La migración pobló las 108 sesiones × 15 reglas = 1620 filas (valor del JSONB,
-  o `true` si faltaba).
-- **`db.js` absorbe el cambio:** `hydrateChecklist` reconstruye `s.checklist = {codigo:
-  bool}` en memoria desde el embedding `sesion_checklist(regla_codigo,cumplido)`, así
-  metrics/calendar/charts/coach/disciplina **no cambian**. `upsertSesion` persiste el
-  checklist como filas (upsert por `sesion_date+regla_codigo`).
-- **Soft-delete de reglas:** `deleteRegla`/`deleteChecklistItem` pasan a `activa=false`
-  (hay historial en `sesion_checklist`, no se borra físico). `estrategia.js` carga solo
-  activas.
-- **AddOn `ChecklistChaumer`:** lee por embedding y escribe filas en `sesion_checklist`
-  (asegura la fila de `sesiones` antes, por la FK). `checklist_go_at`/`hora_noticia_roja`
-  siguen en `sesiones`.
-- **UI:** "Checklist" → **"Checklist Reglas"** en Registrar.
-- Verificado contra la BD real (service_role): triggers, upsert, embedding y CASCADE.
-- Migraciones: `2026-07-08-normalizar-checklist-catalogo-reglas.sql` (constructiva) +
-  `2026-07-08-drop-sesiones-checklist-jsonb.sql` (drop del modelo viejo, tras verificar).
-
----
-
-## Checkpoint 2026-07-08b — Fechas especiales (`catalogo_fechas`) + reorden del menú
-
-- **Nueva tabla `catalogo_fechas`** (`tipo`: fomc/festivo/vacaciones/otro; fecha, nombre,
-  emoji, notas, activa). Unifica y reemplaza a `fomc_dates` (migrada) y al cálculo de
-  festivos que vivía en el código. Se cargaron los festivos CME 2025-2027. RLS + grants
-  como el resto. `fomc_dates` queda **obsoleta** (pendiente de drop).
-- **Sección nueva "Fechas Especiales"** (`js/fechas.js`): selector de año, lista agrupada
-  por tipo, alta/edición/borrado y botón "Generar festivos" del año (reusa
-  `Calendar.calcCMEHolidays`, sin duplicar).
-- **`calendar.js`** lee FOMC y festivos de `catalogo_fechas` (año completo); pinta
-  vacaciones (verde) y otras fechas con su badge; el modal del día muestra el nombre del
-  evento. Un día FOMC operado conserva el color del resultado + badge FOMC.
-- **Menú reordenado:** Disciplina · Análisis · Calendario · Apex · Experimentos · Trades ·
-  Sesión · Historial · Coach IA · Imágenes · Estrategia · Datos · Fechas Especiales.
-  "Registrar" renombrado a **"Sesión"**.
-- Migración: `2026-07-08-catalogo-fechas.sql`.
-
----
-
-## Checkpoint 2026-07-09 — Coach IA: datos operativos + análisis desplegable
-
-- **Coach ya no pide precios que están en la BD:** el prompt incluye el detalle por-trade
-  (hora, dirección, entrada→salida, puntos, resultado, P&L), no solo el agregado.
-- **Análisis Técnico rediseñado:** 3 secciones (Contexto/Desarrollo/Validación) con bloques
-  de datos colapsables (`<details>`, cerrados por defecto): premercado+checklist en
-  Contexto, tabla de operativa en Desarrollo. Parser de secciones robusto al formato del
-  encabezado (`##` o `**`, con/sin emoji) — antes todo caía en Contexto.
-
----
-
-## Checkpoint 2026-07-15 — Modal del día rediseñado (Resumen + Operativa)
-
-- **Resumen "el día en 5 segundos":** hero con P&L grande + badge resultado + chip del
-  setup + metadatos (trades, emociones, confianza) en una línea; bloque **Proceso** con
-  UNA barra del checklist real del día (dinámico desde `catalogo_reglas`, solo ítems
-  aplicables por fase/setup — reemplaza el "X/6" hardcodeado que mentía) listando solo
-  los ✗; errores como chips; **UNA** recomendación ("Siguiente paso"). Se eliminó el
-  muro de chips Bien/A-mejorar.
-- **Operativa:** tabla de trades estilo Coach (hora · dir · entrada→salida · puntos ·
-  resultado · P&L, con 🚫 si entró en ventana de noticia); checklist por fases (F1/F2/F3,
-  dinámico, solo aplicables); Retroceso prefiere el dato registrado en la sesión (el
-  derivado |P&L/2| queda de fallback con "≈"). **Estados vacíos inteligentes:** distingue
-  filtro de cuenta ocultando trades ("Hay N trades de otras cuentas") vs sesión operada
-  sin export de NT8 vs no operó.
-- **Gráfica:** las recomendaciones de cada error ahora son visibles directamente (antes
-  ocultas tras el chevron); la descripción larga sigue colapsable.
-
----
-
-## Checkpoint 2026-07-21 — Cuenta principal configurable
-
-Motivación: el usuario quemó la PA `PA-APEX-232411-03` y compró una evaluación nueva
-`APEX-232411-14`, que quiere llevar como cuenta principal del journal.
-
-- **Fase A — configurable:** `objetivos.cuenta_principal` (BD, sincroniza dispositivos);
-  selector "Cuenta principal" en Datos; el Coach analiza esa cuenta en vez del hardcode
-  `PA-APEX-232411-03`; `db.js` cachea la principal (`cuentaPrincipal`/`fetchCuentaPrincipal`,
-  fallback histórico). El filtro del calendario la usa como default.
-- **Fase B — routing NT8:** `SupabaseAutoExport` enruta a `trades`+Telegram las cuentas
-  `PA-*` **y** la cuenta principal (aunque sea evaluación sin prefijo). Lee
-  `objetivos.cuenta_principal` de la BD al iniciar (fire-and-forget), así al cambiarla en
-  Datos el routing se actualiza sin recompilar. Requiere recompilar el indicador **una vez**.
-  ✅ **Verificado end-to-end el 24 jul:** `APEX-232411-14` tiene 3 trades reales en
-  `trades` (22-24 jul, +$888.82 netos) exportados por NT8.
-- **Fase C — Apex Tracker:** sin cambios de código. `apex.js` ya deriva los trades de cada
-  cuenta de `[...apex_trades, ...trades]` por `numero_cuenta`, y `esPACuenta` depende del
-  `estado` (no del nombre). El usuario solo agrega la `-14` como cuenta de evaluación.
-- Migración: `2026-07-21-objetivos-cuenta-principal.sql` (aplicada vía MCP).
-
----
-
-## Checkpoint 2026-07-23 — Zona horaria, Coach más claro y UI consistente
-
-### 🕐 Zona horaria (causó 2 bugs; regla de oro del proyecto)
-**NinjaTrader está configurado en hora de Colombia (UTC-5)**, así que TODO lo que
-exporta (velas y `entry_time`/`exit_time` de los trades) viene en hora Colombia,
-NO en ET. Colombia no tiene DST y Nueva York sí → en verano (EDT) ET va 1 h
-adelante (09:30 ET = **08:30 Colombia**); en invierno coinciden.
-- **`SupabaseDailyLevels`:** convertía las velas asumiendo la zona del template del
-  CME (Central) → el RTH se detectaba 1 h antes. Ahora usa Colombia
-  (`SA Pacific Standard Time`) como zona de origen. Además, sus parámetros
-  **RTH abre/cierra van en hora de NUEVA YORK: 930 / 1600** (poner 830 hacía que
-  tomara la vela de las 7:30 Colombia). Con eso funciona todo el año.
-- **Coach IA:** leía las horas de los trades como si fueran ET y llamaba
-  "premercado" a un trade de las 08:36 (= 09:36 ET, en pleno RTH). Ahora el código
-  las **convierte a ET** antes del prompt (mostrando la local entre paréntesis) y
-  hay una sección "HORAS Y SESIÓN" que fija RTH = 09:30–16:00 ET.
-
-### 🤖 Coach IA
-- **Relación de apertura calculada por código** (apertura vs ONH/ONL y vs PDH/PDL:
-  encima / dentro / debajo, con distancia en pts) e inyectada en el prompt: el
-  modelo la usa tal cual en vez de comparar precios "a ojo" (afirmó "abrió sobre el
-  ONH" cuando estaba 187 pts por debajo).
-- **Validación de setups agrupada por fase** (F1/F2/F3, con barra de color y
-  contador n/m) y **títulos descriptivos de regla** en vez de códigos internos
-  (`rr_1a1` → "R:R siempre 1:1"); `_limpiaCodigos()` traduce en el render lo que
-  la IA cuele.
-- Parser de las 3 secciones robusto al formato del encabezado (`##` o `**`).
-
-### 🎨 UI
-- **Títulos hero centrados** en todas las secciones (estilo Análisis); los controles
-  bajan a una fila `.section-actions`.
-- **Disciplina:** clic en una barra de "Distribución por tipo" o en una fila de
-  "Causa raíz" abre el modal con los días de esos errores (y clic en el día abre su
-  detalle).
-- **Calendario:** el chip pasa a **T · S · Sin · No · F** calculado POR DÍA (misma
-  prioridad que el color del calendario) → su suma cuadra con el total de días del
-  mes. Antes duplicaba días con trade + sesión `no_opero` y contaba días sin conexión.
-
----
-
-## Checkpoint 2026-07-24 — Setups paramétricos (Fases A-E)
-
-Motivación: los setups eran texto libre hardcodeado en 6 sitios y la *familia*
-(IRI / Reingreso) se deducía con `startsWith('iri')` repetido en 5 archivos JS.
-Crear un setup nuevo obligaba a editar código y recompilar el indicador.
-
-**Modelo nuevo**
-```
-catalogo_setups           familia: iri, reingreso, …
-   └── catalogo_setup_variantes   las 6 variantes (nombre, subtipo, direccion)
-            └── sesiones.setup_codigo (FK)   ← qué setup se operó ese día
-catalogo_reglas.setup → apunta a la FAMILIA, o NULL = común a todos los setups
-```
-Regla de oro: **una regla aplica a un día si su `setup` es NULL o coincide con la
-familia del setup de ese día.** Lo respetan formulario, métricas, disciplina y Coach.
-
-- **Fase A — BD.** Tablas nuevas + `sesiones.setup_codigo` con backfill de las 120
-  sesiones (las 2 legacy "IRI Alcista" → IRI Continuación Alcista). Mapa de reglas
-  aprobado: `chk_contexto` pasa a exclusiva de IRI; `stop_max_puntos` baja de Fase 2
-  a **Fase 3**; 3 reglas nuevas de Reingreso (consecución fallida, vela de reingreso,
-  vela de consecución); `rei_entrada` archivada (soft-delete); `chk_mqzpxeub` →
-  `chk_no_mover`. Se conservan en checklist `target_sin_zonas` y `rr_1a1`.
-  Migración `2026-07-24-catalogo-setups.sql`.
-- **Fase B — Web.** Dropdowns desde el catálogo (agrupados por familia) y
-  `DB.setupFamily()` como fuente única (FK → nombre → prefijo como fallback);
-  se eliminan los 5 `startsWith('iri')`. **Trigger `fn_sync_setup_codigo`** mantiene
-  `setup` y `setup_codigo` sincronizados escriba quien escriba — necesario porque el
-  Worker `/api/session` **no está versionado** y no se le puede añadir la columna.
-  ⚠️ El trigger DEBE comparar contra `OLD`: una primera versión hacía ganar siempre
-  al código y revertía en silencio el cambio de setup que mandan Worker y bot.
-  Migración `2026-07-24-sesiones-sync-setup-codigo.sql`.
-- **Fase C — Coach IA.** El prompt mandaba el checklist completo y TODAS las reglas
-  duras: en un día de Reingreso evaluaba las de IRI. Ahora filtra por la familia del
-  día. Además `fmtReglasSetup` leía la capa `'setup'`, **eliminada al unificar el
-  rulebook en junio**, así que siempre respondía "el trader NO ha documentado reglas
-  para ningún setup" y el Coach regañaba por reglas que sí existen.
-- **Fase E — Administración desde el Journal.** Estrategia: el editor de regla trae
-  selectores de **Fase** y **Aplica a** (Común / familias). Datos: tarjeta **Setups
-  operativos** para crear familias y variantes, renombrar y activar/desactivar. El
-  `codigo` no cambia al renombrar (lo referencian `catalogo_reglas.setup` y
-  `sesiones.setup_codigo`). `onShow` recarga catálogos para ver los cambios sin F5.
-- **Fase D — Telegram + NT8.** El bot lee las variantes de BD y su `callback_data`
-  lleva el **código, no el índice** (la lista puede cambiar entre mostrar el teclado y
-  pulsarlo); envía `setup_codigo`. El AddOn construye **un botón por familia** desde
-  `catalogo_setups` y cae al primero si el setup persistido ya no existe.
-  ✅ **`ChecklistChaumer` recompilado y verificado en NT8 el 24 jul** (2 botones —
-  IRI y Reingreso — y la Fase 2 intercambia sus 4 ítems al cambiar de setup).
-
-**Bug corregido en Registrar (mismo día):** al abrir una sesión guardada, Fase 2
-mostraba las reglas de IRI y Reingreso mezcladas. `renderChecklist()` corre en
-`init()` con el `<select>` vacío, y asignar `.value` por código **no dispara
-`change`**, así que nunca se re-filtraba. `prefill()` y `clearForm()` ahora
-re-renderizan; sin setup elegido se muestran solo las comunes + aviso.
-
-> **Pendiente (decisión de Kris):** el trigger `fn_backfill_regla_checklist` marcó las
-> 3 reglas nuevas como cumplidas (`true`) en las 120 sesiones históricas — diseño "no
-> dañar disciplina". Si se prefiere que salgan como *N/A*, hay que ajustarlo.
-
----
-
-## Checkpoint 2026-07-24b — Filtro de cuentas multi-selección
-
-Motivación: la cuenta principal actual (`APEX-232411-14`) **no aparecía** en el
-selector de cuentas de Análisis.
-
-**Causa raíz.** Las 4 copias de `abbreviateAccount()` (charts, calendar, metrics,
-table) recortaban el nombre a los **2 primeros segmentos**:
-
-| Cuenta real | Lo que mostraba el filtro |
-|---|---|
-| `APEX-232411-14` | `APEX-232411` |
-| `PA-APEX-232411-03` | `PA-APEX` |
-
-La cuenta en uso estaba en la lista pero irreconocible, y una futura `-15` habría
-caído en la **misma opción** que la `-14`, sumándose en silencio. La abreviación
-además rompía la preferencia de cuenta principal que `calendar.js` ya intentaba
-aplicar: comparaba `DB.cuentaPrincipal()` (nombre completo) contra una lista de
-nombres abreviados → nunca casaba y caía al hardcode `PA-APEX` (la PA quemada).
-
-- **Componente nuevo `js/account-filter.js`.** Dropdown con checkboxes que permite
-  **combinar varias cuentas** (p. ej. la PA + la evaluación actual). Reemplaza los
-  3 `<select>` y las 4 copias de `abbreviateAccount()`. Selección: `null` = todas ·
-  array = subconjunto. API: `create` / `setAccounts` / `selected` / `matches` /
-  `filter` / `slug` / `label`.
-- **Nombre completo** como valor y como etiqueta, con badge `principal`.
-- **Default = `objetivos.cuenta_principal`.** Hay que pedirla explícitamente
-  (`fetchCuentaPrincipal`, memoizada y compartida por las 3 instancias):
-  `Calendar.init()` corre **antes** que cualquier otro `getObjetivos()`, así que el
-  cache de `db.js` todavía tendría el fallback histórico.
-- **Migración transparente** del valor abreviado ya guardado (`annualAccount`,
-  `calendarAccount`) → se expande a las cuentas completas que ese prefijo
-  representaba. Claves nuevas: `analysisAccounts`, `calendarAccounts`,
-  `tradesAccounts` (Trades ahora también persiste su selección).
-- **Aplicado en Análisis, Calendario, Trades y Métricas** (Métricas hereda el filtro
-  del Calendario). `create()` es idempotente porque `TradesTable.reload()` reusa
-  `init()`.
-- Verificado en preview: 16/16 pruebas del componente + 18/18 de integración (KPIs
-  de Análisis y Métricas y filas de Trades recalculando al combinar cuentas).
-
-> ⚠️ **Al combinar cuentas los KPIs se SUMAN.** "Rentabilidad %" divide por un único
-> capital inicial configurado en Datos, así que ese KPI concreto queda distorsionado
-> al mezclar dos bases de capital distintas. El resto (P&L, Win Rate, Efectividad,
-> Profit Factor, equity) sí es correcto combinado.
-
-> **Nota:** Análisis sigue leyendo **solo la tabla `trades`**. Las cuentas de
-> evaluación viejas (`-11`, `-12`, `-13`) viven en `apex_trades` y se consultan en
-> Apex Tracker (decisión explícita de Kris, 24 jul).
-
----
-
-## Checkpoint 2026-08-03 — Calendario: fechas futuras + la verdad de la disciplina
-
-Sesión de trabajo sobre el Calendario. Empezó por un detalle visual y terminó
-destapando tres formas distintas en que la disciplina mentía.
-
-### 📅 Fechas especiales futuras (commit `873e09b`)
-
-Los festivos y días FOMC solo tomaban su color **cuando llegaba la fecha**: todas las
-ramas de fecha especial del render estaban bloqueadas por `isFuture`, aunque `load()`
-ya trae el año completo de `catalogo_fechas`. El dato estaba; el render lo tiraba.
-
-- Festivo/FOMC/vacaciones/otras se detectan sin el filtro de futuro. Un día futuro
-  especial toma su color con `.future-especial` (opacidad 0.72, para que se note que
-  aún no llega) en vez del `.future` apagado, y muestra su badge.
-- Ese día es clicable y abre el modal informativo.
-- El modal informativo ahora reconoce **FOMC** (antes solo festivo/vacaciones/otras):
-  un FOMC sin trades ni sesión abría el modal normal vacío. Si hay sesión registrada
-  se respeta el modal normal, para no perder sus notas.
-- `fomcDates` pasa de `Set` a mapa `date → {name, emoji}` (el modal necesita el nombre).
-- CSS nuevo: `.future-especial` y `.day-especial` (las fechas de tipo "otro" solo
-  tenían badge, sin color de celda).
-
-### 🎯 Disciplina — tres bugs de fondo (commits `3fe6e2b`, `c63d6d1`)
-
-**Síntoma 1: agosto marcaba 44% sin haber operado un solo día.**
-El AddOn de NT8 crea la fila de `sesiones` al abrir la plataforma (la necesita por la
-FK de `sesion_checklist`), y esa fila nace con `no_opero = false` — el **default de la
-columna**. `discFactorAplica` usaba justo ese campo para decidir si aplican las Fases
-2 y 3, así que un día con la pre-sesión hecha y sin GO evaluaba 5 ítems de lectura y
-ejecución que nunca ocurrieron: 4/9 = 44%.
-
-- **`sesionOpero()`**: las Fases 2/3 solo aplican si hubo **operativa real** (trades ese
-  día o setup declarado). Sin el Set de fechas con trades se mantiene el criterio
-  histórico (`!no_opero`), para no alterar el pasado en silencio.
-- **`esDiaHabil()`**: sábados y domingos fuera de **toda** estadística (disciplina, días
-  con actividad, tasa de errores, P&L). Había una sesión fantasma del sábado 25-jul,
-  borrada por migración; y 2 trades de domingo de `Sim101` que ya no entran.
-- **Días sin conexión fuera de todo**: `activeSesiones` en `metrics.js` pasa a filtrar
-  por `seConecto` — antes el denominador de la tasa de errores y los días limpios
-  incluían días en que ni te conectaste.
-- **AddOn `ChecklistChaumer`**: guarda de fin de semana en `UpsertSesionAsync` y
-  `UpsertChecklistAsync` (punto único: cubre checklist, GO y hora de noticia).
-  ✅ Recompilado en NT8 el 3 ago.
-
-**Síntoma 2: julio marcaba 100% con un error grave dentro.**
-El 8-jul el checklist decía `chk_noticias` ("No operar con noticia roja activa") =
-**cumplida**, y el diagnóstico del mismo día registraba el error **"FOMC"**: operó un
-IRI tendencial en día FOMC, a sabiendas (`regla_vista = true`). El checklist es
-**auto-reportado antes de operar** y nadie vuelve atrás a desmarcarlo.
-
-- **`diagnostico_errores.regla_codigo`** (FK a `catalogo_reglas`): la regla que ese
-  error contradice. `NULL` = no toca el checklist — los errores psicológicos (Miedo,
-  Duda, Rabia, Ansiedad, FOMO) siguen contando solo en la tasa de errores.
-- **`reglaCumplida()`**: si hay un error vinculado a la regla X ese día, X cuenta como
-  **incumplida aunque la casilla esté marcada**. Aplicado en el cálculo canónico, en el
-  dashboard (total, por fase, racha e historial) y en el modal del día (que además
-  expone `roto` para poder distinguirlo visualmente más adelante).
-- **Backfill de 8 errores** que mapean sin ambigüedad: FOMC → `chk_noticias`, Mover Stop
-  → `chk_no_mover`, Trade sin Consecución → `chk_consecucion`, Entrada Tardía →
-  `chk_orden`. Los otros 39 quedan en `NULL` y se comportan igual que antes.
-- **Coach IA**: el formato de error pasa de 8 a **9 partes** (`reglaCodigo`). El prompt
-  recibe los códigos de las reglas aplicables a ese día y el parser **valida contra el
-  catálogo** antes de guardar (hay FK). Retro-compatible con las líneas viejas.
-
-**Síntoma 3 (regresión detectada y corregida en la misma sesión):** `conTrades` se
-construía con los trades **ya filtrados por cuenta**, así que los días de feb–mar
-(operados en la PA vieja, sin setup declarado) se daban por no operados al tener el
-filtro en la cuenta actual, y perdían sus Fases 2/3. Ahora se usa siempre el total sin
-filtrar — **la disciplina es del proceso del trader, no de una cuenta**.
-
-### 🧹 Criterio centralizado
-
-El criterio de disciplina estaba **duplicado en 4 sitios**. Ahora vive solo en `db.js`
-(`esDiaHabil`, `fechasConTrades`, `sesionOpero`, `discFactorAplica`, `reglasRotasPorDia`,
-`reglaCumplida`, `calcDisciplinaStats`): se eliminaron las copias muertas de
-`factorAplica`/`setupFamilyOf` en `metrics.js`, `disciplina.js` delega y `app.js` usa el
-mismo. `calcDisciplinaStats(sesiones, items, opts)` pasa a objeto de opciones
-(`{conTrades, rotas}`) en vez de seguir sumando parámetros. De paso, `charts.js` pasaba
-`casByDate` donde el API ya esperaba otra cosa (residuo que se ignoraba en silencio).
+## Checkpoint 2026-09-23 — Curva de equity verde/roja y tooltip del día
+
+### La curva cambia de color en el cero
+
+Verde por encima de cero y rojo por debajo, **exactamente donde la cruza**. Colorear tramo a
+tramo no sirve: un tramo que cruza el cero sale entero de un color. Se usa un degradado
+vertical con un **corte duro en el píxel del cero**, recalculado en cada pintada porque
+depende del alto real del área.
+
+- **Relleno** entre la curva y el cero, más intenso lejos del cero y apagado al tocarlo.
+- **El cero siempre visible** (`beginAtZero`): es la frontera entre los dos colores.
+- **Fechas** "3 ago" en vez de "08-03"; el tooltip de Chart.js da el acumulado (en su
+  color) y el resultado **del día**.
+- **Colores leídos de los tokens** con `getComputedStyle` (`--accent-txt`, `--red-txt`,
+  `--bg3`…): Chart.js pinta en canvas y no lee CSS, pero así no hay hex sueltos.
+
+### La etiqueta del acumulado
+
+Primero se puso **dentro del área**, encima del último punto, y se montaba sobre la propia
+línea y el relleno: casi no se leía. Pasó al **margen derecho**, a la altura del último punto,
+como la etiqueta de precio de una plataforma de trading: pestaña sólida en el color del
+resultado, texto en el color del fondo y una guía punteada desde el punto. El margen se
+reserva **midiendo el texto real** antes de crear la gráfica, para no robar ancho en móvil.
+
+### Tooltip del día
+
+Al pasar el ratón por un día del calendario: **setup** declarado, **puntos** del día y
+**errores** — solo el nombre, sin la descripción; si no hay, **"Sin errores"**. Los repetidos
+salen con "×2".
+
+- Los **puntos salen del precio**, no del P&L: es la medida de riesgo del proyecto y no
+  depende de los contratos (tampoco de la regularización del 19-sep).
+- `getCasuisticasByMonth` trae ahora el nombre del error (`casuistica:error`); solo lo usa el
+  calendario. La caché pasó de `true` a la lista de nombres por día, y los iconos de error de
+  la rejilla siguen funcionando.
+- **Solo con ratón** (`hover: hover` + `pointer: fine`). En táctil no se monta, y el toque
+  sigue abriendo la vista del día.
+- `position: fixed` con las coordenadas de la celda y `pointer-events: none`, para que no lo
+  recorte ningún `overflow` ni parpadee al entrar y salir. Se oculta con cualquier scroll.
 
 ### Verificación
 
-Sin poder usar la app con login (RLS), se stubeó la capa de datos y se ejecutó el
-**código real**: render del calendario, `calcDisciplinaStats`, `Metrics.init()` y
-`Disciplina.init()`.
+**Por píxel, con `getImageData`**, porque el panel del navegador deja de componer fotogramas
+a ratos y las capturas salían en blanco o con fundidos a medias. En agosto: la línea en el
+punto de +$73 da `#3FE0A6` exacto y en los negativos `#F2706F`; la pestaña del acumulado es
+`#F2706F` sólido y empieza en x=653 con el área acabando en 645. Tooltip del 6-ago con los 4
+errores reales de la BD; en móvil no se crea. Consola limpia.
 
-| Caso | Resultado |
-|---|---|
-| FOMC futuro (19-ago) | `day-fomc future-especial`, opacidad 0.72, badge, clicable |
-| Días futuros normales (16) | Intactos: `.future` 0.4, sin color/badge, no clicables |
-| Agosto sin operar | 44% → **100%** (4/4) |
-| 8-jul con error FOMC | 100% → **92%** (12/13) |
-| Error psicológico / de otro día | No altera la disciplina |
-| Día operado con trades sin setup | 9 ítems aplicables (histórico intacto) |
-| Filtro apuntando a otra cuenta | 13 ítems siguen aplicando (regresión cubierta) |
-| Sábado · día sin conexión | 0 aplicables |
-
-Migraciones: `2026-08-03-borrar-sesion-fin-de-semana.sql`,
-`2026-08-03-errores-regla-codigo.sql` (ambas aplicadas vía MCP).
-
-> ⚠️ **Efecto lateral asumido:** la **tasa de errores** y los **días limpios** tienen ahora
-> un denominador menor (los días sin conexión salieron), así que sus porcentajes suben
-> respecto a lo que se venía viendo. Es el comportamiento pedido, no un bug.
+Commits: `539b64d` · `99d3786`.
 
 ---
 
-## Checkpoint 2026-08-03b — Rediseño del checklist y de la disciplina
+## Checkpoint 2026-09-19 — El journal: una sola cuenta, regularizado a ±$160
 
-Sesión larga de análisis con Kris. Empezó con *"¿por qué junio tiene 95% de disciplina
-con 32% de errores?"* y terminó rehaciendo cómo se mide la disciplina.
-Plan completo y decisiones: `docs/plan-rediseno-checklist-disciplina.md`.
-Cómo funciona hoy: `docs/Disciplina.md`.
+### Una sola cuenta en `trades`, todas las de Apex en `apex_trades` (D-019)
 
-### El diagnóstico
+El histórico de `trades` estaba partido en **cuatro cuentas que se sucedieron** porque cada
+una fue la principal durante un tramo, y el Calendario y Análisis lo mostraban troceado:
 
-Cinco defectos, todos verificados con datos:
+| Cuenta | Desde → hasta | Trades | P&L |
+|---|---|---|---|
+| `PA-APEX-232411-03` | 3 feb → 16 jul | 80 | −$2.729,10 |
+| `APEX-232411-14` | 22 jul → 13 ago | 12 | −$1.257,66 |
+| `APEX-232411-15` | 14 ago → 31 ago | 6 | −$382,32 |
+| `Sim101` | 1 sep → 18 sep | 11 | −$157,42 |
 
-1. **El checklist no era un compromiso previo, era un recuerdo.** Solo **10 de 126
-   sesiones** tenían `checklist_go_at`: el 92% se marcaba después de conocer el resultado.
-2. **Preguntaba cosas que los datos ya saben** (stop, ventana de noticia, día FOMC).
-3. **Diluía y no ponderaba**: 184 casillas en junio; un día perdido movía menos de 1 punto.
-4. **Era redundante con Errores**: desde junio, día que falla el checklist = día con
-   error, 1 a 1 sin excepciones.
-5. **El GO obligaba a marcar hechos que aún no habían ocurrido** — o mentías, o perdías
-   el trade. **Hallazgo de Kris**, y el que más cambió el diseño.
+Cada tabla pasa a tener **un rol**: `trades` es el journal de la cuenta principal bajo una
+sola etiqueta (`Sim101`), con la cuenta real en la columna nueva `cuenta_origen`; y
+`apex_trades` tiene **todas** las cuentas de Apex con su nombre real. Las 98 filas de cuentas
+Apex se copiaron a `apex_trades` (0 solapamientos por cuenta+fecha+hora), y **`apex.js` dejó
+de leer `trades`**.
 
-### Lo que se hizo
+Eso **sustituye** el invariante "un trade vive en UNA tabla". Existía porque `apex.js`
+concatenaba las dos; al dejar de hacerlo, nace la regla nueva: *si `apex.js` vuelve a leer
+`trades`, el drawdown consumido se infla*. Escrito en `apex.js`, `CLAUDE.md` y D-019.
 
-**Checklist: 17 reglas → 13 por día. GO: 13 clics → 8. 3 reglas se verifican solas.**
+**No se copió nada de `apex_trades` hacia `trades`.** Era lo que parecía pedir el caso, y
+habría sido un error: de sus 21 días, **20 ya estaban en `trades`** — la misma operativa
+replicada en dos cuentas con distinto número de contratos (18-sep: +$86,96 en `trades`
+frente a +$1.067,96 en `apex_trades`). Se habrían contado dos veces.
 
-- **Regla nueva `fomc_solo_reingreso`.** Estaba escrita en `fil_1` ("día FOMC → solo
-  reingresos, NUNCA tendencial") pero enterrada en un texto de filosofía: **nunca se
-  preguntaba**. Detecta 3 violaciones históricas — 18-mar, 17-jun y 8-jul — las tres con
-  pérdida, **−$653** en total. La de marzo no se había registrado nunca.
-- **`chk_calendario` y `chk_noticias` tenían los enunciados INTERCAMBIADOS.** Se separan
-  en declarativa (Fase 1) y automática (Fase 3).
-- **Salen del checklist** `rr_1a1` (ya está en `fil_4`) y `no_fomc` (decía "preferible no
-  operar, a criterio" mientras el Coach la juzgaba grave: contradecía a la regla real).
-- 5 enunciados reescritos por solape; `chk_5velas` pierde el `(<5 velas)` que contradecía
-  a su propio enunciado; `chk_orden` sube a Fase 2.
-- **`sesion_noticias`**: varias noticias rojas por día con hora y nombre, en la web y en
-  el AddOn. Trigger bidireccional con `hora_noticia_roja` para no romper el Worker.
-- **Campos nuevos** en `catalogo_reglas`: `bloquea_go`, `aplica_si` y uso de `evidencia`.
+Verificado por SQL replicando el reparto por periodo del front: las **7 tarjetas** de Apex
+conservan exactamente sus trades y su P&L (Apex-15 primera: 13 propios + 6 que venían de
+`trades` = 19).
 
-### Los tres conceptos nuevos
+### La simulación a un contrato
 
-| Concepto | Qué resuelve |
-|---|---|
-| **`evidencia = auto`** | Cuando el dato puede responder, responde el dato. Tres estados: cumplida, incumplida y **sin evidencia** (no cuenta) |
-| **`aplica_si`** | Tercer eje de aplicabilidad: **contexto del día**. Antes solo fase y familia de setup. Una regla se evalúa solo cuando había algo que cumplir |
-| **`bloquea_go`** | El GO cae DENTRO de la Fase 2, donde de verdad se da: con el rompimiento identificado y la orden lista |
+Antes de regularizar, se simuló el año con `profit ÷ qty` (exacto en bruto y comisión):
+**la mitad de la pérdida era tamaño, no criterio** (−$4.527 real frente a −$2.261). Agosto,
+−$2.160, habría sido −$131. Y el tamaño subía justo al perder: **1,82 contratos de media en
+los ganadores, 2,10 en los perdedores**, con el máximo en 5 frente a 10.
 
-### Resultado
+### Regularización a ±$160 por trade (D-020)
 
-**La disciplina SUBIÓ de 81% a 83% global**, en contra de lo previsto: las condicionales
-dejaron de contar ~120 días sin riesgo, y el stop —al verificarse por dato— sale 82
-cumplidos / 1 fallo donde antes se leía una casilla siempre en `true`.
+Los **20 trades** que pasaban de ±$160 por tamaño bajaron de contratos hasta entrar en rango.
+Se recalcularon `qty`, `profit`, `commission`, `mae`, `mfe` y `etd`; **los precios no se
+tocaron**. Journal: **−$4.526,50 → −$2.488,58**.
 
-| Mes | Antes | Después |
-|---|---|---|
-| Feb | 75% | 79% |
-| Mar | 64% | 67% |
-| Abr | 70% | 71% |
-| May | 90% | 93% |
-| Jun | 95% | 95% |
-| Jul | 99% | 99% |
-| **Global** | **81%** | **83%** |
+**La disciplina no se movió**: `mae` y `qty` se escalan juntos, así que el MAE en **puntos**
+—lo que evalúa el stop máximo— da idéntico. Verificado en los 20: 0 con MAE o MFE en puntos
+distinto, 0 cambios de signo. Respaldo en `_bak_20260919_trades_regularizacion`.
 
-### Correcciones de datos que salieron por el camino
+> ⚠️ **El journal deja de ser fiel a lo que se ejecutó**, a sabiendas. `apex_trades` conserva
+> los contratos reales, así que el Apex Tracker sigue mostrando el drawdown verdadero: las
+> dos tablas divergen **a propósito**.
 
-- **El límite de pérdida diaria ($150) estaba obsoleto.** El riesgo se mide en PUNTOS: un
-  stop de 80 pts cuesta entre $200 y $800 según los contratos, así que la regla en
-  dólares era imposible de cumplir. En puntos, julio da **9/9 días correctos**; en
-  dólares daba 5/9. Pasa a ser control de capital del Apex Tracker.
-- **Gestión del stop verificada**: 89 de 90 trades dentro de 80 puntos, MAE medio 31,4.
-  La única violación fue el 6-feb (96,5 pts).
-- **13 errores más vinculados a su regla** (21 de 46 en total): Error de Marcación (7) →
-  consecución, Contra Soporte (2) → target sin zonas, IRIs Poco Claros (2) → estructura,
-  Entré en Sim (1) → cuenta PA, Target Largo (1) → stop máximo.
+### El NQ del journal pasa a MNQ (D-021)
 
-> ✅ **`ChecklistChaumer` recompilado el 3 ago** → el rediseño queda activo end-to-end:
-> web, cálculo, AddOn y Coach. Pendiente solo estrenarlo en la sesión en vivo del 4 ago
-> (GO con 8 ítems, noticias desde el AddOn, y un análisis del Coach para confirmar el
-> bloque "VERIFICADO POR DATOS" y el vínculo error → regla).
+El único NQ de `trades` (24-jun, 1 contrato) no se podía bajar de tamaño: con $20/punto,
+32,5 puntos ya eran −$653,80. Se convirtió a MNQ **manteniendo los −32,5 puntos**, solo con el
+multiplicador: **−$653,80 → −$66,30**. Journal: **−$1.901,08**.
 
-> ⚠️ **Error propio a no repetir:** al analizar el MAE lo normalicé con $2/punto para
-> todos los trades, pero 4 son de **NQ ($20/punto)**. Eso infló esos MAE ×10 y me llevó a
-> afirmar que había 5 trades con más de 80 puntos en contra cuando solo había 1. **El
-> multiplicador depende del contrato** (`_usdPorPunto` en db.js).
+Los **17 NQ de `apex_trades` no se tocaron**: ahí consumieron drawdown real, que es lo que
+decidió que esas cuentas se quemaran.
 
-Migraciones: `2026-08-03-rediseno-checklist-fase1.sql` (aplicada vía MCP).
-Commits: `753d51b` · `2427888` · `06e42bd` · `ec2af13` · `e183416`.
+Solo queda **un** trade fuera de ±160, y a propósito: el **6-feb** (−$194,30 con un contrato).
+No es tamaño ni instrumento: es un stop que se dejó correr **96,5 puntos** con el límite en 80.
 
-### Ajustes tras estrenarlo (mismo día)
+> Al documentar apareció una **colisión de IDs**: otra sesión había creado un D-018 ("Dos
+> setups") el mismo día. La decisión de la cuenta única quedó como **D-019** (el commit
+> `ebd7e5d` cita "D-018"; la buena es la D-019).
 
-**🐛 Guardar sesión rompía con PGRST204** (`4b37fda`). `upsertSesion` saca `checklist`
-del payload antes de mandarlo al Worker `/api/session`, porque ese Worker escribe lo que
-recibe **tal cual** como columnas de `sesiones`. Al añadir la lista de noticias en la
-Fase 3 se pasó `noticiasRojas` al payload pero no se sacó del destructuring, así que
-viajaba como columna inexistente y PostgREST rechazaba el guardado entero. Ahora se
-extraen las dos claves relacionales (`checklist` y `noticiasRojas`).
+**Pendiente (Fase 4 del diseño):** cuando la cuenta real sea la principal y esté en
+`apex_cuentas`, sus trades irán a `trades` y el Tracker no los verá. Se resuelve con un
+trigger en Postgres, sin recompilar NinjaTrader.
 
-**🐛 La regla FOMC marcaba violación en días normales** (`393465e`). `reglaAutoResultado`
-no comprobaba el contexto: devolvía `false` en **cualquier** día operado con IRI. El
-cálculo de disciplina estaba bien —filtra antes con `discFactorAplica`— pero **el Coach
-pide el resultado directamente**, así que reportaba al trader una violación inexistente.
-
-> ⚠️ **Lección:** una regla condicional debe comprobar su propio contexto **dentro** de
-> `reglaAutoResultado`, no solo en el filtro de aplicabilidad. Hay llamadores que piden
-> el resultado suelto. Además el Coach ahora filtra el checklist por `aplica_si`, para
-> que una regla condicional ni aparezca si su contexto no se dio ese día.
-
-Verificado: 27-jul y 3-ago (IRI, no FOMC) → N/A y fuera del checklist; 8-jul (IRI en día
-FOMC) → sigue marcando violación. La disciplina histórica no se movió (julio 123/124).
-
-**🤖 Telegram deja de pedir las noticias** (`393465e`). Las registra el AddOn en
-`sesion_noticias` con hora y nombre, así que preguntarlas otra vez duplicaba el dato y
-alargaba el flujo. `PRE_RESIST` pasa directo a emoción (o a reflexión si no operó); el
-paso viejo se conserva por si quedó algún estado a medias en KV.
-
-**🏷️ "Días de trabajo" → "Días conectados"** en la card del calendario y el desglose.
-
-### ✅ Verificado en vivo (11 ago) — el rediseño funciona end-to-end
-
-Tras 6 sesiones operadas con el sistema nuevo (3, 4, 5, 6, 10 y 11 de agosto), sin
-incidencias en el AddOn ni en el guardado.
-
-**El Coach rellena bien el vínculo error → regla.** El análisis del **6 de agosto** —el
-primero con errores desde el rediseño— quedó así:
-
-| Error | Tipo | → Regla vinculada |
-|---|---|---|
-| Descartar Setup Válido | operativo | `target_sin_zonas` |
-| Error de Marcación | marcado | `chk_zonas` |
-| Duda | psicológico | *(ninguna)* ✓ |
-| Rabia | psicológico | *(ninguna)* ✓ |
-
-Es exactamente el comportamiento diseñado: vincula los que contradicen una regla y deja
-vacía la 9ª parte en los psicológicos, que no tienen casilla que romper.
-
-> 💡 **El Coach razona el vínculo, no aplica una tabla fija.** Para "Error de Marcación"
-> eligió `chk_zonas`, mientras que el backfill histórico de esa misma etiqueta apunta a
-> `chk_consecucion`. En este caso acertó mejor: el detalle era *"zona naranja marcada en
-> 29515 en lugar de 29537.25"* — un fallo de marcación de zona, no de consecución. Que
-> discrepe según el caso concreto es buena señal.
-
-**De paso, una lectura de la métrica de errores.** Agosto marcaba **17%** con un solo día
-malo: 1 día con errores ÷ 6 días conectados = 16,7%. Los 4 errores del 6-ago cuentan como
-**un** día — la métrica mide frecuencia de días con fallos, no cantidad de errores. Con
-pocos días en el mes, uno malo pesa mucho; se diluye según avanza el mes.
+Diseño: `docs/disenos/2026-09-18-cuenta-unica-en-trades.md` · Migraciones:
+`2026-09-18-cuenta-unica-en-trades`, `2026-09-19-regularizar-trades-a-160`,
+`2026-09-19-nq-a-mnq-en-el-journal` · Commits: `ebd7e5d` · `0ac02f0` · `befe509`.
 
 ---
 
-## Checkpoint 2026-08-11 — Coach IA: fuga temporal del historial
+## Checkpoint 2026-09-18 — Dos setups: Continuación y Reingreso
 
-**El problema:** `cargarHistorialCompacto()` y `detectarPatrones()` traían los últimos
-registros **sin filtrar por la fecha analizada**. Al re-analizar el 8-jul, el system
-prompt incluía los resúmenes y los errores de agosto: el Coach razonaba con información
-que ese día no existía y citaba como "patrón repetido" lo que pasó después.
-
-**El arreglo:** parámetro `antesDe` (exclusivo, `.lt('sesion_date', …)`) en
-`DB.getHistorialCompacto` y `DB.getErroresHistoricos`. El Coach lo pasa con `coachDate`
-en los tres puntos donde miraba el pasado:
-
-| Punto | Antes | Ahora |
-|---|---|---|
-| `cargarHistorialCompacto` (prompt) | últimos 60 resúmenes globales | 60 sesiones **anteriores** al día |
-| `detectarPatrones` (prompt) | todos los errores | errores **anteriores** al día |
-| `guardarDiagnostico` (`patron_detectado`) | todos menos el día actual | solo los **anteriores** |
-
-Sin el parámetro las dos funciones devuelven todo, así que la **sección Historial**
-(`renderHistorial`) sigue listando el histórico completo — no se tocó.
-
-El `.lt` va **antes** de `.order`/`.limit`: al revés, PostgREST cortaría los 60 más
-recientes globales y luego filtraría, dejando el historial vacío al analizar días viejos.
-Los encabezados del prompt ahora dicen la fecha de corte y una línea explícita de que no
-hay información posterior.
-
-**Verificación:** ejecutado el código real de `db.js` con la capa Supabase stubeada —
-8 asserts: `.lt` presente con fecha y ausente sin ella, resultados filtrados, y el orden
-de la cadena.
+- **De 6 setups a 4** (D-018). Las dos variantes de apertura se funden en las de
+  continuación y la familia `iri` pasa a `continuacion`. Migración
+  `2026-09-18-setups-continuacion-reingreso`, respaldos en `_bak_20260918_*`.
+- Migrado: 86 sesiones (50 Continuación Alcista + 36 Bajista), 6 operativas de Chaumer,
+  3 `setup_observado`, 4 reglas de Fase 2. La apertura ya no se distingue en el histórico.
+- Código: fallback por prefijo en `db.js`, lista de respaldo del bot y del AddOn
+  `ChecklistChaumer` (recompilado en NT8 el 21 sep), y comentarios en 6 archivos.
+- El despliegue del bot falló por token de Cloudflare inválido (`code: 10000`): Kris lo
+  regeneró, y el workflow pasó a Wrangler 4 (`bcedaf5`). Desplegado en verde.
+- `SupabaseAutoExport` recompilado en NT8 el 21 sep: quedan activos el anti-replay y la
+  exclusión de simulación/playback. Comprobado: 0 trades con `exit_time < entry_time` en
+  `trades` y `apex_trades`.
+- Verificado en el preview: selector del Diario, checklist de Fase 2, Disciplina
+  (agrupa bajo «Continuación»), Datos › Catálogos, filtro de Trades y Chaumer.
+- De paso, arreglada la copia local (`dev.local.js`): anulaba `setupFamily`,
+  `setupLabel` y `setupsSync` por empezar por "set", y la Fase 2 mostraba
+  «[object Promise]».
 
 ---
 
-### Coach IA — la gráfica base64 ya no se guarda en `chat_messages` (11 ago)
+## Checkpoint 2026-09-17 — Chaumer: la lista día a día y la hora Colombia
 
-**El problema:** la imagen del día viaja a Claude como bloque `image` en base64 dentro
-del primer mensaje, y `chatHistory` **entero** se guardaba en el JSONB `chat_messages`.
-Medido en la BD real: **46 filas, 40 MB de chat**, la más pesada 1274 kB, sobre una tabla
-de 42 MB — el ~95% del peso eran imágenes duplicadas. Duplicadas porque **ya viven en
-Cloudinary** (`sesiones.imagen_url`) y el Coach las recarga solo con `autoCargarImagen`
-al abrir el día (verificado: las 46 tienen URL, 0 sin respaldo).
-
-**El arreglo** (`chatSinImagenes` en `coach.js`): al persistir, cada bloque `image` se
-sustituye por un bloque de **texto** marcador. En **memoria no se toca** — el chat sigue
-viendo la gráfica para responder sobre ella; lo que cambia es solo lo que baja a Postgres.
-El marcador es contenido válido para la API por si esa conversación se reenvía.
-
-**Efecto colateral que había que cubrir:** al restaurar el chat, la extracción del texto
-del mensaje tomaba `content.find(c => c.type === 'text')` — el **primer** bloque, que
-ahora es el marcador. `esInstruccionSistema` dejaba de reconocer la Etapa 1 y el análisis
-técnico completo se volcaba dentro del chat. Ahora se **juntan todos** los bloques de
-texto (retro-compatible con las conversaciones ya guardadas).
-
-| | Antes | Después |
-|---|---|---|
-| `chat_messages` (46 filas) | 40 MB | 270 kB |
-| Fila más pesada | 1274 kB | 11 kB |
-| Tabla completa | 42 MB | **664 kB** |
-
-**Verificación:** 15 asserts sobre el código real de `coach.js` (sin base64 al guardar,
-imagen intacta en memoria, marcador válido, retro-compatibilidad y bordes) + conteos
-jsonb en la BD: **0 bloques `image`, 0 `source`**, 46/46 filas con análisis y conversación.
-
-Migración: `2026-08-11-chat-messages-sin-imagenes.sql` (aplicada vía MCP + `VACUUM FULL`,
-necesario porque el UPDATE deja tuplas muertas en la TOAST y el espacio no vuelve solo).
+- **Diferencias pasa a ser la pestaña principal** del comparador; «Día» se renombra
+  **Registrar**. Dashboard de 5 KPIs + 3 tarjetas arriba, y abajo la **lista día a día**
+  (fecha · mi resultado · el suyo · Δ puntos). Cada fila abre un **modal con las dos
+  gráficas** (Esc para salir, ← → para cambiar de día).
+- **Horas en hora Colombia** (D-017). Las filas estaban mezcladas ET / Colombia: 5 seguras
+  en ET corregidas con `2026-09-17-chaumer-hora-colombia` (respaldo
+  `_bak_20260917_chaumer_horas`); las dudosas se quedan por decisión de Kris. El Δ de hora
+  pasa a medirse solo en días con el mismo setup.
+- Verificado con las 12 filas reales de septiembre: brecha −17,5 = (−79,5) − (−62).
+  Detalle: `docs/disenos/2026-08-19-chaumer-vs-yo.md` §5.8.
+- **v8, mismo día:** la lista pasa a ser una tabla con columnas (resultado · hora · puntos
+  por lado), orden ascendente, fila de totales con % de efectividad, y la franja solo
+  distingue mismo setup (verde) / setup distinto (rojo). §5.9.
+- Las horas dudosas y la del 28 ago (21:52) las revisa Kris a mano.
 
 ---
 
-### Coach IA — prompt caching sobre el system prompt y la gráfica (11 ago)
+## Checkpoint 2026-09-14 — Apex-15 renovada: dos tarjetas con el mismo número
 
-**El problema:** cada turno del chat reenviaba a precio completo el system prompt
-entero (rulebook + estrategia + 60 resúmenes + catálogos) **y** la gráfica en base64.
-Una sesión de coaching son 3+ llamadas, así que todo eso se pagaba 3+ veces.
+La `APEX-232411-15` se quemó el 8-sep (−1.324,08 ese día, balance 47.805,06 bajo el piso
+de 48.000). Kris la renovó el viernes 11-sep y **Apex conserva el número de cuenta**, así
+que NT8 exporta las dos etapas con el mismo `AccountName`.
 
-**El arreglo:** `cache_control` de Anthropic (GA, sin cabecera beta) en dos puntos —
-el máximo por petición son 4:
+El Tracker asignaba trades a cada tarjeta **solo por número**: una segunda tarjeta habría
+cogido los 21 trades y nacido quemada. Ahora **cada tarjeta es un periodo**: desde su
+`fecha_inicio` hasta el día antes de que empiece otra con el mismo número (`periodoDe` en
+`js/apex.js`). El límite se deduce, no se guarda: cero cambios de esquema, y la próxima
+renovación es solo crear otra tarjeta. El formulario exige fecha de inicio si el número ya
+lo usa otra tarjeta.
 
-1. **El system prompt**, que es idéntico durante toda la sesión (se construye una vez
-   en la Etapa 1 y se reutiliza). Pasa de string a bloque de texto con marca.
-2. **El último bloque del último turno del usuario**, avanzando turno a turno: cada
-   llamada relee lo que escribió la anterior — incluida la imagen, que vive en el
-   primer mensaje. En un turno 3 típico eso es el **99,9% del payload**.
+| Tarjeta | Periodo | Trades | Balance |
+|---|---|---|---|
+| Apex-15 (quemada, id 6) | 12-ago → 10-sep | 19 | 47.805,06 |
+| Apex-15 · 2ª (id 7) | 11-sep → | 2 | 49.895,96 |
 
-**TTL de 1 h** en vez de los 5 min por defecto: entre el análisis y el diagnóstico el
-trader *lee*, y esa pausa se come los 5 minutos. Con 1 h el equilibrio son 3 llamadas,
-justo el flujo normal. Una sesión de solo 2 llamadas paga ~10% de más — asumido.
+Verificado con `SELECT` y en el preview (copia local ampliada con la Apex-15). Ninguna otra
+cuenta tenía trades anteriores a su `fecha_inicio`, así que las demás tarjetas no cambian.
+Migración `2026-09-14-apex15-renovada.sql`. Diseño:
+`docs/disenos/2026-09-14-apex-cuenta-renovada.md`.
 
-**La invariante que había que respetar:** el caché es un match de **prefijo byte a
-byte**. Un mismo mensaje tiene que serializarse igual en todos los turnos, así que
-`mensajesConCache` normaliza **siempre** a bloques tipados (si un turno mandara string
-y el siguiente bloque, el prefijo cambiaría y no habría un solo acierto). Devuelve una
-copia: `chatHistory` no lleva marcas — es lo que se persiste.
-
-El Worker proxy reenvía el body con `JSON.stringify(body)` **tal cual**, así que
-`cache_control` pasa sin tocarlo: no hubo que desplegar nada.
-
-`llamarClaude` ahora loguea `cache_creation_input_tokens` / `cache_read_input_tokens`
-en consola. **Si "leídos" sale 0 turno tras turno, el prefijo se está rompiendo** y se
-está pagando todo completo sin avisar.
-
-**Verificación:** 13 asserts sobre el código real — una sola marca por petición, en el
-sitio correcto, sin contaminar `chatHistory`, con el prefijo compartido byte a byte
-idéntico entre los turnos 1, 2 y 3, y la imagen intacta tras el copiado.
+> ⚠️ Queda al backlog: el filtro de cuentas de Calendario/Trades/Análisis sigue mezclando
+> las dos etapas, porque filtra por nombre de NT8 y no por tarjeta.
 
 ---
 
-### Coach IA — retomar una sesión guardada (11 ago)
-
-**El síntoma:** al abrir un día que ya tenía diagnóstico, la pantalla mostraba todo
-(análisis, diagnóstico, conversación) y las etapas se veían desbloqueadas, pero el chat
-respondía *"Primero haz el análisis inicial"* y el botón de diagnóstico estaba gris.
-**Solo lectura, sin decirlo.** La única salida era relanzar el Análisis Técnico, que
-gasta una llamada y se lleva por delante la conversación guardada.
-
-**La causa:** `cargarFecha` llama a `resetPanel` (deja `systemPromptCache = null` y el
-botón `disabled`) y luego a `mostrarDiagnosticoGuardado`, que restauraba la UI y los
-flags de etapa pero **no reconstruía el contexto del Coach ni reactivaba el botón**.
-
-### Dos bugs latentes que el candado estaba tapando
-
-Habilitarlo sin más habría provocado pérdida de datos. Los dos estaban dormidos
-**precisamente porque no se podía escribir en un día cargado**:
-
-1. **`mostrarDiagnosticoGuardado` pintaba el HTML pero nunca rehidrataba
-   `diagnosticoActual`.** Como `guardarDiagnostico` arma el payload desde ahí,
-   regenerar el diagnóstico sobre un día cargado habría guardado `sec_contexto`,
-   `sec_desarrollo` y `sec_validacion` en `undefined` → **borrando las 3 secciones de
-   la Etapa 1** en la BD. La guarda de "primero genera el análisis" no lo frena porque
-   `resumen` sí queda lleno tras regenerar. Verificado contra el código anterior:
-   `diagnosticoActual` quedaba literalmente `{}`.
-2. **`saveErroresIA` borra los errores IA del día antes de reinsertar.** Retomar un día
-   y solo chatear deja la lista de confirmación vacía — no porque el día esté limpio,
-   sino porque nunca se generó un diagnóstico — así que guardar habría **eliminado los
-   errores ya registrados**. Ahora un flag `erroresRevisados` distingue "revisada y
-   vacía" de "nunca revisada"; el patrón detectado se conserva por el mismo motivo.
-
-### Lo que se hizo
-
-| Pieza | Cómo |
-|---|---|
-| Rehidratar el estado | `Object.assign(diagnosticoActual, …)` con las 7 secciones + los campos de patrón |
-| Reconstruir el contexto | **Perezoso**, dentro de `llamarClaude`: si no hay `systemPromptCache` y no es la primera llamada, se reconstruye para esa fecha. No cuesta llamada a la IA — son lecturas de Supabase — y no se paga por el mero hecho de mirar un día |
-| Guardia del chat | `enviarMensaje` pasa a exigir `analisisHecho` (hecho ahora **o** cargado) en vez de `systemPromptCache` |
-| Botón | Se habilita al cargar y pasa a decir **"Regenerar diagnóstico"** — reemplaza, no añade |
-| Volver a guardar | `marcarSinGuardar()` desde `llamarClaude`, el punto único por el que pasa todo contenido nuevo |
-| La gráfica | `restaurarImagenEnChat()` devuelve la imagen de Cloudinary a su sitio en el chat (operación inversa de `chatSinImagenes`), para que el Coach pueda volver a **mirar** el gráfico. Best-effort: si aún no se recargó, se continúa sin ella |
-
-**Carrera cerrada en `autoCargarImagen`:** `readAsDataURL` es asíncrono por callback,
-así que la función **terminaba antes de asignar `imagenBase64`** — esperarla no servía
-de nada. Ahora se envuelve el `FileReader` en una promesa y `setupEmocionConfianza`
-guarda la promesa en `imagenPromesa` (sin esperarla: bajar la imagen no debe retrasar
-el panel). El chat sí la espera antes de enviar, así que al retomar un día la gráfica
-está garantizada, se escriba a los 30 s o al medio segundo de abrirlo.
-
-**Verificación:** 25 asserts ejecutando el flujo real (`cargarFecha` → `guardarDiagnostico`)
-con DOM y Supabase stubeados — incluidos los dos casos críticos: las 3 secciones
-sobreviven al guardado, y guardar sin haber revisado la lista **no** toca los errores.
-Más dos comparaciones A/B contra el commit anterior que confirman que ambos fallos eran
-reales: `diagnosticoActual` quedaba en `{}`, y la promesa de la imagen resolvía vacía.
-
----
-
-### Coach IA — confianza en la entrada + simetría stop/target (11 ago)
-
-Dos peticiones de Kris tras usar el Coach.
-
-**1. "Confianza pre-sesión" → "Confianza en la entrada".** La pregunta vieja no aportaba
-nada: *"ahí siempre voy a estar bien"*. Medir la convicción **al apretar el gatillo** sí
-discrimina. Se reutiliza la columna `nivel_confianza` (mismo rango 1-5, sin migración):
-los valores históricos significan lo anterior, pero como eran uniformemente altos no
-había señal que perder — **y no contaminan nada**, porque la confianza solo entra al
-prompt para el día que se analiza; el historial de 60 días son resúmenes compactos.
-
-Cambia la etiqueta en el panel del Coach, el tooltip del modal del día y la pregunta del
-bot de Telegram (*"¿Qué tan convencido estabas al entrar?"*). Y una sección nueva en el
-prompt para que el Coach la **cruce con los hechos** en vez de recitarla:
-
-| Confianza | Lo que pasó | Lectura |
-|---|---|---|
-| Alta (4-5) | reglas rotas | **sobreconfianza** — el patrón más caro |
-| Baja (1-2) | entró igual | error de proceso aunque gane: ¿qué filtro no estaba claro? |
-| Baja (1-2) | no entró, setup válido | el filtro funcionó; ¿la duda estaba justificada? |
-| Alta (4-5) | proceso limpio + STOP | **no es un error** — coste del negocio, no buscar culpables |
-
-Incluye el aviso de sesgo: se puntúa *después* de operar, así que un día verde se
-recuerda como más convencido de lo que fue.
-
-**2. El Coach preguntaba el stop teniendo el target (y al revés).** La regla 1:1 ya
-estaba en el rulebook (`fil_1`, `fil_4`: *"Target = mismo recorrido"*), pero el prompt
-tenía una orden que la pisaba: *"Si necesitas un dato que NO está registrado,
-PREGÚNTALO en lugar de suponerlo"*. El Coach trataba el stop como dato ausente que no
-debía inventar — obedeciendo, no fallando.
-
-Ahora esa orden lleva una excepción explícita y hay una sección que la desarrolla:
-conocer un lado **es** conocer los dos, y derivarlo no es adivinar, es aplicar la regla
-del trader. Además se deriva del propio trade: si cerró en TARGET, sus puntos son el
-target *y* el stop; si cerró en STOP, el valor absoluto es el stop *y* el target. Solo
-se pregunta si ningún lado se puede derivar (cierre manual sin tocar ninguno).
-
-**Verificación:** 15 asserts sobre el **prompt real** — generado cargando `db.js` +
-`coach.js` juntos con Supabase stubeado, no revisando el código fuente a ojo. Confirma
-el valor de confianza renderizado, las 4 lecturas cruzadas, las dos direcciones del 1:1,
-y que la excepción se enuncia antes de la sección que la explica.
-
-> El bot de Telegram se despliega solo al hacer push.
-
----
-
-### Coach IA — migración a Sonnet 5 + botón coherente + manual al día (11 ago)
-
-**El botón.** Si la IA colaba el diagnóstico dentro del chat,
-`procesarDiagnosticoDesdeChat` apagaba el botón ("Diagnóstico generado") — y en un día
-retomado eso le quitaba al trader el "Regenerar" que sí tenía al abrirlo. Ahora queda
-habilitado como "Regenerar diagnóstico", igual que en el resto del flujo.
-
-**Sonnet 5 — no era cambiar la cadena del modelo.** `claude-sonnet-4-6` →
-`claude-sonnet-5` traía un cambio de comportamiento que **habría roto todas las
-llamadas**:
-
-| | Sonnet 4.6 | Sonnet 5 |
-|---|---|---|
-| Omitir `thinking` | NO piensa | **piensa** (adaptive por defecto) |
-| Primer bloque de la respuesta | `text` | **`thinking`** (de texto vacío) |
-
-El código leía `data.content[0].text`. Con Sonnet 5 ese primer bloque es de
-razonamiento → `undefined` → `''` → **"Respuesta vacía de Claude" en cada llamada**.
-Ahora se filtran los bloques `type === 'text'` y se concatenan.
-
-Lo demás de la migración:
-- **`max_tokens` 3000 → 8000.** El razonamiento sale del MISMO presupuesto que la
-  respuesta; con 3000 el diagnóstico se cortaba a media frase.
-- **`thinking: {type:'adaptive'}` explícito**, aunque sea el default: en 4.6 omitirlo
-  significaba lo contrario, así que dejarlo escrito evita malentendidos futuros.
-- **`effort: 'low'`.** El proxy no hace streaming: la respuesta entera viaja en una
-  petición, así que acotar cuánto piensa mantiene la latencia parecida a la de hoy.
-  Subir a `'medium'` es una línea si el análisis se queda corto.
-- **Aviso de corte.** `stop_reason === 'max_tokens'` ahora avisa por consola y con un
-  toast: el corte era silencioso y el parser troceaba el resto sin quejarse.
-- No hacía falta tocar el Worker (reenvía el body tal cual) ni el prompt caching.
-
-**Documentación.** `manual-tecnico.md` seguía en `claude-sonnet-4-5-20251001` con el
-fragmento de la petición sin caché. Actualizado, más una nota de qué comprobar **antes**
-de cambiar de modelo (¿piensa por defecto? ¿siguen aceptándose los parámetros?). Igual
-en `arquitectura-tecnica.md` y `CLAUDE.md`. **Las filas de changelog de v4.0 (mayo) NO
-se tocaron**: son registro histórico, y ahí `claude-sonnet-4-5` era cierto.
-
-**Verificación:** 13 asserts nuevos simulando la forma de respuesta de Sonnet 5 —
-incluida la comprobación de que el método viejo (`content[0].text`) devolvía `""`. Las 6
-suites juntas: **89 comprobaciones, 0 fallos**.
-
----
-
-## Checkpoint 2026-08-16 — Sesión Operativa: tres pantallas en una
-
-Para entender un día había que recorrer **cuatro** pantallas (Calendario, Sesión,
-Historial y Coach IA) y varios datos se pedían dos veces. Ahora son **dos**.
-
-### Sesión Operativa (`section-register`, menú "Sesión")
-
-Absorbe lo que eran tres entradas de menú. Cabecera común (fecha + el recuadro de
-resultado **Resultado · Puntos · P&L · Setup**) y **tres pestañas**:
-
-| Pestaña | Qué es |
-|---|---|
-| **Diario** | El formulario de registro de siempre |
-| **Coach IA** | Las 3 etapas del Coach |
-| **Días anteriores** | El índice del diario (era la sección Historial) |
-
-- **Una sola fecha** manda sobre las tres. Antes Sesión y Coach llevaban cada uno
-  la suya y no se hablaban. `SesionOperativa` (en `app.js`) controla pestañas y
-  cabecera; `Coach.setFecha(date)` recibe la fecha desde el Diario.
-- `Nav.go('coach')` y `Nav.go('historial')` **siguen valiendo**: son alias que
-  abren esta sección y su pestaña (`Nav.TAB_ALIAS`). No romper esto.
-- El markup del Coach se movió **conservando todos sus ids**, así que `coach.js`
-  no se enteró del cambio.
-- El Coach se inicializa la primera vez que se abre su pestaña, no al arrancar.
-
-### Vista del día (antes modal del calendario)
-
-El modal de 3 pestañas (Gráfica/Resumen/Operativa) pasa a **pantalla completa**,
-un solo scroll, sin pestañas: gráfico → *Tu reflexión* → *Análisis del Coach* →
-Veredicto → Errores → Aprendizaje → Notas. Se cierra con `Esc` o los botones.
-Se eliminaron `_renderResumen` y `_renderOperativa` (191 líneas muertas).
-
-### Datos que cambiaron de sitio
-
-- **Emoción (llegada y cierre) y confianza** se registran en el **Diario**, no en
-  el Coach. Llegada y confianza → `sesiones`; la de cierre → `diagnosticos_diarios`.
-  ⚠️ El Coach **ya no manda esos campos** al guardar: con sus selectores retirados
-  enviaría `null` y borraría lo que puso el Diario.
-- **Noticias**: se retira el textarea libre `sesiones.noticias`. Todo vive en
-  `sesion_noticias` (varias por día). El texto viejo se migró
-  (`2026-08-16-migrar-noticias-texto.sql`) y la columna **no se borró**.
-  El 14 y 15 de julio pasaron de una hora a dos: la ventana de ±5 min de la
-  publicación de la mañana no se estaba vigilando.
-
-### Reglas de oro que salieron de los bugs de esta sesión
-
-- **NO filtrar por `cuenta_principal` al mostrar días.** La cuenta de Apex rota
-  (la -14 pasó a la -15); filtrar por la de hoy vacía todo el histórico anterior.
-  `trades` ya contiene solo la operativa del journal.
-- **`preloadCatalogos` trae la cuenta principal.** Sin eso, `cuentaPrincipal()`
-  devuelve el fallback histórico y el Coach analiza la cuenta equivocada.
-- **Nada interactivo dentro de `#sessionFieldset` funciona en modo lectura**: el
-  fieldset se deshabilita entero. Los desplegables de fase del checklist son
-  `role="button"`, no `<button>`, por esto.
-- **Ojo con los `;` al insertar código**: `updateCierreMeta()` seguido de un array
-  literal se leyó como `updateCierreMeta()['expSNTList']` y reventaba al guardar.
-  `node --check` NO lo detecta: es sintaxis válida con otro significado.
-- **En lectura no se dibujan campos vacíos** (`marcarVacios` + `.vacio-en-lectura`).
-  Al ocultar grupos de botones sin opción elegida, comprobar que no arrastren
-  listas: los T/S de errores y experimentos se llevaban por delante sus listas.
-
-### Diseño
-
-La maqueta aprobada está en el artefacto de la propuesta. **Es la fuente de
-verdad**: en esta sesión se implementó otra cosa y hubo que rehacerlo. Claves:
-título de tarjeta verde en mayúsculas y sin icono, barra de cumplimiento gruesa
-con rótulo centrado, fases como filas con acento de color, y "La operación" con
-recuadros `CONTEXTO · CORRIDA · RETROCESO · ZONAS EN CONTRA` + tabla de trades.
-
-### Pendiente
-
-- Llevar el mismo lenguaje visual a las pestañas **Coach IA** y **Días anteriores**
-  y al resto de la app (calendario, disciplina, análisis) — siguen con el estilo viejo.
-- Los manuales (`manual-tecnico.md`, `manual-usuario.md`, `arquitectura-*.md`)
-  describen el modelo viejo de 3 secciones separadas.
-
----
-
-## Checkpoint 2026-08-16c — Navegación: 6 botones y la pantalla "Otros"
-
-Diseño aprobado y persistido en `docs/disenos/2026-08-16-navegacion-6-botones.md` (v2),
-4 fases. Kris lo pidió desde el móvil: no le cabían los botones y tenía que deslizar.
-
-### El diagnóstico
-
-| Qué | El número |
-|---|---|
-| Botones en la barra | 11 × 60 px = **660 px** de barra contra ~390 px de pantalla |
-| Visibles sin deslizar | 6,5 — y la barra de scroll está oculta a propósito, así que nada indicaba que hubiera más |
-| Títulos por pantalla | **2**: el de la barra (blanco) y el `.analysis-hero-title` de cada sección (verde, 2,1 rem) |
-| Formas de cerrar sesión desde el móvil | **0** — el botón vivía en el pie del sidebar, y ese pie está `display:none` en móvil |
-
-Y el badge "Cuenta Fondeo" del pie era texto fijo escrito a mano que ningún JS actualizaba.
-
-### Lo que se hizo
-
-- **Barra de 6:** Disciplina · Análisis · Calendario · Sesión · Apex · Otros. 360 px, entra
-  sin deslizar. Las otras 6 secciones **no se movieron ni perdieron sus ids**: solo cambia
-  por dónde se llega. `Nav.PADRE` mantiene "Otros" encendido dentro de ellas y un chevron
-  en la barra devuelve — en móvil es la única salida.
-- **Un solo título**, el de la barra, en `--accent-txt` y mayúsculas. Fuera los 11 heroes y
-  su CSS. El dato variable (mes del Calendario, filtro de Imágenes, rango de Disciplina) va
-  a `Nav.setContexto`, que lo guarda **por sección**: `go()` no re-renderiza el Calendario
-  al volver, así que limpiarlo dejaba la barra sin el mes.
-- **Ajustes dentro de Otros:** claves y objetivos (abre el modal de siempre, sin tocarlo),
-  tema (fila inerte, ver D-010), seguridad (cambiar contraseña vía `supa.auth.updateUser`)
-  y cerrar sesión — que así **vuelve a existir en el móvil**, con el email de la sesión
-  debajo en lugar del badge que mentía.
-- **"NQ Journal" → "Trading Journal"** en los 6 sitios; `CACHE` a v6 para que el service
-  worker no siga sirviendo el HTML viejo.
-
-### Verificación
-
-Las 12 secciones abren y ninguna tiene ya título duplicado. A 390 px: barra sin scroll
-(contenido 390 = visible 390), sin scroll horizontal de página, filas de Ajustes de 59-60 px
-(mínimo táctil 44). Contexto probado navegando meses en Calendario —incluido **volver desde
-otra sección y encontrarlo intacto**—, filtrando en Imágenes y cambiando período en
-Disciplina. Validaciones del cambio de contraseña probadas; **el cambio real no**, porque
-habría cambiado la contraseña de verdad.
-
-### Lo que NO entró
-
-El tema claro (D-010) y convertir "Cuenta Fondeo" en un dato real: se borró en vez de
-arreglarlo, y mostrar la cuenta principal de Apex sigue siendo otro encargo.
-
----
-
-## Checkpoint 2026-08-16b — Reestructuracion documental
-
-Cambio de **orden**, no de funcionalidad: la app no se toco. Diseno aprobado y
-persistido en `docs/disenos/2026-08-16-reestructuracion.md` (v4), 6 fases.
-
-### El diagnostico
-
-El `CLAUDE.md` habia crecido a 259 lineas mezclando cinco cosas —referencia,
-invariantes, post-mortems, changelog y flujo de trabajo— y se cargaba entero en cada
-sesion. La memoria automatica describia el proyecto por su cuenta y se habia quedado en
-julio: **seis datos tenian dos o tres respuestas distintas** segun donde miraras.
-
-| Dato | Decia | La verdad |
-|---|---|---|
-| Modelo de IA | sonnet-5 / haiku-4-5 / sonnet-4-6 | `claude-sonnet-5` |
-| Seguridad BD | "RLS activado" y "RLS deshabilitado" | activo en las 18 tablas |
-| `fomc_dates`, `apex_registros`, `estrategia_chaumer` | documentadas como vivas | borradas |
-| Triggers del checklist | descritos funcionando | eliminados el 16 ago |
-| Stop maximo | 60 puntos y 80 puntos | 80 puntos |
-| Nº de tablas | 17 | 18 |
-
-Ademas: 3.627 lineas de manuales describiendo la app de tres secciones, dos checkpoints
-titulados igual, 122 permisos literales (uno con la clave anon dentro) y los disenos
-aprobados viviendo solo en el chat.
-
-### Lo que se hizo
-
-- **`CLAUDE.md` 259 -> 149 lineas.** Adopta 5 secciones con nombre estable
-  (Invariantes / Verificacion / Diseno / Datos / Lenguaje visual) que son el **contrato**
-  que leen los skills genericos.
-- **`.claude/rules/`** con `paths:`: las 7 reglas de oro de la disciplina y las
-  invariantes del Coach, de Sesion Operativa y de NinjaTrader cargan **solo al abrir el
-  archivo al que afectan**. No se pierden; dejan de pagarse siempre.
-- **Memoria de 11 archivos a 2.** Guarda al usuario, no al proyecto: lo que describe el
-  proyecto se fue al repo, que cambia en el mismo commit que el codigo.
-- **`docs/decisiones.md`**: 9 decisiones con su porque, que antes habia que deducir.
-- **`tasks/`**: los pendientes salen del `CLAUDE.md`, porque cambian cada semana.
-- **4 skills genericos** en `~/.claude/skills/`, sin una sola mencion a este proyecto.
-- **Tokens CSS**: 19 -> 26, 140 -> 45 literales. Ni un color cambio.
-
-### Lo que NO se toco
-
-El comportamiento de la app, el criterio de disciplina, el P&L neto, la zona horaria, las
-invariantes del Coach, `upsertSesion`, y la decision cerrada del 24 jul sobre las 6
-reglas de feb-may. Y la estructura de `js/` / `index.html` / `styles.css`, que se
-analizo y se aplazo con su propio diseno (ver `tasks/backlog.md`).
-
-### Falsa alarma y un bug real (16 ago)
-
-Al verificar la Fase 6 reporte que el registro del **service worker** fallaba. Era falso:
-lo bloqueaba el navegador embebido de la prueba. La prueba de control fue registrar
-`manifest.json` como SW y obtener el mismo error — un JSON deberia fallar por MIME type.
-
-Pero el analisis destapo un bug real: **`APP_SHELL` en `sw.js` era codigo muerto**. Se
-declaraba y no se usaba en ningun sitio (`install` solo precacheaba el CDN), listaba
-`js/annual.js` —que ya no existe— y le faltaban 6 archivos que si. La PWA no abria sin
-conexion en la primera visita. Arreglado: `install` precachea 28 entradas y `CACHE`
-sube a `nqjournal-v5`. **Verificado por Kris en Chrome: 28 entradas en Cache Storage.**
-
----
-
-## Checkpoint 2026-08-16d — Cuenta Apex-15, formato de importes y vista del día
-
-### 🔀 La Apex-15 no salía en el calendario
-
-Kris configuró `APEX-232411-15` como cuenta principal y no aparecía en el selector.
-
-**Causa doble.** `SupabaseAutoExport` enruta por nombre de cuenta (`PA-*` y la principal
-→ `trades`; el resto → `apex_trades`) y leía `objetivos.cuenta_principal` **una sola vez,
-al arrancar**. El 14-ago se operó la -15 a las 09:28, cuando la principal era todavía la
--14, así que el trade fue a `apex_trades`; el cambio de configuración llegó a las 13:12.
-Y el selector de cuentas se construye desde las cuentas presentes en `trades`, así que una
-cuenta sin trades **no existe como opción** — ni siquiera para ser el default.
-
-- **Datos:** se movió el trade del 14-ago a `trades`. Los del 12 y 13 se quedaron en
-  `apex_trades` porque esos días la operativa se replicó en la -14 y el mismo trade ya
-  estaba en `trades` bajo esa cuenta: moverlos habría contado la pérdida dos veces.
-- **`account-filter.js`:** la cuenta principal **siempre** está en la lista, aunque no
-  tenga trades. Arregla Calendario, Análisis y Trades de una vez.
-- **`SupabaseAutoExport.cs`:** la cuenta principal se **refresca cada 5 min**. Informa en
-  el log solo en la primera lectura y en cada cambio; el timer se libera en
-  `State.Terminated`. ⚠️ **Requiere recompilar.**
-
-> ⚠️ **NO duplicar un trade en `trades` y `apex_trades`.** `apex.js` hace
-> `[...apex_trades, ...trades].filter(t => t.account === cta.numero_cuenta)` asumiendo que
-> cada cuenta vive en UNA sola tabla. Duplicar haría que el Apex Tracker contase el trade
-> dos veces e inflase el **drawdown consumido** — el número que decide si la cuenta se
-> quema. Con el trade solo en `trades` se ve igual en las dos vistas, que es exactamente
-> el caso de la Apex-14.
-
-### 💰 Importes con separador de miles
-
-Helpers **`fmtMiles`** y **`fmtDinero`** en `db.js`, aplicados a los importes del
-calendario (día, semana, total del mes), la card P&L Neto, el KPI y la tabla de Análisis
-con sus totales, el coste de errores y el P&L de experimentos.
-
-> La agrupación se hace **a mano, no con `toLocaleString('es-ES')`**: en español el
-> estándar CLDR no agrupa los números de 4 dígitos, así que 2212 salía `"2212"` y solo
-> agrupaba desde `"10.000"`. Se detectó al verificar.
-> Ahora: `2212 → +$2.212` · `-1257,66 → −$1.258` · `1234567 → +$1.234.567`
-
-### 🧭 El filtro de cuentas y las flechas de mes suben a la barra superior
-
-`.calendar-header` **desaparece**: el título ya estaba arriba y esa fila solo sostenía esos
-dos controles, así que se recupera su alto completo sobre el calendario. También se
-quitaron de Análisis y Trades.
-
-- Las flechas `‹ ›` van pegadas al contexto: navegan el dato que se está mirando.
-- Los 3 filtros conviven en el header (cada sección tiene su selección persistida) y
-  **`Nav.HERRAMIENTAS` + `_pintaHerramientas`** muestran el de la sección activa. Añadir
-  una sección es una línea, no lógica nueva.
-- En ≤560 px se oculta el nombre de cuenta y queda el icono de cartera.
-
-### 🖼️ Vista del día — 7 ajustes
-
-| Antes | Ahora |
-|---|---|
-| Dos botones "Volver al calendario" | **Uno**: el pie entero se elimina |
-| El de arriba con leyenda | Solo icono (texto en `title`/`aria-label`) |
-| Leyenda "Esc para salir" | Fuera — Esc sigue cerrando |
-| Fecha en gris, sin estilo de título | **`--accent-txt`, mayúsculas**, como el resto de títulos |
-| Recuadro Puntos/Resultado/P&L/Setup a la izquierda | **Centrado** en la pantalla |
-| Botón "Ver sesión" | Fuera (iba en el pie) |
-| Imagen dentro del scroll | **Fija** bajo la cabecera, a todo el ancho; solo scrollea el texto |
-| Análisis del Coach completo y abierto | **Resumen** arriba + "Ver análisis completo" plegado |
-
-- La imagen sale de `.dv-scroll`; `.modal-full` pasa a columna flex y solo el texto
-  desborda. Cada día abre con el scroll arriba (antes heredaba el del día anterior).
-- El plegado usa el mismo `<details class="cz-det">` que la pestaña del Coach
-  (`_bloquePlegable`), así que se ve y se comporta igual.
-
-> ⚠️ **`.modal-header` se declara más abajo con `display:flex`** y ganaba por orden sobre
-> `.dv-header`, dejando el recuadro pegado a la izquierda (413 px desviado). Hace falta la
-> doble clase **`.modal-header.dv-header`**.
-
-> ⚠️ **Lección de verificación:** la primera prueba de "imagen fija" no valía — el
-> contenido era corto, no había scroll y la imagen no se movía trivialmente. Hubo que
-> repetirla con contenido largo y un scroll real de 500 px.
-
-Migración: `2026-08-14-mover-trade-apex15-a-trades.sql` (aplicada vía MCP).
-Commits: `d3e31ef` · `de45a1b` · `4794a77` · `3e97402`.
-
----
-
-
-
-## Checkpoint 2026-08-31 — Motivos sin cubrir, FOMC del desglose y P&L de la celda
+## Checkpoint 2026-08-31b — Motivos sin cubrir, FOMC del desglose y P&L de la celda
 
 ### Tres motivos que se pintaban como "no me conecté"
 
@@ -2222,6 +482,97 @@ tomado`, `Sin setup` y `Noticia roja` dan todos día conectado; solo `se_conecto
 > Dos agentes sobre el mismo árbol: commitear por archivo, no con `-A`.
 
 ---
+
+## Checkpoint 2026-08-31 — El checklist dejó de marcarse solo · zonas naranjas al AddOn · RR en puntos
+
+Tres cosas, todas en la frontera entre NinjaTrader y la BD. La primera se arregló el 16 de
+agosto y se quedó sin documentar; se recoge aquí.
+
+### 1. El checklist se marcaba solo al abrir el mercado (16 ago)
+
+**El síntoma.** El AddOn aparecía con **todas** las casillas marcadas justo al abrir el
+mercado, sin haber tocado nada.
+
+**La cadena**, reconstruida con datos reales del 14 de agosto:
+
+1. `SupabaseDailyLevels` hace UPSERT a `sesiones` al detectar la apertura del RTH
+   (09:31 ET). Si la fila del día no existía, es un **INSERT**.
+2. El trigger `trg_materializar_checklist` insertaba las 18 reglas con `cumplido = true`.
+3. El AddOn hace poll cada 5 s y copia BD → casillas: se marcaban solas. Y el siguiente
+   guardado las persistía **como si las hubiera marcado el trader** → disciplina inflada al
+   100 % en los días que no se corrigieran a mano.
+
+**La huella que lo delató.** `rr_1a1` es la única regla con `activa = false`, así que ni el
+AddOn ni la web la escriben — pero el trigger no filtraba por `activa`. Su `updated_at` del
+14 ago quedó sellado a las **08:31:00.247 hora Colombia = 09:31 ET**, el instante de la
+apertura, junto a la fila de `sesiones` con su `precio_apertura`. Mismo sello el 5 y el 10
+de agosto, ambos cerrados 18/18 en `true`.
+
+**El arreglo.** Migración `2026-08-16-checklist-sin-materializar-en-true.sql`: fuera
+`trg_materializar_checklist` y `trg_backfill_regla`. **Sin fila = N/A**, que es como ya lo
+leían `calcDisciplinaStats` (`db.js`) y `_checklistDia` (`app.js`). En el AddOn, el reset de
+sesión dejó de guardar: escribía las 18 reglas en `false` sin haber tocado nada. Ninguna
+fila existente se tocó — el histórico se conserva por decisión expresa de Kris. Porqué
+completo: **D-013**.
+
+**Verificado.** Ningún trigger de materialización vivo; una sesión insertada a mano (fecha
+ficticia, borrada después) crea **0 filas** de checklist; 2068 filas de histórico intactas.
+Y en vivo el 31 de agosto: la sesión del día tiene **17 filas, no 18** — falta justo
+`rr_1a1` —, escritas de una vez cuando Kris marcó.
+
+### 2. Las zonas naranjas se escriben en el AddOn, no en Telegram (31 ago)
+
+Dos casillas nuevas en `ChecklistChaumer` ("Sop." y "Res."), debajo de las noticias rojas:
+precios separados por comas, el mismo formato que pedía el bot. Se escriben en premercado,
+al marcarlas en el gráfico, junto a la regla `chk_zonas` que ya vivía en la Fase 1.
+
+Mismo mecanismo ya probado con las noticias: debounce de 900 ms, guarda anti-pisado de 3 s
+frente al poll de 5 s, cajas vacías en sesión nueva, y bloqueo en fin de semana. Se parsea
+en **cultura invariante**: la coma es el separador de la lista, así que los decimales van
+con punto.
+
+**Lo que no era opcional.** El bot mandaba `soportes_naranja: data.soportes_naranja ?? []`
+en cada guardado. Quitarle las preguntas sin quitarle esas dos claves habría hecho que el
+registro de la noche **borrara** las zonas escritas por la mañana — el mismo motivo por el
+que el bot ya no manda los niveles de precio. Porqué completo: **D-014**.
+
+De paso caen `parseNumList`, `PREMKT_PROMPTS` y `premktResumen`, sin uso. **Ojo:** el primer
+intento de esa limpieza se llevó por delante `escHtml`, `CONTEXTOS` y `SETUPS_FALLBACK`, que
+sí se usan; `node --check` no lo vio porque seguía siendo sintaxis válida. Se cazó revisando
+el diff. Lección: en una limpieza de código muerto, **revisar qué se borró**, no solo que
+compile.
+
+**Verificado end-to-end el 31 ago.** Kris escribió las zonas en el AddOn (`[29384]` /
+`[29486]`), registró la sesión completa por el bot (setup, emoción, confianza, análisis) y
+las zonas **siguieron intactas**. Los niveles de `SupabaseDailyLevels` tampoco se tocaron.
+
+### 3. RR — herramienta de dibujo que mide el riesgo en PUNTOS (25 y 31 ago)
+
+El Risk Reward de NinjaTrader mide en precio, porcentaje, ticks, dinero o pips. **En puntos
+no**, que es la unidad en la que está escrito todo este proyecto. `RR.cs` es un clon suyo
+con enum propio (`RRUnit`), solo dos unidades —Puntos, por defecto siempre, y Valor— y los
+colores de Kris de fábrica. Por qué un clon y no una modificación: **D-015**.
+
+Los puntos se formatean con la **misma fórmula que usa NinjaTrader** para su propia unidad
+`Points` (`@NetChangeDisplay.cs:123`), así que los decimales los decide el tick del
+instrumento y funciona igual en NQ que en MNQ.
+
+El 31 de agosto se le añadió el **sombreado de las zonas de stop y target**, cada una con el
+color de su línea y opacidad configurable (`AreaOpacity`, 20 por defecto, 0 lo apaga). Se
+pinta antes de las líneas para que queden encima, y **no** durante el hit test — mismo
+criterio que las figuras de NinjaTrader: así el área no se traga los clics de lo que haya
+debajo.
+
+**Verificado.** `RR.cs` compila con `csc.exe` contra las DLL reales de NinjaTrader con **0
+errores**, igual que los otros tres archivos de `NinjaTrader/`. El diff contra el original
+está acotado a los cambios pactados.
+
+### Pendiente
+
+- **Recompilar `RR` en NT8** para ver el sombreado (el AddOn ya está recompilado).
+
+---
+
 ## Checkpoint 2026-08-23 — Tarjetas KPI y curva de equity del Calendario
 
 Dos cambios de forma, ninguno de cálculo.
@@ -2270,6 +621,7 @@ los perfiles de opacidad al 60 %, 90 % y 97 % son iguales y el relleno solo baja
 la curva está más abajo — era aliasing de la captura reducida.
 
 ---
+
 ## Checkpoint 2026-08-19 — Otros y Datos rediseñados, modo local, y el comparador de Chaumer
 
 Tres cosas en un día, encadenadas: Kris dijo que **Otros parecía una pantalla de los 90** y
@@ -2465,548 +817,271 @@ Stops · Días conectados**.
 
 ---
 
-## Checkpoint Ago 2026 (3) — Dashboard de Disciplina: el porqué de cada fallo (6 ago)
+## Checkpoint 2026-08-16d — Cuenta Apex-15, formato de importes y vista del día
 
-Sesión sobre el tablero por fase. Kris preguntó por qué "Target sin zonas en contra"
-salía en rojo con 3/4, y se terminó cambiando cómo se navega y se lee todo el dashboard.
+### 🔀 La Apex-15 no salía en el calendario
 
-### 🔍 Cada regla abre los días en que falló
+Kris configuró `APEX-232411-15` como cuenta principal y no aparecía en el selector.
 
-El tablero decía "3/4" y ahí se acababa: ni qué día, ni por qué. Ahora la fila con
-fallos es clicable y abre un modal con el **enunciado completo** de la regla —que no se
-veía en ninguna pantalla— sus metadatos (fase, evidencia, si bloquea el GO, `aplica_si`)
-y un bloque por día fallido con **su motivo**, que hasta ahora se veían idénticos:
+**Causa doble.** `SupabaseAutoExport` enruta por nombre de cuenta (`PA-*` y la principal
+→ `trades`; el resto → `apex_trades`) y leía `objetivos.cuenta_principal` **una sola vez,
+al arrancar**. El 14-ago se operó la -15 a las 09:28, cuando la principal era todavía la
+-14, así que el trade fue a `apex_trades`; el cambio de configuración llegó a las 13:12.
+Y el selector de cuentas se construye desde las cuentas presentes en `trades`, así que una
+cuenta sin trades **no existe como opción** — ni siquiera para ser el default.
 
-| Motivo | Cuándo | Qué muestra |
-|---|---|---|
-| 🔲 Sin marcar | la casilla quedó en `false` | incumplimiento declarado |
-| ⚠️ Desmentida | marcada, pero un error la contradice (regla de oro nº 4) | el error y su descripción |
-| ⚙ Verificado por dato | reglas `evidencia=auto` | MAE en puntos vs el límite, hora de la noticia, setup del día FOMC |
+- **Datos:** se movió el trade del 14-ago a `trades`. Los del 12 y 13 se quedaron en
+  `apex_trades` porque esos días la operativa se replicó en la -14 y el mismo trade ya
+  estaba en `trades` bajo esa cuenta: moverlos habría contado la pérdida dos veces.
+- **`account-filter.js`:** la cuenta principal **siempre** está en la lista, aunque no
+  tenga trades. Arregla Calendario, Análisis y Trades de una vez.
+- **`SupabaseAutoExport.cs`:** la cuenta principal se **refresca cada 5 min**. Informa en
+  el log solo en la primera lectura y en cada cambio; el timer se libera en
+  `State.Terminated`. ⚠️ **Requiere recompilar.**
 
-Clic en un día → modal del día, reusando la delegación que ya existía en `metrics.js`.
+> ⚠️ **NO duplicar un trade en `trades` y `apex_trades`.** `apex.js` hace
+> `[...apex_trades, ...trades].filter(t => t.account === cta.numero_cuenta)` asumiendo que
+> cada cuenta vive en UNA sola tabla. Duplicar haría que el Apex Tracker contase el trade
+> dos veces e inflase el **drawdown consumido** — el número que decide si la cuenta se
+> quema. Con el trade solo en `trades` se ve igual en las dos vistas, que es exactamente
+> el caso de la Apex-14.
 
-**El caso que lo motivó (6-ago):** la casilla estaba marcada en `true`; la tumba el error
-*"Descartar Setup Válido"* (`regla_codigo = target_sin_zonas`). Descartó el Setup A, con
-todos los filtros en verde, porque la zona naranja estaba en 29515 (último máximo) y no en
-29537.25 (el de más rechazos). El filtro se aplicó bien sobre un nivel mal marcado — no fue
-una violación por impulsividad, sino una ejecución no fiable de la regla.
+### 💰 Importes con separador de miles
 
-### 🎛️ Los controles suben a la barra superior
+Helpers **`fmtMiles`** y **`fmtDinero`** en `db.js`, aplicados a los importes del
+calendario (día, semana, total del mes), la card P&L Neto, el KPI y la tabla de Análisis
+con sus totales, el coste de errores y el P&L de experimentos.
 
-La sección tenía su propia fila de controles (`.dd-hero`), contradiciendo el invariante de
-navegación: los controles de sección van en la barra, declarados en `Nav.HERRAMIENTAS`.
+> La agrupación se hace **a mano, no con `toLocaleString('es-ES')`**: en español el
+> estándar CLDR no agrupa los números de 4 dígitos, así que 2212 salía `"2212"` y solo
+> agrupaba desde `"10.000"`. Se detectó al verificar.
+> Ahora: `2212 → +$2.212` · `-1257,66 → −$1.258` · `1234567 → +$1.234.567`
 
-- **Flechas ‹ ›**: se reusan las de la barra (`#prevMonth`/`#nextMonth`, hasta ahora solo del
-  Calendario) con `navMes: true`. Como son compartidas, **cada módulo atiende solo cuando su
-  sección está a la vista** — de ahí el `Nav.actual()` nuevo.
-- **Selector de período**: desplegable compacto en `.header-actions`, mismo patrón que el
-  filtro de cuentas. Píldoras no: en móvil las 4 opciones competían con el título.
-- **Período nuevo: Año** (1-ene → 31-dic).
-- **Las flechas avanzan una unidad del período**: Mes ±1 · Trimestre ±3 meses · Año ±1 año ·
-  Todo → se ocultan. Antes en Trimestre saltaban de mes en mes.
-- `.dd-hero`, `.dd-hero-controls`, `.dd-monthnav` y `.dd-period-bar` se eliminan del CSS.
+### 🧭 El filtro de cuentas y las flechas de mes suben a la barra superior
 
-### 🧩 Fase 2 separada por familia de setup
+`.calendar-header` **desaparece**: el título ya estaba arriba y esa fila solo sostenía esos
+dos controles, así que se recupera su alto completo sobre el calendario. También se
+quitaron de Análisis y Trades.
 
-Las 4 reglas del Reingreso leían "sin datos" todos los días de IRI, mezcladas con las de
-IRI y las comunes en una sola lista. Ahora la fase se agrupa en **Comunes · IRI ·
-Reingreso**, cada grupo con su propio ratio. Los nombres salen de `catalogo_setups`, no de
-una lista fija, y las fases con una sola familia (1 y 3) no se parten. El % grande de la
-fase sigue siendo el global, para no mover la tarjeta "Fase más débil".
+- Las flechas `‹ ›` van pegadas al contexto: navegan el dato que se está mirando.
+- Los 3 filtros conviven en el header (cada sección tiene su selección persistida) y
+  **`Nav.HERRAMIENTAS` + `_pintaHerramientas`** muestran el de la sección activa. Añadir
+  una sección es una línea, no lógica nueva.
+- En ≤560 px se oculta el nombre de cuenta y queda el icono de cartera.
 
-### Verificación
+### 🖼️ Vista del día — 7 ajustes
 
-Con la capa de datos stubeada y el **código real** (la app pide login por RLS), sobre datos
-reales de agosto y julio:
-
-| Caso | Resultado |
+| Antes | Ahora |
 |---|---|
-| Agosto · filas clicables | `chk_zonas` y `target_sin_zonas`, las 2 con fallos ✓ |
-| Modal de `target_sin_zonas` | 6-ago · ⚠️ Desmentida + el error ✓ |
-| Motivo `auto` (8-jul, FOMC) | "Día FOMC operado con IRI Apertura Alcista" ✓ |
-| Motivo `auto` (stop) | MAE 900 / (2 × 5) = "90.0 pts, por encima de 80" ✓ |
-| Fase 2 en julio | Comunes 4/5 · IRI 4/4 · Reingreso 3/4 ✓ |
-| Navegación | Trimestre ‹ → abr–jun · Año › → 2027 · Todo → flechas ocultas ✓ |
-| `_pintaHerramientas` real | disciplina: período+flechas · calendario: cuenta+flechas · trades: nada ✓ |
-| Móvil 375px | sin solape título/botón, panel dentro de pantalla, sin scroll horizontal ✓ |
+| Dos botones "Volver al calendario" | **Uno**: el pie entero se elimina |
+| El de arriba con leyenda | Solo icono (texto en `title`/`aria-label`) |
+| Leyenda "Esc para salir" | Fuera — Esc sigue cerrando |
+| Fecha en gris, sin estilo de título | **`--accent-txt`, mayúsculas**, como el resto de títulos |
+| Recuadro Puntos/Resultado/P&L/Setup a la izquierda | **Centrado** en la pantalla |
+| Botón "Ver sesión" | Fuera (iba en el pie) |
+| Imagen dentro del scroll | **Fija** bajo la cabecera, a todo el ancho; solo scrollea el texto |
+| Análisis del Coach completo y abierto | **Resumen** arriba + "Ver análisis completo" plegado |
 
-Commits: `a729522` (modal de reglas) · este.
+- La imagen sale de `.dv-scroll`; `.modal-full` pasa a columna flex y solo el texto
+  desborda. Cada día abre con el scroll arriba (antes heredaba el del día anterior).
+- El plegado usa el mismo `<details class="cz-det">` que la pestaña del Coach
+  (`_bloquePlegable`), así que se ve y se comporta igual.
+
+> ⚠️ **`.modal-header` se declara más abajo con `display:flex`** y ganaba por orden sobre
+> `.dv-header`, dejando el recuadro pegado a la izquierda (413 px desviado). Hace falta la
+> doble clase **`.modal-header.dv-header`**.
+
+> ⚠️ **Lección de verificación:** la primera prueba de "imagen fija" no valía — el
+> contenido era corto, no había scroll y la imagen no se movía trivialmente. Hubo que
+> repetirla con contenido largo y un scroll real de 500 px.
+
+Migración: `2026-08-14-mover-trade-apex15-a-trades.sql` (aplicada vía MCP).
+Commits: `d3e31ef` · `de45a1b` · `4794a77` · `3e97402`.
 
 ---
 
-## Checkpoint 2026-08-31 — El checklist dejó de marcarse solo · zonas naranjas al AddOn · RR en puntos
+## Checkpoint 2026-08-16c — Navegación: 6 botones y la pantalla "Otros"
 
-Tres cosas, todas en la frontera entre NinjaTrader y la BD. La primera se arregló el 16 de
-agosto y se quedó sin documentar; se recoge aquí.
+Diseño aprobado y persistido en `docs/disenos/2026-08-16-navegacion-6-botones.md` (v2),
+4 fases. Kris lo pidió desde el móvil: no le cabían los botones y tenía que deslizar.
 
-### 1. El checklist se marcaba solo al abrir el mercado (16 ago)
+### El diagnóstico
 
-**El síntoma.** El AddOn aparecía con **todas** las casillas marcadas justo al abrir el
-mercado, sin haber tocado nada.
+| Qué | El número |
+|---|---|
+| Botones en la barra | 11 × 60 px = **660 px** de barra contra ~390 px de pantalla |
+| Visibles sin deslizar | 6,5 — y la barra de scroll está oculta a propósito, así que nada indicaba que hubiera más |
+| Títulos por pantalla | **2**: el de la barra (blanco) y el `.analysis-hero-title` de cada sección (verde, 2,1 rem) |
+| Formas de cerrar sesión desde el móvil | **0** — el botón vivía en el pie del sidebar, y ese pie está `display:none` en móvil |
 
-**La cadena**, reconstruida con datos reales del 14 de agosto:
+Y el badge "Cuenta Fondeo" del pie era texto fijo escrito a mano que ningún JS actualizaba.
 
-1. `SupabaseDailyLevels` hace UPSERT a `sesiones` al detectar la apertura del RTH
-   (09:31 ET). Si la fila del día no existía, es un **INSERT**.
-2. El trigger `trg_materializar_checklist` insertaba las 18 reglas con `cumplido = true`.
-3. El AddOn hace poll cada 5 s y copia BD → casillas: se marcaban solas. Y el siguiente
-   guardado las persistía **como si las hubiera marcado el trader** → disciplina inflada al
-   100 % en los días que no se corrigieran a mano.
+### Lo que se hizo
 
-**La huella que lo delató.** `rr_1a1` es la única regla con `activa = false`, así que ni el
-AddOn ni la web la escriben — pero el trigger no filtraba por `activa`. Su `updated_at` del
-14 ago quedó sellado a las **08:31:00.247 hora Colombia = 09:31 ET**, el instante de la
-apertura, junto a la fila de `sesiones` con su `precio_apertura`. Mismo sello el 5 y el 10
-de agosto, ambos cerrados 18/18 en `true`.
+- **Barra de 6:** Disciplina · Análisis · Calendario · Sesión · Apex · Otros. 360 px, entra
+  sin deslizar. Las otras 6 secciones **no se movieron ni perdieron sus ids**: solo cambia
+  por dónde se llega. `Nav.PADRE` mantiene "Otros" encendido dentro de ellas y un chevron
+  en la barra devuelve — en móvil es la única salida.
+- **Un solo título**, el de la barra, en `--accent-txt` y mayúsculas. Fuera los 11 heroes y
+  su CSS. El dato variable (mes del Calendario, filtro de Imágenes, rango de Disciplina) va
+  a `Nav.setContexto`, que lo guarda **por sección**: `go()` no re-renderiza el Calendario
+  al volver, así que limpiarlo dejaba la barra sin el mes.
+- **Ajustes dentro de Otros:** claves y objetivos (abre el modal de siempre, sin tocarlo),
+  tema (fila inerte, ver D-010), seguridad (cambiar contraseña vía `supa.auth.updateUser`)
+  y cerrar sesión — que así **vuelve a existir en el móvil**, con el email de la sesión
+  debajo en lugar del badge que mentía.
+- **"NQ Journal" → "Trading Journal"** en los 6 sitios; `CACHE` a v6 para que el service
+  worker no siga sirviendo el HTML viejo.
 
-**El arreglo.** Migración `2026-08-16-checklist-sin-materializar-en-true.sql`: fuera
-`trg_materializar_checklist` y `trg_backfill_regla`. **Sin fila = N/A**, que es como ya lo
-leían `calcDisciplinaStats` (`db.js`) y `_checklistDia` (`app.js`). En el AddOn, el reset de
-sesión dejó de guardar: escribía las 18 reglas en `false` sin haber tocado nada. Ninguna
-fila existente se tocó — el histórico se conserva por decisión expresa de Kris. Porqué
-completo: **D-013**.
+### Verificación
 
-**Verificado.** Ningún trigger de materialización vivo; una sesión insertada a mano (fecha
-ficticia, borrada después) crea **0 filas** de checklist; 2068 filas de histórico intactas.
-Y en vivo el 31 de agosto: la sesión del día tiene **17 filas, no 18** — falta justo
-`rr_1a1` —, escritas de una vez cuando Kris marcó.
+Las 12 secciones abren y ninguna tiene ya título duplicado. A 390 px: barra sin scroll
+(contenido 390 = visible 390), sin scroll horizontal de página, filas de Ajustes de 59-60 px
+(mínimo táctil 44). Contexto probado navegando meses en Calendario —incluido **volver desde
+otra sección y encontrarlo intacto**—, filtrando en Imágenes y cambiando período en
+Disciplina. Validaciones del cambio de contraseña probadas; **el cambio real no**, porque
+habría cambiado la contraseña de verdad.
 
-### 2. Las zonas naranjas se escriben en el AddOn, no en Telegram (31 ago)
+### Lo que NO entró
 
-Dos casillas nuevas en `ChecklistChaumer` ("Sop." y "Res."), debajo de las noticias rojas:
-precios separados por comas, el mismo formato que pedía el bot. Se escriben en premercado,
-al marcarlas en el gráfico, junto a la regla `chk_zonas` que ya vivía en la Fase 1.
+El tema claro (D-010) y convertir "Cuenta Fondeo" en un dato real: se borró en vez de
+arreglarlo, y mostrar la cuenta principal de Apex sigue siendo otro encargo.
 
-Mismo mecanismo ya probado con las noticias: debounce de 900 ms, guarda anti-pisado de 3 s
-frente al poll de 5 s, cajas vacías en sesión nueva, y bloqueo en fin de semana. Se parsea
-en **cultura invariante**: la coma es el separador de la lista, así que los decimales van
-con punto.
+---
 
-**Lo que no era opcional.** El bot mandaba `soportes_naranja: data.soportes_naranja ?? []`
-en cada guardado. Quitarle las preguntas sin quitarle esas dos claves habría hecho que el
-registro de la noche **borrara** las zonas escritas por la mañana — el mismo motivo por el
-que el bot ya no manda los niveles de precio. Porqué completo: **D-014**.
+## Checkpoint 2026-08-16b — Reestructuración documental
 
-De paso caen `parseNumList`, `PREMKT_PROMPTS` y `premktResumen`, sin uso. **Ojo:** el primer
-intento de esa limpieza se llevó por delante `escHtml`, `CONTEXTOS` y `SETUPS_FALLBACK`, que
-sí se usan; `node --check` no lo vio porque seguía siendo sintaxis válida. Se cazó revisando
-el diff. Lección: en una limpieza de código muerto, **revisar qué se borró**, no solo que
-compile.
+Cambio de **orden**, no de funcionalidad: la app no se toco. Diseno aprobado y
+persistido en `docs/disenos/2026-08-16-reestructuracion.md` (v4), 6 fases.
 
-**Verificado end-to-end el 31 ago.** Kris escribió las zonas en el AddOn (`[29384]` /
-`[29486]`), registró la sesión completa por el bot (setup, emoción, confianza, análisis) y
-las zonas **siguieron intactas**. Los niveles de `SupabaseDailyLevels` tampoco se tocaron.
+### El diagnostico
 
-### 3. RR — herramienta de dibujo que mide el riesgo en PUNTOS (25 y 31 ago)
+El `CLAUDE.md` habia crecido a 259 lineas mezclando cinco cosas —referencia,
+invariantes, post-mortems, changelog y flujo de trabajo— y se cargaba entero en cada
+sesion. La memoria automatica describia el proyecto por su cuenta y se habia quedado en
+julio: **seis datos tenian dos o tres respuestas distintas** segun donde miraras.
 
-El Risk Reward de NinjaTrader mide en precio, porcentaje, ticks, dinero o pips. **En puntos
-no**, que es la unidad en la que está escrito todo este proyecto. `RR.cs` es un clon suyo
-con enum propio (`RRUnit`), solo dos unidades —Puntos, por defecto siempre, y Valor— y los
-colores de Kris de fábrica. Por qué un clon y no una modificación: **D-015**.
+| Dato | Decia | La verdad |
+|---|---|---|
+| Modelo de IA | sonnet-5 / haiku-4-5 / sonnet-4-6 | `claude-sonnet-5` |
+| Seguridad BD | "RLS activado" y "RLS deshabilitado" | activo en las 18 tablas |
+| `fomc_dates`, `apex_registros`, `estrategia_chaumer` | documentadas como vivas | borradas |
+| Triggers del checklist | descritos funcionando | eliminados el 16 ago |
+| Stop maximo | 60 puntos y 80 puntos | 80 puntos |
+| Nº de tablas | 17 | 18 |
 
-Los puntos se formatean con la **misma fórmula que usa NinjaTrader** para su propia unidad
-`Points` (`@NetChangeDisplay.cs:123`), así que los decimales los decide el tick del
-instrumento y funciona igual en NQ que en MNQ.
+Ademas: 3.627 lineas de manuales describiendo la app de tres secciones, dos checkpoints
+titulados igual, 122 permisos literales (uno con la clave anon dentro) y los disenos
+aprobados viviendo solo en el chat.
 
-El 31 de agosto se le añadió el **sombreado de las zonas de stop y target**, cada una con el
-color de su línea y opacidad configurable (`AreaOpacity`, 20 por defecto, 0 lo apaga). Se
-pinta antes de las líneas para que queden encima, y **no** durante el hit test — mismo
-criterio que las figuras de NinjaTrader: así el área no se traga los clics de lo que haya
-debajo.
+### Lo que se hizo
 
-**Verificado.** `RR.cs` compila con `csc.exe` contra las DLL reales de NinjaTrader con **0
-errores**, igual que los otros tres archivos de `NinjaTrader/`. El diff contra el original
-está acotado a los cambios pactados.
+- **`CLAUDE.md` 259 -> 149 lineas.** Adopta 5 secciones con nombre estable
+  (Invariantes / Verificacion / Diseno / Datos / Lenguaje visual) que son el **contrato**
+  que leen los skills genericos.
+- **`.claude/rules/`** con `paths:`: las 7 reglas de oro de la disciplina y las
+  invariantes del Coach, de Sesion Operativa y de NinjaTrader cargan **solo al abrir el
+  archivo al que afectan**. No se pierden; dejan de pagarse siempre.
+- **Memoria de 11 archivos a 2.** Guarda al usuario, no al proyecto: lo que describe el
+  proyecto se fue al repo, que cambia en el mismo commit que el codigo.
+- **`docs/decisiones.md`**: 9 decisiones con su porque, que antes habia que deducir.
+- **`tasks/`**: los pendientes salen del `CLAUDE.md`, porque cambian cada semana.
+- **4 skills genericos** en `~/.claude/skills/`, sin una sola mencion a este proyecto.
+- **Tokens CSS**: 19 -> 26, 140 -> 45 literales. Ni un color cambio.
+
+### Lo que NO se toco
+
+El comportamiento de la app, el criterio de disciplina, el P&L neto, la zona horaria, las
+invariantes del Coach, `upsertSesion`, y la decision cerrada del 24 jul sobre las 6
+reglas de feb-may. Y la estructura de `js/` / `index.html` / `styles.css`, que se
+analizo y se aplazo con su propio diseno (ver `tasks/backlog.md`).
+
+### Falsa alarma y un bug real (16 ago)
+
+Al verificar la Fase 6 reporte que el registro del **service worker** fallaba. Era falso:
+lo bloqueaba el navegador embebido de la prueba. La prueba de control fue registrar
+`manifest.json` como SW y obtener el mismo error — un JSON deberia fallar por MIME type.
+
+Pero el analisis destapo un bug real: **`APP_SHELL` en `sw.js` era codigo muerto**. Se
+declaraba y no se usaba en ningun sitio (`install` solo precacheaba el CDN), listaba
+`js/annual.js` —que ya no existe— y le faltaban 6 archivos que si. La PWA no abria sin
+conexion en la primera visita. Arreglado: `install` precachea 28 entradas y `CACHE`
+sube a `nqjournal-v5`. **Verificado por Kris en Chrome: 28 entradas en Cache Storage.**
+
+---
+
+## Checkpoint 2026-08-16 — Sesión Operativa: tres pantallas en una
+
+Para entender un día había que recorrer **cuatro** pantallas (Calendario, Sesión,
+Historial y Coach IA) y varios datos se pedían dos veces. Ahora son **dos**.
+
+### Sesión Operativa (`section-register`, menú "Sesión")
+
+Absorbe lo que eran tres entradas de menú. Cabecera común (fecha + el recuadro de
+resultado **Resultado · Puntos · P&L · Setup**) y **tres pestañas**:
+
+| Pestaña | Qué es |
+|---|---|
+| **Diario** | El formulario de registro de siempre |
+| **Coach IA** | Las 3 etapas del Coach |
+| **Días anteriores** | El índice del diario (era la sección Historial) |
+
+- **Una sola fecha** manda sobre las tres. Antes Sesión y Coach llevaban cada uno
+  la suya y no se hablaban. `SesionOperativa` (en `app.js`) controla pestañas y
+  cabecera; `Coach.setFecha(date)` recibe la fecha desde el Diario.
+- `Nav.go('coach')` y `Nav.go('historial')` **siguen valiendo**: son alias que
+  abren esta sección y su pestaña (`Nav.TAB_ALIAS`). No romper esto.
+- El markup del Coach se movió **conservando todos sus ids**, así que `coach.js`
+  no se enteró del cambio.
+- El Coach se inicializa la primera vez que se abre su pestaña, no al arrancar.
+
+### Vista del día (antes modal del calendario)
+
+El modal de 3 pestañas (Gráfica/Resumen/Operativa) pasa a **pantalla completa**,
+un solo scroll, sin pestañas: gráfico → *Tu reflexión* → *Análisis del Coach* →
+Veredicto → Errores → Aprendizaje → Notas. Se cierra con `Esc` o los botones.
+Se eliminaron `_renderResumen` y `_renderOperativa` (191 líneas muertas).
+
+### Datos que cambiaron de sitio
+
+- **Emoción (llegada y cierre) y confianza** se registran en el **Diario**, no en
+  el Coach. Llegada y confianza → `sesiones`; la de cierre → `diagnosticos_diarios`.
+  ⚠️ El Coach **ya no manda esos campos** al guardar: con sus selectores retirados
+  enviaría `null` y borraría lo que puso el Diario.
+- **Noticias**: se retira el textarea libre `sesiones.noticias`. Todo vive en
+  `sesion_noticias` (varias por día). El texto viejo se migró
+  (`2026-08-16-migrar-noticias-texto.sql`) y la columna **no se borró**.
+  El 14 y 15 de julio pasaron de una hora a dos: la ventana de ±5 min de la
+  publicación de la mañana no se estaba vigilando.
+
+### Reglas de oro que salieron de los bugs de esta sesión
+
+- **NO filtrar por `cuenta_principal` al mostrar días.** La cuenta de Apex rota
+  (la -14 pasó a la -15); filtrar por la de hoy vacía todo el histórico anterior.
+  `trades` ya contiene solo la operativa del journal.
+- **`preloadCatalogos` trae la cuenta principal.** Sin eso, `cuentaPrincipal()`
+  devuelve el fallback histórico y el Coach analiza la cuenta equivocada.
+- **Nada interactivo dentro de `#sessionFieldset` funciona en modo lectura**: el
+  fieldset se deshabilita entero. Los desplegables de fase del checklist son
+  `role="button"`, no `<button>`, por esto.
+- **Ojo con los `;` al insertar código**: `updateCierreMeta()` seguido de un array
+  literal se leyó como `updateCierreMeta()['expSNTList']` y reventaba al guardar.
+  `node --check` NO lo detecta: es sintaxis válida con otro significado.
+- **En lectura no se dibujan campos vacíos** (`marcarVacios` + `.vacio-en-lectura`).
+  Al ocultar grupos de botones sin opción elegida, comprobar que no arrastren
+  listas: los T/S de errores y experimentos se llevaban por delante sus listas.
+
+### Diseño
+
+La maqueta aprobada está en el artefacto de la propuesta. **Es la fuente de
+verdad**: en esta sesión se implementó otra cosa y hubo que rehacerlo. Claves:
+título de tarjeta verde en mayúsculas y sin icono, barra de cumplimiento gruesa
+con rótulo centrado, fases como filas con acento de color, y "La operación" con
+recuadros `CONTEXTO · CORRIDA · RETROCESO · ZONAS EN CONTRA` + tabla de trades.
 
 ### Pendiente
 
-- **Recompilar `RR` en NT8** para ver el sombreado (el AddOn ya está recompilado).
-
----
-
-## Checkpoint 2026-09-14 — Apex-15 renovada: dos tarjetas con el mismo número
-
-La `APEX-232411-15` se quemó el 8-sep (−1.324,08 ese día, balance 47.805,06 bajo el piso
-de 48.000). Kris la renovó el viernes 11-sep y **Apex conserva el número de cuenta**, así
-que NT8 exporta las dos etapas con el mismo `AccountName`.
-
-El Tracker asignaba trades a cada tarjeta **solo por número**: una segunda tarjeta habría
-cogido los 21 trades y nacido quemada. Ahora **cada tarjeta es un periodo**: desde su
-`fecha_inicio` hasta el día antes de que empiece otra con el mismo número (`periodoDe` en
-`js/apex.js`). El límite se deduce, no se guarda: cero cambios de esquema, y la próxima
-renovación es solo crear otra tarjeta. El formulario exige fecha de inicio si el número ya
-lo usa otra tarjeta.
-
-| Tarjeta | Periodo | Trades | Balance |
-|---|---|---|---|
-| Apex-15 (quemada, id 6) | 12-ago → 10-sep | 19 | 47.805,06 |
-| Apex-15 · 2ª (id 7) | 11-sep → | 2 | 49.895,96 |
-
-Verificado con `SELECT` y en el preview (copia local ampliada con la Apex-15). Ninguna otra
-cuenta tenía trades anteriores a su `fecha_inicio`, así que las demás tarjetas no cambian.
-Migración `2026-09-14-apex15-renovada.sql`. Diseño:
-`docs/disenos/2026-09-14-apex-cuenta-renovada.md`.
-
-> ⚠️ Queda al backlog: el filtro de cuentas de Calendario/Trades/Análisis sigue mezclando
-> las dos etapas, porque filtra por nombre de NT8 y no por tarjeta.
-
----
-
-## Checkpoint 2026-09-17 — Chaumer: la lista día a día y la hora Colombia
-
-- **Diferencias pasa a ser la pestaña principal** del comparador; «Día» se renombra
-  **Registrar**. Dashboard de 5 KPIs + 3 tarjetas arriba, y abajo la **lista día a día**
-  (fecha · mi resultado · el suyo · Δ puntos). Cada fila abre un **modal con las dos
-  gráficas** (Esc para salir, ← → para cambiar de día).
-- **Horas en hora Colombia** (D-017). Las filas estaban mezcladas ET / Colombia: 5 seguras
-  en ET corregidas con `2026-09-17-chaumer-hora-colombia` (respaldo
-  `_bak_20260917_chaumer_horas`); las dudosas se quedan por decisión de Kris. El Δ de hora
-  pasa a medirse solo en días con el mismo setup.
-- Verificado con las 12 filas reales de septiembre: brecha −17,5 = (−79,5) − (−62).
-  Detalle: `docs/disenos/2026-08-19-chaumer-vs-yo.md` §5.8.
-- **v8, mismo día:** la lista pasa a ser una tabla con columnas (resultado · hora · puntos
-  por lado), orden ascendente, fila de totales con % de efectividad, y la franja solo
-  distingue mismo setup (verde) / setup distinto (rojo). §5.9.
-- Las horas dudosas y la del 28 ago (21:52) las revisa Kris a mano.
-
----
-
-## Checkpoint 2026-09-18 — Dos setups: Continuación y Reingreso
-
-- **De 6 setups a 4** (D-018). Las dos variantes de apertura se funden en las de
-  continuación y la familia `iri` pasa a `continuacion`. Migración
-  `2026-09-18-setups-continuacion-reingreso`, respaldos en `_bak_20260918_*`.
-- Migrado: 86 sesiones (50 Continuación Alcista + 36 Bajista), 6 operativas de Chaumer,
-  3 `setup_observado`, 4 reglas de Fase 2. La apertura ya no se distingue en el histórico.
-- Código: fallback por prefijo en `db.js`, lista de respaldo del bot y del AddOn
-  `ChecklistChaumer` (recompilado en NT8 el 21 sep), y comentarios en 6 archivos.
-- El despliegue del bot falló por token de Cloudflare inválido (`code: 10000`): Kris lo
-  regeneró, y el workflow pasó a Wrangler 4 (`bcedaf5`). Desplegado en verde.
-- `SupabaseAutoExport` recompilado en NT8 el 21 sep: quedan activos el anti-replay y la
-  exclusión de simulación/playback. Comprobado: 0 trades con `exit_time < entry_time` en
-  `trades` y `apex_trades`.
-- Verificado en el preview: selector del Diario, checklist de Fase 2, Disciplina
-  (agrupa bajo «Continuación»), Datos › Catálogos, filtro de Trades y Chaumer.
-- De paso, arreglada la copia local (`dev.local.js`): anulaba `setupFamily`,
-  `setupLabel` y `setupsSync` por empezar por "set", y la Fase 2 mostraba
-  «[object Promise]».
-
----
-
-## Checkpoint 2026-09-19 — El journal: una sola cuenta, regularizado a ±$160
-
-### Una sola cuenta en `trades`, todas las de Apex en `apex_trades` (D-019)
-
-El histórico de `trades` estaba partido en **cuatro cuentas que se sucedieron** porque cada
-una fue la principal durante un tramo, y el Calendario y Análisis lo mostraban troceado:
-
-| Cuenta | Desde → hasta | Trades | P&L |
-|---|---|---|---|
-| `PA-APEX-232411-03` | 3 feb → 16 jul | 80 | −$2.729,10 |
-| `APEX-232411-14` | 22 jul → 13 ago | 12 | −$1.257,66 |
-| `APEX-232411-15` | 14 ago → 31 ago | 6 | −$382,32 |
-| `Sim101` | 1 sep → 18 sep | 11 | −$157,42 |
-
-Cada tabla pasa a tener **un rol**: `trades` es el journal de la cuenta principal bajo una
-sola etiqueta (`Sim101`), con la cuenta real en la columna nueva `cuenta_origen`; y
-`apex_trades` tiene **todas** las cuentas de Apex con su nombre real. Las 98 filas de cuentas
-Apex se copiaron a `apex_trades` (0 solapamientos por cuenta+fecha+hora), y **`apex.js` dejó
-de leer `trades`**.
-
-Eso **sustituye** el invariante "un trade vive en UNA tabla". Existía porque `apex.js`
-concatenaba las dos; al dejar de hacerlo, nace la regla nueva: *si `apex.js` vuelve a leer
-`trades`, el drawdown consumido se infla*. Escrito en `apex.js`, `CLAUDE.md` y D-019.
-
-**No se copió nada de `apex_trades` hacia `trades`.** Era lo que parecía pedir el caso, y
-habría sido un error: de sus 21 días, **20 ya estaban en `trades`** — la misma operativa
-replicada en dos cuentas con distinto número de contratos (18-sep: +$86,96 en `trades`
-frente a +$1.067,96 en `apex_trades`). Se habrían contado dos veces.
-
-Verificado por SQL replicando el reparto por periodo del front: las **7 tarjetas** de Apex
-conservan exactamente sus trades y su P&L (Apex-15 primera: 13 propios + 6 que venían de
-`trades` = 19).
-
-### La simulación a un contrato
-
-Antes de regularizar, se simuló el año con `profit ÷ qty` (exacto en bruto y comisión):
-**la mitad de la pérdida era tamaño, no criterio** (−$4.527 real frente a −$2.261). Agosto,
-−$2.160, habría sido −$131. Y el tamaño subía justo al perder: **1,82 contratos de media en
-los ganadores, 2,10 en los perdedores**, con el máximo en 5 frente a 10.
-
-### Regularización a ±$160 por trade (D-020)
-
-Los **20 trades** que pasaban de ±$160 por tamaño bajaron de contratos hasta entrar en rango.
-Se recalcularon `qty`, `profit`, `commission`, `mae`, `mfe` y `etd`; **los precios no se
-tocaron**. Journal: **−$4.526,50 → −$2.488,58**.
-
-**La disciplina no se movió**: `mae` y `qty` se escalan juntos, así que el MAE en **puntos**
-—lo que evalúa el stop máximo— da idéntico. Verificado en los 20: 0 con MAE o MFE en puntos
-distinto, 0 cambios de signo. Respaldo en `_bak_20260919_trades_regularizacion`.
-
-> ⚠️ **El journal deja de ser fiel a lo que se ejecutó**, a sabiendas. `apex_trades` conserva
-> los contratos reales, así que el Apex Tracker sigue mostrando el drawdown verdadero: las
-> dos tablas divergen **a propósito**.
-
-### El NQ del journal pasa a MNQ (D-021)
-
-El único NQ de `trades` (24-jun, 1 contrato) no se podía bajar de tamaño: con $20/punto,
-32,5 puntos ya eran −$653,80. Se convirtió a MNQ **manteniendo los −32,5 puntos**, solo con el
-multiplicador: **−$653,80 → −$66,30**. Journal: **−$1.901,08**.
-
-Los **17 NQ de `apex_trades` no se tocaron**: ahí consumieron drawdown real, que es lo que
-decidió que esas cuentas se quemaran.
-
-Solo queda **un** trade fuera de ±160, y a propósito: el **6-feb** (−$194,30 con un contrato).
-No es tamaño ni instrumento: es un stop que se dejó correr **96,5 puntos** con el límite en 80.
-
-> Al documentar apareció una **colisión de IDs**: otra sesión había creado un D-018 ("Dos
-> setups") el mismo día. La decisión de la cuenta única quedó como **D-019** (el commit
-> `ebd7e5d` cita "D-018"; la buena es la D-019).
-
-**Pendiente (Fase 4 del diseño):** cuando la cuenta real sea la principal y esté en
-`apex_cuentas`, sus trades irán a `trades` y el Tracker no los verá. Se resuelve con un
-trigger en Postgres, sin recompilar NinjaTrader.
-
-Diseño: `docs/disenos/2026-09-18-cuenta-unica-en-trades.md` · Migraciones:
-`2026-09-18-cuenta-unica-en-trades`, `2026-09-19-regularizar-trades-a-160`,
-`2026-09-19-nq-a-mnq-en-el-journal` · Commits: `ebd7e5d` · `0ac02f0` · `befe509`.
-
----
-
-## Checkpoint 2026-09-23 — Curva de equity verde/roja y tooltip del día
-
-### La curva cambia de color en el cero
-
-Verde por encima de cero y rojo por debajo, **exactamente donde la cruza**. Colorear tramo a
-tramo no sirve: un tramo que cruza el cero sale entero de un color. Se usa un degradado
-vertical con un **corte duro en el píxel del cero**, recalculado en cada pintada porque
-depende del alto real del área.
-
-- **Relleno** entre la curva y el cero, más intenso lejos del cero y apagado al tocarlo.
-- **El cero siempre visible** (`beginAtZero`): es la frontera entre los dos colores.
-- **Fechas** "3 ago" en vez de "08-03"; el tooltip de Chart.js da el acumulado (en su
-  color) y el resultado **del día**.
-- **Colores leídos de los tokens** con `getComputedStyle` (`--accent-txt`, `--red-txt`,
-  `--bg3`…): Chart.js pinta en canvas y no lee CSS, pero así no hay hex sueltos.
-
-### La etiqueta del acumulado
-
-Primero se puso **dentro del área**, encima del último punto, y se montaba sobre la propia
-línea y el relleno: casi no se leía. Pasó al **margen derecho**, a la altura del último punto,
-como la etiqueta de precio de una plataforma de trading: pestaña sólida en el color del
-resultado, texto en el color del fondo y una guía punteada desde el punto. El margen se
-reserva **midiendo el texto real** antes de crear la gráfica, para no robar ancho en móvil.
-
-### Tooltip del día
-
-Al pasar el ratón por un día del calendario: **setup** declarado, **puntos** del día y
-**errores** — solo el nombre, sin la descripción; si no hay, **"Sin errores"**. Los repetidos
-salen con "×2".
-
-- Los **puntos salen del precio**, no del P&L: es la medida de riesgo del proyecto y no
-  depende de los contratos (tampoco de la regularización del 19-sep).
-- `getCasuisticasByMonth` trae ahora el nombre del error (`casuistica:error`); solo lo usa el
-  calendario. La caché pasó de `true` a la lista de nombres por día, y los iconos de error de
-  la rejilla siguen funcionando.
-- **Solo con ratón** (`hover: hover` + `pointer: fine`). En táctil no se monta, y el toque
-  sigue abriendo la vista del día.
-- `position: fixed` con las coordenadas de la celda y `pointer-events: none`, para que no lo
-  recorte ningún `overflow` ni parpadee al entrar y salir. Se oculta con cualquier scroll.
-
-### Verificación
-
-**Por píxel, con `getImageData`**, porque el panel del navegador deja de componer fotogramas
-a ratos y las capturas salían en blanco o con fundidos a medias. En agosto: la línea en el
-punto de +$73 da `#3FE0A6` exacto y en los negativos `#F2706F`; la pestaña del acumulado es
-`#F2706F` sólido y empieza en x=653 con el área acabando en 645. Tooltip del 6-ago con los 4
-errores reales de la BD; en móvil no se crea. Consola limpia.
-
-Commits: `539b64d` · `99d3786`.
-
----
-
-## Checkpoint 2026-09-24 — Unificación Chaumer: fases 1–3 y el repositorio público
-
-Diseño: `docs/disenos/2026-09-24-unificacion-chaumer.md` (v1.4). **Un solo proyecto por
-debajo, dos webs por encima:** el proyecto Chaumer entra en el Journal y el portal queda como
-la pantalla de Alfredo.
-
-### Fase 1 · GitHub Pages publica solo la aplicación
-
-Pages servía la rama `main` entera: `CLAUDE.md`, `docs/`, `NinjaTrader/` daban 200.
-`publicar-journal.yml` monta una carpeta con `index.html`, `js/`, `css/`, `icons/`,
-`favicon.svg`, `manifest.json` y `sw.js`, y solo publica eso. Kris cambió *Source* a
-**GitHub Actions** antes del push. Lo privado da 404; la app carga en escritorio y en móvil.
-
-### Fase 3 · `chaumer/` con sus 115 commits
-
-`git subtree add` desde `Trading_Plan`. `01_Plan`, `02_Assets` y `05_Backtesting`, idénticos
-byte a byte a la carpeta vieja. El portal se publica solo con `publicar-portal.yml`
-(secretos propios `PORTAL_CLOUDFLARE_*`; la misma cuenta que el bot) y las 56 páginas salieron
-idénticas a las de antes. Dos cosas que solo aparecieron al mudar:
-
-- **El espacio de "Trading Journal".** Cinco scripts del portal sacaban su carpeta con
-  `URL.pathname`, que deja `%20`: `npm run verificar` fallaba. Ahora `fileURLToPath`.
-- **CRLF.** Git en Windows sacaba `chaumer/` con CRLF, la huella de los diagramas cambiaba y se
-  redibujaban. `.gitattributes`: `chaumer/** text=auto eol=lf`.
-
-### El repositorio era público (D-022)
-
-`CLAUDE.md` decía "privado"; no lo era desde su creación. Al subir `chaumer/`, el plan de
-Alfredo quedó legible en GitHub. Pasarlo a privado **tumbó el Journal** (Pages no publica
-privados con la cuenta gratuita) y lo **desactivó**. Kris lo dejó público hasta tener
-presupuesto para GitHub Pro; hubo que reactivar Pages y relanzar la publicación. El portal ya
-enseñaba sin contraseña casi todo el plan (con `noindex`).
-
-Commits: `f20786d` · `21b82c0` · `221379d` · `29496d7` · `3bbaffa` · `fb32a92` · `b984823` ·
-`dffd562` · `31133c0`.
-
----
-
-## Checkpoint 2026-09-24 — Fase 6: el Coach con el plan de Chaumer y Claude Opus 5.5
-
-- **6a** — El Worker `broad-hall-c53f` al repositorio (`workers/proxy-ia/`), sin claves escritas. Pasa
-  el cuerpo tal cual: el cambio de modelo no necesitó tocarlo. No reenvía `anthropic-beta`.
-- **6b** — `plan_documentos` (los 5 documentos, 138 K caracteres) y `coach_uso`. Se cargaron por el
-  MCP con el SQL del sincronizador, en trozos, comprobando cada trozo con su sha256: un salto de línea
-  perdido en el glosario lo cazó la huella. El Coach manda el plan como primer bloque del system en
-  días de la etapa 2, con Opus 5.5, un vigilante de códigos y el aviso de negativa.
-- **Prueba real (24/09):** 88.235 tokens escritos en caché en el análisis y leídos en el chat y el
-  diagnóstico; 0,92 USD la sesión. El análisis juzgó con el plan: stop 11 puntos más corto que el que
-  marca el plan (desde que nace la zona) → entrada inválida.
-- **6c** — Documentos (`.claude/rules/coach.md`, `CLAUDE.md`, D-025) y un arreglo visto de paso:
-  `parsearSetupsJson` cortaba el resumen del veredicto en la palabra «setup» y guardaba los `**`.
-
-Commits: `272b5ea` · `57006aa` · `804a1dc` y el de la 6c.
-
-## Checkpoint 2026-09-29 — Sesiones en vez de test ciego, dos carpetas de backtesting, y `chaumer/` en orden
-
-**Qué se cerró** (diseños `2026-09-28-sesiones-y-carpetas.md` y `2026-09-28-orden-chaumer.md`; D-029 y D-030):
-
-- **Sesiones.** «Test ciego» y «Sesiones de julio» son una sola cosa: una pestaña en el portal, con la misma
-  tarjeta (fecha, gráfico, resultado con sus puntos, setup). Plan 3.34: el término sale del plan; `P-29` sigue
-  abierto como «las sesiones de validación». Los 21 gráficos de julio y septiembre, redibujados con el motor de hoy:
-  21 de 21 iguales a las tablas del plan.
-- **`05_Backtesting/` = `kris/` + `claude/`** (sesiones, `protocolo/`, `motor/` con los datos). El motor dibuja el
-  gráfico del día ahí, y **lo publica solo si el día ya está registrado** (el candado del motor); no sube nada si
-  GitHub va por delante o hay commits locales sin subir.
-- **`chaumer/` en orden:** 6 documentos y `_Historia/` al archivo (con un `LEEME` de en qué miente cada uno),
-  `DESPLIEGUE` reescrito, 53 archivos borrados que no usaba nadie, y una regla: en `chaumer/` no nacen documentos.
-  Plan 3.35: dos rutas al día.
-- **`CLAUDE.md` de la raíz, de 237 a 167 líneas (17,3 → 12,0 KB)**: invariantes en una línea con su puntero,
-  la sección `chaumer/` reducida a lo transversal (el resto lo carga `chaumer/CLAUDE.md`), la tabla de datos sin la
-  historia de cada fila. Corregidas dos cosas que mentían: las cifras de la deuda visual (contradecían a
-  `estilos.md`) y la fila de la metodología, que apuntaba al rulebook de la etapa 1.
-
-**Verificado:** la regresión del motor antes y después de la mudanza (48 de 48); `npm run verificar` sin fallos
-tras cada fase; los documentos del Coach, con su huella sha256 comprobada en la BD; la publicación automática,
-contra un repositorio de prueba.
-
-**Pendiente:** la primera publicación automática lanzada por NinjaTrader (29/09, 10:32) y recompilar
-`CadenaDiaria` en NT8 — `tasks/current.md`.
-
----
-
-## Checkpoint 2026-09-28 — Las reglas de Chaumer, cerradas: se pasa al backtesting
-
-Diseño: `docs/disenos/2026-09-25-reglas-chaumer.md` (v1.6). **La reestructuración está terminada:** las reglas
-viven en siete archivos por grupo con una plantilla fija, `reglas.json` se genera y el vigilante pasa en modo
-estricto. Cinco fases: F0 (el «Por qué» entero en el portal) · F1 (correcciones) · F2 (los siete archivos y
-sus consumidores) · F3 (fusiones, 40 → 35) · F4 (la ficha nueva del portal). Después, con Kris uno a uno, los
-pendientes de método (planes 3.26–3.33): reingreso de una sola vela, el papel de la zona de premercado lo da la
-apertura, vela de apertura sin cuerpo, la Fed la sesión entera, una regla retirada (**34 reglas**), el 8/07
-revalidado (julio **−142,50 en 6**) y la orden tras la noticia roja.
-
-El motor, el 28/09: lee los días de Fed de Fechas Especiales (completada hacia atrás con el calendario oficial),
-aplica las noticias rojas y anota los rompimientos de las zonas de premercado. Ninguno cambió una operación
-validada, y cada uno pasó su regresión (`scripts/cadena/prueba_motor.py`).
-
-**Decisión de Kris:** no se abre otra lista de pendientes antes de empezar. Se hace el backtesting y cada duda
-se resuelve cuando aparezca en un día concreto. Las dudas ya vistas quedan en `tasks/current.md` como
-referencia. El mismo día `tasks/current.md` se dejó en lo mínimo: lo terminado, aquí; ideas y
-comprobaciones sueltas, a `backlog.md`.
-
-**Dudas ya vistas, para reconocerlas cuando salgan en el backtesting** (no son tareas; el registro del
-método sigue en `chaumer/01_Plan/PENDIENTES.md`, donde los huecos declarados no se borran):
-
-- **Plazo de la consecución del reingreso.** El motor le pone tope de 5 velas; el plan dice que el traspaso
-  no tiene plazo. Caso: 11/09, reingreso de las 9:01 (consecución en la 13.ª vela; sin tope sale tal cual se
-  vio a mano, descartado por el punto de referencia 29.423,00). Sin tope cambia el 24/07: Reingreso alcista
-  9:21, +38,00
-- **¿Una zona de premercado da Continuación?** `R-25` dice que no; `R-15` («Aplica a: Continuación ·
-  Reingreso») y `R-40` lo dejan abierto. El motor dice que no. Tampoco anota como rompimiento la salida de
-  una zona que abrió con la ventana dentro (ningún día hasta hoy)
-- **Resolución anticipada del plazo** (`P-31`) y **marcado por banda y turno** (`P-33`): el motor no está
-  comprobado en esos dos puntos. **Umbral MNQ frente a NQ** (`P-32`): julio se marcó con el de NQ
-- **Tres operaciones que cambió el motor el 28/09** (días no validados, reingreso de una sola vela): 23/07
-  (Reingreso −17,00 → Continuación bajista +32,25), 03/08 (+11,25 → NO OPERA), 24/09 (+21,50 → NO OPERA)
-- **Test ciego:** sin decidir si las 10 jornadas (10 → 23/09) cierran el criterio de 9 de 10
-- **Textos del plan desfasados** (con el sí de Kris): `R-09` dice «verde/roja» por azul/blanca; `R-36` nombra
-  los discursos de Powell y se decidió no contarlos; `PENDIENTES.md` da por no hechos el filtro de noticias
-  del motor (`P-27`) y los rompimientos de premercado (`P-34`)
-- **Diagramas por rehacer:** el del volumen de premercado (dibuja 2.000; vale más de 8.000 en MNQ) y los
-  siete de agosto; después, unificar las carpetas de imágenes
-- **Se cierran con los números del backtesting:** regla de parada, mín/máx de premercado, retroceso mínimo
-  (falta la comisión real por contrato MNQ). **No bloquean:** Apex, sesión sin hora de cierre, nombre de la
-  conexión, términos del curso
-
----
-
-## Checkpoint 2026-09-25c — Cowork deja de existir: el plan se trabaja desde Claude Code
-
-Kris decidió que el plan de Chaumer, el test ciego, el motor y los diagramas se trabajen desde aquí. `01_Plan`
-deja de ser de solo lectura: cada cambio necesita el sí de Kris (erratas incluidas), va en su propio commit
-`plan:` y se cierra sincronizado. Se reescribieron las instrucciones que asignaban cosas a Cowork (`CLAUDE.md`,
-los dos de `chaumer/`, la regla del Coach, `sincronizar.mjs`, el texto del Coach y el de Estrategia, el LEEME
-del test ciego —que gana una regla de ceguera para Claude Code— y varios comentarios) y el comentario de
-`plan_documentos` en la BD. Los dos buzones, `PROPUESTAS_AL_PLAN.md` y `PENDIENTE_PORTAL.md`, se archivaron
-en `docs/archivo/chaumer/`, y lo que tenían abierto pasó a `tasks/current.md`. D-028.
-
----
-
-## Checkpoint 2026-09-25b — Fase 8: el portal suelta R2, y la unificación termina
-
-La fase iba a mudar las observaciones de Alfredo a Supabase y apagar D1 y R2. La revisión contra el código lo
-cambió: en D1 había **0 observaciones** y **ninguna línea** usaba R2 desde la fase 4. Kris decidió dejar las
-observaciones en D1 (mudarlas obligaba a que la llave del portal escribiera en Supabase, contra D-023). El portal
-suelta R2 (el bucket sigue en Cloudflare, sin borrar) y la copia local de D1 gana la tabla que le faltaba.
-D-027. Con esto, **las 8 fases de la unificación Chaumer están cerradas**.
-
----
-
-## Checkpoint 2026-09-25 — Fase 7: la cadena diaria
-
-Diseño: `docs/disenos/2026-09-24-cadena-diaria.md` (v1.8) · D-026. **Kris deja de exportar a mano:** cada
-día a las 10:32 un AddOn de NinjaTrader exporta las velas, el motor de Chaumer marca el día y la ficha
-llega al Coach, que no la enseña hasta que Kris registra su lectura.
-
-- **7a · el motor.** `lector.py` sigue a Nueva York (desde el 2/11 habría tomado una vela de premercado
-  como vela base) y en día de Fed ve reingresos. Regresión: 46 días no Fed idénticos. El 8/07 da ahora un
-  Reingreso −64,75 y se llevó a Cowork.
-- **7b · la BD.** `sesiones.registrada_at` (congelada por trigger) y `diario_editado_at`; `motor_fichas`
-  con el candado del test ciego: la única tabla con RLS que no es `auth_all`, a propósito.
-- **7c · el puente.** `scripts/cadena/subir_dia.py` importa el motor sin copiarlo, sube el gráfico a
-  Cloudinary y la ficha a Supabase. 10 fichas del 10 al 23/09.
-- **7d · el Journal.** Tarjeta "Lo que marcó el motor" en el Coach y la sección en su contexto, sin
-  códigos del plan y presentada como auditoría.
-- **7e · el AddOn.** `CadenaDiaria.cs`, escrito en C# 5 para compilarlo fuera de NinjaTrader. La primera
-  noche recuperó solo 5 días; el 25/09 exportó a las 10:32:42. **6 de 6 días idénticos** a la
-  exportación manual, línea a línea.
-
-**Lo que enseñó:** el diseño viejo (10:45 fijo y una tarea de Windows) se rompía el 2/11; y un candado en
-JavaScript no protege nada si la app lee con `auth_all`.
-
----
-
----
-
-## Cómo continuar en un nuevo chat
-
-1. Leer este archivo (`docs/historial-proyecto.md`) para contexto completo
-2. El código fuente está en GitHub: `https://github.com/kristeb-trader/trading-journal`
-3. Working directory local: `E:\Proyectos\Trading Journal`
-4. Para cambios en la BD: SQL Editor de Supabase → `https://jothoslozctflfrnysrx.supabase.co`
-5. **Regla operativa:** cada cambio en cualquier archivo debe hacerse **commit y push inmediatamente**
-6. **Flujo de trabajo con IA:** analizar → presentar diagnóstico → esperar aprobación → implementar → commit
-
----
+- Llevar el mismo lenguaje visual a las pestañas **Coach IA** y **Días anteriores**
+  y al resto de la app (calendario, disciplina, análisis) — siguen con el estilo viejo.
+- Los manuales (`manual-tecnico.md`, `manual-usuario.md`, `arquitectura-*.md`)
+  describen el modelo viejo de 3 secciones separadas.
