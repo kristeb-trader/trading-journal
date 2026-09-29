@@ -3,15 +3,18 @@
 > Solo lo que está en curso. Lo terminado va a `docs/historial-proyecto.md`; las ideas y lo que
 > está por comprobar, a `backlog.md`.
 
-## Backtesting de Chaumer (desde el 29 sep)
+## Backtesting de Chaumer
 
 Las reglas están cerradas. **Cada duda se resuelve cuando aparezca en un día concreto**, con ese día
 delante: nada de listas previas (decisión de Kris, 28/09). Si cambia el motor, su regresión
 (`python scripts/cadena/prueba_motor.py`); si cambia el plan, el sí de Kris y su commit `plan:`.
 
-- [ ] **Arrancar:** decidir con Kris qué backtesting (el manual de 2025, 116 gráficos, o el del motor) y con
-  qué datos. El motor solo tiene velas del 01/07 al 25/08/2026 y los días desde el 10/09: para un año hacen
-  falta las de 1 minuto de MNQ de ese año, exportadas de NinjaTrader
+**Objetivo (Kris, 28/09):** poder hacer el backtesting completo **de cualquier fecha**, no de un tramo fijo.
+El motor corre sobre cualquier día del que haya velas de 1 minuto; lo que limita es qué velas hay.
+
+- [ ] **Arrancar:** ver con Kris cómo conseguir las velas de 1 minuto de MNQ del periodo que quiera, exportadas
+  de NinjaTrader (hoy solo hay del 01/07 al 25/08/2026 y los días desde el 10/09), y cómo encaja el backtesting
+  manual de 2025 (116 gráficos)
 
 Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md`, checkpoint del 28/09.
 
