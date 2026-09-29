@@ -583,7 +583,7 @@ No operes en la ventana de `VENTANA_NOTICIA` alrededor de una noticia roja de Fo
 - **Solo el impacto ROJO.** Naranja y amarillo no bloquean. El nivel lo da el icono de Forex Factory, no un criterio propio.
 - **La ventana:** `VENTANA_NOTICIA` alrededor de la hora publicada — de T−5 a T+5, ambos inclusive: 11 minutos.
 - **Dentro de la ventana no se coloca ninguna orden.** Si ya hay una pendiente sin llenar, **se cancela al entrar T−5**, y no consume el cupo de `R-28` (`R-29`).
-- **Pasado T+5**, si el setup sigue vivo, se vuelve a colocar la orden.
+- **Pasado T+5**, si el setup sigue vivo **y cumple todas las reglas** con las zonas de ese momento, se vuelve a colocar la orden. Si no, se espera otro setup. Si mientras estaba retirada el precio pasó del nivel de entrada, ya no se puede poner una orden stop (`R-24`), así que tampoco se entra.
 
 #### `R-36` · Día de FOMC
 
