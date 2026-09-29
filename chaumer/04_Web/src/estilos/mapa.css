@@ -277,12 +277,14 @@ body.con-mapa {
 .mp-ayuda[hidden] { display: none; }
 
 .mp-barrido {
-  position: fixed; left: 0; right: 0; top: 0; height: 46%; z-index: 25;
+  position: fixed; left: 0; right: 0; top: 0; height: 40%; z-index: 25;
   pointer-events: none; opacity: 0;
+  /* Suave a propósito. La primera versión era una banda blanca con halo que
+     se comía la pantalla; comparada con la referencia, allí el destello casi
+     no se ve y lo que se percibe es el fundido limpio. */
   background: linear-gradient(180deg,
-    transparent 0%, rgba(120, 190, 255, 0.05) 62%, rgba(150, 210, 255, 0.30) 92%,
-    rgba(210, 238, 255, 0.95) 99%, rgba(210, 238, 255, 1) 100%);
-  box-shadow: 0 0 34px 6px rgba(120, 190, 255, 0.45);
+    transparent 0%, rgba(120, 190, 255, 0.025) 58%, rgba(150, 210, 255, 0.09) 90%,
+    rgba(190, 225, 255, 0.26) 99%, rgba(200, 230, 255, 0.34) 100%);
 }
 
 /* ═══ globo y ficha ════════════════════════════════════════════════════ */

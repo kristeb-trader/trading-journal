@@ -22,9 +22,15 @@ import * as D from './disposicion.mjs';
 
 /* Los siete tonos salen de tokens.css: --info, el cian de --texto-degradado,
    --acento, el violeta de la aurora, --positivo, --aviso y --negativo. */
+/* Un tono por pieza, en el orden de la jornada. Salen de tokens.css: --info,
+   el cian de --texto-degradado, --negativo, el violeta de la aurora,
+   --positivo, --aviso y --acento.
+   El coral y el azul están cambiados respecto al orden natural de la rampa:
+   los pidió así el operador el 29/09/2026 — Zonas en coral y Proceso diario
+   en azul. */
 const TONOS = [
-  [56, 189, 212], [91, 225, 240], [76, 141, 255], [120, 96, 255],
-  [63, 207, 142], [227, 179, 65], [239, 95, 99],
+  [56, 189, 212], [91, 225, 240], [239, 95, 99], [120, 96, 255],
+  [63, 207, 142], [227, 179, 65], [76, 141, 255],
 ];
 const AZUL = [76, 141, 255];
 
@@ -111,6 +117,9 @@ export function iniciarMapa(datos) {
       ancho: innerWidth, alto: innerHeight,
       menu: vista === 'pieza' ? 292 : 0,
       zMin: vista === 'pieza' ? 0.95 : 0,
+      // El flujo se asienta algo por encima del centro: así la primera fila
+      // queda a la altura de la vista y se empieza a leer por arriba.
+      subir: vista === 'pieza' ? 70 : 0,
     });
   }
 
@@ -178,6 +187,13 @@ export function iniciarMapa(datos) {
     const d = D.disponerPieza(suyas);
     pos = d.pos; caja = d.caja;
 
+    /* Cuántas relaciones tiene la más y la menos conectada de la pieza: la
+       intensidad se reparte entre esas dos, no sobre una escala absoluta, o
+       una pieza con poco trato saldría toda apagada. */
+    const cuenta = suyas.map((x) => x.rel.length);
+    const menos = Math.min(...cuenta), mas = Math.max(...cuenta);
+    const fuerza = (r) => (mas === menos ? 1 : (r.rel.length - menos) / (mas - menos));
+
     suyas.forEach((r, i) => {
       const p = pos[r.id];
       const env = document.createElement('div');
@@ -188,7 +204,7 @@ export function iniciarMapa(datos) {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'mp-hex mp-hex--regla';
-      b.style.cssText = tonos(g);
+      b.style.cssText = tonos(g, fuerza(r));
       b.innerHTML = '<span class="mp-hex__in">'
         + '<span class="mp-hex__m">' + g.sigla + ' #' + String(i + 1).padStart(2, '0') + '</span>'
         + '<span class="mp-hex__r">' + esc(r.nombre) + '</span>'
@@ -234,9 +250,17 @@ export function iniciarMapa(datos) {
 
   /* ── transiciones ──────────────────────────────────────────────────── */
 
-  function atenuar(o, yaMismo) {
+  /**
+   * El fundido de la transición.
+   *
+   * Funde del TODO, no a medias. Comparado fotograma a fotograma con la
+   * referencia (29/09/2026): allí el mundo desaparece limpio y vuelve suave,
+   * y eso es lo que se percibe como cuidado. Dejarlo a 0,3 deja el contenido
+   * viejo por debajo del nuevo y se ve sucio.
+   */
+  function atenuar(o, ms) {
     for (const e of [el.mundo, pistas.lienzo]) {
-      e.style.transition = yaMismo ? 'none' : 'opacity .15s ease';
+      e.style.transition = ms === 0 ? 'none' : 'opacity ' + (ms || 300) + 'ms ease';
       e.style.opacity = o;
     }
   }
@@ -245,10 +269,10 @@ export function iniciarMapa(datos) {
     if (quieta || !el.barrido || !el.barrido.animate) return;
     el.barrido.animate([
       { opacity: 0, transform: 'translateY(-100%)' },
-      { opacity: 0.9, offset: 0.28 },
-      { opacity: 0.9, offset: 0.68 },
-      { opacity: 0, transform: 'translateY(215%)' },
-    ], { duration: 1150, easing: 'cubic-bezier(.35,0,.3,1)' });
+      { opacity: 1, offset: 0.3 },
+      { opacity: 1, offset: 0.66 },
+      { opacity: 0, transform: 'translateY(210%)' },
+    ], { duration: 980, easing: 'cubic-bezier(.35,0,.3,1)' });
   }
 
   function entrar(gid, sinHistoria) {
@@ -257,15 +281,15 @@ export function iniciarMapa(datos) {
     ocupado = true;
     ocultarPista();
     const p = pos[gid];
-    atenuar(0.3); barrido();
+    atenuar(0, 300); barrido();
     // Bajar de nivel es ACERCARSE. La direccion del zoom codifica la jerarquia.
-    cam.irHasta({ x: p.x, y: p.y, z: cam.z * 1.9 }, 210, () => {
+    cam.irHasta({ x: p.x, y: p.y, z: cam.z * 1.9 }, 330, () => {
       vista = 'pieza'; piezaActual = gid;
       construirPieza(gid); cromo(); url(sinHistoria);
       const f = encuadre();
       cam.irYa({ x: f.x, y: f.y - 46, z: f.z * 0.86 });
-      aplicar(); pistas.revelar(); atenuar(1, true);
-      cam.irHasta(f, 620, () => { ocupado = false; });
+      aplicar(); pistas.revelar(); atenuar(1, 340);
+      cam.irHasta(f, 660, () => { ocupado = false; });
     });
   }
 
@@ -274,15 +298,15 @@ export function iniciarMapa(datos) {
     if (ocupado || gid === piezaActual) return;
     ocupado = true;
     ocultarPista();
-    atenuar(0.3); barrido();
+    atenuar(0, 240); barrido();
     setTimeout(() => {
       piezaActual = gid;
       construirPieza(gid); cromo(); url(sinHistoria);
       const f = encuadre();
       cam.irYa({ x: f.x, y: f.y, z: f.z * 0.92 });
-      aplicar(); pistas.revelar(); atenuar(1, true);
-      cam.irHasta(f, 380, () => { ocupado = false; });
-    }, quieta ? 0 : 120);
+      aplicar(); pistas.revelar(); atenuar(1, 300);
+      cam.irHasta(f, 420, () => { ocupado = false; });
+    }, quieta ? 0 : 250);
   }
 
   function volver(sinHistoria) {
@@ -290,16 +314,16 @@ export function iniciarMapa(datos) {
     ocupado = true;
     ocultarPista();
     const previo = piezaActual;
-    atenuar(0.3); barrido();
+    atenuar(0, 300); barrido();
     // Subir de nivel es ALEJARSE: la imagen en espejo de entrar.
-    cam.irHasta({ x: cam.x, y: cam.y, z: cam.z * 0.68 }, 210, () => {
+    cam.irHasta({ x: cam.x, y: cam.y, z: cam.z * 0.68 }, 330, () => {
       vista = 'hub'; piezaActual = null;
       construirHub(); cromo(); url(sinHistoria);
       const f = encuadre();
       const p = pos[previo] || { x: f.x, y: f.y };
       cam.irYa({ x: p.x, y: p.y, z: f.z * 2.2 });
-      aplicar(); pistas.revelar(); atenuar(1, true);
-      cam.irHasta(f, 600, () => { ocupado = false; });
+      aplicar(); pistas.revelar(); atenuar(1, 340);
+      cam.irHasta(f, 640, () => { ocupado = false; });
     });
   }
 
@@ -501,9 +525,24 @@ export function iniciarMapa(datos) {
 
   /* ── ayudas ────────────────────────────────────────────────────────── */
 
-  function tonos(g) {
-    return '--c:' + g.lcss + ';--cd:' + rgba(g.luz, 0.8) + ';--cb:' + rgba(g.rgb, 0.38)
-      + ';--b:' + rgba(g.luz, 0.75) + ';--f:#090C12';
+  /**
+   * Las variables de color de un nodo.
+   *
+   * `f` (0..1) es opcional: cuando viene, el borde y el texto siguen a la
+   * fuerza de la regla, de modo que se ve el esqueleto de la pieza sin leer
+   * nada. El TONO no cambia —sería mentir, todas son de la misma pieza—,
+   * cambia la intensidad.
+   */
+  function tonos(g, f) {
+    if (f == null) {
+      return '--c:' + g.lcss + ';--cd:' + rgba(g.luz, 0.8) + ';--cb:' + rgba(g.rgb, 0.38)
+        + ';--b:' + rgba(g.luz, 0.75) + ';--f:#090C12';
+    }
+    return '--c:' + rgba(g.luz, 0.52 + f * 0.48)
+      + ';--cd:' + rgba(g.luz, 0.38 + f * 0.42)
+      + ';--cb:' + rgba(g.rgb, 0.2 + f * 0.3)
+      + ';--b:' + rgba(g.luz, 0.3 + f * 0.6)
+      + ';--f:#090C12';
   }
   function etiquetaDe(r) {
     const a = r.aplica.length === 2 ? 'Ambos' : (r.aplica[0] || 'Común');

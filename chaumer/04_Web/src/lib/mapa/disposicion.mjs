@@ -215,14 +215,14 @@ export function carriles(reglas, pos, rgb) {
  * Dentro de una pieza nunca se encoge por debajo de `zMin`: un mapa que no se
  * puede leer no es un mapa. Si no cabe, se recorre.
  */
-export function encuadrar(caja, { ancho, alto, menu = 0, arriba = 104, abajo = 96, zMin = 0, zMax = 1.1 }) {
+export function encuadrar(caja, { ancho, alto, menu = 0, arriba = 104, abajo = 96, zMin = 0, zMax = 1.1, subir = 0 }) {
   const libreW = ancho - menu - 104;
   const libreH = alto - arriba - abajo;
   let z = Math.min(libreW / (caja.w + 60), libreH / (caja.h + 60), zMax);
   if (z < zMin) z = zMin;
   return {
     x: caja.x + caja.w / 2 - menu / (2 * z),
-    y: caja.y + caja.h / 2 - (arriba - abajo) / (2 * z),
+    y: caja.y + caja.h / 2 - (arriba - abajo) / (2 * z) + subir / z,
     z,
   };
 }

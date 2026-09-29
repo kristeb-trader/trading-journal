@@ -1,12 +1,13 @@
 # El mapa del método — una página nueva en el portal
 
-**Versión:** v1.1 · **Estado:** ✅ **IMPLEMENTADO el 29/09/2026.** Las 5 fases, verificadas.
+**Versión:** v1.2 · **Estado:** ✅ **CERRADO el 29/09/2026.** Las 5 fases y la decisión de color.
 **Escrito:** 29/09/2026. **Alcance:** el portal (`chaumer/04_Web`), una página nueva.
 
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 29/09/2026 | Primera versión, escrita después de una maqueta funcional revisada por Kris |
 | v1.1 | 29/09/2026 | **Aprobado e implementado.** Tres correcciones del §11 contra los datos reales, y §13 con lo que cambió al construirlo |
+| v1.2 | 29/09/2026 | Decidido el color (§11): por número de relaciones. Zonas y Proceso diario se intercambian el tono. La transición se vuelve a comparar con la referencia y se suaviza (§14) |
 
 ---
 
@@ -230,7 +231,7 @@ foco está en un campo de texto, no se mueve el mapa.
 - **Dependencias nuevas.** La referencia empezó con Three.js desde un CDN y lo tiraron por la
   misma razón que aquí: sin paso de compilación. Canvas2D hace lo mismo en 7 KB.
 
-## 11. Decisión pendiente
+## 11. El color dentro de una pieza — decidido
 
 **El color dentro de una pieza.** Las 13 reglas de Zonas comparten el color del grupo y Kris lo ve
 monótono. Darles tonos distintos sería decoración que miente: son de la misma pieza. Lo honesto es
@@ -247,7 +248,15 @@ variar la **intensidad** según un dato real. Contados sobre `reglas.json`:
 > falsas: que `aplica_a` no tenía variedad (sí la tiene, aunque poca: 5 de 34) y que el apartado
 > servía como eje general (solo existe en Zonas). Por eso cambia la recomendación.
 
-**No bloquea las fases 1-3.** Se decide antes de la 4.
+**Decidido el 29/09/2026: por número de relaciones.** La intensidad del borde y del texto sigue
+al número de relacionadas, repartida **dentro de cada pieza** (no sobre una escala absoluta, o una
+pieza poco conectada saldría entera apagada). El tono no cambia: sería mentir, todas son de la
+misma pieza.
+
+En Zonas eso pone fuertes a *Zona de premercado* y *Rompimiento y consecución* (6 relaciones cada
+una) y apagada a *La vela que confirma un traspaso* (2). El esqueleto del grupo se ve sin leer.
+
+**Y dos tonos cambiados**, a petición del operador: Zonas pasa a coral y Proceso diario al azul.
 
 ## 13. Qué cambió al implementarlo
 
@@ -287,6 +296,31 @@ emulada.
 | Zoom mínimo dentro de una pieza | **95 %**, nunca menos |
 | `npm run verificar` | **57 páginas, 0 fallos** en enlaces, maquetación, parámetros, cifras, nombres, referencias y vista |
 | Consola | Sin errores |
+
+## 14. La transición, comparada otra vez con la referencia
+
+El 29/09, ya con el mapa publicado, Kris no veía el efecto al entrar en una pieza. Se grabaron las
+dos transiciones con el screencast del navegador, a los mismos hitos. El resultado fue claro:
+
+| | Referencia | El mío, antes |
+|---|---|---|
+| ~385 ms | el hub **intacto** | ya atenuado y a medio zoom |
+| ~500 ms | **funde a negro limpio** | una **banda blanca con halo** cruzando la pantalla |
+| ~830 ms | negro, tranquilo | la banda todavía dominando |
+
+Dos errores, los dos míos:
+
+1. **El destello era un foco.** Tenía un borde casi blanco al 95 % y un `box-shadow` de 34 px. En
+   la referencia el destello casi no se ve: lo que se percibe es el fundido.
+2. **Atenuar a 0,3 ensucia.** Deja el contenido viejo por debajo del nuevo. Era un parche contra
+   un hueco en blanco que en realidad venía de otro sitio (§7.2), y sobraba.
+
+Corregido: se funde **del todo** en 300 ms, el destello baja a un degradado suave sin halo, y la
+entrada vuelve con un fundido de 340 ms además del escalonado. El ritmo ya coincide con el de la
+referencia.
+
+**Y el flujo se asienta 70 px por encima del centro**, para que la primera fila quede a la altura
+de la vista y se empiece a leer por arriba.
 
 ## 12. La maqueta
 
