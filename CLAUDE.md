@@ -132,6 +132,7 @@ NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) �
                   RR (Risk Reward en PUNTOS) · CadenaDiaria (AddOn: exporta el día y lanza el puente)
 scripts/cadena/   El puente de la cadena diaria: motor → gráfico → ficha en Supabase → portal
 scripts/plan/     El plan de Chaumer → reglas.json, catalogo_reglas y plan_documentos
+scripts/herramientas/  medir-tokens · respaldo.ps1 (a diario, 11:00, a OneDrive: tarea de Windows)
 TelegramBot/      Bot (Cloudflare Worker) · workers/proxy-ia/  copia del Worker proxy IA
 ```
 

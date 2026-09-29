@@ -50,6 +50,11 @@
 - **Scripts:** borrados `TelegramBot/deploy.bat` y los tres `comparar-*.py` del 26/09; `medir-tokens.js` a
   `scripts/herramientas/`; el prompt de la reestructuración de agosto, al archivo.
 - **Cifras al día:** el índice de migraciones (86 archivos), el mapa del código del `CLAUDE.md` y el backlog.
+- **Respaldo diario en OneDrive** (Kris, por un disco que falla): `scripts/herramientas/respaldo.ps1` copia el proyecto
+  entero —con `.git` y lo que git ignora, como el backtesting manual— más la configuración y el código propio de
+  NinjaTrader y los skills y la memoria de Claude a `E:\OneDrive\Cerebro_Proyectos\Journal Trading\`. Solo añade,
+  nunca borra; sin claves. Tarea de Windows «TradingJournal - respaldo», a las 11:00 o al encender. La copia vieja de
+  agosto que había allí, apartada en `_copia-2026-08-09\`. Cómo restaurar: la cabecera del script.
 
 **Verificado:** ninguna línea del historial se pierde (comprobado línea a línea contra el original); ninguna ruta
 viva apunta a un archivo movido o borrado; lo que sale de git, ignorado **antes** de moverlo; el Journal publicado
