@@ -20,11 +20,8 @@ Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md
 
 **Las Sesiones (D-029, 28/09):** `chaumer/05_Backtesting/` es `kris/` (el backtesting a mano) y `claude/`
 (un gráfico por día + su `.json`; el protocolo del chat «Backtesting» en `claude/protocolo/LEEME.md`).
-- [ ] **Mañana (29/09), en `%LOCALAPPDATA%\TradingJournal\cadena\registro.txt`:** la primera publicación
-  automática de verdad — `publicar: 29/09 subido al portal`. Si pone «el push falló», es que git no tiene
-  credenciales cuando lo lanza NinjaTrader (sin consola): mirarlo entonces
-- [ ] Mañana, en `Documentos\NinjaTrader 8\cadena-diaria\registro.txt`: que el AddOn escribió las velas en
-  `claude\motor\datos\dia\` y no volvió a crear la carpeta vieja
+La publicación automática funciona desde el 29/09: el AddOn exportó a las 10:32 en `claude\motor\datos\dia\` y
+el puente subió el día solo (`6461e1a`).
 
 ## Portal de Alfredo
 

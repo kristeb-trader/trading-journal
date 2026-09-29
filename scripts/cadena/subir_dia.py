@@ -18,6 +18,8 @@ Umbral: el de chaumer/01_Plan/PARAMETROS.md. Días de Fed: Fechas Especiales (ti
 El gráfico del día se queda en chaumer/05_Backtesting/claude/ (las Sesiones, 28/09/2026), con su .json. Al
 terminar, cada pasada los sube a GitHub —y así al portal— SOLO si el día ya está registrado (el candado del
 motor, D-026): commit de esos archivos y push a main. Registro: %LOCALAPPDATA%\\TradingJournal\\cadena\\registro.txt
+(ojo: desde la app de escritorio de Claude esa ruta se ve virtualizada y no enseña lo que escribe NinjaTrader; lo de
+cada pasada del AddOn está también en Documentos\\NinjaTrader 8\\cadena-diaria\\registro.txt, con el prefijo «puente ·»).
 """
 import os, re, sys, json, glob, hashlib, datetime, traceback, urllib.request, urllib.error, uuid
 
