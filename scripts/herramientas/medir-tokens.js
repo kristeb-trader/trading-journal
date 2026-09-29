@@ -7,10 +7,10 @@
  * y saca los contadores reales de uso. No estima nada: son las cifras que
  * devuelve la API en cada mensaje.
  *
- *   node docs/herramientas/medir-tokens.js sesiones
- *   node docs/herramientas/medir-tokens.js arranque
- *   node docs/herramientas/medir-tokens.js turnos   <id-sesion>
- *   node docs/herramientas/medir-tokens.js llamadas <id-sesion>
+ *   node scripts/herramientas/medir-tokens.js sesiones
+ *   node scripts/herramientas/medir-tokens.js arranque
+ *   node scripts/herramientas/medir-tokens.js turnos   <id-sesion>
+ *   node scripts/herramientas/medir-tokens.js llamadas <id-sesion>
  *
  * El <id-sesion> es el nombre del .jsonl sin extensión (basta el prefijo).
  * Otro proyecto:  --dir "C:/Users/<tu>/.claude/projects/<otro>"

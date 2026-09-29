@@ -235,13 +235,14 @@ Si no baja, las reglas están mal y se revisan.
 | 2 | Corregida la cifra del diseño del 16 ago | Marcada como engañosa · aparecen el 4,6% y los 76k reales |
 | 3 | `docs/herramientas/medir-tokens.js` | `node --check` limpio · los 4 subcomandos reproducen las cifras del diagnóstico |
 
-**La medición es ahora repetible por Kris sin depender de mí:**
+**La medición es ahora repetible por Kris sin depender de mí** (el script vive en `scripts/herramientas/` desde el
+29/09/2026; antes, en `docs/herramientas/`):
 
 ```
-node docs/herramientas/medir-tokens.js arranque
-node docs/herramientas/medir-tokens.js sesiones
-node docs/herramientas/medir-tokens.js turnos   <id>
-node docs/herramientas/medir-tokens.js llamadas <id>
+node scripts/herramientas/medir-tokens.js arranque
+node scripts/herramientas/medir-tokens.js sesiones
+node scripts/herramientas/medir-tokens.js turnos   <id>
+node scripts/herramientas/medir-tokens.js llamadas <id>
 ```
 
 Sin argumentos lista las sesiones disponibles. Con `--dir` apunta a otro proyecto.

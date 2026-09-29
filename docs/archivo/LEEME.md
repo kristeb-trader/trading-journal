@@ -28,6 +28,8 @@ Archivado el 2026-08-16. Motivo y criterio:
 | Archivo | En qué miente |
 |---|---|
 | `historial-hasta-2026-08-15.md` | La primera mitad del historial. Hasta «Estado actual del proyecto» es una foto de mayo–junio: Coach con `claude-sonnet-4-6`, «repositorio privado», el esquema y las carpetas de mayo. Las fases 1–22 y los checkpoints de junio al 11/08 son historia verdadera de su fecha |
+| `inicio-journal/` | **Solo en disco, fuera de git.** Lo que era `Otros/` en la raíz: el chat, los CSV/XLSX de trades y los PDFs de reglas v4 con que arrancó el journal en mayo. Las reglas v4 no son el plan vigente (`chaumer/01_Plan/`) |
+| `prompt-reestructuracion.md` | No es un diseño: el encargo que abrió la reestructuración documental del 16/08 (`docs/disenos/2026-08-16-reestructuracion.md`). Las rutas y el estado que da son de ese día |
 
 Motivo y criterio: `docs/disenos/2026-09-29-orden-raiz.md`.
 
