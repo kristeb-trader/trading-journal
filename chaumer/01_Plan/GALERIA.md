@@ -310,7 +310,7 @@ Stop y target marcados a **43 puntos** cada uno — **1:1 correcto** (`R-32`) y 
 
 ## G-12 · 🔴 SESIÓN · 6 JULIO 2026 · una Continuación rechazada y un Reingreso operado sobre la MISMA zona
 
-**Archivo:** `../02_Assets/galeria/L6_sesion_completa.png` · **Reglas:** `R-15`, `R-07`, `R-05`, `R-06`, `R-09`, `R-16`, `R-12`, `R-20`, `R-31`, `R-26`, `R-32`, `R-34`
+**Archivo:** `05_Backtesting\claude\2026-07-06.png` · **Reglas:** `R-15`, `R-07`, `R-05`, `R-06`, `R-09`, `R-16`, `R-12`, `R-20`, `R-31`, `R-26`, `R-32`, `R-34`
 
 > **Segunda sesión reconstruida al tick desde datos exactos de NinjaTrader**, vela a vela con el operador. Es el caso que la galería no tenía: **dos setups sobre la misma zona en un intervalo de un minuto — uno se descarta, el otro se opera.**
 

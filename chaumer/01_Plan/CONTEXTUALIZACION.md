@@ -12,7 +12,7 @@
 Chaumer distingue explícitamente dos categorías, y el plan las adopta:
 
 > *"Existen **parámetros operativos** y existen **elementos para contextualizar**. […] Me ayudan a tomar decisiones, **mas no es un parámetro operativo**."*
-> — Nota de voz, 24/08/2026 · transcripción en `03_Materia_Prima\transcripciones\2026-08-24_audio_chaumer.md`
+> — Nota de voz, 24/08/2026 · transcripción en `docs/archivo/chaumer/materia-prima/transcripciones/2026-08-24_audio_chaumer.md` (en disco, fuera de git)
 
 | | Dónde vive | Naturaleza |
 |---|---|---|
