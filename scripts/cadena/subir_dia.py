@@ -10,12 +10,14 @@ scripts/cadena/prueba_motor.py (D-026, D-028).
     python scripts/cadena/subir_dia.py 2026-09-23 [2026-09-22 ...]    unos días
     python scripts/cadena/subir_dia.py --pendientes [--dias 10]        lo que falte o haya cambiado
     python scripts/cadena/subir_dia.py --comparar                      fase 7e: AddOn contra exportación manual
+    python scripts/cadena/subir_dia.py --publicar [--ensayo]           solo subir al portal lo de claude/ ya registrado
 
 Lo lanza el AddOn CadenaDiaria de NinjaTrader; a mano, el acceso directo "Subir el dia.bat".
 Clave: la service_role de los indicadores (Documentos\\NinjaTrader 8\\supabase-service-key.txt).
 Umbral: el de chaumer/01_Plan/PARAMETROS.md. Días de Fed: Fechas Especiales (tipo fomc).
-El gráfico del día se queda en chaumer/05_Backtesting/claude/ (las Sesiones, 28/09/2026): de ahí lo publica
-el portal, pero solo al hacer push, nunca solo. Registro: %LOCALAPPDATA%\\TradingJournal\\cadena\\registro.txt
+El gráfico del día se queda en chaumer/05_Backtesting/claude/ (las Sesiones, 28/09/2026), con su .json. Al
+terminar, cada pasada los sube a GitHub —y así al portal— SOLO si el día ya está registrado (el candado del
+motor, D-026): commit de esos archivos y push a main. Registro: %LOCALAPPDATA%\\TradingJournal\\cadena\\registro.txt
 """
 import os, re, sys, json, glob, hashlib, datetime, traceback, urllib.request, urllib.error, uuid
 
@@ -323,8 +325,68 @@ def pendientes(n_dias, huella_motor):
     return fuera
 
 
+# ── Publicar las Sesiones (29/09/2026) ─────────────────────────────────────────
+def git(*args, timeout=120):
+    """git en la raíz del repositorio, sin preguntar nada nunca (corre sin consola, lanzado por NT8)."""
+    import subprocess
+    env = dict(os.environ, GIT_TERMINAL_PROMPT='0', GCM_INTERACTIVE='never')
+    r = subprocess.run(['git', '-C', RAIZ, *args], capture_output=True, text=True, encoding='utf-8',
+                       env=env, timeout=timeout, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+    return r.returncode, (r.stdout + r.stderr).rstrip()   # rstrip: la 1.ª línea de status empieza por espacio
+
+
+def publicar_sesiones(ensayo=False):
+    """Sube a GitHub (y así al portal) los gráficos y veredictos de claude/ que sean nuevos o hayan
+    cambiado, SOLO de los días ya registrados (sesiones.registrada_at). Es el candado del motor (D-026):
+    lo que marcó el motor no se ve antes de que Kris registre su lectura, tampoco en el portal.
+    Commit solo de esos archivos; si la rama no es main o GitHub va por delante, no sube y lo apunta:
+    se reintenta en la siguiente pasada. Nunca tumba la cadena."""
+    try:
+        rel = os.path.relpath(SESIONES, RAIZ).replace('\\', '/')
+        ok, rama = git('rev-parse', '--abbrev-ref', 'HEAD')
+        if ok != 0: log(f'publicar: git no responde ({rama[:120]})'); return
+        if rama != 'main': log(f'publicar: la rama es {rama}, no main: no se sube nada'); return
+        _, st = git('status', '--porcelain', '--untracked-files=all', '--', rel)
+        cambios = {}
+        for ln in st.splitlines():
+            m = re.search(r'(\d{4}-\d{2}-\d{2})\.(png|json)$', ln)
+            if m and '/' not in ln[3:].replace(rel + '/', '', 1): cambios.setdefault(m[1], []).append(ln[3:].strip().strip('"'))
+        if not cambios: return
+        filas = sb('GET', 'sesiones?select=sesion_date,registrada_at&registrada_at=not.is.null'
+                          f"&sesion_date=in.({','.join(sorted(cambios))})")
+        registrados = {f['sesion_date'] for f in filas}
+        fuera = sorted(set(cambios) - registrados)
+        if fuera: log(f"publicar: {', '.join(fuera)} sin registrar: se quedan en disco hasta que lo estén")
+        dias = sorted(set(cambios) & registrados)
+        if not dias: return
+        rutas = [p for d in dias for p in cambios[d]]
+        if ensayo:
+            log(f"publicar (ensayo): subiría {', '.join(dias)} · {len(rutas)} archivo(s)"); return
+        git('fetch', '-q', 'origin', 'main', timeout=180)
+        _, detras = git('rev-list', '--count', 'HEAD..origin/main')
+        if detras.strip() not in ('', '0'):
+            log(f'publicar: GitHub va {detras.strip()} commit(s) por delante: no se sube; queda para la siguiente pasada'); return
+        # Commits locales sin subir: son trabajo de otra sesión, quizá retenido a propósito. El push los
+        # publicaría de paso, así que no se sube nada hasta que esa sesión haga su push.
+        _, delante = git('rev-list', '--count', 'origin/main..HEAD')
+        if delante.strip() not in ('', '0'):
+            log(f'publicar: hay {delante.strip()} commit(s) locales sin subir: no se publica para no subirlos de paso'); return
+        git('add', '--', *rutas)
+        dd = ', '.join(datetime.date.fromisoformat(d).strftime('%d/%m') for d in dias)
+        c, out = git('commit', '-q', '-m', f'chore(sesiones): lo que marcó el motor el {dd}',
+                     '-m', 'Automático (subir_dia.py): solo días ya registrados, por el candado del motor (D-026, D-029).',
+                     '--', *rutas)
+        if c != 0: log(f'publicar: el commit falló ({out[:200]})'); return
+        c, out = git('push', '-q', 'origin', 'main', timeout=180)
+        log(f"publicar: {dd} subido al portal" if c == 0 else f'publicar: commit hecho, pero el push falló ({out[:200]}): se sube con el siguiente push')
+    except Exception as e:
+        log(f'publicar: ❌ {e}')
+
+
 def main(argv):
     if '--comparar' in argv: return comparar_todo()
+    if '--publicar' in argv:
+        publicar_sesiones(ensayo='--ensayo' in argv); return 0
     huella_motor = hashlib.sha256(open(os.path.join(BT, 'lector.py'), 'rb').read()).hexdigest()
     try:
         umbral, desde = umbral_del_plan()
@@ -335,7 +397,9 @@ def main(argv):
     if '--pendientes' in argv:
         n = int(argv[argv.index('--dias') + 1]) if '--dias' in argv else 10
         fechas = pendientes(n, huella_motor)
-        if not fechas: log('pendientes: nada que subir'); return 0
+        if not fechas:
+            log('pendientes: nada que subir')
+            publicar_sesiones(); return 0
     else:
         fechas = [a for a in argv if re.fullmatch(r'\d{4}-\d{2}-\d{2}', a)]
         if not fechas: print(__doc__); return 1
@@ -352,6 +416,7 @@ def main(argv):
                    {'fecha': f, 'estado': 'error', 'ficha': {'motivo': str(e)[:500]}, 'huella_motor': huella_motor},
                    'resolution=ignore-duplicates,return=minimal')   # una ficha buena no se pisa con un error
             except Exception: pass
+    publicar_sesiones()
     return 1 if fallos else 0
 
 

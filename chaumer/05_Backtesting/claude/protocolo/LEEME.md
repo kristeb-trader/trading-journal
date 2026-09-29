@@ -101,7 +101,7 @@ Cada diferencia cae en una de tres, y se anota en `DISCREPANCIAS.md`:
 
 **El veredicto del día va a la tabla del plan** («Sesiones de septiembre — día por día» en `01_Plan\GALERIA.md`, o la del mes que toque) **solo con el sí del operador**, en su commit `plan: …`. Mientras no esté ahí, el portal enseña el del motor (el `.json` de al lado del gráfico).
 
-**Nada se publica solo:** lo que hay en `claude\` llega al portal cuando se hace push.
+**El motor publica solo, pero solo días registrados:** al terminar cada pasada sube a GitHub —y así al portal— los gráficos y `.json` de `claude\` de los días que el operador ya registró. Un gráfico que dibujes tú aquí sube con tu commit, como cualquier otro cambio.
 
 ---
 

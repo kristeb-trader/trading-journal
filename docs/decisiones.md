@@ -33,8 +33,12 @@ el motor suelto, `datos`, más AppData y `02_Assets/galeria/sesiones`) y dos pes
 enseñaban lo mismo con tarjetas distintas. Los gráficos viejos, además, ya no decían lo que dice el plan.
 
 **Consecuencias asumidas.**
-- Un PNG al día entra en git (~130 KB; ~33 MB al año). El candado del motor se mantiene porque nada se
-  publica solo: el portal cambia al hacer push, por la noche.
+- Un PNG al día entra en git (~130 KB; ~33 MB al año).
+- **Se publican solos, pero solo los días registrados** (decidido el mismo 28/09): al terminar cada pasada,
+  `subir_dia.py` hace commit de los gráficos y `.json` nuevos de `claude/` de los días con `registrada_at` y
+  push a `main`. Así el candado del motor sigue en pie también en el portal. No sube si la rama no es
+  `main`, si GitHub va por delante o si hay commits locales sin subir (serían trabajo retenido de otra
+  sesión y se publicarían de paso); lo apunta en el registro y lo reintenta en la siguiente pasada.
 - `CadenaDiaria.cs` lleva la ruta nueva como valor por defecto; manda `cadena-diaria.json`, así que
   recompilar en NT8 no es urgente.
 

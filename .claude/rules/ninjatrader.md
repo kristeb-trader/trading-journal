@@ -56,6 +56,8 @@ día **sin archivo** en `datos\dia\` lo pide con `BarsRequest` y lo escribe como
   York de Windows. Nada de horas fijas.
 - **Contrato:** el del último rollover de `MasterInstrument.RolloverCollection` con fecha ≤ el día (hoy
   `MNQ 12-26`), con la merge policy global.
+- **Publica solo:** al terminar, `subir_dia.py` hace commit y push de los gráficos de `chaumer\05_Backtesting\claude\`
+  de los días **ya registrados** (el candado del motor, D-029). Es el único proceso que hace push sin nadie delante.
 - **Configuración:** `Documentos\NinjaTrader 8\cadena-diaria.json` (la relee cada minuto: cambiarla no
   pide recompilar). **Registro:** `Documentos\NinjaTrader 8\cadena-diaria\registro.txt`.
 - **Si algo no cuadra**, `subir_dia.py --comparar` compara línea a línea la carpeta `datos\dia_auto\`

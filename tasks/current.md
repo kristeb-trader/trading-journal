@@ -20,8 +20,9 @@ Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md
 
 **Las Sesiones (D-029, 28/09):** `chaumer/05_Backtesting/` es `kris/` (el backtesting a mano) y `claude/`
 (un gráfico por día + su `.json`; el protocolo del chat «Backtesting» en `claude/protocolo/LEEME.md`).
-- [ ] Los gráficos que el motor deja cada día en `claude/` se suben con un commit por la noche, cuando el día
-  ya está registrado: el portal solo cambia con el push
+- [ ] **Mañana (29/09), en `%LOCALAPPDATA%\TradingJournal\cadena\registro.txt`:** la primera publicación
+  automática de verdad — `publicar: 29/09 subido al portal`. Si pone «el push falló», es que git no tiene
+  credenciales cuando lo lanza NinjaTrader (sin consola): mirarlo entonces
 - [ ] Recompilar `CadenaDiaria` en NT8 cuando se abra el editor (solo cambia el valor por defecto de la
   carpeta; manda `cadena-diaria.json`)
 - [ ] Mañana, en `Documentos\NinjaTrader 8\cadena-diaria\registro.txt`: que el AddOn escribió las velas en

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Versión** | v1 |
+| **Versión** | v2 |
 | **Estado** | ✅ Implementado y publicado (28/09/2026) |
 | **Fecha** | 28/09/2026 |
 | **Decidido con Kris** | el motor va dentro de `claude/` · el término «test ciego» sale también del plan |
@@ -12,6 +12,7 @@
 | Versión | Fecha | Cambio |
 |---|---|---|
 | v1 | 28/09/2026 | Primera propuesta. Aprobada entera, con los 9 cambios del plan |
+| v2 | 28/09/2026 | §7: los gráficos del motor se publican solos, solo los días registrados (pedido por Kris) |
 
 ---
 
@@ -270,3 +271,27 @@ Lo de §3.5. Commit: `docs: sesiones y dos carpetas (D-029)`.
   del 28/09, que llegaron después de la ficha de las 15:32.
 
 **Retirados** los 11 gráficos viejos de julio (`chaumer/02_Assets/galeria/sesiones/`), con el visto bueno de Kris a los nuevos (28/09/2026). Quedan en el historial de git.
+
+---
+
+## 7. Publicación automática (v2, 28/09/2026)
+
+**Pedido por Kris:** que los gráficos del motor lleguen solos al portal, pero solo los de días registrados.
+
+`subir_dia.py` → `publicar_sesiones()`, al final de cada pasada (también cuando no hay nada que procesar), o a mano
+con `--publicar [--ensayo]`:
+
+1. Mira qué `AAAA-MM-DD.png` / `.json` de `claude/` son nuevos o cambiaron (`git status`).
+2. Se queda con los días que tienen `sesiones.registrada_at` (Supabase). Los demás se quedan en disco.
+3. No sube nada si la rama no es `main`, si GitHub va por delante o si hay commits locales sin subir (trabajo de otra
+   sesión, quizá retenido a propósito, como el de esta noche hasta el visto bueno de julio).
+4. Commit **solo de esos archivos** (`chore(sesiones): lo que marcó el motor el DD/MM`) y push a `main`. El workflow del
+   portal lo publica.
+5. Nunca tumba la cadena: cualquier fallo va al registro y se reintenta en la siguiente pasada.
+
+**Cuándo publica en la práctica:** el registro del día se hace por la mañana (el bot o el Diario), así que a las 10:32
+el día ya está registrado y se publica en esa misma pasada. Un día sin registrar espera a la siguiente pasada del motor.
+
+**Probado** contra una copia local de GitHub (un repositorio bare): sube solo el día registrado y deja el no registrado
+y un cambio ajeno sin tocar; no sube si GitHub va por delante; no sube si hay un commit local sin subir. La primera
+publicación de verdad, lanzada por NinjaTrader, será la del 29/09: `tasks/current.md`.
