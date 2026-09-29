@@ -14,7 +14,7 @@ Los dos únicos setups que se operan: Continuación y Reingreso
 
 <!-- id: dos -->
 
-### Solo hay dos R-23
+### Solo hay dos R-28
 
 El método no busca oportunidades: busca **dos figuras concretas**. Si lo que hay delante no es una de las dos, no hay operación, por bien que se vea el gráfico.
 

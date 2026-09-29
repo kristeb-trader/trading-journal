@@ -46,7 +46,7 @@ La primera vela después de la apertura — la de las 08:31 en horario de verano
 - **Las velas anteriores** — No sirven de referencia. La estructura del día empieza aquí
 - **¿Puede sostener una zona?** — Sí
 
-#### Por dónde empieza el día R-27
+#### Por dónde empieza el día R-07
 
 Que la primera vela declare una dirección no significa que haya que operar en ese sentido toda la mañana.
 

@@ -51,7 +51,7 @@ Palabras del operador: *«no se toca nada, jamás… Repito, jamás se gestiona�
 
 <!-- id: salidas -->
 
-### Solo hay dos salidas R-30
+### Solo hay dos salidas R-33
 
 - **Salida 1** — **El stop.**
 - **Salida 2** — **El objetivo.**
@@ -63,7 +63,7 @@ Si la ventana de dos horas termina con la operación viva, la operación sigue. 
 
 <!-- id: cerrar -->
 
-### Al cerrar R-34 · R-28
+### Al cerrar R-28
 
 Terminada la operación, con el resultado que sea:
 

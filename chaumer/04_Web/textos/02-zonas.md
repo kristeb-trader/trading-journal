@@ -40,7 +40,7 @@ Del retroceso interesa un punto concreto: **su extremo** — el más bajo si la 
 
 <!-- id: nace -->
 
-### Generación de zonas R-09 · R-16 · R-19
+### Generación de zonas R-09 · R-16
 
 Cuando una corrida termina, deja un rastro en el gráfico: una franja de precio que se llama **zona**. No se dibuja a ojo. Sale siempre de la misma vela y con los mismos límites.
 
@@ -80,7 +80,7 @@ Las dos zonas de un movimiento no nacen a la vez, y confundirlo lleva a operar a
 
 <!-- id: consecucion -->
 
-### Rompimiento y consecución R-20 · R-22 · R-19
+### Rompimiento y consecución R-20 · R-22
 
 Superar una zona son dos cosas, no una. Primero el **rompimiento**, después la **consecución**. Y el mismo mecanismo que supera una zona es el que más tarde dispara la entrada.
 
