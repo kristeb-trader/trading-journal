@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-09-29c | Cuatro calendarios: Mío, Chaumer, Claude y el manual, en puntos |
 | 2026-09-29b | La raíz en orden: el historial, partido en el 16/08 |
 | 2026-09-29 | Sesiones en vez de test ciego, dos carpetas de backtesting, y `chaumer/` en orden |
 | 2026-09-28 | Las reglas de Chaumer, cerradas: se pasa al backtesting |
@@ -33,6 +34,60 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-09-29c — Cuatro calendarios: Mío, Chaumer, Claude y el manual, en puntos
+
+**Qué se cerró** (diseño `2026-09-29-cuatro-calendarios.md`, D-032):
+
+- **La pantalla principal del Calendario:**
+  - cuatro cuadros en el mismo mes, cada uno con sus puntos, el P&L, T/S y un mini
+    calendario;
+  - debajo, la curva de puntos acumulados de todos;
+  - el cuadro que no tiene datos lleva un enlace a su último mes con datos;
+  - en el celular, un cuadro por fila y una tira de un color por día.
+- **La vista completa de Chaumer, Claude y el manual** (`js/calendarios.js`): una sola vista
+  para los tres, con las piezas de la de siempre:
+  - cuatro tarjetas;
+  - la cuadrícula en puntos con el P&L debajo;
+  - la curva, que `Metrics.pintarEquity` hace reutilizable;
+  - el recuadro del día, que se queda fijo al clicar; en Claude, con «Ver gráfico».
+- **Mi calendario, en puntos:** celdas, semanas, total, la tarjeta *Puntos netos* y la curva.
+  El P&L real va debajo y en el recuadro del día.
+- **El candado del motor, respetado.** `motor_estados(desde, hasta)` dice qué días siguen
+  cerrados sin enseñar su operación; un día sin registrar sale **🔒 Registra tu día**. La
+  política `candado` no se tocó.
+- **Navegación:**
+  - `Nav.setVolver` hace que el chevron de la barra vuelva a la principal;
+  - un solo mes para las cinco pantallas;
+  - el filtro de cuentas solo se ve en Mío y en la principal;
+  - siguen siendo 6 botones.
+
+**Arreglado por el camino:**
+
+- **La curva de equity** reventaba la carga si se pintaba oculta: con alto 0, el corte en cero
+  daba NaN.
+- **La rejilla del calendario** se salía por la derecha en el móvil con textos largos. Ahora
+  usa `minmax(0, 1fr)`.
+- **La leyenda** pasa a varias líneas.
+
+**Verificado** con los datos reales de septiembre, contra un `SELECT`:
+
+| | Puntos | P&L | T/S |
+|---|---|---|---|
+| Mío | −14,5 | +$43,88 | 9/8 |
+| Chaumer | −65 | −$145,30 calc. | 7/8 |
+| Claude | −37,5 | −$85,20 calc. | 5/5 |
+
+- **Backtesting manual, noviembre de 2025:** +248 pts, +$478,66, 11/6.
+- **Pantallas y navegación:**
+  - el 🔒 simulado y el enlace «Última: …»;
+  - escritorio y 375 px, sin desbordes;
+  - consola limpia.
+
+**Queda fuera:** julio y agosto del motor. Los 11 días de julio solo están como archivos, y
+del 21-jul al 25-ago el motor aún no ha corrido. El calendario de Claude empieza el 10-sep.
 
 ---
 

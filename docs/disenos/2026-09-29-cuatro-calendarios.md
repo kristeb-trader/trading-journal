@@ -1,11 +1,12 @@
 # Cuatro calendarios — una pantalla principal antes del calendario
 
-**Versión:** v1 · **Estado:** 🔵 **APROBADO el 29/09/2026**, en implementación.
+**Versión:** v1.1 · **Estado:** ✅ **CERRADO el 29/09/2026.** Las 5 fases implementadas y verificadas; D-032.
 **Escrito:** 29/09/2026. **Alcance:** la sección Calendario de la app (no el portal).
 
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 29/09/2026 | Primera versión, con las tres decisiones de Kris del §2 |
+| v1.1 | 29/09/2026 | **Implementado.** §10 con lo que cambió al construirlo |
 
 ---
 
@@ -287,3 +288,23 @@ Estimación: fases 2 y 3 de unas 20 llamadas cada una; 1 y 4 de unas 10.
 - **Los 116 gráficos del backtesting manual de 2025** que no están en `bt_jornadas`: la bitácora
   tiene 115 jornadas, y el calendario muestra lo que haya en la bitácora.
 - Comparar día a día con veredicto: ya lo hace Chaumer → *Diferencias*.
+
+## 10. Lo que cambió al construirlo
+
+Nada del diseño se descartó. Lo añadido, todo menor:
+
+- **`fmtPuntos` y `puntosDeTrade` pasan a `db.js`**, junto a `fmtMiles` y `fmtDinero`: el calendario,
+  los cuadros y las tarjetas suman y formatean los puntos con la misma función.
+- **Las tarjetas compactas llevan una segunda línea visible** (`.metric-sec`) con el P&L: el `sub` de
+  siempre está oculto en esa rejilla.
+- **La curva comparada usa interpolación monótona**: con la curva suavizada normal, entre dos días la
+  línea inventaba picos que no existieron.
+- **Dos defectos que salieron al construirlo:**
+  - La curva de "Mío" se pinta ahora con su contenedor oculto: con alto 0, el corte en cero daba NaN y
+    reventaba la carga de la sección. Además, al abrir "Mío" se vuelve a pintar ya visible.
+  - La rejilla del calendario se salía por la derecha en el móvil con textos largos: las columnas pasan a
+    `minmax(0, 1fr)` y la leyenda a varias líneas. Vale también para "Mío".
+- **El contexto de la barra** dice "Mío · Septiembre 2026" también en Mío. En el celular solo el mes,
+  porque no cabe.
+
+Las cifras de control del §3.2 coincidieron en la pantalla, en los cuadros y en la curva.

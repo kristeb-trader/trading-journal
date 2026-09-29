@@ -10,6 +10,36 @@
 
 ---
 
+## D-032 — El Calendario se lee en puntos; el P&L de Chaumer y Claude se calcula
+
+**Decisión (Kris, 29/09/2026).** Los cuatro calendarios —Mío, Chaumer, Claude y el
+backtesting manual— muestran **puntos** como cifra principal y el P&L debajo. Incluye el
+calendario de siempre: celdas, semanas, total del mes, la tarjeta *Puntos netos* y la curva.
+
+- **Mío:** puntos por **precio**, trade a trade (`puntosDeTrade`, `db.js`); P&L el real.
+- **Chaumer y Claude:** solo registran puntos. Su P&L se **calcula** con los datos de inicio
+  del backtesting (`bt_cabecera`: hoy 1 MNQ, $2/punto, $1,02 de comisión) y se marca *calc.*
+  Si Kris cambia esos datos en Otros → Backtesting, cambian estos P&L.
+- **Manual:** el P&L guardado, congelado. No se recalcula.
+
+**Motivo.** Es la única unidad que las cuatro fuentes comparten sin inventar nada, y es la
+medida de riesgo del proyecto (D-005). Para comparar el mismo mes contra Chaumer y el motor,
+el dinero no sirve: depende de cuántos contratos puso cada uno.
+
+**Lo que hay que saber al leerlo.** Los puntos **no se multiplican por contratos**, así que un
+mes puede ir en negativo en puntos y en positivo en dinero. Septiembre de 2026: **−14,5 pts y
++$43,88**, porque los trades ganadores llevaron más contratos. Por eso los dos números se ven
+siempre juntos.
+
+**Alternativas descartadas:**
+- *Cada calendario en su unidad* ($ en Mío y el manual, puntos en los otros): no se podían
+  comparar entre sí en la curva ni en los cuadros.
+- *Interruptor $ / pts:* un control más para la misma decisión, que Kris ya tomó.
+
+Diseño: `docs/disenos/2026-09-29-cuatro-calendarios.md`.
+
+---
+
 ## D-031 — El portal no consulta `prefers-reduced-motion`
 
 **Decisión (Kris, 29/09/2026).** El portal se anima **siempre**, sin preguntar al sistema

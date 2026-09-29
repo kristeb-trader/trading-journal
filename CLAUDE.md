@@ -119,7 +119,8 @@ js/db.js          Toda query a Supabase + cálculo canónico de disciplina +
                   fmtMiles/fmtDinero (formato de importes)
 js/form.js        Pestaña "Diario" de Sesión Operativa
 js/coach.js       Pestaña "Coach IA" (3 etapas) + renderHistorial = "Días anteriores"
-js/calendar.js    Calendario mensual · js/metrics.js  KPIs
+js/calendar.js    Calendario mensual (Mío, en puntos) · js/metrics.js  KPIs + curva (pintarEquity)
+js/calendarios.js La pantalla de los 4 calendarios (Mío · Chaumer · Claude · manual) y la vista de los 3 últimos
 js/charts.js      Sección Análisis · js/disciplina.js  Dashboard de Disciplina
 js/apex.js        Apex Tracker · js/experimentos.js  Laboratorio
 js/estrategia.js  El plan de Chaumer y la etapa anterior, de solo lectura · js/fechas.js  Fechas Especiales

@@ -13,6 +13,15 @@ Cosas hechas que no se pudieron probar del todo. Ninguna bloquea.
 - **A ojo, la UI del 16 ago:** los controles en la barra superior en móvil, y el alto de la imagen en la
   vista del día (`46vh` escritorio, `34vh` móvil)
 
+## Cuatro calendarios
+
+- **Julio y agosto en el calendario de Claude.** Hoy empieza el 10-sep: los 11 días de julio
+  (6–20) solo están como archivos en `chaumer/05_Backtesting/claude/`, y del 21-jul al 25-ago el
+  motor no ha corrido aunque hay velas. Sería pasar el motor por esos días y subir sus fichas con
+  `subir_dia.py`. Diseño: `docs/disenos/2026-09-29-cuatro-calendarios.md` §9.
+- **Por comprobar con la sesión iniciada:** los cuatro cuadros con los datos en vivo (verificado con
+  los de septiembre inyectados en la copia local, y cada cifra contra un `SELECT`).
+
 ## Comparador Chaumer vs yo
 
 Terminado; vive de cargar días en **Otros › Chaumer › Registrar** (también los que él no operó). Queda
