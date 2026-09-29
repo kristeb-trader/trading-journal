@@ -1,4 +1,0 @@
-Aqui deja Claude su grafico de cada jornada del test ciego: AAAA-MM-DD.png
-Lo genera dia.py.
-
-Carpeta renombrada el 14/09/2026: antes se llamaba "claude".

@@ -4,7 +4,7 @@ EL PUENTE de la cadena diaria (fase 7 · docs/disenos/2026-09-24-cadena-diaria.m
 
 Corre el motor de Chaumer sobre el archivo de velas de un día, hace su gráfico, lo sube a
 Cloudinary y guarda la FICHA en Supabase (motor_fichas). El motor se IMPORTA, no se copia:
-chaumer/05_Backtesting/lector.py y dia.py son de auditoría: un cambio en ellos pasa por
+chaumer/05_Backtesting/claude/motor/lector.py y dia.py son de auditoría: un cambio en ellos pasa por
 scripts/cadena/prueba_motor.py (D-026, D-028).
 
     python scripts/cadena/subir_dia.py 2026-09-23 [2026-09-22 ...]    unos días
@@ -14,7 +14,8 @@ scripts/cadena/prueba_motor.py (D-026, D-028).
 Lo lanza el AddOn CadenaDiaria de NinjaTrader; a mano, el acceso directo "Subir el dia.bat".
 Clave: la service_role de los indicadores (Documentos\\NinjaTrader 8\\supabase-service-key.txt).
 Umbral: el de chaumer/01_Plan/PARAMETROS.md. Días de Fed: Fechas Especiales (tipo fomc).
-Nunca escribe en test_ciego/ (es del test ciego, que marca a ciegas). Registro: %LOCALAPPDATA%\\TradingJournal\\cadena\\registro.txt
+El gráfico del día se queda en chaumer/05_Backtesting/claude/ (las Sesiones, 28/09/2026): de ahí lo publica
+el portal, pero solo al hacer push, nunca solo. Registro: %LOCALAPPDATA%\\TradingJournal\\cadena\\registro.txt
 """
 import os, re, sys, json, glob, hashlib, datetime, traceback, urllib.request, urllib.error, uuid
 
@@ -22,11 +23,12 @@ try: sys.stdout.reconfigure(encoding='utf-8')
 except Exception: pass
 
 RAIZ = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-BT = os.path.join(RAIZ, 'chaumer', '05_Backtesting')
+SESIONES = os.path.join(RAIZ, 'chaumer', '05_Backtesting', 'claude')   # un gráfico por día: AAAA-MM-DD.png
+BT = os.path.join(SESIONES, 'motor')
 PARAMETROS = os.path.join(RAIZ, 'chaumer', '01_Plan', 'PARAMETROS.md')
 DIA_MANUAL = os.path.join(BT, 'datos', 'dia')         # la exportación de Kris (y del AddOn tras la 7e)
 DIA_AUTO = os.path.join(BT, 'datos', 'dia_auto')      # la del AddOn mientras dura la verificación (7e)
-SALIDA = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), 'TradingJournal', 'cadena')
+SALIDA = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), 'TradingJournal', 'cadena')   # el registro
 CLAVE = os.path.join(os.path.expanduser('~'), 'Documents', 'NinjaTrader 8', 'supabase-service-key.txt')
 SUPABASE = 'https://jothoslozctflfrnysrx.supabase.co'
 CLOUDINARY = ('dq4n7bjta', 'trading-journal')         # los mismos que la app (js/config.js)
@@ -243,7 +245,7 @@ def procesar(fecha, umbral, desde, fed_set, huella_motor):
         else: log(f'{fecha}  exportación del AddOn = manual, línea a línea')
     grafico = None
     if estado == 'ok':
-        png = os.path.join(SALIDA, f'{fecha}.png')
+        png = os.path.join(SESIONES, f'{fecha}.png')
         ev2, t2 = dia.dibujar(d, png, path)
         if (t2 and {k: t2[k] for k in ('e', 's', 't', 'res')}) != (t and {k: t[k] for k in ('e', 's', 't', 'res')}):
             raise RuntimeError('el gráfico y la ficha no dan la misma operación')

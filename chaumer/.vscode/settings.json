@@ -17,7 +17,7 @@
   "search.exclude": {
     "**/node_modules": true,
     "04_Web/dist": true,
-    "05_Backtesting/datos": true
+    "05_Backtesting/claude/motor/datos": true
   },
 
   // Sin acentos rotos: todo el proyecto va en UTF-8.

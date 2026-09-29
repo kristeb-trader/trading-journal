@@ -2,7 +2,7 @@
 """
 LECTOR CHAUMER  ·  reescrito 2026-08-26 con las reglas confirmadas por el operador.
 HERRAMIENTA DE AUDITORIA. No es una herramienta operativa.
-Vive en 05_Backtesting, fuera de 01_Plan.
+Vive en 05_Backtesting/claude/motor (desde el 28/09/2026), fuera de 01_Plan.
 """
 import os, re
 
@@ -20,7 +20,7 @@ def umbral_del_plan():
     Sin __file__ (la regresion carga una version de git con exec) devuelve None: quien lo
     carga asi fija el umbral en cada pasada (scripts/cadena/prueba_motor.py lo hace)."""
     if '__file__' not in globals(): return None
-    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '01_Plan', 'PARAMETROS.md')
+    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '01_Plan', 'PARAMETROS.md')
     txt = open(ruta, encoding='utf-8').read()
     m = re.search(r'\|\s*\*\*`UMBRAL_VOL`\*\*\s*\|\s*\*\*>\s*([\d.]+)\s*contratos en MNQ\*\*', txt)
     if not m: raise ValueError('lector.py: no encuentro la fila UMBRAL_VOL en ' + ruta)

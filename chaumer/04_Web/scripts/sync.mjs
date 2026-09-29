@@ -4,7 +4,7 @@
  * 01_Plan/  -> src/content/
  * 02_Assets/ -> public/assets/
  *
- * 05_Backtesting/test_ciego/Back_claude/ -> public/assets/test-ciego/
+ * 05_Backtesting/claude/ -> public/assets/test-ciego/
  *
  * REGLA DURA: abre `01_Plan/`, `02_Assets/` y el test ciego en SOLO LECTURA y aborta si algun
  * destino cae fuera de `04_Web/`. El plan no se toca nunca desde aqui.
@@ -23,7 +23,7 @@ const ASSETS = path.join(RAIZ, '02_Assets');
 const DEST_CONTENIDO = path.join(WEB, 'src', 'content');
 const DEST_ASSETS = path.join(WEB, 'public', 'assets');
 // Los graficos del test ciego diario, uno por jornada (test_ciego/LEEME_BACK_DIARIO.md).
-const TEST_CIEGO = path.join(RAIZ, '05_Backtesting', 'test_ciego', 'Back_claude');
+const TEST_CIEGO = path.join(RAIZ, '05_Backtesting', 'claude');
 
 // Los documentos que el portal espera encontrar. Si falta uno, se avisa.
 // TRADING_PLAN_CHAUMER.md salió el 26/09/2026: las reglas viven en 01_Plan/reglas/ y llegan en reglas.json.
@@ -202,7 +202,7 @@ if (fs.existsSync(TEST_CIEGO)) {
     jornadas.push({ fecha: m[1], url: '/assets/test-ciego/' + f });
   }
 } else {
-  aviso('no existe 05_Backtesting/test_ciego/Back_claude: la pagina del test ciego saldra vacia');
+  aviso('no existe 05_Backtesting/claude: la pagina del test ciego saldra vacia');
 }
 fs.writeFileSync(
   path.join(DEST_CONTENIDO, 'test_ciego.json'),

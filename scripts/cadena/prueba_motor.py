@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Regresión del motor (chaumer/05_Backtesting/lector.py): compara el motor de una versión
+Regresión del motor (chaumer/05_Backtesting/claude/motor/lector.py): compara el motor de una versión
 de git (por defecto HEAD) con el del disco, día a día, sobre todos los datos disponibles.
 
     python scripts/cadena/prueba_motor.py            # HEAD contra el disco
@@ -16,12 +16,21 @@ import os, sys, glob, subprocess, types, importlib.util
 
 sys.stdout.reconfigure(encoding='utf-8')
 RAIZ = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-BT = os.path.join(RAIZ, 'chaumer', '05_Backtesting')
-REL = 'chaumer/05_Backtesting/lector.py'
+BT = os.path.join(RAIZ, 'chaumer', '05_Backtesting', 'claude', 'motor')
+# Dónde estaba lector.py en git: en claude/motor/ desde el 28/09/2026; antes, en la raíz de 05_Backtesting.
+RELS = ('chaumer/05_Backtesting/claude/motor/lector.py', 'chaumer/05_Backtesting/lector.py')
 
 
 def motor_de_git(ref):
-    src = subprocess.check_output(['git', '-C', RAIZ, 'show', f'{ref}:{REL}']).decode('utf-8')
+    for rel in RELS:
+        try:
+            src = subprocess.check_output(['git', '-C', RAIZ, 'show', f'{ref}:{rel}'],
+                                          stderr=subprocess.DEVNULL).decode('utf-8')
+            break
+        except subprocess.CalledProcessError:
+            continue
+    else:
+        raise SystemExit(f'lector.py no está en {ref} en ninguna de sus rutas')
     m = types.ModuleType('lector_' + ref)
     exec(compile(src, f'lector@{ref}', 'exec'), m.__dict__)
     return m

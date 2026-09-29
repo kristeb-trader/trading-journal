@@ -16,8 +16,8 @@ aplica, si no se cumple y las excepciones—, sin el porque ni los casos.
 import json, os, datetime
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
-REGLAS = os.path.join(AQUI, '..', '..', '01_Plan', 'reglas.json')
-PARAMS = os.path.join(AQUI, '..', '..', '01_Plan', 'PARAMETROS.md')
+REGLAS = os.path.join(AQUI, '..', '..', '..', '01_Plan', 'reglas.json')
+PARAMS = os.path.join(AQUI, '..', '..', '..', '01_Plan', 'PARAMETROS.md')
 SALIDA = os.path.join(AQUI, 'FICHA_MARCADO.md')
 
 

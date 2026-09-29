@@ -35,7 +35,7 @@ from matplotlib.patches import Rectangle
 AQUI = os.path.dirname(os.path.abspath(__file__))
 WEB = os.path.dirname(AQUI)
 RAIZ = os.path.dirname(WEB)
-BACKTEST = os.path.join(RAIZ, "05_Backtesting")
+BACKTEST = os.path.join(RAIZ, "05_Backtesting", "claude", "motor")
 DATOS = os.path.join(BACKTEST, "datos", "NQ 09-26.Last.txt")
 SALIDA = os.path.join(WEB, "public", "conceptos")
 

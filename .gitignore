@@ -28,11 +28,12 @@ chaumer/**/_Historia/
 chaumer/03_Materia_Prima/transcripciones/
 
 # datos de mercado exportados de NinjaTrader
-chaumer/05_Backtesting/datos/
+chaumer/05_Backtesting/claude/motor/datos/
 
-# graficos del backtesting manual: se quedan en disco (decision del 22/09/2026;
-# crecen cada dia y en git quedarian para siempre en el historial)
-chaumer/05_Backtesting/05_01_Operativo/Back_*/
+# graficos del backtesting manual (el de Kris): se quedan en disco (decision del
+# 22/09/2026; crecen cada dia y en git quedarian para siempre en el historial).
+# Las Sesiones de claude/ SI van a git: el portal se publica desde ahi.
+chaumer/05_Backtesting/kris/*.png
 
 # portal: lo que genera la compilacion
 chaumer/04_Web/node_modules/
