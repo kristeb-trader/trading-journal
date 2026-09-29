@@ -126,11 +126,13 @@ js/estrategia.js  El plan de Chaumer y la etapa anterior, de solo lectura · js/
 js/chaumer.js     Comparador Chaumer vs yo (pestañas Diferencias y Registrar)
 js/backtesting.js Bitácora de backtesting: registrar, corregir, borrar (bt_*)
 js/account-filter.js  Filtro de cuentas compartido (nombre COMPLETO)
+js/table.js       Trades · js/data.js  Datos (catálogos) · js/gallery.js  Imágenes
 css/styles.css    Dark mode + responsive
 NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) · ChecklistChaumer ·
                   RR (Risk Reward en PUNTOS) · CadenaDiaria (AddOn: exporta el día y lanza el puente)
 scripts/cadena/   El puente de la cadena diaria: motor → gráfico → ficha en Supabase → portal
-TelegramBot/      Bot (Cloudflare Worker)
+scripts/plan/     El plan de Chaumer → reglas.json, catalogo_reglas y plan_documentos
+TelegramBot/      Bot (Cloudflare Worker) · workers/proxy-ia/  copia del Worker proxy IA
 ```
 
 ## La carpeta `chaumer/`

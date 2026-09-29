@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-09-29b | La raíz en orden: el historial, partido en el 16/08 |
 | 2026-09-29 | Sesiones en vez de test ciego, dos carpetas de backtesting, y `chaumer/` en orden |
 | 2026-09-28 | Las reglas de Chaumer, cerradas: se pasa al backtesting |
 | 2026-09-25c | Cowork deja de existir: el plan se trabaja desde Claude Code |
@@ -32,6 +33,27 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-09-29b — La raíz en orden: el historial, partido en el 16/08
+
+**Qué se cerró** (diseño `2026-09-29-orden-raiz.md`, el criterio de D-030 fuera de `chaumer/`):
+
+- **El historial, partido.** Lo anterior al 16/08 —la foto del sistema de mayo (Coach con Sonnet 4.6, «repositorio
+  privado», el esquema de mayo), las fases 1–22 y los checkpoints hasta el 11/08— pasa a
+  `docs/archivo/historial-hasta-2026-08-15.md`. Este archivo baja de 169 KB a 61 KB, del más reciente al más
+  antiguo, con un índice que lista todos sus checkpoints (dos renombrados con sufijo: `2026-08-31b`, `2026-09-24b`;
+  el de «Ago 2026 (3)» es `2026-08-06`, ya en el archivo).
+- **La raíz:** `README.md` reescrito (decía «repositorio privado»); `desktop.ini` e `icons/TJ.ico` fuera de git,
+  en disco; `create-icons.html` borrado; `Otros/` a `docs/archivo/inicio-journal/`, en disco y fuera de git.
+- **Scripts:** borrados `TelegramBot/deploy.bat` y los tres `comparar-*.py` del 26/09; `medir-tokens.js` a
+  `scripts/herramientas/`; el prompt de la reestructuración de agosto, al archivo.
+- **Cifras al día:** el índice de migraciones (86 archivos), el mapa del código del `CLAUDE.md` y el backlog.
+
+**Verificado:** ninguna línea del historial se pierde (comprobado línea a línea contra el original); ninguna ruta
+viva apunta a un archivo movido o borrado; lo que sale de git, ignorado **antes** de moverlo; el Journal publicado
+sigue sirviendo la app y los iconos, y `TJ.ico` ya da 404; `medir-tokens.js` corre desde su sitio nuevo.
 
 ---
 

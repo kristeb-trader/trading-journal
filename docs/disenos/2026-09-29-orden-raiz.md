@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Versión** | v1 |
-| **Estado** | 🟢 Aprobado por Kris (29/09/2026), con `Otros/` al archivo en disco — en implementación |
+| **Estado** | ✅ Implementado y publicado (29/09/2026) |
 | **Precedente** | `2026-09-28-orden-chaumer.md` (D-030): el mismo criterio, aplicado fuera de `chaumer/` |
 
 ## 1. Diagnóstico
@@ -59,3 +59,19 @@ la carpeta conserva su icono). `create-icons.html`, borrado. `Otros/` → `docs/
   renombrados; el índice lista todas las secciones.
 - F2–F3: ninguna ruta viva apunta a un archivo borrado o movido; `git check-ignore` confirma lo ignorado antes de
   cualquier `git add`; la publicación del Journal en Actions termina en verde.
+
+## 4. Cómo quedó (29/09/2026)
+
+| Fase | Commit | Verificado |
+|---|---|---|
+| F1 · historial | `fe793c9` | 0 líneas perdidas contra el original; 21 checkpoints en el índice; 169 KB → 61 KB (+108 KB en el archivo) |
+| F2 · raíz | `d6b1061` | `git check-ignore` de `inicio-journal/`, `desktop.ini` y `TJ.ico`; «Publicar Journal» en verde; producción: `index.html` e `icon-192.png` 200, `TJ.ico` y `create-icons.html` 404 |
+| F3 · scripts | `82237a5` | ninguna ruta viva a lo movido o borrado; `medir-tokens.js arranque` corre desde `scripts/herramientas/` |
+| F4 · verdades | el de este cambio | `INDICE.md`: 86 archivos, todos con su fila (26 MCP + 4 sin registro + 56 previas) |
+
+**Desviaciones:** los IDs de Cloudflare y de Telegram no se tacharon (`wrangler.toml` los publica de todos modos). El
+mapa del `CLAUDE.md` gana también `scripts/plan/` y `workers/proxy-ia/`, que faltaban.
+
+**Resultado:** en la raíz, en git, solo quedan la app (`index.html`, `favicon.svg`, `manifest.json`, `sw.js`, `css/`,
+`js/`, `icons/`), sus piezas (`NinjaTrader/`, `TelegramBot/`, `workers/`, `scripts/`), `chaumer/`, `docs/`, `tasks/`,
+`CLAUDE.md` y `README.md`.

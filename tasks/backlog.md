@@ -85,9 +85,9 @@ solo según el Coach analiza días nuevos — no requiere trabajo manual, solo t
 
 ## Estructura del código
 
-Analizado en la reestructuración de agosto y **explícitamente aplazado**: 18 archivos JS
-(~10.400 líneas) sin módulos ni bundler, `index.html` con el markup de todas las secciones,
-`styles.css` de 4.217 líneas. Acoplamiento por ids del DOM.
+Analizado en la reestructuración de agosto y **explícitamente aplazado**. A 29/09/2026: 19 archivos JS
+(~13.900 líneas) sin módulos ni bundler, `index.html` con el markup de todas las secciones,
+`styles.css` de 5.507 líneas (en agosto eran 18, ~10.400 y 4.217). Acoplamiento por ids del DOM.
 
 Es el coste conocido de la decisión D-001, no un descuido. Si algún día se aborda, va con
 su propio diseño y su propia aprobación. Ver `docs/decisiones.md` D-001.

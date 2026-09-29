@@ -17,7 +17,7 @@
 | ⚠️ **sin registro** | Aplicada con `execute_sql` o a mano. Funcionó, pero no dejó rastro |
 | ✅ **previa al registro** | De antes de que existiera la práctica (jun – 15 jul 2026) |
 
-**Estado a 2026-08-16:** 65 archivos = 5 con registro en Supabase + 4 aplicadas sin
+**Estado a 2026-09-29:** 86 archivos = 26 con registro en Supabase + 4 aplicadas sin
 registrar (ago) + 56 previas a la práctica.
 
 ## Migraciones
