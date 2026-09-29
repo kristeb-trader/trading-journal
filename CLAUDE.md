@@ -205,6 +205,9 @@ motor de backtesting—, traído con su historia el 24 sep (`git subtree`; antes
   repositorio es público** (D-022): lo que hay en `chaumer/` se puede leer en GitHub.
 - Lo pesado y lo de terceros (velas, vídeos, gráficos del backtesting) está en disco y
   **fuera de git**: ver el bloque `chaumer/` del `.gitignore`.
+- **En `chaumer/` no se crean documentos nuevos** (D-030): diseños, pendientes, decisiones e
+  historia van a su sitio del Journal; lo que ya no vale, a `docs/archivo/chaumer/`. La tabla,
+  en `chaumer/CLAUDE.md`.
 
 ## Estado
 

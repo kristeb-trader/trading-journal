@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Versión** | v1 |
-| **Estado** | 🟢 Aprobado (29/09/2026), con P1 y P2 — en implementación |
+| **Estado** | ✅ Implementado y publicado (29/09/2026) |
 | **Fecha** | 28/09/2026 |
 | **Decidido con Kris** | `04_Web/textos/` ya no se usa: fuera · `chaumer/_Historia/` al archivo · `03_Materia_Prima/` ya no se usa: al archivo |
 
@@ -162,3 +162,21 @@ Cada fase, verificada y en su commit.
 | **F3 · Borrar** | §3.4 | `npm run verificar` sin fallos · el portal compila y se ve igual (captura) |
 | **F4 · Plan 3.35** | §3.5: P1 y P2, con tu sí | `vigilar --estricto`, sincronización con huella, `npm run verificar` |
 | **F5 · La regla** | §3.6 + D-030 | — |
+
+---
+
+## 5. Cómo quedó (29/09/2026)
+
+| Fase | Commit | Verificado |
+|---|---|---|
+| F1 · rescatar | `515b853` | `SUPABASE_PORTAL_KEY` comprobada (`/api/backtesting` responde con datos); el workflow y `markdownRico`, leídos antes de escribir las reglas |
+| F2 · archivar y mover | `e5a03dc` | ninguna ruta viva apunta a algo que ya no existe (quedaba solo la del plan, P1); `materia-prima/` comprobada como ignorada por git **antes** de cualquier `git add` |
+| F3 · borrar | `ef410db` | `npm run verificar`: 0 enlaces rotos, 0 fallos; 24 sesiones y 10 ejemplos con imagen. Sin captura nueva: no cambió el HTML de ninguna página, y `vista` renderiza el portal |
+| F4 · plan 3.35 | `78b2d82` | vigilante estricto sin avisos; checklist y contextualización aplicados por el MCP, los cinco documentos cuadran con su sha256; catálogo idéntico; `npm run verificar` 0 fallos |
+| F5 · la regla | el de este cambio | — |
+
+**Resultado:** la raíz de `chaumer/` tiene 5 carpetas (`.vscode`, `01_Plan`, `02_Assets`, `04_Web`, `05_Backtesting`)
+y `CLAUDE.md`; la de `04_Web/`, dos `.md` (`CLAUDE.md`, `DESPLIEGUE.md`).
+
+**Desviación:** ninguna del diseño. Se añadió, al escribir el `LEEME` del archivo, la línea de los dos documentos
+que ya estaban archivados desde el 25/09.

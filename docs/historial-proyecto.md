@@ -1,9 +1,11 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-09-25
+**Última actualización:** 2026-09-29
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-09-29 | Sesiones en vez de test ciego, dos carpetas de backtesting, y `chaumer/` en orden |
+| 2026-09-28 | Las reglas de Chaumer, cerradas: se pasa al backtesting |
 | 2026-09-25c | Cowork deja de existir: el plan se trabaja desde Claude Code |
 | 2026-09-25b | Fase 8: el portal suelta R2 — unificación Chaumer completa |
 | 2026-09-25 | Fase 7: la cadena diaria |
@@ -2876,6 +2878,30 @@ Commits: `f20786d` · `21b82c0` · `221379d` · `29496d7` · `3bbaffa` · `fb32a
   `parsearSetupsJson` cortaba el resumen del veredicto en la palabra «setup» y guardaba los `**`.
 
 Commits: `272b5ea` · `57006aa` · `804a1dc` y el de la 6c.
+
+## Checkpoint 2026-09-29 — Sesiones en vez de test ciego, dos carpetas de backtesting, y `chaumer/` en orden
+
+**Qué se cerró** (diseños `2026-09-28-sesiones-y-carpetas.md` y `2026-09-28-orden-chaumer.md`; D-029 y D-030):
+
+- **Sesiones.** «Test ciego» y «Sesiones de julio» son una sola cosa: una pestaña en el portal, con la misma
+  tarjeta (fecha, gráfico, resultado con sus puntos, setup). Plan 3.34: el término sale del plan; `P-29` sigue
+  abierto como «las sesiones de validación». Los 21 gráficos de julio y septiembre, redibujados con el motor de hoy:
+  21 de 21 iguales a las tablas del plan.
+- **`05_Backtesting/` = `kris/` + `claude/`** (sesiones, `protocolo/`, `motor/` con los datos). El motor dibuja el
+  gráfico del día ahí, y **lo publica solo si el día ya está registrado** (el candado del motor); no sube nada si
+  GitHub va por delante o hay commits locales sin subir.
+- **`chaumer/` en orden:** 6 documentos y `_Historia/` al archivo (con un `LEEME` de en qué miente cada uno),
+  `DESPLIEGUE` reescrito, 53 archivos borrados que no usaba nadie, y una regla: en `chaumer/` no nacen documentos.
+  Plan 3.35: dos rutas al día.
+
+**Verificado:** la regresión del motor antes y después de la mudanza (48 de 48); `npm run verificar` sin fallos
+tras cada fase; los documentos del Coach, con su huella sha256 comprobada en la BD; la publicación automática,
+contra un repositorio de prueba.
+
+**Pendiente:** la primera publicación automática lanzada por NinjaTrader (29/09, 10:32) y recompilar
+`CadenaDiaria` en NT8 — `tasks/current.md`.
+
+---
 
 ## Checkpoint 2026-09-28 — Las reglas de Chaumer, cerradas: se pasa al backtesting
 

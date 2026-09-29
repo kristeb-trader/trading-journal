@@ -33,6 +33,27 @@ Si trabajando en otra cosa ves algo mal en el plan, **díselo al operador en ese
 
 ---
 
+## Dónde va cada cosa — en `chaumer/` no nacen documentos
+
+Hasta el 29/09/2026 cada chat abría su propio `.md` aquí dentro, y acabó habiendo cinco sitios con el estado y
+documentos que mentían (D-030). **En `chaumer/` no se crea ningún documento nuevo.** Cada cosa va a su sitio del
+Journal:
+
+| Si es… | Va a |
+|---|---|
+| un diseño | `docs/disenos/AAAA-MM-DD-tema.md` |
+| un pendiente | `tasks/current.md` |
+| una decisión y su porqué | `docs/decisiones.md` |
+| lo que pasó | `docs/historial-proyecto.md` · del plan, solo en `01_Plan\HISTORIAL.md` |
+| una imagen de trabajo (una duda, una previa, una comparación) | el scratchpad de la sesión, **nunca** el repositorio |
+| algo que ya no vale | `docs/archivo/chaumer/`, con su línea en el `LEEME` |
+
+Lo único que vive en `chaumer/`: el plan (`01_Plan\`), las imágenes que publica el portal (`02_Assets\`), el portal
+(`04_Web\`, con `CLAUDE.md` y `DESPLIEGUE.md`), las Sesiones (`05_Backtesting\`, con los tres documentos de su
+protocolo) y este archivo.
+
+---
+
 ## Dónde está la verdad, y qué leer para cada cosa
 
 **Las reglas viven en `01_Plan\reglas\`: siete archivos, uno por grupo, en el orden del día** — perímetro (4) · estructura (3) · **zonas (13)** · setup y entrada (5) · riesgo y gestión (5) · filtros (3) · proceso (1). Cada regla con la misma plantilla: la regla, cómo se aplica, si no se cumple, excepciones y por qué. Es **la única fuente**: se edita ahí y en ningún otro sitio (desde el 26/09/2026; diseño en `docs/disenos/2026-09-25-reglas-chaumer.md`, en la raíz del repositorio).

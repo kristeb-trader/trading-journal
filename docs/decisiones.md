@@ -10,6 +10,34 @@
 
 ---
 
+## D-030 — En `chaumer/` no nacen documentos; lo que ya no vale se archiva
+
+**Decisión (Kris, 29/09/2026).** `chaumer/` se queda con lo que de verdad se usa: el plan, las imágenes que
+publica el portal, el portal y las Sesiones. **No se crean documentos nuevos allí**: cada cosa va a su sitio del
+Journal (tabla en `chaumer/CLAUDE.md`). Lo que ya no describe el proyecto va a `docs/archivo/chaumer/`, con un
+`LEEME` que dice en qué miente cada archivo.
+- Archivados: `FASES`, `ESTADO_FASE_2`, `DISENO_PORTAL`, `DIAGNOSTICO_PORTAL`, `CAMBIO_IRI_A_CONTINUACION`,
+  `DISENO_COACH` y `chaumer/_Historia/` (que hasta hoy solo estaba en disco). Antes, sus 4 pendientes vivos
+  pasaron a `tasks/current.md` y sus 3 reglas vivas al `CLAUDE.md` del portal.
+- `DESPLIEGUE.md`, reescrito: decía que el portal se subía a mano y que el código era privado.
+- `DISENO_BACKTESTING` pasa a `docs/disenos/2026-09-09-bitacora-backtesting.md`.
+- Borrados (git los conserva): 28 imágenes de trabajo, 9 imágenes que no enseñaba ninguna página, los textos
+  del portal (Kris: ya no se usan) y sus dos scripts, un script de un solo uso y tres archivos sueltos.
+- La materia prima (transcripciones de Chaumer) va al archivo **en disco, fuera de git**: es de terceros y el
+  repositorio es público.
+
+**Motivo.** Hasta el 25/09 Cowork y Claude Code se comunicaban escribiéndose documentos, y cuando Cowork
+desapareció (D-028) se quedaron; sin una regla de dónde va cada cosa, cada chat abría el suyo. El estado estaba en
+cinco sitios, había documentos que mentían, y 4 pendientes solo existían en un archivo de seguimiento que ya
+nadie leía.
+
+**Alternativas descartadas.** Reorganizar también `01_Plan/`: cada archivo del plan es un cambio que necesita el
+sí de Kris, y el portal, el Coach y los scripts leen esos nombres. No es donde estaba el desorden.
+
+**Diseño:** `docs/disenos/2026-09-28-orden-chaumer.md`.
+
+---
+
 ## D-029 — «Test ciego» pasa a llamarse Sesiones, y `05_Backtesting` se queda en dos carpetas
 
 **Decisión (Kris, 28/09/2026).** Las sesiones de julio y las del test ciego de septiembre son lo mismo:
