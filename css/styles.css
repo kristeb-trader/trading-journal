@@ -856,20 +856,51 @@ body[data-modo-local]::before {
 .cal-leyenda-nota { margin-left: auto; color: var(--text3); font-size: 0.75rem; }
 .cal-tip-obs { margin-top: 6px; font-size: 0.74rem; }
 
-/* Celular: un cuadro por fila, y el mini calendario pasa a una tira de un color
-   por día — cuatro calendarios a este ancho no se leen (diseño §4.2). */
+/* Celular: los CUATRO calendarios en miniatura en la misma pantalla, 2×2 (Kris,
+   30 sep). Cada miniatura enseña el P&L, el acierto, T/S y el mes como una
+   rejilla de colores sin números; al tocarla se amplía (calendarios.js, zoom). */
 @media (max-width: 768px) {
-  .hub-grid { grid-template-columns: 1fr; gap: 12px; }
-  .hub-mini { display: flex; flex-wrap: wrap; gap: 3px; }
-  .hub-mini-cab, .hub-dia.hueco { display: none; }
-  .hub-dia { min-height: 0; width: 14px; height: 14px; border-radius: 3px; }
-  .hub-dia-n, .hub-dia-p { display: none; }
+  .hub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+  .hub-grid .hub-card { padding: 10px 9px 9px; gap: 7px; border-radius: 12px; }
+  .hub-grid .hub-card-head { gap: 5px; }
+  .hub-grid .hub-icono { display: none; }
+  .hub-grid .hub-nombre { font-size: 0.66rem; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .hub-grid .hub-abrir { font-size: 0; gap: 0; }
+  .hub-grid .hub-abrir i { font-size: 0.85rem; }
+  /* Las tres tarjetas se compactan: el P&L en una fila, acierto y T/S debajo. */
+  .hub-grid .hub-kpis { grid-template-columns: 1fr 1fr; gap: 2px 6px; }
+  .hub-grid .hub-kpi { background: none; border: 0; padding: 0; align-items: flex-start; text-align: left; gap: 0; }
+  .hub-grid .hub-kpi:first-child { grid-column: 1 / -1; }
+  .hub-grid .hub-kpi-l, .hub-grid .hub-kpi-s { display: none; }
+  .hub-grid .hub-kpi-v { font-size: 0.82rem; font-weight: 700; }
+  .hub-grid .hub-kpi:first-child .hub-kpi-v { font-size: 1.15rem; font-weight: 800; }
+  .hub-grid .hub-kpis.vacias .hub-kpi:not(:first-child) { display: none; }
+  .hub-grid .hub-aviso { display: none; }
+  /* El mes, en colores: la misma rejilla L–V, sin números. */
+  .hub-grid .hub-mini { gap: 2px; }
+  .hub-grid .hub-mini-cab { font-size: 0.5rem; padding: 0; }
+  .hub-grid .hub-dia { min-height: 0; height: 13px; border-radius: 3px; }
+  .hub-grid .hub-dia-n, .hub-grid .hub-dia-p { display: none; }
   .cal-hub { min-height: 0; }
   .hub-curva-cuerpo { flex-direction: column; }
   .hub-curva-lienzo { flex: none; height: 230px; }
   .hub-curva-leyenda { width: auto; }
-  .hub-kpi-v { font-size: 1.15rem; }
 }
+
+/* El calendario ampliado (zoom desde su miniatura). Es la misma tarjeta a tamaño
+   completo, con los puntos de cada día, y un botón para abrir su calendario. */
+.hub-zoom { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.hub-zoom-fondo { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.62); }
+.hub-zoom-caja {
+  position: relative; width: min(100%, 460px); max-height: calc(100vh - 32px); overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px; transform-origin: top left; will-change: transform;
+}
+.hub-zoom-caja .hub-card { cursor: default; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55); }
+.hub-zoom-caja .hub-card:hover { transform: none; }
+.hub-zoom-caja .hub-dia { min-height: 40px; }
+.hub-zoom-cerrar { position: absolute; top: 8px; right: 8px; z-index: 1; }
+.hub-zoom-caja .hub-abrir { visibility: hidden; }
+.hub-zoom-abrir { width: 100%; justify-content: center; }
 
 /* ── Metrics ─────────────────────────────────────────────────────────── */
 .period-selector { display: flex; gap: 4px; }

@@ -314,7 +314,8 @@ const Calendarios = (() => {
     const grid = $('hubGrid')
     grid.innerHTML = FUENTES.map(f => tarjeta(f, dias[f.id], y, m, esp)).join('')
     grid.querySelectorAll('.hub-card').forEach(card => {
-      const abrirla = () => abrir(card.dataset.fuente)
+      // En el celular la miniatura se AMPLÍA primero; en escritorio se abre directa.
+      const abrirla = () => (enCelular() ? ampliar(card) : abrir(card.dataset.fuente))
       card.addEventListener('click', e => { if (!e.target.closest('.hub-ir')) abrirla() })
       card.addEventListener('keydown', e => {
         if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('.hub-ir')) { e.preventDefault(); abrirla() }
@@ -326,10 +327,86 @@ const Calendarios = (() => {
       if (!u || token !== pedido) return
       btn.textContent = `Última: ${MES_CORTO[u.m - 1]} ${u.y} →`
       btn.hidden = false
+      btn.dataset.y = u.y; btn.dataset.m = u.m   // para el mismo enlace dentro del zoom
       btn.addEventListener('click', e => { e.stopPropagation(); Calendar.irAMes(u.y, u.m) })
     })
     pintarCurvaComparada(dias, y, m)
   }
+
+  // ── Zoom de una miniatura (celular) ──────────────────────────────────────
+  // En el celular los cuatro calendarios caben en miniatura (2×2). Tocar uno lo
+  // AMPLÍA desde su sitio —una transición de cámara: acercarse es entrar— y al
+  // cerrar vuelve a encogerse hacia él. Desde el zoom, «Abrir calendario» lleva a
+  // su vista completa. Con movimiento reducido, se abre y cierra sin animar.
+  const enCelular = () => window.matchMedia('(max-width: 768px)').matches
+  const quieto = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const SALIDA = 'cubic-bezier(0.16, 1, 0.3, 1)', ESTANDAR = 'cubic-bezier(0.4, 0, 0.2, 1)'
+  let zoomActual = null
+
+  function ampliar(card) {
+    cerrarZoom(false)
+    const f = FUENTE[card.dataset.fuente]
+    const capa = document.createElement('div')
+    capa.className = 'hub-zoom'
+    capa.innerHTML = `
+      <div class="hub-zoom-fondo"></div>
+      <div class="hub-zoom-caja" role="dialog" aria-modal="true" aria-label="Calendario ${esc(f.nombre)}">
+        <button type="button" class="btn-icon hub-zoom-cerrar" aria-label="Cerrar"><i class="ti ti-x"></i></button>
+        ${card.outerHTML}
+        <button type="button" class="btn btn-primary hub-zoom-abrir">Abrir calendario <i class="ti ti-arrow-right"></i></button>
+      </div>`
+    const copia = capa.querySelector('.hub-card')
+    copia.removeAttribute('tabindex'); copia.removeAttribute('role'); copia.removeAttribute('aria-label')
+    document.body.appendChild(capa)
+    document.body.classList.add('modal-open')
+    const caja = capa.querySelector('.hub-zoom-caja'), fondo = capa.querySelector('.hub-zoom-fondo')
+    zoomActual = { capa, caja, fondo, card }
+
+    capa.querySelector('.hub-zoom-cerrar').addEventListener('click', () => cerrarZoom())
+    fondo.addEventListener('click', () => cerrarZoom())
+    capa.querySelector('.hub-zoom-abrir').addEventListener('click', () => { cerrarZoom(false); abrir(f.id) })
+    capa.querySelector('.hub-ir[data-y]')?.addEventListener('click', e => {
+      const b = e.currentTarget; cerrarZoom(false); Calendar.irAMes(+b.dataset.y, +b.dataset.m)
+    })
+    capa.querySelector('.hub-zoom-abrir').focus({ preventScroll: true })
+
+    if (quieto() || !caja.animate) return
+    // De la miniatura al tamaño completo: se parte del rectángulo de la miniatura
+    // (misma esquina, misma anchura) y se asienta con la curva de salida.
+    const a = card.getBoundingClientRect(), b = caja.getBoundingClientRect()
+    const k = a.width / b.width
+    caja.animate([
+      { transform: `translate(${a.left - b.left}px, ${a.top - b.top}px) scale(${k})`, opacity: 0.5 },
+      { transform: 'none', opacity: 1 },
+    ], { duration: 450, easing: SALIDA })
+    fondo.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250, easing: ESTANDAR })
+  }
+
+  function cerrarZoom(animar = true) {
+    const z = zoomActual
+    if (!z) return
+    zoomActual = null
+    // Idempotente: lo llaman el final de la animación y un respaldo con tiempo,
+    // porque si la pestaña no pinta (en segundo plano) la animación no avanza.
+    let hecho = false
+    const fin = () => {
+      if (hecho) return
+      hecho = true
+      z.capa.remove()
+      if (!zoomActual) document.body.classList.remove('modal-open')
+    }
+    setTimeout(fin, 400)
+    if (!animar || quieto() || !z.caja.animate || !z.card.isConnected) return fin()
+    // De vuelta a su miniatura: alejarse es salir.
+    const a = z.card.getBoundingClientRect(), b = z.caja.getBoundingClientRect()
+    const k = a.width / b.width
+    z.fondo.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: ESTANDAR, fill: 'forwards' })
+    z.caja.animate([
+      { transform: 'none', opacity: 1 },
+      { transform: `translate(${a.left - b.left}px, ${a.top - b.top}px) scale(${k})`, opacity: 0.4 },
+    ], { duration: 280, easing: ESTANDAR, fill: 'forwards' }).onfinish = fin
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && zoomActual) cerrarZoom() })
 
   // ── Curva comparada: los puntos acumulados de cada fuente en el mes ─────
   function pintarCurvaComparada(dias, y, m) {
@@ -500,6 +577,7 @@ const Calendarios = (() => {
   function mostrar(v) {
     vista = v
     ocultarTip()
+    cerrarZoom(false)
     $('calHub').classList.toggle('hidden', v !== 'hub')
     $('calMio').classList.toggle('hidden', v !== 'mio')
     $('calFuente').classList.toggle('hidden', !(v in FUENTE) || v === 'hub' || v === 'mio')
@@ -824,6 +902,7 @@ const Calendarios = (() => {
   }
 
   function alCambiarMes() {
+    cerrarZoom(false)   // la miniatura de origen se va a redibujar
     contexto()
     if (vista === 'hub') renderHub()
     else if (vista !== 'mio') renderFuente(vista)

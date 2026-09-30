@@ -1,6 +1,6 @@
 # Cuatro calendarios — una pantalla principal antes del calendario
 
-**Versión:** v1.4 · **Estado:** ✅ **CERRADO el 29/09/2026.** Las 5 fases implementadas y verificadas; D-032.
+**Versión:** v1.5 · **Estado:** ✅ **CERRADO el 29/09/2026.** Las 5 fases implementadas y verificadas; D-032.
 **Escrito:** 29/09/2026. **Alcance:** la sección Calendario de la app (no el portal).
 
 | Versión | Fecha | Qué cambió |
@@ -350,3 +350,18 @@ distribución que no deje hueco abajo. Sustituye al §4.
   (se separan si coinciden en altura) y guía vertical al pasar el ratón.
 - **Al lado de la curva**, la clasificación del mes (puntos, P&L y T/S de cada calendario, ordenados),
   en lugar de la leyenda. En el celular va debajo.
+
+## 14. Ajuste del 30/09 (v1.5): en el celular, los cuatro en miniatura y zoom
+
+Kris: en el celular, los cuatro calendarios **en miniatura en la misma pantalla**, y poder ampliar
+el que quiera. Sustituye al §4.2 (un cuadro por fila con tira de colores).
+
+- **2×2 en miniatura:** cada una con el P&L, el acierto y T/S, y el mes como rejilla L–V de colores
+  sin números. A 375×812, los cuatro terminan a media pantalla y la curva empieza debajo.
+- **Tocar una miniatura la amplía** (skill `lenguaje-movimiento`, transición de cámara): la tarjeta
+  crece desde su sitio hasta tamaño completo, con los puntos de cada día, en 450 ms con la curva de
+  salida; al cerrar vuelve a encogerse hacia su miniatura (280 ms). Acercarse es entrar, alejarse es
+  salir. Desde el zoom, **«Abrir calendario»** lleva a su vista completa.
+- Se cierra con la ✕, tocando fuera o con Escape. Con **movimiento reducido** se abre y cierra sin
+  animar. Si la pestaña no pinta, un respaldo de 400 ms lo cierra igual.
+- **En escritorio no cambia nada:** el clic abre la vista completa directamente.
