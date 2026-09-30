@@ -716,3 +716,43 @@ subida en un día que abre bajista (variante `SOLO_ZONA_DE_CORRIDA`); cuenta el 
 vez; y el rompimiento de 8:35 lo anota a las 8:35 para buscar la entrada y a las 8:36 para dibujar la zona.
 Además resuelve a las 9:45 el plazo del rompimiento de 9:40, que a mano se resuelve a las 9:44 por estructura
 contraria (sin efecto).
+
+---
+
+# Julio, revalidado con el motor nuevo (30/09/2026)
+
+Al pasar el motor a la corrida fluida 3.36 cambiaron cuatro días de julio validados como NO OPERA. Revisados uno a
+uno con el operador, sobre el gráfico de cada día con los tramos numerados:
+
+| Día | Queda | Lo que dijo el operador |
+|---|---|---|
+| 16/07 | Continuación bajista 8:46 · STOP 9:01 · −66,75 | el primer IRI se descarta por no ser fluido; el segundo cumple y se descarta por el stop (88,00); el tercero se ingresa y sale por stop, *"igual que mi operativa"* |
+| 7/07 | Continuación bajista 9:43 · STOP 9:48 · −56,50 | *"es correcta la entrada de las 9:43"* |
+| 9/07 | Continuación alcista 8:55 · STOP 9:07 · −29,75 | *"es correcta la entrada de las 8:55"* |
+| 20/07 | Continuación bajista 8:58 · TARGET 9:02 · +54,50 | *"la ruptura de las 8:57 es entrada"* |
+
+🟡 **Las reglas no cubrían el caso (20/07).** La regla decía que, cuando un retroceso se pasa, cae también la zona
+que deja ese retroceso. No cae: se juzga en su propio sentido, como primer o segundo IRI (plan 3.38).
+
+---
+
+# Miércoles 2 de septiembre de 2026 — coincidimos
+
+> 📝 **Marcada el 30/09/2026**, a ciegas. Primera jornada con el motor ya en la corrida fluida 3.38.
+
+**Sin noticias rojas. No es día de Fed.**
+
+**Veredicto: Continuación alcista, +29,00 pts = +58,00 USD.** El motor y la lectura a mano coinciden, y coincide con el operador.
+
+| | |
+|---|---|
+| Primer movimiento | **bajista** (8:31, abre 29.098,25 · cierra 29.065,25) |
+| Premercado | **sin zonas** — ninguna vela pasa de 8.000 |
+| Zona | resistencia **29.160,50 – 29.168,00** (vela 9:21), entera por encima de la de 8:43, que había fallado |
+| Entrada | largo · la vela de **9:22** rompe la zona · se llena en la de **9:23** en **29.177,50** |
+| Stop | **29.148,50** · Objetivo **29.206,50** · riesgo **29,00 pts** |
+| Resultado | **TARGET a las 9:36** · +29,00 pts |
+
+Antes: un corto a las 8:38 (orden en 29.036,50) que se cancela a las 8:41 sin llenarse; el primer IRI alcista (8:41),
+que no se opera; y el segundo (resistencia de 8:43), que falla porque la subida siguiente no la rompe.
+

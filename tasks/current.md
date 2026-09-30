@@ -24,7 +24,8 @@ El motor corre sobre cualquier día del que haya velas de 1 minuto; lo que limit
   a las 8:46); en la corrida fluida, el caso del 16/07 no dice cómo acaba el día
 - [ ] **Doce días sin validar de julio y agosto cambian con el motor nuevo** (1, 23, 28 y 31/07; 3, 5, 6, 7, 11, 13,
   14 y 18/08): se ven cuando les toque en el backtesting
-- [ ] **Siguiente día:** 2/09 (velas en `datos/dia/Septiembre.txt`, hasta el 9/09)
+- **Hecho:** 2/09 (Continuación alcista 9:23, +29,00; coincide)
+- [ ] **Siguiente día:** 3/09 (velas en `datos/dia/Septiembre.txt`, hasta el 9/09)
 
 Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md`, checkpoint del 28/09.
 
