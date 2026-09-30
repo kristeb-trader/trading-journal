@@ -1,6 +1,6 @@
 # FICHA DE MARCADO — generada automáticamente
 
-> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-09-29 con `generar_ficha.py`.
+> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-09-30 con `generar_ficha.py`.
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
@@ -427,7 +427,7 @@ Tras un rompimiento con consecución que falla, el precio recupera la zona enter
 Cumplidas las tres, ese rompimiento es la entrada — el cuarto paso de la Continuación (`R-25`). Los dos primeros se miden sobre el zigzag: la corrida, de su punto de arranque a su extremo; el retroceso, de ese mismo extremo a su nivel de referencia (`R-06`).
 
 **Las cuatro formas de fallar**, y basta una:
-- **A · El retroceso se pasa.** Mide más que su corrida. Entonces caen **las dos zonas** de esa pareja: la de la corrida **y la que deja el propio retroceso pasado**.
+- **A · El retroceso se pasa.** Mide más que su corrida: la zona de esa corrida ya no da entrada. **La zona que deja ese retroceso no cae con ella:** se juzga en su propio sentido, como primer o segundo IRI.
 - **B · La corrida siguiente no rompe.** Llega a la zona y no la pasa, **o la rompe sin consecución y se devuelve**. Esa zona ya no da entrada, aunque el precio la vuelva a romper más tarde.
 - **C · Es el primer IRI después de un movimiento contrario.** Aunque cumpla las tres condiciones, no es fluido. Se espera un **segundo IRI** en ese sentido, con su zona nueva **entera más allá** de la del primero, y se entra en la consecución del rompimiento de esa zona.
 - **D · Mercado mixto.** Cuando un tramo llega más allá del **punto donde empezó** el IRI anterior, no se opera en ningún sentido hasta que se arme un IRI por fuera de **los extremos: la resistencia más alta y el soporte más bajo**. Después se espera el segundo IRI, como en C.
