@@ -666,6 +666,7 @@ De aquí sale además el término **corrida fluida**, que es el que gobierna aho
 | Día | Setup | Resultado | Puntos |
 |---|---|---|---|
 | **1 sep** | **Continuación alcista 9:44** *(backtesting hacia atrás, 29/09)* | **TARGET 9:47** | **+15,75** |
+| **2 sep** | **Continuación alcista 9:23** *(backtesting hacia atrás, 30/09)* | **TARGET 9:36** | **+29,00** |
 | **10 sep** | **Continuación alcista 8:40** | **TARGET 8:41** | **+40,50** |
 | **11 sep** | ninguna zona marcada en toda la sesión | NO OPERA | — |
 | **14 sep** | la apertura baja 43,50 y el retroceso sube 53,25 — se pasa | NO OPERA | — |
@@ -677,7 +678,7 @@ De aquí sale además el término **corrida fluida**, que es el que gobierna aho
 | **22 sep** | Continuación alcista 8:37 | **TARGET 8:51** | **+44,50** |
 | **23 sep** | Continuación bajista 8:36 | STOP 8:36 | **−28,25** |
 
-> 🔵 **Estos días sí cuentan distinto.** Los once de julio se marcaron con el operador delante, corrigiendo vela a vela. Éstos se marcaron **a ciegas** y se contrastaron después. Siguen sin tener valor estadístico —son once— pero son los primeros que prueban el plan en vez de construirlo.
+> 🔵 **Estos días sí cuentan distinto.** Los once de julio se marcaron con el operador delante, corrigiendo vela a vela. Éstos se marcaron **a ciegas** y se contrastaron después. Siguen sin tener valor estadístico —son doce— pero son los primeros que prueban el plan en vez de construirlo.
 
 ### Lo que decía esta tabla antes del 14/09/2026
 
