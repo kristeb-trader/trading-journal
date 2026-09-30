@@ -643,21 +643,23 @@ De aquí sale además el término **corrida fluida**, que es el que gobierna aho
 > 🔴 **Esta tabla se rehízo el 14/09/2026** al reescribirse la regla de la corrida fluida. Cuatro días pierden su operación y uno la cambia. Lo que decía antes está justo debajo, para no perder el rastro.
 >
 > 🔴 **Y el 28/09/2026 el 8 de julio pasa de NO OPERA a un reingreso con −64,75**, revalidado por el operador. El total pasa de −77,75 en 5 a **−142,50 en 6**.
+>
+> 🔴 **Y el 30/09/2026 vuelven cuatro operaciones**, al reescribirse otra vez la corrida fluida (cada tramo en su sentido, plan 3.36) y revisar el operador los cuatro días uno a uno: 7, 9, 16 y 20 de julio. El total pasa a **−241,00 en 10**.
 
 | Día | Setup | Resultado | Puntos |
 |---|---|---|---|
 | **6 jul** | Reingreso bajista 8:48 | STOP 8:51 | **−58,75** |
-| **7 jul** | *(retirado el 14/09 — corrida no fluida)* | NO OPERA | — |
+| **7 jul** | Continuación bajista 9:43 *(revalidada el 30/09)* | STOP 9:48 | **−56,50** |
 | **8 jul** | Reingreso bajista 8:38 *(día de Fed; revalidado el 28/09)* | STOP 8:41 | **−64,75** |
-| **9 jul** | *(retirado el 14/09 — corrida no fluida)* | NO OPERA | — |
+| **9 jul** | Continuación alcista 8:55 *(revalidada el 30/09; antes del 14/09 era la de 8:46)* | STOP 9:07 | **−29,75** |
 | **10 jul** | Continuación alcista 8:38 | STOP 8:40 | **−53,50** |
 | **13 jul** | Reingreso bajista 10:04 | **TARGET 10:09** | **+28,50** |
 | **14 jul** | dos entradas bajistas descartadas por `STOP_MAX` | NO OPERA | — |
 | **15 jul** | **Continuación bajista 8:38** | **TARGET 8:39** | **+56,25** |
-| **16 jul** | *(la bajista de 8:40 se retira el 14/09 — la corrida no era fluida)* | NO OPERA | — |
+| **16 jul** | Continuación bajista 8:46 *(revalidada el 30/09; la de 8:40 sigue retirada)* | STOP 9:01 | **−66,75** |
 | **17 jul** | Continuación alcista 9:04 *(la bajista de 8:44 se retira el 14/09)* | STOP 9:05 | **−50,25** |
-| **20 jul** | *(la bajista de 8:58 se retira el 14/09 — corrida no fluida)* | NO OPERA | — |
-| | | **Total** | **−142,50 pts en 6 operaciones** |
+| **20 jul** | **Continuación bajista 8:58** *(revalidada el 30/09)* | **TARGET 9:02** | **+54,50** |
+| | | **Total** | **−241,00 pts en 10 operaciones** |
 
 ## Sesiones de septiembre — día por día
 
