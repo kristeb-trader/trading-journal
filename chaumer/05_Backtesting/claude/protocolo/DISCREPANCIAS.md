@@ -811,3 +811,31 @@ soporte de 8:37 (entrada 29.602,00), que descarta solo porque el objetivo choca 
 ese corto no se plantea. Además, a mano el rompimiento de las 8:49 se resuelve a las 8:52 por estructura contraria y
 la resistencia de 8:37 se estira a 29.650,00.
 
+---
+
+# Martes 8 de septiembre de 2026 — coincidimos · la zona de premercado que sale por los dos lados
+
+> 📝 **Marcada el 30/09/2026**, a ciegas. El lunes 7 fue festivo.
+
+**Sin noticias rojas. No es día de Fed.**
+
+**Veredicto: NO OPERA.** Coincide con el operador (*"el 08 de septiembre está bien"*).
+
+| | |
+|---|---|
+| Primer movimiento | **alcista** (8:31, abre 29.644,50 · cierra 29.659,75) |
+| Premercado | **una zona**, 29.626,00 – 29.649,00 (vela 5:21, 8.713 contratos). La apertura cae dentro |
+| Largos | bloqueados desde las 8:35: la apertura sube 48,25 y la bajada hace 115,00. El precio no vuelve a 29.686,75 |
+| Cortos | primer IRI a las 8:36, no se opera · el soporte de 8:45 falla (la bajada siguiente no lo rompe) · mercado mixto a las 8:54 · el soporte de 9:12 falla (el retroceso se pasa) |
+| Reingresos | 8:40 bajista, descartado por el punto de referencia 29.561,50, a un tick de la entrada (29.561,75) · 8:51 bajista, el objetivo choca con el soporte de 8:45 |
+
+## 🔧 Fue el motor · sin efecto hoy
+
+**La zona de premercado sale por los dos lados.** La vela de 8:31 la rompe por arriba sin consecución; la de 8:33 la
+rompe por abajo y la de 8:34 da la consecución: a mano queda **resistencia** desde las 8:34. El motor anota el
+rompimiento de arriba, lo deja pendiente para siempre y ya no mira el otro lado: la zona se queda sin papel todo el día
+y el gráfico la rotula «soporte».
+
+**El hueco del 4/09, otra vez.** La zona de la apertura no nace como zona de corrida (aquí es una apéndice) y el
+motor no ve que el retroceso se pasa de la apertura.
+
