@@ -604,7 +604,16 @@ const Nav = {
     if (!this.initialized.has(sectionId)) {
       this.initialized.add(sectionId)
       try {
-        if (sectionId === 'calendar') { await Calendar.init(); await Metrics.init(); await Calendarios.init() }
+        if (sectionId === 'calendar') {
+          // En paralelo, no en cadena: lo primero que se ve es la pantalla de los
+          // cuatro calendarios, y antes esperaba a que terminaran "Mío" y sus
+          // métricas, que están ocultos. Calendar.init crea el filtro de cuentas en
+          // su parte síncrona, así que ya existe cuando los otros dos lo leen.
+          await Promise.all([Calendar.init(), Metrics.init(), Calendarios.init()])
+          // El filtro nace en "todas" y fija su selección guardada al final de
+          // Calendar.init: si no es "todas", lo pintado antes se repinta con ella.
+          if (!AccountFilter.isAll('calendar')) { Metrics.rerender(); Calendarios.alCambiarMes() }
+        }
         if (sectionId === 'trades') await TradesTable.init()
         if (sectionId === 'register') { SessionForm.init(); SessionForm.onShow() }
         if (sectionId === 'gallery') await Gallery.init()

@@ -1,6 +1,6 @@
 # Cuatro calendarios — una pantalla principal antes del calendario
 
-**Versión:** v1.5 · **Estado:** ✅ **CERRADO el 29/09/2026.** Las 5 fases implementadas y verificadas; D-032.
+**Versión:** v1.6 · **Estado:** ✅ **CERRADO el 29/09/2026.** Las 5 fases implementadas y verificadas; D-032.
 **Escrito:** 29/09/2026. **Alcance:** la sección Calendario de la app (no el portal).
 
 | Versión | Fecha | Qué cambió |
@@ -365,3 +365,19 @@ el que quiera. Sustituye al §4.2 (un cuadro por fila con tira de colores).
 - Se cierra con la ✕, tocando fuera o con Escape. Con **movimiento reducido** se abre y cierra sin
   animar. Si la pestaña no pinta, un respaldo de 400 ms lo cierra igual.
 - **En escritorio no cambia nada:** el clic abre la vista completa directamente.
+
+## 15. Ajuste del 30/09 (v1.6): mi calendario vuelve a P&L, y la primera carga
+
+- **Mi calendario, como antes** (Kris): celdas, semanas, total del mes, la tarjeta *P&L Neto*, la
+  curva y el recuadro del día, en **P&L**. Los puntos de Mío se ven solo en la pantalla de los
+  cuatro calendarios. Sustituye al §5.1 y deja sin efecto, para Mío, el §11. Chaumer, Claude y el
+  manual no cambian.
+- **La primera entrada tardaba.** La pantalla de los cuatro esperaba en cadena a `Calendar.init` y
+  `Metrics.init` (que pintan "Mío", oculto) antes de pintarse, y las tres cargas descargaban por
+  separado las sesiones completas (≈170 filas + 2.555 de checklist) y los trades. Ahora:
+  - las tres arrancan **en paralelo** (`Nav.go`, `app.js`);
+  - `DB.getSesiones()` y `DB.getTrades()` sin filtros **comparten la petición en curso**
+    (`_compartido`, `db.js`): tres llamadas simultáneas, una descarga. Al terminar se olvida, así
+    que nunca sirve un dato viejo;
+  - el filtro de cuentas nace en "todas" y fija su selección al final de `Calendar.init`: si no es
+    "todas", la pantalla se repinta con ella.

@@ -520,7 +520,14 @@ function calcDisciplinaStats(sesiones, items, opts) {
 const DB = {
   // ── Trades ──────────────────────────────────────────────────────────────
 
-  async getTrades(filters = {}) {
+  getTrades(filters = {}) {
+    // Sin filtros es la lectura que piden a la vez calendar.js y metrics.js.
+    return Object.keys(filters).length
+      ? this._getTrades(filters)
+      : this._compartido('trades', () => this._getTrades())
+  },
+
+  async _getTrades(filters = {}) {
     let q = supa.from('trades').select('*')
       .order('trade_date', { ascending: false })
       .order('entry_time', { ascending: false })
@@ -569,7 +576,22 @@ const DB = {
 
   // ── Sesiones ─────────────────────────────────────────────────────────────
 
-  async getSesiones() {
+  // Llamadas simultáneas a la misma lectura comparten UNA petición. Al entrar al
+  // Calendario, calendar.js, metrics.js y calendarios.js piden a la vez las
+  // sesiones (≈170 filas + 2.500 de checklist) y los trades: eran tres descargas
+  // iguales. Solo se comparte la que está EN CURSO; al terminar se olvida, así que
+  // nunca sirve un dato viejo después de guardar.
+  _enCurso: {},
+  _compartido(clave, fn) {
+    if (!this._enCurso[clave]) {
+      this._enCurso[clave] = fn().finally(() => { delete this._enCurso[clave] })
+    }
+    return this._enCurso[clave]
+  },
+
+  getSesiones() { return this._compartido('sesiones', () => this._getSesiones()) },
+
+  async _getSesiones() {
     const { data, error } = await supa
       .from('sesiones')
       .select('*, sesion_checklist(regla_codigo, cumplido)')
