@@ -1,6 +1,6 @@
 # Cuatro calendarios — una pantalla principal antes del calendario
 
-**Versión:** v1.2 · **Estado:** ✅ **CERRADO el 29/09/2026.** Las 5 fases implementadas y verificadas; D-032.
+**Versión:** v1.3 · **Estado:** ✅ **CERRADO el 29/09/2026.** Las 5 fases implementadas y verificadas; D-032.
 **Escrito:** 29/09/2026. **Alcance:** la sección Calendario de la app (no el portal).
 
 | Versión | Fecha | Qué cambió |
@@ -316,3 +316,18 @@ Kris, tras usarlo: **dentro de cada calendario, la primera tarjeta y el total de
 P&L en grande y los puntos debajo** (en Chaumer y Claude, marcado *calc.*). Sustituye a la tarjeta
 "Puntos netos" del §5.1 y §5.2. Lo demás sigue en puntos: la pantalla principal, las celdas, las
 semanas y la curva.
+
+## 12. Ajuste del 30/09 (v1.3): el clic abre la vista del día, con su gráfico
+
+Kris: que los otros calendarios enseñen la imagen al clicar un día, como el suyo. El clic abre ahora
+**la misma vista del día a pantalla completa** (`Modal.openFuente`, `app.js`): cabecera con resultado,
+puntos, P&L y setup; el gráfico fijo, que se amplía al clicar; y debajo lo escrito del día. Sustituye
+al recuadro fijo con «Ver gráfico» del §5.2; el recuadro al pasar el ratón se queda.
+
+| Fuente | Gráfico | Texto |
+|---|---|---|
+| Chaumer | `imagen_url` | el motivo si no operó; `contexto` y `notas` |
+| Claude | `grafico_url` | «El motor no encontró operación», si es el caso |
+| Manual | `bt_jornadas.imagen` | las observaciones de cada operación y las notas de la jornada |
+
+El día 🔒 de Claude abre la vista **sin gráfico ni operación**, solo con «Registra tu día».

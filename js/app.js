@@ -84,6 +84,26 @@ const Modal = {
     document.body.classList.add('modal-open')
   },
 
+  // La misma vista del día, para un día que NO es del journal: Chaumer, Claude o
+  // el backtesting manual (calendarios.js). Misma cabecera, misma imagen fija con
+  // ampliación y mismo cuerpo con bloques; el contenido lo trae quien llama, ya
+  // escapado. No toca currentSesion: aquí no hay diario que abrir.
+  openFuente({ titulo, stats = '', imagen = null, cuerpo = '' }) {
+    const modal = document.getElementById('dayModal')
+    document.getElementById('modalDateTitle').textContent = titulo
+    document.getElementById('modalHeadStats').innerHTML = stats
+    const img = document.getElementById('modalDiaImg')
+    img.innerHTML = imagen
+      ? '<img alt="Gráfico del día" loading="lazy" style="cursor:zoom-in" title="Clic para ampliar">'
+      : '<div class="dv-sin-img"><i class="ti ti-photo-off"></i> Sin gráfico para este día</div>'
+    const el = img.querySelector('img')
+    if (el) { el.src = imagen; el.addEventListener('click', () => Lightbox.open(el.src)) }
+    document.getElementById('modalDia').innerHTML = cuerpo
+    modal.querySelector('.dv-scroll')?.scrollTo({ top: 0 })
+    modal.classList.remove('hidden')
+    document.body.classList.add('modal-open')
+  },
+
   // ── Helpers de render del modal ─────────────────────────────────────────
   _TIPO_EMO: { psicologico: '🧠', analitico: '📐', operativo: '⚙️', marcado: '🗺️' },
 

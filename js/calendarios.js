@@ -119,11 +119,15 @@ const Calendarios = (() => {
     return dias
   }
 
+  // Lo que Chaumer dejó escrito del día, para la vista del día.
+  const textosChaumer = c => [['Contexto', c.contexto], ['Notas', c.notas]].filter(t => t[1])
+
   function diasChaumer(filas, y, m, cab) {
     const pre = prefijo(y, m), dias = {}
     ;(filas || []).filter(c => c.fecha?.startsWith(pre)).forEach(c => {
       if (!c.opero) {
-        dias[c.fecha] = { fecha: c.fecha, ops: [], estado: 'no-opero', nota: c.motivo_no_opero || '' }
+        dias[c.fecha] = { fecha: c.fecha, ops: [], estado: 'no-opero', nota: c.motivo_no_opero || '',
+                             url: c.imagen_url || null, textos: textosChaumer(c) }
         return
       }
       const p = parseFloat(c.puntos) || 0
@@ -134,7 +138,8 @@ const Calendarios = (() => {
         setup: [SETUP[tipo] || tipo, sentido].filter(Boolean).join(' '),
         hora: horaCorta(c.hora_entrada),
       }
-      dias[c.fecha] = { fecha: c.fecha, ops: [op], estado: estadoPorOps([op]) }
+      dias[c.fecha] = { fecha: c.fecha, ops: [op], estado: estadoPorOps([op]),
+                        url: c.imagen_url || null, textos: textosChaumer(c) }
     })
     return dias
   }
@@ -179,8 +184,8 @@ const Calendarios = (() => {
         obs: o.observaciones || '',
       }))
       dias[j.fecha] = ops.length
-        ? { fecha: j.fecha, ops, estado: estadoPorOps(ops), nota: j.notas || '' }
-        : { fecha: j.fecha, ops: [], estado: 'sin-op', nota: j.notas || 'Jornada sin operación' }
+        ? { fecha: j.fecha, ops, estado: estadoPorOps(ops), nota: j.notas || '', url: j.imagen || null }
+        : { fecha: j.fecha, ops: [], estado: 'sin-op', nota: j.notas || 'Jornada sin operación', url: j.imagen || null }
     })
     return dias
   }
@@ -597,10 +602,10 @@ const Calendarios = (() => {
     const grid = $('fuenteGrid')
     grid.innerHTML = cuadricula(f, diasVista, y, m, esp)
     grid.querySelectorAll('[data-date]').forEach(cell => {
-      cell.addEventListener('click', e => { e.stopPropagation(); mostrarTip(cell, true) })
+      cell.addEventListener('click', () => { ocultarTip(); abrirDia(cell.dataset.date) })
       if (conRaton) {
-        cell.addEventListener('mouseenter', () => mostrarTip(cell, false))
-        cell.addEventListener('mouseleave', () => { if (!tipFijo) ocultarTip() })
+        cell.addEventListener('mouseenter', () => mostrarTip(cell))
+        cell.addEventListener('mouseleave', ocultarTip)
       }
     })
 
@@ -621,10 +626,8 @@ const Calendarios = (() => {
   }
 
   // ── Recuadro del día ─────────────────────────────────────────────────────
-  // Al pasar el ratón, como en "Mío". Al clicar (y en el celular, donde no hay
-  // ratón) se queda fijo y admite clics: Claude lleva ahí "Ver gráfico".
+  // Al pasar el ratón, como en "Mío". El clic abre la vista del día (abrirDia).
   const conRaton = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches
-  let tipFijo = false
 
   function tipHtml(fe) {
     const d = diasVista[fe]
@@ -649,11 +652,54 @@ const Calendarios = (() => {
       html += fila(fuenteVista.calc ? 'P&L calc.' : 'P&L', `<span class="${clsSigno(o.pnl)}">${fmtDinero(o.pnl)}</span>`)
       if (o.obs) html += `<div class="cal-tip-muted cal-tip-obs">${esc(o.obs)}</div>`
     })
-    if (d.url) {
-      html += `<div class="cal-tip-sep"></div>
-        <a class="cal-tip-link" href="${esc(d.url)}" target="_blank" rel="noopener"><i class="ti ti-photo"></i> Ver gráfico</a>`
-    }
     return html
+  }
+
+  // ── Vista del día ────────────────────────────────────────────────────────
+  // La misma pantalla completa que abre "Mío" (Modal, app.js): cabecera con el
+  // resultado, el gráfico fijo —se amplía al clicar— y debajo lo escrito del día.
+  // El día 🔒 de Claude no enseña ni gráfico ni operación.
+  function abrirDia(fe) {
+    const d = diasVista[fe]
+    if (!d) return
+    const f = fuenteVista, fecha = new Date(`${fe}T12:00:00`)
+    const titulo = `${DIAS[fecha.getDay()]} ${fecha.getDate()} ${cap(MES_CORTO[fecha.getMonth()])} ${fecha.getFullYear()} · ${f.nombre}`
+    const bloque = (lbl, txt, tono = '') =>
+      `<div class="dv-block ${tono}"><div class="dv-lbl">${lbl}</div><div class="dv-txt"><p>${esc(txt).replace(/\n/g, '<br>')}</p></div></div>`
+    const celda = (lab, val) => `<div class="mh-stat"><label>${lab}</label>${val}</div>`
+
+    if (d.estado === 'bloqueado') {
+      Modal.openFuente({ titulo, cuerpo: bloque('Día sin registrar', 'Registra tu día para ver lo que marcó el motor.', 'gry') })
+      return
+    }
+
+    const ETIQ = { target: ['TARGET', 'r-t', 'tone-t'], stop: ['STOP', 'r-s', 'tone-s'], mixed: ['MIXTO', 'r-o', 'tone-o'],
+                   be: ['B.E.', 'r-o', 'tone-o'], 'no-opero': ['NO OPERÓ', 'r-o', 'tone-o'],
+                   'sin-op': ['SIN OPERACIÓN', 'r-o', 'tone-o'], error: ['ERROR', 'r-o', 'tone-o'] }
+    const [txt, rb, tono] = ETIQ[d.estado] || ETIQ['sin-op']
+    const celdas = [celda('Resultado', `<span class="cz-rb ${rb}">${txt}</span>`)]
+    if (d.ops.length) {
+      const p = ptsDe(d), usd = pnlDe(d)
+      celdas.push(celda('Puntos', `<span class="mh-val ${p < 0 ? 'neg' : 'pos'}">${fmtPts(p)}</span>`))
+      celdas.push(celda(f.calc ? 'P&amp;L calc.' : 'P&amp;L', `<span class="mh-val ${usd < 0 ? 'neg' : 'pos'}">${fmtDinero(usd)}</span>`))
+      const o = d.ops[0]
+      const setup = [o.setup, o.dir && !/alcista|bajista/i.test(o.setup) ? o.dir.toLowerCase() : ''].filter(Boolean).join(' ')
+      if (setup) celdas.push(`<div class="mh-stat mh-stat-setup"><label>Setup</label><span class="mh-setup">${esc(setup)}${o.hora ? ` · ${esc(o.hora)}` : ''}</span></div>`)
+    }
+
+    let cuerpo = ''
+    if (!d.ops.length && d.nota) cuerpo += bloque(d.estado === 'no-opero' ? 'Por qué no operó' : 'Sin operación', d.nota, 'gry')
+    d.ops.forEach((o, i) => {
+      const lineas = [
+        d.ops.length > 1 ? `${o.setup}${o.hora ? ` · ${o.hora}` : ''} — ${fmtPts(o.puntos)} pts · ${fmtDinero(o.pnl)}` : '',
+        o.obs,
+      ].filter(Boolean).join('\n')
+      if (lineas) cuerpo += bloque(d.ops.length > 1 ? `Operación ${i + 1}` : 'Observaciones', lineas, o.res === 'stop' ? 'red' : '')
+    })
+    ;(d.textos || []).forEach(([lbl, t]) => { cuerpo += bloque(lbl, t, 'blu') })
+    if (d.ops.length && d.nota) cuerpo += bloque('Notas', d.nota, 'blu')
+
+    Modal.openFuente({ titulo, stats: `<div class="mh-box ${tono}">${celdas.join('')}</div>`, imagen: d.url, cuerpo })
   }
 
   function tipEl() {
@@ -665,20 +711,16 @@ const Calendarios = (() => {
       el.setAttribute('role', 'tooltip')
       document.body.appendChild(el)
       window.addEventListener('scroll', ocultarTip, { passive: true, capture: true })
-      document.addEventListener('click', e => { if (tipFijo && !el.contains(e.target)) ocultarTip() })
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') ocultarTip() })
     }
     return el
   }
 
-  function mostrarTip(cell, fijo) {
+  function mostrarTip(cell) {
     const html = tipHtml(cell.dataset.date)
     if (!html) return
     const el = tipEl()
     el.innerHTML = html
     el.classList.add('visible')
-    el.classList.toggle('fijo', fijo)
-    tipFijo = fijo
     const r = cell.getBoundingClientRect()
     const w = el.offsetWidth, h = el.offsetHeight, mg = 8
     let x = Math.max(mg, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - mg))
@@ -689,8 +731,7 @@ const Calendarios = (() => {
   }
 
   function ocultarTip() {
-    tipFijo = false
-    $('calTipFuente')?.classList.remove('visible', 'fijo')
+    $('calTipFuente')?.classList.remove('visible')
   }
 
   // ── API ──────────────────────────────────────────────────────────────────
