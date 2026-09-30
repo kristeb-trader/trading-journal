@@ -6,7 +6,7 @@ const Charts = (() => {
   let allFechasEsp = []   // para el contexto de disciplina (regla FOMC)
   const instances = {}
 
-  let period   = 'month'                       // month | quarter | year
+  let period   = 'year'                        // month | quarter | year — Análisis abre en Anual
   let curYear  = new Date().getFullYear()
   let curMonth = new Date().getMonth() + 1     // 1-12 (para period=month)
   let curQ     = Math.floor(new Date().getMonth() / 3) + 1  // 1-4 (para period=quarter)
