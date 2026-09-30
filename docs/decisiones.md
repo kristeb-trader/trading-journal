@@ -36,6 +36,10 @@ siempre juntos.
   comparar entre sí en la curva ni en los cuadros.
 - *Interruptor $ / pts:* un control más para la misma decisión, que Kris ya tomó.
 
+**Matiz (30/09/2026).** Dentro de cada calendario, la primera tarjeta y el total del mes muestran
+el **P&L en grande y los puntos debajo**: Kris lo prefirió al usarlo. La pantalla principal, las
+celdas, las semanas y la curva siguen en puntos. Las dos cifras se siguen viendo siempre juntas.
+
 Diseño: `docs/disenos/2026-09-29-cuatro-calendarios.md`.
 
 ---

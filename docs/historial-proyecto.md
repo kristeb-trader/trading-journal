@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-09-30b | Cuatro calendarios: dentro de cada uno manda el P&L |
 | 2026-09-30 | El backtesting de Chaumer arranca: la corrida fluida, reescrita sobre el 1/09, y el motor nuevo |
 | 2026-09-29c | Cuatro calendarios: Mío, Chaumer, Claude y el manual, en puntos |
 | 2026-09-29b | La raíz en orden: el historial, partido en el 16/08 |
@@ -35,6 +36,26 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-09-30b — Cuatro calendarios: dentro de cada uno manda el P&L
+
+Ajuste de Kris tras usar la pantalla (diseño `2026-09-29-cuatro-calendarios.md`, v1.2 §11; matiza D-032):
+
+- **Dentro de cada calendario** —Mío, Chaumer, Claude y el manual—, la **primera tarjeta** y el
+  **total del mes** muestran el **P&L en grande y los puntos debajo**. La tarjeta vuelve a llamarse
+  *P&L Neto*; en Chaumer y Claude, *P&L calc.*, porque su dinero es calculado.
+- **Sigue en puntos:** la pantalla principal de los cuatro cuadros, las celdas de cada día, el
+  resumen de cada semana y la curva.
+- **Por qué los dos números no coinciden** (lo preguntó Kris: −14,5 pts con +$43,88 en septiembre):
+  los puntos cuentan cada trade una vez y el dinero multiplica por contratos. Los tres stops más
+  largos del mes (−53,25, −39,5 y −25,75) fueron con 1 contrato; con 1 contrato fijo el mes iría en
+  unos −$46. En puntos × contratos: +490,5 de targets y −452,75 de stops = +37,75 → +$75,50, menos
+  $31,62 de comisiones = +$43,88.
+
+**Verificado** en la copia local, consola limpia: la tarjeta y el total dan el mismo par de cifras
+en Mío y en Claude. Las cuentas de septiembre, contra un `SELECT` de `trades`.
 
 ---
 
