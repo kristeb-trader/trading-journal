@@ -414,7 +414,7 @@ Tras un rompimiento con consecución que falla, el precio recupera la zona enter
 
 **Cómo se aplica**
 
-**Cómo se emparejan corrida y retroceso.** La vela de apertura declara el sentido (`R-07`). Desde ahí el mercado va alternando: una corrida en ese sentido, su retroceso en contra, otra corrida, otro retroceso. **Cada corrida se empareja con el retroceso que viene justo después de ella, y las parejas no se solapan.** Tras una pareja rota, la cuenta vuelve a empezar con la corrida siguiente.
+**Cómo se emparejan corrida y retroceso.** La vela de apertura dice cómo **empieza el primer movimiento**, no la dirección del día (`R-07`). **Cada tramo se juzga en su propio sentido:** una corrida alcista con el retroceso que viene justo después de ella, y una corrida bajista con el suyo.
 
 **Las tres condiciones**, sobre la zona que se va a romper, antes de colocar la orden:
 
@@ -422,15 +422,17 @@ Tras un rompimiento con consecución que falla, el precio recupera la zona enter
 |---|---|
 | **1** | la **corrida** deja su zona al terminar (`R-09`) |
 | **2** | el **retroceso no se pasa**: mide menos que su corrida. Empate cuenta como que no se pasa |
-| **3** | la **corrida siguiente rompe** esa zona |
+| **3** | la **corrida siguiente rompe** esa zona. Vale aunque la rompa la misma vela que hace el retroceso: primero va en contra y después rompe |
 
 Cumplidas las tres, ese rompimiento es la entrada — el cuarto paso de la Continuación (`R-25`). Los dos primeros se miden sobre el zigzag: la corrida, de su punto de arranque a su extremo; el retroceso, de ese mismo extremo a su nivel de referencia (`R-06`).
 
-**Las dos formas de fallar**, y basta una:
+**Las cuatro formas de fallar**, y basta una:
 - **A · El retroceso se pasa.** Mide más que su corrida. Entonces caen **las dos zonas** de esa pareja: la de la corrida **y la que deja el propio retroceso pasado**.
-- **B · La corrida siguiente no rompe.** Llega a la zona, no es capaz de pasarla y se devuelve: esa zona queda bloqueada.
+- **B · La corrida siguiente no rompe.** Llega a la zona y no la pasa, **o la rompe sin consecución y se devuelve**. Esa zona ya no da entrada, aunque el precio la vuelva a romper más tarde.
+- **C · Es el primer IRI después de un movimiento contrario.** Aunque cumpla las tres condiciones, no es fluido. Se espera un **segundo IRI** en ese sentido, con su zona nueva **entera más allá** de la del primero, y se entra en la consecución del rompimiento de esa zona.
+- **D · Mercado mixto.** Cuando un tramo llega más allá del **punto donde empezó** el IRI anterior, no se opera en ningún sentido hasta que se arme un IRI por fuera de **los extremos: la resistencia más alta y el soporte más bajo**. Después se espera el segundo IRI, como en C.
 
-**El bloqueo es del SENTIDO, no de esa zona.** El sentido del día lo declara la vela de apertura: si cierra por debajo de donde abrió, el día es bajista y se buscan cortos; si cierra por encima, alcista y largos. Perdida la fluidez, **no se opera ningún rompimiento en el sentido del día**, sea cual sea la zona — incluidas las **zonas de premercado** (`R-15`), que no tienen corrida detrás y a las que por eso no se les puede mirar si su corrida fue limpia: el bloqueo las alcanza igual. **Solo el sentido del día:** el bloqueo no toca el sentido contrario.
+**El bloqueo es del sentido que perdió la fluidez**, no de esa zona ni del día. Perdida la fluidez, **no se opera ningún rompimiento en ese sentido**, sea cual sea la zona — incluidas las **zonas de premercado** (`R-15`), que no tienen corrida detrás y a las que por eso no se les puede mirar si su corrida fue limpia: el bloqueo las alcanza igual. **El otro sentido lleva su propia cuenta.**
 
 **El rompimiento directo** (término del operador). Con el sentido bloqueado, el mercado acabará rompiendo la zona. **Ese rompimiento no se opera nunca:** por parámetros cumple, pero el mercado está lateral y por contexto pierde probabilidad. Sirve solo como primer paso de la recuperación.
 

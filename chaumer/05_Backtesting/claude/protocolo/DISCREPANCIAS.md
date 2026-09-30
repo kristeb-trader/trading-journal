@@ -663,3 +663,56 @@ el resultado**: leída al revés, la orden se cancela y el día da +47,50.
 El operador la da por buena: *"fue un stop válido, la vela primero bajó, hizo consecución y la misma vela
 después subió al stop"*. **Confirmado el 23/09/2026** y escrito en la regla de caducidad de la orden (versión
 3.13). No abre pendiente.
+
+---
+
+# Martes 1 de septiembre de 2026 — el motor no ve la entrada · la fluidez, aclarada sobre el día
+
+> 📝 **Marcada el 29/09/2026**, primera jornada del backtesting hacia atrás (velas de MNQ 09-26 exportadas ese día).
+> Ciega: no se abrió nada del operador de ese día antes de entregar.
+
+**Noticia roja: ISM Manufacturing PMI a las 9:00. No es día de Fed.**
+
+**Veredicto (a mano, con el operador): Continuación alcista, +15,75 pts = +31,50 USD.** El motor dice NO OPERA.
+
+| | |
+|---|---|
+| Dirección de la vela de apertura | **bajista** (8:31, abre 29.111,75 · cierra 29.097,75) |
+| Premercado | **sin zonas** — la vela más fuerte hizo 7.610 (3:07), por debajo del umbral de 8.000 |
+| Zona | resistencia **29.215,50 – 29.223,50** (vela 9:42), entera por encima de la de 9:36 ya traspasada |
+| Entrada | largo · la vela de **9:43** rompe la zona · se llena en la de **9:44** en **29.224,50** |
+| Stop | **29.208,75** · Objetivo **29.240,25** · riesgo **15,75 pts** |
+| Resultado | **TARGET a las 9:47** · +15,75 pts |
+
+## 🟡 Las reglas no cubrían el caso — el operador explicó la fluidez sobre este día
+
+La regla de corrida fluida dice que la vela de apertura declara **el sentido del día**, y que perdida la fluidez
+se bloquea ese sentido. El operador lo corrige: *"la dirección de la vela de apertura no declara la dirección
+del día, declara cómo inicia el primer movimiento de la apertura"* — lo mismo que ya dice la regla de la vela de
+apertura, que la regla de corrida fluida contradice. Su lectura, tramo a tramo (zigzag 8:31–8:51):
+
+1. Corrida 1 bajista, retroceso 2, y la corrida 3 **no rompe** el soporte de 8:32 (se queda en 29.085,00):
+   se pierde la fluidez bajista. Para un corto: que se rompa el soporte y se arme otro IRI.
+2. **2-3-4 es un IRI alcista normal, pero el movimiento anterior (1) era bajista: eso le quita la fluidez.**
+   El primer IRI en contra del movimiento anterior no se opera; se espera **un segundo IRI** en ese sentido,
+   con su zona **nueva por encima** de la del primero, y se entra en la consecución de su rompimiento. Así cae el
+   largo de las 8:35.
+3. El 5 baja más allá de todo 2-3-4: **mercado mixto**. Se espera un IRI por fuera de **los extremos**, que son
+   *"la resistencia más alta y el soporte más bajo"*.
+4. 6-7-8 es un IRI alcista que apenas pasa el extremo (la resistencia de 8:36): se espera el segundo IRI arriba.
+
+Y dos decisiones más, sobre las velas:
+
+- **9:31 no es entrada.** La resistencia de 9:17 (la del segundo IRI) ya se rompió a las 9:23 con mecha, sin
+  consecución, y se devolvió: *"la 9:23 ya falló"*. Una zona que falla así no da entrada al volver a romperse.
+  Leído de otro modo, el día habría dado +52,50.
+- **La ruptura de las 9:43 vale aunque la haga la misma vela que forma el retroceso** (primero baja y nace la
+  zona, después sube y la rompe por 0,75). Confirmado por el operador: *"la entrada de las 09:44 es válida"*.
+
+## 🔧 El motor
+
+No ve la entrada por tres cosas: da la dirección del día a la vela de apertura y nunca opera la zona de una
+subida en un día que abre bajista (variante `SOLO_ZONA_DE_CORRIDA`); cuenta el rompimiento de una zona una sola
+vez; y el rompimiento de 8:35 lo anota a las 8:35 para buscar la entrada y a las 8:36 para dibujar la zona.
+Además resuelve a las 9:45 el plazo del rompimiento de 9:40, que a mano se resuelve a las 9:44 por estructura
+contraria (sin efecto).
