@@ -12,9 +12,14 @@ delante: nada de listas previas (decisión de Kris, 28/09). Si cambia el motor, 
 **Objetivo (Kris, 28/09):** poder hacer el backtesting completo **de cualquier fecha**, no de un tramo fijo.
 El motor corre sobre cualquier día del que haya velas de 1 minuto; lo que limita es qué velas hay.
 
-- [ ] **Arrancar:** ver con Kris cómo conseguir las velas de 1 minuto de MNQ del periodo que quiera, exportadas
-  de NinjaTrader (hoy solo hay del 01/07 al 25/08/2026 y los días desde el 10/09), y cómo encaja el backtesting
-  manual de 2025 (116 gráficos)
+- **Velas:** NinjaTrader las tiene guardadas desde el 12/06/2025 (MNQ 09-25, 12-25, 03-26, 06-26, 09-26, 12-26):
+  se exportan por **contrato** (el de ese vencimiento, no el siguiente). El backtesting a mano de 2025 (116 gráficos,
+  01/08/2025 → 16/01/2026) queda cubierto. Septiembre, en `datos/dia/Septiembre.txt` (MNQ 09-26, 31/08 → 18/09).
+- **Hecho:** 1/09 (Continuación alcista 9:44, +15,75; el motor dice NO OPERA). Sale la corrida fluida 3.36.
+- [ ] **El motor, a la corrida fluida 3.36:** cada tramo en su sentido, segundo IRI, mercado mixto, la ruptura
+  sin consecución que deja la zona fallida, y que cada zona pueda romperse más de una vez. Después la regresión:
+  si cambia algún día validado, a Kris. Hasta entonces, los días se marcan a mano encima del motor
+- [ ] `claude/2026-09-01.png` sin subir: es el del motor y dice NO OPERA
 
 Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md`, checkpoint del 28/09.
 
