@@ -366,7 +366,6 @@ namespace NinjaTrader.NinjaScript.AddOns
                 Background = Brush("#2A2A26"), BorderBrush = BORDER, BorderThickness = new Thickness(1),
                 IsEnabled = false, Cursor = System.Windows.Input.Cursors.Hand
             };
-            goButton.Click += OnGoClick;
             Grid.SetRow(goButton, 6);
             root.Children.Add(goButton);
 
@@ -543,15 +542,13 @@ namespace NinjaTrader.NinjaScript.AddOns
             if (applyingRemote) { UpdateFaseBadges(); return; }   // cambio venido del poll, no re-escribir
             lastLocalChangeUtc = DateTime.UtcNow;
             UpdateGoButton();
-            _ = SaveStateAsync();              // escritura inmediata (fire-and-forget)
-        }
 
-        private async void OnGoClick(object sender, RoutedEventArgs e)
-        {
-            if (!AllChecked()) return;
-            goConfirmed = true;
-            ShowGoConfirmed();
-            await SaveGoAsync();
+            // Marcar la última regla que bloquea YA es el visto bueno: no hay botón
+            // que pulsar. La hora del GO se sella UNA vez por sesión, y solo por una
+            // marca hecha aquí a mano (nunca por un estado que llega del poll).
+            // SaveGoAsync guarda también el checklist.
+            if (AllChecked() && !goConfirmed) { goConfirmed = true; _ = SaveGoAsync(); }
+            else _ = SaveStateAsync();         // escritura inmediata (fire-and-forget)
         }
 
         // ═══ Lógica de estado ════════════════════════════════════════════════
@@ -577,21 +574,20 @@ namespace NinjaTrader.NinjaScript.AddOns
                 goButton.BorderBrush  = RED;
                 return;
             }
-            if (goConfirmed) { ShowGoConfirmed(); return; }
-            if (AllChecked())
-            {
-                goButton.IsEnabled  = true;
-                goButton.Content    = "GO — operar";
-                goButton.Background  = ACCENT;
-                goButton.Foreground  = Brushes.White;
-                goButton.BorderBrush = ACCENT;
-            }
+            // La barra sigue a las casillas: `goConfirmed` solo recuerda que la hora
+            // del GO ya está sellada, no decide lo que se pinta.
+            if (AllChecked()) { ShowGoConfirmed(); return; }
             else
             {
                 goButton.IsEnabled  = false;
-                var vis = items.Where(IsVisible).ToList();
-                int done = vis.Count(i => i.Checked);
-                goButton.Content    = $"GO — faltan {vis.Count - done} de {vis.Count}";
+                // Solo cuentan las reglas que se marcan a mano y bloquean el GO. Antes
+                // contaba también las automáticas, que ya no se ven: "faltan 8 de 8"
+                // con una sola casilla en pantalla.
+                var req = items.Where(i => IsVisible(i) && i.BloqueaGo && !i.EsAuto).ToList();
+                int falta = req.Count(i => !i.Checked);
+                goButton.Content    = req.Count == 0 ? "Sin reglas que marcar"
+                                    : req.Count == 1 ? "Falta marcar la regla"
+                                    : $"Faltan {falta} de {req.Count}";
                 goButton.Background  = Brush("#2A2A26");
                 goButton.Foreground  = TEXT2;
                 goButton.BorderBrush = BORDER;
@@ -804,6 +800,8 @@ namespace NinjaTrader.NinjaScript.AddOns
         // "+", una hora a medias, o un guardado pendiente o en curso. Mientras sea
         // así, el poll NO repinta las noticias — antes la fila nueva desaparecía en
         // el siguiente refresco (0-5 s) si aún no tenía la hora completa.
+        private static readonly string[] SEP_NOTICIAS = { " / " };
+
         private bool NoticiasPendientes()
         {
             if (noticiasSaving || noticiasDirty) return true;
@@ -826,9 +824,17 @@ namespace NinjaTrader.NinjaScript.AddOns
                 int i = res.FindIndex(x => x.Key == h);
                 if (i < 0) { res.Add(new KeyValuePair<string, string>(h, nombre)); continue; }
                 fundidas = true;
-                string previo = res[i].Value;
-                if (nombre.Length > 0 && !previo.Split('/').Any(x => x.Trim() == nombre))
-                    res[i] = new KeyValuePair<string, string>(h, previo.Length > 0 ? previo + " / " + nombre : nombre);
+                // Se parte por el separador COMPLETO " / ", no por la barra sola: los
+                // nombres la llevan dentro ("m/m", "q/q") y partir por ella hacía que
+                // ninguno coincidiera nunca, así que se repetían en cada guardado.
+                var partes = res[i].Value.Split(SEP_NOTICIAS, StringSplitOptions.RemoveEmptyEntries)
+                                         .Select(x => x.Trim()).Where(x => x.Length > 0).ToList();
+                foreach (var p in nombre.Split(SEP_NOTICIAS, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    string t = p.Trim();
+                    if (t.Length > 0 && !partes.Contains(t)) partes.Add(t);
+                }
+                res[i] = new KeyValuePair<string, string>(h, string.Join(" / ", partes));
             }
             return res;
         }
@@ -887,7 +893,7 @@ namespace NinjaTrader.NinjaScript.AddOns
 
                 bool f = fundidas;
                 await Dispatcher.InvokeAsync(() => {
-                    if (f) SetStatus("🟡 Dos noticias a la misma hora: se guardan como una", WARNING);
+                    if (f) SetStatus("🟢 Guardado · misma hora = una sola noticia", ACCENT);
                     else   SetStatus("🟢 Sincronizado", ACCENT);
                 });
             }
@@ -1098,8 +1104,8 @@ namespace NinjaTrader.NinjaScript.AddOns
                     }
                     applyingRemote = false;
 
-                    if (hasGo && !goConfirmed) { goConfirmed = true; ShowGoConfirmed(); }
-                    else if (!goConfirmed) UpdateGoButton();
+                    if (hasGo) goConfirmed = true;   // la hora del GO ya está sellada en BD
+                    UpdateGoButton();
 
                     UpdateNoticiaAlert();
                     SetStatus("🟢 Sincronizado", ACCENT);
