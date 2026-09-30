@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-09-29
+**Última actualización:** 2026-09-30
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-09-30 | El backtesting de Chaumer arranca: la corrida fluida, reescrita sobre el 1/09, y el motor nuevo |
 | 2026-09-29c | Cuatro calendarios: Mío, Chaumer, Claude y el manual, en puntos |
 | 2026-09-29b | La raíz en orden: el historial, partido en el 16/08 |
 | 2026-09-29 | Sesiones en vez de test ciego, dos carpetas de backtesting, y `chaumer/` en orden |
@@ -34,6 +35,40 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-09-30 — El backtesting de Chaumer arranca: la corrida fluida, reescrita sobre el 1/09, y el motor nuevo
+
+**Qué se cerró.** Las dos primeras jornadas del backtesting hacia atrás, marcadas a ciegas: **1/09** (Continuación
+alcista 9:44, +15,75) y **2/09** (Continuación alcista 9:23, +29,00). La primera obligó a reescribir la regla de
+corrida fluida y el motor.
+
+- **Las velas.** NinjaTrader guarda el minuto desde el 12/06/2025; se exporta **por contrato**. El 1/09 no salía
+  porque se exportaba MNQ 12-26 y ese día el contrato era MNQ 09-26.
+- **El plan, 3.36 → 3.39.** La regla de corrida fluida decía que la vela de apertura declara el sentido del día, al
+  revés que la de la vela de apertura. Kris lo explicó sobre los tramos del 1/09: la apertura dice cómo empieza el
+  primer movimiento; **cada tramo se juzga en su sentido**; el primer IRI tras un movimiento contrario no se opera
+  y se espera un segundo, con la zona entera más allá; si un tramo pasa del inicio del IRI anterior el mercado está
+  mixto y se espera un IRI por fuera de la resistencia más alta y el soporte más bajo; una ruptura sin consecución
+  deja la zona fallida; la vela que hace el retroceso puede romper la zona. Y sobre el 20/07: la zona que deja el
+  retroceso que se pasa **no cae** con la de la corrida.
+- **El motor** (`b7bdcf7`). La clase `Fluidez` de `lector.py` sustituye al mapa de parejas fijado por la apertura.
+  Decisión de implementación: un tramo que no dejó zona no cuenta como IRI. Regresión: las 14 sesiones de
+  septiembre y los siete días de julio con el mismo veredicto, idénticos.
+- **Julio, revalidado.** Cuatro días pasaban de NO OPERA a una entrada; Kris los revisó uno a uno sobre su
+  gráfico con los tramos numerados: 7/07 (−56,50), 9/07 (−29,75), 16/07 (−66,75) y 20/07 (+54,50). Julio pasa de
+  −142,50 en 6 a **−241,00 en 10**. Kris cierra ahí la revisión: no se repasa nada más.
+
+**Lo que queda dicho, para reconocerlo si vuelve:**
+
+- **Doce días sin validar cambian con el motor nuevo** (1, 23, 28 y 31/07; 3, 5, 6, 7, 11, 13, 14 y 18/08). Se
+  verán por primera vez si Kris los pide. Sobre los 64 días con datos el motor pasa de −368,75 a +3,50 puntos
+- **El orden dentro de la vela y el retroceso que se pasa:** el motor mira primero si el retroceso se pasó y
+  después el rompimiento; si una misma vela hace las dos cosas en el orden contrario, lo leerá mal. No ha salido
+- **El 9/07 antes del 14/09** tenía validado otro largo, el de 8:46 (−59,75), que el motor nuevo no da: la subida
+  de 8:43 no dejó zona. Kris dio por buena la de 8:55
+- **Textos del plan desfasados** por la revalidación de julio: en `tasks/backlog.md`
 
 ---
 

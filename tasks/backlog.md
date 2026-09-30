@@ -100,3 +100,12 @@ Analizado en la reestructuración de agosto y **explícitamente aplazado**. A 29
 
 Es el coste conocido de la decisión D-001, no un descuido. Si algún día se aborda, va con
 su propio diseño y su propia aprobación. Ver `docs/decisiones.md` D-001.
+
+## Textos del plan que cuentan julio con el resultado de antes
+
+Tras revalidar julio el 30/09 (plan 3.38) quedan frases que ya no cuadran. Cada una, con el sí de Kris: en la
+galería, el caso del 9/07 (cuenta el largo de 8:46, −59,75; ahora es el de 8:55, −29,75) y el del 16/07 (dice que la
+operación ya no existe; ahora el día tiene el corto de 8:46, −66,75); en la regla de la vela de apertura y en la de
+la caducidad de la orden, el ejemplo del 9/07 (orden de 8:43 que se llena a las 8:46); en la corrida fluida, el caso
+del 16/07 no dice cómo acaba el día. Kris cerró la revisión el 30/09: no es urgente.
+

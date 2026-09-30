@@ -12,22 +12,13 @@ delante: nada de listas previas (decisión de Kris, 28/09). Si cambia el motor, 
 **Objetivo (Kris, 28/09):** poder hacer el backtesting completo **de cualquier fecha**, no de un tramo fijo.
 El motor corre sobre cualquier día del que haya velas de 1 minuto; lo que limita es qué velas hay.
 
+- **Cómo va:** Kris pide el día; Claude lo marca a ciegas con el motor (corrida fluida 3.38), lo revisa a mano y
+  entrega; se compara, y con su sí va a la galería. Hechos: 1/09 (+15,75) y 2/09 (+29,00)
 - **Velas:** NinjaTrader las tiene guardadas desde el 12/06/2025 (MNQ 09-25, 12-25, 03-26, 06-26, 09-26, 12-26):
   se exportan por **contrato** (el de ese vencimiento, no el siguiente). El backtesting a mano de 2025 (116 gráficos,
-  01/08/2025 → 16/01/2026) queda cubierto. Septiembre, en `datos/dia/Septiembre.txt` (MNQ 09-26, 31/08 → 18/09).
-- **Hecho:** 1/09 (Continuación alcista 9:44, +15,75; el motor dice NO OPERA). Sale la corrida fluida 3.36.
-- **Hecho (30/09):** el motor aplica la corrida fluida 3.36–3.38 (`b7bdcf7`). Septiembre sale idéntico; cuatro días
-  de julio, revalidados con Kris uno a uno: 7 (−56,50), 9 (−29,75), 16 (−66,75) y 20 (+54,50). Julio, −241,00 en 10
-- [ ] **Textos del plan que cuentan esos días con el resultado de antes** (con el sí de Kris, frase a frase): en la
-  galería, el caso del 9/07 (el largo de 8:46, −59,75) y el del 16/07 (dice que la operación ya no existe); en la
-  regla de la vela de apertura y en la de la caducidad de la orden, el ejemplo del 9/07 (orden de 8:43 que se llena
-  a las 8:46); en la corrida fluida, el caso del 16/07 no dice cómo acaba el día
-- [ ] **Doce días sin validar de julio y agosto cambian con el motor nuevo** (1, 23, 28 y 31/07; 3, 5, 6, 7, 11, 13,
-  14 y 18/08): se ven cuando les toque en el backtesting
-- **Hecho:** 2/09 (Continuación alcista 9:23, +29,00; coincide)
-- [ ] **Siguiente día:** 3/09 (velas en `datos/dia/Septiembre.txt`, hasta el 9/09)
+  01/08/2025 → 16/01/2026) queda cubierto. Septiembre, en `datos/dia/Septiembre.txt` (MNQ 09-26, 31/08 → 18/09)
 
-Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md`, checkpoint del 28/09.
+Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md`, checkpoints del 28/09 y del 30/09.
 
 **Las Sesiones (D-029, 28/09):** `chaumer/05_Backtesting/` es `kris/` (el backtesting a mano) y `claude/`
 (un gráfico por día + su `.json`; el protocolo del chat «Backtesting» en `claude/protocolo/LEEME.md`).
