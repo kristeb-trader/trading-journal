@@ -806,7 +806,12 @@ namespace NinjaTrader.NinjaScript.AddOns
         {
             if (noticiasSaving || noticiasDirty) return true;
             if (noticiasSaveTimer != null && noticiasSaveTimer.IsEnabled) return true;
-            return noticias.Any(n => HoraNorm(n.Hora) == null);
+            if (noticias.Any(n => HoraNorm(n.Hora) == null)) return true;
+            // Una fila a una hora que ya tiene otra, y todavía sin nombre, no deja
+            // rastro en BD (se funde en la otra): sin esto el poll la quitaría antes
+            // de poder escribirle el nombre.
+            return noticias.Any(n => string.IsNullOrWhiteSpace(n.Nombre)
+                && noticias.Count(m => HoraNorm(m.Hora) == HoraNorm(n.Hora)) > 1);
         }
 
         // Las noticias completas, una por hora (la tabla tiene UNIQUE fecha+hora: varias
@@ -891,10 +896,8 @@ namespace NinjaTrader.NinjaScript.AddOns
                 }
                 while (noticiasDirty);
 
-                bool f = fundidas;
                 await Dispatcher.InvokeAsync(() => {
-                    if (f) SetStatus("🟢 Guardado · misma hora = una sola noticia", ACCENT);
-                    else   SetStatus("🟢 Sincronizado", ACCENT);
+                    SetStatus("🟢 Sincronizado", ACCENT);
                 });
             }
             catch (Exception ex)
@@ -1056,10 +1059,18 @@ namespace NinjaTrader.NinjaScript.AddOns
                         {
                             string h = (string)row["hora"] ?? "";
                             if (h.Length >= 5) h = h.Substring(0, 5);   // "09:00:00" → "09:00"
-                            noticiasRemotas.Add(new Noticia {
-                                Hora = h,
-                                Nombre = row["nombre"] != null && row["nombre"].Type != JTokenType.Null ? (string)row["nombre"] : ""
-                            });
+                            string nom = row["nombre"] != null && row["nombre"].Type != JTokenType.Null ? (string)row["nombre"] : "";
+                            // En BD hay UNA fila por hora (UNIQUE fecha+hora: una ventana
+                            // por hora), con los nombres unidos por " / ". En pantalla se
+                            // muestra una fila por noticia: fundidas en una sola casilla
+                            // parecía que la segunda se había borrado.
+                            var partes = nom.Split(SEP_NOTICIAS, StringSplitOptions.RemoveEmptyEntries)
+                                            .Select(x => x.Trim()).Where(x => x.Length > 0).ToList();
+                            if (partes.Count <= 1)
+                                noticiasRemotas.Add(new Noticia { Hora = h, Nombre = nom.Trim() });
+                            else
+                                foreach (var p in partes)
+                                    noticiasRemotas.Add(new Noticia { Hora = h, Nombre = p });
                         }
                     noticiasRemotas = noticiasRemotas.OrderBy(n => n.Hora).ToList();
                 }
