@@ -299,6 +299,7 @@ def leer_sesion(V, dia):
     r_ini=None; r_ext=None                   # retroceso
     retros=[]                                # (i_confirma, extremo)
     piv=[(b, D[b]['l'] if alc else D[b]['h'])]   # zigzag de corridas y retrocesos
+    pconf=[b]                                # vela en que se sabe cada vertice del zigzag (R-40, 29/09/2026)
 
     fin = S[-1]
     # R-15 (28/09/2026): todo se lee desde la primera vela de la ventana, y eso incluye
@@ -439,7 +440,7 @@ def leer_sesion(V, dia):
             else:
                 z=None
             z_pend = z
-            piv.append((ext, D[ext]['h'] if alc else D[ext]['l']))
+            piv.append((ext, D[ext]['h'] if alc else D[ext]['l'])); pconf.append(i)
             estado='retro'; r_ini=i; r_ext=i
         else:
             confirma = (k['h'] > p['h']) if alc else (k['l'] < p['l'])
@@ -471,7 +472,7 @@ def leer_sesion(V, dia):
                 z.de_corrida=True; z.dir = -1 if alc else 1
                 z.r_ini=i; z.r_fin=None
                 z_pend=z
-            piv.append((r_ext, D[r_ext]['l'] if alc else D[r_ext]['h']))
+            piv.append((r_ext, D[r_ext]['l'] if alc else D[r_ext]['h'])); pconf.append(i)
             estado='corrida'; ini=i-1; ext=i
 
 
@@ -479,7 +480,8 @@ def leer_sesion(V, dia):
     piv.append((ext if estado=='corrida' else r_ext,
                 (D[ext]['h'] if alc else D[ext]['l']) if estado=='corrida'
                 else (D[r_ext]['l'] if alc else D[r_ext]['h'])))
-    return dict(D=D, Z=Z, alc=alc, log=log, b=b, fin=fin, retros=retros, piv=piv, fin_v=fin_v)
+    pconf.append(None)                       # el ultimo vertice no llega a confirmarse
+    return dict(D=D, Z=Z, alc=alc, log=log, b=b, fin=fin, retros=retros, piv=piv, pconf=pconf, fin_v=fin_v)
 
 if __name__=='__main__':
     import sys
@@ -552,46 +554,121 @@ def _punto_de_referencia(res, i, e, t, nd):
             mejor = p if mejor is None else min(mejor, p)
     return mejor
 
-SOLO_ZONA_DE_CORRIDA = True   # variante en prueba
+class Fluidez:
+    """R-40 · Corrida fluida, plan 3.36 (29/09/2026, sobre la jornada del 1/09, con el operador).
 
-def _mapa_fluidez(res):
-    """R-40 · Corrida fluida. Las parejas corrida-retroceso NO se solapan: la
-    vela de apertura declara el sentido, asi que las piernas 1,3,5... son
-    corridas y las 2,4,6... sus retrocesos. Tras una pareja rota la cuenta
-    vuelve a empezar con la corrida siguiente."""
-    piv = res['piv']; D = res['D']
-    def caja(n):
-        d = 1 if piv[n][1] > piv[n-1][1] else -1
-        k = D[piv[n][0]]
-        return (d, max(k['o'],k['c']), k['h']) if d > 0 else (d, k['l'], min(k['o'],k['c']))
-    estado = {}; barrera = {1: None, -1: None}
-    def bloquear(n):
-        if n >= len(piv): return
-        d, lo, hi = caja(n); estado[piv[n][0]] = False
-        nb = hi if d > 0 else lo; b = barrera[d]
-        if b is None or ((nb > b) if d > 0 else (nb < b)): barrera[d] = nb
-    for n in range(1, len(piv)-1, 2):
-        corrida   = abs(piv[n][1]   - piv[n-1][1])
-        retroceso = abs(piv[n+1][1] - piv[n][1])
-        if retroceso > corrida:
-            bloquear(n); bloquear(n+1); continue
-        for m, es_corrida in ((n, True), (n+1, False)):
-            if m >= len(piv): break
-            if es_corrida is False and SOLO_ZONA_DE_CORRIDA:
-                bloquear(m); continue
-            d, lo, hi = caja(m); ok = True
-            if m+2 < len(piv):
-                ext = piv[m+2][1]
-                if (ext <= hi) if d > 0 else (ext >= lo): ok = False
-            b = barrera[d]
-            if b is not None and ((lo <= b) if d > 0 else (hi >= b)): ok = False
-            estado[piv[m][0]] = ok
-            if not ok: bloquear(m)
-    return estado
+    La vela de apertura dice como EMPIEZA el primer movimiento, no la direccion del dia: cada
+    tramo se juzga en su propio sentido. Una zona de corrida (la del tramo n del zigzag, sea
+    subida o bajada) da Continuacion en su sentido si el retroceso (tramo n+1) no se pasa y la
+    corrida siguiente (n+2) la rompe — tambien si la rompe la misma vela del retroceso.
 
-def _veto_R40(res, z):
-    if '_fluidez' not in res: res['_fluidez'] = _mapa_fluidez(res)
-    return not res['_fluidez'].get(z.i_org, False)
+    Cada sentido lleva su estado:
+      'libre'    se opera el IRI fluido
+      'espera'   el primer IRI tras un movimiento contrario no se opera (forma C): su zona pasa
+                 a ser la barrera
+      'segundo'  se opera el IRI fluido cuya zona quede ENTERA mas alla de la barrera
+    Lo que lleva a 'segundo', con la barrera en el borde lejano de la zona que falla:
+      A · el retroceso se pasa (cae la zona de la corrida; la del retroceso se juzga en su sentido)
+      B · la corrida siguiente no la rompe, o la rompe sin consecucion (vence el plazo)
+      D · mercado mixto: un tramo pasa del punto donde empezo el ultimo IRI del otro sentido;
+          las barreras son la resistencia mas alta y el soporte mas bajo
+    Solo cuentan las corridas que dejaron zona (condicion 1): sin zona no hay IRI."""
+
+    def __init__(self, res):
+        self.D, self.Z, self.piv, self.pconf = res['D'], res['Z'], res['piv'], res['pconf']
+        d0 = 1 if res['alc'] else -1
+        self.estado = {d0: ['libre', None], -d0: ['espera', None]}
+        self.veto = {}                       # id(zona) -> motivo por el que su rompimiento no se opera
+        self.rota = {}                       # id(zona) -> [vela, extremo, consecucion?]
+        self.iri = {1: None, -1: None}       # punto donde empezo el ultimo IRI completo de cada sentido
+        self.info = {}
+        for z in self.Z:
+            if not z.de_corrida: continue
+            for n in range(1, len(self.piv)):
+                j, p = self.piv[n]
+                sube = p > self.piv[n-1][1]
+                if j == z.i_org and (1 if sube else -1) == z.dir:
+                    self.info[id(z)] = n; break
+
+    def _lejano(self, z, i):
+        lo, hi = z.en(i)
+        return hi if z.dir > 0 else lo
+
+    def _segundo(self, d, barrera):
+        e = self.estado[d]
+        if e[0] == 'segundo' and e[1] is not None:
+            barrera = max(e[1], barrera) if d > 0 else min(e[1], barrera)
+        self.estado[d] = ['segundo', barrera]
+
+    def vela(self, i, ev, hh):
+        """Pone al dia el estado con la vela i. Va ANTES de mirar rompimientos en esa vela."""
+        k = self.D[i]; sentido = {1: 'alcista', -1: 'bajista'}
+        for z in self.Z:
+            n = self.info.get(id(z))
+            if n is None or z.i > i or (z.fin is not None and z.fin < i): continue
+            d = z.dir; lo, hi = z.en(i); r = self.rota.get(id(z))
+            # A · el retroceso se pasa: el precio va mas alla del arranque de la corrida
+            if id(z) not in self.veto and r is None:
+                ini = self.piv[n-1][1]
+                if (k['l'] < ini) if d > 0 else (k['h'] > ini):
+                    self.veto[id(z)] = 'el retroceso se pasó de su corrida'
+                    # La zona que deja ese retroceso NO cae con ella (operador, 30/09/2026, sobre el
+                    # 20/07): se juzga en su propio sentido, como primer o segundo IRI.
+                    self._segundo(d, self._lejano(z, i))
+                    ev.append(f"{hh(k)}  se pierde la fluidez {sentido[d]}: el retroceso se pasa de la corrida de {z} (R-40)")
+                    continue
+            # rompimiento en su sentido (la mecha basta) y su consecucion
+            if r is None:
+                if (k['h'] > hi + TICK/2) if d > 0 else (k['l'] < lo - TICK/2):
+                    self.rota[id(z)] = [i, k['h'] if d > 0 else k['l'], False]
+                    if self.estado[d][0] == 'espera':
+                        # cuenta como primer IRI aunque ya estuviese descartado por otra cosa: es el
+                        # rompimiento que no se opera (16/07: "se debe esperar que genere otro IRI bajista")
+                        self.veto.setdefault(id(z), 'es el primer IRI en este sentido tras un movimiento contrario: se espera un segundo IRI')
+                        self._segundo(d, self._lejano(z, i))
+                elif n+2 < len(self.pconf) and self.pconf[n+2] == i:
+                    # B · la corrida siguiente termina sin romperla
+                    if id(z) not in self.veto:
+                        self.veto[id(z)] = 'la corrida siguiente no la rompió'
+                        self._segundo(d, self._lejano(z, i))
+                        ev.append(f"{hh(k)}  se pierde la fluidez {sentido[d]}: la corrida siguiente no rompe {z} (R-40)")
+                continue
+            if r[2] is not False or r[0] >= i: continue
+            if (k['h'] > r[1]) if d > 0 else (k['l'] < r[1]):
+                r[2] = True
+                if id(z) not in self.veto or self.veto[id(z)].startswith('es el primer IRI'):
+                    self.iri[d] = self.piv[n-1][1]
+                    if self.estado[-d][0] == 'libre': self.estado[-d] = ['espera', None]
+            elif i - r[0] >= PLAZO:
+                # B · la rompio sin consecucion: esa zona ya no da entrada aunque se vuelva a romper
+                r[2] = None
+                self.veto[id(z)] = 'la rompió sin consecución y se devolvió'
+                self._segundo(d, self._lejano(z, i))
+                ev.append(f"{hh(k)}  se pierde la fluidez {sentido[d]}: {z} rota sin consecución (R-40)")
+        # D · mercado mixto
+        for d in (1, -1):
+            ini = self.iri[d]
+            if ini is None or not ((k['l'] < ini) if d > 0 else (k['h'] > ini)): continue
+            vistas = [z for z in self.Z if z.i <= i]
+            if not vistas: continue
+            self.iri = {1: None, -1: None}
+            arriba = max(z.en(i)[1] for z in vistas); abajo = min(z.en(i)[0] for z in vistas)
+            self.estado = {1: ['segundo', arriba], -1: ['segundo', abajo]}
+            ev.append(f"{hh(k)}  mercado mixto: pasa del inicio del IRI {sentido[d]} ({ini:.2f}); "
+                      f"se espera un IRI por fuera de {abajo:.2f} – {arriba:.2f} (R-40)")
+            break
+
+    def permiso(self, z, i):
+        """(True, None) si el rompimiento de z en su sentido se opera; si no, (False, motivo)."""
+        if id(z) not in self.info: return False, 'la zona no sale de una corrida del zigzag'
+        if id(z) in self.veto: return False, self.veto[id(z)]
+        d = z.dir; e = self.estado[d]
+        if e[0] == 'segundo' and e[1] is not None:
+            lo, hi = z.en(i)
+            if not ((lo > e[1]) if d > 0 else (hi < e[1])):
+                return False, f"rompimiento directo: la zona no queda entera más allá de {e[1]:.2f}"
+        self.estado[d] = ['libre', None]
+        return True, None
 
 def o_pausa(o): return o.get('pausa') is not None
 
@@ -613,6 +690,7 @@ def detectar_setups(res, solo_reingresos=False):
     # R-41: los puntos de control SOLO se dibujan cuando se presenta un reingreso.
     res['reingresos']=[]
     def hh(k): return f"{col(k)//100}:{k['t'][2:4]}"
+    flu = Fluidez(res)
 
     for i in range(b, fin+1):
         k=D[i]
@@ -652,6 +730,7 @@ def detectar_setups(res, solo_reingresos=False):
             ev.append(f"{hh(k)}  rompimiento de {z} — zona de premercado: sin Continuación, "
                       f"queda para el Reingreso")
         if i==b: continue                              # la vela base solo cuenta para esos rompimientos
+        flu.vela(i, ev, hh)
 
         # ---------- llenado / caducidad ----------
         T_vela = _noticia(dia, _minutos(k), 4) if orden and not trade else None
@@ -774,8 +853,9 @@ def detectar_setups(res, solo_reingresos=False):
             # anotado y el reingreso de R-26 —que nace justo de un rompimiento que
             # falla— se volveria invisible. El veto es solo para ESTA entrada de
             # continuacion; la zona sigue viva y el reingreso no se toca.
-            if _veto_R40(res, z):
-                ev.append(f"{hh(k)}  rompimiento de {z} ✗ no se opera — la corrida no es fluida (R-40)")
+            ok, motivo = flu.permiso(z, i)
+            if not ok:
+                ev.append(f"{hh(k)}  rompimiento de {z} ✗ no se opera — {motivo} (R-40)")
                 break
             # El stop es el extremo que haya hecho el mercado DESDE QUE NACIO LA ZONA
             # HASTA EL ROMPIMIENTO, no solo el techo/suelo del retroceso que la origino.
