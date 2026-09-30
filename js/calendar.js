@@ -184,10 +184,8 @@ const Calendar = (() => {
 
   // Puntos por PRECIO, no por P&L (db.js): los mismos que suma Calendarios.
   const puntosTrade = puntosDeTrade
-  const fmtPts = p => {
-    const n = Number(Math.abs(p).toFixed(2)).toString().replace('.', ',')
-    return `${p > 0 ? '+' : p < 0 ? '−' : ''}${n}`
-  }
+  // Redondeados, como en todo el calendario (fmtPuntos, db.js).
+  const fmtPts = p => `${p > 0 ? '+' : p < 0 ? '−' : ''}${fmtPuntos(p)}`
 
   function tipHtml(dateStr) {
     const trades = tradesCache[dateStr] || []

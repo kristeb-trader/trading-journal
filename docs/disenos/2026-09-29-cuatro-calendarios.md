@@ -1,6 +1,6 @@
 # Cuatro calendarios — una pantalla principal antes del calendario
 
-**Versión:** v1.3 · **Estado:** ✅ **CERRADO el 29/09/2026.** Las 5 fases implementadas y verificadas; D-032.
+**Versión:** v1.4 · **Estado:** ✅ **CERRADO el 29/09/2026.** Las 5 fases implementadas y verificadas; D-032.
 **Escrito:** 29/09/2026. **Alcance:** la sección Calendario de la app (no el portal).
 
 | Versión | Fecha | Qué cambió |
@@ -331,3 +331,22 @@ al recuadro fijo con «Ver gráfico» del §5.2; el recuadro al pasar el ratón 
 | Manual | `bt_jornadas.imagen` | las observaciones de cada operación y las notas de la jornada |
 
 El día 🔒 de Claude abre la vista **sin gráfico ni operación**, solo con «Registra tu día».
+
+## 13. Ajuste del 30/09 (v1.4): la pantalla principal, rehecha
+
+Kris: tres tarjetas sobre cada calendario, puntos sin decimales, una gráfica más moderna y una
+distribución que no deje hueco abajo. Sustituye al §4.
+
+- **Tres tarjetas por cuadro:** P&L (con los puntos debajo) · Acierto (con el número de
+  operaciones) · Targets/Stops (con el ratio). En Chaumer y Claude, *P&L calc.*
+- **Puntos redondeados al entero** en los cuatro calendarios: cuadros, celdas, semanas, totales,
+  recuadros y curvas (`fmtPuntos`, `db.js`). El dato exacto sigue en la vista del día y en Trades.
+- **Distribución:**
+  - desde 1280 px, los cuatro cuadros van en **una fila** y la curva ocupa **todo el alto que
+    sobra**: a 1440×900 entra todo sin scroll ni hueco al pie;
+  - de 769 a 1279 px, 2×2;
+  - en el celular, un cuadro por fila.
+- **La curva:** relleno degradado bajo cada línea, una etiqueta con el valor al final de cada una
+  (se separan si coinciden en altura) y guía vertical al pasar el ratón.
+- **Al lado de la curva**, la clasificación del mes (puntos, P&L y T/S de cada calendario, ordenados),
+  en lugar de la leyenda. En el celular va debajo.

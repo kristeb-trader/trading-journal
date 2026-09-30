@@ -41,8 +41,11 @@ const Calendarios = (() => {
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1)
 
   // Puntos con su signo: 40.5 → "+40,5" · -1234.25 → "−1.234,25" (fmtPuntos, db.js)
-  const fmtPts = (v, { signo = true } = {}) =>
-    `${v < 0 ? '−' : v > 0 && signo ? '+' : ''}${fmtPuntos(v)}`
+  // El signo sale del valor YA redondeado: −0,3 es "0", no "−0".
+  const fmtPts = (v, { signo = true } = {}) => {
+    const r = Math.sign(v) * Math.round(Math.abs(v))
+    return `${r < 0 ? '−' : r > 0 && signo ? '+' : ''}${fmtPuntos(r)}`
+  }
   const clsSigno = v => (v > 0 ? 'pos' : v < 0 ? 'neg' : '')
   // "08:41:00" → "8:41"
   const horaCorta = h => (h ? String(h).slice(0, 5).replace(/^0/, '') : '')
@@ -271,21 +274,29 @@ const Calendarios = (() => {
     if (dias == null) {
       cuerpo = `<div class="hub-vacio"><i class="ti ti-cloud-off"></i> No se pudo cargar</div>`
     } else {
+      // Tres tarjetas sobre cada calendario (30 sep): P&L · Acierto · Targets/Stops.
       const r = resumen(dias)
-      const cifras = r.n
-        ? `<div class="hub-cifras">
-             <div class="hub-pts ${clsSigno(r.puntos)}">${fmtPts(r.puntos)}<small>pts</small></div>
-             <div class="hub-sec">
-               <span class="${clsSigno(r.pnl)}">${fmtDinero(r.pnl)}</span>${f.calc ? '<span class="hub-calc" title="P&L calculado con los datos de inicio del backtesting">calc.</span>' : ''}
-               <span class="hub-ts"><span class="ts-t">${r.targets}</span><span class="ts-sep">/</span><span class="ts-s">${r.stops}</span></span>
-             </div>
-           </div>`
-        : `<div class="hub-cifras hub-cifras-vacias">
-             <div class="hub-pts">—</div>
-             <div class="hub-sec"><span class="hub-muted">${r.hayDias ? 'Sin operaciones' : `Sin jornadas en ${MESES[m - 1]}`}</span>
-               ${r.hayDias ? '' : `<button type="button" class="hub-ir" data-ultimo="${f.id}" hidden></button>`}</div>
-           </div>`
-      cuerpo = cifras + miniCalendario(dias, y, m, esp)
+      const conRes = r.targets + r.stops
+      const ac = conRes ? Math.round(r.targets / conRes * 100) : null
+      const ratio = r.stops ? (r.targets / r.stops).toFixed(2).replace('.', ',') : r.targets ? '∞' : '—'
+      const kpi = (lab, val, cls, sub) => `
+        <div class="hub-kpi">
+          <span class="hub-kpi-l">${lab}</span>
+          <span class="hub-kpi-v ${cls}">${val}</span>
+          <span class="hub-kpi-s">${sub}</span>
+        </div>`
+      const cifras = `<div class="hub-kpis${r.n ? '' : ' vacias'}">
+        ${kpi(f.calc ? 'P&amp;L calc.' : 'P&amp;L', r.n ? fmtDinero(r.pnl) : '—', r.n ? clsSigno(r.pnl) : '',
+              r.n ? `${fmtPts(r.puntos)} pts` : '&nbsp;')}
+        ${kpi('Acierto', ac == null ? '—' : `${ac}%`, ac == null ? '' : ac >= 50 ? 'pos' : 'neg',
+              r.n ? `${conRes} op.` : '&nbsp;')}
+        ${kpi('Targets / Stops', r.n ? `<span class="ts-t">${r.targets}</span><span class="ts-sep">/</span><span class="ts-s">${r.stops}</span>` : '—', 'hub-ts',
+              r.n ? `Ratio ${ratio}` : '&nbsp;')}
+      </div>`
+      const aviso = r.n ? '' : `<div class="hub-aviso">
+        <span class="hub-muted">${r.hayDias ? 'Sin operaciones' : `Sin jornadas en ${MESES[m - 1]}`}</span>
+        ${r.hayDias ? '' : `<button type="button" class="hub-ir" data-ultimo="${f.id}" hidden></button>`}</div>`
+      cuerpo = cifras + aviso + miniCalendario(dias, y, m, esp)
     }
     return `
       <article class="hub-card hc-${f.color}" data-fuente="${f.id}" tabindex="0" role="button"
@@ -350,12 +361,73 @@ const Calendarios = (() => {
       return { f, data }
     }).filter(Boolean)
 
+    // Al lado de la curva, la clasificación del mes: quién va delante, con sus
+    // puntos y su P&L. Sustituye a la leyenda: dice lo mismo y además ordena.
     const leyenda = $('hubCurvaLeyenda')
-    if (leyenda) leyenda.innerHTML = series.map(s => {
-      const v = s.data.at(-1)
-      return `<span class="hub-ley hc-${s.f.color}"><span class="hub-dot"></span>${s.f.nombre}
-                <b class="${clsSigno(v)}">${fmtPts(v)}</b></span>`
-    }).join('')
+    if (leyenda) leyenda.innerHTML = series.length ? series
+      .map(s => ({ s, v: s.data.at(-1), r: resumen(dias[s.f.id]) }))
+      .sort((a, b) => b.v - a.v)
+      .map(({ s, v, r }, i) => `
+        <div class="hub-rank hc-${s.f.color}">
+          <span class="hub-rank-n">${i + 1}</span>
+          <span class="hub-dot"></span>
+          <span class="hub-rank-nom">${s.f.nombre}</span>
+          <span class="hub-rank-pts ${clsSigno(v)}">${fmtPts(v)}<small>pts</small></span>
+          <span class="hub-rank-usd">${fmtDinero(r.pnl)}${s.f.calc ? ' calc.' : ''} · ${r.targets}/${r.stops}</span>
+        </div>`).join('') : ''
+
+    const rgba = (hex, a) => {
+      const n = parseInt(hex.replace('#', ''), 16)
+      return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`
+    }
+    // Relleno bajo cada línea: su color arriba, transparente abajo. Muy tenue,
+    // para que cuatro series no se empasten.
+    const relleno = color => c => {
+      const a = c.chart.chartArea
+      if (!a || !(a.bottom - a.top > 0)) return 'transparent'
+      const g = c.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom)
+      g.addColorStop(0, rgba(color, 0.16)); g.addColorStop(1, rgba(color, 0))
+      return g
+    }
+    // Etiqueta con el valor al final de cada línea, en el margen derecho y con su
+    // color (como la de la curva de cada calendario). Si dos quedan a la misma
+    // altura, se separan para que no se pisen.
+    const TAG_H = 20, FUENTE_TAG = '700 11px "Segoe UI", system-ui, sans-serif'
+    const etiquetas = {
+      id: 'etiquetasFinales',
+      afterDatasetsDraw(chart) {
+        const a = chart.chartArea, c = chart.ctx
+        const tags = chart.data.datasets.map((ds, i) => {
+          const pt = chart.getDatasetMeta(i).data.at(-1)
+          return pt && { y: pt.y, py: pt.y, x: pt.x, col: ds.borderColor, txt: fmtPts(ds.data.at(-1)) }
+        }).filter(Boolean).sort((p, q) => p.y - q.y)
+        tags.forEach((t, i) => { if (i && t.y < tags[i - 1].y + TAG_H + 2) t.y = tags[i - 1].y + TAG_H + 2 })
+        c.save(); c.font = FUENTE_TAG; c.textBaseline = 'middle'
+        tags.forEach(t => {
+          const w = c.measureText(t.txt).width + 14
+          const x = a.right + 8, y = Math.max(a.top, Math.min(t.y - TAG_H / 2, a.bottom - TAG_H))
+          c.beginPath(); c.setLineDash([2, 3]); c.lineWidth = 1; c.strokeStyle = rgba(t.col, 0.5)
+          c.moveTo(t.x, t.py); c.lineTo(x, y + TAG_H / 2); c.stroke(); c.setLineDash([])
+          c.beginPath()
+          if (c.roundRect) c.roundRect(x, y, w, TAG_H, 5); else c.rect(x, y, w, TAG_H)
+          c.fillStyle = t.col; c.fill()
+          c.fillStyle = FONDO; c.fillText(t.txt, x + 7, y + TAG_H / 2 + 0.5)
+        })
+        c.restore()
+      },
+    }
+    // Guía vertical al pasar el ratón: sitúa el día sin rejilla.
+    const guia = {
+      id: 'guiaVertical',
+      afterDatasetsDraw(chart) {
+        const act = chart.tooltip?.getActiveElements?.() || []
+        if (!act.length) return
+        const c = chart.ctx, x = act[0].element.x
+        c.save(); c.beginPath(); c.setLineDash([3, 4]); c.lineWidth = 1
+        c.strokeStyle = 'rgba(255,255,255,0.22)'
+        c.moveTo(x, chart.chartArea.top); c.lineTo(x, chart.chartArea.bottom); c.stroke(); c.restore()
+      },
+    }
     const lienzo = ctx.parentElement
     lienzo.classList.toggle('vacio', !series.length)
     lienzo.dataset.vacio = `Ningún calendario tiene operaciones en ${mesNombre(y, m)}`
@@ -368,19 +440,23 @@ const Calendarios = (() => {
         labels: fechas.map(etiqueta),
         datasets: series.map(s => ({
           label: s.f.nombre, data: s.data,
-          borderColor: COLOR[s.f.id], backgroundColor: COLOR[s.f.id],
+          borderColor: COLOR[s.f.id],
+          fill: 'origin', backgroundColor: relleno(COLOR[s.f.id]),
           // Monótona: suaviza sin inventar picos ni valles que no existieron.
-          borderWidth: 2, cubicInterpolationMode: 'monotone',
+          borderWidth: 2.25, cubicInterpolationMode: 'monotone',
           borderCapStyle: 'round', borderJoinStyle: 'round',
           // Solo el último punto: el dato que se busca al mirar.
-          pointRadius: s.data.map((_, i) => (i === s.data.length - 1 ? 3.5 : 0)),
-          pointHoverRadius: 4.5,
-          pointBorderColor: FONDO, pointBorderWidth: 2,
+          pointRadius: s.data.map((_, i) => (i === s.data.length - 1 ? 4 : 0)),
+          pointHoverRadius: 5,
+          pointBackgroundColor: COLOR[s.f.id], pointHoverBackgroundColor: COLOR[s.f.id],
+          pointBorderColor: FONDO, pointHoverBorderColor: FONDO, pointBorderWidth: 2,
         })),
       },
+      plugins: [guia, etiquetas],
       options: {
         responsive: true, maintainAspectRatio: false,
-        layout: { padding: { top: 8, right: 8 } },
+        // El margen derecho es el hueco de las etiquetas de valor.
+        layout: { padding: { top: 10, right: 58 } },
         interaction: { mode: 'index', intersect: false },
         animation: { duration: 450, easing: 'easeOutQuart' },
         plugins: {

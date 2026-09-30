@@ -182,9 +182,13 @@
           <div class="card annual-table-card hub-curva-card">
             <div class="chart-header">
               <h3><i class="ti ti-chart-line"></i> Puntos acumulados del mes</h3>
+            </div>
+            <!-- La curva ocupa el alto que sobre en la pantalla; al lado, la
+                 clasificación del mes (en móvil, debajo). -->
+            <div class="hub-curva-cuerpo">
+              <div class="hub-curva-lienzo"><canvas id="hubCurva"></canvas></div>
               <div class="hub-curva-leyenda" id="hubCurvaLeyenda"></div>
             </div>
-            <div class="hub-curva-lienzo"><canvas id="hubCurva"></canvas></div>
           </div>
         </div>
 

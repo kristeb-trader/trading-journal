@@ -731,17 +731,20 @@ body[data-modo-local]::before {
 }
 .hub-card:hover .hub-abrir, .hub-card:focus-visible .hub-abrir { color: var(--c); }
 
-.hub-cifras { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.hub-pts {
-  font-size: 1.9rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1;
-  font-variant-numeric: tabular-nums; color: var(--text2);
+/* Tres tarjetas sobre cada mini calendario: P&L · Acierto · Targets/Stops. */
+.hub-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.hub-kpi {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 6px 9px; text-align: center; min-width: 0;
 }
-.hub-pts small { font-size: 0.8rem; font-weight: 600; color: var(--text3); margin-left: 4px; letter-spacing: 0; }
-.hub-pts.pos { color: var(--accent-txt); }
-.hub-pts.neg { color: var(--red-txt); }
-.hub-sec { display: flex; align-items: baseline; gap: 10px; font-size: 0.85rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text2); }
-.hub-sec .pos { color: var(--accent-txt); }
-.hub-sec .neg { color: var(--red-txt); }
+.hub-kpi-l { font-size: 0.58rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); white-space: nowrap; }
+.hub-kpi-v { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--text2); }
+.hub-kpi-v.pos { color: var(--accent-txt); }
+.hub-kpi-v.neg { color: var(--red-txt); }
+.hub-kpi-s { font-size: 0.68rem; color: var(--text3); font-variant-numeric: tabular-nums; }
+.hub-kpis.vacias .hub-kpi-v { color: var(--text3); font-weight: 500; }
+.hub-aviso { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 0.8rem; margin-top: -4px; }
 .hub-calc {
   font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--text3); border: 1px solid var(--border); border-radius: 4px; padding: 1px 4px; margin-left: -4px;
@@ -751,7 +754,6 @@ body[data-modo-local]::before {
 .hub-ts .ts-s { color: var(--red-txt); }
 .hub-ts .ts-sep { color: var(--text3); font-weight: 300; margin: 0 3px; }
 .hub-muted { color: var(--text3); font-weight: 500; }
-.hub-cifras-vacias .hub-pts { color: var(--text3); font-weight: 500; }
 .hub-ir {
   font-size: 0.78rem; font-weight: 600; color: var(--c);
   background: none; border: none; padding: 0; cursor: pointer;
@@ -795,13 +797,41 @@ body[data-modo-local]::before {
 .hub-dia.est-fomc    { background: color-mix(in srgb, var(--warning) 10%, transparent); border-color: color-mix(in srgb, var(--warning) 28%, transparent); }
 
 /* Curva comparada */
-.hub-curva-card .chart-header { flex-wrap: wrap; gap: 8px 16px; }
-.hub-curva-leyenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.78rem; color: var(--text2); }
-.hub-ley { display: inline-flex; align-items: center; gap: 6px; }
-.hub-ley b { font-variant-numeric: tabular-nums; }
-.hub-ley b.pos { color: var(--accent-txt); }
-.hub-ley b.neg { color: var(--red-txt); }
-.hub-curva-lienzo { position: relative; height: 260px; }
+/* La pantalla ocupa todo el alto: los cuatro cuadros arriba y la curva se queda
+   con lo que sobre, así no queda un hueco vacío al pie en pantallas grandes. */
+.cal-hub { display: flex; flex-direction: column; min-height: calc(100vh - var(--topbar-h) - 48px); }
+.hub-curva-card { flex: 1; display: flex; flex-direction: column; min-height: 340px; margin-top: 0; }
+.hub-curva-cuerpo { flex: 1; display: flex; gap: 18px; min-height: 0; }
+.hub-curva-lienzo { position: relative; flex: 1; min-width: 0; min-height: 250px; }
+.hub-curva-lienzo canvas { position: absolute; inset: 0; }
+/* Clasificación del mes, al lado de la curva. */
+.hub-curva-leyenda { width: 230px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.hub-curva-leyenda:empty { display: none; }
+.hub-rank {
+  display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 2px 8px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px;
+}
+.hub-rank-n { font-size: 0.7rem; font-weight: 700; color: var(--text3); width: 10px; }
+.hub-rank-nom { font-size: 0.82rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hub-rank-pts { font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text2); }
+.hub-rank-pts small { font-size: 0.65rem; font-weight: 600; color: var(--text3); margin-left: 3px; }
+.hub-rank-pts.pos { color: var(--accent-txt); }
+.hub-rank-pts.neg { color: var(--red-txt); }
+.hub-rank-usd { grid-column: 3 / -1; font-size: 0.7rem; color: var(--text3); font-variant-numeric: tabular-nums; }
+/* Escritorio: los cuatro cuadros en UNA fila y la curva se queda con el alto que
+   sobra, así todo entra en una pantalla sin scroll ni hueco al pie. Por debajo de
+   1280 px vuelven a 2×2: en una fila las celdas ya no darían para los puntos. */
+@media (min-width: 1280px) {
+  .hub-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .hub-card { padding: 14px 12px 12px; gap: 10px; }
+  .hub-kpis { gap: 6px; }
+  .hub-kpi { padding: 8px 3px 7px; }
+  .hub-kpi-v { font-size: 1.1rem; }
+  .hub-kpi-l { font-size: 0.52rem; letter-spacing: 0.04em; }
+  .hub-dia { min-height: 32px; }
+  .hub-dia-p { font-size: 0.7rem; }
+  .hub-curva-card { min-height: 280px; }
+}
 .hub-curva-lienzo.vacio canvas { display: none; }
 .hub-curva-lienzo.vacio::after {
   content: attr(data-vacio); position: absolute; inset: 0;
@@ -834,8 +864,11 @@ body[data-modo-local]::before {
   .hub-mini-cab, .hub-dia.hueco { display: none; }
   .hub-dia { min-height: 0; width: 14px; height: 14px; border-radius: 3px; }
   .hub-dia-n, .hub-dia-p { display: none; }
-  .hub-pts { font-size: 1.6rem; }
-  .hub-curva-lienzo { height: 220px; }
+  .cal-hub { min-height: 0; }
+  .hub-curva-cuerpo { flex-direction: column; }
+  .hub-curva-lienzo { flex: none; height: 230px; }
+  .hub-curva-leyenda { width: auto; }
+  .hub-kpi-v { font-size: 1.15rem; }
 }
 
 /* ── Metrics ─────────────────────────────────────────────────────────── */
