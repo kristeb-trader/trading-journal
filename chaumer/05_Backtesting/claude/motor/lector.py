@@ -133,6 +133,7 @@ class Zona:
         self.de_corrida=False                     # la creo una corrida (no un retroceso)
         self.pm=False                             # zona de premercado (R-15)
         self.i_papel=None                         # vela en que una zona 'P' tomo su papel
+        self.pend2=None                           # zona 'P': rompimiento del OTRO lado, esperando consecucion
         self.dir=0                                # sentido de esa corrida: +1 / -1
         self.r_ini=None; self.r_fin=None          # retroceso que la origina
         self.hist=[(i,lo,hi)]                     # geometria a lo largo del dia
@@ -390,6 +391,22 @@ def leer_sesion(V, dia):
                     # El rompimiento SIGUE pendiente: si algun dia llega la consecucion,
                     # la zona queda traspasada igual.
                     z.pend=(d,ir,ex,True)
+            if z.tipo=='P' and z.pend is not None and not resuelto:
+                # R-15 (30/09/2026, jornada del 8/09): una zona sin papel sale por el lado que PRIMERO
+                # consiga rompimiento + consecucion. Hasta hoy, anotado un lado, el motor ya no miraba el
+                # otro: el 8/09 la vela de 8:31 rompe por arriba sin consecucion, la de 8:33 rompe por
+                # abajo y la de 8:34 da la consecucion, y la zona se quedaba sin papel todo el dia.
+                # El primer rompimiento sigue pendiente, con su apendice o su estiramiento al vencer el plazo.
+                p2=z.pend2
+                if p2 is not None and p2[1] < i and ((k['h'] > p2[2]) if p2[0]=='arriba' else (k['l'] < p2[2])):
+                    z.tipo = 'S' if p2[0]=='arriba' else 'R'
+                    z.arriba=False; z.abajo=False; z.i_papel=i; z.pend2=None
+                    log.append(f"{col(k)//100}:{k['t'][2:4]} la zona de premercado "
+                               f"{z.lo:.2f}-{z.hi:.2f} sale {p2[0]}: queda como "
+                               f"{'soporte' if z.tipo=='S' else 'resistencia'}")
+                elif p2 is None:
+                    if   z.pend[0]=='arriba' and k['l'] < z.lo: z.pend2=('abajo',i,k['l'])
+                    elif z.pend[0]=='abajo'  and k['h'] > z.hi: z.pend2=('arriba',i,k['h'])
             if z.pend is None and not resuelto:
                 # La vela que confirma un traspaso NO abre a la vez el rompimiento del
                 # otro lado: el rompimiento contrario se busca a partir de la SIGUIENTE.
@@ -589,6 +606,12 @@ class Fluidez:
                 sube = p > self.piv[n-1][1]
                 if j == z.i_org and (1 if sube else -1) == z.dir:
                     self.info[id(z)] = n; break
+        # La corrida de la APERTURA se juzga siempre, deje zona de corrida o no (30/09/2026, jornadas del
+        # 4/09 y el 8/09): si su zona se funde con la de premercado o nace como apendice, no entra en
+        # self.info y nadie miraba si su retroceso se pasaba.
+        self.apertura = None
+        if len(self.piv) > 1 and 1 not in self.info.values():
+            self.apertura = dict(d=d0, ini=self.piv[0][1], ext=self.piv[1][1])
 
     def _lejano(self, z, i):
         lo, hi = z.en(i)
@@ -603,6 +626,18 @@ class Fluidez:
     def vela(self, i, ev, hh):
         """Pone al dia el estado con la vela i. Va ANTES de mirar rompimientos en esa vela."""
         k = self.D[i]; sentido = {1: 'alcista', -1: 'bajista'}
+        ap = self.apertura
+        if ap is not None:
+            fin = self.pconf[2] if len(self.pconf) > 2 else None        # ahi acaba su retroceso
+            if fin is not None and i > fin: self.apertura = None
+            elif (k['l'] < ap['ini']) if ap['d'] > 0 else (k['h'] > ap['ini']):
+                # la barrera: el borde lejano de la zona donde quedo el extremo de la corrida, o el extremo
+                dentro = [z for z in self.Z if z.i <= i and z.en(i)[0] - 1e-9 <= ap['ext'] <= z.en(i)[1] + 1e-9]
+                if ap['d'] > 0: barrera = max([z.en(i)[1] for z in dentro] + [ap['ext']])
+                else:           barrera = min([z.en(i)[0] for z in dentro] + [ap['ext']])
+                self._segundo(ap['d'], barrera); self.apertura = None
+                ev.append(f"{hh(k)}  se pierde la fluidez {sentido[ap['d']]}: el retroceso se pasa de la corrida "
+                          f"de la apertura; se espera un IRI entero más allá de {barrera:.2f} (R-40)")
         for z in self.Z:
             n = self.info.get(id(z))
             if n is None or z.i > i or (z.fin is not None and z.fin < i): continue

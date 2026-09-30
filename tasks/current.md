@@ -17,11 +17,8 @@ El motor corre sobre cualquier día del que haya velas de 1 minuto; lo que limit
   (30/09); un cambio de regla o un día que no coincide sí se le pregunta. **Al cerrar cada día se pasa el puente**
   (`python scripts/cadena/subir_dia.py AAAA-MM-DD`) para que el Journal —calendario «Claude» y Coach— tenga su ficha
   y su gráfico, igual que el portal (Kris, 30/09). Hechos: 1/09 (+15,75), 2/09 (+29,00), 3/09 (+24,00), 4/09 (+16,75) y 8/09 (no opera)
-- [ ] **Dos huecos del motor**, sin efecto en los días en que salieron:
-  1. *La apertura que pierde la fluidez y el motor no lo ve* (4/09, 8/09): si la zona de la corrida se funde con otra
-     o nace como apéndice, no es «zona de corrida» y no se mira si su retroceso se pasa
-  2. *La zona de premercado que abre con el precio dentro y sale por los dos lados* (8/09): anota el primer
-     rompimiento, lo deja pendiente y no ve la salida por el otro lado; la zona se queda sin papel
+- **Arreglado (30/09):** los dos huecos del motor que salieron el 4/09 y el 8/09 — la corrida de la apertura se juzga
+  siempre, deje o no zona de corrida; y la zona de premercado sin papel mira los dos lados. Ninguna operación cambia
 - **Velas:** NinjaTrader las tiene guardadas desde el 12/06/2025 (MNQ 09-25, 12-25, 03-26, 06-26, 09-26, 12-26):
   se exportan por **contrato** (el de ese vencimiento, no el siguiente). El backtesting a mano de 2025 (116 gráficos,
   01/08/2025 → 16/01/2026) queda cubierto. Septiembre, en `datos/dia/Septiembre.txt` (MNQ 09-26, 31/08 → 18/09)
