@@ -468,11 +468,11 @@ const Calendar = (() => {
     // "sin entradas"; omite solo los días sin operar y sin conexión).
     const diasActividad = diasConActividad()
     html += `
-      <div class="cal-month-total-widget ${totalPts >= 0 ? 'positive' : 'negative'}">
+      <div class="cal-month-total-widget ${totalPnl >= 0 ? 'positive' : 'negative'}">
         <span class="cmt-label">TOTAL ${monthName.toUpperCase()} ${currentYear}</span>
         <span class="cmt-sub">${diasActividad} día${diasActividad !== 1 ? 's' : ''} · ${totalTrades} trade${totalTrades !== 1 ? 's' : ''}</span>
-        <span class="cmt-amount ${totalPts >= 0 ? 'positive' : 'negative'}">${fmtPtsCal(totalPts)} pts
-          <small class="cmt-usd">${fmtDinero(totalPnl)}</small></span>
+        <span class="cmt-amount ${totalPnl >= 0 ? 'positive' : 'negative'}">${fmtDinero(totalPnl)}
+          <small class="cmt-usd">${fmtPtsCal(totalPts)} pts</small></span>
       </div>`
 
     grid.innerHTML = html

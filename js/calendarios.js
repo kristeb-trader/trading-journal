@@ -490,12 +490,13 @@ const Calendarios = (() => {
     const conRes = r.targets + r.stops
     const acierto = conRes ? Math.round(r.targets / conRes * 100) : null
     const ratio = r.stops ? (r.targets / r.stops).toFixed(2).replace('.', ',') : r.targets ? '∞' : '—'
-    const calc = f.calc ? ' <span class="hub-calc">calc.</span>' : ''
     const tono = v => (v > 0 ? 'green' : v < 0 ? 'red' : 'neutral')
     const cards = [
-      { label: 'Puntos netos', value: r.n ? `${fmtPts(r.puntos)}<small class="metric-unidad">pts</small>` : '—',
-        color: r.n ? tono(r.puntos) : 'neutral',
-        sec: r.n ? `<span class="${clsSigno(r.pnl)}">${fmtDinero(r.pnl)}</span>${calc} · ${fmtPts(r.puntos / r.n)} pts/op.` : 'Sin operaciones' },
+      // 30 sep: aquí manda el P&L y los puntos van debajo (Kris). En la principal,
+      // en las celdas y en la curva siguen mandando los puntos.
+      { label: f.calc ? 'P&L calc.' : 'P&L Neto', value: r.n ? fmtDinero(r.pnl) : '—',
+        color: r.n ? tono(r.pnl) : 'neutral',
+        sec: r.n ? `<span class="${clsSigno(r.puntos)}">${fmtPts(r.puntos)} pts</span> · ${fmtPts(r.puntos / r.n)} pts/op.` : 'Sin operaciones' },
       { label: 'Acierto', value: acierto == null ? '—' : `${acierto}%`,
         color: acierto == null ? 'neutral' : acierto >= 50 ? 'green' : 'red',
         sec: r.n ? `sobre ${conRes} operaciones${r.be ? ` · ${r.be} en B.E.` : ''}` : 'Sin operaciones' },
@@ -568,11 +569,11 @@ const Calendarios = (() => {
 
     const r = resumen(dias)
     html += `
-      <div class="cal-month-total-widget ${r.puntos >= 0 ? 'positive' : 'negative'}">
+      <div class="cal-month-total-widget ${r.pnl >= 0 ? 'positive' : 'negative'}">
         <span class="cmt-label">TOTAL ${MESES[m - 1].toUpperCase()} ${y}</span>
-        <span class="cmt-sub">${r.diasOp} día${r.diasOp !== 1 ? 's' : ''} · ${r.n} operaci${r.n !== 1 ? 'ones' : 'ón'}</span>
-        <span class="cmt-amount ${r.puntos >= 0 ? 'positive' : 'negative'}">${fmtPts(r.puntos)} pts
-          <small class="cmt-usd">${fmtDinero(r.pnl)}${f.calc ? ' calc.' : ''}</small></span>
+        <span class="cmt-sub">${r.diasOp} día${r.diasOp !== 1 ? 's' : ''} · ${r.n} operaci${r.n !== 1 ? 'ones' : 'ón'}${f.calc ? ' · P&L calc.' : ''}</span>
+        <span class="cmt-amount ${r.pnl >= 0 ? 'positive' : 'negative'}">${fmtDinero(r.pnl)}
+          <small class="cmt-usd">${fmtPts(r.puntos)} pts</small></span>
       </div>`
     return html
   }

@@ -1,12 +1,13 @@
 # Cuatro calendarios — una pantalla principal antes del calendario
 
-**Versión:** v1.1 · **Estado:** ✅ **CERRADO el 29/09/2026.** Las 5 fases implementadas y verificadas; D-032.
+**Versión:** v1.2 · **Estado:** ✅ **CERRADO el 29/09/2026.** Las 5 fases implementadas y verificadas; D-032.
 **Escrito:** 29/09/2026. **Alcance:** la sección Calendario de la app (no el portal).
 
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 29/09/2026 | Primera versión, con las tres decisiones de Kris del §2 |
 | v1.1 | 29/09/2026 | **Implementado.** §10 con lo que cambió al construirlo |
+| v1.2 | 30/09/2026 | Dentro de cada calendario, la tarjeta y el total del mes: P&L en grande, puntos debajo (§11) |
 
 ---
 
@@ -308,3 +309,10 @@ Nada del diseño se descartó. Lo añadido, todo menor:
   porque no cabe.
 
 Las cifras de control del §3.2 coincidieron en la pantalla, en los cuadros y en la curva.
+
+## 11. Ajuste del 30/09 (v1.2)
+
+Kris, tras usarlo: **dentro de cada calendario, la primera tarjeta y el total del mes muestran el
+P&L en grande y los puntos debajo** (en Chaumer y Claude, marcado *calc.*). Sustituye a la tarjeta
+"Puntos netos" del §5.1 y §5.2. Lo demás sigue en puntos: la pantalla principal, las celdas, las
+semanas y la curva.

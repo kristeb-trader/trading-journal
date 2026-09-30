@@ -568,11 +568,13 @@ const Metrics = (() => {
       {
         // Los puntos mandan y el P&L real va debajo, siempre a la vista: son dos
         // lecturas verdaderas y distintas (diseño de los cuatro calendarios, §3.2).
-        label: 'Puntos netos',
-        value: `${netPts < 0 ? '−' : netPts > 0 ? '+' : ''}${fmtPuntos(netPts)}<small class="metric-unidad">pts</small>`,
+        // 30 sep: en la vista completa manda el P&L y los puntos van debajo (Kris).
+        // Las celdas, las semanas y la curva siguen en puntos.
+        label: 'P&L Neto',
+        value: fmtDinero(netPnl),
         icon: 'ti-currency-dollar',
-        color: netPts > 0 ? 'green' : netPts < 0 ? 'red' : 'neutral',
-        sec: `<span class="${netPnl > 0 ? 'pos' : netPnl < 0 ? 'neg' : ''}">${fmtDinero(netPnl)}</span> · ${fmtDinero(avgPnl)}/día`,
+        color: netPnl > 0 ? 'green' : netPnl < 0 ? 'red' : 'neutral',
+        sec: `<span class="${netPts > 0 ? 'pos' : netPts < 0 ? 'neg' : ''}">${netPts < 0 ? '−' : netPts > 0 ? '+' : ''}${fmtPuntos(netPts)} pts</span> · ${fmtDinero(avgPnl)}/día`,
       },
       { label: 'Disciplina', value: `${disciplinaProceso}%`, icon: 'ti-checkup-list', color: disciplinaProceso >= 80 ? 'green' : disciplinaProceso >= 50 ? 'warning' : 'red', sub: chkItemsTotal > 0 ? `${chkItemsOk}/${chkItemsTotal} ítems de checklist${trendDisc}` : 'Sin días operados', clickable: true, action: 'disc-detail' },
       { label: 'Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días${costoErrores > 0 ? ` · ≈ <span style="color:var(--red)">-$${fmtMiles(costoErrores)}</span>` : ''}${trendErr}` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
