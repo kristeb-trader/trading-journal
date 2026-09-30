@@ -756,3 +756,30 @@ que deja ese retroceso. No cae: se juzga en su propio sentido, como primer o seg
 Antes: un corto a las 8:38 (orden en 29.036,50) que se cancela a las 8:41 sin llenarse; el primer IRI alcista (8:41),
 que no se opera; y el segundo (resistencia de 8:43), que falla porque la subida siguiente no la rompe.
 
+---
+
+# Jueves 3 de septiembre de 2026 — coincidimos
+
+> 📝 **Marcada el 30/09/2026**, a ciegas.
+
+**Sin noticias rojas. No es día de Fed.**
+
+**Veredicto: Continuación alcista, +24,00 pts = +48,00 USD.** El motor y la lectura a mano coinciden, y coincide con el operador.
+
+| | |
+|---|---|
+| Primer movimiento | **alcista** (8:31, abre 29.249,50 · cierra 29.282,75) |
+| Premercado | **un soporte**, 29.199,25 – 29.242,50 — la vela de 7:31 hizo 10.047 contratos |
+| Zona | resistencia **29.439,50 – 29.444,50** (vela 10:07), entera por encima de la de 8:51, que había fallado |
+| Entrada | largo · la vela de **10:09** rompe la zona · se llena en la de **10:11** en **29.446,00** |
+| Stop | **29.422,00** · Objetivo **29.470,00** · riesgo **24,00 pts** |
+| Resultado | **TARGET a las 10:16** · +24,00 pts |
+
+Antes: la apertura sube 45,00 y la bajada hace 62,25 (se pasa); la resistencia de 8:42 falla porque la subida
+siguiente no la rompe; un reingreso bajista a las 8:52, descartado por el punto de referencia 29.333,50; y un largo a
+las 8:53 (orden en 29.375,50) que se cancela a las 8:54 sin llenarse.
+
+A mano, el rompimiento sin consecución de las 8:53 se resuelve a las 8:57 por estructura contraria, no a las 8:58
+por plazo (sin efecto). El umbral de volumen es el de hoy, 8.000, también para los días anteriores al 14/09
+(operador, 30/09: *"déjalo con 8.000"*).
+

@@ -15,7 +15,7 @@ El motor corre sobre cualquier día del que haya velas de 1 minuto; lo que limit
 - **Cómo va:** Kris pide el día; Claude lo marca a ciegas con el motor (corrida fluida 3.38), lo revisa a mano y
   entrega; se compara, y con su sí va a la galería. **Al cerrar cada día se pasa el puente**
   (`python scripts/cadena/subir_dia.py AAAA-MM-DD`) para que el Journal —calendario «Claude» y Coach— tenga su ficha
-  y su gráfico, igual que el portal (Kris, 30/09). Hechos: 1/09 (+15,75) y 2/09 (+29,00)
+  y su gráfico, igual que el portal (Kris, 30/09). Hechos: 1/09 (+15,75), 2/09 (+29,00) y 3/09 (+24,00)
 - **Velas:** NinjaTrader las tiene guardadas desde el 12/06/2025 (MNQ 09-25, 12-25, 03-26, 06-26, 09-26, 12-26):
   se exportan por **contrato** (el de ese vencimiento, no el siguiente). El backtesting a mano de 2025 (116 gráficos,
   01/08/2025 → 16/01/2026) queda cubierto. Septiembre, en `datos/dia/Septiembre.txt` (MNQ 09-26, 31/08 → 18/09)
