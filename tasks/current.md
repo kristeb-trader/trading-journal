@@ -18,8 +18,10 @@ El motor corre sobre cualquier día del que haya velas de 1 minuto; lo que limit
 - **Hecho:** 1/09 (Continuación alcista 9:44, +15,75; el motor dice NO OPERA). Sale la corrida fluida 3.36.
 - [ ] **El motor, a la corrida fluida 3.36:** cada tramo en su sentido, segundo IRI, mercado mixto, la ruptura
   sin consecución que deja la zona fallida, y que cada zona pueda romperse más de una vez. Después la regresión:
-  si cambia algún día validado, a Kris. Hasta entonces, los días se marcan a mano encima del motor
-- [ ] `claude/2026-09-01.png` sin subir: es el del motor y dice NO OPERA
+  si cambia algún día validado, a Kris. Hasta entonces, los días se marcan a mano encima del motor.
+  **Hecho en disco, sin subir** (29/09): septiembre sale idéntico, pero cambian cuatro días de julio validados
+  como NO OPERA — 7 (−56,50), 9 (−29,75), 16 (−66,75) y 20 (−33,50). Revisarlos con Kris uno a uno, empezando
+  por el 16
 
 Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md`, checkpoint del 28/09.
 
