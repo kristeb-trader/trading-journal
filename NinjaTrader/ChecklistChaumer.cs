@@ -198,6 +198,8 @@ namespace NinjaTrader.NinjaScript.AddOns
         private const int NOTICIA_MARGEN_MIN = 5;   // ventana de bloqueo ±5 min
         private DispatcherTimer timer;
         private DispatcherTimer noticiasSaveTimer;  // debounce al escribir las noticias
+        private volatile bool noticiasSaving;       // hay un guardado de noticias en curso
+        private volatile bool noticiasDirty;        // cambió algo mientras se guardaba: repetir
         private DispatcherTimer zonasSaveTimer;     // debounce al escribir las zonas naranjas
 
         // UI refs
@@ -444,7 +446,11 @@ namespace NinjaTrader.NinjaScript.AddOns
 
             foreach (int fase in new[] { 1, 2, 3 })
             {
-                var ofFase = items.Where(i => i.Fase == fase && IsVisible(i)).ToList();
+                // Solo lo que se marca A MANO. Las reglas verificadas por dato
+                // (evidencia = auto) las resuelve el journal con los trades del día:
+                // aquí no hay nada que hacer con ellas, así que no se pintan. Una fase
+                // que solo tenga automáticas no muestra tarjeta.
+                var ofFase = items.Where(i => i.Fase == fase && IsVisible(i) && !i.EsAuto).ToList();
                 if (ofFase.Count == 0) continue;
 
                 var faseStack = new StackPanel();
@@ -482,23 +488,6 @@ namespace NinjaTrader.NinjaScript.AddOns
                             Text = "  se marca después de entrar", Foreground = TEXT2, FontSize = 10,
                             VerticalAlignment = VerticalAlignment.Center });
                         faseStack.Children.Add(sep);
-                    }
-
-                    // Ítems verificados por dato: no se marcan, los resuelve el journal
-                    // con los trades del día. Se muestran para no esconder que existen.
-                    if (it.EsAuto)
-                    {
-                        var auto = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(2, 4, 2, 4) };
-                        auto.Children.Add(new TextBlock {
-                            Text = "⚙ ", Foreground = Brush("#60A5FA"), FontSize = 12,
-                            VerticalAlignment = VerticalAlignment.Center });
-                        auto.Children.Add(new TextBlock {
-                            Text = it.Texto, TextWrapping = TextWrapping.Wrap, Foreground = TEXT2, FontSize = 11,
-                            VerticalAlignment = VerticalAlignment.Center, MaxWidth = 250 });
-                        auto.ToolTip = "Se verifica solo con los trades del día";
-                        faseStack.Children.Add(auto);
-                        it.Box = null;
-                        continue;
                     }
 
                     var cb = new CheckBox {
@@ -798,46 +787,118 @@ namespace NinjaTrader.NinjaScript.AddOns
             noticiasSaveTimer.Start();
         }
 
-        // Reemplaza el set del día en `sesion_noticias`. Un trigger sincroniza
+        // "9:30" → "09:30". null si la hora aún no está completa (HH:MM con los dos
+        // dígitos de los minutos): "10:3" no es las 10:03, es alguien escribiendo.
+        private static string HoraNorm(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return null;
+            var p = s.Trim().Split(':');
+            if (p.Length != 2 || p[1].Length != 2) return null;
+            int h, m;
+            if (!int.TryParse(p[0], out h) || !int.TryParse(p[1], out m)) return null;
+            if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+            return h.ToString("00") + ":" + m.ToString("00");
+        }
+
+        // Hay algo en pantalla que todavía no está en BD: una fila recién creada con
+        // "+", una hora a medias, o un guardado pendiente o en curso. Mientras sea
+        // así, el poll NO repinta las noticias — antes la fila nueva desaparecía en
+        // el siguiente refresco (0-5 s) si aún no tenía la hora completa.
+        private bool NoticiasPendientes()
+        {
+            if (noticiasSaving || noticiasDirty) return true;
+            if (noticiasSaveTimer != null && noticiasSaveTimer.IsEnabled) return true;
+            return noticias.Any(n => HoraNorm(n.Hora) == null);
+        }
+
+        // Las noticias completas, una por hora (la tabla tiene UNIQUE fecha+hora: varias
+        // cifras a la misma hora son UN evento con UNA ventana). Si hay dos filas con
+        // la misma hora se funden uniendo los nombres. Se llama en el hilo de UI.
+        private List<KeyValuePair<string, string>> SnapshotNoticias(out bool fundidas)
+        {
+            fundidas = false;
+            var res = new List<KeyValuePair<string, string>>();
+            foreach (var n in noticias)
+            {
+                string h = HoraNorm(n.Hora);
+                if (h == null) continue;                       // aún se está escribiendo
+                string nombre = (n.Nombre ?? "").Trim();
+                int i = res.FindIndex(x => x.Key == h);
+                if (i < 0) { res.Add(new KeyValuePair<string, string>(h, nombre)); continue; }
+                fundidas = true;
+                string previo = res[i].Value;
+                if (nombre.Length > 0 && !previo.Split('/').Any(x => x.Trim() == nombre))
+                    res[i] = new KeyValuePair<string, string>(h, previo.Length > 0 ? previo + " / " + nombre : nombre);
+            }
+            return res;
+        }
+
+        // Guarda el set del día en `sesion_noticias`. Un trigger sincroniza
         // `sesiones.hora_noticia_roja` para el Worker y la web.
+        //
+        // Primero se ESCRIBE (upsert por fecha+hora) y solo después se borra lo que
+        // sobra. Antes era DELETE de todo + INSERT: si el INSERT fallaba, el día se
+        // quedaba sin ninguna noticia. Y va en serie: dos guardados solapados se
+        // pisaban entre sí.
         private async Task SaveNoticiasAsync()
         {
             if (EsFinDeSemana()) return;
+            if (noticiasSaving) { noticiasDirty = true; return; }
+            noticiasSaving = true;
             try
             {
-                // La fila de sesiones debe existir antes (FK)
-                await UpsertSesionAsync(new JObject { ["sesion_date"] = currentDate }).ConfigureAwait(false);
-
-                var del = new HttpRequestMessage(HttpMethod.Delete,
-                    SUPABASE_URL + "/rest/v1/sesion_noticias?sesion_date=eq." + currentDate);
-                var dres = await http.SendAsync(del).ConfigureAwait(false);
-                if (!dres.IsSuccessStatusCode)
-                    throw new Exception("DELETE HTTP " + (int)dres.StatusCode);
-
-                var rows = new JArray();
-                foreach (var n in noticias)
+                bool fundidas = false;
+                do
                 {
-                    if (ParseHhmm(n.Hora) < 0) continue;   // hora incompleta: aún se está escribiendo
-                    rows.Add(new JObject {
-                        ["sesion_date"] = currentDate,
-                        ["hora"] = n.Hora,
-                        ["nombre"] = string.IsNullOrWhiteSpace(n.Nombre) ? (JToken)JValue.CreateNull() : (JToken)n.Nombre
-                    });
+                    noticiasDirty = false;
+                    List<KeyValuePair<string, string>> snap = null;
+                    await Dispatcher.InvokeAsync(() => { snap = SnapshotNoticias(out fundidas); });
+
+                    // La fila de sesiones debe existir antes (FK)
+                    await UpsertSesionAsync(new JObject { ["sesion_date"] = currentDate }).ConfigureAwait(false);
+
+                    if (snap.Count > 0)
+                    {
+                        var rows = new JArray();
+                        foreach (var kv in snap)
+                            rows.Add(new JObject {
+                                ["sesion_date"] = currentDate,
+                                ["hora"] = kv.Key,
+                                ["nombre"] = kv.Value.Length == 0 ? (JToken)JValue.CreateNull() : (JToken)kv.Value
+                            });
+                        var req = new HttpRequestMessage(HttpMethod.Post,
+                            SUPABASE_URL + "/rest/v1/sesion_noticias?on_conflict=sesion_date,hora");
+                        req.Headers.Add("Prefer", "resolution=merge-duplicates");
+                        req.Content = new StringContent(rows.ToString(), Encoding.UTF8, "application/json");
+                        var res = await http.SendAsync(req).ConfigureAwait(false);
+                        if (!res.IsSuccessStatusCode)
+                            throw new Exception("HTTP " + (int)res.StatusCode + ": " + await res.Content.ReadAsStringAsync().ConfigureAwait(false));
+                    }
+
+                    // Borrar SOLO las horas que ya no están en pantalla
+                    string filtro = SUPABASE_URL + "/rest/v1/sesion_noticias?sesion_date=eq." + currentDate;
+                    if (snap.Count > 0)
+                        filtro += "&hora=not.in.(" + string.Join(",", snap.Select(kv => kv.Key + ":00")) + ")";
+                    var dres = await http.SendAsync(new HttpRequestMessage(HttpMethod.Delete, filtro)).ConfigureAwait(false);
+                    if (!dres.IsSuccessStatusCode)
+                        throw new Exception("DELETE HTTP " + (int)dres.StatusCode + ": " + await dres.Content.ReadAsStringAsync().ConfigureAwait(false));
                 }
-                if (rows.Count > 0)
-                {
-                    var req = new HttpRequestMessage(HttpMethod.Post, SUPABASE_URL + "/rest/v1/sesion_noticias");
-                    req.Content = new StringContent(rows.ToString(), Encoding.UTF8, "application/json");
-                    var res = await http.SendAsync(req).ConfigureAwait(false);
-                    if (!res.IsSuccessStatusCode)
-                        throw new Exception("HTTP " + (int)res.StatusCode + ": " + await res.Content.ReadAsStringAsync().ConfigureAwait(false));
-                }
-                await Dispatcher.InvokeAsync(() => SetStatus("🟢 Sincronizado", ACCENT));
+                while (noticiasDirty);
+
+                bool f = fundidas;
+                await Dispatcher.InvokeAsync(() => {
+                    if (f) SetStatus("🟡 Dos noticias a la misma hora: se guardan como una", WARNING);
+                    else   SetStatus("🟢 Sincronizado", ACCENT);
+                });
             }
             catch (Exception ex)
             {
-                await Dispatcher.InvokeAsync(() => SetStatus("🟡 Noticias sin guardar (sin conexión)", WARNING));
+                await Dispatcher.InvokeAsync(() => SetStatus("🟡 Noticias sin guardar — ver Output", WARNING));
                 NinjaTrader.Code.Output.Process("ChecklistChaumer SaveNoticias: " + ex.Message, PrintTo.OutputTab1);
+            }
+            finally
+            {
+                noticiasSaving = false;
             }
         }
 
@@ -1011,9 +1072,14 @@ namespace NinjaTrader.NinjaScript.AddOns
                     }
                     // Noticias (no pisar si el usuario las está editando). Se comparan
                     // por contenido para no re-renderizar en cada poll y perder el foco.
-                    if ((DateTime.UtcNow - lastHoraChangeUtc).TotalSeconds >= 3)
+                    if (!NoticiasPendientes() && (DateTime.UtcNow - lastHoraChangeUtc).TotalSeconds >= 3)
                     {
-                        string firmaLocal  = string.Join("|", noticias.Select(n => n.Hora + "~" + n.Nombre));
+                        // La local se compara ordenada y con la hora normalizada, como
+                        // llega la remota: si no, "9:30" o un orden distinto forzaban un
+                        // repintado que quitaba el foco.
+                        string firmaLocal  = string.Join("|", noticias
+                            .Select(n => new { H = HoraNorm(n.Hora) ?? n.Hora, n.Nombre })
+                            .OrderBy(x => x.H).Select(x => x.H + "~" + x.Nombre));
                         string firmaRemota = string.Join("|", noticiasRemotas.Select(n => n.Hora + "~" + n.Nombre));
                         if (firmaLocal != firmaRemota)
                         {
