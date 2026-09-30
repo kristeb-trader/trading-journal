@@ -16,12 +16,15 @@ El motor corre sobre cualquier día del que haya velas de 1 minuto; lo que limit
   se exportan por **contrato** (el de ese vencimiento, no el siguiente). El backtesting a mano de 2025 (116 gráficos,
   01/08/2025 → 16/01/2026) queda cubierto. Septiembre, en `datos/dia/Septiembre.txt` (MNQ 09-26, 31/08 → 18/09).
 - **Hecho:** 1/09 (Continuación alcista 9:44, +15,75; el motor dice NO OPERA). Sale la corrida fluida 3.36.
-- [ ] **El motor, a la corrida fluida 3.36:** cada tramo en su sentido, segundo IRI, mercado mixto, la ruptura
-  sin consecución que deja la zona fallida, y que cada zona pueda romperse más de una vez. Después la regresión:
-  si cambia algún día validado, a Kris. Hasta entonces, los días se marcan a mano encima del motor.
-  **Hecho en disco, sin subir** (29/09): septiembre sale idéntico, pero cambian cuatro días de julio validados
-  como NO OPERA — 7 (−56,50), 9 (−29,75), 16 (−66,75) y 20 (−33,50). Revisarlos con Kris uno a uno, empezando
-  por el 16
+- **Hecho (30/09):** el motor aplica la corrida fluida 3.36–3.38 (`b7bdcf7`). Septiembre sale idéntico; cuatro días
+  de julio, revalidados con Kris uno a uno: 7 (−56,50), 9 (−29,75), 16 (−66,75) y 20 (+54,50). Julio, −241,00 en 10
+- [ ] **Textos del plan que cuentan esos días con el resultado de antes** (con el sí de Kris, frase a frase): en la
+  galería, el caso del 9/07 (el largo de 8:46, −59,75) y el del 16/07 (dice que la operación ya no existe); en la
+  regla de la vela de apertura y en la de la caducidad de la orden, el ejemplo del 9/07 (orden de 8:43 que se llena
+  a las 8:46); en la corrida fluida, el caso del 16/07 no dice cómo acaba el día
+- [ ] **Doce días sin validar de julio y agosto cambian con el motor nuevo** (1, 23, 28 y 31/07; 3, 5, 6, 7, 11, 13,
+  14 y 18/08): se ven cuando les toque en el backtesting
+- [ ] **Siguiente día:** 2/09 (velas en `datos/dia/Septiembre.txt`, hasta el 9/09)
 
 Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md`, checkpoint del 28/09.
 
