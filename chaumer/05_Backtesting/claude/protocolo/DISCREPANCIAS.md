@@ -783,3 +783,31 @@ A mano, el rompimiento sin consecución de las 8:53 se resuelve a las 8:57 por e
 por plazo (sin efecto). El umbral de volumen es el de hoy, 8.000, también para los días anteriores al 14/09
 (operador, 30/09: *"déjalo con 8.000"*).
 
+---
+
+# Viernes 4 de septiembre de 2026 — coincidimos · el motor no ve que la apertura pierde la fluidez
+
+> 📝 **Marcada el 30/09/2026**, a ciegas.
+
+**Noticia roja: Unemployment Rate a las 7:30, fuera de la ventana. No es día de Fed.**
+
+**Veredicto: Continuación bajista, +16,75 pts = +33,50 USD.** Coincide con el operador (*"estamos igual"*).
+
+| | |
+|---|---|
+| Primer movimiento | **bajista** (8:31, abre 29.588,25 · cierra 29.566,00) |
+| Premercado | **un soporte**, 29.546,25 – 29.565,25 — la vela de 7:31, la de la noticia, hizo 12.230 contratos |
+| Zona | soporte **29.530,00 – 29.533,50** (vela 9:45), entero por debajo del de premercado, roto con consecución a las 9:43–9:44 |
+| Entrada | corto · la vela de **9:46** hace el retroceso y rompe la zona · se llena en la de **9:48** en **29.527,50** |
+| Stop | **29.544,25** · Objetivo **29.510,75** · riesgo **16,75 pts** |
+| Resultado | **TARGET a las 9:50** · +16,75 pts |
+
+## 🔧 Fue el motor · sin efecto hoy
+
+La bajada de la apertura (42,50) deja su zona dentro del soporte de premercado y se funde con él; la subida
+siguiente hace 91,50 y se pasa. El motor solo mira si el retroceso se pasa en las zonas que nacen de una corrida, y
+ésta no nace: se estira la de premercado. Por eso no bloquea los cortos y a las 8:42 da por válido el de la ruptura del
+soporte de 8:37 (entrada 29.602,00), que descarta solo porque el objetivo choca con el soporte de premercado. A mano
+ese corto no se plantea. Además, a mano el rompimiento de las 8:49 se resuelve a las 8:52 por estructura contraria y
+la resistencia de 8:37 se estira a 29.650,00.
+
