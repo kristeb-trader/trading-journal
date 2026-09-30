@@ -71,7 +71,7 @@ La corrida **nace mirando máximos** y **muere mirando mínimos**. Son dos crite
 
 La **primera vela de la ventana operativa: la 08:31** hora Colombia en el horario de verano de EE. UU., **la 09:31** en el de invierno.
 
-No se compara con ninguna anterior — la vela anterior es premercado y no sirve como `n−1`. **Declara ella misma la dirección del día con su propio cuerpo:** cierre por encima de su apertura → el día inicia alcista; por debajo → inicia bajista. **Sin cuerpo** (cierra donde abrió), la dirección la da la primera vela siguiente que pase de su máximo (alcista) o de su mínimo (bajista); si esa vela pasa de los dos, lo que hizo primero según su color. Y es la vela origen de la primera corrida, tenga cuerpo o no.
+No se compara con ninguna anterior — la vela anterior es premercado y no sirve como `n−1`. **Declara ella misma cómo empieza el primer movimiento, con su propio cuerpo:** cierre por encima de su apertura → el día inicia alcista; por debajo → inicia bajista. **Sin cuerpo** (cierra donde abrió), la dirección la da la primera vela siguiente que pase de su máximo (alcista) o de su mínimo (bajista); si esa vela pasa de los dos, lo que hizo primero según su color. Y es la vela origen de la primera corrida, tenga cuerpo o no.
 
 La corrida se mide **desde su extremo**: el mínimo si es alcista, el máximo si es bajista. Y **puede sostener zona** como cualquier otra vela.
 
@@ -147,7 +147,7 @@ Una corrida es fluida cuando la secuencia sale bien **tres veces seguidas**: la 
 
 ## ROMPIMIENTO DIRECTO
 
-El rompimiento de una zona **mientras el sentido del día está bloqueado** porque se perdió la fluidez. Por parámetros cumple —pasa el tick, llega la consecución—, pero el mercado está lateral y **por contexto pierde probabilidad**. **No se opera nunca:** es solo el primer paso para que vuelvan las entradas.
+El rompimiento de una zona **mientras su sentido está bloqueado** porque se perdió la fluidez. Por parámetros cumple —pasa el tick, llega la consecución—, pero el mercado está lateral y **por contexto pierde probabilidad**. **No se opera nunca:** es solo el primer paso para que vuelvan las entradas.
 
 **Regla:** `R-40`
 

@@ -112,7 +112,7 @@ Diagrama: `02_Assets\diagramas\R-26_reingreso.png`
 
 ### Cómo se aplica
 
-**Cómo se emparejan corrida y retroceso.** La vela de apertura declara el sentido (`R-07`). Desde ahí el mercado va alternando: una corrida en ese sentido, su retroceso en contra, otra corrida, otro retroceso. **Cada corrida se empareja con el retroceso que viene justo después de ella, y las parejas no se solapan.** Tras una pareja rota, la cuenta vuelve a empezar con la corrida siguiente.
+**Cómo se emparejan corrida y retroceso.** La vela de apertura dice cómo **empieza el primer movimiento**, no la dirección del día (`R-07`). **Cada tramo se juzga en su propio sentido:** una corrida alcista con el retroceso que viene justo después de ella, y una corrida bajista con el suyo.
 
 **Las tres condiciones**, sobre la zona que se va a romper, antes de colocar la orden:
 
@@ -120,15 +120,17 @@ Diagrama: `02_Assets\diagramas\R-26_reingreso.png`
 |---|---|
 | **1** | la **corrida** deja su zona al terminar (`R-09`) |
 | **2** | el **retroceso no se pasa**: mide menos que su corrida. Empate cuenta como que no se pasa |
-| **3** | la **corrida siguiente rompe** esa zona |
+| **3** | la **corrida siguiente rompe** esa zona. Vale aunque la rompa la misma vela que hace el retroceso: primero va en contra y después rompe |
 
 Cumplidas las tres, ese rompimiento es la entrada — el cuarto paso de la Continuación (`R-25`). Los dos primeros se miden sobre el zigzag: la corrida, de su punto de arranque a su extremo; el retroceso, de ese mismo extremo a su nivel de referencia (`R-06`).
 
-**Las dos formas de fallar**, y basta una:
+**Las cuatro formas de fallar**, y basta una:
 - **A · El retroceso se pasa.** Mide más que su corrida. Entonces caen **las dos zonas** de esa pareja: la de la corrida **y la que deja el propio retroceso pasado**.
-- **B · La corrida siguiente no rompe.** Llega a la zona, no es capaz de pasarla y se devuelve: esa zona queda bloqueada.
+- **B · La corrida siguiente no rompe.** Llega a la zona y no la pasa, **o la rompe sin consecución y se devuelve**. Esa zona ya no da entrada, aunque el precio la vuelva a romper más tarde.
+- **C · Es el primer IRI después de un movimiento contrario.** Aunque cumpla las tres condiciones, no es fluido. Se espera un **segundo IRI** en ese sentido, con su zona nueva **entera más allá** de la del primero, y se entra en la consecución del rompimiento de esa zona.
+- **D · Mercado mixto.** Cuando un tramo llega más allá del **punto donde empezó** el IRI anterior, no se opera en ningún sentido hasta que se arme un IRI por fuera de **los extremos: la resistencia más alta y el soporte más bajo**. Después se espera el segundo IRI, como en C.
 
-**El bloqueo es del SENTIDO, no de esa zona.** El sentido del día lo declara la vela de apertura: si cierra por debajo de donde abrió, el día es bajista y se buscan cortos; si cierra por encima, alcista y largos. Perdida la fluidez, **no se opera ningún rompimiento en el sentido del día**, sea cual sea la zona — incluidas las **zonas de premercado** (`R-15`), que no tienen corrida detrás y a las que por eso no se les puede mirar si su corrida fue limpia: el bloqueo las alcanza igual. **Solo el sentido del día:** el bloqueo no toca el sentido contrario.
+**El bloqueo es del sentido que perdió la fluidez**, no de esa zona ni del día. Perdida la fluidez, **no se opera ningún rompimiento en ese sentido**, sea cual sea la zona — incluidas las **zonas de premercado** (`R-15`), que no tienen corrida detrás y a las que por eso no se les puede mirar si su corrida fue limpia: el bloqueo las alcanza igual. **El otro sentido lleva su propia cuenta.**
 
 **El rompimiento directo** (término del operador). Con el sentido bloqueado, el mercado acabará rompiendo la zona. **Ese rompimiento no se opera nunca:** por parámetros cumple, pero el mercado está lateral y por contexto pierde probabilidad. Sirve solo como primer paso de la recuperación.
 
@@ -163,6 +165,10 @@ Es la traducción medible de «no es fluida» y «está lateral». Palabras del 
 **Caso de origen · 18/09/2026.** Abre bajista. La vela de **8:32** deja un retroceso de 38,00 contra una corrida de 29,00 → se acaban los cortos. Las velas de **8:49 y 8:50** rompen la zona de premercado con consecución → **rompimiento directo, no se opera**. La corrida de 8:52 deja el soporte 29.781,50 – 29.791,75, entero por debajo del terreno bloqueado; la de 8:55 lo rompe → **entrada en la de 8:56**, +31,00 pts. Palabras del operador: *"ya no hay fluidez bajista, por lo tanto ya no pienso en cortos; espero que se rompa la zona de soporte, que haga otro IRI, y ahí sí entro"*.
 
 **Primera jornada que lo ejercita entero · 21/09/2026.** Abre alcista. Se pierde a las **8:34** (retroceso de 44,25 contra corrida de 38,75) · rompimiento directo a las **8:37** · se recupera con un largo a las 8:49 que **se cancela antes de llenar** · se **vuelve a perder** a las **8:51** (20,00 contra 16,25) · segundo rompimiento directo a las **8:52** · se recupera con la entrada de las **8:59**, +23,75 pts.
+
+#### Cada tramo en su sentido, el segundo IRI y el mercado mixto (29/09/2026)
+
+Sobre la jornada del **1/09/2026**, la primera del backtesting hacia atrás. Hasta aquí la regla decía que la vela de apertura declaraba **el sentido del día**, al revés que `R-07`. El operador: *"la dirección de la vela de apertura no declara la dirección del día, declara cómo inicia el primer movimiento de la apertura"*. La apertura baja (tramo 1); la bajada siguiente (3) no rompe el soporte de 8:32: se pierde la fluidez bajista. **2-3-4 es un IRI normal, hacia arriba**, pero *"el movimiento antecesor de ese (1) fue bajista, por lo tanto le quita fluidez al IRI 2-3-4, y lo que yo haría sería esperar otro IRI arriba, un segundo IRI alcista para pensar en largos"* (forma C). El tramo 5 baja hasta 29.040,00, más allá de donde empezó el 2 (29.062,75): *"el mercado está mixto, entonces debo esperar un IRI sobre los extremos"*, que son *"la resistencia más alta y el soporte más bajo"* (forma D). La resistencia de 9:17 se rompe a las 9:23 sin consecución y se devuelve; a las 9:31 se rompe otra vez, y no se opera: *"la 9:23 ya falló"* (forma B). La entrada del día la da la resistencia de 9:42: la vela de **9:43** primero baja —hace el retroceso— y después la rompe; *"la entrada de las 09:44 es válida"*. Largo en 29.224,50, **+15,75 pts**.
 
 **Origen:** sesiones de septiembre — jornadas del 10, 11 y 14 de septiembre de 2026, y la revisión del 16/07. Ver `05_Backtesting\claude\protocolo\DISCREPANCIAS.md`.
 
