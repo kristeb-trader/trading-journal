@@ -839,3 +839,25 @@ y el gráfico la rotula «soporte».
 **El hueco del 4/09, otra vez.** La zona de la apertura no nace como zona de corrida (aquí es una apéndice) y el
 motor no ve que el retroceso se pasa de la apertura.
 
+---
+
+# Miércoles 9 de septiembre de 2026 — coincidimos
+
+> 📝 **Marcada el 30/09/2026**, a ciegas. Primera jornada con los dos arreglos del motor (`b032ed2`).
+
+**Sin noticias rojas. No es día de Fed.**
+
+**Veredicto: Continuación alcista, +67,25 pts = +134,50 USD.** El motor y la lectura a mano coinciden, sin diferencias, y coincide con el operador.
+
+| | |
+|---|---|
+| Primer movimiento | **alcista** (8:31, abre 29.455,00 · cierra 29.462,25) |
+| Premercado | **sin zonas** — la vela más fuerte hizo 7.291 contratos |
+| Zona | resistencia **29.462,25 – 29.472,50** (vela 8:31): el primer IRI del día, en el sentido de la apertura |
+| Entrada | largo · la vela de **8:35** rompe la zona · se llena en la de **8:38** en **29.499,25** |
+| Stop | **29.432,00** · Objetivo **29.566,50** · riesgo **67,25 pts** |
+| Resultado | **TARGET a las 9:00** · +67,25 pts, por dos ticks (máximo 29.567,00) |
+
+La corrida (55,50) no la cortan las velas de 8:32 y 8:33; el retroceso es la de 8:34 (40,50). El stop es el mínimo
+desde que nace la zona, 29.432,00: el de la vela de 8:32 (29.422,50) es anterior y no cuenta.
+
