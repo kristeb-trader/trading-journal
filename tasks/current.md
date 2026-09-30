@@ -13,7 +13,8 @@ delante: nada de listas previas (decisión de Kris, 28/09). Si cambia el motor, 
 El motor corre sobre cualquier día del que haya velas de 1 minuto; lo que limita es qué velas hay.
 
 - **Cómo va:** Kris pide el día; Claude lo marca a ciegas con el motor (corrida fluida 3.38), lo revisa a mano y
-  entrega; se compara, y con su sí va a la galería. **Al cerrar cada día se pasa el puente**
+  entrega; se compara. **Si Kris dice «sí» o «perfecto» es que coincide, y va a la galería sin volver a preguntar**
+  (30/09); un cambio de regla o un día que no coincide sí se le pregunta. **Al cerrar cada día se pasa el puente**
   (`python scripts/cadena/subir_dia.py AAAA-MM-DD`) para que el Journal —calendario «Claude» y Coach— tenga su ficha
   y su gráfico, igual que el portal (Kris, 30/09). Hechos: 1/09 (+15,75), 2/09 (+29,00), 3/09 (+24,00) y 4/09 (+16,75)
 - [ ] **Hueco del motor (4/09):** si la zona de una corrida se funde con otra (la de premercado), no ve que su
