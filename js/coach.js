@@ -17,6 +17,8 @@ const Coach = (() => {
   // Precio de Opus 5.5 en USD por millón de tokens, para la fila de `coach_uso`.
   // La escritura de caché cuesta 2× la entrada con TTL de 1 h y 1,25× con 5 min.
   const PRECIO = { entrada: 4, salida: 20, cache1h: 8, cache5m: 5, cacheLeida: 0.20 }
+  // Resúmenes de días anteriores que lee el Coach (ver cargarHistorialCompacto).
+  const HISTORIAL_DIAS = 20
 
   // El Coach IA solo analiza la CUENTA PRINCIPAL configurada (Datos → Cuenta
   // principal, guardada en objetivos.cuenta_principal). Las demás se ignoran.
@@ -47,6 +49,12 @@ const Coach = (() => {
   let imagenBase64      = null // chart subido (si existe)
   let imagenPromesa     = null // carga en curso de la gráfica del día desde Cloudinary
   let diagnosticoGuardado = false
+  // Errores del diagnóstico que Kris aún no confirmó. El texto se guarda solo;
+  // los errores NO, porque cuentan en la disciplina y los confirma él.
+  let erroresPendientes = false
+  // Sube cada vez que el panel se vacía (cambio de día, análisis nuevo). Una
+  // respuesta que vuelve con otro número llegó tarde: es de un panel que ya no está.
+  let panel = 0
 
   // Máquina de estados del flujo en 3 etapas
   let analisisHecho     = false // etapa 1 completada
@@ -99,7 +107,10 @@ const Coach = (() => {
 
   // ── Construcción del System Prompt ────────────────────────────────────
 
-  async function buildSystemPrompt(date) {
+  // `conPlan`: el bloque A (el plan de Chaumer) va delante. Entonces las reglas no se
+  // repiten aquí: ya están en el plan, enteras, y duplicarlas costaba ~4.500 tokens
+  // por día sin añadir nada (y en la etapa 2 la "estrategia v4" salía vacía).
+  async function buildSystemPrompt(date, { conPlan = false } = {}) {
     const [reglasTodas, historial, patrones, sesion, trades, casuisticas, emociones, catalogoErrores, , fechasEsp, objetivos] = await Promise.all([
       cargarReglas(),
       cargarHistorialCompacto(date),
@@ -123,10 +134,30 @@ const Coach = (() => {
     const familiaDia = DB.setupFamily(sesion) ||
       DB.setupFamily({ setup: sesion?.setup_observado || null })
 
-    // Bloques derivados del rulebook canónico `reglas`
-    const estrategia  = fmtFilosofia(reglas)
-    const reglasSetup = fmtReglasSetup(reglas, familiaDia, sesion)
-    const reglasDuras = fmtReglasDuras(reglas, familiaDia)
+    // Bloques derivados del rulebook canónico `reglas`. Con el plan delante, un
+    // puntero corto en su lugar.
+    const bloqueReglas = conPlan ? `## LAS REGLAS DE ESTE DÍA
+
+Son las del PLAN DE TRADING de arriba: no se repiten aquí. Setup del día: **${sesion?.setup || sesion?.setup_observado || 'no identificado'}** — evalúa solo las reglas que el plan aplica a ese setup.
+Si la entrada rompe una regla cuyo incumplimiento el plan marca como «no se opera», el VEREDICTO final es INVÁLIDO por más bueno que se vea el resto. Nombra cada regla por lo que dice, NUNCA por su código.` : `## ⛔ REGLAS NO NEGOCIABLES (DURAS) — violar una = entrada INVÁLIDA
+
+${fmtReglasDuras(reglas, familiaDia)}
+
+Estas reglas NO admiten excepción. Si la sesión viola cualquiera, el VEREDICTO final es INVÁLIDO por más bueno que se vea el resto del setup, y debes nombrar la regla rota por su **TÍTULO descriptivo** (p. ej. "Stop máximo de 80 puntos", "Día FOMC: solo reingresos"). NUNCA muestres el código interno (\`chk_consecucion\`, \`chk_orden\`…): es solo referencia, el trader no lo entiende. Las demás reglas (blandas) son guías sujetas a criterio.
+
+---
+
+## ESTRATEGIA CHAUMER COMPLETA (v4)
+
+${fmtFilosofia(reglas)}
+
+---
+
+## REGLAS DEL SETUP DEL DÍA
+
+${fmtReglasSetup(reglas, familiaDia, sesion)}
+
+Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes. Las reglas de setup son EXCLUYENTES entre sí: evalúa únicamente las de la familia del setup operado. Nunca reportes como incumplida una regla de otro setup — no aplica.`
 
     // El Coach analiza ÚNICAMENTE la cuenta principal configurada.
     // Las demás cuentas (evaluación, simulación) no se analizan.
@@ -325,25 +356,7 @@ Responde SIEMPRE en español. Sé estricto y directo — si el trader cometió e
 
 ---
 
-## ⛔ REGLAS NO NEGOCIABLES (DURAS) — violar una = entrada INVÁLIDA
-
-${reglasDuras}
-
-Estas reglas NO admiten excepción. Si la sesión viola cualquiera, el VEREDICTO final es INVÁLIDO por más bueno que se vea el resto del setup, y debes nombrar la regla rota por su **TÍTULO descriptivo** (p. ej. "Stop máximo de 80 puntos", "Día FOMC: solo reingresos"). NUNCA muestres el código interno (\`chk_consecucion\`, \`chk_orden\`…): es solo referencia, el trader no lo entiende. Las demás reglas (blandas) son guías sujetas a criterio.
-
----
-
-## ESTRATEGIA CHAUMER COMPLETA (v4)
-
-${estrategia}
-
----
-
-## REGLAS DEL SETUP DEL DÍA
-
-${reglasSetup}
-
-Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes. Las reglas de setup son EXCLUYENTES entre sí: evalúa únicamente las de la familia del setup operado. Nunca reportes como incumplida una regla de otro setup — no aplica.
+${bloqueReglas}
 
 ---
 
@@ -353,7 +366,7 @@ ${patrones}
 
 ---
 
-## HISTORIAL DE SESIONES (las 60 sesiones ANTERIORES al ${date})
+## HISTORIAL DE SESIONES (las ${HISTORIAL_DIAS} sesiones ANTERIORES al ${date})
 
 ${historial}
 
@@ -530,13 +543,13 @@ NombreError | tipo | resultado | detalleError | NombreRec | textoRec | fase | re
 - reglaVista: SOLO si el error fue violar una regla conocida → "vista" (vio la regla y la violó: impulsividad, disciplina) o "noVista" (no la vio/no la supo a tiempo: falla analítica). Si no aplica, deja vacío.
 - reglaCodigo: el CÓDIGO EXACTO de la regla del checklist que este error contradice, de la lista CÓDIGOS DE REGLA de abajo. Es CRÍTICO: el trader marcó esa casilla como cumplida antes de operar, y este código es lo que permite corregirla. Rellénalo SOLO si el error rompe directamente esa regla concreta. Si el error no contradice ninguna regla del checklist (típico de los psicológicos: miedo, duda, rabia, ansiedad), DÉJALO VACÍO. No inventes códigos ni fuerces una correspondencia dudosa.
 Ejemplo día operado: Error de Marcación | marcado | ninguno | Marqué la zona 10 puntos arriba. | Revisión de zonas | Siempre verificar la zona en 5 min antes de marcarla en 1 min. | 2 | | chk_zonas
-Ejemplo regla violada: Excedió Retroceso | psicologico | ninguno | Retroceso $145 > límite $120, lo vio y entró igual. | Respetar stop máx | Si el retroceso supera el límite, NO entrar sin excepción. | 2 | vista | stop_max_puntos
+Ejemplo regla violada: Excedió Retroceso | psicologico | ninguno | Retroceso de 95 puntos > stop máximo de 80, lo vio y entró igual. | Respetar stop máx | Si el retroceso supera el límite, NO entrar sin excepción. | 2 | vista | stop_max_puntos
 Ejemplo sin regla: Miedo | psicologico | T | No tomé la entrada por miedo. | Visualización pre-sesión | Antes de operar visualiza 3 entradas recientes exitosas para anclar confianza. | 3 | |
 
 CÓDIGOS DE REGLA del checklist (para la parte reglaCodigo — usa el código, no el título):
 ${codigosReglaStr}
 Si NO hubo errores, escribe exactamente: NINGUNO
-- Si hay una ALERTA DE RIESGO arriba: cuando el trader VIO la alerta y entró igual, clasifícalo como error psicológico de impulsividad (el más grave, prioritario); si NO la vio a tiempo, clasifícalo como error analítico/de proceso. El límite de stop máximo es una regla NO negociable: si el stop en dólares lo supera, la entrada es INVÁLIDA por más bueno que se vea el resto del setup.
+- Si hay una ALERTA DE RIESGO arriba: cuando el trader VIO la alerta y entró igual, clasifícalo como error psicológico de impulsividad (el más grave, prioritario); si NO la vio a tiempo, clasifícalo como error analítico/de proceso. El límite de stop máximo es una regla NO negociable: si el stop en puntos lo supera, la entrada es INVÁLIDA por más bueno que se vea el resto del setup.
 
 CATÁLOGO DE ERRORES (usa estos nombres exactos cuando apliquen):
 ${catalogoStr}
@@ -774,8 +787,11 @@ ${avisos}` : ''}
   // Historial PREVIO a la fecha analizada. Sin el corte, al analizar un día pasado
   // se le pasaban al Coach los resúmenes de días posteriores: razonaba con
   // información que ese día no existía (y citaba "patrones" del futuro).
+  // 20 y no 60 (2 oct): un mes de resúmenes basta para el contexto, y lo que se
+  // repite ya lo resume "PATRONES CRÍTICOS" con 600 errores. Eran ~4.000 tokens
+  // más cada día.
   async function cargarHistorialCompacto(hasta) {
-    const historial = await DB.getHistorialCompacto(60, hasta || null)
+    const historial = await DB.getHistorialCompacto(HISTORIAL_DIAS, hasta || null)
     if (!historial.length) return 'Sin historial previo registrado.'
     return historial
       .slice()
@@ -814,16 +830,64 @@ ${avisos}` : ''}
   }
 
   // ── Prompt caching ─────────────────────────────────────────────────────
-  // El system prompt (rulebook + estrategia + 60 resúmenes + catálogos) y la
-  // gráfica en base64 se reenviaban ÍNTEGROS en cada turno del chat. Con
-  // `cache_control` se escriben una vez (×1.25) y se releen a ×0.1.
+  // El system prompt (el plan + el día + el historial) y la gráfica se escriben
+  // en la caché una vez y se releen casi gratis en los turnos siguientes.
   //
-  // TTL de 1 h en vez de los 5 min por defecto: entre el análisis y el
-  // diagnóstico el trader LEE, y esa pausa se come de sobra los 5 minutos.
-  // Con 1h el punto de equilibrio son 3 llamadas — justo el flujo normal
-  // (análisis → chat → diagnóstico). Si un día solo se hacen 2, se paga un
-  // 10% de más; a cambio no se recalienta un prompt enorme en cada pausa.
-  const CACHE_CTRL = { type: 'ephemeral', ttl: '1h' }
+  // TTL de 5 min + toque (2 oct): la escritura de 1 h cuesta 2× la entrada y la
+  // de 5 min, 1,25×. Con ~88.000 tokens eran $0,70 frente a $0,44 en CADA día,
+  // porque el Coach se abre una vez al día y la caché de ayer ya no existe.
+  // Las pausas del flujo (leer el análisis antes de preguntar) se cubren con
+  // `tocarCache`: una lectura renueva la caché por otros 5 min y cuesta ~$0,02.
+  const CACHE_CTRL = { type: 'ephemeral' }
+
+  // El toque: reenviar la última petición con `max_tokens: 0`. La API solo lee el
+  // prefijo (renueva la caché) y no genera nada. La vida de la caché cuenta desde
+  // el INICIO de la petición que la leyó, así que el toque va 4 min después del
+  // inicio de la anterior. Tras 15 min sin actividad se deja de tocar: si Kris
+  // cerró la sesión, cada toque más sería dinero tirado.
+  const CACHE_VIDA     = 5 * 60e3
+  const TOQUE_CADA     = 4 * 60e3
+  const TOQUE_MARGEN   = 20e3       // red y reloj: más tarde que esto, la caché pudo caducar
+  const TOQUE_HASTA    = 15 * 60e3  // sin actividad real, se deja de tocar
+  let toque = null                  // { cuerpo, fecha, panel, inicio, actividad, timer }
+
+  function pararToque() {
+    if (toque?.timer) clearTimeout(toque.timer)
+    toque = null
+  }
+
+  function programarToque(cuerpo, inicio, fecha) {
+    pararToque()
+    toque = { cuerpo, fecha, panel, inicio, actividad: inicio, timer: null }
+    toque.timer = setTimeout(tocarCache, Math.max(0, inicio + TOQUE_CADA - Date.now()))
+  }
+
+  async function tocarCache() {
+    const t = toque
+    if (!t || t.panel !== panel) return pararToque()
+    const ahora = Date.now()
+    // Un temporizador que llega tarde (pestaña en segundo plano, móvil bloqueado)
+    // encontraría la caché caducada: el toque la ESCRIBIRÍA entera (~$0,44) para
+    // nada. Mejor dejarla morir; la próxima pregunta real la vuelve a escribir.
+    if (ahora - t.inicio > CACHE_VIDA - TOQUE_MARGEN) return pararToque()
+    if (ahora - t.actividad > TOQUE_HASTA) return pararToque()
+    t.inicio = ahora
+    t.timer = setTimeout(tocarCache, TOQUE_CADA)
+    try {
+      const res = await fetch(CLAUDE_URL, {
+        method: 'POST',
+        headers: cabecerasClaude(),
+        body: JSON.stringify({ ...t.cuerpo, max_tokens: 0 }),
+      })
+      if (!res.ok) { console.warn('[Coach] toque de caché:', res.status, await res.text()); return }
+      const data = await res.json()
+      const u = data?.usage
+      if (u) console.info('[Coach] toque — leídos: %d · escritos: %d', u.cache_read_input_tokens || 0, u.cache_creation_input_tokens || 0)
+      registrarUso(u, 'toque', 0, t.fecha)
+    } catch (e) {
+      console.warn('[Coach] toque de caché:', e?.message || e)
+    }
+  }
 
   // El caché es un match de PREFIJO byte a byte, así que un mismo mensaje debe
   // serializarse igual en todos los turnos: se normaliza SIEMPRE a bloques
@@ -910,7 +974,9 @@ Cómo usarlos:
 
   // Una fila en coach_uso por llamada, con el `usage` de la respuesta. No bloquea:
   // si falla, el análisis sigue y solo se avisa en la consola.
-  function registrarUso(u, stopReason, codigosQuitados) {
+  // `fecha` es la del día que se analizaba al SALIR la petición: si Kris cambió de
+  // día mientras llegaba la respuesta, `coachDate` ya es otro.
+  function registrarUso(u, stopReason, codigosQuitados, fecha = coachDate) {
     if (!u) return
     const cc = u.cache_creation
     const escr1h = cc ? (cc.ephemeral_1h_input_tokens || 0) : (u.cache_creation_input_tokens || 0)
@@ -919,8 +985,8 @@ Cómo usarlos:
       escr5m * PRECIO.cache5m + (u.cache_read_input_tokens || 0) * PRECIO.cacheLeida +
       (u.output_tokens || 0) * PRECIO.salida) / 1e6
     DB.registrarUsoCoach({
-      fecha_analizada:  coachDate || null,
-      etapa:            etapaDeFecha(coachDate) ?? null,
+      fecha_analizada:  fecha || null,
+      etapa:            etapaDeFecha(fecha) ?? null,
       modelo:           MODEL,
       entrada:          u.input_tokens || 0,
       cache_escrita:    u.cache_creation_input_tokens || 0,
@@ -934,52 +1000,69 @@ Cómo usarlos:
 
   // ── Llamada a Claude ───────────────────────────────────────────────────
 
+  function cabecerasClaude() {
+    return {
+      'Content-Type': 'application/json',
+      'x-api-key': localStorage.getItem('claude_api_key') || '',
+      'anthropic-version': '2023-06-01',
+      'X-Dashboard-Token': localStorage.getItem('dashboard_secret') || '',
+    }
+  }
+
+  // El contexto del día: A (el plan, solo etapa 2) y después B (el día). B se arma
+  // sabiendo si A está, porque con el plan delante B no repite sus reglas.
+  async function prepararContexto(fecha) {
+    planBloque = await construirBloquePlan(fecha)
+    systemPromptCache = await buildSystemPrompt(fecha, { conPlan: !!planBloque })
+  }
+
+  // Si Kris cambia de día mientras llega una respuesta, esa respuesta es del día
+  // anterior: no se pinta ni se guarda (se guardaría con la fecha nueva).
+  const CANCELADA = 'respuesta-de-otro-dia'
+
   async function llamarClaude(userContent, isFirst = false) {
-    const apiKey = localStorage.getItem('claude_api_key')
-    if (!apiKey) throw new Error('Configura tu API Key de Claude en ⚙ Ajustes')
+    if (!localStorage.getItem('claude_api_key')) throw new Error('Configura tu API Key de Claude en ⚙ Ajustes')
+    const fecha = coachDate, miPanel = panel
 
     if (isFirst) {
-      ;[planBloque, systemPromptCache] = await Promise.all([construirBloquePlan(coachDate), buildSystemPrompt(coachDate)])
+      await prepararContexto(fecha)
       chatHistory = []
     } else if (!systemPromptCache) {
       // Sesión guardada que se retoma: la app pintó el análisis en pantalla, pero
       // el Coach no tiene NADA en la cabeza (reglas, estrategia, histórico, datos
       // del día). Se le reconstruye el contexto de esa fecha antes de continuar.
       // No cuesta una llamada a la IA: son lecturas de Supabase.
-      ;[planBloque, systemPromptCache] = await Promise.all([construirBloquePlan(coachDate), buildSystemPrompt(coachDate)])
+      await prepararContexto(fecha)
       await imagenPromesa   // la gráfica puede seguir bajando de Cloudinary
       restaurarImagenEnChat()
     }
+    if (miPanel !== panel) throw new Error(CANCELADA)
 
     // Agregar mensaje al historial
     chatHistory.push({ role: 'user', content: userContent })
 
-    const res = await fetch(CLAUDE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'X-Dashboard-Token': localStorage.getItem('dashboard_secret') || '',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: MAX_TOKENS,
-        thinking: THINKING,
-        output_config: { effort: EFFORT },
-        // El system es idéntico durante toda la sesión de coaching (se construye una
-        // vez en la Etapa 1), así que es el prefijo cacheable. Dos bloques, cada uno
-        // con su marca: A (el plan, solo etapa 2; igual para todos los días) y B (el día).
-        system: [
-          ...(planBloque ? [{ type: 'text', text: planBloque, cache_control: CACHE_CTRL }] : []),
-          { type: 'text', text: systemPromptCache, cache_control: CACHE_CTRL },
-        ],
-        messages: mensajesConCache(chatHistory),
-      })
-    })
+    const cuerpo = {
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      thinking: THINKING,
+      output_config: { effort: EFFORT },
+      // El system es idéntico durante toda la sesión de coaching (se construye una
+      // vez en la Etapa 1), así que es el prefijo cacheable. Dos bloques, cada uno
+      // con su marca: A (el plan, solo etapa 2; igual para todos los días) y B (el día).
+      system: [
+        ...(planBloque ? [{ type: 'text', text: planBloque, cache_control: CACHE_CTRL }] : []),
+        { type: 'text', text: systemPromptCache, cache_control: CACHE_CTRL },
+      ],
+      messages: mensajesConCache(chatHistory),
+    }
+    // Una petición real lee la caché: el toque pendiente sobra hasta que acabe.
+    pararToque()
+    const inicio = Date.now()
+    const res = await fetch(CLAUDE_URL, { method: 'POST', headers: cabecerasClaude(), body: JSON.stringify(cuerpo) })
 
     if (!res.ok) {
       const txt = await res.text()
+      if (miPanel === panel) chatHistory.pop()   // la pregunta no tuvo respuesta
       throw new Error(`Error ${res.status}: ${txt}`)
     }
 
@@ -998,7 +1081,11 @@ Cómo usarlos:
     const crudo = (data?.content || []).filter(b => b?.type === 'text')
       .map(b => b.text || '').join('\n').trim()
     const { texto, n: codigosQuitados } = planBloque ? quitarCodigosPlan(crudo) : { texto: crudo, n: 0 }
-    registrarUso(u, data?.stop_reason, codigosQuitados)
+    registrarUso(u, data?.stop_reason, codigosQuitados, fecha)
+
+    // Se pagó, pero ya no es de este panel: ni se pinta, ni se guarda, ni se toca.
+    if (miPanel !== panel) throw new Error(CANCELADA)
+    programarToque(cuerpo, inicio, fecha)
 
     if (data?.stop_reason === 'refusal') {
       // Opus 5.5 puede negarse a responder. Se retira el turno de Kris para que la
@@ -1016,7 +1103,8 @@ Cómo usarlos:
 
     chatHistory.push({ role: 'assistant', content: texto })
     // Punto único por el que pasa TODO contenido nuevo: si el día venía marcado
-    // como "Ya guardado" (sesión retomada), ahora hay algo sin persistir.
+    // como "Guardado" (sesión retomada), ahora hay algo sin persistir hasta que
+    // termine el guardado automático.
     marcarSinGuardar()
     return texto
   }
@@ -1169,10 +1257,10 @@ Cómo usarlos:
 
   // Cuando la IA genera el diagnóstico dentro del chat, lo aplica en el Step 3
   // automáticamente sin requerir una segunda llamada a la API.
-  async function procesarDiagnosticoDesdeChat(respuesta) {
+  async function procesarDiagnosticoDesdeChat(respuesta, miPanel = panel) {
     const diag = parsearDiagnostico(respuesta)
     const hayContenido = Object.values(diag).some(v => v && v.trim().length > 10)
-    if (!hayContenido) return
+    if (!hayContenido) return autoGuardar(miPanel)   // al menos, el mensaje del chat
 
     Object.assign(diagnosticoActual, diag)
     renderDiagnostico(diag)
@@ -1197,7 +1285,10 @@ Cómo usarlos:
     }
 
     mostrarGuardar()
-    Toast.show('✅ Diagnóstico aplicado automáticamente. Revisa los errores y guarda.', 'success')
+    await autoGuardar(miPanel)
+    Toast.show(erroresPendientes
+      ? '✅ Diagnóstico aplicado y guardado. Revisa los errores y pulsa «Guardar errores».'
+      : '✅ Diagnóstico aplicado y guardado.', 'success')
     document.getElementById('coachStageDiagnostico')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
@@ -1612,10 +1703,15 @@ Cómo usarlos:
   // ── ETAPA 1: Análisis técnico ─────────────────────────────────────────
 
   async function analisisTecnico() {
+    // Rehacer el análisis es lo caro del Coach (relee el plan entero) y, con el
+    // guardado automático, REEMPLAZA lo guardado del día. Que no pase por un clic suelto.
+    if (analisisHecho && !confirm('Este día ya tiene análisis. Rehacerlo vuelve a leer el plan entero (unos $0,50) y reemplaza el análisis y el diagnóstico guardados.\n\n¿Rehacerlo?')) return
+
     const btn = document.getElementById('coachAnalyzeBtn')
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Analizando...' }
 
     // Limpiar estado previo
+    const miPanel = ++panel
     chatHistory = []
     diagnosticoActual = {}
     diagnosticoGuardado = false
@@ -1623,11 +1719,15 @@ Cómo usarlos:
     sesionCerrada = false
     diagnosticoHecho = false
     erroresRevisados = false
+    erroresPendientes = false
+    erroresDetectados = []
     systemPromptCache = null
     planBloque = null
 
     const chatEl = document.getElementById('coachChatMessages')
     if (chatEl) chatEl.innerHTML = ''
+    const erroresEl = document.getElementById('coachErroresConfirm')
+    if (erroresEl) erroresEl.innerHTML = ''
     const analisisEl = document.getElementById('coachAnalisisContent')
     if (analisisEl) analisisEl.innerHTML = '<div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Construyendo análisis técnico...</div>'
     ocultarGuardar()
@@ -1703,10 +1803,12 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
           <i class="ti ti-clipboard-check"></i>
           <p>Pulsa <strong>Generar Diagnóstico</strong> cuando quieras el veredicto, errores y aprendizaje. El chat de coaching es opcional.</p>
         </div>`
-      renderMensaje('assistant', '✅ Análisis técnico completado. Puedes conversar sobre la sesión (opcional) o ir directo a **Generar Diagnóstico**. Si chateas, el diagnóstico integrará todo lo discutido.')
+      renderMensaje('assistant', '✅ Análisis técnico completado y guardado. Puedes conversar sobre la sesión (opcional) o ir directo a **Generar Diagnóstico**. Si chateas, el diagnóstico integrará todo lo discutido.')
       mostrarGuardar()
+      await autoGuardar(miPanel)
 
     } catch (err) {
+      if (err.message === CANCELADA) return
       if (analisisEl) analisisEl.innerHTML = `<div class="coach-error"><i class="ti ti-alert-triangle"></i> Error: ${err.message}</div>`
       Toast.show('Error al analizar: ' + err.message, 'error')
     } finally {
@@ -1738,6 +1840,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
 
     const btn = document.getElementById('coachDiagnosticoBtn')
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Generando...' }
+    const miPanel = panel
 
     const diagEl = document.getElementById('coachDiagnosticoContent')
     if (diagEl) diagEl.innerHTML = '<div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Generando diagnóstico final...</div>'
@@ -1764,15 +1867,20 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
 
       diagnosticoHecho = true
       mostrarGuardar()
-      Toast.show('Diagnóstico generado. Revisa los errores a registrar y guarda.', 'success')
+      await autoGuardar(miPanel)
+      Toast.show(erroresPendientes
+        ? 'Diagnóstico generado y guardado. Revisa los errores y pulsa «Guardar errores».'
+        : 'Diagnóstico generado y guardado.', 'success')
 
     } catch (err) {
+      if (err.message === CANCELADA) return
       if (diagEl) diagEl.innerHTML = `<div class="coach-error"><i class="ti ti-alert-triangle"></i> Error: ${err.message}</div>`
       Toast.show('Error al generar diagnóstico: ' + err.message, 'error')
     } finally {
       // Si ya hay diagnóstico (recién generado o cargado de la BD), el botón
-      // reemplaza — que se lea así antes de pulsarlo.
-      if (btn) {
+      // reemplaza — que se lea así antes de pulsarlo. (Si cambió el día, el botón
+      // ya es del día nuevo: lo dejó como debía `resetPanel`.)
+      if (btn && miPanel === panel) {
         btn.disabled = false
         btn.innerHTML = diagnosticoHecho
           ? '<i class="ti ti-refresh"></i> Regenerar diagnóstico'
@@ -1785,7 +1893,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
 
   async function prepararErroresConfirm(textoErrores) {
     const parsed = parsearErroresEstructurado(textoErrores)
-    let yaRegistrados = [], catalogoNombres = [], recCatalogoNombres = []
+    let yaRegistrados = [], catalogoNombres = [], recCatalogoNombres = [], hayIA = false
     try {
       const [existentes, catalogo, catRec] = await Promise.all([
         DB.getCasuisticasByDate(coachDate),
@@ -1793,6 +1901,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
         DB.getCatalogoRecomendaciones(),
       ])
       yaRegistrados = existentes.map(e => (e.casuistica || '').toLowerCase().trim())
+      hayIA = existentes.some(e => e.origen === 'ia' || e.origen === 'ambos')
       catalogoNombres = catalogo.map(c => (c.nombre || '').toLowerCase().trim())
       recCatalogoNombres = catRec.map(r => (r.nombre || '').toLowerCase().trim())
     } catch (_) { /* sin conexión */ }
@@ -1819,6 +1928,9 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     // La lista existe y es la de esta sesión: a partir de aquí guardar SÍ debe
     // reescribir los errores del día (incluido vaciarlos si el día salió limpio).
     erroresRevisados = true
+    // Hay algo que confirmar si la IA propone errores, o si el día ya tenía errores
+    // de la IA que este diagnóstico (limpio) dejaría de dar por buenos.
+    erroresPendientes = erroresDetectados.length > 0 || hayIA
     renderErroresConfirm()
   }
 
@@ -1948,6 +2060,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
 
     const sendBtn = document.getElementById('coachSendBtn')
     if (sendBtn) sendBtn.disabled = true
+    const miPanel = panel
 
     try {
       const respuesta = await llamarClaude(texto, false)
@@ -1958,12 +2071,14 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
       // (sin segunda llamada a la API).
       if (esDiagnosticoEnChat(respuesta)) {
         renderMensaje('assistant', '📋 Diagnóstico final generado — lo apliqué en las ventanas de abajo 👇')
-        await procesarDiagnosticoDesdeChat(respuesta)
+        await procesarDiagnosticoDesdeChat(respuesta, miPanel)
       } else {
         renderMensaje('assistant', respuesta)
+        await autoGuardar(miPanel)
       }
     } catch (err) {
       renderTyping(false)
+      if (err.message === CANCELADA) return
       renderMensaje('assistant', `❌ Error: ${err.message}`)
     } finally {
       if (sendBtn) sendBtn.disabled = false
@@ -1973,24 +2088,77 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
 
   // ── Guardar diagnóstico ───────────────────────────────────────────────
 
+  // El botón dice qué falta. Análisis, chat y diagnóstico se guardan solos
+  // (`autoGuardar`); lo único que espera a Kris son los errores, que cuentan en la
+  // disciplina y los confirma él.
   function mostrarGuardar() {
-    document.querySelectorAll('.coach-save-btn').forEach(btn => btn.classList.remove('hidden'))
+    document.querySelectorAll('.coach-save-btn').forEach(btn => {
+      btn.classList.remove('hidden')
+      if (erroresPendientes) {
+        btn.disabled = false
+        btn.innerHTML = '<i class="ti ti-device-floppy"></i> Guardar errores'
+      } else if (diagnosticoGuardado) {
+        btn.disabled = true
+        btn.innerHTML = '<i class="ti ti-circle-check"></i> Guardado'
+      } else {
+        btn.disabled = false
+        btn.innerHTML = '<i class="ti ti-device-floppy"></i> Guardar diagnóstico'
+      }
+    })
   }
 
   function ocultarGuardar() {
     document.querySelectorAll('.coach-save-btn').forEach(btn => btn.classList.add('hidden'))
   }
 
-  // Un día ya guardado deja los botones en "Ya guardado" y bloquea `guardarDiagnostico`.
-  // En cuanto se genera contenido nuevo sobre ese día hay que poder volver a guardar.
+  // Hay contenido nuevo sin persistir (hasta que termine el guardado automático).
   function marcarSinGuardar() {
     if (!diagnosticoGuardado) return
     diagnosticoGuardado = false
-    document.querySelectorAll('.coach-save-btn').forEach(btn => {
-      btn.disabled = false
-      btn.innerHTML = '<i class="ti ti-device-floppy"></i> Guardar diagnóstico'
-      btn.classList.remove('hidden')
-    })
+    mostrarGuardar()
+  }
+
+  // Lo que se guarda del día: las secciones, el chat y el modelo. NO lleva los
+  // patrones (se derivan de los errores confirmados) ni la emoción de cierre (la
+  // escribe el Diario): las columnas que no van en el upsert se conservan.
+  // Una sección que falta va como null A PROPÓSITO: al rehacer el análisis, el
+  // diagnóstico viejo ya no corresponde y no debe quedarse a medias.
+  function payloadDiagnostico() {
+    const d = diagnosticoActual
+    return {
+      sesion_date:          coachDate,
+      sec_contexto:         d.contexto || null,
+      sec_desarrollo:       d.desarrollo || null,
+      sec_validacion:       d.validacion || null,
+      sec_veredicto:        d.veredicto || null,
+      sec_errores:          d.errores || null,
+      sec_aprendizaje:      d.aprendizaje || null,
+      sec_resumen_compacto: d.resumen || null,
+      // El veredicto se parsea junto con la validación para detectar VÁLIDA/INVÁLIDA
+      setups_json:          parsearSetupsJson(`${d.validacion || ''}\n${d.veredicto || ''}`),
+      chat_messages:        chatSinImagenes(chatHistory),
+      modelo_usado:         MODEL,
+      updated_at:           new Date().toISOString(),
+    }
+  }
+
+  // Guardado automático tras cada respuesta (2 oct). El 1 de octubre se hizo el
+  // análisis dos veces —en el móvil y luego en el PC— y no se guardó ninguna:
+  // $1,83 pagados y nada en la BD. Sin botón que olvidar, eso no vuelve a pasar.
+  async function autoGuardar(miPanel) {
+    if (miPanel !== panel || !diagnosticoActual.contexto) return
+    try {
+      await DB.saveDiagnostico(payloadDiagnostico())
+      if (miPanel !== panel) return
+      diagnosticoGuardado = true
+      mostrarGuardar()
+    } catch (e) {
+      console.warn('[Coach] guardado automático:', e?.message || e)
+      if (miPanel !== panel) return
+      diagnosticoGuardado = false
+      mostrarGuardar()
+      Toast.show('No se pudo guardar automáticamente: pulsa «Guardar diagnóstico» antes de salir.', 'warning')
+    }
   }
 
   // La gráfica viaja como base64 dentro del mensaje de la Etapa 1. En MEMORIA se
@@ -1999,6 +2167,8 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
   // en Cloudinary (`sesiones.imagen_url`), desde donde `autoCargarImagen` la
   // recarga sola al abrir el día. Guardarla aquí era duplicarla.
   const IMG_PLACEHOLDER = '[Gráfica de la sesión — adjunta en el análisis original]'
+  // Primer día con guardado automático (ver la carga de un día en `cargarFecha`).
+  const AUTOGUARDADO_DESDE = '2026-10-02'
   function chatSinImagenes(mensajes) {
     return (mensajes || []).map(m => {
       if (!Array.isArray(m?.content)) return m
@@ -2030,8 +2200,10 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     return false
   }
 
+  // El botón: guarda todo y, si esta sesión revisó la lista, los errores
+  // confirmados y los patrones que se derivan de ellos.
   async function guardarDiagnostico() {
-    if (diagnosticoGuardado) { Toast.show('Ya guardado', 'info'); return }
+    if (diagnosticoGuardado && !erroresPendientes) { Toast.show('Ya guardado', 'info'); return }
     if (!diagnosticoActual.resumen && !diagnosticoActual.contexto) { Toast.show('Primero genera el análisis', 'warning'); return }
 
     const btns = document.querySelectorAll('.coach-save-btn')
@@ -2040,8 +2212,6 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     try {
       // Errores confirmados por el usuario en la lista (registro unificado)
       const erroresConfirmados = leerErroresConfirmados()
-      // El veredicto se parsea junto con la validación para detectar VÁLIDA/INVÁLIDA
-      const setuosJson   = parsearSetupsJson(`${diagnosticoActual.validacion || ''}\n${diagnosticoActual.veredicto || ''}`)
 
       // El patrón se deriva de los errores, así que solo se recalcula si esta
       // sesión revisó la lista. Si no (día retomado en el que solo se chateó),
@@ -2064,27 +2234,14 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
         patronDescripcion = patrones.map(e => e.nombre).join('; ') || null
       }
 
-      const payload = {
-        sesion_date:          coachDate,
-        sec_contexto:         diagnosticoActual.contexto,
-        sec_desarrollo:       diagnosticoActual.desarrollo,
-        sec_validacion:       diagnosticoActual.validacion,
-        sec_veredicto:        diagnosticoActual.veredicto || null,
-        sec_errores:          diagnosticoActual.errores,
-        sec_aprendizaje:      diagnosticoActual.aprendizaje,
-        sec_resumen_compacto: diagnosticoActual.resumen,
-        setups_json:          setuosJson,
-        // La emoción de cierre y la confianza se registran en el Diario (son de
-        // la sesión, no del análisis). No se mandan desde aquí: hacerlo con los
-        // selectores ya retirados enviaría null y BORRARÍA lo que puso el Diario.
-        patron_detectado:     patronDetectado,
-        patron_descripcion:   patronDescripcion,
-        chat_messages:        chatSinImagenes(chatHistory),
-        modelo_usado:         MODEL,
-        updated_at:           new Date().toISOString(),
-      }
-
-      await DB.saveDiagnostico(payload)
+      // La emoción de cierre y la confianza se registran en el Diario (son de la
+      // sesión, no del análisis): `payloadDiagnostico` no las lleva, y así no se
+      // pisa lo que puso el Diario.
+      await DB.saveDiagnostico({
+        ...payloadDiagnostico(),
+        patron_detectado:   patronDetectado,
+        patron_descripcion: patronDescripcion,
+      })
 
       // Errores confirmados → ocurrencias (diagnostico_errores, origen 'ia'/'ambos').
       // Solo si esta sesión revisó la lista: `saveErroresIA` BORRA los errores IA
@@ -2096,15 +2253,16 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
       // el Diario junto con el resto de la sesión.)
 
       diagnosticoGuardado = true
+      erroresPendientes = false
+      mostrarGuardar()
       Toast.show('Diagnóstico guardado correctamente', 'success')
-      btns.forEach(btn => { btn.innerHTML = '<i class="ti ti-circle-check"></i> Guardado' })
 
       // Refrescar historial
       await renderHistorial()
 
     } catch (err) {
       Toast.show('Error al guardar: ' + err.message, 'error')
-      btns.forEach(btn => { btn.disabled = false; btn.innerHTML = '<i class="ti ti-device-floppy"></i> Guardar diagnóstico' })
+      mostrarGuardar()
     }
   }
 
@@ -2374,6 +2532,8 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
   // ── Cambio de fecha ───────────────────────────────────────────────────
 
   function resetPanel() {
+    panel++              // lo que esté en camino ya es de otro día
+    pararToque()         // la caché de ese día ya no se va a usar
     chatHistory         = []
     diagnosticoActual   = {}
     diagnosticoGuardado = false
@@ -2382,6 +2542,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     diagnosticoHecho    = false
     erroresDetectados   = []
     erroresRevisados    = false
+    erroresPendientes   = false
     systemPromptCache   = null
     planBloque          = null
     imagenBase64        = null
@@ -2486,11 +2647,21 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
       }
 
       diagnosticoGuardado = true
-      document.querySelectorAll('.coach-save-btn').forEach(btn => {
-        btn.innerHTML = '<i class="ti ti-circle-check"></i> Ya guardado'
-        btn.classList.remove('hidden')
-      })
-      Toast.show(`Diagnóstico del ${fmtDate(date)} cargado`, 'info')
+      // Con el guardado automático, un diagnóstico puede estar guardado con sus
+      // errores aún sin confirmar (se cerró la página antes de pulsar «Guardar
+      // errores»). Si el día no tiene NINGUNO registrado, se vuelve a ofrecer la
+      // lista. Solo desde que existe el guardado automático: antes de eso un día sin
+      // errores registrados es un día en que Kris los desmarcó todos a propósito.
+      const miPanel = panel
+      if (date >= AUTOGUARDADO_DESDE && parsearErroresEstructurado(diag.sec_errores).length) {
+        const registrados = await DB.getCasuisticasByDate(date).catch(() => null)
+        if (miPanel !== panel) return
+        if (registrados && !registrados.length) await prepararErroresConfirm(diag.sec_errores)
+      }
+      mostrarGuardar()
+      Toast.show(erroresPendientes
+        ? `Diagnóstico del ${fmtDate(date)} cargado — tiene errores sin confirmar`
+        : `Diagnóstico del ${fmtDate(date)} cargado`, erroresPendientes ? 'warning' : 'info')
     }
   }
 
@@ -2524,9 +2695,15 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
     pendingDate = null
   }
 
+  // Se llama cada vez que se vuelve a la pestaña. Si es el mismo día y hay una
+  // sesión en marcha, NO se recarga: recargar vaciaba el chat, la lista de errores
+  // y el toque de la caché solo por mirar el Diario un momento. La tarjeta del
+  // motor sí se repinta: registrar la lectura en el Diario es lo que la abre.
   function refresh() {
-    cargarFecha(pendingDate || coachDate || today())
+    const date = pendingDate || coachDate || today()
     pendingDate = null
+    if (date === coachDate && analisisHecho) { renderTarjetaMotor(date); return }
+    cargarFecha(date)
   }
 
   // Invalida la caché del rulebook para que el próximo análisis use lo recién editado

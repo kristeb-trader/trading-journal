@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-09-30
+**Última actualización:** 2026-10-02
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-02 | El Coach, más barato: caché de 5 min con toque y guardado automático |
 | 2026-09-30b | Cuatro calendarios: dentro de cada uno manda el P&L |
 | 2026-09-30 | El backtesting de Chaumer arranca: la corrida fluida, reescrita sobre el 1/09, y el motor nuevo |
 | 2026-09-29c | Cuatro calendarios: Mío, Chaumer, Claude y el manual, en puntos |
@@ -36,6 +37,29 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-02 — El Coach, más barato: caché de 5 min con toque y guardado automático
+
+Kris dejó de usar el Coach por el coste (~$0,96 por día con Opus 5.5 y el plan entero). Lo medido en
+`coach_uso` y en los registros de Supabase:
+
+- **El 75 % del día era escribir la caché** de ~88.000 tokens a precio de 1 h ($0,70), que nunca llega viva
+  al día siguiente. Ahora es de 5 min ($0,44) y un **toque** cada 4 min la mantiene mientras el Coach está
+  abierto (máx. 15 min sin actividad).
+- **El 1/10 se pagó dos veces y no quedó nada:** análisis en el móvil a las 11:14, nunca guardado; otro desde
+  cero en el PC a las 18:04, tampoco. Ahora se **guarda solo** tras cada respuesta; los errores esperan a
+  «Guardar errores». Volver a la pestaña ya no vacía la sesión del mismo día.
+- El bloque del día ya no repite las reglas del plan, y el historial son 20 días en vez de 60.
+
+**Estimado:** ~$0,67 por día (~$13 al mes). Decisión: D-033.
+
+**Verificado.** Prueba que ejecuta el `coach.js` real con BD, API y reloj simulados: **39/39**, y la misma
+prueba contra el código anterior falla en lo cambiado. En la copia local, recorrido completo con respuestas
+simuladas (análisis → chat → diagnóstico → ir al Diario y volver → guardar errores), consola sin errores.
+**Sin verificar con Claude de verdad** (no hay clave en el entorno): lo confirma el primer día real en
+`coach_uso` — primera llamada ~$0,50, filas `toque` con salida 0 y lecturas > 0 tras una pausa.
 
 ---
 

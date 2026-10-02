@@ -21,6 +21,17 @@ paths:
   PREFIJO byte a byte: cualquier cosa que varíe el system prompt o la serialización de un
   mensaje entre turnos mata el caché sin avisar. `llamarClaude` loguea escritos/leídos: si
   "leídos" sale 0 turno tras turno, se rompió el prefijo.
+- **Caché de 5 min + toque, NO de 1 h** (D-033). La de 1 h cuesta 2× escribirla y nunca llega viva al día
+  siguiente. `tocarCache` reenvía la última petición con `max_tokens: 0` cada 4 min (desde el INICIO de la
+  anterior) hasta 15 min sin actividad. **Un toque que llega tarde no se envía**: escribiría la caché entera
+  (~$0,44). El cuerpo del toque es el de la última petición TAL CUAL (ninguna clave extra: la API las rechaza).
+- **Guardado automático** (`autoGuardar`) tras el análisis, cada mensaje y el diagnóstico. **Los errores NO**
+  se guardan solos: los confirma Kris con «Guardar errores» (cuentan en la disciplina). Una sección que falta
+  va como `null` a propósito: rehacer el análisis deja sin diagnóstico (por eso rehacerlo pide confirmación).
+- **`panel`** sube en cada `resetPanel`: una respuesta que vuelve con otro número es de otro día y no se pinta
+  ni se guarda (se guardaría con la fecha nueva). Su coste sí se apunta, al día de origen.
+- **Volver a la pestaña no recarga** el mismo día con sesión en marcha (`refresh`): recargar vaciaba el chat,
+  la lista de errores y el toque.
 - **La gráfica NO se persiste** en `chat_messages` (se sustituye por un marcador de texto;
   vive en Cloudinary, `sesiones.imagen_url`). `chatSinImagenes` al guardar,
   `restaurarImagenEnChat` al retomar. La tabla llegó a pesar 42 MB por esto.
@@ -38,13 +49,15 @@ paths:
 
 ## El plan de Chaumer (fase 6, 24 sep)
 
-Modelo **`claude-opus-5-5`**, `max_tokens` 16.000, `thinking: adaptive`, `effort: low`. En Opus 5.5 el
+Modelo **`claude-opus-5-5`**, `max_tokens` 16.000, `thinking: adaptive`, `effort: low`, historial de 20 días. En Opus 5.5 el
 razonamiento **no se puede apagar** (`disabled` / `enabled` dan 400) y cuenta dentro de `max_tokens`.
 
 - **El system son DOS bloques, en este orden:** A = el plan (`construirBloquePlan`: instrucciones fijas + los
   5 documentos de `plan_documentos`), **solo en días de la etapa 2**; B = el día (`buildSystemPrompt`). A va
   primero porque es igual para todos los días de la etapa: la caché lo relee entre turnos y entre días. Un
   día de la etapa 1 va sin A, como siempre. Meter algo de la fecha en A rompe la caché de todos los días.
+- **Con A delante, B no repite las reglas** (`conPlan`): ni las duras, ni la "estrategia v4", ni las del
+  setup; un puntero corto en su lugar. Si el plan no carga, B lleva las reglas como siempre.
 - **`plan_documentos` lo escribe solo `scripts/plan/sincronizar.mjs`** (genera `salida-documentos.sql`, se
   aplica por el MCP y se comprueba con la huella sha256). Nunca a mano ni desde la app. Cada commit `plan:`
   (D-028) se cierra sincronizando: el Coach lo cachea en memoria (`DB.getPlanDocumentos`) hasta recargar.
@@ -55,7 +68,8 @@ razonamiento **no se puede apagar** (`disabled` / `enabled` dan 400) y cuenta de
   responder a esto; prueba a reformular.».
 - **`coach_uso`: una fila por llamada** (`registrarUso`) con tokens, coste y `stop_reason`, sin texto. Los
   precios viven en `PRECIO` (`coach.js`); si cambia el modelo, cambian ahí. Medido el 24/09: prefijo de
-  ~88.000 tokens, sesión completa 0,92 USD, lecturas de caché desde el 2º turno.
+  ~88.000 tokens, sesión completa 0,92 USD, lecturas de caché desde el 2º turno. Los toques van con
+  `stop_reason = 'toque'` y salida 0.
 
 ```sql
 -- ¿funciona la caché y cuánto cuesta el mes?

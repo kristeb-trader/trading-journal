@@ -10,6 +10,35 @@
 
 ---
 
+## D-033 — El Coach baja de coste: caché de 5 min con toque, guardado automático y prompt sin repetidos
+
+*Sustituye en parte a D-025: la caché ya no es de 1 h y el historial son 20 días, no 60.*
+
+**Decisión (Kris, 02/10/2026).** Kris dejó de usar el Coach por el coste: del 24/09 al 2/10 operó 6 días y
+solo uno tiene diagnóstico guardado. Se aplica todo lo que abarata **sin tocar lo que el Coach sabe**:
+- **Caché de 5 min en vez de 1 h, con «toque».** Escribir la caché cuesta 1,25× la entrada con 5 min y 2×
+  con 1 h: con ~88.000 tokens, **$0,44 frente a $0,70 cada día**. Para que las pausas no la maten, mientras
+  el Coach está abierto se reenvía la última petición con `max_tokens: 0` cada 4 min (una lectura, ~$0,02),
+  hasta 15 min sin actividad. Un toque que llega tarde (pestaña dormida) no se envía: escribiría la caché
+  entera para nada.
+- **Guardado automático** tras el análisis, cada mensaje y el diagnóstico. Los **errores** siguen esperando
+  a Kris («Guardar errores»): cuentan en la disciplina. El 1/10 se hizo el análisis dos veces —móvil y PC— y
+  no se guardó ninguno: **$1,83 sin nada en la BD**.
+- **Volver a la pestaña no recarga** el mismo día si hay sesión en marcha (antes la vaciaba).
+- **Sin repetidos:** con el plan delante, el bloque del día ya no copia sus reglas (~4.500 tokens); el
+  historial pasa de 60 a 20 resúmenes (~4.000), porque lo que se repite ya lo recoge «patrones».
+- Rehacer el análisis de un día que ya lo tiene **pide confirmación**.
+
+**Motivo.** El 75 % del coste diario era escribir la caché del prefijo, y se pagaba entero cada día porque
+la de 1 h nunca llega viva al día siguiente. Estimado: ~$0,96 → ~$0,67 por día (~$19 → ~$13 al mes).
+
+**Descartado.** Quitar los «Por qué» del plan (~15.000 tokens) o el glosario (~11.000): ahorran poco y
+quitan justo lo que le deja explicar el porqué de cada regla. Análisis por lotes (la mitad de precio, pero
+tarda de minutos a horas). Reducir la gráfica (un céntimo al día). **Pendiente:** comparar Sonnet 5.5 con
+Opus 5.5 sobre un mismo día (cuesta la mitad en todo); lo decide Kris viendo los dos.
+
+---
+
 ## D-032 — El Calendario se lee en puntos; el P&L de Chaumer y Claude se calcula
 
 **Decisión (Kris, 29/09/2026).** Los cuatro calendarios —Mío, Chaumer, Claude y el
