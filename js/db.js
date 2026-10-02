@@ -1117,6 +1117,16 @@ const DB = {
     return data
   },
 
+  // Las velas de 1 minuto que el motor leyó ese día (texto `AAAAMMDD HHMMSS;o;h;l;c;v`,
+  // UTC, hora de CIERRE). Aparte de la ficha porque son ~50 KB y solo las quiere el
+  // Coach. Mismo candado: sin día registrado, la BD devuelve null.
+  async getVelasMotor(fecha) {
+    const { data, error } = await supa.from('motor_fichas')
+      .select('velas').eq('fecha', fecha).maybeSingle()
+    if (error) throw error
+    return data?.velas || null
+  },
+
   // La primera vez que Kris ve la ficha (solo si el día está registrado; la BD lo
   // comprueba). Con `diario_editado_at` dice si editó su lectura después de verla.
   async marcarFichaVista(fecha) {

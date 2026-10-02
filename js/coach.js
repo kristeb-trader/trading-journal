@@ -111,7 +111,7 @@ const Coach = (() => {
   // repiten aquí: ya están en el plan, enteras, y duplicarlas costaba ~4.500 tokens
   // por día sin añadir nada (y en la etapa 2 la "estrategia v4" salía vacía).
   async function buildSystemPrompt(date, { conPlan = false } = {}) {
-    const [reglasTodas, historial, patrones, sesion, trades, casuisticas, emociones, catalogoErrores, , fechasEsp, objetivos] = await Promise.all([
+    const [reglasTodas, historial, patrones, sesion, trades, casuisticas, emociones, catalogoErrores, , fechasEsp, objetivos, noticias] = await Promise.all([
       cargarReglas(),
       cargarHistorialCompacto(date),
       detectarPatrones(date),
@@ -123,9 +123,16 @@ const Coach = (() => {
       DB.fetchCuentaPrincipal(),   // asegura el cache de la cuenta principal
       DB.getFechasEspeciales().catch(() => []),   // para la regla "día FOMC"
       DB.getObjetivos().catch(() => null),        // stop máximo en puntos
+      // Las noticias rojas viven en `sesion_noticias`. Antes se leía `sesiones.noticias`,
+      // una columna que nunca se escribe: el Coach creía que no había noticia (PCE el
+      // 30/09, NFP el 2/10) mientras el motor sí lo sabía.
+      DB.getNoticiasByDate(date).catch(() => []),
     ])
     // La ficha del motor (fase 7). La BD solo la entrega si el día está registrado.
     const fichaMotor = await DB.getFichaMotor(date).catch(() => null)
+    // Y con ella, las velas exactas de la ventana (mismo candado).
+    const velasMotor = fichaMotor?.estado === 'ok'
+      ? await DB.getVelasMotor(date).catch(() => null) : null
     // El reglamento de la ETAPA de esa fecha: un día anterior al 24/09 se analiza con
     // el rulebook propio; desde el 24/09, con el plan de Chaumer (fase 5c).
     const reglas = reglasDeEtapa(reglasTodas, date)
@@ -165,7 +172,7 @@ Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes.
     const tradesPA = (trades || []).filter(t => (t.account || '') === cuentaPrin)
 
     // Guardar para los bloques de datos (premercado/checklist/operativa) del análisis
-    sesionActual = sesion || null
+    sesionActual = sesion ? { ...sesion, noticiasRojas: noticias } : null
     tradesActual = tradesPA
 
     // Catálogo de errores (vocabulario controlado para evitar duplicados)
@@ -287,7 +294,7 @@ Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
     // Análisis del trader
     const analisisTrader = sesion?.analisis_trader || 'No registrado'
 
-    const motorStr = fmtFichaMotor(fichaMotor, sesion, date)
+    const motorStr = fmtFichaMotor(fichaMotor, sesion, date) + fmtVelas(velasMotor, date)
 
     // Premercado / contexto técnico (futuro continuo: ver sección de interpretación)
     const cAyer = sesion?.precio_cierre_ayer
@@ -320,7 +327,9 @@ Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
     const resN = Array.isArray(sesion?.resistencias_naranja) ? sesion.resistencias_naranja : []
     if (sopN.length) otros.push(`Soporte(s) naranja: ${sopN.join(', ')}`)
     if (resN.length) otros.push(`Resistencia(s) naranja: ${resN.join(', ')}`)
-    if (sesion?.noticias) otros.push(`Noticias: ${sesion.noticias}`)
+    const noticiasStr = (noticias || []).length
+      ? noticias.map(n => `${n.hora} ${n.nombre || ''}`.trim()).join(' · ')
+      : 'ninguna registrada'
 
     // Relación de apertura CALCULADA por el código (el modelo NO debe recalcularla,
     // solo interpretarla): evita errores de aritmética al comparar la apertura con
@@ -381,6 +390,7 @@ Tienes los valores EXACTOS; NUNCA los aproximes "a ojo" del gráfico ni digas "u
 - La LÍNEA ROJA = PDL (mínimo de ayer). Su valor exacto está en los datos.
 - Las ZONAS NARANJAS (soportes/resistencias) tienen valores exactos registrados (soportes_naranja / resistencias_naranja).
 - Los precios de ENTRADA y SALIDA de cada trade son exactos (vienen de la tabla de trades, no del gráfico).
+- Si abajo están las VELAS DE 1 MINUTO DE LA VENTANA, el máximo y el mínimo de cada vela también son exactos: mide con ellos.
 Usa siempre esos valores exactos. Si necesitas un dato que NO está registrado en el contexto, PREGÚNTALO en lugar de suponerlo o inventarlo — con UNA excepción, la simetría stop/target de la sección siguiente: eso se DERIVA, no se pregunta.
 
 ---
@@ -439,6 +449,7 @@ Estado emocional al cierre: ${emocionFin}
 Confianza en la entrada (1-5, la convicción que tenía al entrar): ${confianza}
 Contexto de mercado: ${sesion?.contexto || 'No indicado'}
 Setup del día: ${sesion?.setup || 'No indicado'}
+Noticias rojas (hora Colombia, las registra el trader): ${noticiasStr}
 
 Premercado / contexto técnico:
 ${premktStr}
@@ -630,6 +641,37 @@ ${eventos}
 Operación: ${opStr}${avisos ? `
 Avisos del motor sobre este día (cae en uno de sus agujeros):
 ${avisos}` : ''}
+`
+  }
+
+  // Las velas de 1 minuto de la ventana (2 oct, propuesta B). Sin ellas el Coach
+  // medía a ojo sobre la imagen ("≈30558") y le pedía a Kris "el mínimo exacto de la
+  // vela de las 08:43", un dato que el motor ya había subido. Solo la ventana
+  // (~120 velas, ~2.500 tokens): el premercado ya lo resume la ficha.
+  // Formato de origen: `AAAAMMDD HHMMSS;o;h;l;c;v`, UTC, hora de CIERRE. Se pasan a
+  // hora Colombia (UTC−5 fijo) con la hora de cierre, como NinjaTrader y el motor.
+  function fmtVelas(texto, date) {
+    if (!texto || !date) return ''
+    const et = horaEt('12:00', date)
+    const difEt = et ? Number(et.slice(0, 2)) - 12 : 1
+    const desde = 9 * 60 + 31 - difEt * 60      // la vela de las 9:31 ET (la 1.ª de la apertura)
+    const hasta = desde + 119                  // la ventana: 2 horas
+    const dia = date.replace(/-/g, '')
+    const filas = []
+    for (const ln of String(texto).split('\n')) {
+      const m = ln.trim().match(/^(\d{8}) (\d{2})(\d{2})\d{2};([^;]+);([^;]+);([^;]+);([^;]+);(\d+)/)
+      if (!m || m[1] !== dia) continue
+      const col = Number(m[2]) * 60 + Number(m[3]) - 300
+      if (col < desde || col > hasta) continue
+      filas.push(`${Math.floor(col / 60)}:${String(col % 60).padStart(2, '0')} ${m[4]} ${m[5]} ${m[6]} ${m[7]} ${m[8]}`)
+    }
+    if (!filas.length) return ''
+    return `
+## VELAS DE 1 MINUTO DE LA VENTANA (precios EXACTOS)
+
+Hora Colombia, la del CIERRE de la vela (como en NinjaTrader y en el motor). Columnas: hora apertura máximo mínimo cierre volumen.
+Son los precios reales del día: mide con ellas las corridas, los retrocesos, las zonas, el punto del stop y el objetivo, en puntos y en ticks. No estimes un precio en la imagen si está aquí, y no le preguntes al trader un precio que puedes leer aquí. La imagen sirve para ver lo que él dibujó (zonas, líneas).
+${filas.join('\n')}
 `
   }
 
@@ -1451,7 +1493,9 @@ Cómo usarlos:
     const sop = Array.isArray(s.soportes_naranja) ? s.soportes_naranja.filter(x=>x!=null&&x!=='') : []
     const res = Array.isArray(s.resistencias_naranja) ? s.resistencias_naranja.filter(x=>x!=null&&x!=='') : []
     const chips = arr => arr.length ? arr.map(v=>`<span class="cz-chip-o">${v}</span>`).join('') : '<span class="cz-dv">—</span>'
-    const noticiaVal = [s.noticias, s.hora_noticia_roja ? `· roja ${s.hora_noticia_roja}` : ''].filter(Boolean).join(' ')
+    const noticiaVal = (s.noticiasRojas || []).length
+      ? s.noticiasRojas.map(n => `${n.hora} ${n.nombre || ''}`.trim()).join(' · ')
+      : (s.hora_noticia_roja ? `roja ${s.hora_noticia_roja}` : '')
     return `
       <div class="cz-dgroup"><div class="cz-dgt">Referencia (OHLC de ayer)</div>${ref || '<p class="cz-empty">—</p>'}</div>
       <div class="cz-dgroup"><div class="cz-dgt">Overnight / apertura</div>${on || '<p class="cz-empty">—</p>'}</div>
@@ -2385,11 +2429,12 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
   async function mostrarDiagnosticoGuardado(diag, date) {
     // Cargar los datos del día (premercado/checklist/operativa) para los bloques desplegables
     try {
-      const [ses, trs] = await Promise.all([
+      const [ses, trs, nots] = await Promise.all([
         DB.getSesionByDate(date || diag.sesion_date),
         DB.getTradesByDate(date || diag.sesion_date),
+        DB.getNoticiasByDate(date || diag.sesion_date).catch(() => []),
       ])
-      sesionActual = ses || null
+      sesionActual = ses ? { ...ses, noticiasRojas: nots } : null
       tradesActual = (trs || []).filter(t => (t.account || '') === cuentaAnalisis())
     } catch { sesionActual = null; tradesActual = [] }
     // Filas nuevas: veredicto en columna propia. Filas viejas: concatenado en sec_validacion.

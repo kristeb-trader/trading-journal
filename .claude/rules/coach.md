@@ -87,7 +87,13 @@ Lo que marcó el motor de Chaumer (`motor_fichas`) entra en el Coach por dos sit
 - **La sección "LO QUE MARCÓ EL MOTOR ESE DÍA"**, en el **bloque B** y nunca en el A: meter algo de la fecha
   en A rompe la caché de todos los días.
 
+- **Las velas de la ventana** (2 oct): `DB.getVelasMotor` + `fmtVelas` meten en el bloque B las ~120 velas de
+  1 minuto de la ventana (hora Colombia, la del CIERRE, como NinjaTrader y el motor), para que el Coach mida
+  con precios exactos y no a ojo sobre la imagen. Solo si hay ficha `ok`: mismo candado.
+
 Invariantes:
+- **Las noticias se leen de `sesion_noticias`** (`DB.getNoticiasByDate`). `sesiones.noticias` existe pero
+  **nunca se escribe**: leerla hacía creer al Coach que no había noticia (PCE el 30/09, NFP el 2/10).
 - **El candado es de la BD** (D-026): si el día no está registrado, `getFichaMotor` devuelve `null` por RLS
   y la sección no sale. No se "arregla" en JavaScript.
 - Las líneas del motor traen códigos del plan (`(R-40)`): se quitan con `quitarCodigosPlan(…, { avisar:

@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-02b | El Coach ve las noticias reales y las velas exactas de la ventana |
 | 2026-10-02 | El Coach, más barato: caché de 5 min con toque y guardado automático |
 | 2026-09-30b | Cuatro calendarios: dentro de cada uno manda el P&L |
 | 2026-09-30 | El backtesting de Chaumer arranca: la corrida fluida, reescrita sobre el 1/09, y el motor nuevo |
@@ -37,6 +38,24 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-02b — El Coach ve las noticias reales y las velas exactas de la ventana
+
+Primer paso de la ruta acordada con Kris para unir motor y Coach (B → A → C; D descartada): darle al Coach los
+datos que ya existían y no leía.
+
+- **Noticias.** El Coach leía `sesiones.noticias`, una columna que nunca se escribe: creía que no había noticia
+  roja (PCE el 30/09, NFP el 2/10) mientras el motor —que lee `sesion_noticias`— sí lo sabía. Ahora lee
+  `sesion_noticias`, y el desplegable «Referencias del día» también.
+- **Velas.** El Coach medía a ojo sobre la imagen («≈30558») y le pedía a Kris «el mínimo exacto de la vela de las
+  08:43». Ahora recibe las ~120 velas de 1 minuto de la ventana que el puente ya subía a `motor_fichas`
+  (~2.500 tokens, ~$0,015 al día), bajo el mismo candado que la ficha.
+
+**Verificado.** La ventana real del 1/10 en la BD son 120 velas, 8:31–10:30 hora Colombia; la prueba del Coach
+(`coach.js` real con BD y reloj simulados) da 48/48, con verano e invierno. App local sin errores. Con Claude
+de verdad, el primer análisis de un día registrado.
 
 ---
 
