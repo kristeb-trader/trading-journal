@@ -8,14 +8,13 @@
 Ruta acordada con Kris el 02/10: **B → A → C**, E cuando se quiera, D descartada. Hechos B (noticias y velas al
 Coach) y A (`scripts/cadena/medir.py`: la operación de Kris medida con el motor, en `ficha.tu_operacion`).
 
-- [ ] **Comprobar con Claude de verdad** — el primer análisis de un día registrado: que no pregunte precios, que
-  use la medición del motor en la validación, y en `coach_uso` la primera llamada a ~$0,50 y filas `toque`
-- [ ] **Prueba Sonnet 5.5 vs Opus 5.5** con un mismo día (~$1), si Kris quiere: con lo difícil ya medido, puede bastar
+- [ ] **La prueba real, al final (Kris, 03/10), con un día sin analizar** (28/09 → 2/10): Opus en la pestaña
+  normal (se guarda) y Sonnet 5.5 con `?modelo=sonnet` (no guarda), lado a lado. Mirar: que no pregunte precios,
+  que use la medición del motor, el Contexto según el plan; y en `coach_uso`, el coste de cada uno y los `toque`
 - [ ] **C** (que la IA deje de releer el plan entero) solo tras semanas de A con motor y Coach coincidiendo
 - [ ] **E:** que el puente no escriba dentro del repo (`noticias_rojas.txt`, `dias_fed.txt`) ni publique desde la
   copia de trabajo
-- [ ] Preguntas abiertas a Kris sobre el análisis técnico: ¿el contexto «viejo» (rango overnight, PDH/PDL) sirve en
-  los días del plan? ¿un solo botón para análisis + diagnóstico?
+- [ ] Pregunta abierta a Kris: ¿un solo botón para análisis + diagnóstico? (El contexto viejo ya se decidió: fuera, D-035)
 
 ## Backtesting de Chaumer
 

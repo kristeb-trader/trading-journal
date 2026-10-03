@@ -3,7 +3,18 @@ const Coach = (() => {
 
   const CLAUDE_URL = 'https://broad-hall-c53f.kristerock.workers.dev/api/claude'
   // Opus 5.5 desde el 24 sep (fase 6, decisión de Kris): lee el plan de Chaumer entero.
-  const MODEL      = 'claude-opus-5-5'
+  // MODO PRUEBA (03/10): con `?modelo=sonnet` en la dirección, el Coach usa Sonnet 5.5 y NO
+  // guarda nada, para comparar los dos modelos con un mismo día sin pisar el análisis bueno.
+  // Precios en USD por millón de tokens (la escritura de caché: 2× con 1 h, 1,25× con 5 min).
+  const MODELOS = {
+    opus:   { id: 'claude-opus-5-5',   precio: { entrada: 4, salida: 20, cache1h: 8, cache5m: 5,   cacheLeida: 0.20 } },
+    sonnet: { id: 'claude-sonnet-5-5', precio: { entrada: 2, salida: 10, cache1h: 4, cache5m: 2.5, cacheLeida: 0.20 } },
+  }
+  const PRUEBA = (() => {
+    try { const m = new URLSearchParams(location.search).get('modelo'); return MODELOS[m] && m !== 'opus' ? m : null }
+    catch { return null }
+  })()
+  const MODEL      = MODELOS[PRUEBA || 'opus'].id
   // Opus 5.5 piensa SIEMPRE (no se puede apagar) y el razonamiento sale del mismo
   // presupuesto que la respuesta: con 8000 el diagnóstico podría cortarse a medias.
   const MAX_TOKENS = 16000
@@ -14,9 +25,8 @@ const Coach = (() => {
   // en una sola petición. `low` acota cuánto piensa y mantiene la latencia parecida
   // a la de hoy. Si el análisis se queda corto, subir a 'medium' (una línea).
   const EFFORT     = 'low'
-  // Precio de Opus 5.5 en USD por millón de tokens, para la fila de `coach_uso`.
-  // La escritura de caché cuesta 2× la entrada con TTL de 1 h y 1,25× con 5 min.
-  const PRECIO = { entrada: 4, salida: 20, cache1h: 8, cache5m: 5, cacheLeida: 0.20 }
+  // Precio del modelo en uso, para la fila de `coach_uso`.
+  const PRECIO = MODELOS[PRUEBA || 'opus'].precio
   // Resúmenes de días anteriores que lee el Coach (ver cargarHistorialCompacto).
   const HISTORIAL_DIAS = 20
 
@@ -103,6 +113,24 @@ const Coach = (() => {
   // envía a la IA)? No es parte de la conversación real; vive en su panel, no en el chat.
   function esInstruccionSistema(texto) {
     return /Realiza el AN[ÁA]LISIS T[ÉE]CNICO|Emite el DIAGN[ÓO]STICO FINAL/i.test(texto || '')
+  }
+
+  // El formato de la sección CONTEXTO. Vive aquí UNA vez y lo usan los dos sitios que
+  // definen el formato (el system y `instruccionFormato`): si se escribe dos veces, se
+  // desincronizan (pasó el 16/08). Días del plan: el día se lee como lo lee el plan —
+  // vela de apertura, zonas de premercado, noticia—, sin el "sesgo" viejo (Kris, 03/10).
+  function formatoContexto(soloPlan) {
+    return soloPlan
+      ? `En corto: <cómo empezó el día según el plan y qué había que vigilar, en 1-2 frases llanas>
+Detalle:
+Apertura: <qué declaró la vela de apertura (alcista/bajista) y qué significa para el primer movimiento>
+Zonas: <las zonas de premercado vigentes que importaban hoy y por qué>
+Noticias: <la noticia roja del día y su ventana, o "Sin noticias">`
+      : `En corto: <cómo venía el día y qué había que vigilar, en 1-2 frases>
+Detalle:
+Sesgo: <Alcista|Bajista|Mixto> | <razón en pocas palabras>
+Vigilar: <el/los nivel(es) clave que importan hoy y por qué>
+Noticias: <noticia relevante del día, o "Sin noticias">`
   }
 
   // ── Construcción del System Prompt ────────────────────────────────────
@@ -354,7 +382,10 @@ Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
     }
 
     const fmtGrupo = arr => arr.length ? arr.map(l => `  - ${l}`).join('\n') : '  - No registrado'
-    const premktStr = (ref.length || otros.length)
+    // Días del plan (Kris, 03/10): fuera el contexto viejo (PDH/PDL, rango overnight, deriva,
+    // "sesgo"). Del premercado solo cuentan las zonas que marcó el trader.
+    const zonasPlanStr = `  - Soportes: ${sopN.length ? sopN.join(', ') : 'ninguno'}\n  - Resistencias: ${resN.length ? resN.join(', ') : 'ninguna'}`
+    const premktStr = conPlan ? null : (ref.length || otros.length)
       ? `Datos de referencia:\n${fmtGrupo(ref)}\n\nContexto adicional:\n${fmtGrupo(otros)}` +
         (relacion.length ? `\n\nRelación de apertura (YA CALCULADA — úsala TAL CUAL, no la recalcules ni la contradigas):\n${fmtGrupo(relacion)}` : '')
       : '  No registrado'
@@ -385,10 +416,10 @@ Este historial y los patrones de arriba llegan hasta el día ANTERIOR a la sesi�
 
 ## PRECISIÓN DE PRECIOS — NO ADIVINES (MUY IMPORTANTE)
 
-Tienes los valores EXACTOS; NUNCA los aproximes "a ojo" del gráfico ni digas "un valor aproximado en una zona / en la línea verde o roja":
-- La LÍNEA VERDE del gráfico = PDH (máximo de ayer). Su valor exacto está en los datos de referencia.
+Tienes los valores EXACTOS; NUNCA los aproximes "a ojo" del gráfico ni digas "un valor aproximado en una zona${conPlan ? '' : ' / en la línea verde o roja'}":
+${conPlan ? '' : `- La LÍNEA VERDE del gráfico = PDH (máximo de ayer). Su valor exacto está en los datos de referencia.
 - La LÍNEA ROJA = PDL (mínimo de ayer). Su valor exacto está en los datos.
-- Las ZONAS NARANJAS (soportes/resistencias) tienen valores exactos registrados (soportes_naranja / resistencias_naranja).
+`}- Las ZONAS NARANJAS (soportes/resistencias) tienen valores exactos registrados (soportes_naranja / resistencias_naranja).
 - Los precios de ENTRADA y SALIDA de cada trade son exactos (vienen de la tabla de trades, no del gráfico).
 - Si abajo están las VELAS DE 1 MINUTO DE LA VENTANA, el máximo y el mínimo de cada vela también son exactos: mide con ellos.
 Usa siempre esos valores exactos. Si necesitas un dato que NO está registrado en el contexto, PREGÚNTALO en lugar de suponerlo o inventarlo — con UNA excepción, la simetría stop/target de la sección siguiente: eso se DERIVA, no se pregunta.
@@ -428,7 +459,7 @@ Las horas de los trades vienen YA CONVERTIDAS a hora de Nueva York (ET), con la 
 - Premercado = antes de las 09:30 ET. Solo llama "premercado" a un trade si su hora ET es anterior a 09:30.
 - En verano (EDT) Colombia va 1 h detrás de ET (08:36 Colombia = 09:36 ET); en invierno (EST) coinciden. Nunca uses la hora de Colombia para decidir si fue premercado o RTH.
 
----
+${conPlan ? '' : `---
 
 ## CÓMO LEER EL CONTEXTO DE PREMERCADO (MUY IMPORTANTE)
 
@@ -439,7 +470,7 @@ Por lo tanto:
 - Si comentas esa diferencia, hazlo SIEMPRE con magnitud y contexto: tamaño en puntos y en relación al rango overnight (ONH/ONL) y al rango de ayer (PDH/PDL).
 - RELACIÓN DE APERTURA (lo accionable): la línea "Relación de apertura (YA CALCULADA)" del contexto te dice si la apertura quedó por encima, por debajo o DENTRO del rango overnight (ONH/ONL) y del rango de ayer (PDH/PDL). **Úsala tal cual — NO la recalcules comparando los precios a ojo.** Abrir fuera del rango → sesgo tendencial / continuación. Abrir dentro → sesgo rotacional y mayor probabilidad de buscar el cierre de ayer (gap-fill).
 - Usa PDH/PDL (máx/mín de ayer) y ONH/ONL (máx/mín premercado) como NIVELES DE REFERENCIA: son los imanes y las zonas de reacción más probables en la sesión US. Relaciónalos con las líneas naranjas marcadas por el trader.
-
+`}
 ---
 
 ## SESIÓN DE HOY — ${date}
@@ -451,8 +482,9 @@ Contexto de mercado: ${sesion?.contexto || 'No indicado'}
 Setup del día: ${sesion?.setup || 'No indicado'}
 Noticias rojas (hora Colombia, las registra el trader): ${noticiasStr}
 
-Premercado / contexto técnico:
-${premktStr}
+${conPlan ? `Zonas de premercado que marcó el trader (naranjas):
+${zonasPlanStr}` : `Premercado / contexto técnico:
+${premktStr}`}
 
 Trades:
   ${tradesStr}
@@ -480,7 +512,7 @@ ${motorStr}
 El análisis se realiza en un flujo guiado de tres etapas. Tú produces dos entregables estructurados; entre ellos hay una sesión de chat libre.
 
 ### ETAPA 1 — ANÁLISIS TÉCNICO (primer entregable)
-Cuando recibas la instrucción de análisis técnico (o la imagen del gráfico), produce EXACTAMENTE estas 3 secciones. Los datos de referencia (PDO/PDH/PDL/PDC/PDR, deriva overnight, etc.) son para TU análisis: NO los vuelques ni hagas tablas con ellos en el output.
+Cuando recibas la instrucción de análisis técnico (o la imagen del gráfico), produce EXACTAMENTE estas 3 secciones.${conPlan ? ' Lee el día SOLO como lo lee el plan de trading: nada de análisis técnico genérico (sesgo por rango overnight, máximo y mínimo de ayer, deriva).' : ' Los datos de referencia (PDO/PDH/PDL/PDC/PDR, deriva overnight, etc.) son para TU análisis: NO los vuelques ni hagas tablas con ellos en el output.'}
 
 ⚠️ **CADA UNA de las 3 secciones se escribe en DOS capas, con estas dos marcas literales:**
 
@@ -500,11 +532,7 @@ El **Detalle** sí va técnico y completo: es lo que se despliega y lo que TÚ m
 
 **1. 🌍 CONTEXTO**
 \`\`\`
-En corto: <cómo venía el día y qué había que vigilar, en 1-2 frases>
-Detalle:
-Sesgo: <Alcista|Bajista|Mixto> | <razón en pocas palabras>
-Vigilar: <el/los nivel(es) clave que importan hoy y por qué>
-Noticias: <noticia relevante del día, o "Sin noticias">
+${formatoContexto(conPlan)}
 \`\`\`
 NO incluyas "Datos de referencia" ni "Contexto adicional" en esta sección.
 
@@ -1421,7 +1449,7 @@ Cómo usarlos:
       if (!m) return `<div class="cz-row"><span class="cz-val">${inlineMd(line)}</span></div>`
       const lbl = m[1].trim(), val = m[2].trim()
       let valHtml = inlineMd(val)
-      if (/sesgo|bias/i.test(lbl)) {
+      if (/sesgo|bias|apertura/i.test(lbl)) {
         const bias = (val.match(/alcista|bajista|mixto|lateral|rotacional|neutral/i) || [''])[0]
         if (bias) {
           const up = /alcista/i.test(bias), down = /bajista/i.test(bias)
@@ -1534,9 +1562,11 @@ Cómo usarlos:
     const noticiaVal = (s.noticiasRojas || []).length
       ? s.noticiasRojas.map(n => `${n.hora} ${n.nombre || ''}`.trim()).join(' · ')
       : (s.hora_noticia_roja ? `roja ${s.hora_noticia_roja}` : '')
+    // Días del plan: solo lo que el plan usa (zonas de premercado y noticias). Kris, 03/10.
+    const soloPlan = etapaDeFecha(s.sesion_date) === 2
     return `
-      <div class="cz-dgroup"><div class="cz-dgt">Referencia (OHLC de ayer)</div>${ref || '<p class="cz-empty">—</p>'}</div>
-      <div class="cz-dgroup"><div class="cz-dgt">Overnight / apertura</div>${on || '<p class="cz-empty">—</p>'}</div>
+      ${soloPlan ? '' : `<div class="cz-dgroup"><div class="cz-dgt">Referencia (OHLC de ayer)</div>${ref || '<p class="cz-empty">—</p>'}</div>
+      <div class="cz-dgroup"><div class="cz-dgt">Overnight / apertura</div>${on || '<p class="cz-empty">—</p>'}</div>`}
       <div class="cz-dgroup"><div class="cz-dgt">Zonas naranjas</div>
         <div class="cz-drow"><span class="cz-dl">Soportes</span><span class="cz-zwrap">${chips(sop)}</span></div>
         <div class="cz-drow"><span class="cz-dl">Resistencias</span><span class="cz-zwrap">${chips(res)}</span></div>
@@ -1633,7 +1663,11 @@ Cómo usarlos:
       const val = re => limpia(L.find(l => re.test(l)) || '').replace(re, '').trim()
       const sesgo = val(/^\**\s*sesgo\s*:\s*\**/i).split('|').map(s => s.trim()).filter(Boolean).join(' — ')
       const vig   = val(/^\**\s*vigilar\s*:\s*\**/i)
-      const out = [sesgo && `Sesgo ${sesgo.toLowerCase()}.`, vig && `A vigilar: ${vig}`].filter(Boolean).join(' ')
+      // Días del plan: «Apertura:» y «Zonas:» en lugar de «Sesgo:» y «Vigilar:».
+      const ape   = val(/^\**\s*apertura\s*:\s*\**/i)
+      const zon   = val(/^\**\s*zonas\s*:\s*\**/i)
+      const out = [sesgo && `Sesgo ${sesgo.toLowerCase()}.`, vig && `A vigilar: ${vig}`,
+                   ape && `Apertura: ${ape}`, zon && `Zonas: ${zon}`].filter(Boolean).join(' ')
       return out || limpia(L[0])
     }
     return limpia(L[0])   // desarrollo y cualquier otra: la primera idea
@@ -1787,7 +1821,7 @@ Cómo usarlos:
   async function analisisTecnico() {
     // Rehacer el análisis es lo caro del Coach (relee el plan entero) y, con el
     // guardado automático, REEMPLAZA lo guardado del día. Que no pase por un clic suelto.
-    if (analisisHecho && !confirm('Este día ya tiene análisis. Rehacerlo vuelve a leer el plan entero (unos $0,50) y reemplaza el análisis y el diagnóstico guardados.\n\n¿Rehacerlo?')) return
+    if (analisisHecho && !PRUEBA && !confirm('Este día ya tiene análisis. Rehacerlo vuelve a leer el plan entero (unos $0,50) y reemplaza el análisis y el diagnóstico guardados.\n\n¿Rehacerlo?')) return
 
     const btn = document.getElementById('coachAnalyzeBtn')
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Analizando...' }
@@ -1819,16 +1853,13 @@ Cómo usarlos:
       // prompt. Este mensaje pesa más (va en el turno del usuario). Si se cambia
       // el formato, hay que cambiarlo EN LOS DOS — tenerlo solo en el system
       // prompt no sirvió: el modelo siguió este y no escribió los resúmenes.
-      const instruccionFormato = `Realiza el ANÁLISIS TÉCNICO (Etapa 1) en exactamente 3 secciones.
+      const soloPlan = etapaDeFecha(coachDate) === 2
+      const instruccionFormato = `Realiza el ANÁLISIS TÉCNICO (Etapa 1) en exactamente 3 secciones.${soloPlan ? ' Lee el día SOLO como lo lee el plan de trading: nada de sesgo por rango overnight, máximo y mínimo de ayer ni deriva.' : ''}
 
-⚠️ OBLIGATORIO: cada sección lleva DOS capas, con estas dos marcas escritas TAL CUAL, cada una en su propia línea. Sin ellas la respuesta es inválida:
+⚠️ OBLIGATORIO: cada sección lleva DOS capas, con estas dos marcas escritas TAL CUAL, cada una en su propia línea. Sin ellas la respuesta es inválida. En la línea "En corto", SIN precios crudos: si un número aporta, dilo como DISTANCIA en puntos.
 
 **1. 🌍 CONTEXTO**
-En corto: <1 o 2 frases en lenguaje llano. SIN precios crudos: di "el mínimo del premercado", no "30124.25". Si un número aporta, dilo como DISTANCIA en puntos.>
-Detalle:
-Sesgo: <Alcista|Bajista|Mixto> | <razón breve>
-Vigilar: <nivel(es) clave y por qué>
-Noticias: <la del día, o "Sin noticias">
+${formatoContexto(soloPlan)}
 
 **2. 📈 DESARROLLO DE SESIÓN**
 En corto: <1 o 2 frases: qué hizo el precio y qué hizo el trader>
@@ -2174,6 +2205,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
   // (`autoGuardar`); lo único que espera a Kris son los errores, que cuentan en la
   // disciplina y los confirma él.
   function mostrarGuardar() {
+    if (PRUEBA) return ocultarGuardar()   // modo prueba: aquí no se guarda nada
     document.querySelectorAll('.coach-save-btn').forEach(btn => {
       btn.classList.remove('hidden')
       if (erroresPendientes) {
@@ -2228,7 +2260,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
   // análisis dos veces —en el móvil y luego en el PC— y no se guardó ninguna:
   // $1,83 pagados y nada en la BD. Sin botón que olvidar, eso no vuelve a pasar.
   async function autoGuardar(miPanel) {
-    if (miPanel !== panel || !diagnosticoActual.contexto) return
+    if (PRUEBA || miPanel !== panel || !diagnosticoActual.contexto) return
     try {
       await DB.saveDiagnostico(payloadDiagnostico())
       if (miPanel !== panel) return
@@ -2285,6 +2317,7 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
   // El botón: guarda todo y, si esta sesión revisó la lista, los errores
   // confirmados y los patrones que se derivan de ellos.
   async function guardarDiagnostico() {
+    if (PRUEBA) { Toast.show('Modo prueba: no se guarda nada', 'info'); return }
     if (diagnosticoGuardado && !erroresPendientes) { Toast.show('Ya guardado', 'info'); return }
     if (!diagnosticoActual.resumen && !diagnosticoActual.contexto) { Toast.show('Primero genera el análisis', 'warning'); return }
 
@@ -2769,6 +2802,15 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
 
     // Imagen
     setupImagenCoach()
+
+    // Modo prueba: que se vea siempre que no es el Coach de verdad.
+    if (PRUEBA) {
+      const ab = document.getElementById('coachAnalyzeBtn')
+      if (ab) ab.dataset.prueba = MODEL
+      document.getElementById('coachStageTecnico')?.insertAdjacentHTML('beforebegin',
+        `<div class="coach-error"><i class="ti ti-flask"></i> Modo prueba: ${MODEL}. Nada de lo que hagas aquí se guarda.</div>`)
+      Toast.show(`Modo prueba con ${MODEL}: no se guarda nada`, 'warning')
+    }
 
     // (El selector de fecha y las flechas propias del Coach se retiraron: la
     // fecha la manda la cabecera de Sesión Operativa, común a las 3 pestañas.)

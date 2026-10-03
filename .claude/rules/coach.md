@@ -130,11 +130,23 @@ un trade de plena apertura.
 Implementado salvo **inyectar el catálogo de recomendaciones en el prompt**, para que
 reutilice nombres en vez de duplicarlos. Ver `tasks/current.md`.
 
+## Días del plan: el día se lee solo como lo lee el plan (D-035, 3 oct)
+
+Con el bloque A delante (`conPlan`), el bloque B **no lleva el contexto viejo**: ni «CÓMO LEER EL CONTEXTO DE
+PREMERCADO», ni PDH/PDL/ONH/ONL, ni deriva, ni «sesgo». Del premercado solo van las zonas naranjas. El Contexto
+se escribe como **Apertura / Zonas / Noticias** (`formatoContexto`). Los días de la etapa 1, como siempre.
+
+## Modo prueba (`?modelo=sonnet`)
+
+Para comparar modelos con un mismo día: el Coach usa Sonnet 5.5 (`MODELOS`), **no guarda nada** (ni automático
+ni con el botón) y avisa arriba. El consumo sí va a `coach_uso`, con su modelo y su precio.
+
 ## ⚠️ El formato de salida se define en DOS sitios
 
 `buildSystemPrompt` (system prompt) **y** `instruccionFormato` dentro de `analisisTecnico`
 (mensaje del turno del usuario). El segundo **pesa más**: va en el turno del usuario, más
-cerca de la atención del modelo.
+cerca de la atención del modelo. Desde el 3 oct, el formato del Contexto sale de una sola
+función (`formatoContexto`) que usan los dos: es el camino para el resto de secciones.
 
 Cambiar solo el system prompt NO funciona — pasó el 16 ago con los resúmenes "En corto:":
 el modelo siguió el mensaje de instrucción, que aún tenía el formato viejo, y la única

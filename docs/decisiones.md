@@ -10,6 +10,19 @@
 
 ---
 
+## D-035 — En los días del plan, el Coach lee el día solo como lo lee el plan
+
+**Decisión (Kris, 03/10/2026).** «El contexto viejo ya no me sirve, solo nos vamos a centrar en el nuevo plan
+Chaumer.» En los días de la etapa 2 el Coach deja de recibir y de escribir el contexto de antes del plan
+(sesgo por el rango overnight, máximo y mínimo de ayer, deriva nocturna, líneas verde y roja). El Contexto se
+escribe como lo lee el plan: **vela de apertura, zonas de premercado vigentes y noticia**. El desplegable
+«Referencias del día» enseña solo zonas y noticias. Los días de la etapa 1 no cambian.
+
+**Motivo.** El Coach mezclaba dos lecturas en la misma frase (24/09: «día rotacional» y «la vela de las 08:31
+declaró el día bajista»), y el plan dice que es la única fuente de reglas, sin análisis técnico genérico.
+
+---
+
 ## D-034 — El motor mide, el Coach juzga
 
 **Decisión (Kris, 02/10/2026).** El plan vivía en tres traducciones que no se hablaban: el texto (que lee el

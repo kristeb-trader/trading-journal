@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-03b | El Coach lee el día solo como el plan, y modo prueba para Sonnet |
 | 2026-10-03 | El motor mide tu operación y el Coach la juzga |
 | 2026-10-02b | El Coach ve las noticias reales y las velas exactas de la ventana |
 | 2026-10-02 | El Coach, más barato: caché de 5 min con toque y guardado automático |
@@ -39,6 +40,19 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-03b — El Coach lee el día solo como el plan, y modo prueba para Sonnet
+
+- **D-035:** en los días del plan, fuera el contexto viejo (sesgo por rango overnight, PDH/PDL, deriva). El
+  Contexto se escribe como **Apertura / Zonas / Noticias**, y el formato sale de una sola función que usan los dos
+  sitios que lo definen (`formatoContexto`): así no se desincronizan como el 16/08.
+- **Modo prueba:** `?modelo=sonnet` usa Sonnet 5.5 sin guardar nada, para comparar con Opus el mismo día.
+- **C explicado a Kris:** dejar de releer el plan entero solo tras semanas de A con motor y Coach coincidiendo.
+
+**Verificado.** Prueba del Coach 63/63 (el contexto en los dos sitios, la etapa 1 intacta, el modo prueba llama a
+Sonnet, no guarda y apunta su precio). App local con `?modelo=sonnet`: el aviso sale y el botón de guardar no.
 
 ---
 
