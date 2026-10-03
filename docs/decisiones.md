@@ -10,6 +10,35 @@
 
 ---
 
+## D-034 — El motor mide, el Coach juzga
+
+**Decisión (Kris, 02/10/2026).** El plan vivía en tres traducciones que no se hablaban: el texto (que lee el
+Coach y mide a ojo sobre la imagen), el motor (que mide exacto con las velas, gratis, en el PC de Kris) y las
+reglas del checklist. Se unen así, por pasos:
+- **B (hecho):** el Coach recibe lo que ya existía: las noticias de `sesion_noticias` (leía una columna vacía) y
+  las ~120 velas de la ventana de `motor_fichas`.
+- **A (hecho):** el puente mide **la operación de Kris** con el mismo motor (`scripts/cadena/medir.py`) y la
+  guarda en `ficha.tu_operacion`: si coincide con la del motor, las diferencias de entrada/stop/objetivo/riesgo,
+  el stop máximo, si el objetivo cruza una zona vigente, la noticia y lo que anotó el motor justo antes. El stop
+  y el objetivo de Kris se deducen de la salida y del 1:1; con salida a mano, «no se puede saber».
+- **C (después):** que la IA deje de releer el plan entero (~$0,15 por día en vez de ~$0,46) solo cuando A haya
+  demostrado durante semanas que motor y Coach coinciden.
+
+**Motivo.** Medir dos veces, y la medición cara era la peor: el 24/09 el Coach pidió a Kris «el mínimo exacto
+de la vela de las 08:43» mientras el motor lo tenía. Con A sale lo que nadie había visto: el 9/09 Kris hizo la
+misma operación que el motor con el stop **35,25 pts más corto** — a él le saltó el stop y al motor, con el
+del plan, le dio objetivo.
+
+**Reglas que no se rompen.** `medir.py` **no añade metodología** (chaumer/CLAUDE.md, regla 1): solo usa los
+filtros que el motor aplica a su propia operación (`_libre`, `STOP_MAX`, `_noticia`) y sus eventos. No toca
+`lector.py`. Va bajo el candado de la ficha. Un paso ligero del puente (`medir_pendientes`) la pone al día sin
+redibujar ni subir el gráfico, cuando faltan o cambian los trades.
+
+**Descartado.** Calcularlo en la app (una cuarta traducción del motor, en JavaScript). **D:** sacar la cadena a
+la nube — NinjaTrader tiene que estar abierto igual para sacar las velas, así que no gana nada en lo importante.
+
+---
+
 ## D-033 — El Coach baja de coste: caché de 5 min con toque, guardado automático y prompt sin repetidos
 
 *Sustituye en parte a D-025: la caché ya no es de 1 h y el historial son 20 días, no 60.*

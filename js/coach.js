@@ -617,6 +617,7 @@ Qué confirmó la estrategia | Qué fue nuevo o atípico | Recomendación para m
       ? `${op.setup} ${op.sentido} a las ${op.hora} · entrada ${fmtPx(op.entrada)} · stop ${fmtPx(op.stop)} · objetivo ${fmtPx(op.objetivo)} · riesgo ${fmtPx(op.riesgo)} pts → ${op.resultado} (${fmtPts(op.puntos)} pts${op.salida ? `, salida ${op.salida}` : ''})`
       : 'Ninguna: el motor no encontró entrada ese día.'
     const avisos = (f.avisos || []).map(a => `  - ${limpio(a)}`).join('\n')
+    const tuOp = fmtTuOperacion(f.tu_operacion, limpio)
     const pm = f.premercado || {}
     const umbral = fila.umbral_vol ?? f.motor?.umbral_vol
     const editada = sesion?.diario_editado_at && fila.vista_en &&
@@ -640,8 +641,45 @@ Lo que pasó en la ventana:
 ${eventos}
 Operación: ${opStr}${avisos ? `
 Avisos del motor sobre este día (cae en uno de sus agujeros):
-${avisos}` : ''}
+${avisos}` : ''}${tuOp}
 `
+  }
+
+  // La operación de Kris medida con el mismo motor (scripts/cadena/medir.py, 02/10/2026: «el motor
+  // mide, el Coach juzga»). Son números, no opiniones: el Coach los usa en la validación en vez de
+  // medir a ojo, y sigue juzgando lo que el motor no cubre.
+  function fmtTuOperacion(to, limpio) {
+    const ops = to?.operaciones
+    if (!Array.isArray(ops)) return ''
+    if (!ops.length) return '\n\nLa operación del trader, medida con el motor: no operó ese día.'
+    const pts = v => `${fmtPx(Math.abs(v))} pts`
+    const linea = o => {
+      const L = [`- ${o.hora} ${o.sentido === 'alcista' ? 'largo' : 'corto'} · entrada ${fmtPx(o.entrada)} · salida ${fmtPx(o.salida)} (${o.resultado || 'sin resultado'})`]
+      L.push(o.riesgo != null
+        ? `  · Stop ${fmtPx(o.stop)} · objetivo ${fmtPx(o.objetivo)} · riesgo ${pts(o.riesgo)} (${o.deduccion}). Stop máximo ${o.stop_maximo}: ${o.riesgo_dentro_del_maximo ? 'dentro ✓' : 'LO SUPERA ✗'}`
+        : `  · Stop y objetivo: no se pueden saber (${o.deduccion})`)
+      if (o.objetivo_libre === true)  L.push('  · El objetivo no cruza ninguna zona vigente del motor ✓')
+      if (o.objetivo_libre === false) L.push(`  · El objetivo cruza una zona vigente del motor: ${o.zona_en_el_camino} ✗`)
+      L.push(o.noticia_cerca ? `  · Entró dentro de la ventana de la noticia roja de las ${o.noticia_cerca} ✗` : '  · Sin noticia roja a ±5 min de la entrada ✓')
+      if (!o.en_ventana) L.push('  · La entrada cae FUERA de la ventana operativa ✗')
+      const m = o.motor
+      if (!m) L.push('  · El motor no encontró ninguna entrada ese día.')
+      else if (o.coincide) {
+        const d = o.diferencias
+        L.push(`  · Es la misma operación que la del motor (${m.setup} ${m.sentido} ${m.hora}: entrada ${fmtPx(m.entrada)} · stop ${fmtPx(m.stop)} · objetivo ${fmtPx(m.objetivo)} · riesgo ${pts(m.riesgo)}).`)
+        if (d) L.push(`  · Diferencias con el motor: entrada ${fmtPts(d.entrada)} pts · stop ${fmtPts(d.stop)} pts · riesgo ${d.riesgo < 0 ? `${pts(d.riesgo)} MÁS CORTO` : d.riesgo > 0 ? `${pts(d.riesgo)} más largo` : 'igual'} que el del plan`)
+      } else {
+        L.push(`  · NO es la operación del motor: el motor hizo ${m.setup} ${m.sentido} a las ${m.hora} (${m.resultado}).`)
+      }
+      if (o.eventos_motor?.length)
+        L.push('  · Lo que anotó el motor justo antes de tu entrada:\n' + o.eventos_motor.map(e => `      ${limpio(e)}`).join('\n'))
+      return L.join('\n')
+    }
+    return `
+
+La operación del trader, medida con el mismo motor (precios exactos; el stop y el objetivo se deducen de la salida y del 1:1).
+Úsala en la VALIDACIÓN en lugar de medir a ojo: es un hecho, no una opinión. Si la gráfica o la lectura del trader la contradicen, dilo y razona cuál tiene razón según el plan (el motor tiene los dos agujeros de arriba).
+${ops.map(linea).join('\n')}`
   }
 
   // Las velas de 1 minuto de la ventana (2 oct, propuesta B). Sin ellas el Coach

@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-03 | El motor mide tu operación y el Coach la juzga |
 | 2026-10-02b | El Coach ve las noticias reales y las velas exactas de la ventana |
 | 2026-10-02 | El Coach, más barato: caché de 5 min con toque y guardado automático |
 | 2026-09-30b | Cuatro calendarios: dentro de cada uno manda el P&L |
@@ -38,6 +39,28 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-03 — El motor mide tu operación y el Coach la juzga
+
+Paso A de D-034. `scripts/cadena/medir.py` pone la operación de Kris al lado de la del motor, con los filtros
+que el motor ya aplica a la suya (sin metodología nueva y sin tocar `lector.py`). El puente la guarda en
+`ficha.tu_operacion` en cada pasada; `medir_pendientes` la pone al día sin redibujar si llegan o cambian trades.
+El Coach la recibe en su contexto como un hecho para la validación.
+
+**Rellenados 15 días** (4/09 → 2/10, las fichas hechas con el motor actual). Lo que sale:
+
+| Día | Lo que mide |
+|---|---|
+| 9/09 | Misma operación que el motor, con el stop **35,25 pts más corto**: a Kris le saltó el stop, al motor le dio objetivo |
+| 24/09 | El motor no opera ese rompimiento («la corrida siguiente no la rompió»); el Coach había dado la corrida por fluida |
+| 8/09 y 2/10 | El objetivo cruzaba una zona vigente del motor |
+| 21, 22 y 29/09 | Misma operación, stop 4,5–6,75 pts más corto que el del plan |
+
+**Verificado.** La medición, sin subir nada, con las velas y los trades reales; el puente con una BD falsa (8/8:
+solo reescribe la ficha que lo necesita, conserva lo que tenía, no sube gráfico); el Coach con las mediciones
+reales (55/55); y el relleno de verdad, comprobado con un `SELECT` sobre `motor_fichas`.
 
 ---
 

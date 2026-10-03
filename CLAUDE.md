@@ -131,7 +131,8 @@ js/table.js       Trades · js/data.js  Datos (catálogos) · js/gallery.js  Im�
 css/styles.css    Dark mode + responsive
 NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) · ChecklistChaumer ·
                   RR (Risk Reward en PUNTOS) · CadenaDiaria (AddOn: exporta el día y lanza el puente)
-scripts/cadena/   El puente de la cadena diaria: motor → gráfico → ficha en Supabase → portal
+scripts/cadena/   El puente de la cadena diaria: motor → gráfico → ficha en Supabase → portal;
+                  medir.py: la operación de Kris medida con el motor (D-034)
 scripts/plan/     El plan de Chaumer → reglas.json, catalogo_reglas y plan_documentos
 scripts/herramientas/  medir-tokens · respaldo.ps1 (a diario, 11:00, a OneDrive: tarea de Windows)
 TelegramBot/      Bot (Cloudflare Worker) · workers/proxy-ia/  copia del Worker proxy IA

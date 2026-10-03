@@ -39,6 +39,7 @@ CLOUDINARY = ('dq4n7bjta', 'trading-journal')         # los mismos que la app (j
 
 sys.path.insert(0, BT)
 import lector, dia  # noqa: E402  (dia importa el mismo módulo lector)
+import medir        # noqa: E402  (tu operación contra el motor, 02/10/2026)
 
 os.makedirs(SALIDA, exist_ok=True)
 
@@ -160,8 +161,21 @@ def avisos_del_motor(r, corte_z):
     return av
 
 
-def ficha_del_dia(V, d, umbral, fed):
-    """Corre el motor y arma la ficha. Devuelve (estado, ficha, operacion)."""
+def trades_del_dia(fecha):
+    """Las operaciones de Kris ese día (la tabla `trades` = el journal de la cuenta principal)."""
+    return sb('GET', f'trades?trade_date=eq.{fecha}&select=market_pos,entry_time,exit_time,'
+                     'entry_price,exit_price,resultado&order=entry_time')
+
+
+def tu_operacion(r, ev, t, trades, d):
+    """La medición de las operaciones de Kris contra el motor (medir.py), con la huella de los trades:
+    si cambian (un trade que llega tarde, uno corregido), la siguiente pasada la rehace."""
+    return {'huella': medir.huella_trades(trades), 'operaciones': medir.medir(r, ev, t, trades, d)}
+
+
+def ficha_del_dia(V, d, umbral, fed, trades=None):
+    """Corre el motor y arma la ficha. Devuelve (estado, ficha, operacion). Con `trades`, la ficha
+    lleva además `tu_operacion`: la de Kris medida con el mismo motor (02/10/2026)."""
     r = lector.leer_sesion(V, d)
     if r is None:
         return 'sin_jornada', {'motivo': 'sin ventana completa (festivo o datos incompletos)'}, None
@@ -192,6 +206,8 @@ def ficha_del_dia(V, d, umbral, fed):
                             'puntos': t['pts'], 'salida': t.get('h_out')},
         'avisos': avisos_del_motor(r, corte_z),
     }
+    if trades is not None:
+        ficha['tu_operacion'] = tu_operacion(r, ev, t, trades, d)
     return 'ok', ficha, t
 
 
@@ -257,7 +273,12 @@ def procesar(fecha, umbral, desde, fed_set, huella_motor):
     lector.UMBRAL_VOL = umbral
     lector.FOMC = set(fed_set)
     V = lector.cargar(path)
-    estado, ficha, t = ficha_del_dia(V, d, umbral, fed)
+    try:
+        trades = trades_del_dia(fecha)
+    except Exception as e:       # sin trades la ficha sale igual; la medición se rehace en la próxima pasada
+        log(f'{fecha}  no se pudieron leer los trades ({e}): la ficha va sin tu operación')
+        trades = None
+    estado, ficha, t = ficha_del_dia(V, d, umbral, fed, trades)
     avisos = ficha.setdefault('avisos', []) if estado == 'ok' else []
     if datetime.date.fromisoformat(fecha) < desde:
         avisos.append(f'umbral actual ({umbral}, desde {desde:%d/%m/%Y}) aplicado a un día anterior a ese cambio')
@@ -325,6 +346,41 @@ def pendientes(n_dias, huella_motor):
         if f not in hay or hay[f]['huella_motor'] != huella_motor or hay[f]['huella_datos'] != h:
             fuera.append(f)
     return fuera
+
+
+def medir_pendientes(n_dias, huella_motor, fed_set):
+    """Pone al día `tu_operacion` en las fichas buenas de los últimos días SIN redibujar ni subir el
+    gráfico: solo corre el motor en memoria y reescribe la ficha. Cubre lo que `pendientes` no ve —un
+    trade que llega o se corrige después de la ficha— y rellena las fichas de antes del 02/10/2026.
+    Solo fichas hechas con el motor de ahora: si la huella del motor cambió, ya las rehace `procesar`.
+    Nunca tumba la cadena."""
+    try:
+        desde = (datetime.date.today() - datetime.timedelta(days=n_dias)).isoformat()
+        fichas = sb('GET', f'motor_fichas?fecha=gte.{desde}&estado=eq.ok&huella_motor=eq.{huella_motor}'
+                           '&select=fecha,umbral_vol,dia_fed,ficha')
+        if not fichas: return
+        trades = sb('GET', f'trades?trade_date=gte.{desde}&select=trade_date,market_pos,entry_time,'
+                           'exit_time,entry_price,exit_price,resultado&order=entry_time')
+        por_dia = {}
+        for tr in trades: por_dia.setdefault(tr['trade_date'], []).append(tr)
+        for fila in fichas:
+            f = fila['fecha']; ficha = fila['ficha'] or {}
+            del_dia = por_dia.get(f, [])
+            if (ficha.get('tu_operacion') or {}).get('huella') == medir.huella_trades(del_dia): continue
+            manual, auto = archivos(f)
+            if not (manual or auto): continue
+            d = f.replace('-', '')
+            lector.UMBRAL_VOL = fila.get('umbral_vol') or lector.UMBRAL_VOL
+            lector.FOMC = set(fed_set)
+            r = lector.leer_sesion(lector.cargar(manual or auto), d)
+            if not r or 'error' in r: continue
+            ev, t = lector.detectar_setups(r, solo_reingresos=bool(fila.get('dia_fed')))
+            ficha['tu_operacion'] = tu_operacion(r, ev, t, del_dia, d)
+            sb('PATCH', f'motor_fichas?fecha=eq.{f}', {'ficha': ficha}, 'return=minimal')
+            n = len(ficha['tu_operacion']['operaciones'])
+            log(f"{f}  tu operación medida con el motor ({n} {'operación' if n == 1 else 'operaciones'})")
+    except Exception as e:
+        log(f'medir: ❌ {e}')
 
 
 # ── Publicar las Sesiones (29/09/2026) ─────────────────────────────────────────
@@ -401,6 +457,7 @@ def main(argv):
         fechas = pendientes(n, huella_motor)
         if not fechas:
             log('pendientes: nada que subir')
+            medir_pendientes(n, huella_motor, fed_set)
             publicar_sesiones(); return 0
     else:
         fechas = [a for a in argv if re.fullmatch(r'\d{4}-\d{2}-\d{2}', a)]
@@ -418,6 +475,8 @@ def main(argv):
                    {'fecha': f, 'estado': 'error', 'ficha': {'motivo': str(e)[:500]}, 'huella_motor': huella_motor},
                    'resolution=ignore-duplicates,return=minimal')   # una ficha buena no se pisa con un error
             except Exception: pass
+    if '--pendientes' in argv:
+        medir_pendientes(n, huella_motor, fed_set)
     publicar_sesiones()
     return 1 if fallos else 0
 

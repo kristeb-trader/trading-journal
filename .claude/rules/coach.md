@@ -91,6 +91,10 @@ Lo que marcó el motor de Chaumer (`motor_fichas`) entra en el Coach por dos sit
   1 minuto de la ventana (hora Colombia, la del CIERRE, como NinjaTrader y el motor), para que el Coach mida
   con precios exactos y no a ojo sobre la imagen. Solo si hay ficha `ok`: mismo candado.
 
+- **Tu operación, medida con el motor** (D-034): `ficha.tu_operacion` (la escribe `scripts/cadena/medir.py`
+  desde el puente) entra en la sección del motor vía `fmtTuOperacion`. Es un **hecho** para la validación, no
+  una opinión; el Coach sigue juzgando lo que el motor no cubre. Fichas anteriores sin medición: no sale nada.
+
 Invariantes:
 - **Las noticias se leen de `sesion_noticias`** (`DB.getNoticiasByDate`). `sesiones.noticias` existe pero
   **nunca se escribe**: leerla hacía creer al Coach que no había noticia (PCE el 30/09, NFP el 2/10).

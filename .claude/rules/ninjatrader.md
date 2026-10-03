@@ -56,6 +56,9 @@ día **sin archivo** en `datos\dia\` lo pide con `BarsRequest` y lo escribe como
   York de Windows. Nada de horas fijas.
 - **Contrato:** el del último rollover de `MasterInstrument.RolloverCollection` con fecha ≤ el día (hoy
   `MNQ 12-26`), con la merge policy global.
+- **Mide tu operación** (02/10/2026, D-034): `medir.py` pone cada trade de Kris al lado de la operación del motor
+  y lo guarda en `ficha.tu_operacion`. **No añade reglas**: solo usa los filtros con los que el motor juzga la
+  suya. `medir_pendientes` (en cada `--pendientes`) la rehace sin redibujar si los trades cambian.
 - **Publica solo:** al terminar, `subir_dia.py` hace commit y push de los gráficos de `chaumer\05_Backtesting\claude\`
   de los días **ya registrados** (el candado del motor, D-029). Es el único proceso que hace push sin nadie delante.
 - **Configuración:** `Documentos\NinjaTrader 8\cadena-diaria.json` (la relee cada minuto: cambiarla no
