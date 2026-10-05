@@ -236,10 +236,20 @@ import Icono from '../componentes/Icono.astro';
     font-size: var(--t-3); text-transform: uppercase; letter-spacing: var(--track-etiqueta);
     font-weight: var(--peso-max); color: var(--texto);
   }
+  /* Todo en columnas de ancho fijo, para que de un mes a otro cada pieza
+     caiga en el mismo sitio (pedido del operador, 05/10/2026): el nombre de
+     «Septiembre» es el doble que el de «Mayo», y «1 operación» que
+     «12 operaciones». Los anchos caben la pieza mas larga posible. */
+  .bt .mes-boton { min-width: 11.5rem; vertical-align: middle; }
   .bt .mes-cuenta {
-    display: inline; margin-left: var(--e-3); font-family: var(--fuente);
+    display: inline-flex; align-items: center; vertical-align: middle;
+    margin-left: var(--e-3); font-family: var(--fuente);
     font-size: var(--t-2); font-weight: var(--peso-medio); color: var(--texto-2);
+    font-variant-numeric: tabular-nums;
   }
+  /* Sin «·»: con columnas fijas el separador quedaba suelto en medio del aire. */
+  .bt .mc-ops { min-width: 7.5rem; }
+  .bt .mc-t { min-width: 4.75rem; }
   /* La efectividad: la cifra que mas se mira. En su propio color, que no es
      ni el verde ni el rojo de la fila: no juzga, destaca. */
   .bt .mes-efec {
@@ -611,8 +621,9 @@ import Icono from '../componentes/Icono.astro';
           '<button class="mes-boton" type="button" aria-expanded="' + abierto + '">' + FLECHA_MES +
             '<span class="mes-nombre">' + MESES_LARGOS[Number(t[1]) - 1] + ' ' + t[0] + '</span>' +
           '</button>' +
-          '<span class="mes-cuenta">' + ops.length + (ops.length === 1 ? ' operación' : ' operaciones') +
-            (hay ? ' · <span class="pos">' + target + ' target</span> · <span class="neg">' + stop + ' stop</span>' : '') +
+          '<span class="mes-cuenta">' +
+            '<span class="mc-ops">' + ops.length + (ops.length === 1 ? ' operación' : ' operaciones') + '</span>' +
+            (hay ? '<span class="mc-t pos">' + target + ' target</span><span class="mc-s neg">' + stop + ' stop</span>' : '') +
           '</span>' +
         '</td>' +
         '<td class="n ' + tono(puntos) + '">' + (hay ? firmado(puntos) : '—') + '</td>' +
