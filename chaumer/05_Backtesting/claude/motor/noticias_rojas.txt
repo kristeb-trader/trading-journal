@@ -28,3 +28,5 @@
 2026-09-04  07:30  Unemployment Rate
 2026-09-10  07:30  Core PPI m/m
 2026-09-16  13:00  FOMC Economic Projections
+2026-09-30  07:30  Core PCE Price Index m/m / Final GDP q/q
+2026-10-02  07:30  Average Hourly Earnings m/m / Non-Farm Employment Change / Unemployment Rate
