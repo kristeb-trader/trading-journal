@@ -31,6 +31,7 @@ const Backtesting = (() => {
   let jornadas = []
   let wired = false
   let subiendo = false
+  let abiertos = null   // meses desplegados ('YYYY-MM')
 
   const $ = id => document.getElementById(id)
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
@@ -118,20 +119,27 @@ const Backtesting = (() => {
       meses[meses.length - 1].js.push(j)
     })
 
+    // Plegados salvo el más nuevo; lo que se abra o cierre aguanta al recargar.
+    if (!abiertos) abiertos = new Set([meses[0].k])
+
     cont.innerHTML = cab + meses.map(m => {
       const [y, mm] = m.k.split('-').map(Number)
       const o = m.js.flatMap(j => j.operaciones || [])
       const t = o.filter(x => x.resultado === 'target').length
       const pnl = o.reduce((a, x) => a + Number(x.pnl), 0)
+      const efec = o.length ? `<span class="bt-mes-efec">${Math.round(t / o.length * 100)}% efectividad</span>` : ''
       return `
-        <div class="bt-mes">
-          <div class="bt-mes-h">
+        <details class="bt-mes" data-mes="${m.k}"${abiertos.has(m.k) ? ' open' : ''}>
+          <summary class="bt-mes-h">
+            <i class="ti ti-chevron-right bt-mes-flecha"></i>
             <span>${MESES[mm - 1]} ${y}</span>
-            <span class="bt-mes-n">${plural(o.length, 'operación', 'operaciones')} · ${t} T · ${o.length - t} S</span>
+            <span class="bt-mes-n">${plural(o.length, 'operación', 'operaciones')} ·
+              <span class="bt-pos">${t} T</span> · <span class="bt-neg">${o.length - t} S</span></span>
+            ${efec}
             <span class="bt-mes-pnl ${cls(pnl)}">${dinero(pnl)}</span>
-          </div>
+          </summary>
           ${m.js.map(fila).join('')}
-        </div>`
+        </details>`
     }).join('')
   }
 
@@ -351,6 +359,11 @@ const Backtesting = (() => {
         Lightbox.open(full, urls, urls.indexOf(full))
       }
     })
+    // `toggle` no burbujea: se escucha en captura.
+    $('btContent')?.addEventListener('toggle', e => {
+      const k = e.target.dataset?.mes
+      if (k) e.target.open ? abiertos.add(k) : abiertos.delete(k)
+    }, true)
     $('btResultado')?.addEventListener('change', vistaPrevia)
     $('btPuntos')?.addEventListener('input', vistaPrevia)
     $('btImagen')?.addEventListener('change', subirImagen)

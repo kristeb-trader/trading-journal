@@ -5166,8 +5166,14 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   padding: 10px 16px; background: var(--bg3); border-bottom: 1px solid var(--border);
   font-size: 0.85rem; font-weight: 700; color: var(--text2);
+  cursor: pointer; list-style: none; user-select: none;
 }
+.bt-mes-h::-webkit-details-marker { display: none; }
+.bt-mes:not([open]) .bt-mes-h { border-bottom: none; }
+.bt-mes-flecha { display: inline-block; font-size: 1rem; color: var(--text3); transition: transform var(--transition); }
+.bt-mes[open] .bt-mes-flecha { transform: rotate(90deg); }
 .bt-mes-h .bt-mes-n { font-size: 0.74rem; font-weight: 600; color: var(--text3); }
+.bt-mes-h .bt-mes-efec { font-size: 0.74rem; font-weight: 700; color: var(--text); }
 .bt-mes-h .bt-mes-pnl { margin-left: auto; font-variant-numeric: tabular-nums; }
 
 .bt-row {
