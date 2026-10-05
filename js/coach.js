@@ -124,7 +124,7 @@ const Coach = (() => {
       ? `En corto: <cómo empezó el día según el plan y qué había que vigilar, en 1-2 frases llanas>
 Detalle:
 Apertura: <qué declaró la vela de apertura (alcista/bajista) y qué significa para el primer movimiento>
-Zonas: <las zonas de premercado vigentes que importaban hoy y por qué>
+Zonas: <las zonas de premercado del plan (velas sobre el umbral de volumen, según el motor) que importaban hoy, o "ninguna">
 Noticias: <la noticia roja del día y su ventana, o "Sin noticias">`
       : `En corto: <cómo venía el día y qué había que vigilar, en 1-2 frases>
 Detalle:
@@ -383,8 +383,8 @@ Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
 
     const fmtGrupo = arr => arr.length ? arr.map(l => `  - ${l}`).join('\n') : '  - No registrado'
     // Días del plan (Kris, 03/10): fuera el contexto viejo (PDH/PDL, rango overnight, deriva,
-    // "sesgo"). Del premercado solo cuentan las zonas que marcó el trader.
-    const zonasPlanStr = `  - Soportes: ${sopN.length ? sopN.join(', ') : 'ninguno'}\n  - Resistencias: ${resN.length ? resN.join(', ') : 'ninguna'}`
+    // "sesgo"). Y desde el 05/10, también las zonas naranjas que marcaba a mano: con el plan,
+    // las zonas de premercado son las de las velas sobre el umbral, y esas las da el motor.
     const premktStr = conPlan ? null : (ref.length || otros.length)
       ? `Datos de referencia:\n${fmtGrupo(ref)}\n\nContexto adicional:\n${fmtGrupo(otros)}` +
         (relacion.length ? `\n\nRelación de apertura (YA CALCULADA — úsala TAL CUAL, no la recalcules ni la contradigas):\n${fmtGrupo(relacion)}` : '')
@@ -419,8 +419,8 @@ Este historial y los patrones de arriba llegan hasta el día ANTERIOR a la sesi�
 Tienes los valores EXACTOS; NUNCA los aproximes "a ojo" del gráfico ni digas "un valor aproximado en una zona${conPlan ? '' : ' / en la línea verde o roja'}":
 ${conPlan ? '' : `- La LÍNEA VERDE del gráfico = PDH (máximo de ayer). Su valor exacto está en los datos de referencia.
 - La LÍNEA ROJA = PDL (mínimo de ayer). Su valor exacto está en los datos.
-`}- Las ZONAS NARANJAS (soportes/resistencias) tienen valores exactos registrados (soportes_naranja / resistencias_naranja).
-- Los precios de ENTRADA y SALIDA de cada trade son exactos (vienen de la tabla de trades, no del gráfico).
+`}${conPlan ? '' : `- Las ZONAS NARANJAS (soportes/resistencias) tienen valores exactos registrados (soportes_naranja / resistencias_naranja).
+`}- Los precios de ENTRADA y SALIDA de cada trade son exactos (vienen de la tabla de trades, no del gráfico).
 - Si abajo están las VELAS DE 1 MINUTO DE LA VENTANA, el máximo y el mínimo de cada vela también son exactos: mide con ellos.
 Usa siempre esos valores exactos. Si necesitas un dato que NO está registrado en el contexto, PREGÚNTALO en lugar de suponerlo o inventarlo — con UNA excepción, la simetría stop/target de la sección siguiente: eso se DERIVA, no se pregunta.
 
@@ -482,8 +482,7 @@ Contexto de mercado: ${sesion?.contexto || 'No indicado'}
 Setup del día: ${sesion?.setup || 'No indicado'}
 Noticias rojas (hora Colombia, las registra el trader): ${noticiasStr}
 
-${conPlan ? `Zonas de premercado que marcó el trader (naranjas):
-${zonasPlanStr}` : `Premercado / contexto técnico:
+${conPlan ? `Zonas de premercado: las del plan (velas sobre el umbral de volumen) vienen en la sección del motor. El trader ya no marca zonas a mano.` : `Premercado / contexto técnico:
 ${premktStr}`}
 
 Trades:
@@ -1562,16 +1561,18 @@ Cómo usarlos:
     const noticiaVal = (s.noticiasRojas || []).length
       ? s.noticiasRojas.map(n => `${n.hora} ${n.nombre || ''}`.trim()).join(' · ')
       : (s.hora_noticia_roja ? `roja ${s.hora_noticia_roja}` : '')
-    // Días del plan: solo lo que el plan usa (zonas de premercado y noticias). Kris, 03/10.
-    const soloPlan = etapaDeFecha(s.sesion_date) === 2
+    const noticiasHtml = noticiaVal ? `<div class="cz-dgroup"><div class="cz-dgt">Noticias</div>${_drow('Del día', noticiaVal)}</div>` : ''
+    // Días del plan: solo las noticias (Kris: el contexto viejo el 03/10, las zonas naranjas el
+    // 05/10). Las zonas de premercado del plan las da el motor, en su tarjeta.
+    if (etapaDeFecha(s.sesion_date) === 2) return noticiasHtml || '<p class="cz-empty">Sin noticias rojas registradas.</p>'
     return `
-      ${soloPlan ? '' : `<div class="cz-dgroup"><div class="cz-dgt">Referencia (OHLC de ayer)</div>${ref || '<p class="cz-empty">—</p>'}</div>
-      <div class="cz-dgroup"><div class="cz-dgt">Overnight / apertura</div>${on || '<p class="cz-empty">—</p>'}</div>`}
+      <div class="cz-dgroup"><div class="cz-dgt">Referencia (OHLC de ayer)</div>${ref || '<p class="cz-empty">—</p>'}</div>
+      <div class="cz-dgroup"><div class="cz-dgt">Overnight / apertura</div>${on || '<p class="cz-empty">—</p>'}</div>
       <div class="cz-dgroup"><div class="cz-dgt">Zonas naranjas</div>
         <div class="cz-drow"><span class="cz-dl">Soportes</span><span class="cz-zwrap">${chips(sop)}</span></div>
         <div class="cz-drow"><span class="cz-dl">Resistencias</span><span class="cz-zwrap">${chips(res)}</span></div>
       </div>
-      ${noticiaVal ? `<div class="cz-dgroup"><div class="cz-dgt">Noticias</div>${_drow('Del día', noticiaVal)}</div>` : ''}
+      ${noticiasHtml}
     `
   }
 

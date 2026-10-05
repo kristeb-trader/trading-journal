@@ -16,7 +16,10 @@
 Chaumer.» En los días de la etapa 2 el Coach deja de recibir y de escribir el contexto de antes del plan
 (sesgo por el rango overnight, máximo y mínimo de ayer, deriva nocturna, líneas verde y roja). El Contexto se
 escribe como lo lee el plan: **vela de apertura, zonas de premercado vigentes y noticia**. El desplegable
-«Referencias del día» enseña solo zonas y noticias. Los días de la etapa 1 no cambian.
+«Referencias del día» enseña solo las noticias. Los días de la etapa 1 no cambian.
+**05/10 (Kris):** fuera también las **zonas naranjas** que marcaba a mano —«eso ya no lo veo con el nuevo plan»—;
+las zonas de premercado del plan son las de las velas sobre el umbral de volumen, y las da el motor. Su captura
+en el AddOn de NinjaTrader se quita en otra sesión.
 
 **Motivo.** El Coach mezclaba dos lecturas en la misma frase (24/09: «día rotacional» y «la vela de las 08:31
 declaró el día bajista»), y el plan dice que es la única fuente de reglas, sin análisis técnico genérico.

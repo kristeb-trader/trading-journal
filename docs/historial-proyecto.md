@@ -63,6 +63,9 @@
   Contexto se escribe como **Apertura / Zonas / Noticias**, y el formato sale de una sola función que usan los dos
   sitios que lo definen (`formatoContexto`): así no se desincronizan como el 16/08.
 - **Modo prueba:** `?modelo=sonnet` usa Sonnet 5.5 sin guardar nada, para comparar con Opus el mismo día.
+- **05/10:** primer día real con todo: el día completo costó **$0,63** (antes ~$0,96), el toque y la caché
+  funcionaron, el Contexto salió según el plan y usó la medición del motor. Kris quita después las **zonas
+  naranjas** de los días del plan (el Coach ya no las recibe ni las enseña).
 - **C explicado a Kris:** dejar de releer el plan entero solo tras semanas de A con motor y Coach coincidiendo.
 
 **Verificado.** Prueba del Coach 63/63 (el contexto en los dos sitios, la etapa 1 intacta, el modo prueba llama a
