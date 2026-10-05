@@ -213,8 +213,20 @@ import Icono from '../componentes/Icono.astro';
     border-bottom: 1px solid var(--borde);
     vertical-align: middle;
   }
-  .bt tbody tr.mes:hover td { background: color-mix(in srgb, var(--acento) 11%, var(--superficie)); }
+  .bt tr.mes { cursor: pointer; }
+  .bt tr.mes:hover td { background: color-mix(in srgb, var(--acento) 16%, var(--superficie)); }
   .bt tr.mes td.pos { color: var(--positivo); }
+  /* El mes se pliega: la flecha gira un cuarto de vuelta al abrirse. */
+  .bt .mes-boton {
+    display: inline-flex; align-items: center; gap: var(--e-2);
+    font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+  }
+  .bt .mes-flecha {
+    width: 0.95rem; height: 0.95rem; flex: none; color: var(--texto-3);
+    transition: transform var(--normal), color var(--normal);
+  }
+  .bt tr.mes.abierto .mes-flecha { transform: rotate(90deg); color: var(--acento-vivo); }
+  .bt tr.mes:hover .mes-flecha { color: var(--texto); }
   .bt tr.mes td.neg { color: var(--negativo); }
   /* Nombre y cuenta en una sola linea (pedido del operador): la fila se lee
      de corrido, como el resto de la tabla. */
@@ -322,6 +334,9 @@ import Icono from '../componentes/Icono.astro';
 
     var estado = { cabecera: null, jornadas: [] };
     var filtro = '';
+    // Los meses desplegados ('AAAA-MM'). Todos plegados al entrar; lo que se
+    // abra se queda abierto al cambiar de filtro.
+    var abiertos = {};
 
     // ─────────────────────────────────────────────────────────── cargar
     function cargar() {
@@ -559,7 +574,12 @@ import Icono from '../componentes/Icono.astro';
       });
 
       cuerpo.innerHTML = meses.map(function (m) {
-        return filaMes(m.clave, m.ops) + m.filas.join('');
+        var abierto = !!abiertos[m.clave];
+        // Cada fila del dia lleva su mes, para plegarla sin repintar la tabla.
+        var marca = '<tr data-de="' + m.clave + '"' + (abierto ? '' : ' hidden');
+        return filaMes(m.clave, m.ops, abierto) + m.filas.map(function (f) {
+          return marca + f.slice(3);
+        }).join('');
       }).join('');
 
       vacio.hidden = meses.length > 0;
@@ -572,7 +592,9 @@ import Icono from '../componentes/Icono.astro';
      * Puntos, P&L bajo P&L, y la efectividad —lo que el operador mas mira—
      * bajo Resultado, en grande y en color.
      */
-    function filaMes(clave, ops) {
+    var FLECHA_MES = '<svg class="mes-flecha" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/></svg>';
+
+    function filaMes(clave, ops, abierto) {
       var t = clave.split('-');
       var puntos = 0, pnl = 0, target = 0;
       ops.forEach(function (o) {
@@ -584,9 +606,11 @@ import Icono from '../componentes/Icono.astro';
       var tono = function (v) { return v > 0 ? 'pos' : v < 0 ? 'neg' : ''; };
       var hay = ops.length > 0;
 
-      return '<tr class="mes">' +
+      return '<tr class="mes' + (abierto ? ' abierto' : '') + '" data-mes="' + clave + '">' +
         '<td colspan="4">' +
-          '<span class="mes-nombre">' + MESES_LARGOS[Number(t[1]) - 1] + ' ' + t[0] + '</span>' +
+          '<button class="mes-boton" type="button" aria-expanded="' + abierto + '">' + FLECHA_MES +
+            '<span class="mes-nombre">' + MESES_LARGOS[Number(t[1]) - 1] + ' ' + t[0] + '</span>' +
+          '</button>' +
           '<span class="mes-cuenta">' + ops.length + (ops.length === 1 ? ' operación' : ' operaciones') +
             (hay ? ' · <span class="pos">' + target + ' target</span> · <span class="neg">' + stop + ' stop</span>' : '') +
           '</span>' +
@@ -646,12 +670,23 @@ import Icono from '../componentes/Icono.astro';
         pintarTabla(recorrido());
         return;
       }
+      var mes = e.target.closest('tr.mes');
+      if (mes) { plegar(mes); return; }
       var mini = e.target.closest('[data-lupa-abrir]');
       if (mini) { abrirLupa(mini.dataset.lupaAbrir, mini.alt); return; }
 
       var obs = e.target.closest('td.obs');
       if (obs) obs.parentElement.classList.toggle('abierta');
     });
+
+    function plegar(fila) {
+      var clave = fila.dataset.mes;
+      var abierto = !abiertos[clave];
+      abiertos[clave] = abierto;
+      fila.classList.toggle('abierto', abierto);
+      fila.querySelector('.mes-boton').setAttribute('aria-expanded', String(abierto));
+      raiz.querySelectorAll('tr[data-de="' + clave + '"]').forEach(function (f) { f.hidden = !abierto; });
+    }
 
     var lupa = document.querySelector('[data-lupa]');
     function abrirLupa(url, alt) {
