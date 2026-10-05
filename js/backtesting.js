@@ -127,15 +127,15 @@ const Backtesting = (() => {
       const o = m.js.flatMap(j => j.operaciones || [])
       const t = o.filter(x => x.resultado === 'target').length
       const pnl = o.reduce((a, x) => a + Number(x.pnl), 0)
-      const efec = o.length ? `<span class="bt-mes-efec">${Math.round(t / o.length * 100)}% efectividad</span>` : ''
+      const efec = o.length ? `${Math.round(t / o.length * 100)}% efectividad` : ''
       return `
         <details class="bt-mes" data-mes="${m.k}"${abiertos.has(m.k) ? ' open' : ''}>
           <summary class="bt-mes-h">
             <i class="ti ti-chevron-right bt-mes-flecha"></i>
-            <span>${MESES[mm - 1]} ${y}</span>
-            <span class="bt-mes-n">${plural(o.length, 'operación', 'operaciones')} ·
-              <span class="bt-pos">${t} T</span> · <span class="bt-neg">${o.length - t} S</span></span>
-            ${efec}
+            <span class="bt-mes-nom">${MESES[mm - 1]} ${y}</span>
+            <span class="bt-mes-n bt-mes-ops">${plural(o.length, 'operación', 'operaciones')}</span>
+            <span class="bt-mes-n bt-mes-ts"><span class="bt-pos">${t} T</span> · <span class="bt-neg">${o.length - t} S</span></span>
+            <span class="bt-mes-efec">${efec}</span>
             <span class="bt-mes-pnl ${cls(pnl)}">${dinero(pnl)}</span>
           </summary>
           ${m.js.map(fila).join('')}

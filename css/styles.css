@@ -5175,6 +5175,24 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .bt-mes-h .bt-mes-n { font-size: 0.74rem; font-weight: 600; color: var(--text3); }
 .bt-mes-h .bt-mes-efec { font-size: 0.74rem; font-weight: 700; color: var(--text); }
 .bt-mes-h .bt-mes-pnl { margin-left: auto; font-variant-numeric: tabular-nums; }
+/* Mismas columnas en todos los meses: que las cifras queden una bajo otra. */
+@container (max-width: 519px) {
+  .bt-mes-h {
+    display: grid; row-gap: 2px; column-gap: 10px; padding: 10px 12px;
+    grid-template-columns: 16px 92px 52px minmax(0, 1fr);
+    grid-template-areas: "fl nom nom pnl" ". ops ts efec";
+  }
+  .bt-mes-flecha { grid-area: fl; }
+  .bt-mes-nom { grid-area: nom; }
+  .bt-mes-ops { grid-area: ops; }
+  .bt-mes-ts { grid-area: ts; }
+  .bt-mes-h .bt-mes-efec { grid-area: efec; text-align: right; }
+  .bt-mes-h .bt-mes-pnl { grid-area: pnl; margin-left: 0; text-align: right; }
+}
+@container (min-width: 520px) {
+  .bt-mes-h { display: grid; grid-template-columns: 16px 140px 100px 64px minmax(0, 1fr) auto; }
+  .bt-mes-h .bt-mes-pnl { margin-left: 0; text-align: right; }
+}
 
 .bt-row {
   display: grid; align-items: center; gap: 10px;
