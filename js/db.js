@@ -351,7 +351,8 @@ const AUTO_ALIAS = {
 const VENTANA_ET = { desde: '09:30', hasta: '11:30' }
 // Riesgo máximo por operación (R-04, plan 3.44): en dólares, con los contratos que quepan.
 const RIESGO_MAX_USD = 160
-const RIESGO_MAX_DESDE = '2026-10-05'
+// Se aplica desde el 28/09: Kris lo pidió así el 05/10, al cambiar la regla.
+const RIESGO_MAX_DESDE = '2026-09-28'
 
 function reglaAutoResultado(codigo, s, opts) {
   const o = opts || {}
@@ -372,10 +373,10 @@ function reglaAutoResultado(codigo, s, opts) {
     // `qty` es real desde que la principal es Sim101; lo anterior está regularizado
     // (D-020) y no se evalúa: esta regla solo vive en la etapa nueva.
     if (!trades.length) return null
-    // Hasta el 04/10/2026 la regla era «siempre 1 contrato» (plan 3.43): esos días se
-    // juzgan con la regla que tenían, para no reescribir su disciplina.
+    // Antes del 28/09 se juzga con la regla vieja, «siempre 1 contrato» (plan 3.43). Del
+    // 28/09 al 04/10 ya con la nueva: Kris decidió aplicarla desde ahí (05/10/2026).
     if (s.sesion_date < RIESGO_MAX_DESDE) return trades.every(t => Number(t.qty) === 1)
-    // Desde el 05/10 (plan 3.44): los contratos que quepan sin pasar de $160. Sin el
+    // Desde el 28/09 (plan 3.44): los contratos que quepan sin pasar de $160. Sin el
     // stop en `trades`, el riesgo se mide con el MAE en dólares de toda la posición,
     // igual que el stop máximo se mide con el MAE en puntos.
     const usd = trades.filter(t => t.mae != null).map(t => Math.abs(parseFloat(t.mae) || 0))

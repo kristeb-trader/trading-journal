@@ -85,7 +85,7 @@ const Disciplina = (() => {
     if (key === 'p2_un_contrato') {
       if (s.sesion_date < RIESGO_MAX_DESDE) {
         const q = [...new Set(trs.map(t => Number(t.qty)).filter(n => n !== 1))]
-        return `Operado con <b>${q.join(', ')} contratos</b>. Hasta el 04/10 el plan operaba siempre 1.`
+        return `Operado con <b>${q.join(', ')} contratos</b>. Hasta el 27/09 el plan operaba siempre 1.`
       }
       const peor = Math.max(...trs.filter(t => t.mae != null).map(t => Math.abs(parseFloat(t.mae) || 0)))
       return `El peor movimiento en contra fue de <b>${fmtDinero(peor, { masEnPositivo: false })}</b>, por encima del riesgo máximo de ${fmtDinero(RIESGO_MAX_USD, { masEnPositivo: false })}.`
