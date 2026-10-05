@@ -83,8 +83,12 @@ const Disciplina = (() => {
       return `Operado en <b>${esc(otros.join(', ') || 'otro instrumento')}</b>. El plan opera solo MNQ.`
     }
     if (key === 'p2_un_contrato') {
-      const q = [...new Set(trs.map(t => Number(t.qty)).filter(n => n !== 1))]
-      return `Operado con <b>${q.join(', ')} contratos</b>. El plan opera siempre 1.`
+      if (s.sesion_date < RIESGO_MAX_DESDE) {
+        const q = [...new Set(trs.map(t => Number(t.qty)).filter(n => n !== 1))]
+        return `Operado con <b>${q.join(', ')} contratos</b>. Hasta el 04/10 el plan operaba siempre 1.`
+      }
+      const peor = Math.max(...trs.filter(t => t.mae != null).map(t => Math.abs(parseFloat(t.mae) || 0)))
+      return `El peor movimiento en contra fue de <b>${fmtDinero(peor, { masEnPositivo: false })}</b>, por encima del riesgo máximo de ${fmtDinero(RIESGO_MAX_USD, { masEnPositivo: false })}.`
     }
     if (key === 'p2_ventana_horaria') {
       const fuera = trs.map(t => horaEt(t.entry_time, s.sesion_date)).filter(h => h && (h < VENTANA_ET.desde || h >= VENTANA_ET.hasta))

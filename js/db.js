@@ -349,6 +349,9 @@ const AUTO_ALIAS = {
 }
 // Ventana operativa del plan (R-02): 09:30–11:30 ET, los 120 minutos tras la apertura.
 const VENTANA_ET = { desde: '09:30', hasta: '11:30' }
+// Riesgo máximo por operación (R-04, plan 3.44): en dólares, con los contratos que quepan.
+const RIESGO_MAX_USD = 160
+const RIESGO_MAX_DESDE = '2026-10-05'
 
 function reglaAutoResultado(codigo, s, opts) {
   const o = opts || {}
@@ -365,11 +368,19 @@ function reglaAutoResultado(codigo, s, opts) {
     if (!trades.length) return null
     return trades.every(t => /^MNQ\b/i.test(String(t.instrument || '')))
   }
-  if (codigo === 'p2_un_contrato') {             // R-04 · siempre 1 contrato
+  if (codigo === 'p2_un_contrato') {             // R-04 · el riesgo no pasa de RIESGO_MAX
     // `qty` es real desde que la principal es Sim101; lo anterior está regularizado
     // (D-020) y no se evalúa: esta regla solo vive en la etapa nueva.
     if (!trades.length) return null
-    return trades.every(t => Number(t.qty) === 1)
+    // Hasta el 04/10/2026 la regla era «siempre 1 contrato» (plan 3.43): esos días se
+    // juzgan con la regla que tenían, para no reescribir su disciplina.
+    if (s.sesion_date < RIESGO_MAX_DESDE) return trades.every(t => Number(t.qty) === 1)
+    // Desde el 05/10 (plan 3.44): los contratos que quepan sin pasar de $160. Sin el
+    // stop en `trades`, el riesgo se mide con el MAE en dólares de toda la posición,
+    // igual que el stop máximo se mide con el MAE en puntos.
+    const usd = trades.filter(t => t.mae != null).map(t => Math.abs(parseFloat(t.mae) || 0))
+    if (!usd.length) return null
+    return usd.every(v => v <= RIESGO_MAX_USD)
   }
   if (codigo === 'p2_ventana_horaria') {         // R-02 · entrada entre 09:30 y 11:30 ET
     // entry_time está en hora de COLOMBIA: se convierte a ET antes de comparar.

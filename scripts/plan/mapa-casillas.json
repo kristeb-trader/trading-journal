@@ -15,7 +15,7 @@
     { "codigo": "p2_noticia",           "linea": "Estoy dentro de una ventana de noticia",    "tipo": "auto", "fase": 3, "setup": null, "bloquea_go": false, "aplica_si": "hay_noticia", "orden": 1, "campo": "trades.entry_time vs sesion_noticias.hora ±5min" },
     { "codigo": "p2_instrumento",       "linea": "La orden se envía sobre el gráfico de MNQ", "tipo": "auto", "fase": 3, "setup": null, "bloquea_go": false, "aplica_si": "siempre",     "orden": 2, "campo": "trades.instrument empieza por MNQ" },
     { "codigo": "p2_una_operacion",     "linea": "Cupo consumido",                            "tipo": "auto", "fase": 3, "setup": null, "bloquea_go": false, "aplica_si": "siempre",     "orden": 3, "campo": "trades del día ≤ 1" },
-    { "codigo": "p2_un_contrato",       "regla": "R-04",                                      "tipo": "auto", "fase": 3, "setup": null, "bloquea_go": false, "aplica_si": "siempre",     "orden": 4, "campo": "trades.qty = 1" },
+    { "codigo": "p2_un_contrato",       "regla": "R-04",                                      "tipo": "auto", "fase": 3, "setup": null, "bloquea_go": false, "aplica_si": "siempre",     "orden": 4, "campo": "|trades.mae| ≤ RIESGO_MAX ($160, todos los contratos); antes del 05/10/2026, trades.qty = 1" },
     { "codigo": "p2_ventana_horaria",   "regla": "R-02",                                      "tipo": "auto", "fase": 3, "setup": null, "bloquea_go": false, "aplica_si": "siempre",     "orden": 5, "campo": "trades.entry_time (Colombia) → ET entre 09:30 y 11:30" }
   ]
 }

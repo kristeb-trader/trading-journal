@@ -27,6 +27,16 @@ const Estrategia = (() => {
   const FASE_CLS = { 1: 'b-f1', 2: 'b-f2', 3: 'b-f3' }
   const FASE_TITLE = { 1: 'Fase 1 · Pre-sesión', 2: 'Fase 2 · Lectura del setup', 3: 'Fase 3 · Ejecución' }
   const STOP_CODIGOS = ['p2_stop_max', 'stop_max_puntos']
+  // R-04 (plan 3.44): la regla lleva su tabla de ejemplos. Se calcula con el mismo
+  // RIESGO_MAX_USD con el que db.js juzga la automática, para que no digan cosas distintas.
+  const RIESGO_CODIGOS = ['R-04', 'p2_un_contrato']
+  function tablaRiesgo() {
+    const filas = [80, 40, 25, 10].map(pts => {
+      const c = Math.floor(RIESGO_MAX_USD / (pts * 2))   // MNQ: $2 por punto
+      return `<tr><td>${pts} pts</td><td>${c}</td><td>${fmtDinero(c * pts * 2, { masEnPositivo: false })}</td></tr>`
+    }).join('')
+    return `<table class="rb-tabla"><thead><tr><th>Stop</th><th>Contratos</th><th>Riesgo</th></tr></thead><tbody>${filas}</tbody></table>`
+  }
 
   let reglas = []
   let objetivos = null
@@ -105,6 +115,7 @@ const Estrategia = (() => {
         ${b || refsTxt ? `<div class="rb-crow">${b}${refsTxt}</div>` : ''}
         <p class="rb-ttl">${esc(r.titulo)}</p>
         ${r.enunciado && r.enunciado !== r.titulo ? `<p class="rb-enu">${esc(r.enunciado)}</p>` : ''}
+        ${RIESGO_CODIGOS.includes(r.codigo) ? tablaRiesgo() : ''}
         ${foot ? `<div class="rb-foot">${foot}</div>` : ''}
       </div>`
   }
