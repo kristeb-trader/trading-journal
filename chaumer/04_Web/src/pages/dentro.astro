@@ -40,8 +40,8 @@ const SECCIONES = [
     <p>
       El orden importa. Entre el llenado y este ajuste, la posición corre con el
       valor por defecto de la ATM — <span class="cifra-en">{v('ATM_DEFECTO')}</span>,
-      que son {P.equivalencias('ATM_DEFECTO')[0]}. Ese valor es igual al tope de riesgo justo para que
-      nunca sea más ajustado que el stop real.
+      {P.equivalencias('ATM_DEFECTO').slice(1).join(', ')}. Es así justo para que
+      nunca sea más ajustado que el stop real ni arriesgue más que el tope.
     </p>
   </section>
 
@@ -56,7 +56,7 @@ const SECCIONES = [
       <p><strong>Prohibido mover el objetivo</strong>, en cualquier dirección.</p>
       <p><strong>Prohibido pasar a punto de entrada.</strong></p>
       <p><strong>Prohibido cerrar a mano</strong>, también si el precio no se mueve o va en contra.</p>
-      <p><strong>Prohibido cerrar por partes.</strong> Hay un solo contrato: no hay nada que partir.</p>
+      <p><strong>Prohibido cerrar por partes.</strong> Aunque haya varios contratos, entran y salen todos juntos.</p>
       <p><strong>Prohibido añadir contratos.</strong></p>
     </div>
 

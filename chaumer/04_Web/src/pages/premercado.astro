@@ -134,13 +134,13 @@ const SECCIONES = [
       <dt>Cuál</dt>
       <dd><strong>K1</strong></dd>
       <dt>Contratos</dt>
-      <dd><strong>{v('CONTRATOS')}</strong></dd>
+      <dd><strong>Los que caben</strong> sin pasar de {v('RIESGO_MAX')}: se ponen antes de enviar la orden</dd>
       <dt>Auto Breakeven</dt>
       <dd><strong>Apagado</strong></dd>
       <dt>Auto Trail</dt>
       <dd><strong>Apagado</strong></dd>
       <dt>Stop y objetivo por defecto</dt>
-      <dd><strong>{v('ATM_DEFECTO')}</strong> = {P.equivalencias('ATM_DEFECTO').join(' = ')}</dd>
+      <dd><strong>{v('ATM_DEFECTO')}</strong>: {P.equivalencias('ATM_DEFECTO').join(' · ')}</dd>
     </dl>
 
     <div class="duro">

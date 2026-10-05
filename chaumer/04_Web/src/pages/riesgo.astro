@@ -19,6 +19,18 @@ const v = (n: string) => P.parametro(n);
 // La cuenta objetivo y su porcentaje: bloque «Consecuencias de riesgo» del plan.
 const riesgo = P.consecuenciasRiesgo();
 
+// R-04 (plan 3.44, 05/10/2026): el tope es de dinero y los contratos son los que caben,
+// redondeando hacia abajo. La tabla de la regla se calcula con el RIESGO_MAX vigente,
+// para que no se quede vieja si cambia. MNQ: $2 por punto (R-01).
+const DOLAR_PUNTO = 2;
+const mRiesgo = v('RIESGO_MAX').match(/\$\s?([\d.]+)/);
+if (!mRiesgo) throw new Error('riesgo.astro: RIESGO_MAX no trae una cifra en dólares: ' + v('RIESGO_MAX'));
+const riesgoMax = Number(mRiesgo[1].replace(/\./g, ''));
+const EJEMPLOS = [80, 40, 25, 10].map((pts) => {
+  const c = Math.floor(riesgoMax / (pts * DOLAR_PUNTO));
+  return { pts, c, usd: c * pts * DOLAR_PUNTO };
+});
+
 const SECCIONES = [
   { id: 'cuanto', t: 'Cuánto se arriesga' },
   { id: 'cuantas', t: 'Cuántas veces' },
@@ -35,6 +47,8 @@ const SECCIONES = [
     </p>
 
     <dl class="datos">
+      <dt>Riesgo máximo</dt>
+      <dd><strong>{v('RIESGO_MAX')}</strong>, con los contratos que quepan</dd>
       <dt>Tope de stop</dt>
       <dd><strong>{v('STOP_MAX')}</strong> = {P.equivalencias('STOP_MAX').join(' = ')}</dd>
       <dt>Objetivo</dt>
@@ -90,14 +104,51 @@ const SECCIONES = [
   <section class="ap" id="tamano">
     <h2>Con cuántos contratos <Refs cods="R-04" /></h2>
 
+    <p>
+      El tope es de dinero: <strong>{v('RIESGO_MAX')}</strong>. Se operan los
+      contratos que caben sin pasarlo, redondeando hacia abajo: cuanto más
+      corto el stop, más contratos.
+    </p>
+
+    <div class="tabla-env">
+      <table class="comp">
+        <thead>
+          <tr><th>Stop</th><th>Contratos</th><th>Riesgo</th></tr>
+        </thead>
+        <tbody>
+          {EJEMPLOS.map((e) => (
+            <tr><th>{e.pts} puntos</th><td>{e.c}</td><td>${e.usd}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
     <div class="duro">
       <p>
-        <strong>Siempre {v('CONTRATOS')}.</strong> No sube
-        porque la cuenta crezca. No baja tras una mala racha. No cambia por
-        convicción.
+        <strong>Lo decide solo el stop.</strong> No cambia porque la cuenta
+        crezca, tras una mala racha ni por convicción. Si no cabe ni un
+        contrato, no se opera.
       </p>
-      <p>El tamaño solo se puede revisar una vez al año.</p>
     </div>
   </section>
 
 </Modulo>
+
+<style>
+  .tabla-env { overflow-x: auto; margin: var(--e-5) 0; }
+  .comp { width: 100%; border-collapse: collapse; font-size: var(--t-3); }
+  .comp th, .comp td {
+    padding: var(--e-3) var(--e-4);
+    text-align: left; /* alineacion-ok: celdas de tabla, no prosa */
+    border-bottom: 1px solid var(--borde-sutil);
+  }
+  .comp thead th {
+    font-size: var(--t-1);
+    letter-spacing: var(--track-etiqueta);
+    text-transform: uppercase;
+    color: var(--texto-3);
+    border-bottom-color: var(--borde);
+  }
+  .comp tbody th { color: var(--texto-2); font-weight: var(--peso-normal); font-size: inherit; letter-spacing: normal; text-transform: none; }
+  .comp td { color: var(--texto-2); font-variant-numeric: tabular-nums; }
+</style>
