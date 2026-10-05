@@ -344,9 +344,13 @@ import Icono from '../componentes/Icono.astro';
 
     var estado = { cabecera: null, jornadas: [] };
     var filtro = '';
-    // Los meses desplegados ('AAAA-MM'). Todos plegados al entrar; lo que se
-    // abra se queda abierto al cambiar de filtro.
+    // Los meses desplegados ('AAAA-MM'). Sin filtro, todos plegados al entrar
+    // y lo que se abra se recuerda. Con un filtro, todos desplegados: se filtra
+    // para VER esas operaciones, y con los meses cerrados solo quedaban las
+    // cabeceras (05/10/2026). Al volver a «Todas» se recupera lo de antes.
     var abiertos = {};
+    var abiertosFiltro = null;
+    function mesesAbiertos() { return filtro ? abiertosFiltro : abiertos; }
 
     // ─────────────────────────────────────────────────────────── cargar
     function cargar() {
@@ -413,14 +417,12 @@ import Icono from '../componentes/Icono.astro';
       $('[data-resumen]').textContent = [
         pasos.length + (pasos.length === 1 ? ' jornada' : ' jornadas'),
         ops.length + (ops.length === 1 ? ' operación' : ' operaciones'),
-        c.instrumento,
         'hora Colombia',
       ].join(' · ');
 
       $('[data-valor-inicial]').textContent = usd(inicial);
-      $('[data-sub-inicial]').textContent =
-        c.contratos + (c.contratos === 1 ? ' contrato ' : ' contratos ') + c.instrumento
-        + (c.comision ? ' · ' + usd(c.comision) + ' de comisión' : '');
+      // Sin «1 contrato MNQ» (pedido del operador, 05/10/2026): solo la comisión, si la hay.
+      $('[data-sub-inicial]').textContent = c.comision ? usd(c.comision) + ' de comisión' : '';
 
       var neto = saldo - inicial;
       var tono = function (v) { return v > 0 ? 'pos' : v < 0 ? 'neg' : ''; };
@@ -583,8 +585,12 @@ import Icono from '../componentes/Icono.astro';
         porClave[clave].ops = porClave[clave].ops.concat(visibles);
       });
 
+      if (filtro && !abiertosFiltro) {
+        abiertosFiltro = {};
+        meses.forEach(function (m) { abiertosFiltro[m.clave] = true; });
+      }
       cuerpo.innerHTML = meses.map(function (m) {
-        var abierto = !!abiertos[m.clave];
+        var abierto = !!mesesAbiertos()[m.clave];
         // Cada fila del dia lleva su mes, para plegarla sin repintar la tabla.
         var marca = '<tr data-de="' + m.clave + '"' + (abierto ? '' : ' hidden');
         return filaMes(m.clave, m.ops, abierto) + m.filas.map(function (f) {
@@ -677,6 +683,7 @@ import Icono from '../componentes/Icono.astro';
       var chip = e.target.closest('[data-filtro]');
       if (chip) {
         filtro = chip.dataset.filtro;
+        abiertosFiltro = null;
         raiz.querySelectorAll('[data-filtro]').forEach(function (c) { c.classList.toggle('activa', c === chip); });
         pintarTabla(recorrido());
         return;
@@ -692,8 +699,8 @@ import Icono from '../componentes/Icono.astro';
 
     function plegar(fila) {
       var clave = fila.dataset.mes;
-      var abierto = !abiertos[clave];
-      abiertos[clave] = abierto;
+      var abierto = !mesesAbiertos()[clave];
+      mesesAbiertos()[clave] = abierto;
       fila.classList.toggle('abierto', abierto);
       fila.querySelector('.mes-boton').setAttribute('aria-expanded', String(abierto));
       raiz.querySelectorAll('tr[data-de="' + clave + '"]').forEach(function (f) { f.hidden = !abierto; });
