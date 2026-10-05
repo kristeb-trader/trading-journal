@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-10-02
+**Última actualización:** 2026-10-05
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-05 | El bot registra el día solo al cerrar el trade, y pregunta cómo terminaste |
 | 2026-10-03b | El Coach lee el día solo como el plan, y modo prueba para Sonnet |
 | 2026-10-03 | El motor mide tu operación y el Coach la juzga |
 | 2026-10-02b | El Coach ve las noticias reales y las velas exactas de la ventana |
@@ -42,6 +43,19 @@
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
 
 ---
+
+## Checkpoint 2026-10-05 — El bot registra el día solo al cerrar el trade, y pregunta cómo terminaste
+
+- El aviso de trade de NinjaTrader ya no lleva el botón «Registrar sesión del día»: el bot sigue
+  solo con «¿Cómo llegas a la sesión de hoy?» (se salta «¿Operaste hoy?»).
+- No arranca si ya hay un registro de hoy a medias (un 2º trade no lo reinicia) ni si el día ya
+  está registrado (`registrada_at`; la fila que crea NT8 en premercado la deja en null).
+- Después del análisis pregunta **«¿Cómo terminaste?»** con el catálogo de emociones y guarda al
+  pulsar. El cierre va a `diagnosticos_diarios`, donde lo escribe la web y lo lee el Coach — no
+  a `sesiones.estado_emocional_fin_id`, que está sin uso (0 de 171 días). «Omitir» no lo pisa.
+- `/sesion` a mano sigue igual, con «¿Operaste hoy?»; también acaba preguntando el cierre.
+- El estado del registro en KV dura 12 h (antes 1 h): arranca a las 9:30 y se contesta cuando se puede.
+- Verificado con un simulador (Telegram, Supabase y KV falsos): 18 casos en verde.
 
 ## Checkpoint 2026-10-03b — El Coach lee el día solo como el plan, y modo prueba para Sonnet
 

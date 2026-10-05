@@ -32,6 +32,7 @@ const STEPS = {
   ZONAS_CONTRA: 'zonas_contra',
   SETUP:        'setup',
   REFLEXION:    'reflexion',
+  EMOCION_FIN:  'emocion_fin',   // "¿Cómo terminaste?", después del análisis
 };
 
 // Parsea un número (acepta coma decimal). Devuelve null si no es válido o es /skip.
@@ -106,7 +107,9 @@ const answerCbq = (token, id) =>
 
 // ── KV helpers ──────────────────────────────────────────────────────────────
 const getState  = (kv, id) => kv.get(`s:${id}`, 'json');
-const saveState = (kv, id, state) => kv.put(`s:${id}`, JSON.stringify(state), { expirationTtl: 3600 });
+// 12 h: desde oct 2026 el registro arranca SOLO al cerrar el trade (≈9:30 Col.) y
+// se contesta cuando se puede, a veces por la tarde. Con 1 h caducaba a mitad.
+const saveState = (kv, id, state) => kv.put(`s:${id}`, JSON.stringify(state), { expirationTtl: 12 * 3600 });
 const delState  = (kv, id) => kv.delete(`s:${id}`);
 
 // ── Emociones ───────────────────────────────────────────────────────────────
@@ -139,16 +142,21 @@ async function fetchEmociones(env) {
   } catch { return EMOCIONES_FALLBACK; }
 }
 
-function emocionKeyboard(emociones) {
+// `prefijo`: 'emoc' = cómo llegas (inicio) · 'emofin' = cómo terminaste (cierre).
+// Mismo catálogo para los dos, igual que en la web.
+function emocionKeyboard(emociones, prefijo = 'emoc') {
   const rows = [];
   for (let i = 0; i < emociones.length; i += 2) {
-    const row = [{ text: `${emociones[i].emoji} ${emociones[i].nombre}`, callback_data: `emoc_${emociones[i].id}` }];
-    if (emociones[i + 1]) row.push({ text: `${emociones[i + 1].emoji} ${emociones[i + 1].nombre}`, callback_data: `emoc_${emociones[i + 1].id}` });
+    const row = [{ text: `${emociones[i].emoji} ${emociones[i].nombre}`, callback_data: `${prefijo}_${emociones[i].id}` }];
+    if (emociones[i + 1]) row.push({ text: `${emociones[i + 1].emoji} ${emociones[i + 1].nombre}`, callback_data: `${prefijo}_${emociones[i + 1].id}` });
     rows.push(row);
   }
-  rows.push([{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]);
+  rows.push([{ text: '⏭ Omitir', callback_data: `${prefijo}_skip` }]);
   return { inline_keyboard: rows };
 }
+
+const PREGUNTA_INICIO = '😊 <b>Estado emocional</b>\n\n¿Cómo llegas a la sesión de hoy?';
+const PREGUNTA_CIERRE = '🏁 <b>Estado al cierre</b>\n\n¿Cómo terminaste la sesión?';
 
 const CONFIANZA_KEYBOARD = { inline_keyboard: [[
   { text: '★☆☆☆☆ Muy baja', callback_data: 'conf_1' },
@@ -195,8 +203,9 @@ function buildResumen(data) {
     return (
       `✅ <b>Sesión guardada</b>\n\n` +
       `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
-      `🔌 Me conecté a analizar (sin setup válido)\n\n` +
-      `✍️ <b>Análisis del día:</b>\n${escHtml(data.analisis_trader || '—')}`
+      `🔌 Me conecté a analizar (sin setup válido)\n` +
+      (data._emocionFinTxt ? `🏁 <b>Al cierre:</b> ${escHtml(data._emocionFinTxt)}\n` : '') +
+      `\n✍️ <b>Análisis del día:</b>\n${escHtml(data.analisis_trader || '—')}`
     );
   }
 
@@ -210,8 +219,9 @@ function buildResumen(data) {
     `🔢 <b>Corrida:</b> ${data.num_corrida}ª\n` +
     `🕯️ <b>Velas:</b> ${data.velas_corrida}\n` +
     `⚠️ <b>Zonas en contra:</b> ${data.zonas_contra ? 'Sí' : 'No'}\n` +
-    `📐 <b>Setup:</b> ${data.setup}\n\n` +
-    `✍️ <b>Análisis del día:</b>\n${escHtml(data.analisis_trader || '—')}`
+    `📐 <b>Setup:</b> ${data.setup}\n` +
+    (data._emocionFinTxt ? `🏁 <b>Al cierre:</b> ${escHtml(data._emocionFinTxt)}\n` : '') +
+    `\n✍️ <b>Análisis del día:</b>\n${escHtml(data.analisis_trader || '—')}`
   );
 }
 
@@ -273,6 +283,30 @@ async function saveSession(data, env) {
   }
 }
 
+// ── Estado al cierre ────────────────────────────────────────────────────────
+// Va a `diagnosticos_diarios`, NO a `sesiones`: es donde lo guarda el
+// "¿Cómo terminé?" de la web y de donde lo lee el Coach. La columna homónima de
+// `sesiones` existe pero nadie la usa (0 filas con dato en oct 2026).
+// merge-duplicates + solo estas dos claves: no pisa el resto del diagnóstico.
+async function saveEmocionFin(env, sesionDate, emocionId) {
+  try {
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/diagnosticos_diarios?on_conflict=sesion_date`, {
+      method: 'POST',
+      headers: {
+        apikey:         env.SUPABASE_SERVICE_ROLE,
+        Authorization:  `Bearer ${env.SUPABASE_SERVICE_ROLE}`,
+        'Content-Type': 'application/json',
+        Prefer:         'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({ sesion_date: sesionDate, estado_emocional_fin_id: emocionId }),
+    });
+    if (res.ok) return { ok: true };
+    return { ok: false, status: res.status, error: ((await res.text()) || '').slice(0, 300) };
+  } catch (e) {
+    return { ok: false, status: 0, error: String((e && e.message) || e) };
+  }
+}
+
 // ── Stats desde Supabase ────────────────────────────────────────────────────
 async function fetchMonthStats(env) {
   try {
@@ -322,11 +356,13 @@ async function fetchMonthStats(env) {
 }
 
 // ── Iniciar flujo de sesión ─────────────────────────────────────────────────
+const hoyBogota = env => new Intl.DateTimeFormat('en-CA', {
+  timeZone: env.TIMEZONE || 'America/Bogota',
+  year: 'numeric', month: '2-digit', day: '2-digit',
+}).format(new Date());
+
 async function startSesionFlow(chatId, token, kv, env) {
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: env.TIMEZONE || 'America/Bogota',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date());
+  const today = hoyBogota(env);
   const state = { step: STEPS.OPERO, data: { sesion_date: today } };
   await saveState(kv, chatId, state);
 
@@ -337,6 +373,61 @@ async function startSesionFlow(chatId, token, kv, env) {
       { text: '❌ No operé',   callback_data: 'opero_no' },
     ]] }
   );
+}
+
+// Arranque automático tras un trade de NinjaTrader. Si llega un trade es que se
+// operó: se salta "¿Operaste hoy?" y se va directo a "¿Cómo llegas?".
+// NO arranca (solo queda el aviso del trade) si:
+//   - ya hay un registro a medias de hoy: un 2º trade no lo reinicia;
+//   - el día ya está registrado (`registrada_at`, la pone el primer guardado del
+//     bot o de la web; la fila que crea NT8 en premercado la deja en null).
+async function iniciarTrasTrade(env) {
+  const chatId = env.ALLOWED_CHAT_ID;
+  if (!chatId) return;
+  const today = hoyBogota(env);
+
+  const enCurso = await getState(env.KV, chatId);
+  if (enCurso && enCurso.data && enCurso.data.sesion_date === today) return;
+
+  try {
+    const res = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/sesiones?sesion_date=eq.${today}&select=registrada_at`,
+      { headers: { apikey: env.SUPABASE_SERVICE_ROLE, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE}` } }
+    );
+    if (res.ok) {
+      const filas = await res.json();
+      if (Array.isArray(filas) && filas[0] && filas[0].registrada_at) return;
+    }
+  } catch { /* sin red: mejor preguntar de más que dejar el día sin registrar */ }
+
+  await saveState(env.KV, chatId, {
+    step: STEPS.EMOCION,
+    data: { sesion_date: today, no_opero: false, se_conecto: true },
+  });
+  const emociones = await fetchEmociones(env);
+  await sendMessage(env.BOT_TOKEN, chatId, PREGUNTA_INICIO, emocionKeyboard(emociones));
+}
+
+// Cierre del registro: guarda la sesión y el estado al cierre, y deja el resumen
+// en el mismo mensaje del teclado.
+async function cerrarSesion(state, chatId, msgId, env) {
+  const token = env.BOT_TOKEN;
+  const r = await saveSession(state.data, env);
+  if (!r.ok) {
+    // El estado se conserva: puede reintentar pulsando otra vez.
+    await editMessage(token, chatId, msgId,
+      `⚠️ <b>Error al guardar (HTTP ${r.status})</b>\n<code>${(r.error || 'sin detalle').replace(/[<>]/g, '')}</code>\n\nReintenta con /sesion.`
+    );
+    return;
+  }
+  await delState(env.KV, chatId);
+
+  let aviso = '';
+  if (state.data.estado_emocional_fin_id != null) {
+    const f = await saveEmocionFin(env, state.data.sesion_date, state.data.estado_emocional_fin_id);
+    if (!f.ok) aviso = `\n\n⚠️ La sesión se guardó, pero el estado al cierre no (HTTP ${f.status}). Márcalo en la web.`;
+  }
+  await editMessage(token, chatId, msgId, buildResumen(state.data) + aviso);
 }
 
 // ── Handlers principales ────────────────────────────────────────────────────
@@ -386,7 +477,8 @@ async function handleCallback(cbq, env) {
 
   await answerCbq(token, cbq.id);
 
-  // ── Arrancar sesión desde botón en notificación de trade ──────────────────
+  // ── Botón "Registrar sesión" de los avisos de trade ANTERIORES a oct 2026 ──
+  // Los avisos nuevos ya no lo llevan; se conserva para los que quedan en el chat.
   if (action === 'iniciar_sesion') {
     await startSesionFlow(chatId, token, env.KV, env);
     return;
@@ -418,6 +510,20 @@ async function handleCallback(cbq, env) {
     return;
   }
 
+  // ── Estado al cierre → guardar ────────────────────────────────────────────
+  if (action.startsWith('emofin_')) {
+    if (state.step !== STEPS.EMOCION_FIN) return;   // botón viejo de otro registro
+    const val = action.slice(7);
+    const id = val === 'skip' ? null : parseInt(val);
+    state.data.estado_emocional_fin_id = id;
+    if (id != null) {
+      const e = (await fetchEmociones(env)).find(x => x.id === id);
+      if (e) state.data._emocionFinTxt = `${e.emoji} ${e.nombre}`;
+    }
+    await cerrarSesion(state, chatId, msgId, env);
+    return;
+  }
+
   // ── Flujo principal ───────────────────────────────────────────────────────
   switch (action) {
     // Las zonas naranjas ya NO se piden aqui (ago 2026): las escribe el AddOn
@@ -428,7 +534,7 @@ async function handleCallback(cbq, env) {
       state.step = STEPS.EMOCION;
       await saveState(env.KV, chatId, state);
       const emociones = await fetchEmociones(env);
-      await editMessage(token, chatId, msgId, '😊 <b>Estado emocional</b>\n\n¿Cómo llegas a la sesión de hoy?', emociones.length ? emocionKeyboard(emociones) : { inline_keyboard: [[{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]] });
+      await editMessage(token, chatId, msgId, PREGUNTA_INICIO, emociones.length ? emocionKeyboard(emociones) : { inline_keyboard: [[{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]] });
       break;
     }
 
@@ -550,7 +656,7 @@ async function handleText(msg, env) {
         state.step = STEPS.EMOCION;
         await saveState(env.KV, chatId, state);
         const emociones = await fetchEmociones(env);
-        await sendMessage(token, chatId, '😊 <b>Estado emocional</b>\n\n¿Cómo llegas a la sesión de hoy?', emociones.length ? emocionKeyboard(emociones) : { inline_keyboard: [[{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]] });
+        await sendMessage(token, chatId, PREGUNTA_INICIO, emociones.length ? emocionKeyboard(emociones) : { inline_keyboard: [[{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]] });
       }
       break;
     }
@@ -574,17 +680,14 @@ async function handleText(msg, env) {
       break;
     }
 
+    // El análisis ya no cierra el registro: falta "¿Cómo terminaste?". Se guarda
+    // al pulsar el estado al cierre (o Omitir), en `cerrarSesion`.
     case STEPS.REFLEXION: {
       state.data.analisis_trader = text;
-      const r = await saveSession(state.data, env);
-      await delState(env.KV, chatId);
-      if (r.ok) {
-        await sendMessage(token, chatId, buildResumen(state.data));
-      } else {
-        await sendMessage(token, chatId,
-          `⚠️ <b>Error al guardar (HTTP ${r.status})</b>\n<code>${(r.error || 'sin detalle').replace(/[<>]/g, '')}</code>\n\nReintenta con /sesion.`
-        );
-      }
+      state.step = STEPS.EMOCION_FIN;
+      await saveState(env.KV, chatId, state);
+      const emociones = await fetchEmociones(env);
+      await sendMessage(token, chatId, PREGUNTA_CIERRE, emocionKeyboard(emociones, 'emofin'));
       break;
     }
   }
@@ -623,13 +726,11 @@ async function handleNotify(request, env) {
       chat_id: env.ALLOWED_CHAT_ID,
       text,
       parse_mode: 'HTML',
-      reply_markup: {
-        inline_keyboard: [[
-          { text: '📝 Registrar sesión del día', callback_data: 'iniciar_sesion' },
-        ]],
-      },
     }),
   });
+
+  // Sin botón "Registrar sesión": el registro sigue solo con "¿Cómo llegas?".
+  await iniciarTrasTrade(env);
 
   return new Response('OK');
 }
