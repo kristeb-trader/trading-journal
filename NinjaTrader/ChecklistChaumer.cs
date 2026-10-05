@@ -191,7 +191,6 @@ namespace NinjaTrader.NinjaScript.AddOns
         private string currentDate;                 // sesion_date en uso (fecha ET)
         private DateTime lastLocalChangeUtc = DateTime.MinValue;
         private DateTime lastHoraChangeUtc = DateTime.MinValue;
-        private DateTime lastZonasChangeUtc = DateTime.MinValue;
         private bool applyingRemote = false;        // evita re-disparar writes al aplicar estado remoto
         private bool goConfirmed = false;
         private bool inNoticiaWindow = false;       // dentro de la ventana ±5 min de la noticia roja
@@ -200,7 +199,6 @@ namespace NinjaTrader.NinjaScript.AddOns
         private DispatcherTimer noticiasSaveTimer;  // debounce al escribir las noticias
         private volatile bool noticiasSaving;       // hay un guardado de noticias en curso
         private volatile bool noticiasDirty;        // cambió algo mientras se guardaba: repetir
-        private DispatcherTimer zonasSaveTimer;     // debounce al escribir las zonas naranjas
 
         // UI refs
         private StackPanel sectionsPanel;
@@ -216,8 +214,6 @@ namespace NinjaTrader.NinjaScript.AddOns
         private StackPanel noticiasPanel;           // filas de noticias rojas (hora + nombre)
         private Border noticiaCard;
         private TextBlock noticiaWin;               // ventana / estado NO OPERAR
-        private TextBox soportesBox;                // zonas naranjas: soportes, separados por comas
-        private TextBox resistenciasBox;            // zonas naranjas: resistencias
 
         private string ConfigPath => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -243,7 +239,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // header
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // status
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // noticia roja
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // zonas naranjas
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // tabla de contratos por stop
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // selector de setup
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // checklist
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // GO
@@ -318,31 +314,46 @@ namespace NinjaTrader.NinjaScript.AddOns
             Grid.SetRow(noticiaCard, 2);
             root.Children.Add(noticiaCard);
 
-            // Zonas naranjas del premercado. Se escriben AQUI, en el momento de
-            // marcarlas en el grafico; el bot de Telegram ya no las pregunta (y ya
-            // no las manda en su payload, o las borraria por la noche).
-            var zonasInner = new StackPanel { Margin = new Thickness(8, 6, 8, 6) };
-            zonasInner.Children.Add(new TextBlock {
-                Text = "🟠 Zonas naranjas", Foreground = TEXT2, FontSize = 11 });
-
-            var zonasGrid = new Grid { Margin = new Thickness(0, 4, 0, 0) };
-            zonasGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            zonasGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            zonasGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            zonasGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-            soportesBox     = MakeZonaBox("Soportes naranjas. Separa por comas: 30669, 30700  ·  decimales con punto");
-            resistenciasBox = MakeZonaBox("Resistencias naranjas. Separa por comas: 30810, 30850  ·  decimales con punto");
-            AddZonaRow(zonasGrid, 0, "Sop.", soportesBox);
-            AddZonaRow(zonasGrid, 1, "Res.", resistenciasBox);
-            zonasInner.Children.Add(zonasGrid);
-
-            var zonasCard = new Border {
-                Background = CARD, BorderBrush = BORDER, BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(6), Margin = new Thickness(12, 0, 12, 8), Child = zonasInner
+            // Tabla de referencia: cuántos contratos entrar según el stop, para
+            // mantener el riesgo en ~$160 (MNQ, $2 por punto). Es fija: no se guarda
+            // ni se lee de BD. Sustituye a las zonas naranjas, que el plan nuevo ya
+            // no usa (5 oct 2026).
+            var tablaInner = new StackPanel { Margin = new Thickness(8, 6, 8, 6) };
+            tablaInner.Children.Add(new TextBlock {
+                Text = "📐 Contratos según el stop", Foreground = TEXT2, FontSize = 11 });
+            var tabla = new Grid { Margin = new Thickness(0, 4, 0, 0) };
+            for (int c = 0; c < 3; c++)
+                tabla.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            string[,] filas = {
+                { "Stop (pts)", "Contratos", "Riesgo" },
+                { "80", "1", "$160" },
+                { "40", "2", "$160" },
+                { "25", "3", "$150" },
+                { "10", "8", "$160" },
             };
-            Grid.SetRow(zonasCard, 3);
-            root.Children.Add(zonasCard);
+            for (int r = 0; r < filas.GetLength(0); r++)
+            {
+                tabla.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                for (int c = 0; c < 3; c++)
+                {
+                    var celda = new TextBlock {
+                        Text = filas[r, c], FontSize = 11,
+                        Foreground = r == 0 ? TEXT2 : TEXT,
+                        FontWeight = (r > 0 && c == 1) ? FontWeights.Bold : FontWeights.Normal,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        Margin = new Thickness(0, 1, 0, 1)
+                    };
+                    Grid.SetRow(celda, r); Grid.SetColumn(celda, c);
+                    tabla.Children.Add(celda);
+                }
+            }
+            tablaInner.Children.Add(tabla);
+            var tablaCard = new Border {
+                Background = CARD, BorderBrush = BORDER, BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6), Margin = new Thickness(12, 0, 12, 8), Child = tablaInner
+            };
+            Grid.SetRow(tablaCard, 3);
+            root.Children.Add(tablaCard);
 
             // Selector de setup — filtra la Fase 2. Los botones se construyen en
             // BuildSetupButtons() desde catalogo_setups (uno por familia).
@@ -624,97 +635,6 @@ namespace NinjaTrader.NinjaScript.AddOns
         private static string FmtMin(int t) { int x = ((t % 1440) + 1440) % 1440; return (x / 60).ToString("00") + ":" + (x % 60).ToString("00"); }
 
         // ── Noticias rojas (varias por día) ──────────────────────────────────
-        // ═══ Zonas naranjas ═══════════════════════════════════════════════════
-        private TextBox MakeZonaBox(string tip)
-        {
-            var tb = new TextBox {
-                Height = 22, FontSize = 11, Background = Brush("#2A2A26"), Foreground = TEXT,
-                BorderBrush = BORDER, BorderThickness = new Thickness(1),
-                VerticalContentAlignment = VerticalAlignment.Center, ToolTip = tip
-            };
-            tb.TextChanged += OnZonasChanged;
-            return tb;
-        }
-
-        private void AddZonaRow(Grid g, int fila, string etiqueta, TextBox box)
-        {
-            var lbl = new TextBlock {
-                Text = etiqueta, Foreground = TEXT2, FontSize = 11, Width = 30,
-                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 2, 4, 2)
-            };
-            box.Margin = new Thickness(0, 2, 0, 2);
-            Grid.SetRow(lbl, fila); Grid.SetColumn(lbl, 0);
-            Grid.SetRow(box, fila); Grid.SetColumn(box, 1);
-            g.Children.Add(lbl); g.Children.Add(box);
-        }
-
-        // "30669, 30700" -> [30669, 30700]. Lo que no sea numero se ignora: mientras
-        // se escribe, la caja pasa por estados a medias ("30669, ") que no deben
-        // romper el guardado. Se parsea SIEMPRE en cultura invariante (punto decimal)
-        // porque la coma ya es el separador de la lista.
-        private static JArray ParseZonas(string texto)
-        {
-            var arr = new JArray();
-            if (string.IsNullOrWhiteSpace(texto)) return arr;
-            foreach (var tok in texto.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries))
-            {
-                double v;
-                if (double.TryParse(tok.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out v))
-                    arr.Add(JToken.Parse(v.ToString(CultureInfo.InvariantCulture)));   // 30669, no 30669.0
-            }
-            return arr;
-        }
-
-        // [30669, 30700] -> "30669, 30700"
-        private static string FormatZonas(JToken token)
-        {
-            JArray arr = token as JArray;
-            if (arr == null) return "";
-            return string.Join(", ", arr.Select(t =>
-            {
-                double v;
-                return double.TryParse(t.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out v)
-                    ? v.ToString(CultureInfo.InvariantCulture) : t.ToString();
-            }));
-        }
-
-        private void OnZonasChanged(object sender, TextChangedEventArgs e)
-        {
-            if (applyingRemote) return;
-            lastZonasChangeUtc = DateTime.UtcNow;
-
-            // Debounce 900 ms, igual que las noticias: sin esto, escribir
-            // "30669, 30700" lanzaria un guardado por cada tecla.
-            if (zonasSaveTimer == null)
-            {
-                zonasSaveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(900) };
-                zonasSaveTimer.Tick += (s2, e2) => { zonasSaveTimer.Stop(); _ = SaveZonasAsync(); };
-            }
-            zonasSaveTimer.Stop();
-            zonasSaveTimer.Start();
-        }
-
-        // Dos columnas jsonb de la tabla sesiones. UpsertSesionAsync ya se auto-bloquea
-        // en fin de semana y no pisa el resto de columnas (merge-duplicates).
-        private async Task SaveZonasAsync()
-        {
-            if (EsFinDeSemana()) return;
-            try
-            {
-                await UpsertSesionAsync(new JObject {
-                    ["sesion_date"]          = currentDate,
-                    ["soportes_naranja"]     = ParseZonas(soportesBox != null ? soportesBox.Text : ""),
-                    ["resistencias_naranja"] = ParseZonas(resistenciasBox != null ? resistenciasBox.Text : "")
-                }).ConfigureAwait(false);
-                await Dispatcher.InvokeAsync(() => SetStatus("🟢 Sincronizado", ACCENT));
-            }
-            catch (Exception ex)
-            {
-                await Dispatcher.InvokeAsync(() => SetStatus("🟡 Zonas sin guardar (sin conexión)", WARNING));
-                NinjaTrader.Code.Output.Process("ChecklistChaumer SaveZonas: " + ex.Message, PrintTo.OutputTab1);
-            }
-        }
-
         private void AddNoticia(string hora, string nombre)
         {
             noticias.Add(new Noticia { Hora = hora ?? "", Nombre = nombre ?? "" });
@@ -1031,12 +951,11 @@ namespace NinjaTrader.NinjaScript.AddOns
             {
                 // El checklist vive en sesion_checklist (relacional); se trae anidado.
                 // Checklist y noticias viven en tablas relacionales; se traen anidadas.
-                string url = SUPABASE_URL + "/rest/v1/sesiones?sesion_date=eq." + currentDate + "&select=checklist_go_at,soportes_naranja,resistencias_naranja,sesion_checklist(regla_codigo,cumplido),sesion_noticias(hora,nombre)";
+                string url = SUPABASE_URL + "/rest/v1/sesiones?sesion_date=eq." + currentDate + "&select=checklist_go_at,sesion_checklist(regla_codigo,cumplido),sesion_noticias(hora,nombre)";
                 string json = await http.GetStringAsync(url).ConfigureAwait(false);
                 var arr = JArray.Parse(json);
 
                 JObject checklist = null;
-                JToken sopRemoto = null, resRemoto = null;
                 bool hasGo = false;
                 var noticiasRemotas = new List<Noticia>();
                 if (arr.Count > 0)
@@ -1049,8 +968,6 @@ namespace NinjaTrader.NinjaScript.AddOns
                         foreach (var row in scArr)
                             checklist[(string)row["regla_codigo"]] = (bool)row["cumplido"];
                     }
-                    sopRemoto = arr[0]["soportes_naranja"];
-                    resRemoto = arr[0]["resistencias_naranja"];
                     var goAt = arr[0]["checklist_go_at"];
                     hasGo = goAt != null && goAt.Type != JTokenType.Null;
                     var nArr = arr[0]["sesion_noticias"] as JArray;
@@ -1104,14 +1021,6 @@ namespace NinjaTrader.NinjaScript.AddOns
                             foreach (var n in noticiasRemotas) noticias.Add(n);
                             RenderNoticias();
                         }
-                    }
-                    // Zonas naranjas: no pisar si se estan escribiendo (margen 3 s)
-                    if ((DateTime.UtcNow - lastZonasChangeUtc).TotalSeconds >= 3)
-                    {
-                        string sop = FormatZonas(sopRemoto);
-                        string res = FormatZonas(resRemoto);
-                        if (soportesBox != null && soportesBox.Text != sop) soportesBox.Text = sop;
-                        if (resistenciasBox != null && resistenciasBox.Text != res) resistenciasBox.Text = res;
                     }
                     applyingRemote = false;
 
@@ -1238,8 +1147,6 @@ namespace NinjaTrader.NinjaScript.AddOns
                 applyingRemote = true;
                 foreach (var it in items) { it.Checked = false; if (it.Box != null) it.Box.IsChecked = false; }
                 noticias.Clear(); RenderNoticias();       // nueva sesión: sin noticias aún
-                if (soportesBox != null)     soportesBox.Text = "";
-                if (resistenciasBox != null) resistenciasBox.Text = "";
                 applyingRemote = false;
                 dateText.Text = currentDate;
                 UpdateNoticiaAlert();

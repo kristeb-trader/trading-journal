@@ -115,6 +115,12 @@ namespace NinjaTrader.NinjaScript.DrawingTools
 		[Display(ResourceType = typeof(Custom.Resource), Name = "NinjaScriptDrawingToolAreaOpacity", GroupName = "NinjaScriptGeneral", Order = 4)]
 		public int						AreaOpacity			{ get; set; }
 
+		// Opacidad de las tres líneas (entrada, stop y target), independiente de la
+		// del sombreado: líneas al 100 % con el fondo al 70 %, por ejemplo.
+		[Range(0, 100)]
+		[Display(Name = "Line opacity", GroupName = "NinjaScriptGeneral", Order = 5)]
+		public int						LineOpacity			{ get; set; }
+
 		public override bool SupportsAlerts => true;
 
 		private void DrawPriceText(ChartAnchor anchor, Point point, double price, ChartControl chartControl, ChartPanel chartPanel, ChartScale chartScale)
@@ -290,6 +296,16 @@ namespace NinjaTrader.NinjaScript.DrawingTools
 			stroke.BrushDX.Opacity	= AreaOpacity / 100f;
 			RenderTarget.FillRectangle(new SharpDX.RectangleF(x, top, w, h), stroke.BrushDX);
 			stroke.BrushDX.Opacity	= opacidadPrevia;
+		}
+
+		// Dibuja una línea R con la opacidad de LineOpacity y deja el brush como estaba:
+		// el mismo brush pinta después la etiqueta de precio y el sombreado.
+		private void DrawLineaR(SharpDX.Vector2 a, SharpDX.Vector2 b, SharpDX.Direct2D1.Brush brush, Stroke stroke)
+		{
+			float previa = brush.Opacity;
+			if (!IsInHitTest) brush.Opacity = LineOpacity / 100f;
+			RenderTarget.DrawLine(a, b, brush, stroke.Width, stroke.StrokeStyle);
+			brush.Opacity = previa;
 		}
 
 		private string GetPriceString(double price, ChartBars chartBars)
@@ -590,16 +606,16 @@ namespace NinjaTrader.NinjaScript.DrawingTools
 				SharpDX.Vector2 targetEndVector		= new((float)lineEndX, (float)targetPoint.Y);
 
 				tmpBrush = IsInHitTest ? chartControl.SelectionBrush : TargetLineStroke.BrushDX;
-				RenderTarget.DrawLine(targetStartVector, targetEndVector, tmpBrush, TargetLineStroke.Width, TargetLineStroke.StrokeStyle);
+				DrawLineaR(targetStartVector, targetEndVector, tmpBrush, TargetLineStroke);
 				DrawPriceText(RewardAnchor, targetPoint, targetPrice, chartControl, chartPanel, chartScale);
 			}
 			
 			tmpBrush = IsInHitTest ? chartControl.SelectionBrush : EntryLineStroke.BrushDX;
-			RenderTarget.DrawLine(entryStartVector, entryEndVector, tmpBrush, EntryLineStroke.Width, EntryLineStroke.StrokeStyle);
+			DrawLineaR(entryStartVector, entryEndVector, tmpBrush, EntryLineStroke);
 			DrawPriceText(EntryAnchor, entryPoint, entryPrice, chartControl, chartPanel, chartScale);
 
 			tmpBrush = IsInHitTest ? chartControl.SelectionBrush : StopLineStroke.BrushDX;
-			RenderTarget.DrawLine(stopStartVector, stopEndVector, tmpBrush, StopLineStroke.Width, StopLineStroke.StrokeStyle);
+			DrawLineaR(stopStartVector, stopEndVector, tmpBrush, StopLineStroke);
 			DrawPriceText(RiskAnchor, stopPoint, stopPrice, chartControl, chartPanel, chartScale);
 		}
 
@@ -612,6 +628,7 @@ namespace NinjaTrader.NinjaScript.DrawingTools
 				Ratio						= 1;						// 1:1, la regla rr_1a1 de la metodologia
 				DisplayUnit					= RRUnit.Points;			// SIEMPRE arranca en puntos
 				AreaOpacity					= 20;						// sombreado de las zonas; 0 lo apaga
+				LineOpacity					= 100;						// las líneas, aparte del sombreado
 				AnchorLineStroke 			= new Stroke(Brushes.DarkGray,	DashStyleHelper.Solid, 1f, 50);
 				EntryLineStroke 			= new Stroke(Brushes.Cyan,		DashStyleHelper.Solid, 2f);
 				StopLineStroke 				= new Stroke(Brushes.Red,		DashStyleHelper.Solid, 2f);
