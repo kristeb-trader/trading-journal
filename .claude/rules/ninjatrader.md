@@ -42,6 +42,7 @@ solo porque el mercado sea de NY.
 | `SupabaseDailyLevels.cs` | Escribe los niveles de referencia del día en `sesiones` |
 | `ChecklistChaumer.cs` | Pinta el checklist en el gráfico; lee de `catalogo_reglas` y `catalogo_setups` |
 | `CadenaDiaria.cs` | AddOn sin ventana: exporta las velas del día y lanza el puente del motor (fase 7) |
+| `MarcacionChaumer.cs` | El zigzag blanco del motor en tiempo real. `ZigzagChaumer` es traducción LITERAL de `lector.leer_sesion` (piv): si el motor cambia, se cambia igual. Probado vértice a vértice contra el motor en 100 días (5 oct 2026) |
 
 ## CadenaDiaria (fase 7, 25 sep)
 

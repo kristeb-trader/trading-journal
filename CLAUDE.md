@@ -130,7 +130,8 @@ js/account-filter.js  Filtro de cuentas compartido (nombre COMPLETO)
 js/table.js       Trades · js/data.js  Datos (catálogos) · js/gallery.js  Imágenes
 css/styles.css    Dark mode + responsive
 NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) · ChecklistChaumer ·
-                  RR (Risk Reward en PUNTOS) · CadenaDiaria (AddOn: exporta el día y lanza el puente)
+                  RR (Risk Reward en PUNTOS) · CadenaDiaria (AddOn: exporta el día y lanza el puente) ·
+                  MarcacionChaumer (el zigzag blanco del motor, en tiempo real)
 scripts/cadena/   El puente de la cadena diaria: motor → gráfico → ficha en Supabase → portal;
                   medir.py: la operación de Kris medida con el motor (D-034)
 scripts/plan/     El plan de Chaumer → reglas.json, catalogo_reglas y plan_documentos
