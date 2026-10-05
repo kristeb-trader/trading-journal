@@ -3,7 +3,7 @@
 > **Un solo sitio para los números que pueden cambiar.**
 > Las reglas citan el **nombre** del parámetro, no el valor. Se cambia aquí y se propaga a todo el plan.
 
-**Actualizado:** 2026-09-14 (b)
+**Actualizado:** 2026-10-05
 
 ---
 
@@ -11,15 +11,17 @@
 
 | Parámetro | Valor actual | Equivalencias | Dónde actúa | Desde |
 |---|---|---|---|---|
-| **`STOP_MAX`** | **80 puntos** | 320 ticks · **$160** en MNQ | **Filtro de entrada** (`R-31`, `R-32`): si el stop estructural lo supera **aunque sea por 1 tick**, no se opera | 24/08/2026 |
-| **`ATM_DEFECTO`** | **320 ticks** | 80 puntos · $160 | Stop y target provisionales de la ATM `K1` hasta el ajuste manual (`R-31`) | 24/08/2026 |
+| **`RIESGO_MAX`** | **$160** por operación | 80 puntos con 1 MNQ | **Tamaño de posición** (`R-04`): se operan los contratos que caben sin pasarlo, redondeando hacia abajo | 05/10/2026 |
+| **`STOP_MAX`** | **80 puntos** | 320 ticks · **$160** en MNQ con 1 contrato | **Filtro de entrada** (`R-31`, `R-32`): si el stop estructural lo supera **aunque sea por 1 tick**, no cabe ni un contrato y no se opera | 24/08/2026 |
+| **`ATM_DEFECTO`** | **320 ticks** ÷ contratos | redondeado al tick de abajo · 80 puntos con 1 contrato · 40 con 2 · nunca más de $160 | Stop y target provisionales de la ATM `K1` hasta el ajuste manual (`R-31`) | 05/10/2026 |
 | **`RATIO_TARGET`** | **1:1** | — | El target recorre la misma distancia que el stop (`R-32`) | 21/08/2026 |
-| **`CONTRATOS`** | **1** MNQ | — | Tamaño de posición (`R-31`) | 21/08/2026 |
 | **`OPS_POR_SESION`** | **1** llenada | — | `R-28` | 21/08/2026 |
 
 > 🔴 **`STOP_MAX` es una línea dura, no una zona de aviso.** No hay margen de seguridad por debajo del tope: un stop de 79,75 pts se opera exactamente igual que uno de 30. No existe *"está muy cerca del límite, mejor la dejo"*. Confirmado por el operador el **01/09/2026** sobre el caso del 16/07 (75,50 pts = **94 %** del tope, operación tomada y ganada).
 
-> 🔑 **`ATM_DEFECTO` = `STOP_MAX` a propósito.** El stop provisional **nunca** debe ser más ajustado que el estructural: si lo fuera, el mercado podría sacarte de una operación todavía viva antes de que muevas el stop a mano. Si un día cambia `STOP_MAX`, **hay que cambiar `ATM_DEFECTO` con él**.
+> 🔑 **`ATM_DEFECTO` = `STOP_MAX` ÷ contratos a propósito.** El stop provisional **nunca** debe ser más ajustado que el estructural —si lo fuera, el mercado podría sacarte de una operación todavía viva antes de que muevas el stop a mano— y **nunca** arriesga más de `RIESGO_MAX`. Si un día cambia `STOP_MAX`, **hay que cambiar `ATM_DEFECTO` con él**.
+
+> 💵 **`RIESGO_MAX` manda sobre el número de contratos** (05/10/2026). Hasta ese día el plan operaba siempre 1 contrato (`CONTRATOS`, desde el 21/08/2026).
 
 ## Estructura
 

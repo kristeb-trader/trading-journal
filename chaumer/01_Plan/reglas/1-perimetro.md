@@ -98,20 +98,34 @@ Colombia es **UTC−5 fijo**: no aplica horario de verano. Todo lo demás se mue
 
 ## R-04 · Tamaño de posición
 
-> Opera siempre con `CONTRATOS`. El tamaño no cambia por capital, racha ni convicción.
+> El riesgo no pasa nunca de `RIESGO_MAX`. Se operan los contratos que caben: el riesgo de cada uno son los puntos del stop por $2, y el número se redondea hacia abajo. El número de contratos no importa.
 
 | | |
 |---|---|
 | Aplica a | Continuación · Reingreso |
-| Parámetros | `CONTRATOS` |
-| Relacionadas | — |
+| Parámetros | `RIESGO_MAX` · `STOP_MAX` |
+| Relacionadas | R-31 · R-32 · R-33 |
 | Casos | — |
 
 ### Cómo se aplica
 
-- **Siempre `CONTRATOS`.** No sube aunque la cuenta crezca; no baja aunque la cuenta caiga.
-- **Revisión anual:** es el único momento en que se evalúa cambiar el número de contratos.
+- **Contratos = `RIESGO_MAX` ÷ (puntos del stop × $2)**, redondeado **hacia abajo**: el riesgo nunca pasa de `RIESGO_MAX`. Los puntos del stop son los del stop estructural (`R-32`), medidos desde la entrada.
+- **El riesgo se mide con los puntos del stop**, sin la comisión.
+- **Si no cabe ni un contrato, no se opera:** es el caso de un stop por encima de `STOP_MAX` (`R-31`).
+- **Lo decide solo el stop.** No cambia por capital, racha ni convicción.
+
+Ejemplos, con el `RIESGO_MAX` de hoy:
+
+| Stop (puntos) | Contratos | Riesgo |
+|---|---|---|
+| 80 | 1 | $160 |
+| 40 | 2 | $160 |
+| 25 | 3 | $150 |
+| 10 | 8 | $160 |
 
 ### Por qué
 
-Queda una consecuencia aritmética sin resolver: con tamaño fijo, el riesgo **porcentual** crece a medida que la cuenta cae. Ver `P-21`.
+Decisión del operador (05/10/2026): *"el máximo riesgo son $160, no interesa el número de contratos"*. Hasta entonces el plan operaba siempre **1 contrato** y solo revisaba el tamaño una vez al año; los $160 eran solo lo que costaba un stop de `STOP_MAX` con ese contrato. Desde ese día el tope es **de dinero**, y `STOP_MAX` queda como el caso de 1 contrato.
+
+Queda una consecuencia aritmética sin resolver: con el riesgo fijo en dólares, el riesgo **porcentual** crece a medida que la cuenta cae. Ver `P-21`.
+

@@ -160,7 +160,7 @@ Con `P-25` cerrado queda escrita, por primera vez y en un solo sitio, la secuenc
 - **Sub-fase:** F1.7
 
 ### P-09 · Ventana de exposición manual tras el llenado — RIESGO ACEPTADO
-- **Situación:** entre el llenado de la orden y el ajuste manual del stop, la posición corre con el stop por defecto de la ATM: **`ATM_DEFECTO` = 320 ticks = 80 pts = $160**.
+- **Situación:** entre el llenado de la orden y el ajuste manual del stop, la posición corre con el stop por defecto de la ATM: **`ATM_DEFECTO` = 320 ticks ÷ contratos** (80 pts con 1 contrato), **nunca más de $160** (desde el 05/10/2026).
 - **Estado:** **aceptado explícitamente por el operador** (21/08/2026). Está acotado al tope de riesgo, nunca por encima.
 - **Alternativa descartada:** fijar los ticks exactos en la ATM antes de enviar la orden. El dato es calculable al cierre de la vela de rompimiento (`entrada − mínimo del retroceso`), pero el operador prefiere el ajuste manual posterior.
 - **Mejora del 24/08/2026:** con `ATM_DEFECTO` = `STOP_MAX`, el stop provisional ya **nunca es más ajustado que el estructural**. Desaparece el riesgo de salir de una operación viva durante esta ventana; solo queda el riesgo de perder más de lo estructural si el precio va en contra muy rápido.

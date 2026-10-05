@@ -155,26 +155,31 @@
       "grupo": "perimetro",
       "grupo_nombre": "Perímetro operativo",
       "grupo_orden": 1,
-      "regla": "Opera siempre con `CONTRATOS`. El tamaño no cambia por capital, racha ni convicción.",
+      "regla": "El riesgo no pasa nunca de `RIESGO_MAX`. Se operan los contratos que caben: el riesgo de cada uno son los puntos del stop por $2, y el número se redondea hacia abajo. El número de contratos no importa.",
       "aplica_a": [
         "Continuación",
         "Reingreso"
       ],
       "parametros": [
-        "CONTRATOS"
+        "RIESGO_MAX",
+        "STOP_MAX"
       ],
-      "relacionadas": [],
+      "relacionadas": [
+        "R-31",
+        "R-32",
+        "R-33"
+      ],
       "casos": [],
       "apartado": null,
       "fuente": null,
       "pendiente": null,
       "absorbe": [],
-      "como_se_aplica": "- **Siempre `CONTRATOS`.** No sube aunque la cuenta crezca; no baja aunque la cuenta caiga.\n- **Revisión anual:** es el único momento en que se evalúa cambiar el número de contratos.",
-      "porque": "Queda una consecuencia aritmética sin resolver: con tamaño fijo, el riesgo **porcentual** crece a medida que la cuenta cae. Ver `P-21`.",
+      "como_se_aplica": "- **Contratos = `RIESGO_MAX` ÷ (puntos del stop × $2)**, redondeado **hacia abajo**: el riesgo nunca pasa de `RIESGO_MAX`. Los puntos del stop son los del stop estructural (`R-32`), medidos desde la entrada.\n- **El riesgo se mide con los puntos del stop**, sin la comisión.\n- **Si no cabe ni un contrato, no se opera:** es el caso de un stop por encima de `STOP_MAX` (`R-31`).\n- **Lo decide solo el stop.** No cambia por capital, racha ni convicción.\n\nEjemplos, con el `RIESGO_MAX` de hoy:\n\n| Stop (puntos) | Contratos | Riesgo |\n|---|---|---|\n| 80 | 1 | $160 |\n| 40 | 2 | $160 |\n| 25 | 3 | $150 |\n| 10 | 8 | $160 |",
+      "porque": "Decisión del operador (05/10/2026): *\"el máximo riesgo son $160, no interesa el número de contratos\"*. Hasta entonces el plan operaba siempre **1 contrato** y solo revisaba el tamaño una vez al año; los $160 eran solo lo que costaba un stop de `STOP_MAX` con ese contrato. Desde ese día el tope es **de dinero**, y `STOP_MAX` queda como el caso de 1 contrato.\n\nQueda una consecuencia aritmética sin resolver: con el riesgo fijo en dólares, el riesgo **porcentual** crece a medida que la cuenta cae. Ver `P-21`.",
       "si_no_se_cumple": null,
       "excepciones": null,
       "orden": 4,
-      "enunciado": "Opera siempre con 1 MNQ. El tamaño no cambia por capital, racha ni convicción."
+      "enunciado": "El riesgo no pasa nunca de $160 por operación. Se operan los contratos que caben: el riesgo de cada uno son los puntos del stop por $2, y el número se redondea hacia abajo. El número de contratos no importa."
     },
     {
       "id": "R-05",
@@ -1007,7 +1012,7 @@
       "parametros": [
         "ATM_DEFECTO",
         "STOP_MAX",
-        "CONTRATOS"
+        "RIESGO_MAX"
       ],
       "relacionadas": [
         "R-04",
@@ -1024,12 +1029,12 @@
       "fuente": null,
       "pendiente": null,
       "absorbe": [],
-      "como_se_aplica": "- **La ATM:** **`K1`** · `CONTRATOS` · Auto Breakeven **OFF** · Auto Trail **OFF** · stop y objetivo provisionales en `ATM_DEFECTO`.\n- **Filtro antes de enviar:** el stop estructural debe ser **≤ `STOP_MAX`**. La distancia se mide entre la **entrada** y el stop estructural de `R-32`: en la Continuación, el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento; en el Reingreso, el extremo de la **corrida fallida**. Si lo supera **aunque sea por 1 tick, no se opera**.\n- **Tras el llenado:** 1º el stop a su referencia estructural · 2º el objetivo a 1:1 (`R-32`).\n- **Una vez ajustados, stop y objetivo no se vuelven a mover** (`R-33`).\n\n| | Qué es | Cuándo actúa |\n|---|---|---|\n| **`ATM_DEFECTO`** | stop provisional hasta el ajuste manual | **después** del llenado |\n| **`STOP_MAX`** | filtro de entrada | **antes** de enviar |",
-      "porque": "🔑 **`ATM_DEFECTO` = `STOP_MAX` a propósito.** El stop provisional nunca debe ser más ajustado que el estructural: si lo fuera, el mercado podría sacar al operador de una operación todavía viva antes de que moviera el stop a mano. Si un día cambia `STOP_MAX`, hay que cambiar `ATM_DEFECTO` con él (`PARAMETROS.md`).\n\nRiesgo residual aceptado: la ventana de exposición manual tras el llenado, hasta que se ajustan stop y objetivo (`P-09`).",
+      "como_se_aplica": "- **La ATM:** **`K1`** · los contratos de `R-04` · Auto Breakeven **OFF** · Auto Trail **OFF** · stop y objetivo provisionales en `ATM_DEFECTO`, que depende de los contratos: **cantidad y stop provisional se ponen antes de enviar la orden**.\n- **Filtro antes de enviar:** el stop estructural debe ser **≤ `STOP_MAX`**. La distancia se mide entre la **entrada** y el stop estructural de `R-32`: en la Continuación, el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento; en el Reingreso, el extremo de la **corrida fallida**. Si lo supera **aunque sea por 1 tick, no se opera**.\n- **Tras el llenado:** 1º el stop a su referencia estructural · 2º el objetivo a 1:1 (`R-32`).\n- **Una vez ajustados, stop y objetivo no se vuelven a mover** (`R-33`).\n\n| | Qué es | Cuándo actúa |\n|---|---|---|\n| **`ATM_DEFECTO`** | stop provisional hasta el ajuste manual | **después** del llenado |\n| **`STOP_MAX`** | filtro de entrada | **antes** de enviar |",
+      "porque": "🔑 **`ATM_DEFECTO` = `STOP_MAX` ÷ contratos, a propósito.** Cumple dos cosas a la vez. El stop provisional **nunca es más ajustado que el estructural** —si lo fuera, el mercado podría sacar al operador de una operación todavía viva antes de que moviera el stop a mano—: como los contratos se redondean hacia abajo (`R-04`), el stop estructural siempre cabe dentro. Y **nunca arriesga más de `RIESGO_MAX`**, ni siquiera antes del ajuste. Decisión del operador (05/10/2026): con varios contratos, un stop provisional de `STOP_MAX` habría arriesgado $160 por cada uno hasta ajustarlo. Si un día cambia `STOP_MAX`, hay que cambiar `ATM_DEFECTO` con él (`PARAMETROS.md`).\n\nRiesgo residual aceptado: la ventana de exposición manual tras el llenado, hasta que se ajustan stop y objetivo (`P-09`).",
       "si_no_se_cumple": null,
       "excepciones": null,
       "orden": 28,
-      "enunciado": "Ejecuta con la ATM K1 al valor de 320 ticks y ajusta stop y target a mano tras el llenado, en ese orden."
+      "enunciado": "Ejecuta con la ATM K1 al valor de 320 ticks ÷ contratos y ajusta stop y target a mano tras el llenado, en ese orden."
     },
     {
       "id": "R-32",
@@ -1107,7 +1112,7 @@
       "apartado": null,
       "fuente": null,
       "pendiente": null,
-      "como_se_aplica": "| Queda prohibido, sin excepción | |\n|---|---|\n| Mover el **stop** | ❌ en cualquier dirección |\n| Mover el **objetivo** | ❌ en cualquier dirección |\n| **Breakeven** manual | ❌ |\n| **Cerrar a mano** | ❌ también si el precio no se mueve o va en contra |\n| **Cierre parcial** | ❌ `R-31` fija `CONTRATOS`: no hay nada que partir |\n| **Añadir** contratos | ❌ |\n| **Cerrar por hora** | ❌ no existe |\n\n- **El fin de la `VENTANA_OPERATIVA` prohíbe abrir; no obliga a cerrar.** Una operación abierta sigue hasta stop u objetivo aunque la ventana haya terminado.\n- **Solo hay dos salidas: stop u objetivo.** No hay una tercera. Se deja que el mercado defina el resultado.",
+      "como_se_aplica": "| Queda prohibido, sin excepción | |\n|---|---|\n| Mover el **stop** | ❌ en cualquier dirección |\n| Mover el **objetivo** | ❌ en cualquier dirección |\n| **Breakeven** manual | ❌ |\n| **Cerrar a mano** | ❌ también si el precio no se mueve o va en contra |\n| **Cierre parcial** | ❌ aunque haya varios contratos (`R-04`): entran y salen todos juntos |\n| **Añadir** contratos | ❌ |\n| **Cerrar por hora** | ❌ no existe |\n\n- **El fin de la `VENTANA_OPERATIVA` prohíbe abrir; no obliga a cerrar.** Una operación abierta sigue hasta stop u objetivo aunque la ventana haya terminado.\n- **Solo hay dos salidas: stop u objetivo.** No hay una tercera. Se deja que el mercado defina el resultado.",
       "porque": "> *\"Después de una entrada, y después de ajustar stop y target a sus respectivos niveles, no se toca nada, jamás. Se deja que el mercado haga lo suyo y defina su respectivo resultado. Repito, jamás se gestiona.\"*\n> — Operador, 24/08/2026\n\n🔑 **Es la única regla del plan enunciada como prohibición absoluta**, sin excepciones. Y tiene un efecto que va más allá de la disciplina: convierte cada operación en un **experimento limpio**. Cuando se midan los resultados, medirán el setup — no la gestión. Sin esta regla, un plan mecánico no sería medible.\n\nConsecuencia abierta: la sesión no tiene hora de cierre garantizada (`P-07`).",
       "si_no_se_cumple": null,
       "excepciones": null,

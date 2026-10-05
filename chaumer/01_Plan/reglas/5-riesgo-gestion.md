@@ -67,13 +67,13 @@ Palabras del operador (26/08/2026): *"ya no marco más zonas, no hago más anál
 | | |
 |---|---|
 | Aplica a | Continuación · Reingreso |
-| Parámetros | `ATM_DEFECTO` · `STOP_MAX` · `CONTRATOS` |
+| Parámetros | `ATM_DEFECTO` · `STOP_MAX` · `RIESGO_MAX` |
 | Relacionadas | R-04 · R-32 · R-33 |
 | Casos | G-02 · G-07 · G-11 · G-12 |
 
 ### Cómo se aplica
 
-- **La ATM:** **`K1`** · `CONTRATOS` · Auto Breakeven **OFF** · Auto Trail **OFF** · stop y objetivo provisionales en `ATM_DEFECTO`.
+- **La ATM:** **`K1`** · los contratos de `R-04` · Auto Breakeven **OFF** · Auto Trail **OFF** · stop y objetivo provisionales en `ATM_DEFECTO`, que depende de los contratos: **cantidad y stop provisional se ponen antes de enviar la orden**.
 - **Filtro antes de enviar:** el stop estructural debe ser **≤ `STOP_MAX`**. La distancia se mide entre la **entrada** y el stop estructural de `R-32`: en la Continuación, el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento; en el Reingreso, el extremo de la **corrida fallida**. Si lo supera **aunque sea por 1 tick, no se opera**.
 - **Tras el llenado:** 1º el stop a su referencia estructural · 2º el objetivo a 1:1 (`R-32`).
 - **Una vez ajustados, stop y objetivo no se vuelven a mover** (`R-33`).
@@ -85,7 +85,7 @@ Palabras del operador (26/08/2026): *"ya no marco más zonas, no hago más anál
 
 ### Por qué
 
-🔑 **`ATM_DEFECTO` = `STOP_MAX` a propósito.** El stop provisional nunca debe ser más ajustado que el estructural: si lo fuera, el mercado podría sacar al operador de una operación todavía viva antes de que moviera el stop a mano. Si un día cambia `STOP_MAX`, hay que cambiar `ATM_DEFECTO` con él (`PARAMETROS.md`).
+🔑 **`ATM_DEFECTO` = `STOP_MAX` ÷ contratos, a propósito.** Cumple dos cosas a la vez. El stop provisional **nunca es más ajustado que el estructural** —si lo fuera, el mercado podría sacar al operador de una operación todavía viva antes de que moviera el stop a mano—: como los contratos se redondean hacia abajo (`R-04`), el stop estructural siempre cabe dentro. Y **nunca arriesga más de `RIESGO_MAX`**, ni siquiera antes del ajuste. Decisión del operador (05/10/2026): con varios contratos, un stop provisional de `STOP_MAX` habría arriesgado $160 por cada uno hasta ajustarlo. Si un día cambia `STOP_MAX`, hay que cambiar `ATM_DEFECTO` con él (`PARAMETROS.md`).
 
 Riesgo residual aceptado: la ventana de exposición manual tras el llenado, hasta que se ajustan stop y objetivo (`P-09`).
 
@@ -157,7 +157,7 @@ Palabras del operador: *"siempre el target debe estar libre de zonas o debe siem
 | Mover el **objetivo** | ❌ en cualquier dirección |
 | **Breakeven** manual | ❌ |
 | **Cerrar a mano** | ❌ también si el precio no se mueve o va en contra |
-| **Cierre parcial** | ❌ `R-31` fija `CONTRATOS`: no hay nada que partir |
+| **Cierre parcial** | ❌ aunque haya varios contratos (`R-04`): entran y salen todos juntos |
 | **Añadir** contratos | ❌ |
 | **Cerrar por hora** | ❌ no existe |
 
