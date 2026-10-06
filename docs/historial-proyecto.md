@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-10-05
+**Última actualización:** 2026-10-06
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-06 | NinjaTrader: el checklist solo pide lo manual, y la línea blanca del motor en tiempo real |
 | 2026-10-05 | El bot registra el día solo al cerrar el trade, y pregunta cómo terminaste |
 | 2026-10-03b | El Coach lee el día solo como el plan, y modo prueba para Sonnet |
 | 2026-10-03 | El motor mide tu operación y el Coach la juzga |
@@ -41,6 +42,76 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-06 — NinjaTrader: el checklist solo pide lo manual, y la línea blanca del motor en tiempo real
+
+Todo en `NinjaTrader/`. Los cambios del 30/09 se recogen aquí.
+
+### AddOn `ChecklistChaumer` (30/09)
+
+- **Solo se pintan las reglas que se marcan a mano.** Eran 9 y 7 son automáticas (⚙, las resuelve el
+  journal con los trades): hoy queda **una casilla por setup**. La tarjeta de la Fase 3 desaparece
+  —todo lo que tenía era automático— y con ella el separador «▶ GO». Lo que se guarda no cambia.
+- **El GO se da solo.** Marcar la última regla que bloquea **es** el visto bueno: se sella `checklist_go_at`
+  (una vez por sesión, y solo por una marca hecha a mano, nunca por el poll) y la barra de abajo pasa a
+  «✓ VISTO BUENO PARA OPERAR». Ya no es un botón, es un indicador que sigue a la casilla. El contador
+  decía «faltan 8 de 8» porque contaba las automáticas. D-036.
+- **Noticias: añadir una segunda no guardaba.** Tres causas, todas del AddOn: (1) la fila recién creada con «+»
+  desaparecía en el siguiente poll de 5 s porque aún no estaba en BD; (2) el guardado era DELETE de todo el día
+  + INSERT, y si el INSERT fallaba el día se quedaba sin ninguna; (3) dos guardados solapados se pisaban.
+  Ahora el poll no toca la lista mientras haya algo sin guardar, se escribe (upsert) antes de borrar, y los
+  guardados van en serie. La hora cuenta con los dos dígitos de los minutos («10:3» ya no es las 10:03).
+- **Dos noticias a la misma hora** siguen siendo **una fila en BD** (UNIQUE fecha+hora: una ventana por hora,
+  con los nombres unidos por « / »), pero en pantalla se ven **separadas**: fundidas en una casilla parecía que
+  la segunda se había borrado. Al fundir los nombres se partía por «/» y «m/m» o «q/q» la llevan dentro: se
+  repetían en cada guardado (`… / Final GDP q/q / Final GDP q/q`). Se parte por el separador completo.
+
+### Zonas naranjas fuera, tabla de contratos dentro (05/10)
+
+Las zonas naranjas ya no van en el nuevo plan (D-035 las había quitado del Coach; esto las quita del AddOn).
+En su lugar, una tabla fija de referencia con los contratos a entrar según el stop, para mantener el riesgo en
+~$160 en MNQ: **80 pts → 1 · 40 → 2 · 25 → 3 · 10 → 8**. No se guarda ni se lee de BD. `soportes_naranja` y
+`resistencias_naranja` se quedan en `sesiones` con su histórico; ya no las escribe nadie.
+
+### RR: opacidad de las líneas aparte del sombreado (05/10)
+
+Propiedad nueva **«Line opacity»** (entrada, stop y target), independiente de «Area opacity»: líneas al 100 con
+el fondo al 70, por ejemplo. No se aplica en el hit test ni a la etiqueta de precio.
+
+### `MarcacionChaumer`: la línea blanca del motor, en tiempo real (05–06/10)
+
+Indicador nuevo que dibuja sobre el gráfico operativo el **mismo zigzag blanco** que el motor pinta en los gráficos
+del backtesting, como Kris lo hace a mano con la herramienta Path.
+
+- **Es una copia literal del motor.** `ZigzagChaumer` traduce `lector.leer_sesion` (`piv`): dirección del día
+  por la vela base y su caso sin cuerpo, corrida que muere a 1 tick, orden de la vela por su color. Solo
+  depende de las velas, no de zonas ni de setups. D-037.
+- **Empieza** con la vela de apertura de Nueva York (08:31 Col en verano de EE. UU., **09:31 desde el 1 de
+  noviembre**: no es una hora fija). **Termina** cuando la cuenta vigilada vuelve a plano tras operar, o a las
+  120 velas (11:30 ET) si no hay operación; el corte se reconstruye desde las ejecuciones del día, así que
+  sobrevive a recompilar o reabrir el gráfico. Solo el día de hoy, al cierre de cada vela.
+- **Verificado contra el motor.** La pieza de cálculo, extraída del archivo y compilada aparte, da los mismos
+  vértices que el motor en sus **100 días con datos: 5.278 líneas, 0 diferencias**. El banco sí detecta fallos:
+  tratar un mínimo igual como fin de corrida da 933 diferencias en 11 días.
+- **Probado en vivo el 06/10** (vela base, corte por la cuenta y pintado, que el banco no cubre): funcionó y se
+  detuvo bien tras la salida de la operación de ese día.
+- **Sin ver todavía:** un día sin operación (debe parar a las 10:30) y el primer día en horario de invierno.
+
+### Datos: el espejo Sim101 / Apex (1–3 sep)
+
+Con D-016 (la principal pasa a Sim101) hubo que ordenar a mano los primeros días: los trades de Apex que habían
+entrado a `trades` se movieron a `apex_trades` (un trade vive en una sola tabla), se registró la copia en
+Sim101 de los tres días y se corrigió el trade del 1/09 a 2 contratos. Al bajar de 3 a 2 contratos **`mae` y
+`etd` hay que reescalarlos**: van en dólares y `maeEnPuntos()` los divide por contratos; sin tocarlos habría
+dado 22,87 puntos en vez de 15,25 y habría falseado `stop_max_puntos`.
+
+### Cómo se verificó el C#
+
+`csc.exe` del sistema es C# 5 y no vale. NinjaTrader trae su propio **Roslyn** (`Microsoft.CodeAnalysis.dll`):
+cargado desde PowerShell con un `AssemblyResolve` hacia `C:\Program Files\NinjaTrader 8\bin`, compila los `.cs`
+contra las DLL reales y **sí detecta errores** (se comprobó con uno metido a propósito).
 
 ---
 

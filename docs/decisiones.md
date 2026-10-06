@@ -10,6 +10,51 @@
 
 ---
 
+## D-037 — La marcación en tiempo real es una copia literal del motor, y se prueba contra él
+
+**Decisión (Kris, 05/10/2026).** El indicador `MarcacionChaumer` dibuja el zigzag blanco con una traducción
+**literal** de `lector.leer_sesion` (`piv`), sin reinterpretar nada. Su pieza de cálculo no depende de
+NinjaTrader, para poder compararla con el motor de Python con los mismos datos. Una nueva versión se entrega solo
+si da los mismos vértices que el motor en todos los días con datos.
+
+**Motivo.** La línea blanca es lo que Kris compara con su marcación manual y con los gráficos del backtesting: si
+el indicador y el motor discrepan, no hay forma de saber cuál tiene razón. Con la copia exacta y la prueba, una
+diferencia es siempre un fallo del indicador, nunca una segunda lectura de la regla.
+
+**Coste asumido.** Hay **dos copias de la misma regla** (el motor en Python y el indicador en C#). Si cambia una
+regla de corrida o de retroceso en el plan, hay que cambiar las dos y repetir la comparación.
+
+**Alternativas descartadas.** Llamar al motor desde el indicador: el motor trabaja con archivos y el indicador
+necesita calcular al cierre de cada vela, dentro de NinjaTrader. Una versión "propia" más sencilla del zigzag:
+abre la puerta a que marque distinto del backtesting.
+
+**Reglas de fin y de inicio.** Empieza con la vela de apertura de Nueva York, nunca con una hora fija (el 1 de
+noviembre la hora de Colombia cambia respecto a la de Nueva York). Termina cuando la **cuenta vigilada** vuelve a
+plano tras operar —la cuenta se elige en las propiedades—, o a las 120 velas si no hay operación. Solo dibuja hoy.
+
+---
+
+## D-036 — Marcar la última regla manual es el GO: no hay botón
+
+**Decisión (Kris, 30/09/2026).** En el AddOn del checklist, con una sola regla manual por setup, «al colocar el
+check de la única regla manual ya daría el go». Al marcarla se sella `checklist_go_at` y la barra de abajo
+muestra «✓ VISTO BUENO PARA OPERAR». Esa barra ya no es un botón: sigue a las casillas y desmarcar la devuelve a
+pendiente. La hora ya sellada en BD **no se borra** al desmarcar.
+
+**Motivo.** Las reglas automáticas dejaron de pintarse, así que el botón pedía un clic extra sin que quedara nada
+por confirmar, y su contador («faltan 8 de 8») contaba reglas que ya no se ven.
+
+**Sellar solo por una marca hecha a mano.** El poll de 5 s también cambia casillas (las trae de BD) y no puede
+dar el GO: si lo diera, una casilla vieja en BD sellaría el visto bueno de un día nuevo.
+
+**Alternativas descartadas.** Mantener el botón (clic de más). Borrar `checklist_go_at` al desmarcar: perdería la
+hora del primer visto bueno, que es el dato que importa.
+
+**Nota.** La captura de zonas naranjas en el AddOn, que D-035 dejaba «para otra sesión», se quitó el 05/10; su
+lugar lo ocupa una tabla fija de contratos según el stop.
+
+---
+
 ## D-035 — En los días del plan, el Coach lee el día solo como lo lee el plan
 
 **Decisión (Kris, 03/10/2026).** «El contexto viejo ya no me sirve, solo nos vamos a centrar en el nuevo plan
