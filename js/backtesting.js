@@ -53,6 +53,16 @@ const Backtesting = (() => {
     return `${d.getDate()} ${MES_CORTO[d.getMonth()]} ${d.getFullYear()}`
   }
 
+  // La hora se teclea sin AM/PM: la sesión es siempre de mañana. Acepta «9:45»,
+  // «945» o «0945» y devuelve '09:45'; null si no es una hora antes de las 12:00.
+  function horaManana(txt) {
+    const d = String(txt || '').replace(/\D/g, '')
+    if (d.length < 3 || d.length > 4) return null
+    const h = Number(d.slice(0, -2)), m = Number(d.slice(-2))
+    if (h > 11 || m > 59) return null
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+  }
+
   // El backtesting recorre el mercado pasado día a día: la propuesta para una
   // jornada nueva es el día hábil siguiente a la última registrada.
   function siguienteHabil() {
@@ -222,7 +232,7 @@ const Backtesting = (() => {
     $('btId').value = j?.id || ''
     $('btFecha').value = j?.fecha || siguienteHabil()
     $('btResultado').value = j ? (o ? o.resultado : '') : 'target'
-    $('btHora').value = o?.hora || ''
+    $('btHora').value = o?.hora ? String(o.hora).slice(0, 5) : ''
     $('btDireccion').value = o?.direccion || 'largo'
     $('btSetup').value = o?.setup || 'continuacion'
     $('btPuntos').value = o ? o.puntos : ''
@@ -271,9 +281,10 @@ const Backtesting = (() => {
 
     const operaciones = []
     if (resultado) {
-      const hora = $('btHora').value
+      const hora = horaManana($('btHora').value)
       const puntos = parseFloat($('btPuntos').value)
-      if (!hora) { Toast.show('Falta la hora de la entrada', 'warning'); return }
+      if (!$('btHora').value.trim()) { Toast.show('Falta la hora de la entrada', 'warning'); return }
+      if (!hora) { Toast.show('La hora va como 9:45 (siempre de mañana, antes de las 12:00)', 'warning'); return }
       if (!Number.isFinite(puntos) || puntos < 0) { Toast.show('Los puntos van en positivo: el signo lo pone el resultado', 'warning'); return }
       operaciones.push({
         hora, puntos, resultado,
