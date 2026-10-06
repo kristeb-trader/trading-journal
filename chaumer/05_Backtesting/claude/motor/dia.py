@@ -121,7 +121,7 @@ def dibujar(dia, salida, datos):
     # ---- la operacion
     if t:
         x=t['i_fill']-off; xo=t['i_out']-off
-        cres = GRN if t['res']=='TARGET' else RED
+        cres = GRN if t['res']=='TARGET' else GOLD if t['res']=='ABIERTO' else RED
         # sin lineas de entrada / stop / objetivo: la regla ya las dice.
         # (operador, 01/09/2026: cuanto mas limpio el grafico, mejor)
         # regla de la operacion: area de stop en rojo, area de objetivo en verde,
@@ -138,10 +138,14 @@ def dibujar(dia, salida, datos):
                     fontweight='bold',ha='left' if der else 'right',va='center',
                     arrowprops=dict(arrowstyle='-|>',color=cres,lw=1.8,mutation_scale=14),zorder=11)
         sig='+' if (t['pts'] or 0)>=0 else ''
+        # ABIERTO (06/10/2026): la orden se llena y los datos se acaban (a las 10:30, lo que exporta el
+        # AddOn) sin tocar stop ni objetivo. R-33: la operacion sigue; el resultado aun no se sabe.
+        fin_op = (f"ABIERTA a las {t.get('h_out','')}: sin stop ni objetivo"
+                  if t['res']=='ABIERTO' else
+                  f"{t['res']} en {t.get('h_out','')} · {sig}{t['pts']:.2f} pts = {sig}{t['pts']*2:.2f} USD")
         sub=(f"Operación · {t['tipo']} {'alcista' if t['dir']>0 else 'bajista'} a las {t['hora']} · "
              f"entrada {t['e']:.2f} · stop {t['s']:.2f} · objetivo {t['t']:.2f} · "
-             f"riesgo {t['r']:.2f} pts   →   {t['res']} en {t.get('h_out','')} · "
-             f"{sig}{t['pts']:.2f} pts = {sig}{t['pts']*2:.2f} USD")
+             f"riesgo {t['r']:.2f} pts   →   {fin_op}")
         cierre=''
     else:
         sub='NO HAY OPERACIÓN en toda la ventana'
@@ -159,7 +163,7 @@ def dibujar(dia, salida, datos):
     ax.text(0,1.072,f"{n} zonas marcadas · {viva} vigentes",
             transform=ax.transAxes,color=GREY,fontsize=12.5,va='bottom')
     ax.text(0,1.026,sub,transform=ax.transAxes,
-            color=(GRN if t and t['res']=='TARGET' else RED if t else GOLD),
+            color=(GRN if t and t['res']=='TARGET' else GOLD if (not t or t['res']=='ABIERTO') else RED),
             fontsize=13.5,fontweight='bold',va='bottom')
     fig.savefig(salida,facecolor=BG,dpi=100)
     return ev,t

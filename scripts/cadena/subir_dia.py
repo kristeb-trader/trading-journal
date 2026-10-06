@@ -237,6 +237,8 @@ def veredicto(estado, ficha):
     op = ficha.get('operacion')
     if not op:
         return {'setup': 'el motor no encontró operación en la ventana', 'resultado': 'NO OPERA', 'puntos': '—'}
+    if op['puntos'] is None:      # ABIERTA: se llenó y los datos se acaban sin stop ni objetivo (06/10/2026)
+        return {'setup': f"{op['setup']} {op['sentido']} {op['hora']}", 'resultado': 'ABIERTA', 'puntos': '—'}
     pts = f"{op['puntos']:+.2f}".replace('.', ',').replace('-', '−')
     return {'setup': f"{op['setup']} {op['sentido']} {op['hora']}", 'resultado': op['resultado'], 'puntos': pts}
 
@@ -306,7 +308,9 @@ def procesar(fecha, umbral, desde, fed_set, huella_motor):
             'generada_en': datetime.datetime.now(datetime.timezone.utc).isoformat()}
     sb('POST', 'motor_fichas?on_conflict=fecha', fila, 'resolution=merge-duplicates,return=minimal')
     op = ficha.get('operacion') if estado == 'ok' else None
-    res = (f"{op['setup']} {op['sentido']} {op['hora']} → {op['resultado']} {op['puntos']:+.2f}" if op
+    res = (f"{op['setup']} {op['sentido']} {op['hora']} → "
+           + (f"{op['resultado']} {op['puntos']:+.2f}" if op['puntos'] is not None else 'ABIERTA al acabar los datos')
+           if op
            else 'sin operación' if estado == 'ok' else ficha.get('motivo'))
     log(f"{fecha}  {estado} · {res} · {len(avisos)} aviso(s) · {'Fed · ' if fed else ''}{'manual' if manual else 'addon'}")
     return True
