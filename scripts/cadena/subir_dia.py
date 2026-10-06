@@ -212,10 +212,30 @@ def ficha_del_dia(V, d, umbral, fed, trades=None):
 
 
 def velas_del_dia(path, d):
-    """Las líneas del día en UTC, de las 00:00 al fin de ventana: lo que el motor lee."""
+    """Las líneas del día en UTC, de las 00:00 al fin de ventana: lo que el motor lee para marcar."""
     fin = lector.cierre_utc(d)
     return ''.join(l for l in open(path, encoding='utf-8')
                    if l.startswith(d + ' ') and int(l[9:13]) <= fin)
+
+
+def todas_del_dia(path, d):
+    """Todas las líneas del día, también las de después de la ventana: con ellas se sabe cómo acaba una
+    operación que sigue abierta (R-33). Su huella es la que dice si los datos cambiaron (06/10/2026)."""
+    return ''.join(l for l in open(path, encoding='utf-8') if l.startswith(d + ' '))
+
+
+def marca_abierta(fecha, abierta):
+    """`AAAA-MM-DD.abierta` junto a las velas: el AddOn CadenaDiaria la ve y vuelve a exportar el día con
+    más tiempo (hasta las 13:30 y, si sigue abierta, hasta las 16:00 de Nueva York). Se borra sola cuando la
+    operación ya tiene resultado. Kris, 06/10/2026."""
+    m = os.path.join(DIA_MANUAL, f'{fecha}.abierta')
+    try:
+        if abierta:
+            with open(m, 'w', encoding='utf-8') as fh: fh.write('la operación del motor sigue abierta al acabar los datos\n')
+        elif os.path.exists(m):
+            os.remove(m)
+    except OSError as e:
+        log(f'{fecha}  no pude {"dejar" if abierta else "quitar"} la marca de operación abierta: {e}')
 
 
 def comparar(manual, auto, d):
@@ -303,11 +323,12 @@ def procesar(fecha, umbral, desde, fed_set, huella_motor):
     velas = velas_del_dia(path, d)
     fila = {'fecha': fecha, 'estado': estado, 'instrumento': instrumento(path), 'umbral_vol': umbral,
             'dia_fed': fed, 'ficha': ficha, 'velas': velas, 'grafico_url': grafico,
-            'huella_motor': huella_motor, 'huella_datos': huella(velas),
+            'huella_motor': huella_motor, 'huella_datos': huella(todas_del_dia(path, d)),
             'origen_datos': 'manual' if manual else 'addon',
             'generada_en': datetime.datetime.now(datetime.timezone.utc).isoformat()}
     sb('POST', 'motor_fichas?on_conflict=fecha', fila, 'resolution=merge-duplicates,return=minimal')
     op = ficha.get('operacion') if estado == 'ok' else None
+    marca_abierta(fecha, bool(op) and op.get('puntos') is None)
     res = (f"{op['setup']} {op['sentido']} {op['hora']} → "
            + (f"{op['resultado']} {op['puntos']:+.2f}" if op['puntos'] is not None else 'ABIERTA al acabar los datos')
            if op
@@ -346,7 +367,7 @@ def pendientes(n_dias, huella_motor):
     fuera = []
     for f in fechas:
         m, a = archivos(f)
-        h = huella(velas_del_dia(m or a, f.replace('-', '')))
+        h = huella(todas_del_dia(m or a, f.replace('-', '')))
         if f not in hay or hay[f]['huella_motor'] != huella_motor or hay[f]['huella_datos'] != h:
             fuera.append(f)
     return fuera

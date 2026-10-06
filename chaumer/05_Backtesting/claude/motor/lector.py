@@ -811,13 +811,18 @@ def detectar_setups(res, solo_reingresos=False):
             elif (k['h']>=o['e']) if o['dir']>0 else (k['l']<=o['e']):
                 trade=dict(**o,i_fill=i,hora=hh(k))
                 ev.append(f"{hh(k)}  ►► SE LLENA el {o['tipo']} {'alcista' if o['dir']>0 else 'bajista'} en {o['e']:.2f}")
-                for j in range(i,fin+1):
+                # R-33: la operacion sigue hasta stop u objetivo AUNQUE acabe la ventana. Se mira
+                # hasta la ultima vela que haya en los datos, no hasta el fin de ventana (06/10/2026:
+                # la del dia se lleno a las 10:07 y a las 10:30 seguia viva; el AddOn vuelve a
+                # exportar con mas tiempo los dias que quedan ABIERTO).
+                ult=len(D)-1
+                for j in range(i,ult+1):
                     kk=D[j]
                     pier=(kk['l']<=trade['s']) if trade['dir']>0 else (kk['h']>=trade['s'])
                     gana=(kk['h']>=trade['t']) if trade['dir']>0 else (kk['l']<=trade['t'])
                     if pier: trade.update(res='STOP',pts=-trade['r'],i_out=j,h_out=hh(kk)); break
                     if gana: trade.update(res='TARGET',pts=trade['r'],i_out=j,h_out=hh(kk)); break
-                else: trade.update(res='ABIERTO',pts=None,i_out=fin,h_out=hh(D[fin]))
+                else: trade.update(res='ABIERTO',pts=None,i_out=ult,h_out=hh(D[ult]))
                 break
             # CANCELACION (operador 27/08/2026): un retroceso nuevo NO cancela.
             # Solo cancela (a) que pasen 5 velas sin consecucion, o (b) que el precio

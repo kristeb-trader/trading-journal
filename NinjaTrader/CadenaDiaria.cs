@@ -18,6 +18,11 @@
 //    MNQ 12-26), con la merge policy global (la de los gráficos de Kris).
 //  - Si escribió algo (o al arrancar), lanza `python subir_dia.py --pendientes` en
 //    segundo plano, sin consola, y guarda su salida en el registro.
+//  - Operación abierta (06/10/2026, Kris): si el motor deja la operación del día sin stop
+//    ni objetivo al acabar los datos, el puente deja `AAAA-MM-DD.abierta` junto a las velas.
+//    Entonces el día se vuelve a exportar, REEMPLAZANDO el archivo, con más tiempo: hasta las
+//    13:30 de Nueva York (2 h después de la ventana) y, si sigue abierta, hasta las 16:00 (el
+//    cierre de la sesión de contado). Después ya no se reintenta: queda ABIERTA.
 //
 //  Configuración: Documentos\NinjaTrader 8\cadena-diaria.json (se crea sola).
 //  Registro:      Documentos\NinjaTrader 8\cadena-diaria\registro.txt
@@ -50,6 +55,8 @@ namespace NinjaTrader.NinjaScript.AddOns
         private const int VELAS_VENTANA = 120;
         private const int MARGEN_MIN = 2;          // se exporta 2 min después del fin de ventana
         private const int ESPERA_HOY_MIN = 60;     // hoy incompleto: se reintenta hasta 1 h después
+        // Operación abierta: hasta dónde se amplía la exportación, en minutos tras el fin de ventana
+        private static readonly int[] AMPLIAR_MIN = new int[] { 120, 270 };   // 13:30 y 16:00 ET
 
         // Una sola instancia viva: NinjaTrader crea varias del AddOn (SetDefaults, etc.)
         private static readonly object candado = new object();
@@ -155,6 +162,8 @@ namespace NinjaTrader.NinjaScript.AddOns
             public DateTime Dia;          // la jornada (fecha de Nueva York = fecha UTC de la ventana)
             public bool EsHoy;
             public DateTime CierreUtc;    // cierre de la última vela de la ventana
+            public DateTime HastaUtc;     // última vela que se escribe (= CierreUtc, o más si se amplía)
+            public bool Ampliar;          // reemplaza el archivo: la operación del motor seguía abierta
         }
 
         private static void Tic(object _)
@@ -225,13 +234,56 @@ namespace NinjaTrader.NinjaScript.AddOns
             List<Pendiente> cola = new List<Pendiente>();
             foreach (DateTime dia in dias)
             {
-                if (File.Exists(Archivo(cfg, dia))) continue;
                 DateTime cierre = BaseUtc(dia).AddMinutes(VELAS_VENTANA - 1);
                 bool esHoy = dia == hoy;
+                if (File.Exists(Archivo(cfg, dia)))
+                {
+                    Pendiente amp = Ampliacion(cfg, dia, esHoy, cierre, ahoraUtc);
+                    if (amp != null) cola.Add(amp);
+                    continue;
+                }
                 if (esHoy && ahoraUtc < cierre.AddMinutes(MARGEN_MIN)) continue;   // aún no acabó la ventana
-                cola.Add(new Pendiente { Dia = dia, EsHoy = esHoy, CierreUtc = cierre });
+                cola.Add(new Pendiente { Dia = dia, EsHoy = esHoy, CierreUtc = cierre, HastaUtc = cierre });
             }
             return cola;
+        }
+
+        private static string MarcaAbierta(Config cfg, DateTime dia)
+        {
+            return Path.Combine(cfg.Carpeta, dia.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + ".abierta");
+        }
+
+        // Un día con archivo y con la marca de operación abierta: se vuelve a pedir hasta el siguiente
+        // tramo que su archivo aún no cubra, cuando ya haya pasado. Sin tramos que probar, se quita la marca.
+        private static Pendiente Ampliacion(Config cfg, DateTime dia, bool esHoy, DateTime cierre, DateTime ahoraUtc)
+        {
+            string marca = MarcaAbierta(cfg, dia);
+            if (!File.Exists(marca)) return null;
+            DateTime ultima = UltimaVela(Archivo(cfg, dia));
+            foreach (int min in AMPLIAR_MIN)
+            {
+                DateTime hasta = cierre.AddMinutes(min);
+                if (ultima >= hasta) continue;                                   // ese tramo ya está escrito
+                if (ahoraUtc < hasta.AddMinutes(MARGEN_MIN)) return null;          // todavía no ha llegado
+                return new Pendiente { Dia = dia, EsHoy = esHoy, CierreUtc = cierre, HastaUtc = hasta, Ampliar = true };
+            }
+            try { File.Delete(marca); } catch { }
+            Log(dia.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "  la operación sigue abierta a las 16:00 de Nueva York: se queda ABIERTA");
+            return null;
+        }
+
+        // La hora (UTC) de la última vela escrita en un archivo del día. MinValue si no se puede leer.
+        private static DateTime UltimaVela(string path)
+        {
+            try
+            {
+                string ult = null;
+                foreach (string l in File.ReadLines(path)) if (l.Length >= 15) ult = l;
+                if (ult == null) return DateTime.MinValue;
+                return DateTime.ParseExact(ult.Substring(0, 15), "yyyyMMdd HHmmss", CultureInfo.InvariantCulture,
+                                           DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            }
+            catch { return DateTime.MinValue; }
         }
 
         private static string Archivo(Config cfg, DateTime dia)
@@ -264,7 +316,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                 }
                 TimeZoneInfo zonaNT = NinjaTrader.Core.Globals.GeneralOptions.TimeZoneInfo;
                 DateTime desde = HabilAnterior(p.Dia).Date;                                     // 00:00 hora NinjaTrader, como Kris
-                DateTime hasta = TimeZoneInfo.ConvertTimeFromUtc(p.CierreUtc.AddMinutes(5), zonaNT);
+                DateTime hasta = TimeZoneInfo.ConvertTimeFromUtc(p.HastaUtc.AddMinutes(5), zonaNT);
 
                 BarsRequest req = new BarsRequest(ins, desde, hasta);
                 req.BarsPeriod = new BarsPeriod { BarsPeriodType = BarsPeriodType.Minute, Value = 1, MarketDataType = MarketDataType.Last };
@@ -322,7 +374,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             {
                 // GetTime = cierre de la vela, en la zona de NinjaTrader (Colombia) → UTC
                 DateTime utc = TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(bars.GetTime(k), DateTimeKind.Unspecified), zonaNT);
-                if (utc > p.CierreUtc) break;
+                if (utc > p.HastaUtc) break;
                 sb.Append(utc.ToString("yyyyMMdd HHmmss", inv)).Append(';')
                   .Append(bars.GetOpen(k).ToString(inv)).Append(';')
                   .Append(bars.GetHigh(k).ToString(inv)).Append(';')
@@ -349,10 +401,27 @@ namespace NinjaTrader.NinjaScript.AddOns
                 Log(Dia(p) + "  ⚠️ ventana incompleta (" + enVentana + "/" + VELAS_VENTANA + "): se escribe igual");
             }
 
+            if (p.Ampliar && ultima < p.HastaUtc)
+            {
+                // NinjaTrader aún no tiene las velas hasta la hora pedida: se reintenta el minuto siguiente
+                // durante 1 h. Pasado ese margen se escribe lo que haya, que ya es más que lo de antes.
+                if (DateTime.UtcNow < p.HastaUtc.AddMinutes(ESPERA_HOY_MIN))
+                {
+                    Log(Dia(p) + "  ampliación incompleta (hasta " + ultima.ToString("HH:mm", inv) + " UTC): reintento el minuto siguiente");
+                    return false;
+                }
+            }
+
             string destino = Archivo(cfg, p.Dia);
             string tmp = destino + ".tmp";
             File.WriteAllText(tmp, sb.ToString(), new UTF8Encoding(false));
-            if (File.Exists(destino)) File.Delete(tmp);          // otro pase lo escribió antes
+            if (p.Ampliar)
+            {
+                File.Copy(tmp, destino, true);                    // reemplaza el archivo con más tiempo
+                File.Delete(tmp);
+                try { File.Delete(MarcaAbierta(cfg, p.Dia)); } catch { }   // el puente la vuelve a dejar si sigue abierta
+            }
+            else if (File.Exists(destino)) File.Delete(tmp);     // otro pase lo escribió antes
             else File.Move(tmp, destino);
 
             JObject meta = new JObject();
@@ -364,9 +433,11 @@ namespace NinjaTrader.NinjaScript.AddOns
             meta["ultima_utc"] = ultima.ToString("yyyyMMdd HHmmss", inv);
             meta["zona_ninjatrader"] = zonaNT.Id;
             meta["escrito"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", inv);
+
+            if (p.Ampliar) meta["ampliado_hasta_utc"] = p.HastaUtc.ToString("yyyyMMdd HHmmss", inv);
             File.WriteAllText(Path.Combine(cfg.Carpeta, p.Dia.ToString("yyyy-MM-dd", inv) + ".meta.json"), meta.ToString(), new UTF8Encoding(false));
 
-            Log(Dia(p) + "  " + ins.FullName + " · " + n + " velas (" + delDia + " del día, " + enVentana + "/" + VELAS_VENTANA +
+            Log(Dia(p) + (p.Ampliar ? "  operación abierta: ampliado · " : "  ") + ins.FullName + " · " + n + " velas (" + delDia + " del día, " + enVentana + "/" + VELAS_VENTANA +
                 " en la ventana) · " + primera.ToString("dd/MM HH:mm", inv) + " → " + ultima.ToString("dd/MM HH:mm", inv) + " UTC");
             return true;
         }
