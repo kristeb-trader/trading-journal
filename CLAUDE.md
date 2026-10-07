@@ -82,6 +82,7 @@ sobre la implementación.** Ya pasó que se implementara otra cosa y hubo que re
 | `chaumer_operativas` | **Solo el lado de Chaumer**: el de Kris se lee de `sesiones`+`trades`. `hora_entrada` en hora Colombia, **sin** `horaEt()` (D-017); `puntos` en puntos. El veredicto se calcula, no se guarda |
 | `bt_*` | La bitácora de backtesting: nunca se mezcla con `trades` ni `apex_trades`. Se escribe con `bt_guardar_jornada` (una transacción, calcula el P&L). `pnl` **neto y congelado**: una jornada corregida **conserva** sus valores; `puntos` siempre positivo (el signo, `resultado`); `hora` en hora Colombia. El portal lee `portal_bt_*` |
 | `plan_documentos` | Los 5 documentos del plan que lee el Coach. **Solo** `scripts/plan/sincronizar.mjs` (SQL por el MCP, `huella` sha256); el texto se edita en `chaumer/01_Plan` |
+| `bot_operaciones` | BotChaumer (D-038): **una fila por día y cuenta**, también los días sin operación (`NO OPERA`) y los que un candado no dejó armarse (`NO ARMADO`, con `motivo`). La escribe el bot con `service_role`; `coincide_motor` lo rellenará la cadena (fase 5). **No** se mezcla con `trades` ni `apex_trades`. El Strategy Analyzer no escribe aquí: deja un CSV local |
 | `coach_uso` | Una fila por llamada del Coach: tokens, coste y `codigos_quitados`. **Sin texto** |
 | `motor_fichas` | Lo que marcó el motor cada día. **Solo** `scripts/cadena/subir_dia.py` (`service_role`), a las 10:32 (11:32 en invierno). **Candado:** `authenticated` solo la lee si el día está registrado; `motor_estado(fecha)` dice si la hay sin enseñarla. `velas` (UTC) son para el agente: el Coach no las lee. Horas Colombia, precios en puntos |
 | `sesiones` | `registrada_at` = el **primer** guardado (un trigger la congela): abre el candado de `motor_fichas` y decide qué gráficos del motor se publican; `diario_editado_at` = el último. `setup` y `setup_codigo` los sincroniza `fn_sync_setup_codigo`. La columna `noticias` existe pero no se usa (va a `sesion_noticias`), **ni `estado_emocional_fin_id`**: el estado al cierre vive en `diagnosticos_diarios`, que es donde lo escriben la web y el bot y lo lee el Coach. Los **niveles de precio** los escribe NinjaTrader (indicador `SupabaseDailyLevels`): si el bot o el formulario los mandaran, en `[]`, los **borrarían**. Las **zonas naranjas** (`soportes_naranja`, `resistencias_naranja`) ya no las escribe nadie desde el 5 oct: el plan nuevo no las usa y el AddOn las quitó |
@@ -135,8 +136,10 @@ css/styles.css    Dark mode + responsive
 NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) · ChecklistChaumer ·
                   RR (Risk Reward en PUNTOS) · CadenaDiaria (AddOn: exporta el día y lanza el puente) ·
                   MarcacionChaumer (el zigzag blanco del motor, en tiempo real) ·
-                  MotorChaumer (lector.py en C#, sellado: lo usan el bot y la marcación) · pruebas/ArnesMotor
-scripts/bot/      sincronia.py: los dos motores, vela a vela, y el SELLO · scripts/hooks/pre-commit lo exige
+                  MotorChaumer (lector.py en C#, sellado: lo usan el bot y la marcación) · pruebas/ArnesMotor ·
+                  BotChaumer (la estrategia: opera lo que marca el motor, solo en su lista blanca)
+scripts/bot/      sincronia.py: los dos motores, vela a vela, y el SELLO · scripts/hooks/pre-commit lo exige ·
+                  comparar.py: el CSV del Strategy Analyzer contra el motor
 scripts/cadena/   El puente de la cadena diaria: motor → gráfico → ficha en Supabase → portal;
                   medir.py: la operación de Kris medida con el motor (D-034)
 scripts/plan/     El plan de Chaumer → reglas.json, catalogo_reglas y plan_documentos

@@ -44,6 +44,7 @@ solo porque el mercado sea de NY.
 | `CadenaDiaria.cs` | AddOn sin ventana: exporta las velas del día y lanza el puente del motor (fase 7) |
 | `MarcacionChaumer.cs` | El zigzag blanco del motor en tiempo real. Desde el 06/10/2026 lo calcula `MotorChaumer.Zigzag` (antes, su propia copia `ZigzagChaumer`, probada en 100 días el 5 oct) |
 | `MotorChaumer.cs` | **`lector.py` en C#**, traducción literal y sellada (D-038). Lo usan el bot y la marcación. Va en `Custom\AddOns\`. Se cambia junto con `lector.py`: `.claude/rules/bot.md` |
+| `BotChaumer.cs` | **La estrategia del bot** (D-038). Va en `Custom\Strategies\`. Opera lo que diga `MotorChaumer` al cierre de cada vela, con candados; registro en `bot_operaciones`; configuración en `Documentos\NinjaTrader 8\bot-chaumer.json`. En un gráfico solo opera en tiempo real (y en Market Replay); en el Analyzer (cuenta `Backtest`), sobre el histórico, y deja un CSV en `Documentos\NinjaTrader 8\bot-chaumer\` |
 | `pruebas/ArnesMotor.cs` | Consola para `scripts/bot/sincronia.py`. **No se instala** en NinjaTrader |
 
 ## CadenaDiaria (fase 7, 25 sep)
