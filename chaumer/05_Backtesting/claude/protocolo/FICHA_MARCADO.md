@@ -1,6 +1,6 @@
 # FICHA DE MARCADO — generada automáticamente
 
-> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-09-30 con `generar_ficha.py`.
+> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-10-07 con `generar_ficha.py`.
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
@@ -79,12 +79,23 @@ Opera con un gráfico limpio: velas de 1 minuto y volumen, nada más.
 
 #### `R-04` · Tamaño de posición
 
-Opera siempre con `CONTRATOS`. El tamaño no cambia por capital, racha ni convicción.
+El riesgo no pasa nunca de `RIESGO_MAX`. Se operan los contratos que caben: el riesgo de cada uno son los puntos del stop por $2, y el número se redondea hacia abajo. El número de contratos no importa.
 
 **Cómo se aplica**
 
-- **Siempre `CONTRATOS`.** No sube aunque la cuenta crezca; no baja aunque la cuenta caiga.
-- **Revisión anual:** es el único momento en que se evalúa cambiar el número de contratos.
+- **Contratos = `RIESGO_MAX` ÷ (puntos del stop × $2)**, redondeado **hacia abajo**: el riesgo nunca pasa de `RIESGO_MAX`. Los puntos del stop son los del stop estructural (`R-32`), medidos desde la entrada.
+- **El riesgo se mide con los puntos del stop**, sin la comisión.
+- **Si no cabe ni un contrato, no se opera:** es el caso de un stop por encima de `STOP_MAX` (`R-31`).
+- **Lo decide solo el stop.** No cambia por capital, racha ni convicción.
+
+Ejemplos, con el `RIESGO_MAX` de hoy:
+
+| Stop (puntos) | Contratos | Riesgo |
+|---|---|---|
+| 80 | 1 | $160 |
+| 40 | 2 | $160 |
+| 25 | 3 | $150 |
+| 10 | 8 | $160 |
 
 ---
 
@@ -172,7 +183,9 @@ El rompimiento con mecha sin consecución se acaba de dos maneras, y vale **la q
 
 **Otra ·** antes de que se cumpla ese plazo, el mercado arma una **estructura completa en sentido contrario**: una vela que no da la consecución y se va en contra, otra que hace retroceso, y una tercera que no sigue ese retroceso y vuelve en el sentido de la primera. **La zona se estira en esa tercera vela**, sin esperar más (`R-14`).
 
-En cualquiera de los dos casos, la zona se extiende hasta la punta de la mecha que la rompió. **Qué borde se mueve lo decide el tipo de zona, no el lado del rompimiento:** una resistencia se estira solo por arriba; un soporte, solo por abajo. El otro borde no se mueve. Sigue habiendo **una sola zona**, más grande, y conserva su historial de rompimientos y consecuciones. No se crea ninguna zona nueva.
+En cualquiera de los dos casos, la zona se extiende hasta la punta de la mecha que la rompió. **Qué borde se mueve lo decide el tipo de zona, no el lado del rompimiento:** una resistencia se estira solo por arriba; un soporte, solo por abajo. El otro borde no se mueve. Sigue habiendo **una sola zona**, más grande. No se crea ninguna zona nueva.
+
+> 🔴 **Al estirarse, el rompimiento que la estiró se cierra** *(07/10/2026)*. La zona estirada vuelve a empezar en su borde nuevo: para traspasarla hace falta un **rompimiento nuevo** de ese borde y **su propia consecución**. Que el precio pase después de la punta de aquella mecha **no** es la consecución atrasada del rompimiento viejo: es, como mucho, un rompimiento nuevo.
 
 > 🔴 **Un soporte nunca se estira hacia arriba, ni una resistencia hacia abajo.** Si el precio cruza la zona por el lado contrario —el cruce de vuelta, cuando ya la traspasó una vez—, **no hay nada que estirar**: ese cruce no la toca, solo la mata cuando llegue su consecución (`R-21`).
 
@@ -322,8 +335,8 @@ Rompimiento es superar el borde de la zona por al menos un tick; consecución es
 - **Rompimiento:** un `TICK` más allá del borde de la zona. El cierre de la vela de rompimiento es irrelevante para que haya rompimiento — **la mecha basta**.
 - **Con cuerpo o con mecha:** el rompimiento es **con cuerpo** si el cierre queda más allá del borde traspasado; **con mecha**, si no.
 - **Consecución al alza:** máximo de la vela de rompimiento + 1 `TICK`. **A la baja:** mínimo de la vela de rompimiento − 1 `TICK`.
-- **El traspaso de la zona NO tiene plazo:** el rompimiento queda pendiente indefinidamente y la consecución lo confirma cuando llegue, aunque sea muchas velas después.
-- **El `PLAZO_CONSECUCION`**, contado desde la vela siguiente a la de rompimiento, gobierna solo **la geometría de la zona** (`R-10`, `R-11`, `R-14`) y **la vida de la orden** (`R-29`), no el traspaso. Las dos cosas ocurren sobre el **mismo** rompimiento: primero nace la apéndice o se estira la zona, y más tarde el traspaso se confirma igual.
+- **El traspaso de la zona NO tiene plazo:** el rompimiento queda pendiente indefinidamente y la consecución lo confirma cuando llegue, aunque sea muchas velas después — **salvo que la zona se estire** (`R-10`): el estiramiento cierra ese rompimiento, y para traspasar la zona estirada hace falta uno nuevo con su propia consecución *(07/10/2026)*.
+- **El `PLAZO_CONSECUCION`**, contado desde la vela siguiente a la de rompimiento, gobierna solo **la geometría de la zona** (`R-10`, `R-11`, `R-14`) y **la vida de la orden** (`R-29`), no el traspaso. Cuando nace la **apéndice**, las dos cosas ocurren sobre el **mismo** rompimiento: primero nace la apéndice y más tarde el traspaso de la zona original se confirma igual. Cuando la zona **se estira**, no: el rompimiento se cierra ahí (`R-10`).
 
 #### `R-21` · Vigencia e invalidación de una zona
 
@@ -509,7 +522,7 @@ Ejecuta con la ATM `K1` al valor de `ATM_DEFECTO` y ajusta stop y target a mano 
 
 **Cómo se aplica**
 
-- **La ATM:** **`K1`** · `CONTRATOS` · Auto Breakeven **OFF** · Auto Trail **OFF** · stop y objetivo provisionales en `ATM_DEFECTO`.
+- **La ATM:** **`K1`** · los contratos de `R-04` · Auto Breakeven **OFF** · Auto Trail **OFF** · stop y objetivo provisionales en `ATM_DEFECTO`, que depende de los contratos: **cantidad y stop provisional se ponen antes de enviar la orden**.
 - **Filtro antes de enviar:** el stop estructural debe ser **≤ `STOP_MAX`**. La distancia se mide entre la **entrada** y el stop estructural de `R-32`: en la Continuación, el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento; en el Reingreso, el extremo de la **corrida fallida**. Si lo supera **aunque sea por 1 tick, no se opera**.
 - **Tras el llenado:** 1º el stop a su referencia estructural · 2º el objetivo a 1:1 (`R-32`).
 - **Una vez ajustados, stop y objetivo no se vuelven a mover** (`R-33`).
@@ -564,7 +577,7 @@ Una vez ajustados stop y target, **no se gestiona la posición. Nunca.** Solo la
 | Mover el **objetivo** | ❌ en cualquier dirección |
 | **Breakeven** manual | ❌ |
 | **Cerrar a mano** | ❌ también si el precio no se mueve o va en contra |
-| **Cierre parcial** | ❌ `R-31` fija `CONTRATOS`: no hay nada que partir |
+| **Cierre parcial** | ❌ aunque haya varios contratos (`R-04`): entran y salen todos juntos |
 | **Añadir** contratos | ❌ |
 | **Cerrar por hora** | ❌ no existe |
 
@@ -646,7 +659,7 @@ Ejecuta la sesión siguiendo la checklist diaria **en orden**, y registra **toda
 > **Un solo sitio para los números que pueden cambiar.**
 > Las reglas citan el **nombre** del parámetro, no el valor. Se cambia aquí y se propaga a todo el plan.
 
-**Actualizado:** 2026-09-14 (b)
+**Actualizado:** 2026-10-05
 
 ---
 
@@ -654,15 +667,17 @@ Ejecuta la sesión siguiendo la checklist diaria **en orden**, y registra **toda
 
 | Parámetro | Valor actual | Equivalencias | Dónde actúa | Desde |
 |---|---|---|---|---|
-| **`STOP_MAX`** | **80 puntos** | 320 ticks · **$160** en MNQ | **Filtro de entrada** (`R-31`, `R-32`): si el stop estructural lo supera **aunque sea por 1 tick**, no se opera | 24/08/2026 |
-| **`ATM_DEFECTO`** | **320 ticks** | 80 puntos · $160 | Stop y target provisionales de la ATM `K1` hasta el ajuste manual (`R-31`) | 24/08/2026 |
+| **`RIESGO_MAX`** | **$160** por operación | 80 puntos con 1 MNQ | **Tamaño de posición** (`R-04`): se operan los contratos que caben sin pasarlo, redondeando hacia abajo | 05/10/2026 |
+| **`STOP_MAX`** | **80 puntos** | 320 ticks · **$160** en MNQ con 1 contrato | **Filtro de entrada** (`R-31`, `R-32`): si el stop estructural lo supera **aunque sea por 1 tick**, no cabe ni un contrato y no se opera | 24/08/2026 |
+| **`ATM_DEFECTO`** | **320 ticks** ÷ contratos | redondeado al tick de abajo · 80 puntos con 1 contrato · 40 con 2 · nunca más de $160 | Stop y target provisionales de la ATM `K1` hasta el ajuste manual (`R-31`) | 05/10/2026 |
 | **`RATIO_TARGET`** | **1:1** | — | El target recorre la misma distancia que el stop (`R-32`) | 21/08/2026 |
-| **`CONTRATOS`** | **1** MNQ | — | Tamaño de posición (`R-31`) | 21/08/2026 |
 | **`OPS_POR_SESION`** | **1** llenada | — | `R-28` | 21/08/2026 |
 
 > 🔴 **`STOP_MAX` es una línea dura, no una zona de aviso.** No hay margen de seguridad por debajo del tope: un stop de 79,75 pts se opera exactamente igual que uno de 30. No existe *"está muy cerca del límite, mejor la dejo"*. Confirmado por el operador el **01/09/2026** sobre el caso del 16/07 (75,50 pts = **94 %** del tope, operación tomada y ganada).
 
-> 🔑 **`ATM_DEFECTO` = `STOP_MAX` a propósito.** El stop provisional **nunca** debe ser más ajustado que el estructural: si lo fuera, el mercado podría sacarte de una operación todavía viva antes de que muevas el stop a mano. Si un día cambia `STOP_MAX`, **hay que cambiar `ATM_DEFECTO` con él**.
+> 🔑 **`ATM_DEFECTO` = `STOP_MAX` ÷ contratos a propósito.** El stop provisional **nunca** debe ser más ajustado que el estructural —si lo fuera, el mercado podría sacarte de una operación todavía viva antes de que muevas el stop a mano— y **nunca** arriesga más de `RIESGO_MAX`. Si un día cambia `STOP_MAX`, **hay que cambiar `ATM_DEFECTO` con él**.
+
+> 💵 **`RIESGO_MAX` manda sobre el número de contratos** (05/10/2026). Hasta ese día el plan operaba siempre 1 contrato (`CONTRATOS`, desde el 21/08/2026).
 
 ## Estructura
 

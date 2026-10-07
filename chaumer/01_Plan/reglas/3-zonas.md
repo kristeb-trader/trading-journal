@@ -85,11 +85,15 @@ El rompimiento con mecha sin consecución se acaba de dos maneras, y vale **la q
 
 **Otra ·** antes de que se cumpla ese plazo, el mercado arma una **estructura completa en sentido contrario**: una vela que no da la consecución y se va en contra, otra que hace retroceso, y una tercera que no sigue ese retroceso y vuelve en el sentido de la primera. **La zona se estira en esa tercera vela**, sin esperar más (`R-14`).
 
-En cualquiera de los dos casos, la zona se extiende hasta la punta de la mecha que la rompió. **Qué borde se mueve lo decide el tipo de zona, no el lado del rompimiento:** una resistencia se estira solo por arriba; un soporte, solo por abajo. El otro borde no se mueve. Sigue habiendo **una sola zona**, más grande, y conserva su historial de rompimientos y consecuciones. No se crea ninguna zona nueva.
+En cualquiera de los dos casos, la zona se extiende hasta la punta de la mecha que la rompió. **Qué borde se mueve lo decide el tipo de zona, no el lado del rompimiento:** una resistencia se estira solo por arriba; un soporte, solo por abajo. El otro borde no se mueve. Sigue habiendo **una sola zona**, más grande. No se crea ninguna zona nueva.
+
+> 🔴 **Al estirarse, el rompimiento que la estiró se cierra** *(07/10/2026)*. La zona estirada vuelve a empezar en su borde nuevo: para traspasarla hace falta un **rompimiento nuevo** de ese borde y **su propia consecución**. Que el precio pase después de la punta de aquella mecha **no** es la consecución atrasada del rompimiento viejo: es, como mucho, un rompimiento nuevo.
 
 > 🔴 **Un soporte nunca se estira hacia arriba, ni una resistencia hacia abajo.** Si el precio cruza la zona por el lado contrario —el cruce de vuelta, cuando ya la traspasó una vez—, **no hay nada que estirar**: ese cruce no la toca, solo la mata cuando llegue su consecución (`R-21`).
 
 ### Por qué
+
+**Por qué el estiramiento cierra el rompimiento — caso de origen, 07/10/2026.** La resistencia de la vela 8:32 (31.262,25 – 31.272,00) se rompe con mecha a las 8:34, hasta 31.276,00, sin consecución, y a las 8:39 se estira hasta 31.276,00. Si el rompimiento de las 8:34 siguiera pendiente, su consecución sería pasar de 31.276,00 — **el mismo número que el borde nuevo de la zona** —, así que bastaría con pasar 1 tick de la zona estirada para darla por traspasada: un solo paso, cuando a cualquier otra zona se le exigen dos. Eso pasó a las 9:26 (31.286,00): la zona murió a las 9:28 al cruzarse de vuelta, nació la resistencia de las 9:30 y de ella un Reingreso bajista. Con el rompimiento cerrado, las 9:26 es un rompimiento nuevo sin consecución, la resistencia de las 8:32 se estira otra vez hasta 31.286,00 y **sigue viva**. Palabras del operador: *"al estirarse se cierra el rompimiento. Cuando una zona se estira, se debe volver a esperar un nuevo rompimiento y consecución de esa zona nueva"*.
 
 **Caso de origen, 14/09/2026.** El soporte de la vela de 9:10 (29.062,00 – 29.064,75) queda traspasado hacia abajo a las 9:18. A las 10:07 el precio vuelve y lo cruza hacia arriba sin consecución. Estirarlo por el lado del rompimiento lo llevaba hasta 29.079,75 — dentro de la resistencia viva de 9:09 (29.071,00 – 29.088,50) —, y las dos zonas quedaban **pisándose** entre 29.071,00 y 29.079,75, contra la prohibición de solapar zonas de tipo distinto. Por eso el borde lo decide el tipo de zona.
 
@@ -390,8 +394,8 @@ El mercado no está «fuera» de una zona ni de una banda por geometría, sino c
 - **Rompimiento:** un `TICK` más allá del borde de la zona. El cierre de la vela de rompimiento es irrelevante para que haya rompimiento — **la mecha basta**.
 - **Con cuerpo o con mecha:** el rompimiento es **con cuerpo** si el cierre queda más allá del borde traspasado; **con mecha**, si no.
 - **Consecución al alza:** máximo de la vela de rompimiento + 1 `TICK`. **A la baja:** mínimo de la vela de rompimiento − 1 `TICK`.
-- **El traspaso de la zona NO tiene plazo:** el rompimiento queda pendiente indefinidamente y la consecución lo confirma cuando llegue, aunque sea muchas velas después.
-- **El `PLAZO_CONSECUCION`**, contado desde la vela siguiente a la de rompimiento, gobierna solo **la geometría de la zona** (`R-10`, `R-11`, `R-14`) y **la vida de la orden** (`R-29`), no el traspaso. Las dos cosas ocurren sobre el **mismo** rompimiento: primero nace la apéndice o se estira la zona, y más tarde el traspaso se confirma igual.
+- **El traspaso de la zona NO tiene plazo:** el rompimiento queda pendiente indefinidamente y la consecución lo confirma cuando llegue, aunque sea muchas velas después — **salvo que la zona se estire** (`R-10`): el estiramiento cierra ese rompimiento, y para traspasar la zona estirada hace falta uno nuevo con su propia consecución *(07/10/2026)*.
+- **El `PLAZO_CONSECUCION`**, contado desde la vela siguiente a la de rompimiento, gobierna solo **la geometría de la zona** (`R-10`, `R-11`, `R-14`) y **la vida de la orden** (`R-29`), no el traspaso. Cuando nace la **apéndice**, las dos cosas ocurren sobre el **mismo** rompimiento: primero nace la apéndice y más tarde el traspaso de la zona original se confirma igual. Cuando la zona **se estira**, no: el rompimiento se cierra ahí (`R-10`).
 
 ### Por qué
 
