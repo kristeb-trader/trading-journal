@@ -280,6 +280,15 @@ namespace NinjaTrader.NinjaScript.Strategies
         private void NuevoDia(string d, int cerrada)
         {
             if (fila != null && !finalizado && llenados == 0) Finalizar(fila.Resultado == "EN CURSO" ? "NO OPERA" : null);
+            if (dia != null && inicioDia >= 0)
+            {
+                // ¿Tuvo el día que se acaba sus 120 velas de ventana? Un hueco de datos no es un fallo del bot (18/09/2026)
+                int ap0 = MotorChaumer.AperturaUtc(dia), ci0 = MotorChaumer.CierreUtc(dia), n = 0;
+                for (int i = inicioDia; i < cerrada; i++) { DateTime u = Utc(i); int h = u.Hour * 100 + u.Minute; if (h >= ap0 && h <= ci0) n++; }
+                DayOfWeek dw = new DateTime(int.Parse(dia.Substring(0, 4)), int.Parse(dia.Substring(4, 2)), int.Parse(dia.Substring(6, 2))).DayOfWeek;
+                bool habil = dw != DayOfWeek.Saturday && dw != DayOfWeek.Sunday;
+                if (habil && n < 120) Log("⚠ " + dia + ": ventana incompleta, " + n + " de 120 velas (faltan datos o es festivo)");
+            }
             dia = d;
             inicioDia = cerrada;
             while (inicioDia > 0 && Utc(inicioDia - 1).ToString("yyyyMMdd", INV) == d) inicioDia--;

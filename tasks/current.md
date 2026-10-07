@@ -14,9 +14,8 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
   sello y el hook. 64 de 64 días idénticos, vela a vela incluida
 - [x] **Kris:** `MotorChaumer.cs` y `MarcacionChaumer.cs` copiados y compilados (06/10). Mirar que la línea blanca sale igual
 - [ ] **En cada clon del repo:** `git config core.hooksPath scripts/hooks` (este PC ya lo tiene)
-- [ ] **Fase 3 · el bot**: código hecho y compilado (06/10), tabla `bot_operaciones` aplicada, cuenta `SimBot` creada.
-  Falta la prueba: **Kris** copia `BotChaumer.cs` a `Custom\Strategies\` + F5 y corre el Strategy Analyzer (MNQ 12-26,
-  1 min, del 14/09 al 06/10) → `python scripts/bot/comparar.py`; luego Market Replay de 2 días
+- [ ] **Fase 3 · el bot**: código, tabla `bot_operaciones` y cuenta `SimBot` hechos. **Strategy Analyzer 17/17 iguales
+  al motor** (07/10, MNQ 12-26, 13/09 → 06/10). Falta el **Market Replay** de dos días (Kris): 23/09 y 02/10
 - [ ] **Fase 4 · el pasado entero**: velas desde el 12/06/2025, Strategy Analyzer, Market Replay, informe
 - [ ] **Fase 5 · SimBot en vivo**, con la comparación diaria en la cadena
 
