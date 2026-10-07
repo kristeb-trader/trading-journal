@@ -22,8 +22,7 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
 - [x] **Plan 3.45** (07/10, Kris): al estirarse la zona, el rompimiento que la estiró se cierra. Plan (`d580983`), los dos
   motores con sello nuevo (`cc233a1`), fichas de sep–oct rehechas y publicadas. 18 días cambian zonas; 07/10 y 01/07
   pasan a no operar
-- [ ] **Kris:** copiar `MotorChaumer.cs` (sello `L:bf7669a4…`) a `Custom\AddOns\` y F5, fuera de la ventana. Sin eso el
-  bot y la vista no se arman ("motor desincronizado")
+- [x] **Kris:** `MotorChaumer.cs` con el sello `L:bf7669a4…` compilado; el Analyzer con el motor nuevo da **18/18** (07/10)
 - [ ] **Abiertas del 07/10 (Kris):** ¿cierra también el rompimiento la **zona apéndice** (R-11)? ¿Y el estiramiento por
   **superposición** (R-13, que dice que la zona conserva su historial)? Hoy los dos siguen como estaban
 - [ ] **Bot:** distinguir "encendido después del llenado del motor" de una diferencia intravela. El 07/10 el bot se

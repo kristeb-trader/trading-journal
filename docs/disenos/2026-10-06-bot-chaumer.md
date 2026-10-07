@@ -1,6 +1,6 @@
 # BotChaumer — el motor operando en NinjaTrader
 
-**Versión:** v1.10 · **Estado:** ✅ **APROBADO** el 06/10/2026 (D-038) · 🚧 en implementación: **fases 1 y 2 cerradas · fase 3: Strategy Analyzer 17/17, falta el Market Replay** · §12 (el motor dibujado en vivo) **aprobado**: D0 cerrada · D1 cerrada · D2 con el código hecho, falta el Market Replay.
+**Versión:** v1.11 · **Estado:** ✅ **APROBADO** el 06/10/2026 (D-038) · 🚧 en implementación: **fases 1 y 2 cerradas · fase 3: Strategy Analyzer 17/17, falta el Market Replay** · §12 (el motor dibujado en vivo) **aprobado**: D0 cerrada · D1 cerrada · D2 con el código hecho, falta el Market Replay.
 **Escrito:** 06/10/2026, tras el diagnóstico del mismo día.
 
 | Versión | Fecha | Qué cambió |
@@ -16,6 +16,7 @@
 | v1.8 | 07/10/2026 | **D1, el código:** `ChaumerNT.cs` (configuración, sello y parámetros, lecturas de Supabase, velas en UTC) y `BotChaumer` sobre él: el diff solo mueve código, la lógica de órdenes y candados no cambia. `csc` 0 errores; el sello no cambia (`MotorChaumer.cs` intacto). Falta que el Strategy Analyzer vuelva a dar 17/17 |
 | v1.9 | 07/10/2026 | **D1 cerrada:** el Strategy Analyzer con `ChaumerNT` da otra vez **17/17** y su CSV es idéntico línea a línea al de la pasada anterior en esos 17 días. Traía además el 07/10 en curso (sin velas del motor todavía: se compara tras la cadena de las 10:32) |
 | v1.10 | 07/10/2026 | **D2, el código:** `VistaMotorChaumer.cs` compila con 0 errores contra las DLL de NT8. Calcula el motor al cierre de cada vela y dibuja una foto en `OnRender` (SharpDX), detrás de las velas. Propiedades `VerZonas`, `VerZigzag`, `VerReferencias`, `VerOperacion`, `VerEtiquetas`, `VerCabecera` (no `Zigzag`: se confunde con el `ZigZag` de NinjaTrader). Una orden **pendiente** también se dibuja, más tenue y hasta el borde. Etiquetas con el formato español (*29.840,75*). Falta el Market Replay del 23/09 y el 02/10 al lado de sus PNG |
+| v1.11 | 07/10/2026 | **Primer cambio de regla pasado por toda la cadena (plan 3.45: al estirarse la zona, el rompimiento se cierra).** Plan, los dos motores (65/65, sello `L:bf7669a4 C:b1f08879`), fichas de sep–oct rehechas y, en el Strategy Analyzer, el bot con el motor nuevo: **18/18 iguales**, el 07/10 en NO OPERA como el motor. `sincronia.py --cambio-de-regla` para sellar tras un cambio aprobado. Dibujo (dia.py y la vista): solo los puntos de referencia entre la entrada y el objetivo, y las zonas vigentes cortadas al fin de la ventana |
 
 ---
 
