@@ -176,6 +176,7 @@ Todas las secciones funcionando. **Qué está en marcha y qué falta: `tasks/cur
 | Qué pasó y cuándo | `docs/historial-proyecto.md` |
 | Diseños aprobados | `docs/disenos/` |
 | Estado de las migraciones | `docs/migrations/INDICE.md` |
+| Qué se instala en NinjaTrader, cómo, y el uso diario del bot | `NinjaTrader/LEEME.md` |
 | Documentación del sistema viejo (no vigente) | `docs/archivo/` |
 
 <!-- Las rutas van entre backticks a propósito: asi son texto literal. Sin backticks,

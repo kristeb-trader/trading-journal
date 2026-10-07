@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-10-06
+**Última actualización:** 2026-10-07
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-07 | El bot: BotChaumer en NinjaTrader, los dos motores sellados y el primer cambio de regla por toda la cadena |
 | 2026-10-06 | NinjaTrader: el checklist solo pide lo manual, y la línea blanca del motor en tiempo real |
 | 2026-10-05 | El bot registra el día solo al cerrar el trade, y pregunta cómo terminaste |
 | 2026-10-03b | El Coach lee el día solo como el plan, y modo prueba para Sonnet |
@@ -42,6 +43,48 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-07 — El bot: BotChaumer en NinjaTrader, los dos motores sellados y el primer cambio de regla por toda la cadena
+
+Diseño: `docs/disenos/2026-10-06-bot-chaumer.md` (v1.12) · decisión D-038 · guía de instalación y uso:
+`NinjaTrader/LEEME.md`. Kris decide construir el bot sin esperar a saber si el motor gana, validarlo en una cuenta de
+simulación (`SimBot`) y con el Strategy Analyzer, y exige que **un cambio de regla llegue a la vez a todo**.
+
+### Lo que se construyó (06–07/10)
+
+| Pieza | Qué | Commit |
+|---|---|---|
+| Los números en un sitio | `parametros` en `reglas.json`; `lector.py` sin un número del plan escrito a mano; `decidir()` para correrlo vela a vela | `57e2e2c` |
+| El motor en C# y la sincronía | `MotorChaumer.cs` (lector.py traducido literal), `scripts/bot/sincronia.py`, el **sello** y el hook `pre-commit` | `ad78c67` |
+| El bot | `BotChaumer.cs`, tabla `bot_operaciones`, `scripts/bot/comparar.py` | `1fc0138` |
+| MarcacionChaumer independiente | Restaurado tal cual: es el gráfico manual de Kris; la sincronía lo vigila sin tocarlo | `fead613` |
+| Lo común y la vista | `ChaumerNT.cs`; `VistaMotorChaumer.cs` (el motor dibujado en vivo) | `a646989`, `5b5a58c` |
+
+### Cómo se verificó
+
+- **El motor no ve el futuro:** corrido vela a vela, como en vivo, decide lo mismo que con el día entero (1.463 velas).
+- **Los dos motores:** 65 de 65 días idénticos, día entero y vela a vela; la prueba caza los fallos metidos a propósito
+  (salvo uno que ningún día con datos recorre: límite de cobertura, en `.claude/rules/bot.md`).
+- **Strategy Analyzer (MNQ 12-26, 13/09 → 07/10): 18 de 18 días iguales al motor.** Hizo falta descargar el 18/09, que
+  NinjaTrader tenía vacío (32 bytes), y corregir la hora de una orden repuesta (02/10).
+
+### El primer cambio de regla por toda la cadena (07/10)
+
+En vivo, el bot y la vista enseñaron un Reingreso a las 9:33 que Kris no veía. La causa: tras estirarse la resistencia
+de las 8:32, el rompimiento de las 8:34 seguía pendiente y su consecución era el borde nuevo de la zona, así que pasar
+1 tick la daba por traspasada. **Plan 3.45** (con el sí de Kris): al estirarse la zona, el rompimiento que la estiró se
+cierra. Recorrido: el plan (`d580983`) → los dos motores con sello nuevo (`cc233a1`) → las fichas de septiembre y
+octubre rehechas y publicadas → el bot en el Analyzer, 18/18. Efecto: 18 días cambian zonas; el 07/10 y el 01/07 pasan
+a no operar. Quedan abiertas la zona apéndice y el estiramiento por superposición.
+
+### Ajustes del mismo día
+
+- **Dibujo:** solo los puntos de referencia entre la entrada y el objetivo (`6d1b23d`); las zonas vigentes acaban con la
+  ventana, 10:30 Col / 11:30 en invierno (`60cdc0d`).
+- **Bot:** distingue «encendido tarde» de una diferencia con el motor (`1b9aebd`). El 07/10 un F5 a las 9:36 lo
+  reinició en plena ventana: **nada de F5 durante la ventana**.
 
 ---
 

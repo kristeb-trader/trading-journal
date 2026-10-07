@@ -51,7 +51,9 @@ solo porque el mercado sea de NY.
 
 ## Instalación desde cero (07/10/2026)
 
-Todo sale de `NinjaTrader/` del repositorio, **la versión del repo es la buena**. Se copian **todos a la vez** y un solo
+**La guía para Kris es `NinjaTrader/LEEME.md`**: qué hace cada pieza, la configuración, los pasos, el uso diario del bot y
+qué hacer si algo falla. **Si se añade, quita o mueve un `.cs`, se actualiza allí** (y la tabla de abajo). Resumen:
+todo sale de `NinjaTrader/` del repositorio, **la versión del repo es la buena**. Se copian **todos a la vez** y un solo
 F5: `BotChaumer` y `VistaMotorChaumer` no compilan sin `MotorChaumer` y `ChaumerNT`.
 
 | Carpeta de `Documentos\NinjaTrader 8\bin\Custom\` | Archivos |
