@@ -128,6 +128,8 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         // ── estado de la operación (sobrevive al cambio de día si sigue abierta) ──
         private MotorChaumer.Orden ordenMotor, pendienteTrasCancelar;
+        private string horaPendiente;               // la hora (etiqueta del motor) de la orden que espera a que se cancele la vieja
+        private string registroBacktest;            // en el Analyzer, el registro va a un archivo de la pasada
         private Order entrada, stopO, objetivoO;
         private Fila filaOp;
         private int llenados, salidos;
@@ -158,6 +160,8 @@ namespace NinjaTrader.NinjaScript.Strategies
                 tzNt = Core.Globals.GeneralOptions.TimeZoneInfo;
                 cfg = LeerConfig();
                 esBacktest = Account != null && Account.Name == "Backtest";
+                if (esBacktest)
+                    registroBacktest = Path.Combine(DIR_NT, "bot-chaumer", "backtest-" + DateTime.Now.ToString("yyyyMMdd-HHmmss", INV) + "-registro.txt");
                 problemaGlobal = ComprobarSesion();
                 if (problemaGlobal == null && esBacktest) problemaGlobal = CargarNoticiasYFed();
                 Log(problemaGlobal == null
@@ -260,10 +264,15 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (EntradaViva())
             {
                 if (Misma(o, ordenMotor)) return;
-                pendienteTrasCancelar = o; CancelarEntrada();                         // otra orden: se pone al cancelar la vieja
+                pendienteTrasCancelar = o; horaPendiente = MotorChaumer.Hh(r.D[o.I]);   // otra orden: se pone al cancelar la vieja
+                CancelarEntrada();
                 return;
             }
-            if (entrada != null && !Order.IsTerminalState(entrada.OrderState)) { pendienteTrasCancelar = o; return; }
+            if (entrada != null && !Order.IsTerminalState(entrada.OrderState))
+            {
+                pendienteTrasCancelar = o; horaPendiente = MotorChaumer.Hh(r.D[o.I]);
+                return;
+            }
             if (Misma(o, ordenMotor) && Modo == ModoBotChaumer.Alerta) return;
             Enviar(o, MotorChaumer.Hh(r.D[o.I]));
         }
@@ -275,6 +284,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             inicioDia = cerrada;
             while (inicioDia > 0 && Utc(inicioDia - 1).ToString("yyyyMMdd", INV) == d) inicioDia--;
             velas.Clear(); ultimaVela = inicioDia - 1;
+            if (esBacktest) Log("día " + d + " · primera vela " + Utc(inicioDia).ToString("HH:mm", INV) + " UTC · vela " + inicioDia);
             armadoIntentado = armado = terminado = finalizado = false;
             motor = null; fila = null; eventos = new List<string>();
             if (Position.MarketPosition == MarketPosition.Flat && (llenados == 0 || salidos >= llenados))
@@ -390,7 +400,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (order.Name == N_ENTRADA && orderState == OrderState.Cancelled && pendienteTrasCancelar != null && llenados == 0 && !terminado)
             {
                 var o = pendienteTrasCancelar; pendienteTrasCancelar = null;
-                Enviar(o, fila.HoraOrden);
+                Enviar(o, horaPendiente);
             }
         }
 
@@ -622,12 +632,11 @@ namespace NinjaTrader.NinjaScript.Strategies
         private void Log(string msg)
         {
             Print("[BotChaumer] " + msg);
-            if (esBacktest) return;
             try
             {
                 string dir = Path.Combine(DIR_NT, "bot-chaumer");
                 Directory.CreateDirectory(dir);
-                File.AppendAllText(Path.Combine(dir, "registro.txt"),
+                File.AppendAllText(esBacktest && registroBacktest != null ? registroBacktest : Path.Combine(dir, "registro.txt"),
                     DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", INV) + "  " + msg + Environment.NewLine, new UTF8Encoding(false));
             }
             catch { }

@@ -85,6 +85,16 @@ def main():
             else: dif.append(f"precios: motor {mo['entrada']:.2f}/{mo['stop']:.2f}/{mo['objetivo']:.2f} · bot {f['entrada']}/{f['stop']}/{f['objetivo']}")
         if dif: distintos.append((d, ' · '.join(dif)))
         else: iguales += 1
+    # los días con velas del motor dentro del tramo del CSV que el bot no escribió: un día que el bot ni vio
+    fechas = sorted(f['fecha'] for f in filas)
+    if fechas:
+        del_csv = set(fechas)
+        for p in sorted(glob.glob(os.path.join(BT, 'datos', 'dia', '20*.txt'))):
+            fe = os.path.basename(p)[:10]
+            if fechas[0] <= fe <= fechas[-1] and fe not in del_csv:
+                mo = del_motor(m, fe.replace('-', ''))
+                que = 'NO OPERA' if mo['resultado'] == 'NO OPERA' else f"{mo['setup']} {mo['hora_orden']} → {mo['resultado']}"
+                distintos.append((fe.replace('-', ''), f'falta en el CSV: el bot no dejó fila (el motor: {que})'))
     print(f'días del CSV: {len(filas)} · comparados: {len(filas) - sin_datos} (sin velas del motor: {sin_datos})')
     print(f'✅ iguales: {iguales}')
     for d, txt in distintos: print(f'❌ {d}  {txt}')
