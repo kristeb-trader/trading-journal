@@ -31,6 +31,9 @@ Lo que no se toca sin aprobación explícita. Una línea cada una; el porqué, e
 - **Cada tabla de trades tiene UN rol:** `trades` = journal de la cuenta principal; `apex_trades` =
   todas las de Apex. **`apex.js` NO lee `trades`**: contaría dos veces e inflaría el drawdown. D-019.
 - **Cerrado y no se reabre** — las 6 reglas con relleno en feb–may se quedan como están. D-007.
+- **Los dos motores cambian juntos:** `lector.py` y `NinjaTrader/MotorChaumer.cs` (el del bot), con
+  `scripts/bot/sincronia.py --sellar` a 0 diferencias; el hook rechaza el commit si no. Los números, solo de
+  `reglas.json`. `.claude/rules/bot.md` · D-038.
 
 ## Verificación
 
@@ -131,7 +134,9 @@ js/table.js       Trades · js/data.js  Datos (catálogos) · js/gallery.js  Im�
 css/styles.css    Dark mode + responsive
 NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) · ChecklistChaumer ·
                   RR (Risk Reward en PUNTOS) · CadenaDiaria (AddOn: exporta el día y lanza el puente) ·
-                  MarcacionChaumer (el zigzag blanco del motor, en tiempo real)
+                  MarcacionChaumer (el zigzag blanco del motor, en tiempo real) ·
+                  MotorChaumer (lector.py en C#, sellado: lo usan el bot y la marcación) · pruebas/ArnesMotor
+scripts/bot/      sincronia.py: los dos motores, vela a vela, y el SELLO · scripts/hooks/pre-commit lo exige
 scripts/cadena/   El puente de la cadena diaria: motor → gráfico → ficha en Supabase → portal;
                   medir.py: la operación de Kris medida con el motor (D-034)
 scripts/plan/     El plan de Chaumer → reglas.json, catalogo_reglas y plan_documentos

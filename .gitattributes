@@ -2,3 +2,6 @@
 # editaba hasta D-028, escribia LF). Con la conversion a CRLF de Windows, la huella de cada diagrama del portal
 # cambiaba y la compilacion los volvia a dibujar. text=auto deja en paz los binarios.
 chaumer/** text=auto eol=lf
+
+# Los hooks de git los ejecuta sh: con CRLF no arrancan (D-038, el hook de la sincronía del bot).
+scripts/hooks/* text eol=lf

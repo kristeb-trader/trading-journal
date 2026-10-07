@@ -10,8 +10,11 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
 
 - [x] **Fase 1 · los números en un sitio** (06/10): `parametros` en `reglas.json`; `lector.py` los lee de ahí;
   `minimo` y `decidir()` para correrlo vela a vela
-- [ ] **Fase 2 · el motor en C# y la sincronía**: `MotorChaumer.cs`, el arnés, `scripts/bot/sincronia.py`, el sello y
-  el hook — luego **F5 en NT (Kris)**
+- [x] **Fase 2 · el motor en C# y la sincronía** (06/10): `MotorChaumer.cs`, el arnés, `scripts/bot/sincronia.py`, el
+  sello y el hook. 64 de 64 días idénticos, vela a vela incluida
+- [ ] **Kris:** copiar `MotorChaumer.cs` a `Documentos\NinjaTrader 8\bin\Custom\AddOns\` y `MarcacionChaumer.cs` a
+  `Custom\Indicators\`, y **F5**. Mirar que la línea blanca sale igual mañana
+- [ ] **En cada clon del repo:** `git config core.hooksPath scripts/hooks` (este PC ya lo tiene)
 - [ ] **Fase 3 · el bot**: `BotChaumer.cs`, candados, tabla `bot_operaciones` — **Kris crea la cuenta `SimBot`**
 - [ ] **Fase 4 · el pasado entero**: velas desde el 12/06/2025, Strategy Analyzer, Market Replay, informe
 - [ ] **Fase 5 · SimBot en vivo**, con la comparación diaria en la cadena

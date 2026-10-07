@@ -1,12 +1,13 @@
 # BotChaumer — el motor operando en NinjaTrader
 
-**Versión:** v1.1 · **Estado:** ✅ **APROBADO** el 06/10/2026 (D-038) · 🚧 en implementación: **fase 1 cerrada**.
+**Versión:** v1.2 · **Estado:** ✅ **APROBADO** el 06/10/2026 (D-038) · 🚧 en implementación: **fases 1 y 2 cerradas**.
 **Escrito:** 06/10/2026, tras el diagnóstico del mismo día.
 
 | Versión | Fecha | Qué cambió |
 |---|---|---|
 | v1 | 06/10/2026 | Primera versión. Kris decide construir el bot ya y validarlo en una cuenta de simulación (`SimBot`) en vivo y con las herramientas de NinjaTrader sobre el pasado, y exige que **cualquier cambio de regla aprobado quede sincronizado en todo** |
 | v1.1 | 06/10/2026 | **Aprobado.** Las dos preguntas de §11, con la recomendación: stop y objetivo exactos al llenarse, y GO apagado en `SimBot`. **Fase 1 cerrada**: 15 parámetros en `reglas.json` (los 6 del motor con número), `lector.py` sin un solo número del plan escrito a mano, `minimo` y `decidir()`. Verificado: `prueba_motor.py` ✅, vela a vela con `decidir()` 1.463 velas y 0 diferencias (55 con orden viva), `dia.py` y `medir.py` funcionan, `vigilar.mjs --estricto` limpio, `npm run verificar` 57 páginas y 0 fallos |
+| v1.2 | 06/10/2026 | **Fase 2 cerrada.** `MotorChaumer.cs` (lector.py en C# 5), `pruebas/ArnesMotor.cs`, `scripts/bot/sincronia.py`, el `SELLO` (`L:8c98cbb36c090fb7 C:661e08ea1f6877dc`) y el hook `scripts/hooks/pre-commit`. **V0 cumplida al primer intento: 64 de 64 días idénticos** (12.983 líneas con el día entero, 7.677 velas vela a vela), parámetros y huella iguales en los dos. La prueba **sí detecta** fallos: tres de cuatro mutaciones a propósito saltaron; la cuarta (rompimiento de 1 tick exacto) no, porque ningún día con datos lo tiene — límite de cobertura apuntado en `.claude/rules/bot.md`. **Desviación de §6.1:** `MarcacionChaumer` no corre el motor entero; dibuja con `MotorChaumer.Zigzag`, la misma traducción que tenía, ahora dentro de `MotorChaumer.cs` y comparada con el zigzag del motor en cada día (líneas `ZZ`). Correr el motor entero obligaba a pasarle el premercado y los parámetros a un indicador que solo pinta. Compila con los mismos errores de referencia que la versión anterior y ninguno nuevo |
 
 ---
 

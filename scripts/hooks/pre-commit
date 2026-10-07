@@ -1,0 +1,15 @@
+#!/bin/sh
+# Sincronía del bot (D-038 · docs/disenos/2026-10-06-bot-chaumer.md §5).
+# lector.py (el motor de Python) y NinjaTrader/MotorChaumer.cs (el del bot) cambian JUNTOS y con el
+# SELLO al día. Si alguno de los dos va en el commit y el sello no es el suyo, el commit no entra.
+# Se activa una vez por clon:  git config core.hooksPath scripts/hooks
+if git diff --cached --name-only | grep -qE '^(chaumer/05_Backtesting/claude/motor/lector\.py|NinjaTrader/MotorChaumer\.cs)$'; then
+  python scripts/bot/sincronia.py --comprobar-sello --staged || {
+    echo ""
+    echo "pre-commit: commit rechazado. Cambia los dos motores igual, pasa"
+    echo "  python scripts/bot/sincronia.py --sellar"
+    echo "y vuelve a añadir NinjaTrader/MotorChaumer.cs."
+    exit 1
+  }
+fi
+exit 0

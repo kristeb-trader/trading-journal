@@ -42,7 +42,9 @@ solo porque el mercado sea de NY.
 | `SupabaseDailyLevels.cs` | Escribe los niveles de referencia del día en `sesiones` |
 | `ChecklistChaumer.cs` | Pinta el checklist en el gráfico; lee de `catalogo_reglas` y `catalogo_setups` |
 | `CadenaDiaria.cs` | AddOn sin ventana: exporta las velas del día y lanza el puente del motor (fase 7) |
-| `MarcacionChaumer.cs` | El zigzag blanco del motor en tiempo real. `ZigzagChaumer` es traducción LITERAL de `lector.leer_sesion` (piv): si el motor cambia, se cambia igual. Probado vértice a vértice contra el motor en 100 días (5 oct 2026) |
+| `MarcacionChaumer.cs` | El zigzag blanco del motor en tiempo real. Desde el 06/10/2026 lo calcula `MotorChaumer.Zigzag` (antes, su propia copia `ZigzagChaumer`, probada en 100 días el 5 oct) |
+| `MotorChaumer.cs` | **`lector.py` en C#**, traducción literal y sellada (D-038). Lo usan el bot y la marcación. Va en `Custom\AddOns\`. Se cambia junto con `lector.py`: `.claude/rules/bot.md` |
+| `pruebas/ArnesMotor.cs` | Consola para `scripts/bot/sincronia.py`. **No se instala** en NinjaTrader |
 
 ## CadenaDiaria (fase 7, 25 sep)
 
