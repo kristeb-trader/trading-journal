@@ -70,7 +70,9 @@ def dibujar(dia, salida, datos):
     for z in Z:
         if z.i > corte_z: continue
         n+=1
-        x0=max(z.i_org-off,-1); x1=(z.fin-off) if (z.fin is not None and z.fin<=corte_z) else W
+        # Las vigentes acaban en la ultima vela de la ventana (10:30 Col; 11:30 en invierno), no en el borde
+        # del grafico (operador, 07/10/2026). La ventana la da el motor con la hora de Nueva York (fin).
+        x0=max(z.i_org-off,-1); x1=(z.fin-off) if (z.fin is not None and z.fin<=corte_z) else min(fin-off+.45, W)
         zl,zh=z.en(corte_z)
         vig = (z.fin is None or z.fin>corte_z)
         if vig: viva+=1

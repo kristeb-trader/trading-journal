@@ -39,7 +39,8 @@ namespace NinjaTrader.NinjaScript.Indicators
     public class VistaMotorChaumer : Indicator
     {
         // ── la foto que se dibuja (la arma OnBarUpdate, la lee OnRender) ──────
-        private class ZonaDib { public int X0, X1; public double Lo, Hi; public bool Vigente; public string Etiqueta; }   // X1 -1 = hasta el borde
+        // X1 -1 = hasta el borde (ventana aún abierta). FinVentana: X1 es la última vela de la ventana y la zona la cubre entera
+        private class ZonaDib { public int X0, X1; public double Lo, Hi; public bool Vigente, FinVentana; public string Etiqueta; }
         private class RefDib { public int X0, X1; public double Precio; public bool Vivo; }
         private class OpDib { public int X0, X1; public double E, S, T; public bool Pendiente; }
         private class Foto
@@ -141,6 +142,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             if (r.Error != null) { f.Cabecera = "motor: " + r.Error; f.ColorCabecera = 3; return f; }
             var D = r.D; var t = r.Trade; int b = r.B, off = inicioDia;
             int ult = D.Count - 1;
+            bool ventanaCerrada = MotorChaumer.Hm(D[r.Fin]) >= MotorChaumer.CierreUtc(D[b].D);   // ya está la vela de las 10:30 (11:30 en invierno)
             int corte = t != null ? t.IOut : ult;
             int corteZ = t != null ? t.IFill : corte;       // al llenarse la orden no se marcan más zonas (R-28)
             if (sinNoticias) { t = null; corte = ult; corteZ = ult; }
@@ -156,7 +158,9 @@ namespace NinjaTrader.NinjaScript.Indicators
                 f.Zonas.Add(new ZonaDib
                 {
                     X0 = off + Math.Max(z.IOrg, b),
-                    X1 = (z.Fin != null && z.Fin <= corteZ) ? off + z.Fin.Value : -1,
+                    // las vigentes acaban con la ventana (10:30 Col; 11:30 en invierno) en cuanto se cierra (Kris, 07/10/2026)
+                    X1 = (z.Fin != null && z.Fin <= corteZ) ? off + z.Fin.Value : (ventanaCerrada ? off + r.Fin : -1),
+                    FinVentana = !(z.Fin != null && z.Fin <= corteZ) && ventanaCerrada,
                     Lo = g[0], Hi = g[1], Vigente = vig,
                     Etiqueta = vig ? (z.Tipo == "R" ? "resistencia" : z.Tipo == "S" ? "soporte" : "zona") + "   "
                                      + g[0].ToString("N2", ES) + " – " + g[1].ToString("N2", ES) : null
@@ -262,16 +266,16 @@ namespace NinjaTrader.NinjaScript.Indicators
                 }
 
                 // zonas y sus etiquetas
-                var etiquetas = new List<KeyValuePair<float, string>>();
+                var etiquetas = new List<Tuple<float, float, string>>();   // (y, x del final de la zona, texto)
                 if (VerZonas)
                     foreach (var z in f.Zonas)
                     {
-                        float x0 = X(chartControl, z.X0) - medio, x1 = z.X1 >= 0 ? X(chartControl, z.X1) : xDer;
+                        float x0 = X(chartControl, z.X0) - medio, x1 = z.X1 >= 0 ? X(chartControl, z.X1) + (z.FinVentana ? medio : 0f) : xDer;
                         float y0 = chartScale.GetYByValue(z.Hi), y1 = chartScale.GetYByValue(z.Lo);
                         var r = new SharpDX.RectangleF(x0, y0, Math.Max(1f, x1 - x0), Math.Max(1f, y1 - y0));
                         gris.Opacity = z.Vigente ? .28f : .10f; rt.FillRectangle(r, gris);
                         gris.Opacity = z.Vigente ? .9f : .45f; rt.DrawRectangle(r, gris, z.Vigente ? 1.5f : .7f);
-                        if (z.Etiqueta != null) etiquetas.Add(new KeyValuePair<float, string>((y0 + y1) / 2f, z.Etiqueta));
+                        if (z.Etiqueta != null) etiquetas.Add(Tuple.Create((y0 + y1) / 2f, Math.Min(x1, xDer), z.Etiqueta));
                     }
 
                 // puntos de referencia
@@ -301,12 +305,12 @@ namespace NinjaTrader.NinjaScript.Indicators
                 // etiquetas de las zonas vigentes, a la derecha y sin pisarse
                 if (VerZonas && VerEtiquetas && etiquetas.Count > 0)
                 {
-                    etiquetas.Sort((a, c) => a.Key.CompareTo(c.Key));
+                    etiquetas.Sort((a, c) => a.Item1.CompareTo(c.Item1));
                     float yPrev = float.MinValue;
                     foreach (var e in etiquetas)
                     {
-                        float y = Math.Max(e.Key, yPrev + 16f); yPrev = y;
-                        Texto(rt, letra, e.Value, xDer - 290, y - 8, gris, 1f, 280f, true);
+                        float y = Math.Max(e.Item1, yPrev + 16f); yPrev = y;
+                        Texto(rt, letra, e.Item3, e.Item2 - 290, y - 8, gris, 1f, 280f, true);   // pegada al final de la zona
                     }
                 }
 

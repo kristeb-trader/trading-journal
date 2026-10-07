@@ -89,7 +89,7 @@ protocolo) y este archivo.
 | Fondo | negro `#0B0E14` |
 | Cuadrícula | **ninguna**. Sí la línea del eje horizontal y la vertical de precios (`#3A4256`) |
 | Velas | 🔵 azul `#2E86FF` alcista · ⬜ blanca `#FFFFFF` bajista |
-| Zonas | **todas del mismo gris** `#8B93A7` |
+| Zonas | **todas del mismo gris** `#8B93A7`. Las **vigentes acaban en la última vela de la ventana** (10:30 Col; 11:30 en invierno), no en el borde del gráfico (07/10/2026) |
 | Corridas y retrocesos | línea blanca en zigzag uniendo extremos |
 | Puntos de referencia | flecha punteada **naranja oscuro `#FF9A3C`**, contraste bajo, extendida a la derecha. Roto: más tenue y cortado una vela después. **Solo se dibujan cuando hay un reingreso, y solo los que quedan entre su entrada y su objetivo** (07/10/2026) |
 | La operación | franja roja entrada→stop, verde entrada→objetivo, **solo sobre el tramo** |
