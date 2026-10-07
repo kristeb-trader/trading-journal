@@ -49,6 +49,33 @@ solo porque el mercado sea de NY.
 | `ChaumerNT.cs` | Lo común de `BotChaumer` y `VistaMotorChaumer`: configuración (`bot-chaumer.json`), sello y parámetros, lecturas de Supabase de un día, velas en UTC desde `Bars`. Va en `Custom\AddOns\`. `MarcacionChaumer` **no** lo usa |
 | `pruebas/ArnesMotor.cs` | Consola para `scripts/bot/sincronia.py`. **No se instala** en NinjaTrader |
 
+## Instalación desde cero (07/10/2026)
+
+Todo sale de `NinjaTrader/` del repositorio, **la versión del repo es la buena**. Se copian **todos a la vez** y un solo
+F5: `BotChaumer` y `VistaMotorChaumer` no compilan sin `MotorChaumer` y `ChaumerNT`.
+
+| Carpeta de `Documentos\NinjaTrader 8\bin\Custom\` | Archivos |
+|---|---|
+| `Indicators\` | `SupabaseAutoExport.cs` · `SupabaseDailyLevels.cs` · `MarcacionChaumer.cs` · `VistaMotorChaumer.cs` |
+| `AddOns\` | `ChecklistChaumer.cs` · `CadenaDiaria.cs` · `MotorChaumer.cs` · `ChaumerNT.cs` |
+| `Strategies\` | `BotChaumer.cs` |
+| `DrawingTools\` | `RR.cs` |
+| **No se instala** | `pruebas/ArnesMotor.cs` (solo para `scripts/bot/sincronia.py`) |
+
+En `Documentos\NinjaTrader 8\` (fuera del repo):
+
+| Archivo | Qué | ¿Se crea solo? |
+|---|---|---|
+| `supabase-service-key.txt` | La service_role key. **Secreta: no está en git.** Sin ella no escriben a Supabase ni los indicadores, ni el bot, ni la cadena | **No**: copiarla del gestor de contraseñas |
+| `cadena-diaria.json` | Carpeta de las velas, Python y el puente | Sí |
+| `bot-chaumer.json` | Ruta del repositorio, lista blanca de cuentas, exigir GO | Sí |
+| `checklist-chaumer-config.json` | Posición y tamaño del panel del checklist | Sí |
+
+Además: zona horaria de NT **Bogotá (UTC−5)**; la cuenta de simulación **`SimBot`** creada a mano; el repositorio en
+`E:\Proyectos\Trading Journal` (el bot y la vista leen de él `lector.py`, `MotorChaumer.cs` y `reglas.json` para el
+sello); **Python** en el PATH con `matplotlib` (la cadena dibuja los gráficos con `dia.py`); y en cada clon del repo,
+`git config core.hooksPath scripts/hooks`.
+
 ## CadenaDiaria (fase 7, 25 sep)
 
 Arranca con el Control Center. Cada minuto, si hay conexión con precios, mira los **últimos 5 días
