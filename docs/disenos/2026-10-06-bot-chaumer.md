@@ -1,6 +1,6 @@
 # BotChaumer — el motor operando en NinjaTrader
 
-**Versión:** v1.5 · **Estado:** ✅ **APROBADO** el 06/10/2026 (D-038) · 🚧 en implementación: **fases 1 y 2 cerradas · fase 3: Strategy Analyzer 17/17, falta el Market Replay** · 📝 §12 (el motor dibujado en vivo) en propuesta.
+**Versión:** v1.6 · **Estado:** ✅ **APROBADO** el 06/10/2026 (D-038) · 🚧 en implementación: **fases 1 y 2 cerradas · fase 3: Strategy Analyzer 17/17, falta el Market Replay** · 📝 §12 (el motor dibujado en vivo) en propuesta, segunda versión.
 **Escrito:** 06/10/2026, tras el diagnóstico del mismo día.
 
 | Versión | Fecha | Qué cambió |
@@ -11,6 +11,7 @@
 | v1.3 | 06/10/2026 | **Fase 3, el código.** `BotChaumer.cs` compila con **0 errores** contra las DLL de NT8 (csc del sistema, C# 5). Tabla `bot_operaciones` aplicada (`2026-10-06-bot-operaciones`, RLS + `auth_all` + grants, verificada). `scripts/bot/comparar.py` (adelantado de la fase 4) probado con un CSV igual al motor (11/11) y con un tick movido (lo caza). **Desviaciones de §6.3–§6.4, dentro de lo aprobado:** la ruta del repositorio y «exigir GO» van en `bot-chaumer.json`, no como propiedades (la única propiedad es el modo); candados añadidos: gráfico MNQ de 1 minuto, premercado desde las 00:00 UTC (plantilla ETH), sin posición abierta y sin operación previa del bot ese día en esa cuenta; en un gráfico solo opera en tiempo real (en el Analyzer, cuenta `Backtest`, sobre el histórico); el Market Replay escribe en `bot_operaciones` con su cuenta (`Playback101`). **Para el Analyzer:** un solo contrato y sin serie ajustada, o los precios salen desplazados (`comparar.py` lo reconoce) |
 | v1.4 | 07/10/2026 | **Strategy Analyzer (MNQ 12-26, 1 min, ETH, 13/09 → 06/10): 17 de 17 días idénticos al motor** — setup, sentido, hora de la orden, precios, contratos, hora del llenado y resultado. Hizo falta: (1) corregir la hora de una orden repuesta (02/10: el motor cambia el Reingreso de las 9:23 por la Continuación de las 9:24); (2) **el 18/09 no estaba en la base de datos de NinjaTrader** (el archivo de minutos pesaba 32 bytes; la cadena sí lo tenía, del 24/09): se descargó con Tools → Historical Data → Load. Desde entonces el bot deja en el Analyzer su registro en un archivo de la pasada y anota cada día hábil con menos de 120 velas de ventana; `comparar.py` cuenta los días del motor que faltan en el CSV. Diferencias intravela: ninguna en estos 17 días |
 | v1.5 | 07/10/2026 | **§12 en propuesta:** el motor dibujado en vivo (zonas, zigzag, puntos de referencia y la operación) en `MarcacionChaumer`, con `ChaumerNT.cs` compartido con el bot. Lo pide Kris |
+| v1.6 | 07/10/2026 | **§12 rehecho entero.** Kris: `MarcacionChaumer` no se toca y queda independiente del bot. Se restaura su versión de `b2cd618` (la fase 2 le había quitado su zigzag propio), `sincronia.py` lo vigila sin modificarlo, y el dibujo en vivo va a un indicador nuevo, `VistaMotorChaumer` |
 
 ---
 
@@ -244,53 +245,65 @@ y `tasks/current.md`.
 
 ---
 
-## 12 · Ampliación: el motor dibujado en vivo — 📝 PROPUESTA (07/10/2026)
+## 12 · Ampliación: el motor dibujado en vivo — 📝 PROPUESTA, segunda versión (07/10/2026)
 
-**Lo pide Kris (07/10):** que en el gráfico, en vivo, se dibujen solos el zigzag **y las zonas**. Hoy el bot calcula todo
-pero no dibuja nada; `MarcacionChaumer` solo pinta el zigzag; las zonas solo existen en los PNG de `dia.py`.
+**Lo pide Kris (07/10):** que en el gráfico donde corre el bot se dibujen solos, en vivo, el zigzag **y las zonas**. Hoy
+el bot calcula todo pero no dibuja nada, y las zonas solo existen en los PNG de `dia.py`.
 
-### 12.1 Quién dibuja: el indicador, no el bot
+**Condición de Kris (07/10): `MarcacionChaumer` no se toca y queda independiente del bot.** Es el indicador de su gráfico
+operativo, con el que opera a mano. La primera versión de esta propuesta lo ampliaba: descartada.
 
-`MarcacionChaumer` pasa a correr **el motor entero** (`MotorChaumer`, el mismo sellado que opera el bot) al cierre de cada
-vela y a dibujar lo que sale, con el estándar de `dia.py`. **No el bot**, por tres razones:
+### 12.1 MarcacionChaumer vuelve a ser independiente
 
-| | En el indicador | En el bot |
-|---|---|---|
-| Sirve para operar a mano (cuenta principal, sin bot) | ✅ | ❌ solo donde corre el bot |
-| Sobrevive a desactivar o reiniciar el bot | ✅ | ❌ |
-| Lo que se ve es lo que decide el bot | ✅ mismo motor, mismo sello | ✅ |
+- **La fase 2 ya lo había tocado** (`ad78c67`): le quitó su copia del zigzag (`ZigzagChaumer`) para que usara
+  `MotorChaumer.Zigzag`. Dibuja lo mismo, pero desde entonces depende de `MotorChaumer.cs`: si ese archivo faltara o no
+  compilara, el indicador de Kris tampoco. Va contra lo que Kris quiere.
+- **Se restaura exactamente la versión de `b2cd618`**, la que Kris usaba hasta el 06/10: su propio `ZigzagChaumer`, sin
+  depender de nada del bot.
+- **Para que no se separe del motor sin que nadie lo vea**, `sincronia.py` **lee** su `ZigzagChaumer` del archivo (sin
+  modificarlo), lo compila aparte junto al arnés y lo compara con el zigzag del motor en todos los días, como hacía con
+  `MotorChaumer.Zigzag`. Si un cambio de regla toca corridas o retrocesos, la sincronía avisa; el cambio en
+  `MarcacionChaumer` se le pide a Kris, como cualquier otro cambio de ese indicador.
+- `MotorChaumer.Zigzag` se borra: ya no lo usa nadie.
 
-### 12.2 Qué dibuja — el estándar de `dia.py`, en vivo
+### 12.2 Un indicador nuevo para el gráfico del bot: `VistaMotorChaumer`
+
+`NinjaTrader/VistaMotorChaumer.cs`, en `Custom\Indicators\`. Corre **el motor entero** (`MotorChaumer`, el mismo sellado
+que opera el bot) al cierre de cada vela y dibuja lo que sale con el estándar de `dia.py`. Va en el gráfico donde corre el
+bot, y en cualquier otro donde Kris lo quiera; no depende del bot ni el bot de él.
 
 | Elemento | Cómo (de `dia.py`) |
 |---|---|
-| **Zonas** | Rectángulo gris `#8B93A7` desde la vela que la sostiene (`i_org`) hasta que queda inactiva (`fin`) o hasta el borde derecho; **vigente** con relleno 28 % y borde 1,5; **inactiva**, 10 % y borde fino. Geometría de cada momento (`Historia`): una zona que se estira, se ve estirarse. Etiqueta a la derecha solo en las vigentes: *resistencia 29.840,75 – 29.845,25* |
-| **Zigzag** | Línea blanca con puntos en los vértices, como hoy. Ya no con `Zigzag()` aparte: con el `Piv` del motor entero |
+| **Zonas** | Rectángulo gris `#8B93A7` desde la vela que la sostiene (`i_org`) hasta que queda inactiva (`fin`) o hasta el borde derecho; **vigente** con relleno 28 % y borde 1,5; **inactiva**, 10 % y borde fino. Geometría de cada momento: una zona que se estira se ve estirarse. Etiqueta a la derecha solo en las vigentes: *resistencia 29.840,75 – 29.845,25* |
+| **Zigzag** | Línea blanca con puntos en los vértices, del `Piv` del motor entero |
 | **Puntos de referencia** | Solo si en el día se presentó un reingreso: flecha punteada naranja `#FF9A3C`, tenue y cortada una vela después cuando se rompe por cierre |
 | **La operación** | Franja roja entrada→stop y verde entrada→objetivo, **solo sobre el tramo** (de la vela de la orden a la de salida). Sin líneas de entrada, stop ni objetivo |
 | **Cabecera** (una línea, arriba a la izquierda) | `N zonas · M vigentes` y lo que el motor tiene en marcha: *orden: Continuación alcista · entrada · stop · objetivo* o *sin operación*; en día de Fed, el aviso dorado |
-| **El corte** | Como `dia.py`: al llenarse la orden **no se dibujan más zonas** (R-28); el zigzag sigue hasta el resultado. Si se vigila una cuenta (la propiedad de hoy), su llenado real también corta |
+| **El corte** | Como `dia.py`: al llenarse la orden del motor **no se dibujan más zonas** (R-28); el zigzag sigue hasta el resultado |
 
-Cada pieza con su interruptor en las propiedades (zonas, zigzag, referencias, operación, etiquetas). Las velas no se
-tocan: son de la plantilla del gráfico.
+Cada pieza con su interruptor en las propiedades (zonas, zigzag, referencias, operación, etiquetas). Las velas no se tocan:
+son de la plantilla del gráfico. Si en el mismo gráfico está también `MarcacionChaumer`, se apaga el zigzag de uno de los dos.
 
-### 12.3 Cómo, sin duplicar nada
+- **Dibujo en `OnRender`** (SharpDX), como `MarcacionChaumer`, no con objetos `Draw.*`: cientos de rectángulos de dibujo
+  ensucian la lista del gráfico y pesan.
+- **Sin Supabase también dibuja:** zonas y zigzag no dependen de noticias ni de Fed. Si no puede leerlas, no dibuja la
+  operación y lo dice en la cabecera.
+- **Sin sello no dibuja nada** y lo dice en la cabecera: el gráfico no puede enseñar un motor que no es el del bot.
+- **Solo hoy** (en Market Replay, el día que se reproduce).
 
-- **`NinjaTrader/ChaumerNT.cs`** (nuevo): lo que hoy vive dentro de `BotChaumer` y necesitan los dos — las velas del día
-  en UTC desde `Bars`, la configuración `bot-chaumer.json`, la comprobación del sello, los parámetros y las lecturas de
-  Supabase (noticias, Fed). `BotChaumer` pasa a usarlo; `MotorChaumer.cs` no se toca (sigue sin NinjaTrader, para el arnés).
-- **Dibujo en `OnRender`** (SharpDX), como hoy, no con objetos `Draw.*`: cientos de rectángulos de dibujo ensucian la lista
-  del gráfico y pesan.
-- **Sin Supabase también dibuja:** las zonas y el zigzag no dependen de noticias ni de Fed. Si no puede leerlas, dibuja
-  zonas y zigzag y avisa en la cabecera de que la operación no se muestra.
-- **Sin sello no dibuja la operación** y lo dice en la cabecera: el gráfico no puede enseñar un motor que no es el del bot.
-- **Solo hoy**, como ahora (en Market Replay, el día que se reproduce).
+### 12.3 Lo común, en un solo sitio: `ChaumerNT.cs`
+
+`NinjaTrader/ChaumerNT.cs` (nuevo, `Custom\AddOns\`): lo que hoy vive dentro de `BotChaumer` y necesita también la vista —
+las velas del día en UTC desde `Bars`, la configuración `bot-chaumer.json`, la comprobación del sello, los parámetros y las
+lecturas de Supabase (noticias, Fed). Lo usan `BotChaumer` y `VistaMotorChaumer`; **`MarcacionChaumer` no**.
+`MotorChaumer.cs` no se toca (sigue sin NinjaTrader, para el arnés).
 
 ### 12.4 Fases y verificación
 
-| Fase | Qué | Se verifica con |
-|---|---|---|
-| **D1** | `ChaumerNT.cs` y `BotChaumer` sobre él | `csc` 0 errores · **el Strategy Analyzer vuelve a dar 17/17** (el refactor no puede cambiar nada) |
-| **D2** | `MarcacionChaumer` dibuja el motor entero | `csc` 0 errores · **Market Replay del 23/09 y del 02/10**, el gráfico al lado del PNG del motor de ese día: mismas zonas, mismo zigzag, misma franja |
+| Fase | Qué | Se verifica con | Le toca a Kris |
+|---|---|---|---|
+| **D0** | `MarcacionChaumer` restaurado tal cual (`b2cd618`) · `sincronia.py` vigila su `ZigzagChaumer` · fuera `MotorChaumer.Zigzag` | el archivo idéntico byte a byte al de `b2cd618` · `sincronia.py` 64/64 con la comparación del zigzag de `MarcacionChaumer` | copiar `MarcacionChaumer.cs` y `MotorChaumer.cs`, F5 |
+| **D1** | `ChaumerNT.cs` y `BotChaumer` sobre él | `csc` 0 errores · **el Strategy Analyzer vuelve a dar 17/17** (el refactor no puede cambiar nada) | copiar, F5, Analyzer |
+| **D2** | `VistaMotorChaumer` | `csc` 0 errores · **Market Replay del 23/09 y del 02/10**, el gráfico al lado del PNG del motor de ese día: mismas zonas, mismo zigzag, misma franja | copiar, F5, replay |
 
-**Encaja con la fase 3:** el Market Replay pendiente (§9) se hace una sola vez y prueba a la vez el bot y el dibujo.
+**Encaja con la fase 3:** el Market Replay pendiente (§9) se hace una sola vez y prueba a la vez el bot y la vista.
