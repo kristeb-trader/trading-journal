@@ -97,6 +97,10 @@ def dibujar(dia, salida, datos):
             if (ndr < 0) != bajo: continue
             fuera = (pv >= er) if ndr < 0 else (pv <= er)
             if fuera: continue
+            # Solo los que quedan ENTRE la entrada y el objetivo: son los unicos que pueden descartar
+            # el reingreso (lector._punto_de_referencia). Los de mas alla del objetivo no deciden nada
+            # (operador, 07/10/2026, sobre las mechas de 8:32 y 8:34).
+            if (pv <= tr) if ndr < 0 else (pv >= tr): continue
             roto = None
             for m in range(j+1, corte+1):
                 if (D[m]['c'] < pv) if bajo else (D[m]['c'] > pv):

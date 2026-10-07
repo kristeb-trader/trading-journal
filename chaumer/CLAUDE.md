@@ -91,7 +91,7 @@ protocolo) y este archivo.
 | Velas | 🔵 azul `#2E86FF` alcista · ⬜ blanca `#FFFFFF` bajista |
 | Zonas | **todas del mismo gris** `#8B93A7` |
 | Corridas y retrocesos | línea blanca en zigzag uniendo extremos |
-| Puntos de referencia | flecha punteada **naranja oscuro `#FF9A3C`**, contraste bajo, extendida a la derecha. Roto: más tenue y cortado una vela después. **Solo se dibujan cuando hay un reingreso** |
+| Puntos de referencia | flecha punteada **naranja oscuro `#FF9A3C`**, contraste bajo, extendida a la derecha. Roto: más tenue y cortado una vela después. **Solo se dibujan cuando hay un reingreso, y solo los que quedan entre su entrada y su objetivo** (07/10/2026) |
 | La operación | franja roja entrada→stop, verde entrada→objetivo, **solo sobre el tramo** |
 | Líneas de entrada / stop / objetivo | **no se dibujan** |
 | Otros | oro `#F5C542` · rojo `#FF5C5C` · verde `#4ADE80` · naranja `#FF9A3C` |

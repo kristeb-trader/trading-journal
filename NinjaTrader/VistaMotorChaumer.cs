@@ -178,6 +178,8 @@ namespace NinjaTrader.NinjaScript.Indicators
                     if ((re.Nd < 0) != bajo) continue;
                     bool fuera = re.Nd < 0 ? pv >= re.E : pv <= re.E;
                     if (fuera) continue;
+                    // solo los que quedan ENTRE la entrada y el objetivo: los únicos que pueden descartar el reingreso (Kris, 07/10/2026)
+                    if (re.Nd < 0 ? pv <= re.T : pv >= re.T) continue;
                     int roto = -1;
                     for (int m = j + 1; m <= corte; m++)
                         if (bajo ? D[m].C < pv : D[m].C > pv) { roto = m; break; }
