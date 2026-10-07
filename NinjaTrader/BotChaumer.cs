@@ -115,6 +115,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         private readonly List<MotorChaumer.Vela> velas = new List<MotorChaumer.Vela>();
         private int ultimaVela = -1;                // última vela ya pasada a `velas`
         private bool armadoIntentado, armado, terminado, finalizado;
+        private int velaArmado = -1;                // la vela (índice en el día) en que el bot se armó
         private MotorChaumer motor;
         private Fila fila;
         private List<string> eventos = new List<string>();
@@ -212,6 +213,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (!armadoIntentado)
             {
                 if (hm > ci) return;                            // encendido con la ventana ya cerrada
+                velaArmado = cerrada - inicioDia;
                 Armar(d);
                 if (!armado) return;
             }
@@ -231,9 +233,19 @@ namespace NinjaTrader.NinjaScript.Strategies
 
             if (r.Trade != null)
             {
-                // el motor la da por llenada y aquí no se llenó: diferencia intravela (o un rechazo)
                 CancelarEntrada();
-                fila.Diferencia = "el motor la da por llenada a las " + r.Trade.Hora + " (" + r.Trade.Res + ") y en el mercado no se llenó";
+                if (r.Trade.IFill <= velaArmado)
+                {
+                    // El motor la llenó ANTES de que el bot se armara (encendido tarde, un F5 en plena ventana): no es
+                    // una diferencia con el mercado, y no se persigue (07/10/2026). La comparación diaria lo deja fuera.
+                    fila.Motivo = "encendido tarde: el bot se armó a las " + MotorChaumer.Hh(r.D[velaArmado]) + ", después de la orden del motor de las "
+                                + MotorChaumer.Hh(r.D[r.Trade.I]) + " (llenada a las " + r.Trade.Hora + "): no se persigue";
+                }
+                else
+                {
+                    // el motor la da por llenada con el bot encendido y aquí no se llenó: diferencia intravela (o un rechazo)
+                    fila.Diferencia = "el motor la da por llenada a las " + r.Trade.Hora + " (" + r.Trade.Res + ") y en el mercado no se llenó";
+                }
                 Finalizar("NO OPERA");
                 terminado = true;
                 return;

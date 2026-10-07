@@ -25,8 +25,7 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
 - [x] **Kris:** `MotorChaumer.cs` con el sello `L:bf7669a4…` compilado; el Analyzer con el motor nuevo da **18/18** (07/10)
 - [ ] **Abiertas del 07/10 (Kris):** ¿cierra también el rompimiento la **zona apéndice** (R-11)? ¿Y el estiramiento por
   **superposición** (R-13, que dice que la zona conserva su historial)? Hoy los dos siguen como estaban
-- [ ] **Bot:** distinguir "encendido después del llenado del motor" de una diferencia intravela. El 07/10 el bot se
-  reinició a las 9:36 (F5 en plena ventana) y la fila dice que el motor la dio por llenada y el mercado no
+- [x] **Bot:** distingue «encendido tarde» de una diferencia (07/10). **Kris:** copiar `BotChaumer.cs` y F5 fuera de la ventana
 - [ ] **§12 D2** `VistaMotorChaumer`: código hecho (07/10). **Kris:** copiar a `Custom/Indicators`, F5 y el Market Replay del 23/09 y el 02/10 con el bot y la vista
 - [ ] **Fase 4 · el pasado entero**: velas desde el 12/06/2025, Strategy Analyzer, Market Replay, informe
 - [ ] **Fase 5 · SimBot en vivo**, con la comparación diaria en la cadena
