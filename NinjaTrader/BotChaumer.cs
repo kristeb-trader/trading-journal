@@ -22,8 +22,10 @@
 //  cuentas de la lista blanca y si exige el GO. Ningún número del plan es una propiedad: los lee
 //  el motor de chaumer/01_Plan/reglas.json.
 //
+//  Lo común con VistaMotorChaumer (configuración, sello, Supabase, velas en UTC) vive en ChaumerNT.cs.
+//
 //  En C# 5, como MotorChaumer.cs. Instalar: copiar a Documentos\NinjaTrader 8\bin\Custom\Strategies\
-//  (con MotorChaumer.cs en Custom\AddOns\) y F5. Gráfico MNQ 1 minuto con la plantilla ETH.
+//  (con MotorChaumer.cs y ChaumerNT.cs en Custom\AddOns\) y F5. Gráfico MNQ 1 minuto con la plantilla ETH.
 // ═══════════════════════════════════════════════════════════════════════════
 
 #region Using declarations
@@ -51,18 +53,9 @@ namespace NinjaTrader.NinjaScript.Strategies
 
     public class BotChaumer : Strategy
     {
-        private const string URL = "https://jothoslozctflfrnysrx.supabase.co/rest/v1/";
         private const string N_ENTRADA = "Chaumer entrada", N_STOP = "Chaumer stop", N_OBJETIVO = "Chaumer objetivo";
         private static readonly CultureInfo INV = CultureInfo.InvariantCulture;
-        private static readonly string DIR_NT = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "NinjaTrader 8");
-
-        // ── configuración ────────────────────────────────────────────────────
-        private class Config
-        {
-            public string Repo = @"E:\Proyectos\Trading Journal";
-            public List<string> Cuentas = new List<string> { "SimBot", "Sim101", "Playback101", "Backtest" };
-            public bool ExigirGo = false;
-        }
+        private static readonly string DIR_NT = ChaumerNT.DIR_NT;
 
         // ── la fila del día (bot_operaciones) ────────────────────────────────
         private class Fila
@@ -105,7 +98,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
 
         // ── estado de la sesión ──────────────────────────────────────────────
-        private Config cfg;
+        private ConfigChaumer cfg;
         private MotorChaumer.Parametros P;
         private string problemaGlobal;            // un candado que impide operar toda la sesión
         private bool avisadoGlobal, esBacktest;
@@ -158,7 +151,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             else if (State == State.DataLoaded)
             {
                 tzNt = Core.Globals.GeneralOptions.TimeZoneInfo;
-                cfg = LeerConfig();
+                cfg = ChaumerNT.LeerConfig(Log);
                 esBacktest = Account != null && Account.Name == "Backtest";
                 if (esBacktest)
                     registroBacktest = Path.Combine(DIR_NT, "bot-chaumer", "backtest-" + DateTime.Now.ToString("yyyyMMdd-HHmmss", INV) + "-registro.txt");
@@ -182,24 +175,10 @@ namespace NinjaTrader.NinjaScript.Strategies
                 return "la cuenta " + (Account == null ? "?" : Account.Name) + " no está en la lista blanca (bot-chaumer.json)";
             if (BarsPeriod.BarsPeriodType != BarsPeriodType.Minute || BarsPeriod.Value != 1) return "el gráfico no es de 1 minuto";
             if (Instrument.MasterInstrument.Name != "MNQ") return "el instrumento es " + Instrument.MasterInstrument.Name + ", no MNQ";
-            try
-            {
-                string lector = Path.Combine(cfg.Repo, @"chaumer\05_Backtesting\claude\motor\lector.py");
-                string motorCs = Path.Combine(cfg.Repo, @"NinjaTrader\MotorChaumer.cs");
-                string sello = MotorChaumer.SelloDe(File.ReadAllText(lector, Encoding.UTF8), File.ReadAllText(motorCs, Encoding.UTF8));
-                if (sello != MotorChaumer.SELLO)
-                    return "motor desincronizado: el compilado es " + MotorChaumer.SELLO + " y el del repositorio " + sello
-                         + ". Pasa scripts/bot/sincronia.py --sellar, copia MotorChaumer.cs a Custom\\AddOns y F5";
-                P = MotorChaumer.Parametros.Leer(Path.Combine(cfg.Repo, @"chaumer\01_Plan\reglas.json"));
-            }
-            catch (Exception e) { return "no puedo leer el motor del repositorio (" + cfg.Repo + "): " + e.Message; }
-
-            string clave = LeerClave();
-            if (string.IsNullOrEmpty(clave)) return "falta Documentos\\NinjaTrader 8\\supabase-service-key.txt";
-            http = new HttpClient();
-            http.Timeout = TimeSpan.FromSeconds(8);
-            http.DefaultRequestHeaders.Add("apikey", clave);
-            http.DefaultRequestHeaders.Add("Authorization", "Bearer " + clave);
+            string m = ChaumerNT.ComprobarMotor(cfg.Repo, out P);
+            if (m != null) return m;
+            http = ChaumerNT.Cliente();
+            if (http == null) return "falta Documentos\\NinjaTrader 8\\supabase-service-key.txt";
             return null;
         }
 
@@ -291,7 +270,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
             dia = d;
             inicioDia = cerrada;
-            while (inicioDia > 0 && Utc(inicioDia - 1).ToString("yyyyMMdd", INV) == d) inicioDia--;
+            inicioDia = ChaumerNT.InicioDia(Bars, cerrada, d, tzNt);
             velas.Clear(); ultimaVela = inicioDia - 1;
             if (esBacktest) Log("día " + d + " · primera vela " + Utc(inicioDia).ToString("HH:mm", INV) + " UTC · vela " + inicioDia);
             armadoIntentado = armado = terminado = finalizado = false;
@@ -320,7 +299,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
             else
             {
-                string fallo = LeerDiaDeSupabase(fila.Fecha, out nots, out fed, out go);
+                string fallo = ChaumerNT.LeerDia(http, fila.Fecha, out nots, out fed, out go);
                 if (fallo != null) { NoArmado("no pude leer de Supabase las noticias de hoy (" + fallo + ")"); return; }
                 if (!Account.Name.StartsWith("Playback", StringComparison.Ordinal) && YaOperoHoy(fila.Fecha))
                 { NoArmado("el bot ya operó hoy en esta cuenta"); return; }
@@ -468,79 +447,22 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
 
         // ═════════════════════════════════════════════════════════════ velas y horas
-        private DateTime Utc(int idx)
-        {
-            return TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(Bars.GetTime(idx), DateTimeKind.Unspecified), tzNt);
-        }
+        private DateTime Utc(int idx) { return ChaumerNT.Utc(Bars, idx, tzNt); }
 
-        private string Hora(int idx)
-        {
-            DateTime u = Utc(idx);
-            return MotorChaumer.Hh(new MotorChaumer.Vela { T = u.ToString("HHmmss", INV) });
-        }
+        private string Hora(int idx) { return ChaumerNT.Hora(Bars, idx, tzNt); }
 
-        /// <summary>La hora de un instante con la etiqueta del motor: la de la vela que lo contiene (hora de cierre).</summary>
-        private string HoraDe(DateTime tNt)
-        {
-            DateTime u = TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(tNt, DateTimeKind.Unspecified), tzNt);
-            DateTime m = new DateTime(u.Year, u.Month, u.Day, u.Hour, u.Minute, 0);
-            if (u > m) m = m.AddMinutes(1);
-            return MotorChaumer.Hh(new MotorChaumer.Vela { T = m.ToString("HHmmss", INV) });
-        }
+        private string HoraDe(DateTime tNt) { return ChaumerNT.HoraDe(tNt, tzNt); }
 
         private List<MotorChaumer.Vela> VelasHasta(int cerrada)
         {
-            for (int i = ultimaVela + 1; i <= cerrada; i++)
-            {
-                DateTime u = Utc(i);
-                velas.Add(new MotorChaumer.Vela
-                {
-                    D = u.ToString("yyyyMMdd", INV), T = u.ToString("HHmmss", INV),
-                    O = Bars.GetOpen(i), H = Bars.GetHigh(i), L = Bars.GetLow(i), C = Bars.GetClose(i), V = (long)Bars.GetVolume(i)
-                });
-            }
+            for (int i = ultimaVela + 1; i <= cerrada; i++) velas.Add(ChaumerNT.Vela(Bars, i, tzNt));
             if (cerrada > ultimaVela) ultimaVela = cerrada;
             return velas;
         }
 
         // ═════════════════════════════════════════════════════════════ Supabase
-        private static string LeerClave()
-        {
-            try
-            {
-                string path = Path.Combine(DIR_NT, "supabase-service-key.txt");
-                if (File.Exists(path)) return File.ReadAllText(path).Trim().TrimStart('\uFEFF').Trim();
-            }
-            catch { }
-            return null;
-        }
 
-        private JArray Get(string ruta)
-        {
-            string txt = Task.Run(() => http.GetStringAsync(URL + ruta)).Result;
-            return JArray.Parse(txt);
-        }
-
-        private static int Minutos(string hora) { return int.Parse(hora.Substring(0, 2), INV) * 60 + int.Parse(hora.Substring(3, 2), INV); }
-
-        /// <summary>Noticias, Fed y GO de una fecha (yyyy-MM-dd). null si todo bien; si no, el fallo.</summary>
-        private string LeerDiaDeSupabase(string fecha, out List<int> nots, out bool fed, out bool? go)
-        {
-            nots = new List<int>(); fed = false; go = null;
-            try
-            {
-                foreach (var n in Get("sesion_noticias?select=hora&order=hora&sesion_date=eq." + fecha)) nots.Add(Minutos((string)n["hora"]));
-                fed = Get("catalogo_fechas?select=fecha&tipo=eq.fomc&activa=eq.true&fecha=eq." + fecha).Count > 0;
-            }
-            catch (Exception e) { return (e.InnerException ?? e).Message; }
-            try
-            {
-                var s = Get("sesiones?select=checklist_go_at&sesion_date=eq." + fecha);
-                go = s.Count > 0 && s[0]["checklist_go_at"] != null && s[0]["checklist_go_at"].Type != JTokenType.Null;
-            }
-            catch { go = null; }
-            return null;
-        }
+        private JArray Get(string ruta) { return ChaumerNT.Get(http, ruta); }
 
         private bool YaOperoHoy(string fecha)
         {
@@ -562,7 +484,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 {
                     string d = ((string)n["sesion_date"]).Replace("-", "");
                     if (!noticiasTodas.ContainsKey(d)) noticiasTodas[d] = new List<int>();
-                    noticiasTodas[d].Add(Minutos((string)n["hora"]));
+                    noticiasTodas[d].Add(ChaumerNT.Minutos((string)n["hora"]));
                 }
                 fedTodas = new HashSet<string>();
                 foreach (var f in Get("catalogo_fechas?select=fecha&tipo=eq.fomc&activa=eq.true")) fedTodas.Add(((string)f["fecha"]).Replace("-", ""));
@@ -582,7 +504,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             {
                 try
                 {
-                    var req = new HttpRequestMessage(HttpMethod.Post, URL + "bot_operaciones?on_conflict=fecha,cuenta");
+                    var req = new HttpRequestMessage(HttpMethod.Post, ChaumerNT.URL + "bot_operaciones?on_conflict=fecha,cuenta");
                     req.Headers.Add("Prefer", "resolution=merge-duplicates,return=minimal");
                     req.Content = new StringContent(json, Encoding.UTF8, "application/json");
                     var resp = http.SendAsync(req).Result;
@@ -594,27 +516,6 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
 
         // ═════════════════════════════════════════════════════════════ configuración, CSV y registro
-        private Config LeerConfig()
-        {
-            var c = new Config();
-            string path = Path.Combine(DIR_NT, "bot-chaumer.json");
-            try
-            {
-                if (!File.Exists(path))
-                {
-                    var j0 = new JObject();
-                    j0["repo"] = c.Repo; j0["cuentas"] = new JArray(c.Cuentas.ToArray()); j0["exigir_go"] = c.ExigirGo;
-                    File.WriteAllText(path, j0.ToString(), new UTF8Encoding(false));
-                    return c;
-                }
-                var j = JObject.Parse(File.ReadAllText(path));
-                if (j["repo"] != null) c.Repo = (string)j["repo"];
-                if (j["cuentas"] != null) c.Cuentas = j["cuentas"].Select(x => (string)x).ToList();
-                if (j["exigir_go"] != null) c.ExigirGo = (bool)j["exigir_go"];
-            }
-            catch (Exception e) { Log("bot-chaumer.json ilegible (" + e.Message + "): uso los valores por defecto"); }
-            return c;
-        }
 
         private void EscribirCsv()
         {

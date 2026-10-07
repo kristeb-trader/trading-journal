@@ -137,7 +137,8 @@ NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) �
                   RR (Risk Reward en PUNTOS) · CadenaDiaria (AddOn: exporta el día y lanza el puente) ·
                   MarcacionChaumer (el zigzag blanco, en el gráfico manual de Kris: independiente del bot, no se toca) ·
                   MotorChaumer (lector.py en C#, sellado: lo usa el bot) · pruebas/ArnesMotor ·
-                  BotChaumer (la estrategia: opera lo que marca el motor, solo en su lista blanca)
+                  BotChaumer (la estrategia: opera lo que marca el motor, solo en su lista blanca) ·
+                  ChaumerNT (lo común del bot y la vista: config, sello, Supabase, velas UTC)
 scripts/bot/      sincronia.py: los dos motores, vela a vela, y el SELLO · scripts/hooks/pre-commit lo exige ·
                   comparar.py: el CSV del Strategy Analyzer contra el motor
 scripts/cadena/   El puente de la cadena diaria: motor → gráfico → ficha en Supabase → portal;
