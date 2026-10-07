@@ -138,6 +138,7 @@ NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) �
                   MarcacionChaumer (el zigzag blanco, en el gráfico manual de Kris: independiente del bot, no se toca) ·
                   MotorChaumer (lector.py en C#, sellado: lo usa el bot) · pruebas/ArnesMotor ·
                   BotChaumer (la estrategia: opera lo que marca el motor, solo en su lista blanca) ·
+                  VistaMotorChaumer (el motor del bot dibujado en vivo: zonas, zigzag, operación) ·
                   ChaumerNT (lo común del bot y la vista: config, sello, Supabase, velas UTC)
 scripts/bot/      sincronia.py: los dos motores, vela a vela, y el SELLO · scripts/hooks/pre-commit lo exige ·
                   comparar.py: el CSV del Strategy Analyzer contra el motor

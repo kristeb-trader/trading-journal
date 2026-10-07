@@ -1,6 +1,6 @@
 # BotChaumer — el motor operando en NinjaTrader
 
-**Versión:** v1.9 · **Estado:** ✅ **APROBADO** el 06/10/2026 (D-038) · 🚧 en implementación: **fases 1 y 2 cerradas · fase 3: Strategy Analyzer 17/17, falta el Market Replay** · §12 (el motor dibujado en vivo) **aprobado**: D0 cerrada · D1 cerrada · D2 pendiente.
+**Versión:** v1.10 · **Estado:** ✅ **APROBADO** el 06/10/2026 (D-038) · 🚧 en implementación: **fases 1 y 2 cerradas · fase 3: Strategy Analyzer 17/17, falta el Market Replay** · §12 (el motor dibujado en vivo) **aprobado**: D0 cerrada · D1 cerrada · D2 con el código hecho, falta el Market Replay.
 **Escrito:** 06/10/2026, tras el diagnóstico del mismo día.
 
 | Versión | Fecha | Qué cambió |
@@ -15,6 +15,7 @@
 | v1.7 | 07/10/2026 | **§12 aprobado. D0 cerrada:** `MarcacionChaumer.cs` restaurado byte a byte a `b2cd618` (blob `9cea7cf`); `MotorChaumer.Zigzag` borrado; `sincronia.py` extrae `ZigzagChaumer` del indicador sin tocarlo y lo compara: 64/64, y una mutación en su zigzag salta. Sello nuevo `L:8c98cbb36c090fb7 C:7deb42cb5f9f9576` (solo cambió el C#: el motor de Python es el mismo) |
 | v1.8 | 07/10/2026 | **D1, el código:** `ChaumerNT.cs` (configuración, sello y parámetros, lecturas de Supabase, velas en UTC) y `BotChaumer` sobre él: el diff solo mueve código, la lógica de órdenes y candados no cambia. `csc` 0 errores; el sello no cambia (`MotorChaumer.cs` intacto). Falta que el Strategy Analyzer vuelva a dar 17/17 |
 | v1.9 | 07/10/2026 | **D1 cerrada:** el Strategy Analyzer con `ChaumerNT` da otra vez **17/17** y su CSV es idéntico línea a línea al de la pasada anterior en esos 17 días. Traía además el 07/10 en curso (sin velas del motor todavía: se compara tras la cadena de las 10:32) |
+| v1.10 | 07/10/2026 | **D2, el código:** `VistaMotorChaumer.cs` compila con 0 errores contra las DLL de NT8. Calcula el motor al cierre de cada vela y dibuja una foto en `OnRender` (SharpDX), detrás de las velas. Propiedades `VerZonas`, `VerZigzag`, `VerReferencias`, `VerOperacion`, `VerEtiquetas`, `VerCabecera` (no `Zigzag`: se confunde con el `ZigZag` de NinjaTrader). Una orden **pendiente** también se dibuja, más tenue y hasta el borde. Etiquetas con el formato español (*29.840,75*). Falta el Market Replay del 23/09 y el 02/10 al lado de sus PNG |
 
 ---
 

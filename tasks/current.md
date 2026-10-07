@@ -19,7 +19,7 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
 - [x] **§12 D0** (07/10): `MarcacionChaumer` restaurado tal cual e independiente del bot; la sincronía lo vigila sin tocarlo
 - [x] **Kris:** `MarcacionChaumer.cs` y `MotorChaumer.cs` copiados y compilados (07/10)
 - [x] **§12 D1** (07/10): `ChaumerNT.cs`; el Analyzer vuelve a dar 17/17, CSV idéntico al anterior
-- [ ] **§12 D2** `VistaMotorChaumer` (con el Market Replay pendiente)
+- [ ] **§12 D2** `VistaMotorChaumer`: código hecho (07/10). **Kris:** copiar a `Custom/Indicators`, F5 y el Market Replay del 23/09 y el 02/10 con el bot y la vista
 - [ ] **Fase 4 · el pasado entero**: velas desde el 12/06/2025, Strategy Analyzer, Market Replay, informe
 - [ ] **Fase 5 · SimBot en vivo**, con la comparación diaria en la cadena
 
