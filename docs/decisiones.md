@@ -10,6 +10,35 @@
 
 ---
 
+## D-038 — Se construye el bot: el motor opera en NinjaTrader, y todo cambia junto
+
+**Decisión (Kris, 06/10/2026).** Se construye `BotChaumer`, una estrategia de NinjaTrader que opera el plan tal como
+lo marca el motor, **sin esperar** a saber si el motor gana: se valida en una cuenta de simulación `SimBot` en vivo y
+sobre el pasado con el Strategy Analyzer y el Market Replay. Se levanta para el bot la regla *«los scripts de
+05_Backtesting son de auditoría, nunca de operación»*: los scripts siguen siendo de auditoría y el único código
+operativo es el bot, que solo opera las cuentas de su lista blanca. Condición de Kris: **un cambio de regla aprobado
+llega a todo —motor, bot, cadena— o a nada.** Dentro del diseño aprobado: el bot pone stop y objetivo exactos al
+llenarse (en vez de la ATM `K1` y el ajuste a mano) y en `SimBot` opera sin exigir el GO del checklist, anotando si
+lo hubo. Diseño: `docs/disenos/2026-10-06-bot-chaumer.md`.
+
+**Motivo.** Medir el plan en vivo, con órdenes reales de simulación, cada día y sin que dependa de que Kris marque.
+La sincronía es la condición para que lo que mida el bot sea el plan y no una versión vieja de él.
+
+**Cómo se sostiene la sincronía.** Los números del plan, en un solo sitio (`PARAMETROS.md` → `parametros` de
+`reglas.json`, que leen los dos motores); la lógica, en `lector.py` y su traducción literal `MotorChaumer.cs`, atadas
+por una prueba vela a vela con 0 diferencias y un sello (la huella de `lector.py`) que el hook de git y el propio bot
+comprueban: con el sello viejo, el bot no opera.
+
+**Comprobado antes de decidir.** El motor corrido vela a vela, como en vivo, decide exactamente lo mismo que con el
+día entero: 33 días, 1.463 velas, 0 diferencias. No ve el futuro.
+
+**Alternativas descartadas.** Esperar a medir el motor sobre un año antes de construir (lo que se propuso primero):
+Kris prefiere medir con el bot. Llamar al motor de Python desde NinjaTrader: un proceso externo en el camino de las
+órdenes. Un solo motor en C# que use también la cadena: obliga a rehacer gráficos, fichas y la regresión, que
+funcionan.
+
+---
+
 ## D-037 — La marcación en tiempo real es una copia literal del motor, y se prueba contra él
 
 **Decisión (Kris, 05/10/2026).** El indicador `MarcacionChaumer` dibuja el zigzag blanco con una traducción

@@ -1242,5 +1242,67 @@
       "orden": 34,
       "enunciado": "Ejecuta la sesión siguiendo la checklist diaria en orden, y registra todas las sesiones, incluidas aquellas en que no se operó."
     }
-  ]
+  ],
+  "parametros": {
+    "RIESGO_MAX": {
+      "texto": "$160 por operación",
+      "numero": 160
+    },
+    "STOP_MAX": {
+      "texto": "80 puntos",
+      "numero": 80
+    },
+    "ATM_DEFECTO": {
+      "texto": "320 ticks ÷ contratos",
+      "numero": 320
+    },
+    "RATIO_TARGET": {
+      "texto": "1:1",
+      "numero": 1
+    },
+    "OPS_POR_SESION": {
+      "texto": "1 llenada",
+      "numero": 1
+    },
+    "TICK": {
+      "texto": "0,25 puntos",
+      "numero": 0.25
+    },
+    "PLAZO_CONSECUCION": {
+      "texto": "5 velas",
+      "numero": 5
+    },
+    "VENTANA_REINGRESO": {
+      "texto": "hasta que el precio supere el extremo de la vela de consecución",
+      "numero": null
+    },
+    "UMBRAL_50": {
+      "texto": "50 %",
+      "numero": 50
+    },
+    "UMBRAL_VOL": {
+      "texto": "> 8.000 contratos en MNQ",
+      "numero": 8000
+    },
+    "PREMERCADO_INICIO": {
+      "texto": "19:00 hora Colombia (apertura de Tokio)",
+      "numero": null
+    },
+    "VENTANA_OPERATIVA": {
+      "texto": "09:30–11:30 ET",
+      "numero": null
+    },
+    "CANCELACION_FINAL": {
+      "texto": "11:29 ET",
+      "numero": null
+    },
+    "ORIGEN_DEL_STOP": {
+      "texto": "desde que nació la zona hasta la vela de rompimiento",
+      "numero": null
+    },
+    "VENTANA_NOTICIA": {
+      "texto": "±5 minutos",
+      "numero": 5
+    }
+  }
 }

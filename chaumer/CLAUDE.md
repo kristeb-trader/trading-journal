@@ -11,7 +11,10 @@ Metodología de trading de Alfredo Chaumer para **MNQ** en NinjaTrader 8, traduc
 1. **No inventes metodología.** Ninguna regla ni umbral sale de price action genérico. Si algo falta, **falta**: se marca pendiente, no se rellena.
 2. **Ningún adjetivo es una regla.** "Fuerte", "sano", "claro" no valen. Solo ticks, puntos, porcentajes, número de velas y horas exactas.
 3. **No se cambia una regla confirmada** sin pedírselo al operador y esperar su sí.
-4. **Los scripts de `05_Backtesting\` son de auditoría**, nunca de operación.
+4. **Los scripts de `05_Backtesting\` son de auditoría**, nunca de operación. El único código operativo es el bot
+   (`NinjaTrader\BotChaumer.cs`, D-038, 06/10/2026), que opera **lo que marca el motor** y solo en las cuentas de su
+   lista blanca. Por eso **un cambio que toque el marcado o los números cambia a la vez `lector.py` y
+   `MotorChaumer.cs`**: diseño en `docs/disenos/2026-10-06-bot-chaumer.md` §5.
 5. **Los huecos declarados quedan escritos en el plan.** El plan está escrito y contrastado, **no probado**: las sesiones de validación no se han evaluado, no hay regla de parada, falta la capa de contexto, y las cifras del backtesting no miden la estrategia. Viven en `01_Plan\PENDIENTES.md` y en `01_Plan\CIERRE_FASE_1.md`, y **de ahí no se borran**.
    🔸 *El **portal** no tiene que enseñarlos — decisión del operador, 07/09/2026. Es su herramienta personal, no un producto. Lo único que sigue en pie: si algún día el portal muestra la cifra del backtesting (**−91,00 pts**), los cuatro motivos van en la misma pantalla.*
 
@@ -122,3 +125,4 @@ Definiciones medibles en `01_Plan\GLOSARIO.md`.
 - **Días de Fed:** desde el 24/09/2026 el motor anota los rompimientos también en día de Fed (antes no veía ningún reingreso). La lista la pone la cadena diaria del Journal desde Fechas Especiales.
 - ⚠️ El plan opera **solo MNQ** desde el 06/09/2026. Los datos de backtesting son de **NQ** y así se quedan, por decisión del operador. No intentes arreglar esa diferencia.
 - `claude\motor\lector.py` reproduce el marcado · `claude\motor\dia.py` genera la gráfica de una jornada. **Los dos son auditoría.**
+- **Los números del motor** (`TICK`, `STOP_MAX`, `RIESGO_MAX`, `PLAZO_CONSECUCION`, `UMBRAL_VOL`, `VENTANA_NOTICIA`) se leen de la clave `parametros` de `01_Plan\reglas.json`, que se genera de `PARAMETROS.md` (06/10/2026). Ni uno escrito a mano en el motor.

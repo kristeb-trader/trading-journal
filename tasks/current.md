@@ -3,6 +3,19 @@
 > Solo lo que está en curso. Lo terminado va a `docs/historial-proyecto.md`; las ideas y lo que
 > está por comprobar, a `backlog.md`.
 
+## El bot: BotChaumer en NinjaTrader (D-038)
+
+Aprobado el 06/10. Diseño: `docs/disenos/2026-10-06-bot-chaumer.md`. Se valida en `SimBot` en vivo y con el Strategy
+Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado llega a la vez al motor y al bot** (§5).
+
+- [x] **Fase 1 · los números en un sitio** (06/10): `parametros` en `reglas.json`; `lector.py` los lee de ahí;
+  `minimo` y `decidir()` para correrlo vela a vela
+- [ ] **Fase 2 · el motor en C# y la sincronía**: `MotorChaumer.cs`, el arnés, `scripts/bot/sincronia.py`, el sello y
+  el hook — luego **F5 en NT (Kris)**
+- [ ] **Fase 3 · el bot**: `BotChaumer.cs`, candados, tabla `bot_operaciones` — **Kris crea la cuenta `SimBot`**
+- [ ] **Fase 4 · el pasado entero**: velas desde el 12/06/2025, Strategy Analyzer, Market Replay, informe
+- [ ] **Fase 5 · SimBot en vivo**, con la comparación diaria en la cadena
+
 ## Coach + motor: «el motor mide, el Coach juzga» (D-034)
 
 Ruta acordada con Kris el 02/10: **B → A → C**, E cuando se quiera, D descartada. Hechos B (noticias y velas al

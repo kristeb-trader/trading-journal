@@ -4,30 +4,40 @@ LECTOR CHAUMER  ·  reescrito 2026-08-26 con las reglas confirmadas por el opera
 HERRAMIENTA DE AUDITORIA. No es una herramienta operativa.
 Vive en 05_Backtesting/claude/motor (desde el 28/09/2026), fuera de 01_Plan.
 """
-import os, re
+import os, re, json
 
-TICK = 0.25
-STOP_MAX = 80.0
+# LOS NUMEROS DEL PLAN (06/10/2026, D-038): se LEEN de la clave `parametros` de 01_Plan/reglas.json,
+# que genera scripts/plan/leer-reglas.mjs desde PARAMETROS.md. Es la fuente unica de este motor y
+# de MotorChaumer.cs (el bot): un numero se cambia en PARAMETROS.md y llega a los dos. Hasta hoy
+# solo UMBRAL_VOL se leia (de PARAMETROS.md, desde el 26/09/2026); TICK, STOP_MAX, PLAZO y
+# VENTANA_NOTICIA iban escritos aqui y se habrian quedado viejos si el plan los cambiaba.
+# UMBRAL_VOL es AJUSTABLE (R-15, P-37). Para cambiarlo desde fuera:  lector.UMBRAL_VOL = 2000
+#   NQ -> 2000   <- solo para releer el archivo historico 'NQ 09-26.Last.txt'
+_DEL_PLAN = ('TICK', 'STOP_MAX', 'RIESGO_MAX', 'PLAZO_CONSECUCION', 'UMBRAL_VOL', 'VENTANA_NOTICIA')
 
-# Umbral de volumen del premercado: se LEE de 01_Plan/PARAMETROS.md (desde el 26/09/2026;
-# antes iba escrito aqui y se quedaba viejo cuando el operador lo cambiaba).
-# PARAMETRO AJUSTABLE desde el 14/09/2026 (R-15): no es un numero fijo del metodo.
-#   NQ   ->  2000   <- solo para releer el archivo historico 'NQ 09-26.Last.txt'
-# Para cambiarlo desde fuera:  lector.UMBRAL_VOL = 2000
-# Pendiente P-37: el criterio de ajuste lo fija el operador (cerrado 14/09/2026).
-def umbral_del_plan():
-    """El UMBRAL_VOL vigente en PARAMETROS.md. Si no lo encuentra, falla: no se inventa uno.
-    Sin __file__ (la regresion carga una version de git con exec) devuelve None: quien lo
-    carga asi fija el umbral en cada pasada (scripts/cadena/prueba_motor.py lo hace)."""
-    if '__file__' not in globals(): return None
-    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '01_Plan', 'PARAMETROS.md')
-    txt = open(ruta, encoding='utf-8').read()
-    m = re.search(r'\|\s*\*\*`UMBRAL_VOL`\*\*\s*\|\s*\*\*>\s*([\d.]+)\s*contratos en MNQ\*\*', txt)
-    if not m: raise ValueError('lector.py: no encuentro la fila UMBRAL_VOL en ' + ruta)
-    return int(m.group(1).replace('.', ''))
+def parametros_del_plan():
+    """{nombre: numero} de reglas.json. Si falta uno, falla: no se inventa.
+    Sin __file__ (la regresion carga una version de git con exec) devuelve los valores del
+    06/10/2026 y UMBRAL_VOL None: quien lo carga asi fija el umbral en cada pasada
+    (scripts/cadena/prueba_motor.py lo hace). Solo para eso: el motor de verdad lee el plan."""
+    if '__file__' not in globals():
+        return dict(TICK=0.25, STOP_MAX=80.0, RIESGO_MAX=160.0, PLAZO_CONSECUCION=5,
+                    UMBRAL_VOL=None, VENTANA_NOTICIA=5)
+    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '01_Plan', 'reglas.json')
+    P = json.load(open(ruta, encoding='utf-8')).get('parametros', {})
+    out = {}
+    for n in _DEL_PLAN:
+        v = P.get(n, {}).get('numero')
+        if v is None: raise ValueError(f'lector.py: {n} no tiene numero en {ruta} (node scripts/plan/leer-reglas.mjs --escribir)')
+        out[n] = v
+    return out
 
-UMBRAL_VOL = umbral_del_plan()
-PLAZO = 5            # velas para la consecucion
+PARAMETROS = parametros_del_plan()
+TICK = PARAMETROS['TICK']
+STOP_MAX = float(PARAMETROS['STOP_MAX'])
+RIESGO_MAX = PARAMETROS['RIESGO_MAX']        # $ por operacion (R-04): lo usa el bot para los contratos
+UMBRAL_VOL = PARAMETROS['UMBRAL_VOL']
+PLAZO = int(PARAMETROS['PLAZO_CONSECUCION'])  # velas para la consecucion
 
 # Dias de FOMC (R-36): la sesion entera, solo Reingresos (confirmado por el operador 28/09/2026).
 # Desde el 28/09/2026 se LEEN de dias_fed.txt, la copia de Fechas Especiales del Trading Journal
@@ -48,7 +58,7 @@ FOMC = dias_fed()
 # noticias_rojas.txt, la copia de las noticias que Kris anota en el Journal (sesion_noticias),
 # en hora Colombia; la reescribe scripts/cadena/subir_dia.py. Un dia sin noticias anotadas cuenta
 # como dia sin noticia roja.
-VENTANA_NOTICIA = 5
+VENTANA_NOTICIA = int(PARAMETROS['VENTANA_NOTICIA'])
 def noticias_rojas():
     """{'AAAAMMDD': [minutos del dia, hora Colombia]}. Sin __file__ (la regresion carga una
     version de git con exec) no hay noticias: el motor anterior al 28/09 no las aplicaba."""
@@ -257,13 +267,15 @@ def anadir(Z, lo, hi, tipo, i, origen, extremo, i_org=None, rangos=None):
     return nz, ('nueva', None)
 
 # ---------------------------------------------------------------- recorrido
-def leer_sesion(V, dia):
+def leer_sesion(V, dia, minimo=30):
+    """minimo: velas de ventana que hacen falta para leer el dia. 30 con el dia entero (menos no es
+    una jornada americana completa); 1 en vivo, vela a vela (decidir(), el bot: 06/10/2026)."""
     D=[k for k in V if k['d']==dia]
     if not D: return None
     Z = zonas_premercado(D)
     ini, fin_v = apertura_utc(dia), cierre_utc(dia)   # la ventana sigue a Nueva York (24/09/2026)
     S=[i for i,k in enumerate(D) if ini<=hm(k)<=fin_v]
-    if len(S)<30: return None   # no es una jornada americana completa
+    if len(S)<minimo: return None
     b=S[0]                                   # indice de la vela base 08:31
     base=D[b]
     alc = base['c']>base['o']                # direccion del dia
@@ -909,4 +921,18 @@ def detectar_setups(res, solo_reingresos=False):
             if o: orden=_colocar(o, tag, ev, dia, k)
             else: ev.append(tag+f"  ✗ descartado — {motivo}")
             break
+    # La orden que sigue puesta (o aplazada por noticia) al acabar los datos: en vivo, la que el bot
+    # tiene que tener en el mercado ahora mismo (06/10/2026). Con el dia entero suele ser None.
+    res['orden'] = None if trade else orden
     return ev, trade
+
+def decidir(V, dia, hasta=None):
+    """Lo que el motor sabe al CIERRE de la vela `hasta` (indice en V; None = la ultima): el motor
+    entero sobre las velas cerradas hasta ahi, como lo corre el bot en vivo (MotorChaumer.cs, D-038).
+    Comprobado el 06/10/2026 en 33 dias y 1.463 velas: vela a vela decide exactamente lo mismo que
+    con el dia entero. Devuelve (res, eventos, trade); res['orden'] es la orden que debe estar viva."""
+    corte = V if hasta is None else V[:hasta+1]
+    r = leer_sesion(corte, dia, minimo=1)
+    if not r or 'error' in r: return r, [], None
+    ev, trade = detectar_setups(r, solo_reingresos=dia in FOMC)
+    return r, ev, trade

@@ -252,6 +252,18 @@ export function valoresDeParametros(dirPlan = path.dirname(DIR_REGLAS)) {
   return valores
 }
 
+/**
+ * El número de un valor de PARAMETROS.md, para las máquinas: «80 puntos» → 80 · «> 8.000 contratos en MNQ» → 8000 ·
+ * «0,25 puntos» → 0.25 · «$160 por operación» → 160 · «±5 minutos» → 5 · «1:1» → 1. Una hora («09:30–11:30 ET») o
+ * una frase → null. Lo leen los dos motores, lector.py y MotorChaumer.cs (el bot): un número se cambia en
+ * PARAMETROS.md y llega a los dos (D-038, docs/disenos/2026-10-06-bot-chaumer.md §4).
+ */
+export function numeroDeParametro(valor) {
+  const m = String(valor).match(/^(?:>|±)?\s*\$?(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d+))?(?=\s|$|:1$)/)
+  if (!m) return null
+  return Number(m[1].replace(/\./g, '') + (m[2] ? '.' + m[2] : ''))
+}
+
 /** Una frase de una regla en texto plano, sin marcas de Markdown y con cada parámetro sustituido por su valor. */
 export function textoPlano(md, valores) {
   let t = String(md || '')
@@ -277,6 +289,9 @@ export function aJson({ grupos, reglas }, valores = valoresDeParametros()) {
     // `enunciado`: la regla en texto plano, con los parámetros ya resueltos, para quien no lee Markdown
     // (el Journal, los títulos de los enlaces). La fuente sigue siendo `regla`.
     reglas: reglas.map((r) => ({ ...r, enunciado: textoPlano(r.regla, valores) })),
+    // Los números del plan, de PARAMETROS.md: `texto` como se lee y `numero` para las máquinas (null si no es un
+    // número). La fuente única de los dos motores (06/10/2026, D-038).
+    parametros: Object.fromEntries([...valores].map(([n, v]) => [n, { texto: v, numero: numeroDeParametro(v) }])),
   }
 }
 
