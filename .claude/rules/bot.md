@@ -21,7 +21,10 @@ todo lo demás, o no llega a ninguno** (Kris, 06/10/2026).
 
 ## Al cambiar el marcado o un setup
 
-1. El cambio en `lector.py` **y el mismo** en `MotorChaumer.cs` (también `Zigzag()` si toca corridas o retrocesos).
+1. El cambio en `lector.py` **y el mismo** en `MotorChaumer.cs`. **`MarcacionChaumer.cs` no se toca sin el sí de
+   Kris** (07/10/2026): es el indicador de su gráfico operativo manual y es independiente del bot, con su propio
+   `ZigzagChaumer`. La sincronía lo compara sin modificarlo; si un cambio de corridas o retrocesos lo descuadra, se le
+   dice a Kris y se le pide el cambio.
 2. `python scripts/bot/sincronia.py --sellar`: regresión + los dos motores con el día entero y vela a vela en todos
    los días con datos. Solo con **0 diferencias** escribe el `SELLO`.
 3. Commit con los dos archivos. El hook `scripts/hooks/pre-commit` rechaza el commit si el sello no es el suyo

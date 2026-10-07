@@ -13,7 +13,8 @@ decidir EXACTAMENTE lo mismo. Esto lo comprueba y, solo entonces, sella.
 Por cada día con datos (los mismos que scripts/cadena/prueba_motor.py) compara, con el día ENTERO, el registro, las
 zonas, el zigzag, los reingresos, los eventos, la operación y la orden; y VELA A VELA, en cada vela de la ventana, la
 orden que el bot debería tener puesta y la operación. Además: los números que cada motor lee de reglas.json, la huella
-calculada por los dos, y el zigzag suelto que dibuja MarcacionChaumer. Sale con código 1 si algo no cuadra.
+calculada por los dos, y el zigzag propio de MarcacionChaumer (ZigzagChaumer), que se lee del indicador sin tocarlo:
+es el del gráfico operativo de Kris y queda independiente del bot (07/10/2026). Sale con código 1 si algo no cuadra.
 
 El SELLO (`L:<huella de lector.py> C:<huella de MotorChaumer.cs sin el sello>`) solo lo escribe --sellar. Con el sello
 viejo el hook de git rechaza el commit y el bot no opera.
@@ -26,6 +27,7 @@ BT = os.path.join(RAIZ, 'chaumer', '05_Backtesting', 'claude', 'motor')
 LECTOR = os.path.join(BT, 'lector.py')
 MOTOR_CS = os.path.join(RAIZ, 'NinjaTrader', 'MotorChaumer.cs')
 ARNES_CS = os.path.join(RAIZ, 'NinjaTrader', 'pruebas', 'ArnesMotor.cs')
+MARCACION_CS = os.path.join(RAIZ, 'NinjaTrader', 'MarcacionChaumer.cs')
 REGLAS = os.path.join(RAIZ, 'chaumer', '01_Plan', 'reglas.json')
 CSC = r'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 RE_SELLO = r'SELLO = "[^"]*"'
@@ -122,10 +124,30 @@ def canon_vivo(m, V, d):
 
 
 # ── los dos motores ────────────────────────────────────────────────────────
+def zigzag_de_marcacion(carpeta):
+    """La clase ZigzagChaumer de MarcacionChaumer.cs, copiada a un archivo aparte para compilarla con el arnés.
+    El indicador NO se toca (Kris, 07/10/2026): es el de su gráfico operativo y queda independiente del bot."""
+    txt = leer(MARCACION_CS)
+    a = txt.index('public static class ZigzagChaumer')
+    i = txt.index('{', a); nivel = 0
+    for j in range(i, len(txt)):
+        if txt[j] == '{': nivel += 1
+        elif txt[j] == '}':
+            nivel -= 1
+            if nivel == 0: break
+    destino = os.path.join(carpeta, 'ZigzagChaumer.cs')
+    with open(destino, 'w', encoding='utf-8') as f:
+        f.write('// Copiado de NinjaTrader/MarcacionChaumer.cs por scripts/bot/sincronia.py, solo para compararlo.\n'
+                'using System;\nusing System.Collections.Generic;\nusing System.Linq;\n'
+                'namespace NinjaTrader.NinjaScript.Indicators\n{\n    ' + txt[a:j + 1] + '\n}\n')
+    return destino
+
+
 def compilar():
-    dest = os.path.join(tempfile.mkdtemp(prefix='arnes_'), 'ArnesMotor.exe')
-    p = subprocess.run([CSC, '/nologo', '/optimize', '/codepage:65001', '/target:exe', f'/out:{dest}', MOTOR_CS, ARNES_CS],
-                       capture_output=True)
+    carpeta = tempfile.mkdtemp(prefix='arnes_')
+    dest = os.path.join(carpeta, 'ArnesMotor.exe')
+    p = subprocess.run([CSC, '/nologo', '/optimize', '/codepage:65001', '/target:exe', f'/out:{dest}', MOTOR_CS, ARNES_CS,
+                        zigzag_de_marcacion(carpeta)], capture_output=True)
     salida = p.stdout.decode('utf-8', 'replace') + p.stderr.decode('utf-8', 'replace')
     if p.returncode != 0:
         print('❌ csc no compila MotorChaumer.cs + ArnesMotor.cs:\n' + salida)

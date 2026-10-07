@@ -42,8 +42,8 @@ solo porque el mercado sea de NY.
 | `SupabaseDailyLevels.cs` | Escribe los niveles de referencia del día en `sesiones` |
 | `ChecklistChaumer.cs` | Pinta el checklist en el gráfico; lee de `catalogo_reglas` y `catalogo_setups` |
 | `CadenaDiaria.cs` | AddOn sin ventana: exporta las velas del día y lanza el puente del motor (fase 7) |
-| `MarcacionChaumer.cs` | El zigzag blanco del motor en tiempo real. Desde el 06/10/2026 lo calcula `MotorChaumer.Zigzag` (antes, su propia copia `ZigzagChaumer`, probada en 100 días el 5 oct) |
-| `MotorChaumer.cs` | **`lector.py` en C#**, traducción literal y sellada (D-038). Lo usan el bot y la marcación. Va en `Custom\AddOns\`. Se cambia junto con `lector.py`: `.claude/rules/bot.md` |
+| `MarcacionChaumer.cs` | El zigzag blanco del motor en tiempo real, con su propia copia `ZigzagChaumer` (probada en 100 días el 5 oct). **Es el indicador del gráfico operativo de Kris y no se toca sin su sí; independiente del bot** (07/10/2026: se restauró tal cual tras un día dependiendo de `MotorChaumer`). `scripts/bot/sincronia.py` compara su zigzag con el motor sin modificarlo |
+| `MotorChaumer.cs` | **`lector.py` en C#**, traducción literal y sellada (D-038). Lo usa el bot. Va en `Custom\AddOns\`. Se cambia junto con `lector.py`: `.claude/rules/bot.md` |
 | `BotChaumer.cs` | **La estrategia del bot** (D-038). Va en `Custom\Strategies\`. Opera lo que diga `MotorChaumer` al cierre de cada vela, con candados; registro en `bot_operaciones`; configuración en `Documentos\NinjaTrader 8\bot-chaumer.json`. En un gráfico solo opera en tiempo real (y en Market Replay); en el Analyzer (cuenta `Backtest`), sobre el histórico, y deja un CSV en `Documentos\NinjaTrader 8\bot-chaumer\` |
 | `pruebas/ArnesMotor.cs` | Consola para `scripts/bot/sincronia.py`. **No se instala** en NinjaTrader |
 

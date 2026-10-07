@@ -13,8 +13,9 @@
 //  misma fuente que lee lector.py.
 //
 //  Sin dependencias de NinjaTrader y en C# 5 (sin ?., sin $"", sin =>-miembros), para que lo
-//  compile el csc del sistema fuera de NinjaTrader. Lo usan BotChaumer (opera) y MarcacionChaumer
-//  (dibuja el zigzag).
+//  compile el csc del sistema fuera de NinjaTrader. Lo usa BotChaumer (opera). MarcacionChaumer NO:
+//  es el indicador del gráfico operativo de Kris y queda independiente del bot con su propio zigzag
+//  (07/10/2026), que scripts/bot/sincronia.py compara con este motor sin tocarlo.
 //
 //  Instalar: copiar a Documentos\NinjaTrader 8\bin\Custom\AddOns\ y compilar (F5).
 // ═══════════════════════════════════════════════════════════════════════════
@@ -34,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:8c98cbb36c090fb7 C:661e08ea1f6877dc";
+        public const string SELLO = "L:8c98cbb36c090fb7 C:7deb42cb5f9f9576";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -963,70 +964,6 @@ namespace NinjaTrader.NinjaScript
             }
             res.Trade = trade;
             res.Orden = trade != null ? null : orden;
-        }
-
-        // ─────────────────────────────────────────────────────────── zigzag suelto
-        /// <summary>El zigzag de leer_sesion (piv) sobre las velas desde la vela base (índice 0), sin zonas: lo
-        /// dibuja MarcacionChaumer. null si aún no se sabe la dirección del día. La sincronía lo compara con piv.</summary>
-        public static List<Vertice> Zigzag(double[] o, double[] h, double[] l, double[] c, int n)
-        {
-            if (n < 1) return null;
-            bool alc = c[0] > o[0];
-            if (c[0] == o[0])
-            {
-                bool decidido = false;
-                for (int j = 1; j < n; j++)
-                {
-                    bool up = h[j] > h[0], dn = l[j] < l[0];
-                    if (!(up || dn)) continue;
-                    if (up && dn)
-                    {
-                        if (c[j] == o[j]) return null;
-                        alc = c[j] < o[j];
-                    }
-                    else alc = up;
-                    decidido = true; break;
-                }
-                if (!decidido) return null;
-            }
-            var piv = new List<Vertice> { new Vertice { I = 0, Precio = alc ? l[0] : h[0], Confirma = 0 } };
-            bool corrida = true;
-            int ext = 0, rExt = 0;
-            for (int i = 1; i < n; i++)
-            {
-                int p = i - 1;
-                if (corrida)
-                {
-                    bool muere = alc ? l[i] < l[p] : h[i] > h[p];
-                    bool nuevoExt = alc ? h[i] > h[ext] : l[i] < l[ext];
-                    if (nuevoExt && !muere) ext = i;
-                    else if (nuevoExt && muere)
-                    {
-                        bool extremoPrimero = alc ? c[i] < o[i] : c[i] >= o[i];
-                        if (extremoPrimero) ext = i;
-                    }
-                    if (!muere) continue;
-                    piv.Add(new Vertice { I = ext, Precio = alc ? h[ext] : l[ext], Confirma = i });
-                    corrida = false; rExt = i;
-                }
-                else
-                {
-                    bool confirma = alc ? h[i] > h[p] : l[i] < l[p];
-                    bool hunde = alc ? l[i] < l[rExt] : h[i] > h[rExt];
-                    if (hunde && !confirma) rExt = i;
-                    else if (hunde && confirma)
-                    {
-                        bool extremoPrimero = alc ? c[i] >= o[i] : c[i] < o[i];
-                        if (extremoPrimero) rExt = i;
-                    }
-                    if (!confirma) continue;
-                    piv.Add(new Vertice { I = rExt, Precio = alc ? l[rExt] : h[rExt], Confirma = i });
-                    corrida = true; ext = i;
-                }
-            }
-            if (corrida) piv.Add(new Vertice { I = ext, Precio = alc ? h[ext] : l[ext], Confirma = -1 });
-            else piv.Add(new Vertice { I = rExt, Precio = alc ? l[rExt] : h[rExt], Confirma = -1 });
-            return piv;
         }
 
         // ─────────────────────────────────────────────────────────── el sello

@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using NinjaTrader.NinjaScript;
+using NinjaTrader.NinjaScript.Indicators;
 
 static class ArnesMotor
 {
@@ -64,11 +65,12 @@ static class ArnesMotor
         foreach (var e in r.Eventos) w.WriteLine("E " + e);
         w.WriteLine("T " + CanonTrade(r.Trade));
         w.WriteLine("O " + CanonOrden(r.Orden));
-        // el zigzag suelto de MarcacionChaumer, sobre las velas desde la base: tiene que dar el mismo piv
+        // el zigzag propio de MarcacionChaumer (ZigzagChaumer, que sincronia.py extrae del indicador SIN tocarlo),
+        // sobre las velas desde la base: tiene que dar el mismo piv que el motor
         int n = r.Fin - r.B + 1;
         double[] o = new double[n], h = new double[n], l2 = new double[n], c = new double[n];
         for (int k = 0; k < n; k++) { var x = r.D[r.B + k]; o[k] = x.O; h[k] = x.H; l2[k] = x.L; c[k] = x.C; }
-        var zz = MotorChaumer.Zigzag(o, h, l2, c, n);
+        var zz = ZigzagChaumer.Calcular(o, h, l2, c, n);
         if (zz != null)
             foreach (var v in zz) w.WriteLine("ZZ " + v.I + " " + MotorChaumer.F2(v.Precio) + " " + (v.Confirma < 0 ? "-" : v.Confirma.ToString()));
     }

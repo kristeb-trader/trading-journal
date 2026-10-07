@@ -1,6 +1,6 @@
 # BotChaumer — el motor operando en NinjaTrader
 
-**Versión:** v1.6 · **Estado:** ✅ **APROBADO** el 06/10/2026 (D-038) · 🚧 en implementación: **fases 1 y 2 cerradas · fase 3: Strategy Analyzer 17/17, falta el Market Replay** · 📝 §12 (el motor dibujado en vivo) en propuesta, segunda versión.
+**Versión:** v1.7 · **Estado:** ✅ **APROBADO** el 06/10/2026 (D-038) · 🚧 en implementación: **fases 1 y 2 cerradas · fase 3: Strategy Analyzer 17/17, falta el Market Replay** · §12 (el motor dibujado en vivo) **aprobado**: D0 cerrada, D1 y D2 pendientes.
 **Escrito:** 06/10/2026, tras el diagnóstico del mismo día.
 
 | Versión | Fecha | Qué cambió |
@@ -12,6 +12,7 @@
 | v1.4 | 07/10/2026 | **Strategy Analyzer (MNQ 12-26, 1 min, ETH, 13/09 → 06/10): 17 de 17 días idénticos al motor** — setup, sentido, hora de la orden, precios, contratos, hora del llenado y resultado. Hizo falta: (1) corregir la hora de una orden repuesta (02/10: el motor cambia el Reingreso de las 9:23 por la Continuación de las 9:24); (2) **el 18/09 no estaba en la base de datos de NinjaTrader** (el archivo de minutos pesaba 32 bytes; la cadena sí lo tenía, del 24/09): se descargó con Tools → Historical Data → Load. Desde entonces el bot deja en el Analyzer su registro en un archivo de la pasada y anota cada día hábil con menos de 120 velas de ventana; `comparar.py` cuenta los días del motor que faltan en el CSV. Diferencias intravela: ninguna en estos 17 días |
 | v1.5 | 07/10/2026 | **§12 en propuesta:** el motor dibujado en vivo (zonas, zigzag, puntos de referencia y la operación) en `MarcacionChaumer`, con `ChaumerNT.cs` compartido con el bot. Lo pide Kris |
 | v1.6 | 07/10/2026 | **§12 rehecho entero.** Kris: `MarcacionChaumer` no se toca y queda independiente del bot. Se restaura su versión de `b2cd618` (la fase 2 le había quitado su zigzag propio), `sincronia.py` lo vigila sin modificarlo, y el dibujo en vivo va a un indicador nuevo, `VistaMotorChaumer` |
+| v1.7 | 07/10/2026 | **§12 aprobado. D0 cerrada:** `MarcacionChaumer.cs` restaurado byte a byte a `b2cd618` (blob `9cea7cf`); `MotorChaumer.Zigzag` borrado; `sincronia.py` extrae `ZigzagChaumer` del indicador sin tocarlo y lo compara: 64/64, y una mutación en su zigzag salta. Sello nuevo `L:8c98cbb36c090fb7 C:7deb42cb5f9f9576` (solo cambió el C#: el motor de Python es el mismo) |
 
 ---
 
@@ -245,7 +246,7 @@ y `tasks/current.md`.
 
 ---
 
-## 12 · Ampliación: el motor dibujado en vivo — 📝 PROPUESTA, segunda versión (07/10/2026)
+## 12 · Ampliación: el motor dibujado en vivo — ✅ APROBADO (07/10/2026), segunda versión
 
 **Lo pide Kris (07/10):** que en el gráfico donde corre el bot se dibujen solos, en vivo, el zigzag **y las zonas**. Hoy
 el bot calcula todo pero no dibuja nada, y las zonas solo existen en los PNG de `dia.py`.
