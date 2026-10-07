@@ -9,6 +9,9 @@ decidir EXACTAMENTE lo mismo. Esto lo comprueba y, solo entonces, sella.
     python scripts/bot/sincronia.py --sellar                     … y con 0 diferencias escribe el SELLO
     python scripts/bot/sincronia.py --comprobar-sello            ¿el SELLO es el de los archivos de hoy? (rápido)
     python scripts/bot/sincronia.py --comprobar-sello --staged   … el de lo que va al commit (el hook pre-commit)
+    python scripts/bot/sincronia.py --sellar --cambio-de-regla   tras un cambio de regla APROBADO: los días que cambian
+                                                                 respecto a git se enseñan, no bloquean; los dos motores
+                                                                 tienen que seguir a 0 diferencias entre sí
 
 Por cada día con datos (los mismos que scripts/cadena/prueba_motor.py) compara, con el día ENTERO, el registro, las
 zonas, el zigzag, los reingresos, los eventos, la operación y la orden; y VELA A VELA, en cada vela de la ventana, la
@@ -189,10 +192,18 @@ def main():
 
     print('=== 1 · Regresión del motor de Python (prueba_motor.py) ===')
     p = subprocess.run([sys.executable, os.path.join(RAIZ, 'scripts', 'cadena', 'prueba_motor.py')], capture_output=True)
-    ultima = p.stdout.decode('utf-8', 'replace').strip().splitlines()[-1:] or ['(sin salida)']
+    salida = p.stdout.decode('utf-8', 'replace')
+    ultima = salida.strip().splitlines()[-1:] or ['(sin salida)']
     print('  ' + ultima[0])
     if p.returncode != 0:
-        print(p.stdout.decode('utf-8', 'replace')); fallos += 1
+        if '--cambio-de-regla' in args:
+            # Un cambio de regla aprobado cambia días a propósito: se enseñan para revisarlos, no bloquean.
+            # Lo que sí tiene que seguir a 0 es la diferencia entre los dos motores (paso 5).
+            cambian = [l for l in salida.splitlines() if l.strip().startswith('❌')]
+            print(f'  ⚠ cambio de regla: {len(cambian)} días no Fed cambian respecto a git (esperado, se revisan):')
+            for l in cambian: print('   ' + l.strip()[:160])
+        else:
+            print(salida); fallos += 1
 
     print('=== 2 · Compilar MotorChaumer.cs con el csc del sistema (C# 5) ===')
     exe = compilar(); print('  ✅ compila')

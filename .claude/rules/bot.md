@@ -26,7 +26,9 @@ todo lo demás, o no llega a ninguno** (Kris, 06/10/2026).
    `ZigzagChaumer`. La sincronía lo compara sin modificarlo; si un cambio de corridas o retrocesos lo descuadra, se le
    dice a Kris y se le pide el cambio.
 2. `python scripts/bot/sincronia.py --sellar`: regresión + los dos motores con el día entero y vela a vela en todos
-   los días con datos. Solo con **0 diferencias** escribe el `SELLO`.
+   los días con datos. Solo con **0 diferencias** escribe el `SELLO`. Si es un **cambio de regla aprobado**, con
+   `--cambio-de-regla`: los días que cambian respecto a git se enseñan para revisarlos y no bloquean; los dos motores
+   tienen que seguir a 0 entre sí. Después, las fichas de los días que cambian se rehacen con la cadena.
 3. Commit con los dos archivos. El hook `scripts/hooks/pre-commit` rechaza el commit si el sello no es el suyo
    (activado con `git config core.hooksPath scripts/hooks`).
 4. **Avisar a Kris: copiar `MotorChaumer.cs` a `Documentos\NinjaTrader 8\bin\Custom\AddOns\` y F5.** Sin eso el bot

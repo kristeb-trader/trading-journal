@@ -363,6 +363,7 @@ def leer_sesion(V, dia, minimo=30):
                     # hacia arriba a las 10:07, que antes lo estiraba dentro de la
                     # resistencia viva de 9:09 y dejaba las dos zonas pisandose.
                     estira_ok = (z.tipo=='R' and d=='arriba') or (z.tipo=='S' and d=='abajo')
+                    estirada = False
                     if d=='abajo':
                         cuerpo = kr['c'] < z.lo
                         # 15/09/2026: la apendice tambien pasa por el filtro de la banda.
@@ -383,7 +384,7 @@ def leer_sesion(V, dia, minimo=30):
                                        f"APÉNDICE S {ap.lo:.2f}-{ap.hi:.2f} sobre "
                                        f"{col(kr)//100}:{kr['t'][2:4]}")
                         elif not cuerpo and estira_ok:
-                            z.lo=min(z.lo,kr['l']); z.hist.append((i,z.lo,z.hi))
+                            z.lo=min(z.lo,kr['l']); z.hist.append((i,z.lo,z.hi)); estirada=True
                             log.append(f"{col(k)//100}:{k['t'][2:4]} plazo vencido → se ESTIRA "
                                        f"la zona a {z.lo:.2f}-{z.hi:.2f}")
                     else:
@@ -397,12 +398,17 @@ def leer_sesion(V, dia, minimo=30):
                                        f"APÉNDICE R {ap.lo:.2f}-{ap.hi:.2f} sobre "
                                        f"{col(kr)//100}:{kr['t'][2:4]}")
                         elif not cuerpo and estira_ok:
-                            z.hi=max(z.hi,kr['h']); z.hist.append((i,z.lo,z.hi))
+                            z.hi=max(z.hi,kr['h']); z.hist.append((i,z.lo,z.hi)); estirada=True
                             log.append(f"{col(k)//100}:{k['t'][2:4]} plazo vencido → se ESTIRA "
                                        f"la zona a {z.lo:.2f}-{z.hi:.2f}")
-                    # El rompimiento SIGUE pendiente: si algun dia llega la consecucion,
-                    # la zona queda traspasada igual.
-                    z.pend=(d,ir,ex,True)
+                    # Con la APENDICE el rompimiento SIGUE pendiente: si algun dia llega la
+                    # consecucion, la zona original queda traspasada igual (R-20).
+                    # Si la zona SE ESTIRA, el rompimiento se CIERRA (plan 3.45, 07/10/2026, R-10):
+                    # la zona estirada vuelve a empezar en su borde nuevo y para traspasarla hace
+                    # falta un rompimiento nuevo con su propia consecucion. Antes seguia pendiente
+                    # y, como su consecucion es el borde nuevo, pasar 1 tick de la zona estirada
+                    # ya la daba por traspasada (07/10: la resistencia de las 8:32 murio a las 9:28).
+                    z.pend = None if estirada else (d,ir,ex,True)
             if z.tipo=='P' and z.pend is not None and not resuelto:
                 # R-15 (30/09/2026, jornada del 8/09): una zona sin papel sale por el lado que PRIMERO
                 # consiga rompimiento + consecucion. Hasta hoy, anotado un lado, el motor ya no miraba el

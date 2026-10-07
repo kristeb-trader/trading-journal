@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:8c98cbb36c090fb7 C:7deb42cb5f9f9576";
+        public const string SELLO = "L:bf7669a467028db9 C:b1f088794030aa13";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -389,6 +389,7 @@ namespace NinjaTrader.NinjaScript
                         {
                             var kr = D[ir];
                             bool estiraOk = (z.Tipo == "R" && d == "arriba") || (z.Tipo == "S" && d == "abajo");
+                            bool estirada = false;
                             if (d == "abajo")
                             {
                                 bool cuerpo = kr.C < z.Lo;
@@ -401,7 +402,7 @@ namespace NinjaTrader.NinjaScript
                                 }
                                 else if (!cuerpo && estiraOk)
                                 {
-                                    z.Lo = Math.Min(z.Lo, kr.L); z.Historia.Add(new Hist { J = i, Lo = z.Lo, Hi = z.Hi });
+                                    z.Lo = Math.Min(z.Lo, kr.L); z.Historia.Add(new Hist { J = i, Lo = z.Lo, Hi = z.Hi }); estirada = true;
                                     log.Add(Hh(k) + " plazo vencido → se ESTIRA la zona a " + F2(z.Lo) + "-" + F2(z.Hi));
                                 }
                             }
@@ -417,11 +418,13 @@ namespace NinjaTrader.NinjaScript
                                 }
                                 else if (!cuerpo && estiraOk)
                                 {
-                                    z.Hi = Math.Max(z.Hi, kr.H); z.Historia.Add(new Hist { J = i, Lo = z.Lo, Hi = z.Hi });
+                                    z.Hi = Math.Max(z.Hi, kr.H); z.Historia.Add(new Hist { J = i, Lo = z.Lo, Hi = z.Hi }); estirada = true;
                                     log.Add(Hh(k) + " plazo vencido → se ESTIRA la zona a " + F2(z.Lo) + "-" + F2(z.Hi));
                                 }
                             }
-                            z.Pend = new Pend { Dir = d, I = ir, Ex = ex, Hecho = true };
+                            // Con la apéndice el rompimiento sigue pendiente (R-20); si la zona se estira, se CIERRA:
+                            // hace falta un rompimiento nuevo de su borde nuevo con su propia consecución (plan 3.45, R-10)
+                            z.Pend = estirada ? null : new Pend { Dir = d, I = ir, Ex = ex, Hecho = true };
                         }
                     }
                     if (z.Tipo == "P" && z.Pend != null && !resuelto)
