@@ -19,6 +19,15 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
 - [x] **§12 D0** (07/10): `MarcacionChaumer` restaurado tal cual e independiente del bot; la sincronía lo vigila sin tocarlo
 - [x] **Kris:** `MarcacionChaumer.cs` y `MotorChaumer.cs` copiados y compilados (07/10)
 - [x] **§12 D1** (07/10): `ChaumerNT.cs`; el Analyzer vuelve a dar 17/17, CSV idéntico al anterior
+- [x] **Plan 3.45** (07/10, Kris): al estirarse la zona, el rompimiento que la estiró se cierra. Plan (`d580983`), los dos
+  motores con sello nuevo (`cc233a1`), fichas de sep–oct rehechas y publicadas. 18 días cambian zonas; 07/10 y 01/07
+  pasan a no operar
+- [ ] **Kris:** copiar `MotorChaumer.cs` (sello `L:bf7669a4…`) a `Custom\AddOns\` y F5, fuera de la ventana. Sin eso el
+  bot y la vista no se arman ("motor desincronizado")
+- [ ] **Abiertas del 07/10 (Kris):** ¿cierra también el rompimiento la **zona apéndice** (R-11)? ¿Y el estiramiento por
+  **superposición** (R-13, que dice que la zona conserva su historial)? Hoy los dos siguen como estaban
+- [ ] **Bot:** distinguir "encendido después del llenado del motor" de una diferencia intravela. El 07/10 el bot se
+  reinició a las 9:36 (F5 en plena ventana) y la fila dice que el motor la dio por llenada y el mercado no
 - [ ] **§12 D2** `VistaMotorChaumer`: código hecho (07/10). **Kris:** copiar a `Custom/Indicators`, F5 y el Market Replay del 23/09 y el 02/10 con el bot y la vista
 - [ ] **Fase 4 · el pasado entero**: velas desde el 12/06/2025, Strategy Analyzer, Market Replay, informe
 - [ ] **Fase 5 · SimBot en vivo**, con la comparación diaria en la cadena
