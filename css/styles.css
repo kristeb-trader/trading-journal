@@ -5166,30 +5166,41 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 }
 .bt-card-h i { color: var(--text3); font-size: 1rem; }
 .bt-curva { height: 240px; padding: 12px 12px 8px; }
-.bt-dos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+/* Lado a lado solo si cada tabla cabe entera; si no, una debajo de otra. */
+.bt-dos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(560px, 100%), 1fr)); gap: 0 14px; }
 .bt-dos .bt-card { margin-bottom: 14px; }
 /* Las columnas en un grid por tabla: cabecera, filas y total comparten plantilla. */
 .bt-tabla { overflow-x: auto; }
+/* La letra crece con la ventana (pedido de Kris, 09/10): 16 px a 1280, 19 px en
+   una pantalla grande, 14 px en el móvil. En px y no en rem: la raíz de la app
+   mide 14 px y con rem las cifras se quedaban pequeñas. */
 .bt-tr {
-  display: grid; align-items: center; gap: 10px; padding: 8px 16px;
-  border-bottom: 1px solid var(--border); font-size: 0.82rem; color: var(--text2);
+  display: grid; align-items: center; gap: 12px; padding: 0.7em 18px;
+  border-bottom: 1px solid var(--border); color: var(--text2);
+  font-size: clamp(14px, 9px + 0.55vw, 19px); font-variant-numeric: tabular-nums;
 }
-.bt-t-mes .bt-tr { grid-template-columns: minmax(120px, 1.6fr) repeat(5, minmax(44px, 0.7fr)) minmax(64px, 1fr) minmax(72px, 1fr); min-width: 560px; }
-.bt-t-por .bt-tr { grid-template-columns: minmax(90px, 1.3fr) minmax(36px, 0.6fr) minmax(56px, 0.9fr) minmax(48px, 0.8fr) minmax(56px, 0.9fr) minmax(64px, 1fr); min-width: 400px; }
+.bt-t-mes .bt-tr { grid-template-columns: minmax(150px, 1.6fr) repeat(5, minmax(64px, 0.7fr)) minmax(80px, 1fr) minmax(90px, 1fr); min-width: 740px; }
+.bt-t-por .bt-tr { grid-template-columns: minmax(110px, 1.3fr) minmax(40px, 0.6fr) minmax(66px, 0.9fr) minmax(56px, 0.8fr) minmax(70px, 0.9fr) minmax(80px, 1fr); min-width: 480px; }
 .bt-tr:last-child { border-bottom: none; }
-.bt-tr.head { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text3); padding-top: 9px; padding-bottom: 9px; }
-.bt-tr.total { background: var(--bg2); font-weight: 700; }
-.bt-tr.total .bt-td-nom { color: var(--text); }
+.bt-tr.head {
+  font-size: clamp(11px, 8px + 0.3vw, 14px); font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--text3); padding-top: 0.9em; padding-bottom: 0.9em;
+}
+/* El Total, la fila que se busca primero: más grande, con su franja y separado. */
+.bt-tr.total {
+  font-size: clamp(16px, 10px + 0.7vw, 23px); font-weight: 800; padding-top: 0.75em; padding-bottom: 0.75em;
+  color: var(--text); background: var(--accent-dim); border-top: 2px solid var(--accent); box-shadow: inset 4px 0 0 var(--accent);
+}
+.bt-tr.total .bt-td-nom { color: var(--text); text-transform: uppercase; letter-spacing: 0.04em; }
 .bt-td-nom { color: var(--text); font-weight: 600; }
 .bt-tr .bt-efec { color: var(--text); font-weight: 700; }
-@media (max-width: 900px) { .bt-dos { grid-template-columns: 1fr; } }
 @media (max-width: 640px) {
   .bt-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .bt-kpi { padding: 12px; }
   .bt-kpi b { font-size: 1.15rem; }
   /* Sin Jornadas ni Puntos: así Efectividad y P&L caben sin desplazar. */
   .bt-tabla .bt-opt { display: none; }
-  .bt-tr { gap: 8px; padding: 8px 12px; }
+  .bt-tr { gap: 8px; padding-left: 12px; padding-right: 12px; }
   .bt-t-mes .bt-tr { grid-template-columns: minmax(0, 1.8fr) repeat(3, minmax(26px, 0.5fr)) minmax(40px, 0.7fr) minmax(58px, 1fr); min-width: 0; }
   .bt-t-por .bt-tr { grid-template-columns: minmax(0, 1.5fr) minmax(28px, 0.5fr) minmax(48px, 0.9fr) minmax(40px, 0.7fr) minmax(58px, 1fr); min-width: 0; }
 }
