@@ -3,7 +3,7 @@
 > **Un solo sitio para los números que pueden cambiar.**
 > Las reglas citan el **nombre** del parámetro, no el valor. Se cambia aquí y se propaga a todo el plan.
 
-**Actualizado:** 2026-10-05
+**Actualizado:** 2026-10-09
 
 ---
 
@@ -44,6 +44,7 @@
 | **`PREMERCADO_INICIO`** | 19:00 hora Colombia (apertura de Tokio) | `R-15` |
 | **`VENTANA_OPERATIVA`** | 09:30–11:30 ET | `R-02` |
 | **`CANCELACION_FINAL`** | 11:29 ET | `R-29` |
+| **`CIERRE_POR_HORA`** | 16:50 ET | `R-33` — lo que siga abierto se cierra a mercado al terminar esa vela: 10 minutos antes del cierre de la sesión de futuros del CME (17:00 ET). En Colombia, 15:50 en verano y 16:50 en invierno *(09/10/2026)* |
 | **`ORIGEN_DEL_STOP`** | desde que **nació la zona** hasta la vela de rompimiento | `R-32` — el stop es el extremo alcanzado en todo ese tramo, no solo el del retroceso que originó la zona *(27/08/2026)* |
 | **`VENTANA_NOTICIA`** | ±5 minutos | `R-35` |
 

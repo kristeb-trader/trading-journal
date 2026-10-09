@@ -142,6 +142,7 @@ Con `P-25` cerrado queda escrita, por primera vez y en un solo sitio, la secuenc
 - **Acción pendiente:** confirmar compatibilidad con la disponibilidad real del operador frente a la pantalla. Si no lo es, definir un corte por tiempo.
 - **Nota:** interactúa con `P-03` — algunas prop firms fuerzan el cierre de posiciones a una hora determinada.
 - **Sub-fase:** F1.6
+- **Estado:** ✅ **cerrado el 09/10/2026** por el operador: lo que siga abierto se cierra a mercado a las 16:50 de Nueva York, 10 minutos antes del cierre de la sesión de futuros (`CIERRE_POR_HORA`, `R-33`). Caso de origen: la operación del 09/10, abierta de 8:45 a 13:24 hora Colombia.
 
 ### P-08 · Riesgo por operación vs capital — ACTUALIZADO 24/08/2026
 - **Valor real, confirmado por el operador:** **`STOP_MAX` = 80 puntos = 320 ticks = $160** en MNQ.

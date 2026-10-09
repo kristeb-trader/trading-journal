@@ -137,14 +137,14 @@ Riesgo residual aceptado: la ventana de exposición manual tras el llenado, hast
 
 Palabras del operador: *"siempre el target debe estar libre de zonas o debe siempre tener espacio de recorrido sin nada en contra"*.
 
-## R-33 · Solo hay dos salidas: stop u objetivo
+## R-33 · Tres salidas: stop, objetivo o cierre por hora
 
-> Una vez ajustados stop y target, **no se gestiona la posición. Nunca.** Solo la cierran el stop o el objetivo, **aunque termine la ventana operativa**.
+> Una vez ajustados stop y target, **no se gestiona la posición. Nunca.** Solo la cierran el stop o el objetivo, **aunque termine la ventana operativa**, y si a la hora de `CIERRE_POR_HORA` sigue abierta, el cierre por hora.
 
 | | |
 |---|---|
 | Aplica a | Continuación · Reingreso |
-| Parámetros | `VENTANA_OPERATIVA` |
+| Parámetros | `VENTANA_OPERATIVA` · `CIERRE_POR_HORA` |
 | Relacionadas | R-02 · R-28 · R-31 |
 | Casos | G-11 · G-12 |
 | Absorbe | R-30 |
@@ -159,10 +159,10 @@ Palabras del operador: *"siempre el target debe estar libre de zonas o debe siem
 | **Cerrar a mano** | ❌ también si el precio no se mueve o va en contra |
 | **Cierre parcial** | ❌ aunque haya varios contratos (`R-04`): entran y salen todos juntos |
 | **Añadir** contratos | ❌ |
-| **Cerrar por hora** | ❌ no existe |
 
 - **El fin de la `VENTANA_OPERATIVA` prohíbe abrir; no obliga a cerrar.** Una operación abierta sigue hasta stop u objetivo aunque la ventana haya terminado.
-- **Solo hay dos salidas: stop u objetivo.** No hay una tercera. Se deja que el mercado defina el resultado.
+- **Si a la hora de `CIERRE_POR_HORA` sigue abierta, se cierra a mercado al terminar esa vela** *(09/10/2026)*. Es la tercera salida y la única que no es un nivel: no la decide nadie, la decide el reloj. Se apunta como **CIERRE POR HORA**, con los puntos que haya —ganando o perdiendo—, medidos con el cierre de esa vela. Si el stop o el objetivo se tocan dentro de esa misma vela, mandan ellos.
+- **Solo hay tres salidas: stop, objetivo o cierre por hora.** No hay una cuarta. Hasta esa hora, se deja que el mercado defina el resultado.
 
 ### Por qué
 
@@ -171,4 +171,4 @@ Palabras del operador: *"siempre el target debe estar libre de zonas o debe siem
 
 🔑 **Es la única regla del plan enunciada como prohibición absoluta**, sin excepciones. Y tiene un efecto que va más allá de la disciplina: convierte cada operación en un **experimento limpio**. Cuando se midan los resultados, medirán el setup — no la gestión. Sin esta regla, un plan mecánico no sería medible.
 
-Consecuencia abierta: la sesión no tiene hora de cierre garantizada (`P-07`).
+**El cierre por hora, 09/10/2026.** Palabras del operador: *"si algún día se presenta un trade que siga abierto, se debe cerrar 10 minutos antes del cierre"* — el cierre de la sesión de futuros del CME, a las 17:00 de Nueva York. Caso de origen: la Continuación bajista del 09/10 se llenó a las 8:45 y siguió abierta hasta las 13:24 hora Colombia. Sin hora límite, una operación podía cruzar el cierre de la sesión y seguir de un día para otro. El experimento sigue limpio: el cierre es mecánico, a una hora fija, sin que nadie decida nada. Cierra el pendiente de la sesión sin hora de cierre garantizada (`P-07`).

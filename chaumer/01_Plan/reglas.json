@@ -1085,17 +1085,18 @@
     },
     {
       "id": "R-33",
-      "nombre": "Solo hay dos salidas: stop u objetivo",
+      "nombre": "Tres salidas: stop, objetivo o cierre por hora",
       "grupo": "riesgo_gestion",
       "grupo_nombre": "Riesgo, orden y gestión",
       "grupo_orden": 5,
-      "regla": "Una vez ajustados stop y target, **no se gestiona la posición. Nunca.** Solo la cierran el stop o el objetivo, **aunque termine la ventana operativa**.",
+      "regla": "Una vez ajustados stop y target, **no se gestiona la posición. Nunca.** Solo la cierran el stop o el objetivo, **aunque termine la ventana operativa**, y si a la hora de `CIERRE_POR_HORA` sigue abierta, el cierre por hora.",
       "aplica_a": [
         "Continuación",
         "Reingreso"
       ],
       "parametros": [
-        "VENTANA_OPERATIVA"
+        "VENTANA_OPERATIVA",
+        "CIERRE_POR_HORA"
       ],
       "relacionadas": [
         "R-02",
@@ -1112,12 +1113,12 @@
       "apartado": null,
       "fuente": null,
       "pendiente": null,
-      "como_se_aplica": "| Queda prohibido, sin excepción | |\n|---|---|\n| Mover el **stop** | ❌ en cualquier dirección |\n| Mover el **objetivo** | ❌ en cualquier dirección |\n| **Breakeven** manual | ❌ |\n| **Cerrar a mano** | ❌ también si el precio no se mueve o va en contra |\n| **Cierre parcial** | ❌ aunque haya varios contratos (`R-04`): entran y salen todos juntos |\n| **Añadir** contratos | ❌ |\n| **Cerrar por hora** | ❌ no existe |\n\n- **El fin de la `VENTANA_OPERATIVA` prohíbe abrir; no obliga a cerrar.** Una operación abierta sigue hasta stop u objetivo aunque la ventana haya terminado.\n- **Solo hay dos salidas: stop u objetivo.** No hay una tercera. Se deja que el mercado defina el resultado.",
-      "porque": "> *\"Después de una entrada, y después de ajustar stop y target a sus respectivos niveles, no se toca nada, jamás. Se deja que el mercado haga lo suyo y defina su respectivo resultado. Repito, jamás se gestiona.\"*\n> — Operador, 24/08/2026\n\n🔑 **Es la única regla del plan enunciada como prohibición absoluta**, sin excepciones. Y tiene un efecto que va más allá de la disciplina: convierte cada operación en un **experimento limpio**. Cuando se midan los resultados, medirán el setup — no la gestión. Sin esta regla, un plan mecánico no sería medible.\n\nConsecuencia abierta: la sesión no tiene hora de cierre garantizada (`P-07`).",
+      "como_se_aplica": "| Queda prohibido, sin excepción | |\n|---|---|\n| Mover el **stop** | ❌ en cualquier dirección |\n| Mover el **objetivo** | ❌ en cualquier dirección |\n| **Breakeven** manual | ❌ |\n| **Cerrar a mano** | ❌ también si el precio no se mueve o va en contra |\n| **Cierre parcial** | ❌ aunque haya varios contratos (`R-04`): entran y salen todos juntos |\n| **Añadir** contratos | ❌ |\n\n- **El fin de la `VENTANA_OPERATIVA` prohíbe abrir; no obliga a cerrar.** Una operación abierta sigue hasta stop u objetivo aunque la ventana haya terminado.\n- **Si a la hora de `CIERRE_POR_HORA` sigue abierta, se cierra a mercado al terminar esa vela** *(09/10/2026)*. Es la tercera salida y la única que no es un nivel: no la decide nadie, la decide el reloj. Se apunta como **CIERRE POR HORA**, con los puntos que haya —ganando o perdiendo—, medidos con el cierre de esa vela. Si el stop o el objetivo se tocan dentro de esa misma vela, mandan ellos.\n- **Solo hay tres salidas: stop, objetivo o cierre por hora.** No hay una cuarta. Hasta esa hora, se deja que el mercado defina el resultado.",
+      "porque": "> *\"Después de una entrada, y después de ajustar stop y target a sus respectivos niveles, no se toca nada, jamás. Se deja que el mercado haga lo suyo y defina su respectivo resultado. Repito, jamás se gestiona.\"*\n> — Operador, 24/08/2026\n\n🔑 **Es la única regla del plan enunciada como prohibición absoluta**, sin excepciones. Y tiene un efecto que va más allá de la disciplina: convierte cada operación en un **experimento limpio**. Cuando se midan los resultados, medirán el setup — no la gestión. Sin esta regla, un plan mecánico no sería medible.\n\n**El cierre por hora, 09/10/2026.** Palabras del operador: *\"si algún día se presenta un trade que siga abierto, se debe cerrar 10 minutos antes del cierre\"* — el cierre de la sesión de futuros del CME, a las 17:00 de Nueva York. Caso de origen: la Continuación bajista del 09/10 se llenó a las 8:45 y siguió abierta hasta las 13:24 hora Colombia. Sin hora límite, una operación podía cruzar el cierre de la sesión y seguir de un día para otro. El experimento sigue limpio: el cierre es mecánico, a una hora fija, sin que nadie decida nada. Cierra el pendiente de la sesión sin hora de cierre garantizada (`P-07`).",
       "si_no_se_cumple": null,
       "excepciones": null,
       "orden": 30,
-      "enunciado": "Una vez ajustados stop y target, no se gestiona la posición. Nunca. Solo la cierran el stop o el objetivo, aunque termine la ventana operativa."
+      "enunciado": "Una vez ajustados stop y target, no se gestiona la posición. Nunca. Solo la cierran el stop o el objetivo, aunque termine la ventana operativa, y si a la hora de 16:50 ET sigue abierta, el cierre por hora."
     },
     {
       "id": "R-35",
@@ -1294,6 +1295,10 @@
     },
     "CANCELACION_FINAL": {
       "texto": "11:29 ET",
+      "numero": null
+    },
+    "CIERRE_POR_HORA": {
+      "texto": "16:50 ET",
       "numero": null
     },
     "ORIGEN_DEL_STOP": {

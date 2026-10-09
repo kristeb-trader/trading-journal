@@ -1,6 +1,6 @@
 # FICHA DE MARCADO — generada automáticamente
 
-> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-10-07 con `generar_ficha.py`.
+> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-10-09 con `generar_ficha.py`.
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
@@ -565,9 +565,9 @@ Ancla la regla en el nivel de entrada, mide el stop hasta su referencia estructu
 
 > 🔴 **El objetivo NUNCA se acorta para que quepa.** No existe media entrada ni ratio reducido.
 
-#### `R-33` · Solo hay dos salidas: stop u objetivo
+#### `R-33` · Tres salidas: stop, objetivo o cierre por hora
 
-Una vez ajustados stop y target, **no se gestiona la posición. Nunca.** Solo la cierran el stop o el objetivo, **aunque termine la ventana operativa**.
+Una vez ajustados stop y target, **no se gestiona la posición. Nunca.** Solo la cierran el stop o el objetivo, **aunque termine la ventana operativa**, y si a la hora de `CIERRE_POR_HORA` sigue abierta, el cierre por hora.
 
 **Cómo se aplica**
 
@@ -579,10 +579,10 @@ Una vez ajustados stop y target, **no se gestiona la posición. Nunca.** Solo la
 | **Cerrar a mano** | ❌ también si el precio no se mueve o va en contra |
 | **Cierre parcial** | ❌ aunque haya varios contratos (`R-04`): entran y salen todos juntos |
 | **Añadir** contratos | ❌ |
-| **Cerrar por hora** | ❌ no existe |
 
 - **El fin de la `VENTANA_OPERATIVA` prohíbe abrir; no obliga a cerrar.** Una operación abierta sigue hasta stop u objetivo aunque la ventana haya terminado.
-- **Solo hay dos salidas: stop u objetivo.** No hay una tercera. Se deja que el mercado defina el resultado.
+- **Si a la hora de `CIERRE_POR_HORA` sigue abierta, se cierra a mercado al terminar esa vela** *(09/10/2026)*. Es la tercera salida y la única que no es un nivel: no la decide nadie, la decide el reloj. Se apunta como **CIERRE POR HORA**, con los puntos que haya —ganando o perdiendo—, medidos con el cierre de esa vela. Si el stop o el objetivo se tocan dentro de esa misma vela, mandan ellos.
+- **Solo hay tres salidas: stop, objetivo o cierre por hora.** No hay una cuarta. Hasta esa hora, se deja que el mercado defina el resultado.
 
 ---
 
@@ -659,7 +659,7 @@ Ejecuta la sesión siguiendo la checklist diaria **en orden**, y registra **toda
 > **Un solo sitio para los números que pueden cambiar.**
 > Las reglas citan el **nombre** del parámetro, no el valor. Se cambia aquí y se propaga a todo el plan.
 
-**Actualizado:** 2026-10-05
+**Actualizado:** 2026-10-09
 
 ---
 
@@ -700,6 +700,7 @@ Ejecuta la sesión siguiendo la checklist diaria **en orden**, y registra **toda
 | **`PREMERCADO_INICIO`** | 19:00 hora Colombia (apertura de Tokio) | `R-15` |
 | **`VENTANA_OPERATIVA`** | 09:30–11:30 ET | `R-02` |
 | **`CANCELACION_FINAL`** | 11:29 ET | `R-29` |
+| **`CIERRE_POR_HORA`** | 16:50 ET | `R-33` — lo que siga abierto se cierra a mercado al terminar esa vela: 10 minutos antes del cierre de la sesión de futuros del CME (17:00 ET). En Colombia, 15:50 en verano y 16:50 en invierno *(09/10/2026)* |
 | **`ORIGEN_DEL_STOP`** | desde que **nació la zona** hasta la vela de rompimiento | `R-32` — el stop es el extremo alcanzado en todo ese tramo, no solo el del retroceso que originó la zona *(27/08/2026)* |
 | **`VENTANA_NOTICIA`** | ±5 minutos | `R-35` |
 

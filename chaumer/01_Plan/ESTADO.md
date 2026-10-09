@@ -2,7 +2,7 @@
 
 > **Archivo de arranque.** Léelo primero cada sesión. Las reglas, en `reglas/` (un archivo por grupo); las definiciones, en `GLOSARIO.md`.
 
-**v3.45** · 2026-10-07 · **34 reglas** · 🏁 FASE 1 CERRADA · 🔴 **SESIONES EN MARCHA** · 🚧 FASE 2 en curso: portal web en `04_Web\`
+**v3.46** · 2026-10-09 · **34 reglas** · 🏁 FASE 1 CERRADA · 🔴 **SESIONES EN MARCHA** · 🚧 FASE 2 en curso: portal web en `04_Web\`
 
 > 🔴 **Las sesiones de validación arrancaron el 14/09/2026.** Protocolo en `05_Backtesting\claude\protocolo\LEEME.md`; diferencias en `DISCREPANCIAS.md`; las jornadas, en `GALERIA.md`.
 
@@ -73,7 +73,7 @@
 | `R-29` | Caducidad de la orden pendiente |
 | `R-31` | Configuración de ejecución (ATM `K1`) |
 | `R-32` | Stop y target |
-| `R-33` | Solo hay dos salidas: stop u objetivo |
+| `R-33` | Tres salidas: stop, objetivo o cierre por hora |
 
 ### 6 · Filtros de no-operar (3) · `reglas/6-filtros.md`
 
