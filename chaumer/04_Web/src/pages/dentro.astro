@@ -14,7 +14,7 @@ const v = (n: string) => P.parametro(n);
 const SECCIONES = [
   { id: 'llenado', t: 'Al llenarse' },
   { id: 'no-tocar', t: 'No se toca nada' },
-  { id: 'salidas', t: 'Solo hay dos salidas' },
+  { id: 'salidas', t: 'Tres salidas' },
   { id: 'cerrar', t: 'Al cerrar' },
 ];
 ---
@@ -76,20 +76,22 @@ const SECCIONES = [
   </section>
 
   <section class="ap" id="salidas">
-    <h2>Solo hay dos salidas <Refs cods="R-33" /></h2>
+    <h2>Tres salidas <Refs cods="R-33" /></h2>
 
     <dl class="datos">
       <dt>Salida 1</dt>
       <dd><strong>El stop.</strong></dd>
       <dt>Salida 2</dt>
       <dd><strong>El objetivo.</strong></dd>
-      <dt>Cierre por hora</dt>
-      <dd><strong>No existe.</strong> El fin de la ventana prohíbe abrir, no obliga a cerrar</dd>
+      <dt>Salida 3</dt>
+      <dd><strong>El cierre por hora.</strong> Si a las <span class="cifra-en">{v('CIERRE_POR_HORA')}</span> sigue abierta, se cierra a mercado al terminar esa vela, con lo que haya</dd>
     </dl>
 
     <p>
       Si la ventana de dos horas termina con la operación viva, la operación
-      sigue. No hay ninguna acción que se dispare por reloj.
+      sigue: el fin de la ventana prohíbe abrir, no obliga a cerrar. Lo único
+      que dispara el reloj es el cierre por hora, antes del cierre de la sesión
+      de futuros, para que ninguna operación pase de un día a otro.
     </p>
   </section>
 
