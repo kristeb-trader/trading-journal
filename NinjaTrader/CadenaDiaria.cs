@@ -20,9 +20,10 @@
 //    segundo plano, sin consola, y guarda su salida en el registro.
 //  - Operación abierta (06/10/2026, Kris): si el motor deja la operación del día sin stop
 //    ni objetivo al acabar los datos, el puente deja `AAAA-MM-DD.abierta` junto a las velas.
-//    Entonces el día se vuelve a exportar, REEMPLAZANDO el archivo, con más tiempo: hasta las
-//    13:30 de Nueva York (2 h después de la ventana) y, si sigue abierta, hasta las 16:00 (el
-//    cierre de la sesión de contado). Después ya no se reintenta: queda ABIERTA.
+//    Entonces el día se vuelve a exportar, REEMPLAZANDO el archivo, con más tiempo: cada 30
+//    minutos (12:00, 12:30 … de Nueva York) mientras siga abierta, hasta las 16:00 (el cierre de
+//    la sesión de contado). Después ya no se reintenta: queda ABIERTA. (Hasta el 09/10/2026, solo
+//    a las 13:30 y a las 16:00.)
 //
 //  Configuración: Documentos\NinjaTrader 8\cadena-diaria.json (se crea sola).
 //  Registro:      Documentos\NinjaTrader 8\cadena-diaria\registro.txt
@@ -56,7 +57,9 @@ namespace NinjaTrader.NinjaScript.AddOns
         private const int MARGEN_MIN = 2;          // se exporta 2 min después del fin de ventana
         private const int ESPERA_HOY_MIN = 60;     // hoy incompleto: se reintenta hasta 1 h después
         // Operación abierta: hasta dónde se amplía la exportación, en minutos tras el fin de ventana
-        private static readonly int[] AMPLIAR_MIN = new int[] { 120, 270 };   // 13:30 y 16:00 ET
+        // Cada 30 minutos (09/10/2026): el 09/10 el stop saltó a las 14:24 ET, entre las ampliaciones de las 13:30 y
+        // las 16:00, y la ficha dijo ABIERTA durante horas. Así el resultado llega como mucho 30 min después.
+        private static readonly int[] AMPLIAR_MIN = new int[] { 30, 60, 90, 120, 150, 180, 210, 240, 270 };   // 12:00 → 16:00 ET
 
         // Una sola instancia viva: NinjaTrader crea varias del AddOn (SetDefaults, etc.)
         private static readonly object candado = new object();

@@ -109,9 +109,4 @@ operación ya no existe; ahora el día tiene el corto de 8:46, −66,75); en la 
 la caducidad de la orden, el ejemplo del 9/07 (orden de 8:43 que se llena a las 8:46); en la corrida fluida, el caso
 del 16/07 no dice cómo acaba el día. Kris cerró la revisión el 30/09: no es urgente.
 
-## El calendario «Claude» y una operación del motor que sigue ABIERTA
-
-Si una operación del motor sigue abierta a las 16:00 de Nueva York (después de las dos ampliaciones de la cadena,
-06/10/2026), la ficha queda con `resultado` ABIERTO y `puntos` null, y `js/calendarios.js` la pinta como BE con
-0 puntos. Kris lo deja así por ahora (06/10): con las ampliaciones será raro.
 

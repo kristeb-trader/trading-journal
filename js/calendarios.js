@@ -160,8 +160,19 @@ const Calendarios = (() => {
                     nota: e.estado === 'ok' ? 'El motor no encontró operación' : 'Sin jornada completa' }
         return
       }
-      const p = parseFloat(o.puntos) || 0
       const res = String(o.resultado || '').toLowerCase()
+      if (res === 'abierto') {
+        // Sigue abierta al acabar los datos de la cadena (09/10/2026): no es un B.E. con 0 puntos, es que aún
+        // no se sabe. No suma nada; la cadena la vuelve a mirar cada 30 minutos hasta que se cierre.
+        const setup = [o.setup, o.sentido].filter(Boolean).join(' ')
+        // precios de 5 cifras: es-ES ya agrupa los miles (31.053,00); la trampa de las 4 cifras no aplica
+        const px = v => v == null ? '—' : Number(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        dias[f] = { fecha: f, ops: [], estado: 'abierta', url: r.grafico_url || null,
+                    nota: `${setup}${o.hora ? ` · ${horaCorta(o.hora)}` : ''}: la operación sigue abierta, sin stop ni objetivo todavía.`
+                          + ` Entrada ${px(o.entrada)} · stop ${px(o.stop)} · objetivo ${px(o.objetivo)}. La cadena la vuelve a mirar cada 30 minutos.` }
+        return
+      }
+      const p = parseFloat(o.puntos) || 0
       const op = {
         puntos: p, pnl: pnlCalc(p, cab),
         res: res === 'target' || res === 'stop' ? res : 'be',
@@ -255,6 +266,7 @@ const Calendarios = (() => {
       const estado = d ? d.estado : esp[f] || ''
       const pts = d?.ops.length ? d.ops.reduce((s, o) => s + o.puntos, 0) : null
       const cuerpo = d?.estado === 'bloqueado' ? '<i class="ti ti-lock"></i>'
+        : d?.estado === 'abierta' ? '<i class="ti ti-hourglass"></i>'
         : pts != null ? fmtPts(pts) : ''
       const cls = ['hub-dia', estado && `est-${estado}`, f > hoy && 'futuro', f === hoy && 'hoy'].filter(Boolean).join(' ')
       return `<div class="${cls}"><span class="hub-dia-n">${+f.slice(8)}</span><span class="hub-dia-p">${cuerpo}</span></div>`
@@ -609,6 +621,7 @@ const Calendarios = (() => {
     target: 'day-target', stop: 'day-stop', mixed: 'day-mixed', be: 'day-be',
     'sin-entradas': 'day-sin-setup', 'no-opero': 'day-sin-setup', 'sin-op': 'day-sin-setup',
     bloqueado: 'day-no-trade', error: 'day-no-trade', festivo: 'day-festivo', fomc: 'day-fomc',
+    abierta: 'day-abierta',
   }
   const BADGE = {
     'no-opero':  ['badge-sinsetup', 'ti-eye-off',        'No operó'],
@@ -616,12 +629,13 @@ const Calendarios = (() => {
     bloqueado:   ['badge-noopero',  'ti-lock',           'Registra tu día'],
     error:       ['badge-noopero',  'ti-alert-circle',   'Error del motor'],
     be:          ['badge-be',       'ti-scale',          'B.E.'],
+    abierta:     ['badge-abierta',  'ti-hourglass',      'Abierta'],
     festivo:     ['badge-festivo',  'ti-building-bank',  'Festivo'],
     fomc:        ['badge-fomc',     'ti-chart-candle',   'FOMC'],
   }
   const LEYENDA = {
     chaumer: [['green', 'Target'], ['red', 'Stop'], ['sinsetup', 'No operó'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
-    claude:  [['green', 'Target'], ['red', 'Stop'], ['sinsetup', 'Sin operación'], ['gray', 'Registra tu día'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
+    claude:  [['green', 'Target'], ['red', 'Stop'], ['mixed', 'Abierta'], ['sinsetup', 'Sin operación'], ['gray', 'Registra tu día'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
     manual:  [['green', 'Target'], ['red', 'Stop'], ['sinsetup', 'Sin operación'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
   }
 
@@ -829,7 +843,8 @@ const Calendarios = (() => {
 
     const ETIQ = { target: ['TARGET', 'r-t', 'tone-t'], stop: ['STOP', 'r-s', 'tone-s'], mixed: ['MIXTO', 'r-o', 'tone-o'],
                    be: ['B.E.', 'r-o', 'tone-o'], 'no-opero': ['NO OPERÓ', 'r-o', 'tone-o'],
-                   'sin-op': ['SIN OPERACIÓN', 'r-o', 'tone-o'], error: ['ERROR', 'r-o', 'tone-o'] }
+                   'sin-op': ['SIN OPERACIÓN', 'r-o', 'tone-o'], error: ['ERROR', 'r-o', 'tone-o'],
+                   abierta: ['ABIERTA', 'r-o', 'tone-o'] }
     const [txt, rb, tono] = ETIQ[d.estado] || ETIQ['sin-op']
     const celdas = [celda('Resultado', `<span class="cz-rb ${rb}">${txt}</span>`)]
     if (d.ops.length) {
@@ -842,7 +857,8 @@ const Calendarios = (() => {
     }
 
     let cuerpo = ''
-    if (!d.ops.length && d.nota) cuerpo += bloque(d.estado === 'no-opero' ? 'Por qué no operó' : 'Sin operación', d.nota, 'gry')
+    if (!d.ops.length && d.nota) cuerpo += bloque(d.estado === 'no-opero' ? 'Por qué no operó'
+      : d.estado === 'abierta' ? 'Operación abierta' : 'Sin operación', d.nota, 'gry')
     d.ops.forEach((o, i) => {
       const lineas = [
         d.ops.length > 1 ? `${o.setup}${o.hora ? ` · ${o.hora}` : ''} — ${fmtPts(o.puntos)} pts · ${fmtDinero(o.pnl)}` : '',

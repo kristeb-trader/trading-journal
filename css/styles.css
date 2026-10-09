@@ -534,6 +534,8 @@ body[data-modo-local]::before {
 /* Día FOMC sin operar: color natural ámbar. Si se operó, la celda usa el color
    del resultado y la marca FOMC queda solo en el badge. */
 .cal-cell.day-fomc     { background: rgba(194,137,72,0.12);  border-color: rgba(194,137,72,0.35); }
+/* Operación del motor que sigue abierta: aún no hay resultado (borde discontinuo, no suma puntos) */
+.cal-cell.day-abierta  { background: var(--warning-dim); border: 1px dashed color-mix(in srgb, var(--warning) 55%, transparent); }
 .cal-cell.day-vacaciones { background: rgba(45,178,133,0.10); border-color: rgba(45,178,133,0.30); }
 .cal-cell.day-especial   { background: rgba(224,163,59,0.10); border-color: rgba(224,163,59,0.28); }
 /* Fecha especial futura (FOMC, festivo, vacaciones…): se pinta desde ya con su color,
@@ -792,6 +794,8 @@ body[data-modo-local]::before {
 }
 .hub-card[data-fuente="mio"] .hub-dia.est-no-opero, .hub-dia.est-error { background: var(--bg3); opacity: 0.6; }
 .hub-dia.est-bloqueado { background: var(--bg3); border-style: dashed; }
+.hub-dia.est-abierta   { background: var(--warning-dim); border-style: dashed; border-color: color-mix(in srgb, var(--warning) 55%, transparent); }
+.hub-dia.est-abierta .hub-dia-p { color: var(--warning-txt); }
 .hub-dia.est-bloqueado .hub-dia-p { color: var(--text3); font-size: 0.8rem; }
 .hub-dia.est-festivo { background: color-mix(in srgb, var(--blue) 10%, transparent); border-color: color-mix(in srgb, var(--blue) 25%, transparent); }
 .hub-dia.est-fomc    { background: color-mix(in srgb, var(--warning) 10%, transparent); border-color: color-mix(in srgb, var(--warning) 28%, transparent); }
@@ -1075,6 +1079,7 @@ body[data-modo-local]::before {
 .badge-festivo  { background: rgba(56,131,246,0.1);    color: rgba(96,165,250,0.9); }
 .badge-fomc     { background: rgba(194,137,72,0.12);   color: rgba(214,157,92,0.95); }
 .badge-be       { background: rgba(255,255,255,0.05);  color: var(--text3); }
+.badge-abierta  { background: var(--warning-dim);      color: var(--warning-txt); }
 
 .col-dow { color: var(--text3); font-size: 0.78rem; font-weight: 600; width: 38px; }
 .col-account { color: var(--text3); font-size: 0.78rem; }
