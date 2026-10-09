@@ -1210,16 +1210,22 @@
       </section>
 
       <!-- ═══ BACKTESTING ═════════════════════════════════════════════════ -->
-      <!-- La bitácora del backtesting visual de días pasados (bt_*). Aquí se
-           REGISTRA; el portal de Chaumer la enseña con su curva y sus cifras, en
-           solo lectura. Nunca se mezcla con trades. Ver js/backtesting.js. -->
+      <!-- La bitácora del backtesting visual de días pasados (bt_*). Resumen = el
+           dashboard del total; Bitácora = registrar y corregir. El portal de
+           Chaumer la enseña en solo lectura. Nunca se mezcla con trades. Ver
+           js/backtesting.js y docs/disenos/2026-10-09-resumen-backtesting.md. -->
       <section class="section" id="section-backtesting">
         <div class="section-actions">
           <a class="btn-secondary btn-sm" href="https://plan-operativo-nq.pages.dev/backtesting"
              target="_blank" rel="noopener"><i class="ti ti-external-link"></i> Ver en el portal</a>
           <button class="btn-primary btn-sm" id="btNueva"><i class="ti ti-plus"></i> Registrar jornada</button>
         </div>
-        <div id="btContent"></div>
+        <div class="so-tabs" id="btTabs">
+          <button type="button" class="so-tab active" data-tab="resumen"><i class="ti ti-chart-line"></i> Resumen</button>
+          <button type="button" class="so-tab" data-tab="bitacora"><i class="ti ti-list-details"></i> Bitácora</button>
+        </div>
+        <div class="so-panel active" id="bt-panel-resumen"><div id="btResumen"></div></div>
+        <div class="so-panel" id="bt-panel-bitacora"><div id="btContent"></div></div>
       </section>
 
       <!-- Modal: las dos gráficas de un día, la mía y la suya. Se abre desde la

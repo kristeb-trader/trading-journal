@@ -5147,8 +5147,52 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 }
 
 /* ═══ Backtesting (Otros › Backtesting) ═══════════════════════════════════ */
-/* Misma estructura que Fechas Especiales: tarjeta arriba, grupos con filas.
-   Aquí solo se registra; la curva y las cifras las enseña el portal. */
+/* Bitácora: misma estructura que Fechas Especiales, tarjeta arriba y grupos con
+   filas. Resumen: el dashboard del total (.bt-kpis, .bt-card, .bt-tabla). */
+.bt-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.bt-kpi {
+  display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px;
+}
+.bt-kpi > span { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text3); }
+.bt-kpi b { font-size: 1.45rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.bt-kpi b.bt-pos { color: var(--accent-txt); }
+.bt-kpi b.bt-neg { color: var(--red-txt); }
+.bt-kpi small { font-size: 0.74rem; color: var(--text3); }
+.bt-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; }
+.bt-card-h {
+  display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+  font-size: 0.85rem; font-weight: 700; color: var(--text2); background: var(--bg3); border-bottom: 1px solid var(--border);
+}
+.bt-card-h i { color: var(--text3); font-size: 1rem; }
+.bt-curva { height: 240px; padding: 12px 12px 8px; }
+.bt-dos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.bt-dos .bt-card { margin-bottom: 14px; }
+/* Las columnas en un grid por tabla: cabecera, filas y total comparten plantilla. */
+.bt-tabla { overflow-x: auto; }
+.bt-tr {
+  display: grid; align-items: center; gap: 10px; padding: 8px 16px;
+  border-bottom: 1px solid var(--border); font-size: 0.82rem; color: var(--text2);
+}
+.bt-t-mes .bt-tr { grid-template-columns: minmax(120px, 1.6fr) repeat(5, minmax(44px, 0.7fr)) minmax(64px, 1fr) minmax(72px, 1fr); min-width: 560px; }
+.bt-t-por .bt-tr { grid-template-columns: minmax(90px, 1.3fr) minmax(36px, 0.6fr) minmax(56px, 0.9fr) minmax(48px, 0.8fr) minmax(56px, 0.9fr) minmax(64px, 1fr); min-width: 400px; }
+.bt-tr:last-child { border-bottom: none; }
+.bt-tr.head { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text3); padding-top: 9px; padding-bottom: 9px; }
+.bt-tr.total { background: var(--bg2); font-weight: 700; }
+.bt-tr.total .bt-td-nom { color: var(--text); }
+.bt-td-nom { color: var(--text); font-weight: 600; }
+.bt-tr .bt-efec { color: var(--text); font-weight: 700; }
+@media (max-width: 900px) { .bt-dos { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .bt-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .bt-kpi { padding: 12px; }
+  .bt-kpi b { font-size: 1.15rem; }
+  /* Sin Jornadas ni Puntos: así Efectividad y P&L caben sin desplazar. */
+  .bt-tabla .bt-opt { display: none; }
+  .bt-tr { gap: 8px; padding: 8px 12px; }
+  .bt-t-mes .bt-tr { grid-template-columns: minmax(0, 1.8fr) repeat(3, minmax(26px, 0.5fr)) minmax(40px, 0.7fr) minmax(58px, 1fr); min-width: 0; }
+  .bt-t-por .bt-tr { grid-template-columns: minmax(0, 1.5fr) minmax(28px, 0.5fr) minmax(48px, 0.9fr) minmax(40px, 0.7fr) minmax(58px, 1fr); min-width: 0; }
+}
 .bt-cab {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px;
   background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);

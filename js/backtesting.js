@@ -1,10 +1,12 @@
 // Backtesting — la bitácora del backtesting visual de días pasados (bt_*).
 //
-// Aquí se REGISTRA: jornadas, su operación, su gráfico y los datos de inicio. La
-// curva de capital, las cifras y la tabla por meses las enseña el portal de
-// Chaumer, que lee estas mismas tablas en solo lectura (vistas `portal_bt_*`).
-// Diseño: docs/disenos/2026-09-24-unificacion-chaumer.md (fase 4b) y
-// docs/disenos/2026-09-09-bitacora-backtesting.md.
+// Dos pestañas: Resumen (el dashboard del total: cifras, curva, tablas por mes,
+// setup y dirección) y Bitácora (registrar jornadas, su operación, su gráfico y
+// los datos de inicio). El portal de Chaumer lee estas mismas tablas en solo
+// lectura (vistas `portal_bt_*`), con la misma aritmética que el Resumen.
+// Diseño: docs/disenos/2026-09-24-unificacion-chaumer.md (fase 4b),
+// docs/disenos/2026-09-09-bitacora-backtesting.md y
+// docs/disenos/2026-10-09-resumen-backtesting.md.
 //
 // Reglas que no se rompen aquí:
 //   · No hay metodología: no se valida si una operación cumple el plan. Es un
@@ -82,14 +84,158 @@ const Backtesting = (() => {
 
   async function load() {
     const cont = $('btContent'); if (!cont) return
-    cont.innerHTML = '<p class="bt-vacio">Cargando la bitácora…</p>'
+    const res = $('btResumen')
+    cont.innerHTML = res.innerHTML = '<p class="bt-vacio">Cargando la bitácora…</p>'
     try {
       ({ cabecera, jornadas } = await DB.getBacktesting())
     } catch (e) {
-      cont.innerHTML = `<p class="coach-error">No se pudo leer la bitácora: ${esc(e.message)}. Vuelve a entrar en la sección para reintentar.</p>`
+      cont.innerHTML = res.innerHTML =
+        `<p class="coach-error">No se pudo leer la bitácora: ${esc(e.message)}. Vuelve a entrar en la sección para reintentar.</p>`
       return
     }
     render()
+    renderResumen()
+  }
+
+  // ── Resumen: el dashboard del total ──────────────────────────────────────
+  // La aritmética es la del portal (backtesting.astro), para que los dos den
+  // las mismas cifras. Ver docs/disenos/2026-10-09-resumen-backtesting.md.
+  const signo = n => (n > 0 ? '+' : n < 0 ? '−' : '') + pts(Math.abs(Math.round(n * 100) / 100))
+  const pct = (a, b) => (b ? `${Math.round(a / b * 100)}%` : '—')
+  const ptsOp = o => (o.resultado === 'stop' ? -1 : 1) * Number(o.puntos)
+
+  // Totales de un grupo de operaciones.
+  function totales(ops) {
+    const t = ops.filter(o => o.resultado === 'target').length
+    return {
+      n: ops.length, t, s: ops.length - t,
+      puntos: ops.reduce((a, o) => a + ptsOp(o), 0),
+      pnl: ops.reduce((a, o) => a + Number(o.pnl), 0),
+    }
+  }
+
+  function renderResumen() {
+    const cont = $('btResumen'); if (!cont) return
+    if (!jornadas.length) {
+      cont.innerHTML = `<p class="bt-vacio">Todavía no hay jornadas: el resumen aparece con la primera.</p>`
+      return
+    }
+    const inicial = Number(cabecera?.valor_inicial) || 0
+    // De la más vieja a la más nueva, con el saldo corriendo.
+    const orden = jornadas.slice().sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0))
+    let saldo = inicial, techo = inicial, caida = 0
+    orden.forEach(j => {
+      saldo += pnlJornada(j)
+      if (saldo > techo) techo = saldo
+      if (techo - saldo > caida) caida = techo - saldo
+    })
+    const ops = orden.flatMap(j => j.operaciones || [])
+    const tot = totales(ops)
+    const comisiones = ops.reduce((a, o) => a + (Number(o.comision) || 0), 0)
+    const rent = inicial ? tot.pnl / inicial * 100 : 0
+
+    // Rachas: sobre las operaciones en orden; un día sin operación no corta.
+    let rT = 0, rS = 0, cur = 0, prev = null
+    ops.forEach(o => {
+      cur = o.resultado === prev ? cur + 1 : 1
+      prev = o.resultado
+      if (prev === 'target') rT = Math.max(rT, cur); else rS = Math.max(rS, cur)
+    })
+
+    const kpi = (lbl, val, sub, clase = '') => `
+      <div class="bt-kpi"><span>${lbl}</span><b class="${clase}">${val}</b><small>${sub}</small></div>`
+    const cifras = `
+      <div class="bt-kpis">
+        ${kpi('Saldo actual', fmtDinero(saldo, { masEnPositivo: false }), `<span class="${cls(tot.pnl)}">${dinero(tot.pnl)}</span> desde ${fmtDinero(inicial, { masEnPositivo: false })}`)}
+        ${kpi('Rentabilidad', inicial ? `${rent > 0 ? '+' : ''}${String(Math.round(rent * 10) / 10).replace('.', ',')}%` : '—', `${plural(jornadas.length, 'jornada')} · ${plural(tot.n, 'operación', 'operaciones')}`, cls(rent))}
+        ${kpi('Caída máxima', caida ? `−${fmtDinero(caida, { masEnPositivo: false })}` : dinero(0), caida && inicial ? `−${String(Math.round(caida / inicial * 1000) / 10).replace('.', ',')}% del saldo inicial` : 'desde el techo del saldo', caida ? 'bt-neg' : '')}
+        ${kpi('Efectividad', pct(tot.t, tot.n), `<span class="bt-pos">${tot.t} target</span> · <span class="bt-neg">${tot.s} stop</span>`)}
+        ${kpi('Puntos netos', signo(tot.puntos), comisiones ? `${fmtDinero(comisiones, { masEnPositivo: false })} en comisiones` : 'sin comisiones', cls(tot.puntos))}
+        ${kpi('Rachas', `<span class="bt-pos">${rT} T</span> · <span class="bt-neg">${rS} S</span>`, 'las más largas seguidas')}
+      </div>`
+
+    const curva = `
+      <div class="bt-card">
+        <div class="bt-card-h"><i class="ti ti-trending-up"></i> P&amp;L acumulado</div>
+        <div class="bt-curva"><canvas id="btEquity"></canvas></div>
+      </div>`
+
+    // Por mes, del más nuevo al más viejo, con fila de Total.
+    const meses = []
+    jornadas.forEach(j => {
+      const k = j.fecha.slice(0, 7)
+      if (!meses.length || meses[meses.length - 1].k !== k) meses.push({ k, js: [] })
+      meses[meses.length - 1].js.push(j)
+    })
+    const filaMes = (nombre, nJ, x, total = false) => `
+      <div class="bt-tr${total ? ' total' : ''}">
+        <span class="bt-td-nom">${nombre}</span>
+        <span class="bt-num bt-opt">${nJ}</span>
+        <span class="bt-num">${x.n}</span>
+        <span class="bt-num bt-pos">${x.t}</span>
+        <span class="bt-num bt-neg">${x.s}</span>
+        <span class="bt-num bt-efec">${pct(x.t, x.n)}</span>
+        <span class="bt-num bt-opt ${cls(x.puntos)}">${x.n ? signo(x.puntos) : '—'}</span>
+        <span class="bt-num ${cls(x.pnl)}">${dinero(x.pnl)}</span>
+      </div>`
+    const tablaMes = `
+      <div class="bt-card">
+        <div class="bt-card-h"><i class="ti ti-calendar-month"></i> Por mes</div>
+        <div class="bt-tabla bt-t-mes">
+          <div class="bt-tr head"><span>Mes</span><span class="bt-num bt-opt">Jornadas</span><span class="bt-num">Ops</span>
+            <span class="bt-num">T</span><span class="bt-num">S</span><span class="bt-num">Efect.</span>
+            <span class="bt-num bt-opt">Puntos</span><span class="bt-num">P&amp;L</span></div>
+          ${meses.map(m => {
+            const [y, mm] = m.k.split('-').map(Number)
+            return filaMes(`${MESES[mm - 1]} ${y}`, m.js.length, totales(m.js.flatMap(j => j.operaciones || [])))
+          }).join('')}
+          ${filaMes('Total', jornadas.length, tot, true)}
+        </div>
+      </div>`
+
+    // Por setup y por dirección: qué funciona mejor.
+    const tablaPor = (titulo, icono, campo, claves) => `
+      <div class="bt-card">
+        <div class="bt-card-h"><i class="ti ${icono}"></i> ${titulo}</div>
+        <div class="bt-tabla bt-t-por">
+          <div class="bt-tr head"><span></span><span class="bt-num">Ops</span><span class="bt-num">T · S</span>
+            <span class="bt-num">Efect.</span><span class="bt-num bt-opt">Puntos</span><span class="bt-num">P&amp;L</span></div>
+          ${claves.map(c => {
+            const x = totales(ops.filter(o => o[campo] === c))
+            return `
+              <div class="bt-tr">
+                <span class="bt-td-nom">${NOMBRE[c]}</span>
+                <span class="bt-num">${x.n}</span>
+                <span class="bt-num"><span class="bt-pos">${x.t}</span> · <span class="bt-neg">${x.s}</span></span>
+                <span class="bt-num bt-efec">${pct(x.t, x.n)}</span>
+                <span class="bt-num bt-opt ${cls(x.puntos)}">${x.n ? signo(x.puntos) : '—'}</span>
+                <span class="bt-num ${cls(x.pnl)}">${dinero(x.pnl)}</span>
+              </div>`
+          }).join('')}
+        </div>
+      </div>`
+
+    cont.innerHTML = cifras + curva + tablaMes + `
+      <div class="bt-dos">
+        ${tablaPor('Por setup', 'ti-route', 'setup', ['continuacion', 'reingreso'])}
+        ${tablaPor('Por dirección', 'ti-arrows-up-down', 'direccion', ['largo', 'corto'])}
+      </div>`
+    pintarCurva()
+  }
+
+  // Chart.js mide el lienzo al pintar: con la pestaña oculta saldría a 0 px,
+  // así que solo se pinta con el Resumen a la vista (y otra vez al volver a él).
+  function pintarCurva() {
+    if (!$('bt-panel-resumen')?.classList.contains('active') || !$('btEquity')) return
+    const porDia = {}
+    jornadas.forEach(j => { if ((j.operaciones || []).length) porDia[j.fecha] = pnlJornada(j) })
+    Metrics.pintarEquity('btEquity', { porDia, unidad: '$' })
+  }
+
+  function mostrarTab(tab) {
+    document.querySelectorAll('#btTabs .so-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab))
+    document.querySelectorAll('#section-backtesting .so-panel').forEach(p => p.classList.toggle('active', p.id === `bt-panel-${tab}`))
+    if (tab === 'resumen') pintarCurva()
   }
 
   // ── Pantalla ─────────────────────────────────────────────────────────────
@@ -358,6 +504,10 @@ const Backtesting = (() => {
 
   function wire() {
     $('btNueva')?.addEventListener('click', () => abrir(null))
+    $('btTabs')?.addEventListener('click', e => {
+      const b = e.target.closest('.so-tab')
+      if (b) mostrarTab(b.dataset.tab)
+    })
     $('btContent')?.addEventListener('click', e => {
       if (e.target.closest('#btEditarInicio')) return abrirInicio()
       const ed = e.target.closest('[data-edit]')?.dataset.edit
