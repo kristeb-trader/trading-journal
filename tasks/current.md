@@ -26,9 +26,15 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
 - [ ] **Abiertas del 07/10 (Kris):** ¿cierra también el rompimiento la **zona apéndice** (R-11)? ¿Y el estiramiento por
   **superposición** (R-13, que dice que la zona conserva su historial)? Hoy los dos siguen como estaban
 - [x] **Bot:** distingue «encendido tarde» de una diferencia (07/10). Compilado por Kris el 07/10
-- [ ] **08/10 — primer día del bot en SimBot (Kris):** activarlo antes de las 8:31, comprobar `listo … sello L:bf7669a4…`,
-  nada de F5 en la ventana. **Claude**, tras las 10:32: comparar la fila de `bot_operaciones` con la ficha del motor
-  (pasos en `NinjaTrader/LEEME.md` §4)
+- [x] **08/10 — primer día del bot en SimBot:** **COINCIDE** con el motor. Continuación alcista, orden 9:23, 2 × 31316.50
+  (stop 31286.25, objetivo 31346.75), llena 9:24 sin deslizamiento, TARGET 9:29, +30.25 pts, **+$118.40 neto**.
+  Sello correcto. Detalle menor: en los eventos del bot la S de las 8:56 acaba en 31169.75 y en el motor en 31169.50
+  (un tick; no afectó a la operación) — mirar si se repite. **Supongo** que es la vela construida en vivo frente a la
+  del histórico del servidor: se comprueba comparando esa vela en las dos fuentes
+- [x] **09/10 — SimBot:** Continuación bajista 8:44, llena 8:45 (1 × 31053, sin deslizamiento), **STOP a las 13:24**,
+  −76 pts, −$153,30 neto. Misma entrada que el motor; su ficha quedó ABIERTA hasta la ampliación de las 15:02 → de ahí
+  el calendario «abierta» y la cadena cada 30 min (`2429faa`)
+- [ ] **Kris:** copiar `CadenaDiaria.cs` a `Custom\AddOns\` y F5, fuera de la ventana
 - [ ] **§12 D2** `VistaMotorChaumer`: código hecho (07/10). **Kris:** copiar a `Custom/Indicators`, F5 y el Market Replay del 23/09 y el 02/10 con el bot y la vista
 - [ ] **Fase 4 · el pasado entero**: velas desde el 12/06/2025, Strategy Analyzer, Market Replay, informe
 - [ ] **Fase 5 · SimBot en vivo**, con la comparación diaria en la cadena
