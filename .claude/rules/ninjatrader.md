@@ -97,7 +97,7 @@ día **sin archivo** en `datos\dia\` lo pide con `BarsRequest` y lo escribe como
 - **Operación abierta** (06/10/2026): si el motor deja la operación del día sin stop ni objetivo al acabar los
   datos (10:30), el puente deja `AAAA-MM-DD.abierta` junto a las velas. El AddOn vuelve a exportar ese día,
   **reemplazando** el archivo, **cada 30 minutos** mientras siga abierta (12:00, 12:30 … de Nueva York; desde el
-  09/10/2026, antes solo a las 13:30 y las 16:00), hasta las 16:00 (15:00 Col en verano); el puente lo recalcula solo
+  09/10/2026, antes solo a las 13:30 y las 16:00), hasta las 16:50 (15:50 Col en verano): la hora del cierre por hora del plan, así que con esa vela el motor ya la cierra; el puente lo recalcula solo
   (la huella de datos mira el día entero). Después queda ABIERTA. Mientras tanto, el calendario «Claude» del Journal la
   pinta como **«abierta»** (ámbar, reloj de arena) y no suma puntos.
   El motor sigue la operación hasta la última vela que haya, no hasta el fin de ventana (R-33).

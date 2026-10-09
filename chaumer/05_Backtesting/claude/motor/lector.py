@@ -22,7 +22,7 @@ def parametros_del_plan():
     (scripts/cadena/prueba_motor.py lo hace). Solo para eso: el motor de verdad lee el plan."""
     if '__file__' not in globals():
         return dict(TICK=0.25, STOP_MAX=80.0, RIESGO_MAX=160.0, PLAZO_CONSECUCION=5,
-                    UMBRAL_VOL=None, VENTANA_NOTICIA=5)
+                    UMBRAL_VOL=None, VENTANA_NOTICIA=5, CIERRE_POR_HORA=1650)
     ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '01_Plan', 'reglas.json')
     P = json.load(open(ruta, encoding='utf-8')).get('parametros', {})
     out = {}
@@ -30,6 +30,10 @@ def parametros_del_plan():
         v = P.get(n, {}).get('numero')
         if v is None: raise ValueError(f'lector.py: {n} no tiene numero en {ruta} (node scripts/plan/leer-reglas.mjs --escribir)')
         out[n] = v
+    # CIERRE_POR_HORA es una hora ("16:50 ET"), no un numero: se lee del texto (plan 3.46, 09/10/2026, R-33)
+    m = re.match(r'\s*(\d{1,2}):(\d{2})\s*ET', P.get('CIERRE_POR_HORA', {}).get('texto') or '')
+    if not m: raise ValueError(f'lector.py: CIERRE_POR_HORA no es una hora "HH:MM ET" en {ruta}')
+    out['CIERRE_POR_HORA'] = int(m.group(1)) * 100 + int(m.group(2))
     return out
 
 PARAMETROS = parametros_del_plan()
@@ -38,6 +42,7 @@ STOP_MAX = float(PARAMETROS['STOP_MAX'])
 RIESGO_MAX = PARAMETROS['RIESGO_MAX']        # $ por operacion (R-04): lo usa el bot para los contratos
 UMBRAL_VOL = PARAMETROS['UMBRAL_VOL']
 PLAZO = int(PARAMETROS['PLAZO_CONSECUCION'])  # velas para la consecucion
+CIERRE_POR_HORA = PARAMETROS['CIERRE_POR_HORA']   # HHMM de NUEVA YORK: lo abierto se cierra a mercado (R-33)
 
 # Dias de FOMC (R-36): la sesion entera, solo Reingresos (confirmado por el operador 28/09/2026).
 # Desde el 28/09/2026 se LEEN de dias_fed.txt, la copia de Fechas Especiales del Trading Journal
@@ -117,6 +122,11 @@ def apertura_utc(dia):
     f = datetime.date(int(dia[:4]), int(dia[4:6]), int(dia[6:]))
     verano = _domingo(f.year, 3, 2) <= f < _domingo(f.year, 11, 1)
     return 1331 if verano else 1431
+
+def hora_utc(dia, hhmm_et):
+    """HHMM UTC de una hora de Nueva York (HHMM) en la jornada `dia`: +4 h en verano de EE. UU., +5 en invierno.
+    Sale de la misma regla que apertura_utc (la vela base es la de las 9:31 de Nueva York)."""
+    return hhmm_et + (apertura_utc(dia) - 931)
 
 def cierre_utc(dia):
     """HHMM UTC de la ultima vela de la ventana: 120 velas despues de la base (15:30 o 16:30 UTC)."""
@@ -833,13 +843,21 @@ def detectar_setups(res, solo_reingresos=False):
                 # hasta la ultima vela que haya en los datos, no hasta el fin de ventana (06/10/2026:
                 # la del dia se lleno a las 10:07 y a las 10:30 seguia viva; el AddOn vuelve a
                 # exportar con mas tiempo los dias que quedan ABIERTO).
+                # Plan 3.46 (09/10/2026): si sigue abierta en la vela de CIERRE_POR_HORA (16:50 de Nueva
+                # York), se cierra a mercado al terminar esa vela y se mide con su cierre. Stop u objetivo
+                # tocados dentro de esa misma vela mandan: se miran antes.
                 ult=len(D)-1
+                cierre_h=hora_utc(dia, CIERRE_POR_HORA)
                 for j in range(i,ult+1):
                     kk=D[j]
                     pier=(kk['l']<=trade['s']) if trade['dir']>0 else (kk['h']>=trade['s'])
                     gana=(kk['h']>=trade['t']) if trade['dir']>0 else (kk['l']<=trade['t'])
                     if pier: trade.update(res='STOP',pts=-trade['r'],i_out=j,h_out=hh(kk)); break
                     if gana: trade.update(res='TARGET',pts=trade['r'],i_out=j,h_out=hh(kk)); break
+                    if hm(kk)>=cierre_h:
+                        trade.update(res='CIERRE POR HORA',pts=(kk['c']-trade['e'])*trade['dir'],i_out=j,h_out=hh(kk))
+                        ev.append(f"{hh(kk)}  cierre por hora: se cierra a mercado en {kk['c']:.2f} (R-33)")
+                        break
                 else: trade.update(res='ABIERTO',pts=None,i_out=ult,h_out=hh(D[ult]))
                 break
             # CANCELACION (operador 27/08/2026): un retroceso nuevo NO cancela.

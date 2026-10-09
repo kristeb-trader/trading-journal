@@ -112,6 +112,7 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-09-28-fed-actas-y-day1.sql` | ✅ MCP | Fechas Especiales, completa hacia atrás con el calendario oficial de la Fed: los 10 "FOMC Day 1" anteriores al 24/09 pasan a `otro` y entran las 15 actas que faltaban (2025–2026). 34 días de Fed. Efecto aceptado: disciplina de abril, el 08/04 |
 | `2026-09-29-motor-estados-rango.sql` | ✅ MCP | función `motor_estados(desde, hasta)`: el estado de la ficha del motor de un rango (`bloqueada` si el día no está registrado), para el calendario de Claude. Solo `(fecha, estado)`; la política `candado` no se toca. `authenticated` y `service_role` |
 | `2026-10-06-bot-operaciones.sql` | ✅ MCP | tabla `bot_operaciones` (D-038): lo que hizo BotChaumer cada día y cuenta, también sin operación. RLS + `auth_all` + grants a `service_role` |
+| `2026-10-09-bot-cierre-por-hora.sql` | ✅ MCP | `bot_operaciones.resultado` acepta 'CIERRE POR HORA' (plan 3.46). Solo amplía la lista |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.

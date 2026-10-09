@@ -179,6 +179,35 @@ def fuentes():
     return out
 
 
+def casos_sinteticos(m, exe):
+    """Días fabricados para probar en los dos motores las ramas que los datos reales no recorren.
+
+    El cierre por hora (plan 3.46, R-33): el 09/10/2026 real hasta las 17:30 UTC (Continuación bajista llenada a
+    las 8:45 en 31053, stop 31129, objetivo 30977, aún viva) y después velas planas en 31088–31092 hasta las 21:10
+    UTC, sin tocar stop ni objetivo. Tiene que cerrarse en la vela de las 16:50 de Nueva York (20:50 UTC = 15:50 Col)
+    con su cierre: −37,00 puntos. Devuelve [(nombre, ok, detalle)]."""
+    out = []
+    base = os.path.join(BT, 'datos', 'dia', '2026-10-09.txt')
+    if not os.path.exists(base):
+        return [('cierre por hora', False, '     falta datos/dia/2026-10-09.txt para fabricar el caso')]
+    lineas = [l for l in open(base, encoding='utf-8').read().splitlines()
+              if l.strip() and (not l.startswith('20261009') or l[9:15] <= '173000')]
+    for minuto in range(17 * 60 + 31, 21 * 60 + 11):
+        lineas.append(f'20261009 {minuto // 60:02d}{minuto % 60:02d}00;31090;31092;31088;31090;100')
+    ruta = os.path.join(tempfile.mkdtemp(prefix='sintetico_'), 'cierre_por_hora.txt')
+    with open(ruta, 'w', encoding='utf-8', newline='\n') as f: f.write('\n'.join(lineas) + '\n')
+    m.UMBRAL_VOL = 8000
+    V = m.cargar(ruta)
+    a = canon_dia(m, V, '20261009', False)
+    b = arnes(exe, 'dia', REGLAS, ruta, '20261009', 8000, 0, '-')
+    t = next((l for l in a if l.startswith('T ')), 'T -')
+    esperado = '|CIERRE POR HORA|-37.00|'
+    ok = a == b and esperado in t and t.endswith('|15:50')
+    det = '\n'.join('     ' + l for l in (diferencias(a, b) if a != b else [f'operación: {t}  (se esperaba {esperado.strip("|")} a las 15:50)']))
+    out.append(('cierre por hora: CIERRE POR HORA a las 15:50 Col, −37,00, igual en los dos motores', ok, det))
+    return out
+
+
 def diferencias(a, b, n=12):
     return list(difflib.unified_diff(a, b, 'lector.py', 'MotorChaumer.cs', lineterm='', n=1))[:n + 3]
 
@@ -211,7 +240,7 @@ def main():
     m = motor()
     print('=== 3 · Los números del plan que lee cada motor (reglas.json) ===')
     py = 'TICK={TICK:g} STOP_MAX={STOP_MAX:g} RIESGO_MAX={RIESGO_MAX:g} PLAZO_CONSECUCION={PLAZO_CONSECUCION} ' \
-         'UMBRAL_VOL={UMBRAL_VOL} VENTANA_NOTICIA={VENTANA_NOTICIA}'.format(**m.PARAMETROS)
+         'UMBRAL_VOL={UMBRAL_VOL} VENTANA_NOTICIA={VENTANA_NOTICIA} CIERRE_POR_HORA={CIERRE_POR_HORA}'.format(**m.PARAMETROS)
     cs = arnes(exe, 'param', REGLAS)[0]
     ok = py == cs; fallos += not ok
     print(f'  {"✅" if ok else "❌"} {cs}' + ('' if ok else f'\n     Python: {py}'))
@@ -247,6 +276,11 @@ def main():
             for l in (diferencias(a, b) if a != b else []): print('     ' + l)
             for l in (diferencias(va, vb) if va != vb else []): print('     ' + l)
     print(f'  días idénticos: {dias_ok} de {len(vistos)} · {lineas} líneas del día entero · {velas} velas vela a vela')
+
+    print('=== 6 · Casos sintéticos: ramas que ningún día con datos recorre ===')
+    for nombre, ok_caso, detalle in casos_sinteticos(m, exe):
+        fallos += not ok_caso
+        print(f'  {"✅" if ok_caso else "❌"} {nombre}' + ('' if ok_caso else '\n' + detalle))
 
     if fallos:
         print(f'\n❌ {fallos} cosas no cuadran. El motor en C# NO está sincronizado: no se sella.')

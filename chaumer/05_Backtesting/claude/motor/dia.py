@@ -127,7 +127,9 @@ def dibujar(dia, salida, datos):
     # ---- la operacion
     if t:
         x=t['i_fill']-off; xo=t['i_out']-off
-        cres = GRN if t['res']=='TARGET' else GOLD if t['res']=='ABIERTO' else RED
+        # CIERRE POR HORA (plan 3.46): verde si gana, rojo si pierde
+        cres = (GRN if t['res']=='TARGET' else GOLD if t['res']=='ABIERTO'
+                else (GRN if (t['pts'] or 0)>=0 else RED) if t['res']=='CIERRE POR HORA' else RED)
         # sin lineas de entrada / stop / objetivo: la regla ya las dice.
         # (operador, 01/09/2026: cuanto mas limpio el grafico, mejor)
         # regla de la operacion: area de stop en rojo, area de objetivo en verde,
@@ -169,7 +171,8 @@ def dibujar(dia, salida, datos):
     ax.text(0,1.072,f"{n} zonas marcadas · {viva} vigentes",
             transform=ax.transAxes,color=GREY,fontsize=12.5,va='bottom')
     ax.text(0,1.026,sub,transform=ax.transAxes,
-            color=(GRN if t and t['res']=='TARGET' else GOLD if (not t or t['res']=='ABIERTO') else RED),
+            color=(GRN if t and (t['res']=='TARGET' or (t['res']=='CIERRE POR HORA' and (t['pts'] or 0)>=0))
+                   else GOLD if (not t or t['res']=='ABIERTO') else RED),
             fontsize=13.5,fontweight='bold',va='bottom')
     fig.savefig(salida,facecolor=BG,dpi=100)
     return ev,t

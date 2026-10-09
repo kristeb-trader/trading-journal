@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:bf7669a467028db9 C:b1f088794030aa13";
+        public const string SELLO = "L:4d3bfdd2da370666 C:d143afbc34fb4b62";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -45,6 +45,7 @@ namespace NinjaTrader.NinjaScript
             public double Tick, StopMax, RiesgoMax;
             public int Plazo, VentanaNoticia;
             public long UmbralVol;
+            public int CierrePorHoraEt;      // HHMM de Nueva York: lo abierto se cierra a mercado (R-33, plan 3.46)
 
             /// <summary>Los números del plan, de la clave `parametros` de reglas.json. Si falta uno, falla:
             /// no se inventa. Es lo mismo que parametros_del_plan() de lector.py.</summary>
@@ -61,6 +62,10 @@ namespace NinjaTrader.NinjaScript
                 p.Plazo          = (int)Numero(bloque, "PLAZO_CONSECUCION");
                 p.UmbralVol      = (long)Numero(bloque, "UMBRAL_VOL");
                 p.VentanaNoticia = (int)Numero(bloque, "VENTANA_NOTICIA");
+                // CIERRE_POR_HORA es una hora ("16:50 ET"), no un número: se lee del texto
+                var h = Regex.Match(bloque, "\"CIERRE_POR_HORA\"\\s*:\\s*\\{\\s*\"texto\"\\s*:\\s*\"\\s*(\\d{1,2}):(\\d{2})\\s*ET");
+                if (!h.Success) throw new InvalidDataException("CIERRE_POR_HORA no es una hora \"HH:MM ET\" en reglas.json");
+                p.CierrePorHoraEt = int.Parse(h.Groups[1].Value, CultureInfo.InvariantCulture) * 100 + int.Parse(h.Groups[2].Value, CultureInfo.InvariantCulture);
                 return p;
             }
 
@@ -197,6 +202,8 @@ namespace NinjaTrader.NinjaScript
             return verano ? 1331 : 1431;
         }
         public static int CierreUtc(string dia) { return AperturaUtc(dia) + 199; }
+        /// <summary>HHMM UTC de una hora de Nueva York (HHMM) en la jornada `dia`: +4 h en verano de EE. UU., +5 en invierno.</summary>
+        public static int HoraUtc(string dia, int hhmmEt) { return hhmmEt + (AperturaUtc(dia) - 931); }
 
         private static double[] ZRes(Vela k) { return new[] { Math.Max(k.O, k.C), k.H }; }
         private static double[] ZSop(Vela k) { return new[] { k.L, Math.Min(k.O, k.C) }; }
@@ -877,7 +884,10 @@ namespace NinjaTrader.NinjaScript
                                             IFill = i, Hora = Hh(k) };
                         ev.Add(Hh(k) + "  ►► SE LLENA el " + o.Tipo + " " + (o.Dir > 0 ? "alcista" : "bajista") + " en " + F2(o.E));
                         // R-33: hasta stop u objetivo aunque acabe la ventana, hasta la última vela que haya
+                        // plan 3.46: si sigue abierta en la vela de CIERRE_POR_HORA, a mercado con el cierre de esa vela;
+                        // stop u objetivo tocados en esa misma vela mandan (se miran antes)
                         int ult = D.Count - 1; bool cerrado = false;
+                        int cierreH = HoraUtc(D[b].D, P.CierrePorHoraEt);
                         for (int j = i; j <= ult; j++)
                         {
                             var kk = D[j];
@@ -885,6 +895,12 @@ namespace NinjaTrader.NinjaScript
                             bool gana = trade.Dir > 0 ? kk.H >= trade.T : kk.L <= trade.T;
                             if (pier) { trade.Res = "STOP"; trade.Pts = -trade.R; trade.IOut = j; trade.HOut = Hh(kk); cerrado = true; break; }
                             if (gana) { trade.Res = "TARGET"; trade.Pts = trade.R; trade.IOut = j; trade.HOut = Hh(kk); cerrado = true; break; }
+                            if (Hm(kk) >= cierreH)
+                            {
+                                trade.Res = "CIERRE POR HORA"; trade.Pts = (kk.C - trade.E) * trade.Dir; trade.IOut = j; trade.HOut = Hh(kk); cerrado = true;
+                                ev.Add(Hh(kk) + "  cierre por hora: se cierra a mercado en " + F2(kk.C) + " (R-33)");
+                                break;
+                            }
                         }
                         if (!cerrado) { trade.Res = "ABIERTO"; trade.Pts = null; trade.IOut = ult; trade.HOut = Hh(D[ult]); }
                         break;

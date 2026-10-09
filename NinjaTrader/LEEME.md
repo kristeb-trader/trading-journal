@@ -23,7 +23,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 | Archivo | Qué hace | Cómo se usa | Depende de |
 |---|---|---|---|
 | **ChecklistChaumer** | El **panel flotante del checklist**, sincronizado con el Journal: casillas, noticias rojas y el GO | Control Center → **New → Checklist Chaumer**. Se reinicia solo a las 9:00 de Nueva York | la clave de Supabase |
-| **CadenaDiaria** | Sin ventana. A las **10:32** (11:32 en invierno) exporta las velas del día y lanza el puente: el motor, la ficha en Supabase, el gráfico y la publicación en el portal. Si el motor deja la operación abierta, vuelve a exportar **cada 30 minutos** hasta las 16:00 de Nueva York; mientras, el calendario «Claude» la muestra como «abierta» | Nada: arranca solo con NinjaTrader | Python, el repositorio, la clave |
+| **CadenaDiaria** | Sin ventana. A las **10:32** (11:32 en invierno) exporta las velas del día y lanza el puente: el motor, la ficha en Supabase, el gráfico y la publicación en el portal. Si el motor deja la operación abierta, vuelve a exportar **cada 30 minutos** hasta las 16:50 de Nueva York (la hora del cierre por hora); mientras, el calendario «Claude» la muestra como «abierta» | Nada: arranca solo con NinjaTrader | Python, el repositorio, la clave |
 | **MotorChaumer** | **El motor del plan en C#**: la traducción literal de `lector.py`, **sellada** | No se ve: lo usan el bot y la vista | nada |
 | **ChaumerNT** | Lo común del bot y la vista: configuración, sello, lecturas de Supabase, velas del día | No se ve | `MotorChaumer` |
 
@@ -31,7 +31,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 
 | Archivo | Qué hace | Cómo se usa | Depende de |
 |---|---|---|---|
-| **BotChaumer** | **El bot.** Al cierre de cada vela pregunta al motor qué orden debe estar viva y la pone: entrada stop, con los contratos que caben en $160; al llenarse, stop y objetivo exactos; nada más ese día. Solo opera en las cuentas de su lista blanca. Deja una fila por día en `bot_operaciones` | Gráfico MNQ 1 minuto ETH → clic derecho → **Strategies…** → BotChaumer, cuenta **SimBot**, Modo **Automatico**, **Enabled** | `MotorChaumer`, `ChaumerNT`, el repositorio, la clave |
+| **BotChaumer** | **El bot.** Al cierre de cada vela pregunta al motor qué orden debe estar viva y la pone: entrada stop, con los contratos que caben en $160; al llenarse, stop y objetivo exactos; nada más ese día. **A las 16:50 de Nueva York** (15:50 Col en verano), si sigue abierta, cancela stop y objetivo y **cierra a mercado** (CIERRE POR HORA). Solo opera en las cuentas de su lista blanca. Deja una fila por día en `bot_operaciones` | Gráfico MNQ 1 minuto ETH → clic derecho → **Strategies…** → BotChaumer, cuenta **SimBot**, Modo **Automatico**, **Enabled** | `MotorChaumer`, `ChaumerNT`, el repositorio, la clave |
 
 ### Herramienta de dibujo · `Custom\DrawingTools\`
 

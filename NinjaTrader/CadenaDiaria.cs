@@ -21,9 +21,9 @@
 //  - Operación abierta (06/10/2026, Kris): si el motor deja la operación del día sin stop
 //    ni objetivo al acabar los datos, el puente deja `AAAA-MM-DD.abierta` junto a las velas.
 //    Entonces el día se vuelve a exportar, REEMPLAZANDO el archivo, con más tiempo: cada 30
-//    minutos (12:00, 12:30 … de Nueva York) mientras siga abierta, hasta las 16:00 (el cierre de
-//    la sesión de contado). Después ya no se reintenta: queda ABIERTA. (Hasta el 09/10/2026, solo
-//    a las 13:30 y a las 16:00.)
+//    minutos (12:00, 12:30 … de Nueva York) mientras siga abierta, hasta las 16:50: la hora del
+//    cierre por hora del plan (CIERRE_POR_HORA, 3.46), así que con esa vela el motor ya la cierra.
+//    (Hasta el 09/10/2026, solo a las 13:30 y a las 16:00.)
 //
 //  Configuración: Documentos\NinjaTrader 8\cadena-diaria.json (se crea sola).
 //  Registro:      Documentos\NinjaTrader 8\cadena-diaria\registro.txt
@@ -59,7 +59,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         // Operación abierta: hasta dónde se amplía la exportación, en minutos tras el fin de ventana
         // Cada 30 minutos (09/10/2026): el 09/10 el stop saltó a las 14:24 ET, entre las ampliaciones de las 13:30 y
         // las 16:00, y la ficha dijo ABIERTA durante horas. Así el resultado llega como mucho 30 min después.
-        private static readonly int[] AMPLIAR_MIN = new int[] { 30, 60, 90, 120, 150, 180, 210, 240, 270 };   // 12:00 → 16:00 ET
+        private static readonly int[] AMPLIAR_MIN = new int[] { 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 320 };   // 12:00 → 16:50 ET (CIERRE_POR_HORA)
 
         // Una sola instancia viva: NinjaTrader crea varias del AddOn (SetDefaults, etc.)
         private static readonly object candado = new object();
@@ -271,7 +271,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                 return new Pendiente { Dia = dia, EsHoy = esHoy, CierreUtc = cierre, HastaUtc = hasta, Ampliar = true };
             }
             try { File.Delete(marca); } catch { }
-            Log(dia.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "  la operación sigue abierta a las 16:00 de Nueva York: se queda ABIERTA");
+            Log(dia.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "  la operación sigue abierta a las 16:50 de Nueva York (la hora del cierre por hora): se queda ABIERTA");
             return null;
         }
 

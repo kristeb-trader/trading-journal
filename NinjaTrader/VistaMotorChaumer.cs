@@ -204,7 +204,8 @@ namespace NinjaTrader.NinjaScript.Indicators
                 cab += " · " + t.Tipo + (t.Dir > 0 ? " alcista" : " bajista") + " a las " + t.Hora + " · entrada " + P2(t.E)
                      + " · stop " + P2(t.S) + " · objetivo " + P2(t.T)
                      + (t.Res == "ABIERTO" ? "   →   ABIERTA" : "   →   " + t.Res + " " + t.HOut + " · " + sig + P2(t.Pts.Value) + " pts");
-                f.ColorCabecera = t.Res == "TARGET" ? 1 : t.Res == "STOP" ? 2 : 3;
+                f.ColorCabecera = t.Res == "TARGET" ? 1 : t.Res == "STOP" ? 2
+                    : t.Res == "CIERRE POR HORA" ? ((t.Pts ?? 0) >= 0 ? 1 : 2) : 3;   // cierre por hora: verde si gana, rojo si pierde
             }
             else if (r.Orden != null)
             {

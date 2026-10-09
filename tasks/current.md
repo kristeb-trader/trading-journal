@@ -34,7 +34,8 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
 - [x] **09/10 — SimBot:** Continuación bajista 8:44, llena 8:45 (1 × 31053, sin deslizamiento), **STOP a las 13:24**,
   −76 pts, −$153,30 neto. Misma entrada que el motor; su ficha quedó ABIERTA hasta la ampliación de las 15:02 → de ahí
   el calendario «abierta» y la cadena cada 30 min (`2429faa`)
-- [ ] **Kris:** copiar `CadenaDiaria.cs` a `Custom\AddOns\` y F5, fuera de la ventana
+- [x] **Plan 3.46** (09/10): cierre por hora a las 16:50 de Nueva York, en el plan, el portal, los dos motores (caso sintético en la sincronía), el bot, la cadena, `bot_operaciones` y el calendario
+- [ ] **Kris, fuera de la ventana:** copiar `MotorChaumer.cs`, `CadenaDiaria.cs` (a `Custom\AddOns\`), `BotChaumer.cs` (a `Custom\Strategies\`) y `VistaMotorChaumer.cs` (a `Custom\Indicators\`), y un solo F5. Sin el motor nuevo, el bot y la vista dicen «motor desincronizado»
 - [ ] **§12 D2** `VistaMotorChaumer`: código hecho (07/10). **Kris:** copiar a `Custom/Indicators`, F5 y el Market Replay del 23/09 y el 02/10 con el bot y la vista
 - [ ] **Fase 4 · el pasado entero**: velas desde el 12/06/2025, Strategy Analyzer, Market Replay, informe
 - [ ] **Fase 5 · SimBot en vivo**, con la comparación diaria en la cadena

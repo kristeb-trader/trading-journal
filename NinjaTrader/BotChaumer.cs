@@ -53,7 +53,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
     public class BotChaumer : Strategy
     {
-        private const string N_ENTRADA = "Chaumer entrada", N_STOP = "Chaumer stop", N_OBJETIVO = "Chaumer objetivo";
+        private const string N_ENTRADA = "Chaumer entrada", N_STOP = "Chaumer stop", N_OBJETIVO = "Chaumer objetivo", N_CIERRE = "Chaumer cierre";
         private static readonly CultureInfo INV = CultureInfo.InvariantCulture;
         private static readonly string DIR_NT = ChaumerNT.DIR_NT;
 
@@ -124,7 +124,8 @@ namespace NinjaTrader.NinjaScript.Strategies
         private MotorChaumer.Orden ordenMotor, pendienteTrasCancelar;
         private string horaPendiente;               // la hora (etiqueta del motor) de la orden que espera a que se cancele la vieja
         private string registroBacktest;            // en el Analyzer, el registro va a un archivo de la pasada
-        private Order entrada, stopO, objetivoO;
+        private Order entrada, stopO, objetivoO, cierreO;
+        private bool cierrePedido, cierreEnviado;   // CIERRE_POR_HORA: pedido (stop y objetivo cancelándose) · orden a mercado ya enviada
         private Fila filaOp;
         private int llenados, salidos;
         private double comision, sumaSalida;
@@ -205,6 +206,14 @@ namespace NinjaTrader.NinjaScript.Strategies
         {
             DateTime utc = Utc(cerrada);
             string d = utc.ToString("yyyyMMdd", INV);
+            // R-33, plan 3.46: lo que siga abierto en la vela de CIERRE_POR_HORA (16:50 de Nueva York) se cierra a
+            // mercado al terminar esa vela. Va antes que todo: una operación abierta no mira ni el día ni el cupo.
+            if (llenados > salidos && filaOp != null && !cierrePedido)
+            {
+                string dOp = filaOp.Fecha.Replace("-", "");
+                if (string.CompareOrdinal(d, dOp) > 0 || utc.Hour * 100 + utc.Minute >= MotorChaumer.HoraUtc(dOp, P.CierrePorHoraEt))
+                    PedirCierrePorHora();
+            }
             if (d != dia) NuevoDia(d, cerrada);
             if (terminado) return;
             int hm = utc.Hour * 100 + utc.Minute;
@@ -289,7 +298,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             motor = null; fila = null; eventos = new List<string>();
             if (Position.MarketPosition == MarketPosition.Flat && (llenados == 0 || salidos >= llenados))
             {
-                ordenMotor = pendienteTrasCancelar = null; entrada = stopO = objetivoO = null;
+                ordenMotor = pendienteTrasCancelar = null; entrada = stopO = objetivoO = cierreO = null; cierrePedido = cierreEnviado = false;
                 filaOp = null; llenados = salidos = 0; comision = sumaSalida = 0;
             }
         }
@@ -387,6 +396,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (order.Name == N_ENTRADA) entrada = order;
             else if (order.Name == N_STOP) stopO = order;
             else if (order.Name == N_OBJETIVO) objetivoO = order;
+            else if (order.Name == N_CIERRE) cierreO = order;
             else return;
 
             if (orderState == OrderState.Rejected)
@@ -402,6 +412,29 @@ namespace NinjaTrader.NinjaScript.Strategies
                 var o = pendienteTrasCancelar; pendienteTrasCancelar = null;
                 Enviar(o, horaPendiente);
             }
+            // cierre por hora: el cierre a mercado sale cuando stop y objetivo ya están cancelados (nunca dos salidas a la vez)
+            if (cierrePedido && !cierreEnviado && (order.Name == N_STOP || order.Name == N_OBJETIVO)) EnviarCierreSiToca();
+        }
+
+        /// <summary>R-33: cancela stop y objetivo; el cierre a mercado sale cuando los dos están cancelados.</summary>
+        private void PedirCierrePorHora()
+        {
+            cierrePedido = true;
+            Log("cierre por hora: cancelo stop y objetivo para cerrar a mercado");
+            if (stopO != null && !Order.IsTerminalState(stopO.OrderState)) CancelOrder(stopO);
+            if (objetivoO != null && !Order.IsTerminalState(objetivoO.OrderState)) CancelOrder(objetivoO);
+            EnviarCierreSiToca();
+        }
+
+        private void EnviarCierreSiToca()
+        {
+            if (cierreEnviado || llenados <= salidos) return;                       // ya salió, o la cerró el stop o el objetivo
+            if ((stopO != null && !Order.IsTerminalState(stopO.OrderState)) ||
+                (objetivoO != null && !Order.IsTerminalState(objetivoO.OrderState))) return;   // aún no están cancelados
+            var o = ordenMotor;
+            cierreEnviado = true;                                                  // antes de enviar: nunca dos cierres
+            SubmitOrderUnmanaged(0, o.Dir > 0 ? OrderAction.Sell : OrderAction.BuyToCover, OrderType.Market, llenados - salidos, 0, 0, "", N_CIERRE);
+            Log("cierre por hora: a mercado " + (llenados - salidos) + " contrato(s)");
         }
 
         protected override void OnExecutionUpdate(Execution execution, string executionId, double price, int quantity,
@@ -433,13 +466,13 @@ namespace NinjaTrader.NinjaScript.Strategies
                 Guardar(filaOp);
                 Log("llenada " + llenados + " × " + MotorChaumer.F2(ord.AverageFillPrice) + " a las " + filaOp.HoraLlenado);
             }
-            else if (ord.Name == N_STOP || ord.Name == N_OBJETIVO)
+            else if (ord.Name == N_STOP || ord.Name == N_OBJETIVO || ord.Name == N_CIERRE)
             {
                 salidos += quantity; sumaSalida += price * quantity;
                 if (salidos < llenados) return;
                 double ps = sumaSalida / salidos;
                 filaOp.PrecioSalida = ps; filaOp.HoraSalida = HoraDe(time);
-                filaOp.Resultado = ord.Name == N_STOP ? "STOP" : "TARGET";
+                filaOp.Resultado = ord.Name == N_STOP ? "STOP" : ord.Name == N_OBJETIVO ? "TARGET" : "CIERRE POR HORA";
                 filaOp.Puntos = (ps - filaOp.PrecioLlenado.Value) * o.Dir;
                 filaOp.Comision = comision;
                 filaOp.PnlNeto = filaOp.Puntos.Value * llenados * Instrument.MasterInstrument.PointValue - comision;

@@ -88,8 +88,9 @@ const Calendarios = (() => {
   //   { fecha, estado, ops: [{ puntos, pnl, res, setup, hora, dir, obs }], nota, url }
   //   estado: target · stop · mixed · be · sin-entradas · no-opero · sin-op · bloqueado · error
   function estadoPorOps(ops) {
-    const t = ops.filter(o => o.res === 'target').length
-    const s = ops.filter(o => o.res === 'stop').length
+    // El cierre por hora (plan 3.46) colorea el día por su signo, pero no cuenta como target ni stop en las cifras
+    const t = ops.filter(o => o.res === 'target' || (o.res === 'cierre' && o.puntos > 0)).length
+    const s = ops.filter(o => o.res === 'stop' || (o.res === 'cierre' && o.puntos < 0)).length
     return t && !s ? 'target' : s && !t ? 'stop' : t && s ? 'mixed' : 'be'
   }
   const resDeTrade = t => ({ win: 'target', loss: 'stop' }[tradeOutcome(t)] || 'be')
@@ -175,7 +176,7 @@ const Calendarios = (() => {
       const p = parseFloat(o.puntos) || 0
       const op = {
         puntos: p, pnl: pnlCalc(p, cab),
-        res: res === 'target' || res === 'stop' ? res : 'be',
+        res: res === 'target' || res === 'stop' ? res : res === 'cierre por hora' ? 'cierre' : 'be',
         setup: [o.setup, o.sentido].filter(Boolean).join(' '),
         hora: horaCorta(o.hora),
       }
@@ -815,7 +816,7 @@ const Calendarios = (() => {
       const setup = [o.setup, o.dir && !/alcista|bajista/i.test(o.setup) ? o.dir.toLowerCase() : '']
         .filter(Boolean).join(' ')
       html += fila('Setup', `${esc(setup || '—')}${o.hora ? ` <span class="cal-tip-muted">· ${esc(o.hora)}</span>` : ''}`)
-      html += fila('Resultado', { target: 'Target', stop: 'Stop', be: 'B.E.' }[o.res])
+      html += fila('Resultado', { target: 'Target', stop: 'Stop', be: 'B.E.', cierre: 'Cierre por hora' }[o.res])
       html += fila('Puntos', `<span class="${clsSigno(o.puntos)}">${fmtPts(o.puntos)} pts</span>`)
       html += fila(fuenteVista.calc ? 'P&L calc.' : 'P&L', `<span class="${clsSigno(o.pnl)}">${fmtDinero(o.pnl)}</span>`)
       if (o.obs) html += `<div class="cal-tip-muted cal-tip-obs">${esc(o.obs)}</div>`
@@ -845,7 +846,10 @@ const Calendarios = (() => {
                    be: ['B.E.', 'r-o', 'tone-o'], 'no-opero': ['NO OPERÓ', 'r-o', 'tone-o'],
                    'sin-op': ['SIN OPERACIÓN', 'r-o', 'tone-o'], error: ['ERROR', 'r-o', 'tone-o'],
                    abierta: ['ABIERTA', 'r-o', 'tone-o'] }
-    const [txt, rb, tono] = ETIQ[d.estado] || ETIQ['sin-op']
+    const cierre = d.ops.length && d.ops.every(o => o.res === 'cierre')   // plan 3.46: su nombre, con el color del signo
+    const [txt, rb, tono] = cierre
+      ? ['CIERRE POR HORA', ptsDe(d) >= 0 ? 'r-t' : 'r-s', ptsDe(d) >= 0 ? 'tone-t' : 'tone-s']
+      : ETIQ[d.estado] || ETIQ['sin-op']
     const celdas = [celda('Resultado', `<span class="cz-rb ${rb}">${txt}</span>`)]
     if (d.ops.length) {
       const p = ptsDe(d), usd = pnlDe(d)

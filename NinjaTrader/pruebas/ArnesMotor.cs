@@ -98,8 +98,8 @@ static class ArnesMotor
             if (a[0] == "param")
             {
                 var p = MotorChaumer.Parametros.Leer(a[1]);
-                w.WriteLine(string.Format(CultureInfo.InvariantCulture, "TICK={0} STOP_MAX={1} RIESGO_MAX={2} PLAZO_CONSECUCION={3} UMBRAL_VOL={4} VENTANA_NOTICIA={5}",
-                    p.Tick, p.StopMax, p.RiesgoMax, p.Plazo, p.UmbralVol, p.VentanaNoticia));
+                w.WriteLine(string.Format(CultureInfo.InvariantCulture, "TICK={0} STOP_MAX={1} RIESGO_MAX={2} PLAZO_CONSECUCION={3} UMBRAL_VOL={4} VENTANA_NOTICIA={5} CIERRE_POR_HORA={6}",
+                    p.Tick, p.StopMax, p.RiesgoMax, p.Plazo, p.UmbralVol, p.VentanaNoticia, p.CierrePorHoraEt));
             }
             else if (a[0] == "huella")
             {
