@@ -211,6 +211,12 @@ siempre juntos.
 el **P&L en grande y los puntos debajo**: Kris lo prefirió al usarlo. La pantalla principal, las
 celdas, las semanas y la curva siguen en puntos. Las dos cifras se siguen viendo siempre juntas.
 
+**Segundo matiz (30/09/2026, más tarde).** **Mi calendario vuelve entero a P&L**, como estaba antes de
+D-032: celdas, semanas, total, tarjeta, curva y recuadro. Kris: «en mi calendario no me interesan los
+puntos». Los puntos de Mío se ven **solo en la pantalla de los cuatro calendarios**, que es donde se
+compara. Chaumer, Claude y el manual siguen como en el matiz anterior. Los puntos se muestran
+**redondeados al entero** en todos los calendarios.
+
 Diseño: `docs/disenos/2026-09-29-cuatro-calendarios.md`.
 
 ---

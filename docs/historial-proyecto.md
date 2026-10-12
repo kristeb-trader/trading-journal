@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-12b | Las 3 gráficas del día en una pantalla |
 | 2026-10-12 | Borrar las cookies dejó el Journal sin guardar: la puerta del Worker pasa a ser el login |
 | 2026-10-07 | El bot: BotChaumer en NinjaTrader, los dos motores sellados y el primer cambio de regla por toda la cadena |
 | 2026-10-06 | NinjaTrader: el checklist solo pide lo manual, y la línea blanca del motor en tiempo real |
@@ -19,6 +20,7 @@
 | 2026-10-03 | El motor mide tu operación y el Coach la juzga |
 | 2026-10-02b | El Coach ve las noticias reales y las velas exactas de la ventana |
 | 2026-10-02 | El Coach, más barato: caché de 5 min con toque y guardado automático |
+| 2026-09-30c | Cuatro calendarios: la pantalla principal rehecha, el celular y Mío otra vez en P&L |
 | 2026-09-30b | Cuatro calendarios: dentro de cada uno manda el P&L |
 | 2026-09-30 | El backtesting de Chaumer arranca: la corrida fluida, reescrita sobre el 1/09, y el motor nuevo |
 | 2026-09-29c | Cuatro calendarios: Mío, Chaumer, Claude y el manual, en puntos |
@@ -44,6 +46,30 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-12b — Las 3 gráficas del día en una pantalla
+
+**Qué se cerró:** una pantalla completa con las tres gráficas de un día, una debajo de otra y en este
+orden: **la mía, la de Claude (el motor) y la de Chaumer** (`TresGraficas`, `js/app.js`).
+
+- **Dos accesos:**
+  - el botón **«3 gráficas»** en la cabecera de la vista del día, en los cuatro calendarios;
+  - el botón **«Gráficas del día»** en la pantalla de los 4 calendarios, junto al título de la curva.
+    Abre las de hoy, o las del viernes en fin de semana.
+- **Teclas:**
+  - **← / →** cambian de día hábil, sin pasar de hoy;
+  - **clic** en una gráfica la amplía (Lightbox), y ahí ← / → pasan entre las tres;
+  - **Esc** vuelve a las tres; otro Esc cierra la pantalla y deja donde estabas.
+- El Esc se atiende **en captura y antes que nadie**: sin eso, el Esc de la vista del día la cerraba
+  por debajo, y el del Lightbox cerraba también esta pantalla.
+- **La de Claude respeta el candado del motor** (D-026): sin el día registrado sale 🔒 «Registra tu
+  día…». Una gráfica que no existe deja su hueco con el aviso.
+
+**Verificado** en la copia local, con teclas reales: el 18-ago (la mía y los dos huecos), el 15-sep (la
+del motor), la ampliación, la secuencia de Esc y el cambio de día; a 1440 y 375 px, consola limpia.
+**Sin probar:** un día con imagen de Chaumer, porque la copia local no trae ninguna.
 
 ---
 
@@ -327,6 +353,38 @@ prueba contra el código anterior falla en lo cambiado. En la copia local, recor
 simuladas (análisis → chat → diagnóstico → ir al Diario y volver → guardar errores), consola sin errores.
 **Sin verificar con Claude de verdad** (no hay clave en el entorno): lo confirma el primer día real en
 `coach_uso` — primera llamada ~$0,50, filas `toque` con salida 0 y lecturas > 0 tras una pausa.
+
+---
+
+## Checkpoint 2026-09-30c — Cuatro calendarios: la pantalla principal rehecha, el celular y Mío otra vez en P&L
+
+Ajustes de Kris del 30/09 al usarla (diseño `2026-09-29-cuatro-calendarios.md`, v1.3 a v1.6, §12–§15):
+
+- **Clic en un día de Chaumer, Claude o el manual:** abre la misma vista del día a pantalla completa
+  que la mía, con su gráfico (se amplía al clicar) y lo escrito del día (`Modal.openFuente`). El día 🔒
+  de Claude se abre sin gráfico ni operación.
+- **Las miniaturas en morado** los días sin operar de Chaumer, Claude y el manual, como dentro de cada
+  calendario. En gris, solo mi día sin conectarme y el error del motor.
+- **La pantalla principal, rehecha:**
+  - tres tarjetas sobre cada calendario: P&L, Acierto y Targets/Stops;
+  - **puntos redondeados al entero** (`fmtPuntos`);
+  - desde 1280 px, los cuatro cuadros en **una fila** y la curva con el alto que sobra: a 1440×900
+    entra todo sin scroll ni hueco al pie;
+  - la curva, con relleno degradado, una etiqueta de valor al final de cada línea y guía vertical, y
+    a su lado la clasificación del mes en vez de la leyenda.
+- **En el celular, los cuatro en miniatura (2×2)** en la misma pantalla. Tocar uno lo **amplía desde su
+  sitio** (transición de cámara del skill `lenguaje-movimiento`, 450 ms) con un botón para abrir su
+  calendario; al cerrar vuelve a su miniatura. Con movimiento reducido, sin animar.
+- **Mi calendario, otra vez en P&L** como estaba (celdas, semanas, total, tarjeta, curva y recuadro).
+  Los puntos de Mío quedan solo en la pantalla principal (D-032, matiz).
+- **La primera entrada tardaba:** la pantalla principal esperaba en cadena a que cargaran Mío y sus
+  métricas (ocultos), y las tres cargas bajaban por separado las sesiones completas (≈170 + 2.555 filas
+  de checklist) y los trades. Ahora arrancan **en paralelo**, y las lecturas simultáneas **comparten una
+  petición** (`DB._compartido`). Al terminar se olvida, así que nunca sirve un dato viejo.
+
+**Verificado** en la copia local a 1440, 1100 y 375 px, sin desbordes y con la consola limpia, y las
+cifras de septiembre contra un `SELECT`. **Sin medir:** el tiempo real de la primera carga (la copia
+local no pasa por la red).
 
 ---
 
