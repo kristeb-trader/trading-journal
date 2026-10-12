@@ -67,7 +67,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
    (reinstalación del 12/10/2026).
    1. Copiar `C:\Program Files\NinjaTrader 8\bin\Newtonsoft.Json.dll` a `Documentos\NinjaTrader 8\bin\Custom\`.
    2. En el editor de NinjaScript: **clic derecho → References… → Add** → ese `Newtonsoft.Json.dll` → OK.
-      (NinjaTrader lo apunta en `Custom\AdditionalReferences.txt`.)
+      (NinjaTrader lo apunta en `CustomNinjaTrader.Custom.csproj`; no crea `AdditionalReferences.txt`.)
 3. **Copiar todos los `.cs` de esta carpeta a la vez**, cada uno en su carpeta de la tabla, y **un solo F5** en el editor
    de NinjaScript. El bot y la vista no compilan sin `MotorChaumer` y `ChaumerNT`.
 4. **La clave:** `Documentos\NinjaTrader 8\supabase-service-key.txt`.
