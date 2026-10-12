@@ -1129,6 +1129,7 @@ Cómo usarlos:
 
   async function llamarClaude(userContent, isFirst = false) {
     if (!localStorage.getItem('claude_api_key')) throw new Error('Configura tu API Key de Claude en ⚙ Ajustes')
+    if (!localStorage.getItem('dashboard_secret')) throw new Error('Falta el token del dashboard — configúralo en ⚙ Ajustes')
     const fecha = coachDate, miPanel = panel
 
     if (isFirst) {

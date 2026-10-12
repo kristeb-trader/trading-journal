@@ -628,7 +628,11 @@ const DB = {
     // al Worker /api/session (no versionado), que lo escribe tal cual como columnas de
     // `sesiones` — cualquier clave que no sea una columna real revienta el guardado.
     const { checklist, noticiasRojas, ...rest } = payload
+    // Sin el secret el Worker responde 403 y el guardado se pierde entero. Se corta
+    // aquí para decir QUÉ falta: el token vive en el localStorage y se borra con los
+    // datos del sitio, así que esto reaparece cada vez que Kris limpia el navegador.
     const secret = localStorage.getItem('dashboard_secret') || ''
+    if (!secret) throw new Error('Falta el token del dashboard — configúralo en ⚙ Ajustes')
     const res = await fetch('https://broad-hall-c53f.kristerock.workers.dev/api/session', {
       method: 'POST',
       headers: {
