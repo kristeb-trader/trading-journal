@@ -983,7 +983,7 @@ ${filas.join('\n')}
     try {
       const res = await fetch(CLAUDE_URL, {
         method: 'POST',
-        headers: cabecerasClaude(),
+        headers: await cabecerasClaude(),
         body: JSON.stringify({ ...t.cuerpo, max_tokens: 0 }),
       })
       if (!res.ok) { console.warn('[Coach] toque de caché:', res.status, await res.text()); return }
@@ -1107,13 +1107,14 @@ Cómo usarlos:
 
   // ── Llamada a Claude ───────────────────────────────────────────────────
 
-  function cabecerasClaude() {
-    return {
-      'Content-Type': 'application/json',
+  // La `x-api-key` de Anthropic sí sigue en el localStorage: es de Kris y el Worker
+  // no la guarda. La puerta del Worker, en cambio, ya es el login del Journal
+  // (`DB.cabecerasWorker`), no una clave aparte.
+  async function cabecerasClaude() {
+    return DB.cabecerasWorker({
       'x-api-key': localStorage.getItem('claude_api_key') || '',
       'anthropic-version': '2023-06-01',
-      'X-Dashboard-Token': localStorage.getItem('dashboard_secret') || '',
-    }
+    })
   }
 
   // El contexto del día: A (el plan, solo etapa 2) y después B (el día). B se arma
@@ -1129,7 +1130,6 @@ Cómo usarlos:
 
   async function llamarClaude(userContent, isFirst = false) {
     if (!localStorage.getItem('claude_api_key')) throw new Error('Configura tu API Key de Claude en ⚙ Ajustes')
-    if (!localStorage.getItem('dashboard_secret')) throw new Error('Falta el token del dashboard — configúralo en ⚙ Ajustes')
     const fecha = coachDate, miPanel = panel
 
     if (isFirst) {
@@ -1166,7 +1166,7 @@ Cómo usarlos:
     // Una petición real lee la caché: el toque pendiente sobra hasta que acabe.
     pararToque()
     const inicio = Date.now()
-    const res = await fetch(CLAUDE_URL, { method: 'POST', headers: cabecerasClaude(), body: JSON.stringify(cuerpo) })
+    const res = await fetch(CLAUDE_URL, { method: 'POST', headers: await cabecerasClaude(), body: JSON.stringify(cuerpo) })
 
     if (!res.ok) {
       const txt = await res.text()

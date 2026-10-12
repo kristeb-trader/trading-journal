@@ -9,8 +9,11 @@ hallazgo 7 de la unificación). **No se despliega desde aquí**: si se cambia, h
 
 ## Qué hace
 
-Todo pide `POST` y la cabecera `X-Dashboard-Token` igual al secreto `DASHBOARD_SECRET` (Kris lo guarda en
-Ajustes del Journal; vive en su navegador). Sin ella: 403.
+Todo pide `POST` y la cabecera `Authorization: Bearer <access_token>` de la sesión de Supabase del Journal
+(`DB.cabecerasWorker`). El Worker la valida contra `/auth/v1/user`. Sin sesión válida: 401.
+
+**Toda respuesta lleva `Access-Control-Allow-Origin`, también las de error.** Sin esa cabecera el navegador
+descarta la respuesta y `fetch` revienta con un `Failed to fetch` opaco en vez del código real (12/10/2026).
 
 | Ruta | Qué hace | Lo usa |
 |---|---|---|
@@ -19,10 +22,16 @@ Ajustes del Journal; vive en su navegador). Sin ella: 403.
 
 ## Secretos (en Cloudflare, nunca aquí: el repositorio es público, D-022)
 
-`DASHBOARD_SECRET` · `SUPABASE_URL` · `SUPABASE_SERVICE_KEY`.
+`SUPABASE_URL` · `SUPABASE_SERVICE_KEY`.
+
+`DASHBOARD_SECRET` **se retiró el 12/10/2026** y se puede borrar del panel. Era una clave aparte que Kris
+tecleaba en ⚙ Ajustes: vivía solo en el `localStorage`, se perdía al borrar los datos del sitio y no era
+recuperable (en Cloudflare es un *secret*: se escribe y no se lee). Ahora la puerta es el login del Journal.
 
 ## Notas
 
 - La clave de Anthropic **no** está en el Worker: la manda el navegador de Kris en cada llamada.
+- Validar la sesión cuesta un salto extra a Supabase por petición. Se hace así, y no verificando la firma del
+  JWT, para no meter el `JWT secret` como tercer secreto del Worker.
 - Sin `anthropic-beta`, ninguna función beta de la API llega a Anthropic por este proxy. Si algún día hace
   falta, hay que añadir esa cabecera aquí (y a `Access-Control-Allow-Headers`).

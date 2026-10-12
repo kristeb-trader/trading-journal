@@ -628,17 +628,9 @@ const DB = {
     // al Worker /api/session (no versionado), que lo escribe tal cual como columnas de
     // `sesiones` — cualquier clave que no sea una columna real revienta el guardado.
     const { checklist, noticiasRojas, ...rest } = payload
-    // Sin el secret el Worker responde 403 y el guardado se pierde entero. Se corta
-    // aquí para decir QUÉ falta: el token vive en el localStorage y se borra con los
-    // datos del sitio, así que esto reaparece cada vez que Kris limpia el navegador.
-    const secret = localStorage.getItem('dashboard_secret') || ''
-    if (!secret) throw new Error('Falta el token del dashboard — configúralo en ⚙ Ajustes')
     const res = await fetch('https://broad-hall-c53f.kristerock.workers.dev/api/session', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Dashboard-Token': secret,
-      },
+      headers: await DB.cabecerasWorker(),
       body: JSON.stringify(rest),
     })
     if (!res.ok) {
@@ -1721,6 +1713,18 @@ const DB = {
   async getSession() {
     const { data } = await supa.auth.getSession()
     return data.session
+  },
+
+  // El Worker (`/api/session`, `/api/claude`) se autentica con el MISMO login del
+  // Journal: va el `access_token` de la sesión de Supabase. Hasta el 12/10/2026 iba
+  // una clave aparte (`dashboard_secret`) que Kris tecleaba en ⚙ Ajustes y que se
+  // perdía al borrar los datos del sitio; ya no existe.
+  // `getSession()` refresca el token solo si está por caducar, así que no hay que
+  // cachear esto: se pide en cada llamada.
+  async cabecerasWorker(extra = {}) {
+    const ses = await DB.getSession()
+    if (!ses?.access_token) throw new Error('Tu sesión caducó — vuelve a iniciar sesión')
+    return { 'Content-Type': 'application/json', Authorization: `Bearer ${ses.access_token}`, ...extra }
   },
   async signIn(email, password) {
     const { error } = await supa.auth.signInWithPassword({ email, password })

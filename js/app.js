@@ -798,12 +798,9 @@ async function boot() {
   const closeSettings = document.getElementById('closeSettings')
   const inputClaudeKey = document.getElementById('inputClaudeKey')
   const toggleKeyVisibility = document.getElementById('toggleKeyVisibility')
-  const inputDashboardSecret = document.getElementById('inputDashboardSecret')
-  const toggleSecretVisibility = document.getElementById('toggleSecretVisibility')
 
   openSettings.addEventListener('click', async () => {
     inputClaudeKey.value = localStorage.getItem('claude_api_key') || ''
-    inputDashboardSecret.value = localStorage.getItem('dashboard_secret') || ''
     settingsModal.classList.remove('hidden')
     // Cargar objetivos desde BD
     try {
@@ -823,12 +820,6 @@ async function boot() {
     toggleKeyVisibility.innerHTML = isPassword ? '<i class="ti ti-eye-off"></i>' : '<i class="ti ti-eye"></i>'
   })
 
-  toggleSecretVisibility.addEventListener('click', () => {
-    const isPassword = inputDashboardSecret.type === 'password'
-    inputDashboardSecret.type = isPassword ? 'text' : 'password'
-    toggleSecretVisibility.innerHTML = isPassword ? '<i class="ti ti-eye-off"></i>' : '<i class="ti ti-eye"></i>'
-  })
-
   document.getElementById('saveSettings').addEventListener('click', async () => {
     const key = inputClaudeKey.value.trim()
     if (key) {
@@ -837,12 +828,9 @@ async function boot() {
       localStorage.removeItem('claude_api_key')
     }
 
-    const secret = inputDashboardSecret.value.trim()
-    if (secret) {
-      localStorage.setItem('dashboard_secret', secret)
-    } else {
-      localStorage.removeItem('dashboard_secret')
-    }
+    // El Dashboard Secret se retiró el 12/10/2026: el Worker ya valida el login de
+    // Supabase. Se limpia el valor viejo para no dejarlo tirado en el localStorage.
+    localStorage.removeItem('dashboard_secret')
 
     // Guardar objetivos en BD
     const num = id => {
