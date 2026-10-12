@@ -1,6 +1,6 @@
 # NinjaTrader — qué hay, qué instalar y cómo se usa
 
-**Actualizado:** 07/10/2026 · Es la referencia para **reinstalar NinjaTrader desde cero** y para recordar qué hace cada
+**Actualizado:** 12/10/2026 · Es la referencia para **reinstalar NinjaTrader desde cero** y para recordar qué hace cada
 pieza. La versión buena de cada archivo es **la de esta carpeta** del repositorio.
 
 ---
@@ -62,15 +62,24 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 ## 3 · Instalar desde cero
 
 1. **NinjaTrader:** zona horaria **(UTC−05:00) Bogotá** (Tools → Options → General).
-2. **Copiar todos los `.cs` de esta carpeta a la vez**, cada uno en su carpeta de la tabla, y **un solo F5** en el editor
+2. **La librería JSON, antes de compilar** (ChecklistChaumer, CadenaDiaria, ChaumerNT y BotChaumer la usan). NinjaTrader
+   la trae, pero **no la referencia**: sin este paso salen ~50 errores `CS0246`/`CS0103` con «`Newtonsoft`» y «`JObject`»
+   (reinstalación del 12/10/2026).
+   1. Copiar `C:\Program Files\NinjaTrader 8\bin\Newtonsoft.Json.dll` a `Documentos\NinjaTrader 8\bin\Custom\`.
+   2. En el editor de NinjaScript: **clic derecho → References… → Add** → ese `Newtonsoft.Json.dll` → OK.
+      (NinjaTrader lo apunta en `Custom\AdditionalReferences.txt`.)
+3. **Copiar todos los `.cs` de esta carpeta a la vez**, cada uno en su carpeta de la tabla, y **un solo F5** en el editor
    de NinjaScript. El bot y la vista no compilan sin `MotorChaumer` y `ChaumerNT`.
-3. **La clave:** `Documentos\NinjaTrader 8\supabase-service-key.txt`.
-4. **La cuenta de simulación `SimBot`**, creada a mano.
-5. **El repositorio** en `E:\Proyectos\Trading Journal` (o la ruta que diga `bot-chaumer.json`): el bot y la vista
+4. **La clave:** `Documentos\NinjaTrader 8\supabase-service-key.txt`.
+5. **La cuenta de simulación `SimBot`**, creada a mano.
+6. **El repositorio** en `E:\Proyectos\Trading Journal` (o la ruta que diga `bot-chaumer.json`): el bot y la vista
    comprueban ahí el sello del motor.
-6. **Python** en el PATH, con `matplotlib`: la cadena dibuja los gráficos con `dia.py`.
-7. **Gráficos:** MNQ del **contrato vigente**, **1 minuto**, plantilla **ETH** (`<Use instrument settings>`).
-8. **Datos:** si un día falta en el histórico (lo avisa el bot en su registro: *«ventana incompleta»*), Tools →
+7. **Python** en el PATH, con `matplotlib`: la cadena dibuja los gráficos con `dia.py`.
+8. **Gráficos:** MNQ del **contrato vigente**, **1 minuto**, plantilla **ETH** (`<Use instrument settings>`).
+9. **Conexión:** Tools → Connections → la conexión real → marcar **Connect on start up**. Se guarda al cerrar
+   NinjaTrader. El **nombre de la cuenta** real es el que sale en NinjaTrader (p. ej. `334118`), no el de Apex: el
+   ruteo del export es por ese nombre (`.claude/rules/ninjatrader.md`).
+10. **Datos:** si un día falta en el histórico (lo avisa el bot en su registro: *«ventana incompleta»*), Tools →
    Historical Data → **Load** → MNQ del contrato, Minute, las fechas → Download.
 
 ---
