@@ -10,6 +10,29 @@
 
 ---
 
+## D-039 — La cuenta real está configurada, pero la principal sigue siendo Sim101
+
+**Decisión (Kris, 12/10/2026).** La cuenta real de NinjaTrader (se llama , no ) ya está
+conectada, con arranque automático, pero ** se queda en ** mientras Kris
+opere solo simulación. Se pasa a  **el día que empiece a operar la real**. Cierra la revisión que D-016
+dejaba pendiente «cuando se abra la cuenta real».
+
+**Motivo.** El ruteo del export manda al Journal **solo** la cuenta principal (y las ). Con  como
+principal y operando solo en , los trades de simulación caerían en ; como  no está
+dada de alta en el Apex Tracker, **no se verían en ninguna pantalla**: sin P&L, Calendario, Coach ni Telegram.
+
+**Cómo se cambia.** Otros → Datos → cuenta principal. El indicador la relee cada 5 minutos: sin recompilar y sin
+reiniciar. Los trades que ya estén en  de ese periodo **no se mueven solos**.
+
+**Qué hay que tener puesto en el indicador.**  con **«Registrar todas» en OFF** y las dos
+cuentas en sus slots ( y ): con «todas» en ON la simulación se excluye (D-016). Si la real se
+operara por error con la principal en , el trade se guarda en  y se puede recuperar.
+
+**Alternativa descartada.** Poner  como principal desde ya, por coherencia. El Journal mide **proceso** y
+hoy el proceso está en la simulación: dejaría de ver todo lo que Kris opera.
+
+---
+
 ## D-038 — Se construye el bot: el motor opera en NinjaTrader, y todo cambia junto
 
 **Decisión (Kris, 06/10/2026).** Se construye `BotChaumer`, una estrategia de NinjaTrader que opera el plan tal como
