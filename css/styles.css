@@ -5807,3 +5807,37 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .an-kpi { padding: 13px 14px 12px; gap: 4px; }
 .analysis-footer { margin-top: 18px; padding-top: 14px; }
 .an-dist { gap: 14px; }
+
+/* ── Las 3 gráficas del día (TresGraficas, app.js) ─────────────────────────
+   Pantalla completa, por encima de la vista del día y por debajo del Lightbox
+   (z 400): al ampliar una gráfica, el Lightbox se pone encima y Esc vuelve aquí. */
+.dv-tres { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.tg { position: fixed; inset: 0; z-index: 300; background: var(--bg); display: flex; flex-direction: column; }
+.tg-cab {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg2);
+}
+.tg-fecha { font-size: 0.95rem; font-weight: 700; color: var(--accent-txt); margin: 0 4px; }
+.tg-cerrar { margin-right: 6px; }
+.tg-cuerpo { flex: 1 1 auto; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px; align-items: center; }
+.tg-panel { width: 100%; max-width: 1500px; }
+.tg-panel-cab {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c);
+}
+.tg-img {
+  display: block; width: 100%; height: auto; cursor: zoom-in;
+  border-radius: var(--radius); border: 1px solid var(--border); background: var(--card);
+}
+.tg-vacio {
+  display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 140px;
+  border: 1px dashed var(--border); border-radius: var(--radius); color: var(--text3); font-size: 0.85rem;
+}
+.tg-cargando { color: var(--text3); padding: 40px; display: flex; gap: 6px; align-items: center; }
+@media (max-width: 768px) {
+  .tg-cab { padding: 8px 10px; gap: 4px; }
+  .tg-fecha { font-size: 0.8rem; }
+  .tg-cuerpo { padding: 10px; gap: 14px; }
+  .dv-tres { font-size: 0; gap: 0; padding: 6px 8px; }
+  .dv-tres i { font-size: 1rem; }
+}

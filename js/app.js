@@ -88,7 +88,9 @@ const Modal = {
   // el backtesting manual (calendarios.js). Misma cabecera, misma imagen fija con
   // ampliación y mismo cuerpo con bloques; el contenido lo trae quien llama, ya
   // escapado. No toca currentSesion: aquí no hay diario que abrir.
-  openFuente({ titulo, stats = '', imagen = null, cuerpo = '' }) {
+  openFuente({ fecha = null, titulo, stats = '', imagen = null, cuerpo = '' }) {
+    this.currentSesion = null
+    this.currentDate = fecha   // para el botón "3 gráficas"
     const modal = document.getElementById('dayModal')
     document.getElementById('modalDateTitle').textContent = titulo
     document.getElementById('modalHeadStats').innerHTML = stats
@@ -917,6 +919,10 @@ async function boot() {
   })
   // Esc sigue cerrando aunque ya no se anuncie con una leyenda en la cabecera.
   document.addEventListener('keydown', e => { if (e.key === 'Escape') Modal.close() })
+  // Las 3 gráficas del día que se está viendo (la mía, Claude y Chaumer).
+  document.getElementById('modalTresGraficas')?.addEventListener('click', () => {
+    if (Modal.currentDate) TresGraficas.open(Modal.currentDate)
+  })
 
   // Navigation
   SesionOperativa.init()
@@ -990,6 +996,122 @@ const Lightbox = {
     document.removeEventListener('keydown', this._handleKey)
     this._handleKey = null
   }
+}
+
+// ── Las 3 gráficas del día ─────────────────────────────────────────────────
+// Pantalla completa con las tres gráficas de un día, una debajo de otra y en este
+// orden (Kris, 12 oct): la mía, la de Claude (el motor) y la de Chaumer.
+//   · ← / → (o las flechas de la cabecera): día hábil anterior / siguiente.
+//   · Clic en una gráfica: se ve completa (Lightbox), y ahí ← / → pasan entre
+//     las tres. Esc vuelve a esta pantalla; otro Esc la cierra y deja la vista
+//     del día donde estaba.
+// La de Claude respeta el candado del motor (D-026): sin el día registrado no se
+// pide ni se enseña.
+const TresGraficas = {
+  _el: null,
+  _fecha: null,
+  _token: 0,
+
+  open(fecha) {
+    this._fecha = fecha
+    if (!this._el) this._montar()
+    this._el.classList.remove('hidden')
+    document.body.classList.add('modal-open')
+    this._pintar()
+  },
+
+  close() {
+    this._el?.classList.add('hidden')
+    // La vista del día sigue abierta debajo: ella decide el scroll del body.
+    if (document.getElementById('dayModal')?.classList.contains('hidden')) document.body.classList.remove('modal-open')
+  },
+
+  abierta() { return !!this._el && !this._el.classList.contains('hidden') },
+
+  _montar() {
+    const el = this._el = document.createElement('div')
+    el.className = 'tg hidden'
+    el.setAttribute('role', 'dialog')
+    el.setAttribute('aria-modal', 'true')
+    el.innerHTML = `
+      <div class="tg-cab">
+        <button type="button" class="btn-icon tg-cerrar" title="Cerrar (Esc)" aria-label="Cerrar"><i class="ti ti-x"></i></button>
+        <button type="button" class="btn-icon tg-ant" title="Día anterior (←)" aria-label="Día anterior"><i class="ti ti-chevron-left"></i></button>
+        <h3 class="tg-fecha"></h3>
+        <button type="button" class="btn-icon tg-sig" title="Día siguiente (→)" aria-label="Día siguiente"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <div class="tg-cuerpo"></div>`
+    document.body.appendChild(el)
+    el.querySelector('.tg-cerrar').addEventListener('click', () => this.close())
+    el.querySelector('.tg-ant').addEventListener('click', () => this._mover(-1))
+    el.querySelector('.tg-sig').addEventListener('click', () => this._mover(1))
+    el.querySelector('.tg-cuerpo').addEventListener('click', e => {
+      const img = e.target.closest('.tg-img')
+      if (!img) return
+      const urls = [...el.querySelectorAll('.tg-img')].map(i => i.src)
+      Lightbox.open(img.src, urls, urls.indexOf(img.src))
+    })
+    // En captura y antes que nadie: el Esc de la vista del día la cerraría por
+    // debajo, y el del Lightbox también cerraría esta pantalla.
+    window.addEventListener('keydown', e => {
+      if (!this.abierta()) return
+      if (document.getElementById('lightbox')) {
+        if (e.key === 'Escape') { e.stopImmediatePropagation(); Lightbox.close(); document.body.classList.add('modal-open') }
+        return   // ← / → los atiende el Lightbox: pasan entre las tres gráficas
+      }
+      if (e.key === 'Escape') { e.stopImmediatePropagation(); this.close() }
+      else if (e.key === 'ArrowLeft')  { e.stopImmediatePropagation(); this._mover(-1) }
+      else if (e.key === 'ArrowRight') { e.stopImmediatePropagation(); this._mover(1) }
+    }, true)
+  },
+
+  // Día hábil anterior / siguiente; nunca más allá de hoy.
+  _mover(delta) {
+    const d = new Date(`${this._fecha}T12:00:00`)
+    do { d.setDate(d.getDate() + delta) } while (d.getDay() === 0 || d.getDay() === 6)
+    const f = isoLocal(d)
+    if (f > hoyISO()) return
+    this._fecha = f
+    this._pintar()
+  },
+
+  async _pintar() {
+    const f = this._fecha, tok = ++this._token, el = this._el
+    const d = new Date(`${f}T12:00:00`)
+    const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+    const MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    el.querySelector('.tg-fecha').textContent = `${DIAS[d.getDay()]} ${d.getDate()} ${MES[d.getMonth()]} ${d.getFullYear()} · Las 3 gráficas`
+    el.querySelector('.tg-sig').disabled = f >= hoyISO()
+    const cuerpo = el.querySelector('.tg-cuerpo')
+    cuerpo.innerHTML = '<div class="tg-cargando"><i class="ti ti-loader-2"></i> Cargando…</div>'
+    cuerpo.scrollTop = 0
+
+    const [ses, estado, ficha, ch] = await Promise.all([
+      DB.getSesionByDate(f).catch(() => null),
+      DB.motorEstado(f).catch(() => 'sin_ficha'),
+      DB.getFichaMotor(f).catch(() => null),
+      DB.getChaumerOperativa(f).catch(() => null),
+    ])
+    if (tok !== this._token) return   // se cambió de día mientras cargaba
+
+    const paneles = [
+      { nombre: 'Mía', color: 'accent', url: ses?.imagen_url, vacio: 'No subiste gráfico este día' },
+      { nombre: 'Claude', color: 'violet', url: ficha?.grafico_url,
+        vacio: estado === 'bloqueada' ? '<i class="ti ti-lock"></i> Registra tu día para ver lo que marcó el motor'
+                                       : 'El motor no tiene gráfico de este día' },
+      { nombre: 'Chaumer', color: 'blue', url: ch?.imagen_url, vacio: 'Chaumer no tiene gráfico de este día' },
+    ]
+    cuerpo.innerHTML = paneles.map(p => `
+      <section class="tg-panel hc-${p.color}">
+        <div class="tg-panel-cab"><span class="hub-dot"></span>${p.nombre}</div>
+        ${p.url
+          ? `<img class="tg-img" alt="Gráfico de ${p.nombre}" loading="lazy" title="Clic para verla completa">`
+          : `<div class="tg-vacio">${p.vacio}</div>`}
+      </section>`).join('')
+    // La URL por propiedad, no en el HTML: viene de la BD.
+    const imgs = [...cuerpo.querySelectorAll('.tg-img')]
+    paneles.filter(p => p.url).forEach((p, i) => { imgs[i].src = p.url })
+  },
 }
 
 document.addEventListener('DOMContentLoaded', boot)

@@ -838,7 +838,7 @@ const Calendarios = (() => {
     const celda = (lab, val) => `<div class="mh-stat"><label>${lab}</label>${val}</div>`
 
     if (d.estado === 'bloqueado') {
-      Modal.openFuente({ titulo, cuerpo: bloque('Día sin registrar', 'Registra tu día para ver lo que marcó el motor.', 'gry') })
+      Modal.openFuente({ fecha: fe, titulo, cuerpo: bloque('Día sin registrar', 'Registra tu día para ver lo que marcó el motor.', 'gry') })
       return
     }
 
@@ -873,7 +873,7 @@ const Calendarios = (() => {
     ;(d.textos || []).forEach(([lbl, t]) => { cuerpo += bloque(lbl, t, 'blu') })
     if (d.ops.length && d.nota) cuerpo += bloque('Notas', d.nota, 'blu')
 
-    Modal.openFuente({ titulo, stats: `<div class="mh-box ${tono}">${celdas.join('')}</div>`, imagen: d.url, cuerpo })
+    Modal.openFuente({ fecha: fe, titulo, stats: `<div class="mh-box ${tono}">${celdas.join('')}</div>`, imagen: d.url, cuerpo })
   }
 
   function tipEl() {
