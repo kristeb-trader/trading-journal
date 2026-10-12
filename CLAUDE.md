@@ -18,6 +18,12 @@ Lo que no se toca sin aprobación explícita. Una línea cada una; el porqué, e
   (`new Date(f + 'T12:00:00')`) sí vale — por eso `getWeekKey` y `mondayOf` se quedan así.
 - **Guardar sesión** — el Worker escribe el payload TAL CUAL en `sesiones`: una clave que no sea
   columna revienta el guardado entero. `.claude/rules/sesion.md`.
+- **El Worker se autentica con el login del Journal** (`Authorization: Bearer <access_token>` de
+  Supabase, vía `DB.cabecerasWorker()`), nunca con una clave aparte: una credencial que solo viva en
+  el `localStorage` se pierde al borrar los datos del sitio y no se recupera. Checkpoint 12/10.
+- **Toda respuesta del Worker lleva `Access-Control-Allow-Origin`, también las de error.** Sin esa
+  cabecera el navegador descarta la respuesta y `fetch` miente con `Failed to fetch`: el código real
+  nunca llega al JS. Checkpoint 12/10.
 - **Coach IA** — caché por prefijo, la gráfica no se persiste, historial cortado a la fecha; en la
   etapa 2 el plan de Chaumer va **primero** en el system. `.claude/rules/coach.md`.
 - **Sesión Operativa** — nada interactivo dentro de `#sessionFieldset` en modo lectura; los trades
@@ -102,7 +108,7 @@ sobre la implementación.** Ya pasó que se implementara otra cosa y hubo que re
 |---|---|
 | Frontend | HTML + JS vanilla — GitHub Pages, se publica solo al hacer push (`.claude/rules/publicacion.md`) |
 | BD | Supabase (PostgreSQL) |
-| Proxy IA | Cloudflare Worker `broad-hall-c53f.kristerock.workers.dev` |
+| Proxy IA | Cloudflare Worker `broad-hall-c53f.kristerock.workers.dev` — **NO se despliega con push**: se pega a mano en el panel (`workers/proxy-ia/README.md`) |
 | Análisis IA | Claude API `claude-opus-5-5` (`js/coach.js`) — adaptive thinking, effort low, caché de 5 min con toque, guardado automático; consumo en `coach_uso` (D-025, D-033) |
 | Imágenes | Cloudinary (`dq4n7bjta` / preset `trading-journal`) |
 | Bot | Telegram → Cloudflare Worker #2 + KV. **Se despliega solo** al hacer push que toque `TelegramBot/**` |

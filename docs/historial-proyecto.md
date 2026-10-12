@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-10-07
+**Última actualización:** 2026-10-12
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-12 | Borrar las cookies dejó el Journal sin guardar: la puerta del Worker pasa a ser el login |
 | 2026-10-07 | El bot: BotChaumer en NinjaTrader, los dos motores sellados y el primer cambio de regla por toda la cadena |
 | 2026-10-06 | NinjaTrader: el checklist solo pide lo manual, y la línea blanca del motor en tiempo real |
 | 2026-10-05 | El bot registra el día solo al cerrar el trade, y pregunta cómo terminaste |
@@ -43,6 +44,85 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-12 — Borrar las cookies dejó el Journal sin guardar: la puerta del Worker pasa a ser el login
+
+Kris borra cookies y temporales de Windows. A partir de ahí, guardar una sesión responde
+**«Error al guardar: Failed to fetch»**. Dos fallos encadenados, uno encima del otro.
+
+### El fallo de fondo: una clave que solo existía en el navegador
+
+`DB.upsertSesion` no escribe en Supabase: hace `POST` al Worker `broad-hall-c53f`, que es
+quien tiene la `service_role`. Ese Worker se autenticaba con `DASHBOARD_SECRET`, una clave
+**aparte del login**, que Kris tecleaba a mano en ⚙ Ajustes.
+
+Esa clave tenía exactamente dos copias, y las dos se perdieron:
+
+- el `localStorage` del navegador → lo borró el limpiado;
+- Cloudflare → está, pero es un *secret*: se escribe y **no se puede leer nunca más**.
+
+Irrecuperable. Hubo que generar una nueva.
+
+### El fallo que lo volvió indescifrable: CORS en las respuestas de error
+
+El Worker devolvía el 403 así:
+
+```js
+return new Response('Unauthorized', { status: 403 })   // ← sin Access-Control-Allow-Origin
+```
+
+El navegador **descarta** una respuesta cross-origin sin esa cabecera antes de entregarla al
+JS, así que `fetch` no ve un 403: lanza `TypeError: Failed to fetch`. El motivo real nunca
+llegó a la pantalla. Se diagnosticó con `curl` contra el Worker, que sí ve el 403 pelado.
+
+### Lo que se cambió
+
+| Pieza | Antes | Ahora |
+|---|---|---|
+| Puerta del Worker | `X-Dashboard-Token` == `DASHBOARD_SECRET` | `Authorization: Bearer <access_token>` validado contra `/auth/v1/user` |
+| Respuestas de error | sin CORS → `Failed to fetch` | **todas** con `Access-Control-Allow-Origin` |
+| Cabecera en el navegador | armada en dos sitios | `DB.cabecerasWorker()`, único sitio |
+| `cabecerasClaude()` (coach) | síncrona | `async`, reutiliza la anterior |
+| ⚙ Ajustes | campo «Dashboard Secret» | retirado; el valor viejo se borra del `localStorage` |
+
+Commits `2b3ed2b` (CORS) y `b6ad08b` (el login como puerta). `DASHBOARD_SECRET` quedó sin
+uso y se puede borrar del panel de Cloudflare.
+
+**El razonamiento:** había dos credenciales donde bastaba una. El login de Supabase ya existe,
+es la identidad real de Kris y es **recuperable** (restablecer por correo). El secreto del
+dashboard era una contraseña inventada, sin recuperación, que solo servía para esto. Ahora
+borrar el navegador obliga únicamente a iniciar sesión — algo que ya había que hacer igual,
+porque la sesión de Supabase vive en el mismo `localStorage`.
+
+### Cómo se verificó
+
+Contra el Worker ya desplegado:
+
+| Prueba | Resultado |
+|---|---|
+| Preflight | anuncia `Authorization`, ya no `X-Dashboard-Token` |
+| `POST` sin sesión | **401** *con* CORS y mensaje legible |
+| `POST` con token falso | **401** — validó contra Supabase sin reventar |
+
+El camino bueno (sesión real escribiendo en la base) lo confirmó Kris guardando un día: **ok**.
+
+Para probar un token sin escribir nada, se manda un cuerpo que **no es JSON**: si la puerta
+lo deja pasar, el Worker revienta al parsearlo y no toca la base. `403`/`401` = token malo,
+`500` = token bueno.
+
+### Reglas de oro
+
+- **Toda respuesta de un Worker lleva `Access-Control-Allow-Origin`, también las de error.**
+  Sin ella el navegador borra la respuesta y `fetch` miente con un `Failed to fetch` opaco.
+  Un error que no se puede leer cuesta más que el error.
+- **Nada que haga falta para operar puede vivir solo en el `localStorage`.** Se borra con los
+  datos del sitio y no hay copia. Si es una credencial, que sea el login — recuperable — y no
+  una clave suelta.
+- **La `claude_api_key` sigue en el `localStorage` y seguirá perdiéndose.** Es de Kris, el
+  Worker no la guarda a propósito (el repositorio es público, D-022). Va en su gestor de
+  contraseñas.
 
 ---
 
