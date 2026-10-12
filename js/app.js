@@ -923,6 +923,12 @@ async function boot() {
   document.getElementById('modalTresGraficas')?.addEventListener('click', () => {
     if (Modal.currentDate) TresGraficas.open(Modal.currentDate)
   })
+  // Y desde la pantalla de los 4 calendarios: el último día hábil (hoy, si lo es).
+  document.getElementById('hubTresGraficas')?.addEventListener('click', () => {
+    const d = new Date(`${hoyISO()}T12:00:00`)
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1)
+    TresGraficas.open(isoLocal(d))
+  })
 
   // Navigation
   SesionOperativa.init()

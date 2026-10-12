@@ -5841,3 +5841,7 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
   .dv-tres { font-size: 0; gap: 0; padding: 6px 8px; }
   .dv-tres i { font-size: 1rem; }
 }
+/* Acceso a las 3 gráficas desde la pantalla de los 4 calendarios, a la derecha
+   del título de la curva. */
+.hub-curva-card .chart-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.hub-tres { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }

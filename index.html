@@ -182,6 +182,12 @@
           <div class="card annual-table-card hub-curva-card">
             <div class="chart-header">
               <h3><i class="ti ti-chart-line"></i> Puntos acumulados del mes</h3>
+              <!-- Acceso directo a las 3 gráficas del último día hábil (hoy, si lo es).
+                   Desde ahí, ← / → recorren los días. -->
+              <button class="btn btn-secondary btn-sm hub-tres" id="hubTresGraficas" type="button"
+                      title="Ver las 3 gráficas del día: la mía, Claude y Chaumer">
+                <i class="ti ti-layout-rows"></i> Gráficas del día
+              </button>
             </div>
             <!-- La curva ocupa el alto que sobre en la pantalla; al lado, la
                  clasificación del mes (en móvil, debajo). -->
