@@ -81,6 +81,9 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
    ruteo del export es por ese nombre (`.claude/rules/ninjatrader.md`).
 10. **Datos:** si un día falta en el histórico (lo avisa el bot en su registro: *«ventana incompleta»*), Tools →
    Historical Data → **Load** → MNQ del contrato, Minute, las fechas → Download.
+9. **Poner los indicadores en los gráficos y guardar el espacio de trabajo** (File → Workspaces → Save). Compilar no
+   basta: un indicador solo dibuja si está **añadido al gráfico**. El bot no dibuja nada; lo que se ve lo pinta
+   **VistaMotorChaumer**. Al reinstalar el 13/10 el bot se armó bien, pero el gráfico salió vacío hasta añadirla.
 
 ---
 
