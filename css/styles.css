@@ -5171,32 +5171,28 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 }
 .bt-card-h i { color: var(--text3); font-size: 1rem; }
 .bt-curva { height: 240px; padding: 12px 12px 8px; }
-/* Por setup: una tarjeta por setup, con el nombre protagonista. Cada setup
-   declara su color (--c, --c-dim), como las tarjetas de Otros. */
-.bt-setups { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 14px; padding: 16px; }
+/* Por setup: una fila por setup, con etiquetas pequeñas de color y borde en
+   relieve (luz arriba, borde grueso y sombra abajo). Cada etiqueta declara su
+   color (--c base, --c-txt texto, --c-dim fondo), como las tarjetas de Otros. */
 .bt-setup {
-  --c: var(--accent-txt); --c-dim: var(--accent-dim);
-  position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 6px;
-  padding: 20px 22px 18px; border-radius: var(--radius); border: 1px solid var(--border);
-  background: linear-gradient(145deg, var(--c-dim), transparent 65%), var(--bg2);
+  display: grid; grid-template-columns: minmax(130px, auto) auto auto 1fr; align-items: center; gap: 10px;
+  padding: 12px 18px; border-bottom: 1px solid var(--border);
 }
-.bt-setup-reingreso { --c: var(--blue-txt); --c-dim: var(--blue-dim); }
-.bt-setup::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--c); }
-/* El nombre: grande, con degradado y una sombra en capas que le da relieve. */
-.bt-setup-nom {
-  font-size: clamp(26px, 16px + 1.4vw, 40px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.05;
-  background: linear-gradient(180deg, var(--text) 25%, var(--c)); -webkit-background-clip: text; background-clip: text;
-  color: transparent; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.45)) drop-shadow(0 8px 16px var(--c-dim));
+.bt-setup:last-child { border-bottom: none; }
+.bt-chip {
+  --c: var(--text3); --c-txt: var(--text2); --c-dim: var(--bg3);
+  display: inline-flex; justify-content: center; padding: 4px 12px; border-radius: 8px; white-space: nowrap;
+  font-size: clamp(12px, 9px + 0.3vw, 14px); font-weight: 700; letter-spacing: 0.01em; color: var(--c-txt);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 60%), var(--c-dim);
+  border: 1px solid var(--c); border-bottom-width: 3px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 4px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
 }
-.bt-setup-ops { font-size: clamp(12px, 9px + 0.3vw, 14px); color: var(--text3); font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
-.bt-setup-efec {
-  display: flex; align-items: baseline; gap: 8px; margin-top: 8px;
-  font-size: clamp(30px, 18px + 1.6vw, 46px); font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1;
-}
-.bt-setup-efec small { font-size: clamp(12px, 9px + 0.3vw, 14px); font-weight: 600; color: var(--text3); }
-.bt-setup-barra { height: 8px; border-radius: 999px; background: var(--red-dim); overflow: hidden; margin-top: 6px; }
-.bt-setup-barra span { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
-.bt-setup-ts { display: flex; justify-content: space-between; font-size: clamp(13px, 10px + 0.3vw, 15px); font-weight: 700; }
+.bt-chip-continuacion { --c: var(--violet); --c-txt: var(--violet-txt); --c-dim: var(--violet-dim); }
+.bt-chip-reingreso    { --c: var(--blue);   --c-txt: var(--blue-txt);   --c-dim: var(--blue-dim); }
+.bt-chip-target       { --c: var(--accent); --c-txt: var(--accent-txt); --c-dim: var(--accent-dim); }
+.bt-chip-stop         { --c: var(--red);    --c-txt: var(--red-txt);    --c-dim: var(--red-dim); }
+.bt-setup-efec { justify-self: end; font-size: clamp(14px, 10px + 0.4vw, 17px); font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 /* Las columnas en un grid por tabla: cabecera, filas y total comparten plantilla. */
 .bt-tabla { overflow-x: auto; }
 /* La letra crece con la ventana (pedido de Kris, 09/10): 16 px a 1280, 19 px en

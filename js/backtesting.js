@@ -215,26 +215,21 @@ const Backtesting = (() => {
         </div>
       </div>`
 
-    // Por setup, en tarjetas: el nombre del setup protagonista, con su
-    // efectividad y la barra de target/stop. Sin P&L ni puntos (pedido de Kris, 13/10).
+    // Por setup: solo el setup y su resultado, en etiquetas pequeñas de color
+    // con borde en relieve. Sin P&L ni puntos (pedido de Kris, 13/10).
     const setups = `
       <div class="bt-card">
         <div class="bt-card-h"><i class="ti ti-route"></i> Por setup</div>
-        <div class="bt-setups">
-          ${['continuacion', 'reingreso'].map(c => {
-            const x = totales(ops.filter(o => o.setup === c))
-            const ancho = x.n ? Math.round(x.t / x.n * 100) : 0
-            return `
-              <div class="bt-setup bt-setup-${c}">
-                <div class="bt-setup-nom">${NOMBRE[c]}</div>
-                <div class="bt-setup-ops">${plural(x.n, 'operación', 'operaciones')}</div>
-                <div class="bt-setup-efec">${pct(x.t, x.n)}<small>efectividad</small></div>
-                <div class="bt-setup-barra" role="img" aria-label="${x.t} target y ${x.s} stop">
-                  <span style="width:${ancho}%"></span></div>
-                <div class="bt-setup-ts"><span class="bt-pos">${x.t} target</span><span class="bt-neg">${x.s} stop</span></div>
-              </div>`
-          }).join('')}
-        </div>
+        ${['continuacion', 'reingreso'].map(c => {
+          const x = totales(ops.filter(o => o.setup === c))
+          return `
+            <div class="bt-setup">
+              <span class="bt-chip bt-chip-${c}">${NOMBRE[c]}</span>
+              <span class="bt-chip bt-chip-target">${x.t} Target</span>
+              <span class="bt-chip bt-chip-stop">${x.s} Stop</span>
+              <span class="bt-setup-efec">${pct(x.t, x.n)}</span>
+            </div>`
+        }).join('')}
       </div>`
 
     cont.innerHTML = cifras + curva + tablaMes + setups +
