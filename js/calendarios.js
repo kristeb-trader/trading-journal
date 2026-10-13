@@ -108,9 +108,7 @@ const Calendarios = (() => {
         puntos: puntosDeTrade(t) ?? 0,
         pnl: parseFloat(t.profit) || 0,
         res: resDeTrade(t),
-        dir: t.market_pos === 'Short' ? 'Corto' : 'Largo',
-        hora: horaCorta(t.entry_time),   // "08:36:23", hora Colombia como las otras fuentes
-      })
+        dir: t.market_pos === 'Short' ? 'Corto' : 'Largo',      })
     })
     Object.values(dias).forEach(d => { d.estado = estadoPorOps(d.ops) })
     const pre = prefijo(y, m)
@@ -840,9 +838,9 @@ const Calendarios = (() => {
       : ETIQ[d.estado] || ETIQ['sin-op']
   }
 
-  // Lo que cabe en una línea sobre cada gráfica de TresGraficas (app.js): resultado, setup, hora,
-  // puntos y P&L. Usa los mismos adaptadores que los calendarios, así que dice lo mismo que ellos.
-  // null = no hay nada que decir (sin día o 🔒: ese aviso ya lo da el panel).
+  // El título de cada gráfica de TresGraficas (app.js): solo resultado y setup — Kris no quiere ahí ni
+  // puntos ni P&L (13/10). Usa los mismos adaptadores que los calendarios, así que dice lo mismo que ellos.
+  // { res: 'TARGET', tono: 't' | 's' | 'o', setup } · null = nada que decir (sin día o 🔒: ese aviso ya lo da el panel).
   async function resumenDia(id, fe) {
     const [y, m] = fe.split('-').map(Number)
     let dias
@@ -854,18 +852,9 @@ const Calendarios = (() => {
     }
     const d = dias[fe]
     if (!d || d.estado === 'bloqueado') return null
-    const [txt, rb] = etiquetaDe(d)
-    const partes = []
-    if (d.ops.length) {
-      const o = d.ops[0], p = ptsDe(d), usd = pnlDe(d)
-      const setup = [...new Set(d.ops.map(x => x.setup).filter(Boolean))].join(' / ')
-      if (setup) partes.push(esc(setup))
-      if (o.hora) partes.push(esc(o.hora))
-      if (d.ops.length > 1) partes.push(`${d.ops.length} trades`)
-      partes.push(`<b class="${clsSigno(p)}">${fmtPts(p)} pts</b>`)
-      partes.push(`<b class="${clsSigno(usd)}">${fmtDinero(usd)}</b>${id === 'mio' ? '' : ' calc.'}`)
-    } else if (d.nota) partes.push(esc(d.nota))
-    return `<span class="cz-rb ${rb}">${txt}</span>${partes.length ? `<span class="tg-datos">${partes.join(' · ')}</span>` : ''}`
+    const [res, rb] = etiquetaDe(d)
+    const setup = [...new Set(d.ops.map(x => x.setup).filter(Boolean))].join(' / ')
+    return { res, tono: rb.slice(2), setup: esc(setup) }   // setup ya escapado: va a innerHTML
   }
 
   // La misma pantalla completa que abre "Mío" (Modal, app.js): cabecera con el

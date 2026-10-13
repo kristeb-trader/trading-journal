@@ -1111,9 +1111,13 @@ const TresGraficas = {
     const resumenes = await Promise.all(paneles.map(p =>
       Calendarios.resumenDia(p.id, f).catch(err => { console.warn('[3 gráficas]', p.id, err); return null })))
     if (tok !== this._token) return
+    // El título: tres pastillas en relieve — quién, resultado (con su color) y setup
+    const titulo = (p, r) => `<span class="tg-chip tg-quien">${p.nombre}</span>`
+      + (r ? `<span class="tg-chip tg-res-${r.tono}">${r.res}</span>` : '')
+      + (r?.setup ? `<span class="tg-chip tg-setup">${r.setup}</span>` : '')
     cuerpo.innerHTML = paneles.map((p, i) => `
       <section class="tg-panel hc-${p.color}">
-        <div class="tg-panel-cab"><span class="hub-dot"></span>${p.nombre}${resumenes[i] || ''}</div>
+        <div class="tg-panel-cab">${titulo(p, resumenes[i])}</div>
         ${p.url
           ? `<img class="tg-img" alt="Gráfico de ${p.nombre}" loading="lazy" title="Clic para verla completa">`
           : `<div class="tg-vacio">${p.vacio}</div>`}

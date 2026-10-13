@@ -64,19 +64,21 @@ Tres ajustes a la pantalla del 12/10 (`TresGraficas`), pedidos por Kris al usarl
   > En una ventana **más alta que ancha** (Kris la tenía a ~1075×1390) el límite es el alto: tres
   > gráficas de casi 2:1 no pueden llenar el ancho sin scroll, recorte o deformación. Ahí el hueco
   > lateral es el máximo posible; se resuelve maximizando la ventana, que activa las dos filas.
-- **Resultado y setup sobre cada gráfica**, en la misma línea que el nombre para no quitarle alto:
-  `TARGET · Continuación bajista · 9:58 · +20 pts · +$78`.
+- **Un título sobre cada gráfica: quién · resultado · setup**, en tres pastillas pequeñas con relieve
+  (`.tg-chip`: degradado, filo claro arriba, sombra abajo). Color: la del nombre, el de su calendario;
+  Target verde, Stop rojo, el resto neutro; el setup en ámbar.
+  - **Sin hora, puntos ni P&L**: una primera versión los ponía (`TARGET · … · 9:58 · +20 pts · +$78`) y
+    Kris pidió quitarlos — esta pantalla es para mirar las gráficas, las cifras están en los calendarios.
   - Sale de `Calendarios.resumenDia(id, fecha)` (`js/calendarios.js`), que reutiliza los adaptadores de
-    los calendarios: dice lo mismo que ellos, también el P&L **calculado** de Claude y Chaumer («calc.»).
-  - La etiqueta de resultado (`ETIQ` / `etiquetaDe`) pasó a nivel de módulo: la comparten la vista del
-    día y esta pantalla.
-  - Mío: el setup es el que declara la sesión (`sesiones.setup`) y la hora, la del primer trade; con
-    varios trades dice cuántos. El día 🔒 de Claude no enseña resultado: solo el aviso del candado.
+    los calendarios: dice lo mismo que ellos. La etiqueta de resultado (`ETIQ` / `etiquetaDe`) pasó a
+    nivel de módulo: la comparten la vista del día y esta pantalla.
+  - Mío: el setup es el que declara la sesión (`sesiones.setup`). El día 🔒 de Claude no enseña
+    resultado: solo el aviso del candado.
 
 **Verificado** en la copia local, consola limpia: sin scroll a 1440×900 y 375 px (con imágenes 16:9 de
-prueba), las dos filas a 1440, el clic y el Esc. Las líneas, con datos de la copia: 18-ago (Mío y
-Chaumer) y 15-sep (Claude). **Mío del 18-ago contra Supabase:** +$77,96, 9:58, Continuación Bajista —
-coincide. El Chaumer de ese día **no** coincide en la copia (vieja: TARGET +40 a las 10:55); en vivo es
+prueba), las dos filas a 1440, el clic y el Esc. Los títulos, con datos de la copia: 18-ago (Mío y
+Chaumer, TARGET) y 15-sep (Claude, STOP). **Mío del 18-ago contra Supabase:** target, Continuación
+Bajista — coincide. El Chaumer de ese día **no** coincide en la copia (vieja: TARGET +40 a las 10:55); en vivo es
 STOP −20,5 a las 9:58, y es lo que lee la app publicada.
 
 ---
