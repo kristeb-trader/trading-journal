@@ -56,6 +56,9 @@ orden: **la mía, la de Claude (el motor) y la de Chaumer** (`TresGraficas`, `js
 
 - **Las tres caben sin scroll** (ajuste del 13/10, a pedido de Kris): la pantalla se parte en tres filas
   iguales y cada gráfica se encoge para caber entera (`object-fit: contain`); el detalle, con el clic.
+  En pantalla ancha (más de 6:5) tres filas dejaban las gráficas estrechas y con hueco a los lados, así
+  que van **la mía y la de Claude arriba, lado a lado, y la de Chaumer abajo, centrada**: a 1440×900,
+  de 444 a ~690 px de ancho cada una. En el celular, en vertical, siguen una debajo de otra.
 
 - **Dos accesos:**
   - el botón **«3 gráficas»** en la cabecera de la vista del día, en los cuatro calendarios;

@@ -5825,6 +5825,13 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
   display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 10px;
 }
 .tg-panel { min-height: 0; display: flex; flex-direction: column; }
+/* En pantalla ancha, tres filas dejan las gráficas (apaisadas) estrechas y con hueco a los lados:
+   la mía y la de Claude arriba, lado a lado, y la de Chaumer abajo, centrada. Casi el doble de ancho.
+   El corte 6/5 es donde las dos filas empiezan a dar más tamaño que las tres. */
+@media (min-aspect-ratio: 6/5) {
+  .tg-cuerpo { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+  .tg-panel:nth-child(3) { grid-column: 1 / -1; justify-self: center; width: calc(50% - 8px); }
+}
 .tg-panel-cab {
   flex: 0 0 auto; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
   font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c);
