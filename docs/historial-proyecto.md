@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-13 | Las 3 gráficas: sin scroll, en dos filas y con su resultado |
 | 2026-10-12b | Las 3 gráficas del día en una pantalla |
 | 2026-10-12 | Borrar las cookies dejó el Journal sin guardar: la puerta del Worker pasa a ser el login |
 | 2026-10-07 | El bot: BotChaumer en NinjaTrader, los dos motores sellados y el primer cambio de regla por toda la cadena |
@@ -49,20 +50,41 @@
 
 ---
 
+## Checkpoint 2026-10-13 — Las 3 gráficas: sin scroll, en dos filas y con su resultado
+
+Tres ajustes a la pantalla del 12/10 (`TresGraficas`), pedidos por Kris al usarla.
+
+- **Las tres caben sin scroll.** Antes cada gráfica iba a todo el ancho y la de Chaumer quedaba debajo
+  del pliegue. Ahora la pantalla se parte en tres filas iguales y cada gráfica se encoge para caber
+  entera (`object-fit: contain`); el detalle sigue siendo el clic.
+- **En pantalla ancha, dos filas.** Con tres filas, las gráficas (apaisadas, casi 2:1) quedaban estrechas
+  y con hueco a los lados. Por encima de 6:5 —donde dos filas empiezan a dar más tamaño que tres— van
+  **la mía y la de Claude arriba, lado a lado, y la de Chaumer abajo, centrada**: a 1440×900 pasan de 444
+  a ~690 px de ancho. En el celular, en vertical, siguen una debajo de otra.
+  > En una ventana **más alta que ancha** (Kris la tenía a ~1075×1390) el límite es el alto: tres
+  > gráficas de casi 2:1 no pueden llenar el ancho sin scroll, recorte o deformación. Ahí el hueco
+  > lateral es el máximo posible; se resuelve maximizando la ventana, que activa las dos filas.
+- **Resultado y setup sobre cada gráfica**, en la misma línea que el nombre para no quitarle alto:
+  `TARGET · Continuación bajista · 9:58 · +20 pts · +$78`.
+  - Sale de `Calendarios.resumenDia(id, fecha)` (`js/calendarios.js`), que reutiliza los adaptadores de
+    los calendarios: dice lo mismo que ellos, también el P&L **calculado** de Claude y Chaumer («calc.»).
+  - La etiqueta de resultado (`ETIQ` / `etiquetaDe`) pasó a nivel de módulo: la comparten la vista del
+    día y esta pantalla.
+  - Mío: el setup es el que declara la sesión (`sesiones.setup`) y la hora, la del primer trade; con
+    varios trades dice cuántos. El día 🔒 de Claude no enseña resultado: solo el aviso del candado.
+
+**Verificado** en la copia local, consola limpia: sin scroll a 1440×900 y 375 px (con imágenes 16:9 de
+prueba), las dos filas a 1440, el clic y el Esc. Las líneas, con datos de la copia: 18-ago (Mío y
+Chaumer) y 15-sep (Claude). **Mío del 18-ago contra Supabase:** +$77,96, 9:58, Continuación Bajista —
+coincide. El Chaumer de ese día **no** coincide en la copia (vieja: TARGET +40 a las 10:55); en vivo es
+STOP −20,5 a las 9:58, y es lo que lee la app publicada.
+
+---
+
 ## Checkpoint 2026-10-12b — Las 3 gráficas del día en una pantalla
 
 **Qué se cerró:** una pantalla completa con las tres gráficas de un día, una debajo de otra y en este
 orden: **la mía, la de Claude (el motor) y la de Chaumer** (`TresGraficas`, `js/app.js`).
-
-- **Las tres caben sin scroll** (ajuste del 13/10, a pedido de Kris): la pantalla se parte en tres filas
-  iguales y cada gráfica se encoge para caber entera (`object-fit: contain`); el detalle, con el clic.
-  En pantalla ancha (más de 6:5) tres filas dejaban las gráficas estrechas y con hueco a los lados, así
-  que van **la mía y la de Claude arriba, lado a lado, y la de Chaumer abajo, centrada**: a 1440×900,
-  de 444 a ~690 px de ancho cada una. En el celular, en vertical, siguen una debajo de otra.
-- **Resultado y setup sobre cada gráfica** (13/10): en la misma línea que el nombre, para no quitarle alto
-  — `TARGET · Continuación bajista · 9:58 · +20 pts · +$78`. Sale de `Calendarios.resumenDia`, con los
-  mismos adaptadores que los calendarios: dice lo mismo que ellos (el P&L de Claude y Chaumer, «calc.»).
-  El setup de Mío es el que declara la sesión; la hora, la del primer trade.
 
 - **Dos accesos:**
   - el botón **«3 gráficas»** en la cabecera de la vista del día, en los cuatro calendarios;
