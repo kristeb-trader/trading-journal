@@ -3,6 +3,7 @@
 | Versión | Fecha | Estado |
 |---|---|---|
 | v1.0 | 09/10/2026 | Aprobado por Kris en el chat («sí, hazlo con el punto 4 incluido») |
+| v1.1 | 13/10/2026 | Por setup pasa a tarjetas con el nombre del setup protagonista, sin P&L ni puntos (pedido de Kris) |
 
 ## La pregunta
 
@@ -27,8 +28,9 @@ Análisis porque nunca se mezcla con `trades`. "Registrar jornada" sigue en la c
    los calendarios).
 3. **Tabla por mes**, del más nuevo al más viejo: jornadas, operaciones, T, S,
    efectividad, puntos y P&L, con fila de **Total**.
-4. **Por setup** (Continuación · Reingreso) y **por dirección** (Largo · Corto): operaciones,
-   T·S, efectividad, puntos y P&L.
+4. **Por setup** (Continuación · Reingreso), en tarjetas: el nombre del setup grande y con
+   relieve, operaciones, efectividad y la barra de target/stop. **Sin P&L ni puntos** (v1.1).
+   **Por dirección** (Largo · Corto), en tabla: operaciones, T·S, efectividad, puntos y P&L.
 
 ## Aritmética
 

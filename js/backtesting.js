@@ -215,11 +215,30 @@ const Backtesting = (() => {
         </div>
       </div>`
 
-    cont.innerHTML = cifras + curva + tablaMes + `
-      <div class="bt-dos">
-        ${tablaPor('Por setup', 'ti-route', 'setup', ['continuacion', 'reingreso'])}
-        ${tablaPor('Por dirección', 'ti-arrows-up-down', 'direccion', ['largo', 'corto'])}
+    // Por setup, en tarjetas: el nombre del setup protagonista, con su
+    // efectividad y la barra de target/stop. Sin P&L ni puntos (pedido de Kris, 13/10).
+    const setups = `
+      <div class="bt-card">
+        <div class="bt-card-h"><i class="ti ti-route"></i> Por setup</div>
+        <div class="bt-setups">
+          ${['continuacion', 'reingreso'].map(c => {
+            const x = totales(ops.filter(o => o.setup === c))
+            const ancho = x.n ? Math.round(x.t / x.n * 100) : 0
+            return `
+              <div class="bt-setup bt-setup-${c}">
+                <div class="bt-setup-nom">${NOMBRE[c]}</div>
+                <div class="bt-setup-ops">${plural(x.n, 'operación', 'operaciones')}</div>
+                <div class="bt-setup-efec">${pct(x.t, x.n)}<small>efectividad</small></div>
+                <div class="bt-setup-barra" role="img" aria-label="${x.t} target y ${x.s} stop">
+                  <span style="width:${ancho}%"></span></div>
+                <div class="bt-setup-ts"><span class="bt-pos">${x.t} target</span><span class="bt-neg">${x.s} stop</span></div>
+              </div>`
+          }).join('')}
+        </div>
       </div>`
+
+    cont.innerHTML = cifras + curva + tablaMes + setups +
+      tablaPor('Por dirección', 'ti-arrows-up-down', 'direccion', ['largo', 'corto'])
     pintarCurva()
   }
 
