@@ -54,6 +54,9 @@
 **Qué se cerró:** una pantalla completa con las tres gráficas de un día, una debajo de otra y en este
 orden: **la mía, la de Claude (el motor) y la de Chaumer** (`TresGraficas`, `js/app.js`).
 
+- **Las tres caben sin scroll** (ajuste del 13/10, a pedido de Kris): la pantalla se parte en tres filas
+  iguales y cada gráfica se encoge para caber entera (`object-fit: contain`); el detalle, con el clic.
+
 - **Dos accesos:**
   - el botón **«3 gráficas»** en la cabecera de la vista del día, en los cuatro calendarios;
   - el botón **«Gráficas del día»** en la pantalla de los 4 calendarios, junto al título de la curva.
