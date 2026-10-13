@@ -215,25 +215,11 @@ const Backtesting = (() => {
         </div>
       </div>`
 
-    // Por setup: solo el setup y su resultado, en etiquetas pequeñas de color
-    // con borde en relieve. Sin P&L ni puntos (pedido de Kris, 13/10).
-    const setups = `
-      <div class="bt-card">
-        <div class="bt-card-h"><i class="ti ti-route"></i> Por setup</div>
-        ${['continuacion', 'reingreso'].map(c => {
-          const x = totales(ops.filter(o => o.setup === c))
-          return `
-            <div class="bt-setup">
-              <span class="bt-chip bt-chip-${c}">${NOMBRE[c]}</span>
-              <span class="bt-chip bt-chip-target">${x.t} Target</span>
-              <span class="bt-chip bt-chip-stop">${x.s} Stop</span>
-              <span class="bt-setup-efec">${pct(x.t, x.n)}</span>
-            </div>`
-        }).join('')}
+    cont.innerHTML = cifras + curva + tablaMes + `
+      <div class="bt-dos">
+        ${tablaPor('Por setup', 'ti-route', 'setup', ['continuacion', 'reingreso'])}
+        ${tablaPor('Por dirección', 'ti-arrows-up-down', 'direccion', ['largo', 'corto'])}
       </div>`
-
-    cont.innerHTML = cifras + curva + tablaMes + setups +
-      tablaPor('Por dirección', 'ti-arrows-up-down', 'direccion', ['largo', 'corto'])
     pintarCurva()
   }
 
