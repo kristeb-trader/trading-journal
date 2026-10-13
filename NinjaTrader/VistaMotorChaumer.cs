@@ -102,17 +102,24 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         protected override void OnBarUpdate()
         {
-            if (problema != null || CurrentBar < 1) return;
-            if (Bars.Count - 1 - CurrentBar > 1500) return;                  // solo lo reciente: el último día
-            DateTime u = ChaumerNT.Utc(Bars, CurrentBar, tzNt);
+            if (problema != null) return;
+            // Solo velas CERRADAS, como el bot, sea cual sea el Calculate: el diálogo de Indicators puede guardarlo en
+            // «On each tick» y entonces CurrentBar es la vela en formación. El 13/10/2026 la vista metía cada vela con
+            // su primer tick (o=h=l=c) y no la volvía a leer: no vio la Continuación que el bot sí operó.
+            bool cierre = State == State.Historical || Calculate == Calculate.OnBarClose;
+            if (!cierre && !IsFirstTickOfBar) return;
+            int cerrada = cierre ? CurrentBar : CurrentBar - 1;
+            if (cerrada < 1) return;
+            if (Bars.Count - 1 - cerrada > 1500) return;                     // solo lo reciente: el último día
+            DateTime u = ChaumerNT.Utc(Bars, cerrada, tzNt);
             string d = u.ToString("yyyyMMdd", ChaumerNT.INV);
             int hm = u.Hour * 100 + u.Minute;
             if (hm < MotorChaumer.AperturaUtc(d)) return;                    // antes de la ventana: se queda la foto anterior
             try
             {
-                if (d != dia) NuevoDia(d);
-                for (int i = ultimaVela + 1; i <= CurrentBar; i++) velas.Add(ChaumerNT.Vela(Bars, i, tzNt));
-                ultimaVela = CurrentBar;
+                if (d != dia) NuevoDia(d, cerrada);
+                for (int i = ultimaVela + 1; i <= cerrada; i++) velas.Add(ChaumerNT.Vela(Bars, i, tzNt));
+                ultimaVela = cerrada;
                 var r = motor.Decidir(velas, d, null);
                 foto = Fotografiar(r);
                 ForceRefresh();
@@ -120,10 +127,10 @@ namespace NinjaTrader.NinjaScript.Indicators
             catch (Exception e) { Print("[VistaMotorChaumer] " + e.Message); }
         }
 
-        private void NuevoDia(string d)
+        private void NuevoDia(string d, int cerrada)
         {
             dia = d;
-            inicioDia = ChaumerNT.InicioDia(Bars, CurrentBar, d, tzNt);
+            inicioDia = ChaumerNT.InicioDia(Bars, cerrada, d, tzNt);
             velas.Clear(); ultimaVela = inicioDia - 1;
             List<int> nots = new List<int>(); bool? go; fed = false; sinNoticias = true;
             if (http != null)
