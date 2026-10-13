@@ -1101,15 +1101,19 @@ const TresGraficas = {
     if (tok !== this._token) return   // se cambió de día mientras cargaba
 
     const paneles = [
-      { nombre: 'Mía', color: 'accent', url: ses?.imagen_url, vacio: 'No subiste gráfico este día' },
-      { nombre: 'Claude', color: 'violet', url: ficha?.grafico_url,
+      { id: 'mio', nombre: 'Mía', color: 'accent', url: ses?.imagen_url, vacio: 'No subiste gráfico este día' },
+      { id: 'claude', nombre: 'Claude', color: 'violet', url: ficha?.grafico_url,
         vacio: estado === 'bloqueada' ? '<i class="ti ti-lock"></i> Registra tu día para ver lo que marcó el motor'
                                        : 'El motor no tiene gráfico de este día' },
-      { nombre: 'Chaumer', color: 'blue', url: ch?.imagen_url, vacio: 'Chaumer no tiene gráfico de este día' },
+      { id: 'chaumer', nombre: 'Chaumer', color: 'blue', url: ch?.imagen_url, vacio: 'Chaumer no tiene gráfico de este día' },
     ]
-    cuerpo.innerHTML = paneles.map(p => `
+    // Resultado y setup de cada uno: los mismos adaptadores que los calendarios (Calendarios.resumenDia)
+    const resumenes = await Promise.all(paneles.map(p =>
+      Calendarios.resumenDia(p.id, f).catch(err => { console.warn('[3 gráficas]', p.id, err); return null })))
+    if (tok !== this._token) return
+    cuerpo.innerHTML = paneles.map((p, i) => `
       <section class="tg-panel hc-${p.color}">
-        <div class="tg-panel-cab"><span class="hub-dot"></span>${p.nombre}</div>
+        <div class="tg-panel-cab"><span class="hub-dot"></span>${p.nombre}${resumenes[i] || ''}</div>
         ${p.url
           ? `<img class="tg-img" alt="Gráfico de ${p.nombre}" loading="lazy" title="Clic para verla completa">`
           : `<div class="tg-vacio">${p.vacio}</div>`}

@@ -59,6 +59,10 @@ orden: **la mía, la de Claude (el motor) y la de Chaumer** (`TresGraficas`, `js
   En pantalla ancha (más de 6:5) tres filas dejaban las gráficas estrechas y con hueco a los lados, así
   que van **la mía y la de Claude arriba, lado a lado, y la de Chaumer abajo, centrada**: a 1440×900,
   de 444 a ~690 px de ancho cada una. En el celular, en vertical, siguen una debajo de otra.
+- **Resultado y setup sobre cada gráfica** (13/10): en la misma línea que el nombre, para no quitarle alto
+  — `TARGET · Continuación bajista · 9:58 · +20 pts · +$78`. Sale de `Calendarios.resumenDia`, con los
+  mismos adaptadores que los calendarios: dice lo mismo que ellos (el P&L de Claude y Chaumer, «calc.»).
+  El setup de Mío es el que declara la sesión; la hora, la del primer trade.
 
 - **Dos accesos:**
   - el botón **«3 gráficas»** en la cabecera de la vista del día, en los cuatro calendarios;

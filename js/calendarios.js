@@ -109,12 +109,15 @@ const Calendarios = (() => {
         pnl: parseFloat(t.profit) || 0,
         res: resDeTrade(t),
         dir: t.market_pos === 'Short' ? 'Corto' : 'Largo',
+        hora: horaCorta(t.entry_time),   // "08:36:23", hora Colombia como las otras fuentes
       })
     })
     Object.values(dias).forEach(d => { d.estado = estadoPorOps(d.ops) })
     const pre = prefijo(y, m)
     ;(sesiones || []).forEach(s => {
       const f = s.sesion_date
+      // El setup lo declara la sesión, no el trade (para las 3 gráficas del día)
+      if (dias[f] && s.setup) dias[f].ops.forEach(o => { o.setup = s.setup })
       if (!f?.startsWith(pre) || dias[f] || !s.no_opero || !esDiaHabil(f)) return
       if (s.motivo_no_opero === 'FOMC' || s.motivo_no_opero === 'Festivo') return
       dias[f] = { fecha: f, ops: [], estado: s.se_conecto !== false ? 'sin-entradas' : 'no-opero',
@@ -825,6 +828,46 @@ const Calendarios = (() => {
   }
 
   // ── Vista del día ────────────────────────────────────────────────────────
+  // Resultado de un día: [texto, clase de la etiqueta .cz-rb, tono de la cabecera]
+  const ETIQ = { target: ['TARGET', 'r-t', 'tone-t'], stop: ['STOP', 'r-s', 'tone-s'], mixed: ['MIXTO', 'r-o', 'tone-o'],
+                 be: ['B.E.', 'r-o', 'tone-o'], 'no-opero': ['NO OPERÓ', 'r-o', 'tone-o'],
+                 'sin-entradas': ['SIN ENTRADAS', 'r-o', 'tone-o'], 'sin-op': ['SIN OPERACIÓN', 'r-o', 'tone-o'],
+                 error: ['ERROR', 'r-o', 'tone-o'], abierta: ['ABIERTA', 'r-o', 'tone-o'] }
+  function etiquetaDe(d) {
+    const cierre = d.ops.length && d.ops.every(o => o.res === 'cierre')   // plan 3.46: su nombre, con el color del signo
+    return cierre
+      ? ['CIERRE POR HORA', ptsDe(d) >= 0 ? 'r-t' : 'r-s', ptsDe(d) >= 0 ? 'tone-t' : 'tone-s']
+      : ETIQ[d.estado] || ETIQ['sin-op']
+  }
+
+  // Lo que cabe en una línea sobre cada gráfica de TresGraficas (app.js): resultado, setup, hora,
+  // puntos y P&L. Usa los mismos adaptadores que los calendarios, así que dice lo mismo que ellos.
+  // null = no hay nada que decir (sin día o 🔒: ese aviso ya lo da el panel).
+  async function resumenDia(id, fe) {
+    const [y, m] = fe.split('-').map(Number)
+    let dias
+    if (id === 'mio') dias = await diasMio(y, m)
+    else {
+      const src = await (fuentes || cargarFuentes())
+      dias = id === 'chaumer' ? diasChaumer(src.chaumer, y, m, src.cab)
+           : diasClaude(src.estados, src.motor, y, m, src.cab)
+    }
+    const d = dias[fe]
+    if (!d || d.estado === 'bloqueado') return null
+    const [txt, rb] = etiquetaDe(d)
+    const partes = []
+    if (d.ops.length) {
+      const o = d.ops[0], p = ptsDe(d), usd = pnlDe(d)
+      const setup = [...new Set(d.ops.map(x => x.setup).filter(Boolean))].join(' / ')
+      if (setup) partes.push(esc(setup))
+      if (o.hora) partes.push(esc(o.hora))
+      if (d.ops.length > 1) partes.push(`${d.ops.length} trades`)
+      partes.push(`<b class="${clsSigno(p)}">${fmtPts(p)} pts</b>`)
+      partes.push(`<b class="${clsSigno(usd)}">${fmtDinero(usd)}</b>${id === 'mio' ? '' : ' calc.'}`)
+    } else if (d.nota) partes.push(esc(d.nota))
+    return `<span class="cz-rb ${rb}">${txt}</span>${partes.length ? `<span class="tg-datos">${partes.join(' · ')}</span>` : ''}`
+  }
+
   // La misma pantalla completa que abre "Mío" (Modal, app.js): cabecera con el
   // resultado, el gráfico fijo —se amplía al clicar— y debajo lo escrito del día.
   // El día 🔒 de Claude no enseña ni gráfico ni operación.
@@ -842,14 +885,7 @@ const Calendarios = (() => {
       return
     }
 
-    const ETIQ = { target: ['TARGET', 'r-t', 'tone-t'], stop: ['STOP', 'r-s', 'tone-s'], mixed: ['MIXTO', 'r-o', 'tone-o'],
-                   be: ['B.E.', 'r-o', 'tone-o'], 'no-opero': ['NO OPERÓ', 'r-o', 'tone-o'],
-                   'sin-op': ['SIN OPERACIÓN', 'r-o', 'tone-o'], error: ['ERROR', 'r-o', 'tone-o'],
-                   abierta: ['ABIERTA', 'r-o', 'tone-o'] }
-    const cierre = d.ops.length && d.ops.every(o => o.res === 'cierre')   // plan 3.46: su nombre, con el color del signo
-    const [txt, rb, tono] = cierre
-      ? ['CIERRE POR HORA', ptsDe(d) >= 0 ? 'r-t' : 'r-s', ptsDe(d) >= 0 ? 'tone-t' : 'tone-s']
-      : ETIQ[d.estado] || ETIQ['sin-op']
+    const [txt, rb, tono] = etiquetaDe(d)
     const celdas = [celda('Resultado', `<span class="cz-rb ${rb}">${txt}</span>`)]
     if (d.ops.length) {
       const p = ptsDe(d), usd = pnlDe(d)
@@ -928,5 +964,5 @@ const Calendarios = (() => {
     else if (vista !== 'mio') renderFuente(vista)
   }
 
-  return { init, alEntrar, alCambiarMes, vista: () => vista }
+  return { init, alEntrar, alCambiarMes, resumenDia, vista: () => vista }
 })()

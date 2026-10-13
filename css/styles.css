@@ -5836,6 +5836,15 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
   flex: 0 0 auto; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
   font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c);
 }
+/* El resultado y el setup del día, en la misma línea que el nombre: no le quita alto a la gráfica */
+.tg-panel-cab .cz-rb { letter-spacing: 0.04em; }
+.tg-datos {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 500; text-transform: none; letter-spacing: 0; font-size: 0.8rem; color: var(--text2);
+}
+.tg-datos b { font-weight: 700; color: var(--text); }
+.tg-datos b.pos { color: var(--accent-txt); }
+.tg-datos b.neg { color: var(--red-txt); }
 .tg-img {
   display: block; flex: 1 1 auto; min-height: 0; width: 100%; object-fit: contain; cursor: zoom-in;
 }
