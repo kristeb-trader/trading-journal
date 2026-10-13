@@ -14,6 +14,13 @@
       "port": 3211
     },
     {
+      "name": "journal-auto",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "serve"],
+      "autoPort": true,
+      "port": 3212
+    },
+    {
       "name": "portal",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "chaumer/04_Web", "--", "--port", "4321"],

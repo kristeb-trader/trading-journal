@@ -1052,7 +1052,18 @@
              (etiqueta pequeña · número grande · variación), no entre ellas. -->
         <div id="analysisKpiStrip"></div>
 
-        <!-- 2 · Resumen: es lo que responde "¿cómo fue el período?" fila a fila.
+        <!-- 2 · Curva de Equity a ancho completo -->
+        <div class="an-card">
+          <div class="an-card-head">
+            <h3><i class="ti ti-trending-up"></i> Curva de Equity</h3>
+            <button class="help-btn" data-help="equity" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+          </div>
+          <div class="an-chart an-chart-tall"><canvas id="equityChart"></canvas></div>
+          <div class="an-note" id="equityNota"></div>
+        </div>
+
+
+        <!-- 3 · Resumen: es lo que responde "¿cómo fue el período?" fila a fila.
              Se queda como <table> de verdad: la alineación de columnas está
              garantizada por construcción, que es justo lo que una tabla falsa de
              divs con flex no puede prometer. -->
@@ -1078,16 +1089,6 @@
               <tfoot id="analysisTablaFoot"></tfoot>
             </table>
           </div>
-        </div>
-
-        <!-- 3 · Curva de Equity a ancho completo -->
-        <div class="an-card">
-          <div class="an-card-head">
-            <h3><i class="ti ti-trending-up"></i> Curva de Equity</h3>
-            <button class="help-btn" data-help="equity" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-          </div>
-          <div class="an-chart an-chart-tall"><canvas id="equityChart"></canvas></div>
-          <div class="an-note" id="equityNota"></div>
         </div>
 
         <!-- 4 · Las tres tarjetas -->
