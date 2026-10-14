@@ -16,7 +16,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 | **SupabaseAutoExport** | Exporta cada operación cerrada a Supabase. La cuenta principal (o las que empiezan por `PA-`) va al Journal (`trades`) y avisa por Telegram; el resto de cuentas Apex, a `apex_trades`. **Ignora las cuentas de simulación** (SimBot, Sim101, Playback) | Un gráfico de MNQ: una sola instancia vigila todas las cuentas | la clave de Supabase |
 | **SupabaseDailyLevels** | Escribe los niveles del día en la sesión del Journal: apertura, máximo, mínimo y cierre de ayer; apertura de hoy; máximo y mínimo del premercado | Gráfico MNQ con la plantilla **ETH**. Propiedades: RTH abre **930**, cierra **1600** (hora de **Nueva York**) | la clave de Supabase |
 | **MarcacionChaumer** | El **zigzag blanco** de corridas y retrocesos, en tiempo real. Es el de **tu gráfico operativo manual**: **independiente del bot**, no se toca sin tu sí | Tu gráfico de operar, 1 minuto. Propiedad: la cuenta que vigilas (al volver a plano tras operar, deja de dibujar) | nada |
-| **VistaMotorChaumer** | **El motor del bot dibujado en vivo**: zonas (las vigentes, hasta las 10:30; 11:30 en invierno), zigzag, puntos de referencia (solo los que quedan entre la entrada y el objetivo de un reingreso), la franja de la operación y una línea arriba con lo que el motor tiene en marcha | El gráfico del bot (o donde quieras ver las zonas). Si está también MarcacionChaumer, apaga **Zigzag** en uno de los dos | `MotorChaumer`, `ChaumerNT`, el repositorio |
+| **VistaMotorChaumer** | **El motor del bot dibujado en vivo**: zonas (las de premercado, desde la vela donde nacen; las vigentes, hasta las 10:30; 11:30 en invierno; el premercado, del servidor como el bot), zigzag, puntos de referencia (solo los que quedan entre la entrada y el objetivo de un reingreso), la franja de la operación y una línea arriba con lo que el motor tiene en marcha | El gráfico del bot (o donde quieras ver las zonas). Si está también MarcacionChaumer, apaga **Zigzag** en uno de los dos | `MotorChaumer`, `ChaumerNT`, el repositorio |
 
 ### AddOns · `Custom\AddOns\`
 
@@ -31,7 +31,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 
 | Archivo | Qué hace | Cómo se usa | Depende de |
 |---|---|---|---|
-| **BotChaumer** | **El bot.** Al cierre de cada vela pregunta al motor qué orden debe estar viva y la pone: entrada stop, con los contratos que caben en $160; al llenarse, stop y objetivo exactos; nada más ese día. **A las 16:50 de Nueva York** (15:50 Col en verano), si sigue abierta, cancela stop y objetivo y **cierra a mercado** (CIERRE POR HORA). Solo opera en las cuentas de su lista blanca. Deja una fila por día en `bot_operaciones` | Gráfico MNQ 1 minuto ETH → clic derecho → **Strategies…** → BotChaumer, cuenta **SimBot**, Modo **Automatico**, **Enabled** | `MotorChaumer`, `ChaumerNT`, el repositorio, la clave |
+| **BotChaumer** | **El bot.** El **premercado** lo pide al servidor al cerrar la vela de las 8:30 (las velas que NinjaTrader arma al conectarse pueden traer un volumen falso: 14/10); la ventana, del gráfico. Al cierre de cada vela pregunta al motor qué orden debe estar viva y la pone: entrada stop, con los contratos que caben en $160; al llenarse, stop y objetivo exactos; nada más ese día. **A las 16:50 de Nueva York** (15:50 Col en verano), si sigue abierta, cancela stop y objetivo y **cierra a mercado** (CIERRE POR HORA). Solo opera en las cuentas de su lista blanca. Deja una fila por día en `bot_operaciones` | Gráfico MNQ 1 minuto ETH → clic derecho → **Strategies…** → BotChaumer, cuenta **SimBot**, Modo **Automatico**, **Enabled** | `MotorChaumer`, `ChaumerNT`, el repositorio, la clave |
 
 ### Herramienta de dibujo · `Custom\DrawingTools\`
 
@@ -92,7 +92,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 | Cuándo | Qué |
 |---|---|
 | Antes de las **8:31** (9:31 en invierno) | Anotar las noticias rojas en el checklist. Activar BotChaumer en **SimBot**. En el Output: `[BotChaumer] listo · cuenta SimBot · … · sello L:…` |
-| **8:31** | En el Output: `armado AAAA-MM-DD · noticias N · GO …` |
+| **8:31** | En el Output: `premercado del servidor: N velas · …` (si alguna vela del gráfico era distinta, la lista) y `armado AAAA-MM-DD · noticias N · GO …` |
 | Durante la ventana | **Nada de F5 ni recompilar**: desactiva o reinicia el bot |
 | **10:32** | La cadena hace la ficha del motor; se compara con lo que hizo el bot |
 
@@ -105,6 +105,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 | *no trae el premercado* | El gráfico no es ETH, o le faltan datos desde las 19:00 del día anterior |
 | *no pude leer las noticias* | Sin conexión con Supabase: ese día no opera, a propósito |
 | *encendido tarde* | El bot se activó después de que el motor llenara su orden: no la persigue |
+| *no pude pedir al servidor las velas del premercado* | Sin conexión de datos a las 8:30, o el servidor no respondió en 60 s: ese día no opera, a propósito |
 
 ---
 

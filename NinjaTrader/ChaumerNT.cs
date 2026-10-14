@@ -22,6 +22,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using NinjaTrader.Cbi;
 using NinjaTrader.Data;
 
 namespace NinjaTrader.NinjaScript
@@ -158,6 +159,101 @@ namespace NinjaTrader.NinjaScript
             int i = idx;
             while (i > 0 && Utc(bars, i - 1, tzNt).ToString("yyyyMMdd", INV) == d) i--;
             return i;
+        }
+
+        // ── el premercado, pedido al servidor (14/10/2026) ───────────────────
+        // Las velas que NinjaTrader arma en vivo justo después de conectarse pueden salir mal: el 14/10 la de las 8:03
+        // llegó al gráfico con más de 8.000 contratos y en el servidor tuvo 3.708, y el motor marcó una zona de
+        // premercado que no existía. Por eso el premercado se pide al servidor, igual que la cadena diaria a las 10:32.
+
+        /// <summary>Pide al servidor las velas de 1 minuto con cierre en [desdeUtc, hastaUtc]. `fin` recibe las velas
+        /// (o null) y el fallo (o null), en otro hilo. El BarsRequest se lanza desde el hilo de la interfaz, como en CadenaDiaria.</summary>
+        public static void PedirVelas(Instrument ins, TradingHours horario, DateTime desdeUtc, DateTime hastaUtc, TimeZoneInfo tzNt,
+                                      Action<List<MotorChaumer.Vela>, string> fin)
+        {
+            Action lanzar = delegate
+            {
+                try
+                {
+                    DateTime desde = TimeZoneInfo.ConvertTimeFromUtc(desdeUtc.AddMinutes(-2), tzNt);
+                    DateTime hasta = TimeZoneInfo.ConvertTimeFromUtc(hastaUtc.AddMinutes(2), tzNt);
+                    var req = new BarsRequest(ins, desde, hasta);
+                    req.BarsPeriod = new BarsPeriod { BarsPeriodType = BarsPeriodType.Minute, Value = 1, MarketDataType = MarketDataType.Last };
+                    req.TradingHours = horario ?? ins.MasterInstrument.TradingHours;
+                    req.MergePolicy = MergePolicy.UseGlobalSettings;
+                    req.Request(new Action<BarsRequest, ErrorCode, string>(delegate(BarsRequest r, ErrorCode err, string msg)
+                    {
+                        List<MotorChaumer.Vela> v = null; string fallo = null;
+                        try
+                        {
+                            if (err != ErrorCode.NoError) fallo = err + " " + msg;
+                            else
+                            {
+                                v = new List<MotorChaumer.Vela>();
+                                for (int k = 0; k < r.Bars.Count; k++)
+                                {
+                                    DateTime u = Utc(r.Bars, k, tzNt);
+                                    if (u >= desdeUtc && u <= hastaUtc) v.Add(Vela(r.Bars, k, tzNt));
+                                }
+                            }
+                        }
+                        catch (Exception e) { fallo = e.Message; v = null; }
+                        finally { try { r.Dispose(); } catch { } }
+                        fin(v, fallo);
+                    }));
+                }
+                catch (Exception e) { fin(null, e.Message); }
+            };
+            if (System.Windows.Application.Current != null) System.Windows.Application.Current.Dispatcher.BeginInvoke(lanzar);
+            else lanzar();
+        }
+
+        /// <summary>El tramo del premercado de un día del motor: de la primera vela del día UTC a la anterior a la apertura.</summary>
+        public static void TramoPremercado(string d, out DateTime desdeUtc, out DateTime hastaUtc)
+        {
+            DateTime dia = DateTime.ParseExact(d, "yyyyMMdd", INV, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            int ap = MotorChaumer.AperturaUtc(d);                                   // 1331: la vela base cierra a las 13:31 UTC
+            desdeUtc = dia.AddMinutes(1);
+            hastaUtc = dia.AddHours(ap / 100).AddMinutes(ap % 100 - 1);
+        }
+
+        /// <summary>Compara el premercado del gráfico con el del servidor. Devuelve las líneas para el registro: la primera, el
+        /// resumen; después las velas distintas (primero las que cambian de lado del umbral de volumen), hasta `max`.</summary>
+        public static List<string> CompararVelas(List<MotorChaumer.Vela> servidor, List<MotorChaumer.Vela> grafico, long umbral, int max)
+        {
+            var g = new Dictionary<string, MotorChaumer.Vela>();
+            foreach (var x in grafico) g[x.D + x.T] = x;
+            var cruzan = new List<string>(); var otras = new List<string>(); int faltan = 0;
+            foreach (var s in servidor)
+            {
+                MotorChaumer.Vela c;
+                if (!g.TryGetValue(s.D + s.T, out c)) { faltan++; continue; }
+                bool precio = Math.Abs(c.O - s.O) > 1e-9 || Math.Abs(c.H - s.H) > 1e-9 || Math.Abs(c.L - s.L) > 1e-9 || Math.Abs(c.C - s.C) > 1e-9;
+                if (!precio && c.V == s.V) continue;
+                string t = HoraCol(s) + " · gráfico " + c.V.ToString("N0", ES) + " / servidor " + s.V.ToString("N0", ES) + " contratos";
+                if (precio) t += " · precios gráfico " + MotorChaumer.F2(c.O) + " " + MotorChaumer.F2(c.H) + " " + MotorChaumer.F2(c.L) + " " + MotorChaumer.F2(c.C)
+                               + " / servidor " + MotorChaumer.F2(s.O) + " " + MotorChaumer.F2(s.H) + " " + MotorChaumer.F2(s.L) + " " + MotorChaumer.F2(s.C);
+                if ((c.V > umbral) != (s.V > umbral)) cruzan.Add(t + "  ← cambia de lado del umbral de " + umbral.ToString("N0", ES));
+                else otras.Add(t);
+            }
+            int distintas = cruzan.Count + otras.Count;
+            var lineas = new List<string>();
+            lineas.Add("premercado del servidor: " + servidor.Count + " velas · el gráfico tenía " + grafico.Count
+                       + (distintas == 0 && faltan == 0 ? " · todas iguales"
+                          : " · " + distintas + " distintas" + (cruzan.Count > 0 ? " (" + cruzan.Count + " cruzan el umbral)" : "")
+                            + (faltan > 0 ? " · " + faltan + " que el gráfico no tenía" : "")));
+            foreach (var t in cruzan.Concat(otras).Take(max)) lineas.Add("   " + t);
+            if (distintas > max) lineas.Add("   … y " + (distintas - max) + " más");
+            return lineas;
+        }
+
+        private static readonly CultureInfo ES = CultureInfo.GetCultureInfo("es-ES");
+
+        /// <summary>La hora Colombia (UTC−5) del cierre de una vela, "19:07" — también la de la noche anterior.</summary>
+        public static string HoraCol(MotorChaumer.Vela k)
+        {
+            int m = (MotorChaumer.Hm(k) / 100 * 60 + MotorChaumer.Hm(k) % 100 - 300 + 1440) % 1440;
+            return (m / 60) + ":" + (m % 60).ToString("00", INV);
         }
 
         /// <summary>La etiqueta del motor ("8:38") de la vela idx.</summary>

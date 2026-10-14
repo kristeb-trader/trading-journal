@@ -1,6 +1,6 @@
 # BotChaumer — el motor operando en NinjaTrader
 
-**Versión:** v1.13 · **Estado:** ✅ **APROBADO** el 06/10/2026 (D-038) · 🚧 en implementación: **fases 1 y 2 cerradas · fase 3: Strategy Analyzer 17/17, falta el Market Replay** · §12 (el motor dibujado en vivo) **aprobado**: D0 cerrada · D1 cerrada · D2 con el código hecho, falta el Market Replay.
+**Versión:** v1.14 · **Estado:** ✅ **APROBADO** el 06/10/2026 (D-038) · 🚧 en implementación: **fases 1 y 2 cerradas · fase 3: Strategy Analyzer 17/17, falta el Market Replay** · §12 (el motor dibujado en vivo) **aprobado**: D0 cerrada · D1 cerrada · D2 con el código hecho, falta el Market Replay.
 **Escrito:** 06/10/2026, tras el diagnóstico del mismo día.
 
 | Versión | Fecha | Qué cambió |
@@ -19,6 +19,7 @@
 | v1.11 | 07/10/2026 | **Primer cambio de regla pasado por toda la cadena (plan 3.45: al estirarse la zona, el rompimiento se cierra).** Plan, los dos motores (65/65, sello `L:bf7669a4 C:b1f08879`), fichas de sep–oct rehechas y, en el Strategy Analyzer, el bot con el motor nuevo: **18/18 iguales**, el 07/10 en NO OPERA como el motor. `sincronia.py --cambio-de-regla` para sellar tras un cambio aprobado. Dibujo (dia.py y la vista): solo los puntos de referencia entre la entrada y el objetivo, y las zonas vigentes cortadas al fin de la ventana |
 | v1.12 | 07/10/2026 | **El bot distingue «encendido tarde» de una diferencia.** Si el motor llenó su orden antes de la vela en que el bot se armó (un F5 en plena ventana, como el 07/10 a las 9:36), la fila queda `NO OPERA` con `motivo` *«encendido tarde: … no se persigue»* y **sin** `diferencia`. La comparación diaria de la fase 5 (V4) deja fuera esos días: no miden al bot |
 | v1.13 | 09/10/2026 | **Plan 3.46, tercera salida: el cierre por hora.** Lo que siga abierto a las 16:50 de Nueva York (`CIERRE_POR_HORA`) se cierra a mercado al terminar esa vela y se apunta como CIERRE POR HORA. Los dos motores lo miden con el cierre de esa vela (stop u objetivo en esa vela mandan); el bot cancela stop y objetivo y, con los dos cancelados, cierra a mercado (nunca dos salidas). `sincronia.py` gana un **caso sintético** (el 09/10 con velas planas hasta las 21:10 UTC: CIERRE POR HORA a las 15:50 Col, −37,00, igual en los dos motores), porque ningún día real recorre esa rama. 67/67 días idénticos, sello `L:4d3bfdd2 C:d143afbc`. La cadena exporta hasta las 16:50; `bot_operaciones` acepta el resultado; el calendario lo pinta por su signo sin contarlo como target ni stop |
+| v1.14 | 14/10/2026 | **El premercado, del servidor.** El 14/10 NinjaTrader se abrió a las 8:01 y la vela de las 8:03, armada en vivo al conectarse, llegó al gráfico con más de 8.000 contratos (en el servidor, 3.708): el motor del bot marcó una zona de premercado que no existía. Ahora el bot, al cerrar la vela de las 8:30, **pide al servidor el premercado** (`BarsRequest`, como la cadena) y se arma con esas velas; la ventana sigue saliendo del gráfico. Hasta 3 intentos y 60 s; si no llega, **no se arma** ese día. Compara el premercado del gráfico con el del servidor y deja las diferencias en su registro (primero las que cruzan `UMBRAL_VOL`). En el Strategy Analyzer y en Market Replay, el del gráfico. La vista hace lo mismo y dibuja las zonas de premercado **desde la vela donde nacen** (Kris) |
 
 ---
 
@@ -166,6 +167,7 @@ como riesgo (P-09).
 |---|---|---|
 | **Sello del motor** | Sin sincronía (§5, paso 8), no opera | siempre |
 | **Lista blanca de cuentas** | Solo opera en las cuentas de `bot-chaumer.json` (local, como `cadena-diaria.json`). En v1: `SimBot`, `Sim101`, `Playback101` y `Backtest` | siempre |
+| **Premercado del servidor** (14/10/2026) | Al cerrar la vela de las 8:30 pide al servidor las velas del premercado. Si no llegan en 60 s (3 intentos), **no se arma**: mejor no operar que hacerlo con velas armadas en vivo al conectarse | siempre (no en el Analyzer ni en Market Replay) |
 | **Noticias leídas** | Si no puede leer las noticias de hoy de Supabase, **no opera** (un día de IPC sin noticias anotadas sería operar a ciegas) | siempre |
 | **GO del checklist** | Solo se arma si hoy está `sesiones.checklist_go_at`. Aquí vive la capa de contexto: **el bot no decide si hoy se opera, lo decide Kris** | **apagado**: en `SimBot` se mide el plan mecánico puro. El registro anota si hubo GO, para medir después cuánto aporta el contexto |
 | **Freno** (regla de parada) | Racha o pérdida semanal | apagado. **Obligatorio antes de una cuenta real**, con los números que ponga Kris: no se inventa (P-21) |

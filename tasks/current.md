@@ -38,6 +38,17 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
   Continuación alcista 8:49, llena 8:50 (1 × 30795.25), **STOP 8:53**, −47.50 pts, −$95. La vista no lo enseñaba: se
   añadió con Calculate «On each tick» y metía cada vela con su primer tick. Arreglada: solo lee velas cerradas, sea
   cual sea el Calculate. **Kris:** copiar `VistaMotorChaumer.cs` y F5 fuera de la ventana
+- [x] **14/10 — SimBot:** Reingreso bajista 8:32 (1 × 30518, llenado 30513.75, 17 ticks de deslizamiento), **STOP** 8:34,
+  −69.75 pts, −$139,50. Con las velas reales el motor da la misma operación. El bot vio una zona de premercado que
+  no existía (vela 8:03: >8.000 en el gráfico, 3.708 en el servidor; NinjaTrader abierto a las 8:01). Arreglado: el
+  bot y la vista piden el premercado al servidor (diseño v1.14) y la vista dibuja las zonas de premercado desde donde
+  nacen. **Kris:** copiar `ChaumerNT.cs` (AddOns), `BotChaumer.cs` (Strategies), `VistaMotorChaumer.cs` (Indicators), un F5
+  fuera de la ventana
+- [ ] **14/10 — Kris:** «eso nunca fue un reingreso». Revisar con las velas 8:31–8:33 (zona 7:42 30557.00–30572.75)
+- [ ] **El motor no fusiona las zonas de premercado que se tocan** (la regla de superposición): solo el 11/09 en 72 días.
+  Arreglarlo en los dos motores cuando Kris lo apruebe
+- [ ] **La imagen del día y las zonas de premercado desde donde nacen:** Kris elige (a) solo en NinjaTrader, (b) alargar
+  la imagen hasta la vela donde nace, (c) alargarla con un tope
 - [x] **Plan 3.46** (09/10): cierre por hora a las 16:50 de Nueva York, en el plan, el portal, los dos motores (caso sintético en la sincronía), el bot, la cadena, `bot_operaciones` y el calendario
 - [ ] **Kris, fuera de la ventana:** copiar `MotorChaumer.cs`, `CadenaDiaria.cs` (a `Custom\AddOns\`), `BotChaumer.cs` (a `Custom\Strategies\`) y `VistaMotorChaumer.cs` (a `Custom\Indicators\`), y un solo F5. Sin el motor nuevo, el bot y la vista dicen «motor desincronizado»
 - [ ] **§12 D2** `VistaMotorChaumer`: código hecho (07/10). **Kris:** copiar a `Custom/Indicators`, F5 y el Market Replay del 23/09 y el 02/10 con el bot y la vista

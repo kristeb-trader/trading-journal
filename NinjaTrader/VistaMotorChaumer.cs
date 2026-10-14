@@ -10,6 +10,8 @@
 //    · la operación: franja roja entrada→stop y verde entrada→objetivo, solo sobre su tramo
 //    · una línea arriba con lo que el motor tiene en marcha
 //  Al llenarse la orden del motor no se dibujan más zonas (R-28); el zigzag sigue hasta el resultado.
+//  Las zonas de premercado se dibujan desde la vela donde nacen; las demás, desde la vela base (14/10/2026).
+//  El premercado, como el bot, se pide al servidor (14/10/2026); hasta que llega, se usa el del gráfico.
 //
 //  No decide nada ni toca cuentas: solo enseña el motor. No depende del bot ni el bot de él.
 //  NO es MarcacionChaumer: ese es el indicador del gráfico operativo de Kris y no se toca (07/10/2026).
@@ -65,8 +67,12 @@ namespace NinjaTrader.NinjaScript.Indicators
         private string dia;
         private int inicioDia = -1, ultimaVela = -1;
         private readonly List<MotorChaumer.Vela> velas = new List<MotorChaumer.Vela>();
+        private readonly List<int> barraDe = new List<int>();   // la barra del gráfico de cada vela del motor (para dibujar)
         private MotorChaumer motor;
         private bool sinNoticias, fed;
+        // el premercado del servidor, como el bot (14/10/2026): hasta que llega, el del gráfico
+        private volatile List<MotorChaumer.Vela> pmServidor;
+        private string pmDia;
 
         protected override void OnStateChange()
         {
@@ -118,20 +124,71 @@ namespace NinjaTrader.NinjaScript.Indicators
             try
             {
                 if (d != dia) NuevoDia(d, cerrada);
-                for (int i = ultimaVela + 1; i <= cerrada; i++) velas.Add(ChaumerNT.Vela(Bars, i, tzNt));
+                for (int i = ultimaVela + 1; i <= cerrada; i++) { velas.Add(ChaumerNT.Vela(Bars, i, tzNt)); barraDe.Add(i); }
                 ultimaVela = cerrada;
-                var r = motor.Decidir(velas, d, null);
-                foto = Fotografiar(r);
-                ForceRefresh();
+                Calcular();
             }
             catch (Exception e) { Print("[VistaMotorChaumer] " + e.Message); }
+        }
+
+        private void Calcular()
+        {
+            var r = motor.Decidir(velas, dia, null);
+            foto = Fotografiar(r);
+            ForceRefresh();
+        }
+
+        /// <summary>Pide al servidor el premercado del día; al llegar, rehace las velas y la foto.</summary>
+        private void PedirPremercado(string d)
+        {
+            DateTime desde, hasta;
+            ChaumerNT.TramoPremercado(d, out desde, out hasta);
+            ChaumerNT.PedirVelas(Instrument, Bars.TradingHours, desde, hasta, tzNt, delegate(List<MotorChaumer.Vela> v, string fallo)
+            {
+                if (v == null || v.Count == 0) { Print("[VistaMotorChaumer] premercado del servidor: " + (fallo ?? "sin velas") + " · uso el del gráfico"); return; }
+                try { TriggerCustomEvent(delegate(object o) { if ((string)o == dia) { pmServidor = v; Rehacer(); } }, d); }
+                catch (Exception e) { Print("[VistaMotorChaumer] " + e.Message); }
+            });
+        }
+
+        /// <summary>Las velas del motor: el premercado del servidor (si ya llegó) y la ventana del gráfico.</summary>
+        private void Rehacer()
+        {
+            var pm = pmServidor;
+            if (pm == null || motor == null || ultimaVela < inicioDia) return;
+            int ap = MotorChaumer.AperturaUtc(dia), primera = inicioDia;
+            while (primera <= ultimaVela && Hm(primera) < ap) primera++;
+            var porHora = new Dictionary<string, int>();
+            for (int i = inicioDia; i < primera; i++) { var k = ChaumerNT.Vela(Bars, i, tzNt); porHora[k.D + k.T] = i; }
+            velas.Clear(); barraDe.Clear();
+            int ultima = inicioDia;
+            foreach (var k in pm)
+            {
+                int j;
+                if (porHora.TryGetValue(k.D + k.T, out j)) ultima = j;          // si el gráfico no tiene esa vela, la anterior que sí
+                velas.Add(k); barraDe.Add(ultima);
+            }
+            for (int i = primera; i <= ultimaVela; i++) { velas.Add(ChaumerNT.Vela(Bars, i, tzNt)); barraDe.Add(i); }
+            Calcular();
+        }
+
+        private int Hm(int idx) { DateTime u = ChaumerNT.Utc(Bars, idx, tzNt); return u.Hour * 100 + u.Minute; }
+
+        /// <summary>La barra del gráfico de la vela i del motor (más allá de la última, se sigue contando).</summary>
+        private int B(int i)
+        {
+            if (barraDe.Count == 0) return inicioDia + i;
+            if (i < barraDe.Count) return barraDe[Math.Max(0, i)];
+            return barraDe[barraDe.Count - 1] + (i - barraDe.Count + 1);
         }
 
         private void NuevoDia(string d, int cerrada)
         {
             dia = d;
             inicioDia = ChaumerNT.InicioDia(Bars, cerrada, d, tzNt);
-            velas.Clear(); ultimaVela = inicioDia - 1;
+            velas.Clear(); barraDe.Clear(); ultimaVela = inicioDia - 1;
+            pmServidor = null;
+            if (pmDia != d) { pmDia = d; PedirPremercado(d); }
             List<int> nots = new List<int>(); bool? go; fed = false; sinNoticias = true;
             if (http != null)
             {
@@ -147,7 +204,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             var f = new Foto();
             if (r == null) { f.Cabecera = "esperando la ventana"; return f; }
             if (r.Error != null) { f.Cabecera = "motor: " + r.Error; f.ColorCabecera = 3; return f; }
-            var D = r.D; var t = r.Trade; int b = r.B, off = inicioDia;
+            var D = r.D; var t = r.Trade; int b = r.B;
             int ult = D.Count - 1;
             bool ventanaCerrada = MotorChaumer.Hm(D[r.Fin]) >= MotorChaumer.CierreUtc(D[b].D);   // ya está la vela de las 10:30 (11:30 en invierno)
             int corte = t != null ? t.IOut : ult;
@@ -164,9 +221,10 @@ namespace NinjaTrader.NinjaScript.Indicators
                 if (vig) vivas++;
                 f.Zonas.Add(new ZonaDib
                 {
-                    X0 = off + Math.Max(z.IOrg, b),
+                    // la de premercado, desde la vela donde nace; las demás, desde la vela base como mucho (Kris, 14/10/2026)
+                    X0 = B(z.Pm ? z.IOrg : Math.Max(z.IOrg, b)),
                     // las vigentes acaban con la ventana (10:30 Col; 11:30 en invierno) en cuanto se cierra (Kris, 07/10/2026)
-                    X1 = (z.Fin != null && z.Fin <= corteZ) ? off + z.Fin.Value : (ventanaCerrada ? off + r.Fin : -1),
+                    X1 = (z.Fin != null && z.Fin <= corteZ) ? B(z.Fin.Value) : (ventanaCerrada ? B(r.Fin) : -1),
                     FinVentana = !(z.Fin != null && z.Fin <= corteZ) && ventanaCerrada,
                     Lo = g[0], Hi = g[1], Vigente = vig,
                     Etiqueta = vig ? (z.Tipo == "R" ? "resistencia" : z.Tipo == "S" ? "soporte" : "zona") + "   "
@@ -175,7 +233,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             }
 
             foreach (var v in r.Piv)
-                if (v.I >= b && v.I <= corte) f.Zigzag.Add(new KeyValuePair<int, double>(off + v.I, v.Precio));
+                if (v.I >= b && v.I <= corte) f.Zigzag.Add(new KeyValuePair<int, double>(B(v.I), v.Precio));
 
             // puntos de referencia (R-41): solo si se presentó un reingreso
             foreach (var re in r.Reingresos)
@@ -195,7 +253,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                     for (int m = j + 1; m <= corte; m++)
                         if (bajo ? D[m].C < pv : D[m].C > pv) { roto = m; break; }
                     if (roto >= 0 && roto <= re.I) continue;
-                    f.Refs.Add(new RefDib { X0 = off + Math.Max(j, b), X1 = roto >= 0 ? off + roto + 1 : -1, Precio = pv, Vivo = roto < 0 });
+                    f.Refs.Add(new RefDib { X0 = B(Math.Max(j, b)), X1 = roto >= 0 ? B(roto + 1) : -1, Precio = pv, Vivo = roto < 0 });
                 }
             }
 
@@ -206,7 +264,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             }
             else if (t != null)
             {
-                f.Op = new OpDib { X0 = off + t.I, X1 = off + t.IOut, E = t.E, S = t.S, T = t.T };
+                f.Op = new OpDib { X0 = B(t.I), X1 = B(t.IOut), E = t.E, S = t.S, T = t.T };
                 string sig = (t.Pts ?? 0) >= 0 ? "+" : "";
                 cab += " · " + t.Tipo + (t.Dir > 0 ? " alcista" : " bajista") + " a las " + t.Hora + " · entrada " + P2(t.E)
                      + " · stop " + P2(t.S) + " · objetivo " + P2(t.T)
@@ -217,7 +275,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             else if (r.Orden != null)
             {
                 var o = r.Orden;
-                f.Op = new OpDib { X0 = off + o.I, X1 = -1, E = o.E, S = o.S, T = o.T, Pendiente = true };
+                f.Op = new OpDib { X0 = B(o.I), X1 = -1, E = o.E, S = o.S, T = o.T, Pendiente = true };
                 cab += " · orden: " + o.Tipo + (o.Dir > 0 ? " alcista" : " bajista") + " · entrada " + P2(o.E) + " · stop " + P2(o.S)
                      + " · objetivo " + P2(o.T) + (o.Pausa != null ? " · retirada por noticia" : "");
                 f.ColorCabecera = 3;

@@ -12,7 +12,10 @@
 //
 //  Candados (§6.4). Si falla uno, ese día (o esa sesión) no opera y lo deja escrito:
 //    sello del motor = el del repositorio · cuenta en la lista blanca · MNQ de 1 minuto con premercado
-//    · noticias de hoy leídas de Supabase · sin posición ni operación previa hoy · GO si se exige.
+//    · noticias de hoy leídas de Supabase · sin posición ni operación previa hoy · GO si se exige
+//    · el premercado pedido al SERVIDOR al cerrar la vela de las 8:30 (14/10/2026): las velas que NinjaTrader arma en
+//      vivo al conectarse pueden traer un volumen falso. La ventana sigue saliendo del gráfico. Se compara con el
+//      premercado del gráfico y las diferencias van al registro. En el Analyzer y en Market Replay, el del gráfico.
 //
 //  Registro: una fila por día y cuenta en `bot_operaciones` (Supabase, service_role). En el Strategy
 //  Analyzer (cuenta Backtest) no escribe en Supabase: deja un CSV en Documentos\NinjaTrader 8\bot-chaumer\.
@@ -120,6 +123,16 @@ namespace NinjaTrader.NinjaScript.Strategies
         private Fila fila;
         private List<string> eventos = new List<string>();
 
+        // ── el premercado del servidor (14/10/2026): 0 sin pedir · 1 pidiendo · 2 listo · 3 falló ──
+        private volatile int pmEstado;
+        private volatile List<MotorChaumer.Vela> pmServidor;
+        private volatile string pmFallo;
+        private DateTime pmPedidoEn;
+        private int pmIntentos;
+        private int primeraVentana = -1;            // índice en el gráfico de la vela base (la primera de la ventana)
+        private int decisionPendiente = -1;         // la vela cerrada que espera al premercado para decidirse
+        private const int PM_ESPERA_S = 60, PM_INTENTOS = 3;
+
         // ── estado de la operación (sobrevive al cambio de día si sigue abierta) ──
         private MotorChaumer.Orden ordenMotor, pendienteTrasCancelar;
         private string horaPendiente;               // la hora (etiqueta del motor) de la orden que espera a que se cancele la vieja
@@ -196,6 +209,13 @@ namespace NinjaTrader.NinjaScript.Strategies
             bool historico = State == State.Historical;
             if (historico && !esBacktest) return;              // en un gráfico, solo en tiempo real
             if (!historico) VigilarTick();
+            // la vela que esperaba al premercado del servidor se decide en cuanto llega (o en cuanto falla)
+            if (!historico && decisionPendiente >= 0 && PremercadoResuelto())
+            {
+                int c = decisionPendiente; decisionPendiente = -1;
+                try { Decidir(c); }
+                catch (Exception e) { Log("ERROR en la vela " + Hora(c) + ": " + e); }
+            }
             if (!historico && !IsFirstTickOfBar) return;
             int cerrada = historico ? CurrentBar : CurrentBar - 1;
             try { Decidir(cerrada); }
@@ -218,12 +238,18 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (terminado) return;
             int hm = utc.Hour * 100 + utc.Minute;
             int ap = MotorChaumer.AperturaUtc(d), ci = MotorChaumer.CierreUtc(d);
+            // cerrada la última vela del premercado, se pide al servidor: llega en segundos, antes de que cierre la vela base
+            if (UsaServidor() && pmEstado == 0 && hm >= ap - 1 && hm <= ci) PedirPremercado(d);
             if (hm < ap) return;
             if (!armadoIntentado)
             {
                 if (hm > ci) return;                            // encendido con la ventana ya cerrada
-                velaArmado = cerrada - inicioDia;
-                Armar(d);
+                if (UsaServidor())
+                {
+                    if (pmEstado == 0) PedirPremercado(d);
+                    if (!PremercadoResuelto()) { decisionPendiente = cerrada; return; }
+                }
+                Armar(d, cerrada);
                 if (!armado) return;
             }
             if (llenados > 0) return;                           // ya hay operación: solo la cierran stop u objetivo
@@ -296,6 +322,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (esBacktest) Log("día " + d + " · primera vela " + Utc(inicioDia).ToString("HH:mm", INV) + " UTC · vela " + inicioDia);
             armadoIntentado = armado = terminado = finalizado = false;
             motor = null; fila = null; eventos = new List<string>();
+            pmEstado = 0; pmServidor = null; pmFallo = null; pmIntentos = 0; primeraVentana = -1; decisionPendiente = -1;
             if (Position.MarketPosition == MarketPosition.Flat && (llenados == 0 || salidos >= llenados))
             {
                 ordenMotor = pendienteTrasCancelar = null; entrada = stopO = objetivoO = cierreO = null; cierrePedido = cierreEnviado = false;
@@ -304,8 +331,9 @@ namespace NinjaTrader.NinjaScript.Strategies
         }
 
         // ═════════════════════════════════════════════════════════════ candados del día
-        private void Armar(string d)
+        private void Armar(string d, int cerrada)
         {
+            velaArmado = cerrada - inicioDia;
             armadoIntentado = true;
             fila = new Fila
             {
@@ -328,8 +356,29 @@ namespace NinjaTrader.NinjaScript.Strategies
             fila.Go = go;
             if (Position.MarketPosition != MarketPosition.Flat) { NoArmado("sigue abierta una operación anterior"); return; }
             if (cfg.ExigirGo && go != true) { NoArmado("sin el GO del checklist"); return; }
-            int hm0 = Utc(inicioDia).Hour * 100 + Utc(inicioDia).Minute;
-            if (hm0 > 100) { NoArmado("el gráfico no trae el premercado desde las 00:00 UTC (19:00 Col): usa la plantilla ETH"); return; }
+            if (UsaServidor())
+            {
+                // El premercado, del servidor; la ventana, del gráfico (14/10/2026)
+                var pm = pmServidor;
+                if (pmEstado != 2 || pm == null)
+                { NoArmado("no pude pedir al servidor las velas del premercado (" + (pmFallo ?? "sin respuesta") + "): no opero con velas dudosas"); return; }
+                if (pm.Count == 0 || MotorChaumer.Hm(pm[0]) > 100)
+                { NoArmado("el servidor no trae el premercado desde las 00:00 UTC (19:00 Col)"); return; }
+                int ap = MotorChaumer.AperturaUtc(d);
+                primeraVentana = inicioDia;
+                while (primeraVentana < cerrada && Utc(primeraVentana).Hour * 100 + Utc(primeraVentana).Minute < ap) primeraVentana++;
+                var delGrafico = new List<MotorChaumer.Vela>();
+                for (int i = inicioDia; i < primeraVentana; i++) delGrafico.Add(ChaumerNT.Vela(Bars, i, tzNt));
+                foreach (string l in ChaumerNT.CompararVelas(pm, delGrafico, P.UmbralVol, 12)) Log(l);
+                velas.Clear(); velas.AddRange(pm);
+                ultimaVela = primeraVentana - 1;
+                velaArmado = pm.Count + (cerrada - primeraVentana);
+            }
+            else
+            {
+                int hm0 = Utc(inicioDia).Hour * 100 + Utc(inicioDia).Minute;
+                if (hm0 > 100) { NoArmado("el gráfico no trae el premercado desde las 00:00 UTC (19:00 Col): usa la plantilla ETH"); return; }
+            }
             motor = new MotorChaumer(P, nots, fed);
             armado = true;
             Guardar(fila);
@@ -497,6 +546,51 @@ namespace NinjaTrader.NinjaScript.Strategies
         private string Hora(int idx) { return ChaumerNT.Hora(Bars, idx, tzNt); }
 
         private string HoraDe(DateTime tNt) { return ChaumerNT.HoraDe(tNt, tzNt); }
+
+        /// <summary>En un gráfico en vivo, el premercado sale del servidor. En el Strategy Analyzer y en Market Replay, no: allí
+        /// las velas del gráfico ya son las del histórico.</summary>
+        private bool UsaServidor()
+        {
+            return !esBacktest && !Account.Name.StartsWith("Playback", StringComparison.Ordinal);
+        }
+
+        /// <summary>true si el premercado del servidor ya llegó o ya falló (también por tiempo).</summary>
+        private bool PremercadoResuelto()
+        {
+            if (pmEstado == 1 && (DateTime.UtcNow - pmPedidoEn).TotalSeconds > PM_ESPERA_S)
+            {
+                pmFallo = "el servidor no respondió en " + PM_ESPERA_S + " s";
+                pmEstado = 3;
+            }
+            return pmEstado >= 2;
+        }
+
+        private void PedirPremercado(string d)
+        {
+            DateTime desde, hasta;
+            ChaumerNT.TramoPremercado(d, out desde, out hasta);
+            pmEstado = 1; pmIntentos++;
+            if (pmIntentos == 1) pmPedidoEn = DateTime.UtcNow;
+            Instrument ins = Instrument; TradingHours th = Bars.TradingHours;
+            ChaumerNT.PedirVelas(ins, th, desde, hasta, tzNt, delegate(List<MotorChaumer.Vela> v, string fallo)
+            {
+                if (v != null && fallo == null)
+                {
+                    // ¿trae ya la última vela del premercado? Si el servidor aún no la cerró, otro intento en 5 s
+                    bool completa = v.Count > 0 && MotorChaumer.Hm(v[v.Count - 1]) == hasta.Hour * 100 + hasta.Minute;
+                    if (!completa && pmIntentos < PM_INTENTOS)
+                    {
+                        Task.Delay(5000).ContinueWith(delegate(Task t) { PedirPremercado(d); });
+                        return;
+                    }
+                    if (!completa) Log("⚠ el servidor no trae la vela de las " + ChaumerNT.HoraCol(new MotorChaumer.Vela { T = hasta.ToString("HHmmss", INV) })
+                                       + ": sigo con las " + v.Count + " velas que trae");
+                    pmServidor = v; pmEstado = 2;
+                }
+                else if (pmIntentos < PM_INTENTOS) Task.Delay(5000).ContinueWith(delegate(Task t) { PedirPremercado(d); });
+                else { pmFallo = fallo ?? "sin velas"; pmEstado = 3; }
+            });
+        }
 
         private List<MotorChaumer.Vela> VelasHasta(int cerrada)
         {
