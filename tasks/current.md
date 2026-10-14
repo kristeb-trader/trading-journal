@@ -47,8 +47,6 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
 - [ ] **14/10 — Kris:** «eso nunca fue un reingreso». Revisar con las velas 8:31–8:33 (zona 7:42 30557.00–30572.75)
 - [ ] **El motor no fusiona las zonas de premercado que se tocan** (la regla de superposición): solo el 11/09 en 72 días.
   Arreglarlo en los dos motores cuando Kris lo apruebe
-- [ ] **La imagen del día y las zonas de premercado desde donde nacen:** Kris elige (a) solo en NinjaTrader, (b) alargar
-  la imagen hasta la vela donde nace, (c) alargarla con un tope
 - [x] **Plan 3.46** (09/10): cierre por hora a las 16:50 de Nueva York, en el plan, el portal, los dos motores (caso sintético en la sincronía), el bot, la cadena, `bot_operaciones` y el calendario
 - [ ] **Kris, fuera de la ventana:** copiar `MotorChaumer.cs`, `CadenaDiaria.cs` (a `Custom\AddOns\`), `BotChaumer.cs` (a `Custom\Strategies\`) y `VistaMotorChaumer.cs` (a `Custom\Indicators\`), y un solo F5. Sin el motor nuevo, el bot y la vista dicen «motor desincronizado»
 - [ ] **§12 D2** `VistaMotorChaumer`: código hecho (07/10). **Kris:** copiar a `Custom/Indicators`, F5 y el Market Replay del 23/09 y el 02/10 con el bot y la vista

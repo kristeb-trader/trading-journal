@@ -31,7 +31,10 @@ def dibujar(dia, salida, datos):
     # Al LLENARSE la orden termina el analisis del dia: no se marcan mas zonas.
     # (R-34, confirmado por el operador el 01/09/2026 sobre el 17 de julio)
     corte_z = t['i_fill'] if (t and t.get('i_fill') is not None) else corte
-    S=list(range(b,corte+1)); off=b; N=len(S); W=N+9.0
+    # Las zonas de premercado se dibujan desde la vela donde nacen (Kris, 14/10/2026): el gráfico empieza en la
+    # primera de ellas que llegue a dibujarse; si no hay, en la vela base, como siempre.
+    ini = min([b] + [z.i_org for z in Z if getattr(z, 'pm', False) and z.i <= corte_z])
+    S=list(range(ini,corte+1)); off=ini; N=len(S); W=N+9.0
 
     fig,ax=plt.subplots(figsize=(20,10.6),facecolor=BG)
     fig.subplots_adjust(top=.79,bottom=.105,left=.055,right=.985)
@@ -56,7 +59,7 @@ def dibujar(dia, salida, datos):
     elif len(marcas[0])==1: tk=[i-off for i in S if D[i]['t'][3:4] in marcas]
     else: tk=[i-off for i in S if D[i]['t'][2:4] in marcas]
     ax.set_xticks(tk)
-    ax.set_xticklabels([f"{lector.col(D[i+off])//100}:{D[i+off]['t'][2:4]}" for i in tk],
+    ax.set_xticklabels([f"{(lector.col(D[i+off])+2400)%2400//100}:{D[i+off]['t'][2:4]}" for i in tk],
                        color=GREY,fontsize=11.5,rotation=90 if N<=22 else 0)
     ax.tick_params(colors=GREY,labelsize=11.5,length=0); ax.grid(False)
     for nm,s in ax.spines.items():
@@ -72,7 +75,7 @@ def dibujar(dia, salida, datos):
         n+=1
         # Las vigentes acaban en la ultima vela de la ventana (10:30 Col; 11:30 en invierno), no en el borde
         # del grafico (operador, 07/10/2026). La ventana la da el motor con la hora de Nueva York (fin).
-        x0=max(z.i_org-off,-1); x1=(z.fin-off) if (z.fin is not None and z.fin<=corte_z) else min(fin-off+.45, W)
+        x0 = (z.i_org-off) if getattr(z, 'pm', False) else max(z.i_org-off, b-off-1); x1=(z.fin-off) if (z.fin is not None and z.fin<=corte_z) else min(fin-off+.45, W)
         zl,zh=z.en(corte_z)
         vig = (z.fin is None or z.fin>corte_z)
         if vig: viva+=1
@@ -108,7 +111,7 @@ def dibujar(dia, salida, datos):
                 if (D[m]['c'] < pv) if bajo else (D[m]['c'] > pv):
                     roto = m; break
             if roto is not None and roto <= ir: continue      # ya estaba roto
-            x0 = max(j-off, -1); x1 = (roto-off+1) if roto is not None else W
+            x0 = max(j-off, b-off-1); x1 = (roto-off+1) if roto is not None else W
             vivo = roto is None
             ax.plot([x0, x1], [pv, pv], color=NAR, lw=2.0 if vivo else 1.1,
                     ls=(0, (2, 3)), alpha=.80 if vivo else .25, zorder=6)
