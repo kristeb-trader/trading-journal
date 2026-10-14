@@ -3,7 +3,7 @@
 > **Se ejecuta de arriba abajo. No se decide nada que no esté aquí.**
 > Cada línea cita su regla. Si una respuesta es **NO** donde dice parar, **se para** — no se evalúa, no se matiza.
 
-**Versión del plan:** 3.46 · 2026-10-09 · **34 reglas**
+**Versión del plan:** 3.47 · 2026-10-14 · **34 reglas**
 
 ---
 
@@ -79,6 +79,7 @@
 | ☐ | Stop ≤ `STOP_MAX` | `R-31` | **NO SE OPERA** |
 | ☐ | Target 1:1 **libre de zonas vigentes** | `R-32`, `R-21` | **NO SE OPERA** |
 | ☐ | *(solo Reingreso)* Target **sin pasar del punto de referencia** vivo más cercano que quede entre la entrada y el objetivo — el nivel de referencia de cualquier retroceso. Muere solo cuando **una vela CIERRA** más allá; la mecha no lo rompe | `R-41`, `R-26` | **NO SE OPERA** |
+| ☐ | *(solo Reingreso)* ¿Hay una **zona activa más allá del objetivo**, en la dirección del reingreso, a la que el precio pueda ir a testear? Cualquier zona activa, también de premercado, a cualquier distancia | `R-26`, `R-32` | **NO SE OPERA.** Camino libre: es terreno de la Continuación |
 | ☐ | *(solo Continuación)* ¿La corrida es fluida? | `R-40` | **NO SE OPERA ESE ROMPIMIENTO.** La zona sigue viva. Se espera a otro IRI que deje una zona nueva **entera** más allá de ésta — por encima para largo, por debajo para corto |
 | ☐ | ¿Es día de FOMC y el setup es una **Continuación**? | `R-36` | **NO SE OPERA** |
 

@@ -117,13 +117,14 @@ Riesgo residual aceptado: la ventana de exposición manual tras el llenado, hast
 
 > 🔴 **No es solo el extremo del retroceso que originó la zona.** Cuenta **todo** lo que el precio haya hecho mientras la zona estuvo viva, hasta la vela de rompimiento. Si la zona aguanta muchas velas y el precio se aleja más que en su retroceso original, el stop se va con él.
 
-**Los tres filtros que pueden anular la operación:**
+**Los cuatro filtros que pueden anular la operación:**
 
 | # | Comprobación | Aplica a |
 |---|---|---|
 | 1 | stop estructural ≤ `STOP_MAX` (`R-31`) | los dos setups |
 | 2 | el objetivo 1:1 **libre de zonas vigentes** (`R-21`): camino de recorrido sin nada en contra | los dos setups |
 | 3 | el objetivo 1:1 cabe dentro del **punto de referencia** (`R-41`) | solo Reingreso |
+| 4 | hay una **zona activa más allá del objetivo**, en la dirección de la operación: una zona a la que ir a testear (`R-26`, plan 3.47) | solo Reingreso |
 
 - Si **cualquiera** de los tres falla, **la entrada queda invalidada y no se opera**.
 

@@ -326,7 +326,7 @@ Uno de los **dos únicos setups** del plan. **Opera el rompimiento que funciona.
 
 ## REINGRESO
 
-El otro setup. **Opera el rompimiento que falló:** sobre una zona hay rompimiento + consecución, el precio **no continúa**, **atraviesa la zona entera y sobrepasa el borde contrario** —esa es la **vela de reingreso**, que hace de vela de rompimiento— y la consecución de esa vela es la entrada. **No basta con tocar la zona.**
+El otro setup. **Opera el rompimiento que falló:** sobre una zona hay rompimiento + consecución, el precio **no continúa**, **atraviesa la zona entera y sobrepasa el borde contrario** —esa es la **vela de reingreso**, que hace de vela de rompimiento— y la consecución de esa vela es la entrada. **No basta con tocar la zona.** **Y solo si en esa dirección queda otra zona activa, más allá del objetivo, a la que el precio pueda ir a testear**: sin ella, el precio tiene camino libre y no hay reingreso (plan 3.47).
 
 > 🔴 **EL REINGRESO ES INMEDIATO O NO ES.** La ventana se abre con la vela de consecución y **se cierra en cuanto el precio supera el extremo de esa vela**. Si el precio sigue de largo en el sentido del rompimiento, aunque sea un tick, **ya no hay reingreso posible sobre esa zona**.
 

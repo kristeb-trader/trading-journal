@@ -1,6 +1,6 @@
 # FICHA DE MARCADO — generada automáticamente
 
-> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-10-09 con `generar_ficha.py`.
+> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-10-14 con `generar_ficha.py`.
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
@@ -400,7 +400,7 @@ Un IRI —corrida, retroceso, zona y rompimiento de esa zona— y su consecució
 
 #### `R-26` · Setup Reingreso
 
-Tras un rompimiento con consecución que falla, el precio recupera la zona entera y se opera en sentido contrario.
+Tras un rompimiento con consecución que falla, el precio recupera la zona entera y se opera en sentido contrario, **siempre que en ese sentido haya otra zona activa a la que el precio pueda ir a testear.**
 
 **Cómo se aplica**
 
@@ -411,12 +411,15 @@ Tras un rompimiento con consecución que falla, el precio recupera la zona enter
 | 3 | El precio **atraviesa la zona entera y SOBREPASA el borde contrario** → **vela de reingreso**. Alcista: supera el **borde superior** del soporte. Bajista: supera el **borde inferior** de la resistencia. **No basta con tocar la zona.** Esta vela hace de vela de rompimiento |
 | 4 | **Consecución** ≥1 `TICK` más allá de la vela de reingreso ← **ENTRADA** (`R-24`) |
 | 5 | 🔴 El **objetivo debe caber dentro del punto de referencia** (`R-41`) |
+| 6 | 🔴 **Tiene que haber una zona a la que ir a testear:** una zona **activa** (`R-21`) en la dirección del reingreso, **entera más allá del objetivo**. Bajista: por debajo del objetivo. Alcista: por encima. **Cualquier zona activa**, soporte o resistencia, también de premercado (`R-15`), **a cualquier distancia**. El objetivo sigue siendo 1:1 (`R-32`): **no tiene que llegar a esa zona, basta con que exista.** Sin esa zona **no hay reingreso** |
 
 - **🔴 El reingreso es inmediato o no es.** La ventana de reingreso se abre con la vela de consecución y **se cierra en cuanto el precio supera el extremo de esa vela de consecución**. Si el precio sigue de largo en el sentido del rompimiento, aunque sea un tick, **el rompimiento quedó bueno y ya no hay reingreso posible sobre esa zona** — por mucho que el precio vuelva a pasar por ella más tarde.
 - **El `PLAZO_CONSECUCION` de `R-20` no aplica al reingreso:** su límite es la ventana inmediata de arriba.
 - **🔑 La misma vela puede cerrar el rompimiento fallido y abrir el reingreso.** Si la vela que da la **consecución** del rompimiento se da la vuelta dentro del mismo minuto, atraviesa la zona entera y sale por el borde contrario, **esa misma vela es a la vez consecución y vela de reingreso**. No se exige una vela posterior.
 - **🕯️ Pero solo si la consecución llegó primero.** Solo se piensa en reingreso **después** de que llega la consecución. Cuando la consecución y la vuelta a través de la zona caen en la misma vela, el orden lo dice su color —el mismo criterio que para las zonas (`R-09`) y para la orden (`R-29`)—: **vela blanca, primero el máximo; vela azul, primero el mínimo**. Un reingreso **bajista** de una sola vela necesita vela **blanca** (primero la consecución arriba, después la vuelta abajo); uno **alcista**, vela **azul**. Si el color dice lo contrario, el precio atravesó la zona **antes** de la consecución: no es un rompimiento que falla, y **en esa vela no hay reingreso**.
 - **Vela de consecución sin cuerpo** (apertura = cierre): la consecución **cuenta** —el precio pasó del extremo de la vela de rompimiento, sea cual sea el color—, pero sin color no se sabe qué llegó primero, así que **esa vela no es vela de reingreso**: se mira lo que hace el precio después.
+- **🔴 Sin zona a la que ir, no hay reingreso.** Si en la dirección del reingreso no queda ninguna zona activa más allá del objetivo, el precio tiene **camino libre**, y el camino libre es terreno de la Continuación, no del Reingreso: ese rompimiento fallido no se opera. Se suma a los otros dos filtros del objetivo, no los sustituye: entre la entrada y el objetivo sigue sin poder haber ninguna zona activa (`R-32`) ni ningún punto de referencia vivo (`R-41`).
+- **Cuándo se mira:** al poner la orden, con las zonas activas de ese momento, como los demás filtros; y otra vez si la orden se vuelve a poner tras una noticia roja (`R-35`). Con la orden puesta no hace falta vigilarla: la zona está más allá del objetivo y el objetivo más allá de la entrada, así que el precio no puede llegar a ella sin llenar antes la orden.
 - **Dirección:** contraria al rompimiento fallido.
 - **Filtro propio — el punto de referencia (`R-41`):** el objetivo tiene que quedar del lado de dentro del nivel de referencia de **cualquier retroceso vivo** que quede entre la entrada y el objetivo; ese nivel muere cuando una vela **cierra** más allá. Si el objetivo lo pasa, **el reingreso es inválido y no se opera**.
 - **La orden:** Stop Market al cierre de la vela de reingreso, en el nivel de consecución. **Se comprueba el punto de referencia antes de enviarla.**
@@ -553,13 +556,14 @@ Ancla la regla en el nivel de entrada, mide el stop hasta su referencia estructu
 
 > 🔴 **No es solo el extremo del retroceso que originó la zona.** Cuenta **todo** lo que el precio haya hecho mientras la zona estuvo viva, hasta la vela de rompimiento. Si la zona aguanta muchas velas y el precio se aleja más que en su retroceso original, el stop se va con él.
 
-**Los tres filtros que pueden anular la operación:**
+**Los cuatro filtros que pueden anular la operación:**
 
 | # | Comprobación | Aplica a |
 |---|---|---|
 | 1 | stop estructural ≤ `STOP_MAX` (`R-31`) | los dos setups |
 | 2 | el objetivo 1:1 **libre de zonas vigentes** (`R-21`): camino de recorrido sin nada en contra | los dos setups |
 | 3 | el objetivo 1:1 cabe dentro del **punto de referencia** (`R-41`) | solo Reingreso |
+| 4 | hay una **zona activa más allá del objetivo**, en la dirección de la operación: una zona a la que ir a testear (`R-26`, plan 3.47) | solo Reingreso |
 
 - Si **cualquiera** de los tres falla, **la entrada queda invalidada y no se opera**.
 

@@ -59,7 +59,7 @@
 
 ## R-26 · Setup Reingreso
 
-> Tras un rompimiento con consecución que falla, el precio recupera la zona entera y se opera en sentido contrario.
+> Tras un rompimiento con consecución que falla, el precio recupera la zona entera y se opera en sentido contrario, **siempre que en ese sentido haya otra zona activa a la que el precio pueda ir a testear.**
 
 | | |
 |---|---|
@@ -77,12 +77,15 @@
 | 3 | El precio **atraviesa la zona entera y SOBREPASA el borde contrario** → **vela de reingreso**. Alcista: supera el **borde superior** del soporte. Bajista: supera el **borde inferior** de la resistencia. **No basta con tocar la zona.** Esta vela hace de vela de rompimiento |
 | 4 | **Consecución** ≥1 `TICK` más allá de la vela de reingreso ← **ENTRADA** (`R-24`) |
 | 5 | 🔴 El **objetivo debe caber dentro del punto de referencia** (`R-41`) |
+| 6 | 🔴 **Tiene que haber una zona a la que ir a testear:** una zona **activa** (`R-21`) en la dirección del reingreso, **entera más allá del objetivo**. Bajista: por debajo del objetivo. Alcista: por encima. **Cualquier zona activa**, soporte o resistencia, también de premercado (`R-15`), **a cualquier distancia**. El objetivo sigue siendo 1:1 (`R-32`): **no tiene que llegar a esa zona, basta con que exista.** Sin esa zona **no hay reingreso** |
 
 - **🔴 El reingreso es inmediato o no es.** La ventana de reingreso se abre con la vela de consecución y **se cierra en cuanto el precio supera el extremo de esa vela de consecución**. Si el precio sigue de largo en el sentido del rompimiento, aunque sea un tick, **el rompimiento quedó bueno y ya no hay reingreso posible sobre esa zona** — por mucho que el precio vuelva a pasar por ella más tarde.
 - **El `PLAZO_CONSECUCION` de `R-20` no aplica al reingreso:** su límite es la ventana inmediata de arriba.
 - **🔑 La misma vela puede cerrar el rompimiento fallido y abrir el reingreso.** Si la vela que da la **consecución** del rompimiento se da la vuelta dentro del mismo minuto, atraviesa la zona entera y sale por el borde contrario, **esa misma vela es a la vez consecución y vela de reingreso**. No se exige una vela posterior.
 - **🕯️ Pero solo si la consecución llegó primero.** Solo se piensa en reingreso **después** de que llega la consecución. Cuando la consecución y la vuelta a través de la zona caen en la misma vela, el orden lo dice su color —el mismo criterio que para las zonas (`R-09`) y para la orden (`R-29`)—: **vela blanca, primero el máximo; vela azul, primero el mínimo**. Un reingreso **bajista** de una sola vela necesita vela **blanca** (primero la consecución arriba, después la vuelta abajo); uno **alcista**, vela **azul**. Si el color dice lo contrario, el precio atravesó la zona **antes** de la consecución: no es un rompimiento que falla, y **en esa vela no hay reingreso**.
 - **Vela de consecución sin cuerpo** (apertura = cierre): la consecución **cuenta** —el precio pasó del extremo de la vela de rompimiento, sea cual sea el color—, pero sin color no se sabe qué llegó primero, así que **esa vela no es vela de reingreso**: se mira lo que hace el precio después.
+- **🔴 Sin zona a la que ir, no hay reingreso.** Si en la dirección del reingreso no queda ninguna zona activa más allá del objetivo, el precio tiene **camino libre**, y el camino libre es terreno de la Continuación, no del Reingreso: ese rompimiento fallido no se opera. Se suma a los otros dos filtros del objetivo, no los sustituye: entre la entrada y el objetivo sigue sin poder haber ninguna zona activa (`R-32`) ni ningún punto de referencia vivo (`R-41`).
+- **Cuándo se mira:** al poner la orden, con las zonas activas de ese momento, como los demás filtros; y otra vez si la orden se vuelve a poner tras una noticia roja (`R-35`). Con la orden puesta no hace falta vigilarla: la zona está más allá del objetivo y el objetivo más allá de la entrada, así que el precio no puede llegar a ella sin llenar antes la orden.
 - **Dirección:** contraria al rompimiento fallido.
 - **Filtro propio — el punto de referencia (`R-41`):** el objetivo tiene que quedar del lado de dentro del nivel de referencia de **cualquier retroceso vivo** que quede entre la entrada y el objetivo; ese nivel muere cuando una vela **cierra** más allá. Si el objetivo lo pasa, **el reingreso es inválido y no se opera**.
 - **La orden:** Stop Market al cierre de la vela de reingreso, en el nivel de consecución. **Se comprueba el punto de referencia antes de enviarla.**
@@ -92,6 +95,10 @@
 > 🔑 **Es la contraria de la Continuación:** la Continuación opera el rompimiento que **funciona**; el Reingreso, el que **falló**. Es el único setup del plan con un segundo filtro de objetivo, y su orden muere solo por `R-29`.
 
 **Caso que SÍ es reingreso — 6/07/2026:** zona `R` 29.926,50–29.939,25. Rompe la vela 8:46; la 8:47 da la consecución subiendo a 29.967,25 y **esa misma vela** se desploma a 29.908,75, otra vez bajo la zona → reingreso válido, y la misma vela es consecución y vela de reingreso (`G-12`).
+
+**Por qué hace falta una zona a la que ir** (14/10/2026, plan 3.47). Palabras del operador: *"lo que buscamos con el reingreso es una probabilidad en esa dirección. No significa que deba ir hasta la otra zona, sino que tiene posibilidad de ir a testear esa otra zona, que no haya puntos de referencia en contra, y ahí aplica el reingreso"*. Y sobre el camino libre: *"esa es la filosofía de una continuación"*.
+
+**Caso que NO lo es, sin zona a la que ir — 14/10/2026:** la resistencia de premercado de la 7:42 (30.557,00 – 30.572,75) se rompe con la vela 8:31; la 8:32 da la consecución y, en la misma vela blanca, se desploma bajo la zona entera. La mecánica del reingreso se cumple, pero por debajo **no había ninguna zona activa**: camino libre, no hay trade. El motor lo había operado: STOP, −65,50.
 
 **Caso que NO lo es — 13/07/2026:** zona `R` 29.652,25–29.666,75. Rompe la vela 9:25 (máx 29.677,25), consecución la vela 9:27 (máx 29.681,00) y el precio **sigue subiendo** hasta 29.724,00. Lo que hace la vela 9:41, catorce velas después, **no es un reingreso**.
 
