@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-10-12
+**Última actualización:** 2026-10-14
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-14 | El premercado, del servidor; zonas de premercado desde donde nacen; plan 3.47 (el reingreso necesita una zona a la que ir) |
 | 2026-10-13 | Las 3 gráficas: sin scroll, en dos filas y con su resultado |
 | 2026-10-12b | Las 3 gráficas del día en una pantalla |
 | 2026-10-12 | Borrar las cookies dejó el Journal sin guardar: la puerta del Worker pasa a ser el login |
@@ -49,6 +50,28 @@
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
 
 ---
+
+## Checkpoint 2026-10-14 — El premercado, del servidor, y el reingreso que no tenía adónde ir
+
+**Lo que pasó.** Kris reinstaló NinjaTrader. El 13/10 la vista no enseñaba la operación del bot: el diálogo de
+Indicators la guardó en «On each tick» y metía cada vela con su primer tick (`d553b97`, ahora solo lee velas cerradas).
+El 14/10 (CPI) el bot operó un Reingreso bajista 8:33 con STOP −69,75 sobre dos zonas de premercado superpuestas. Una
+no existía: NinjaTrader se abrió a las 8:01 y la vela de las 8:03, armada en vivo al conectarse, llegó con más de
+8.000 contratos (3.708 en el servidor).
+
+**Lo que se cambió.**
+- **El premercado se pide al servidor** (`0e2b420`, diseño del bot v1.14): el bot, al cerrar la vela de las 8:30, con
+  `BarsRequest` como la cadena; 3 intentos y 60 s, o no se arma. Compara con el del gráfico y lo deja en su registro.
+  La vista hace lo mismo.
+- **Las zonas de premercado se dibujan desde donde nacen**: en la vista y en la imagen del día, que empieza en esa
+  vela (`ddb0f4b`, opción b de Kris).
+- **Plan 3.47** (`fb3223d`, portal `8e3dd48`, motores `924843c`): Kris, *«eso nunca fue un reingreso»*. Un reingreso
+  necesita **otra zona activa más allá del objetivo** a la que ir a testear: sin ella hay camino libre, terreno de la
+  Continuación. Validado con cinco casos dibujados. 70/70 días idénticos entre motores; cambian el 14/10 (→ Reingreso
+  bajista 8:49 TARGET +34,25) y el 08/07 (→ no opera).
+
+**Aprendido.** Tras compilar en NinjaTrader hace falta **F5 en el gráfico** para que el indicador cargue la versión
+nueva. Y el motor **no fusiona** las zonas de premercado que se tocan (solo el 11/09 en 72 días): queda en tareas.
 
 ## Checkpoint 2026-10-13 — Las 3 gráficas: sin scroll, en dos filas y con su resultado
 

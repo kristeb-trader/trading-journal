@@ -44,7 +44,12 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
   bot y la vista piden el premercado al servidor (diseño v1.14) y la vista dibuja las zonas de premercado desde donde
   nacen. **Kris:** copiar `ChaumerNT.cs` (AddOns), `BotChaumer.cs` (Strategies), `VistaMotorChaumer.cs` (Indicators), un F5
   fuera de la ventana
-- [ ] **14/10 — Kris:** «eso nunca fue un reingreso». Revisar con las velas 8:31–8:33 (zona 7:42 30557.00–30572.75)
+- [x] **Plan 3.47** (14/10, Kris): el reingreso necesita una zona activa más allá del objetivo, a la que ir a testear
+  (cualquiera, también de premercado, sin distancia máxima). Plan (`fb3223d`), portal (`8e3dd48`), los dos motores con
+  sello `L:c34779e2…` (`924843c`, 70/70). Cambian: 14/10 STOP −65,50 → Reingreso bajista 8:49 TARGET +34,25; 08/07 → no opera
+- [ ] **Kris:** copiar `MotorChaumer.cs` a `Custom\AddOns\`, F5 en el editor y F5 en el gráfico del bot, fuera de la ventana.
+  Sin eso el bot dice «motor desincronizado» y no opera
+- [ ] **Kris:** validar el reingreso nuevo del 14/10 (8:49, sobre la zona del CPI de las 7:31): lo marcó el motor con la regla nueva
 - [ ] **El motor no fusiona las zonas de premercado que se tocan** (la regla de superposición): solo el 11/09 en 72 días.
   Arreglarlo en los dos motores cuando Kris lo apruebe
 - [x] **Plan 3.46** (09/10): cierre por hora a las 16:50 de Nueva York, en el plan, el portal, los dos motores (caso sintético en la sincronía), el bot, la cadena, `bot_operaciones` y el calendario
