@@ -14,7 +14,7 @@ const v = (n: string) => P.parametro(n);
 
 const SECCIONES = [
   { id: 'dia', t: 'No abrir el día' },
-  { id: 'cuatro', t: 'Los cinco filtros' },
+  { id: 'cuatro', t: 'Los seis filtros' },
   { id: 'noticias', t: 'Las noticias' },
   { id: 'cancelan', t: 'Lo que cancela la orden' },
   { id: 'despues', t: 'Descartado no es vacío' },
@@ -48,10 +48,10 @@ const SECCIONES = [
   </section>
 
   <section class="ap" id="cuatro">
-    <h2>Los cinco filtros <Refs cods="R-31 · R-32 · R-41 · R-40 · R-36" /></h2>
+    <h2>Los seis filtros <Refs cods="R-31 · R-32 · R-41 · R-26 · R-40 · R-36" /></h2>
     <p>
       Con el setup identificado y el stop y el objetivo ya medidos, se pasan
-      cinco comprobaciones. <strong>Basta que falle una</strong> para que no
+      seis comprobaciones. <strong>Basta que falle una</strong> para que no
       haya operación.
     </p>
 
@@ -69,6 +69,12 @@ const SECCIONES = [
         <strong>Solo en Reingreso:</strong> el objetivo no pasa del punto de
         referencia vivo más cercano que quede entre la entrada y el objetivo.
         Solo lo rompe una vela que cierre más allá; la mecha no cuenta.
+      </li>
+      <li>
+        <strong>Solo en Reingreso:</strong> hay una zona a la que ir. En la
+        dirección del Reingreso queda otra zona activa, entera más allá del
+        objetivo, a la que el precio pueda ir a testear. Sin ella, el camino está
+        libre y eso es terreno de la Continuación.
       </li>
       <li>
         <strong>Solo en Continuación:</strong> la corrida es fluida. Si no lo es, ese

@@ -233,9 +233,31 @@ const SECCIONES = [
       <dd><strong>Ninguno.</strong> El límite de {v('PLAZO_CONSECUCION')} no aplica aquí</dd>
       <dt>Dónde va el stop</dt>
       <dd>En el extremo de la <strong>corrida fallida</strong>, la que rompió y no continuó</dd>
-      <dt>Filtro propio</dt>
-      <dd>El objetivo <strong>no puede pasar del punto de referencia</strong></dd>
+      <dt>Filtros propios</dt>
+      <dd>El objetivo <strong>no puede pasar del punto de referencia</strong>, y <strong>tiene que haber una zona a la que ir</strong></dd>
     </dl>
+
+    <h3>Una zona a la que ir</h3>
+    <p>
+      Con el Reingreso se busca una probabilidad en esa dirección: que el precio
+      <strong>tenga adónde ir a testear</strong>. Por eso, en la dirección del
+      Reingreso tiene que quedar <strong>otra zona activa, entera más allá del
+      objetivo</strong>. Vale cualquiera, también una de premercado, y a
+      cualquier distancia.
+    </p>
+    <dl class="datos">
+      <dt>El objetivo</dt>
+      <dd>Sigue siendo 1:1. <strong>No tiene que llegar</strong> a esa zona: basta con que exista</dd>
+      <dt>Cuándo se mira</dt>
+      <dd>Al poner la orden, con las zonas activas de ese momento</dd>
+    </dl>
+    <div class="duro">
+      <p>
+        <strong>Sin zona a la que ir, no hay Reingreso.</strong> Si en esa
+        dirección no queda ninguna zona activa, el precio tiene camino libre, y el
+        camino libre es terreno de la Continuación.
+      </p>
+    </div>
 
     <!-- Unificado el 14/09/2026: antes era solo el extremo del retroceso que
          origino la zona. Ahora vale el de cualquier retroceso vivo. -->
