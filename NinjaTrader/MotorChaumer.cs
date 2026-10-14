@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:4d3bfdd2da370666 C:d143afbc34fb4b62";
+        public const string SELLO = "L:c34779e2540b816d C:bd2fe10e016df0cb";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -583,6 +583,24 @@ namespace NinjaTrader.NinjaScript
             return new Orden { Tipo = tipo, Dir = nd, E = e, S = st, T = t.Value, R = r, I = i };
         }
 
+        private const string SIN_ZONA = "no hay zona a la que ir: ninguna zona activa más allá del objetivo, camino libre (plan 3.47)";
+
+        /// <summary>R-26 paso 6, plan 3.47: la zona activa entera más allá del objetivo, en la dirección del reingreso
+        /// (la más cercana), o null: camino libre, no hay reingreso. _zona_a_testear de lector.py.</summary>
+        private static Zona ZonaATestear(List<Zona> Z, int i, double t, int nd)
+        {
+            Zona mejor = null;
+            foreach (var z in Z)
+            {
+                if (z.I > i) continue;
+                if (z.Fin != null && z.Fin <= i) continue;
+                var g = z.En(i);
+                if (nd < 0 ? g[1] <= t : g[0] >= t)
+                    if (mejor == null || (nd < 0 ? g[1] > mejor.En(i)[1] : g[0] < mejor.En(i)[0])) mejor = z;
+            }
+            return mejor;
+        }
+
         /// <summary>R-41: el punto de referencia vivo que estorba el objetivo de un reingreso, o null.</summary>
         private static double? PuntoDeReferencia(Resultado res, int i, double e, double t, int nd)
         {
@@ -848,6 +866,7 @@ namespace NinjaTrader.NinjaScript
                         {
                             var pr = PuntoDeReferencia(res, i, o.E, t2.Value, o.Dir);
                             if (pr != null) motivo = "el objetivo pasa del punto de referencia " + F2(pr.Value);
+                            else if (ZonaATestear(Z, i, t2.Value, o.Dir) == null) motivo = SIN_ZONA;
                         }
                     }
                     int T0 = o.Pausa.Value; o.Pausa = null;
@@ -939,6 +958,7 @@ namespace NinjaTrader.NinjaScript
                     {
                         var pr = PuntoDeReferencia(res, i, e, t.Value, nd);
                         if (pr != null) { o = null; motivo = "el objetivo pasa del punto de referencia " + F2(pr.Value); }
+                        else if (ZonaATestear(Z, i, t.Value, nd) == null) { o = null; motivo = SIN_ZONA; }
                     }
                     string tag = Hh(k) + "  REINGRESO " + (nd < 0 ? "bajista" : "alcista") + " · entrada " + F2(e) + " · stop " + F2(st)
                                  + (t != null ? " · objetivo " + F2(t.Value) + " · riesgo " + F2(r) : "");

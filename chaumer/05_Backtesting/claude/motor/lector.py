@@ -570,6 +570,8 @@ def _evaluar(Z,i,tipo,nd,e,st,ref=None):
     if m: return None, " · ".join(m), t, r
     return dict(tipo=tipo,dir=nd,e=e,s=st,t=t,r=r,i=i), None, t, r
 
+SIN_ZONA = "no hay zona a la que ir: ninguna zona activa más allá del objetivo, camino libre (plan 3.47)"
+
 def _punto_de_referencia(res, i, e, t, nd):
     """R-41 (14/09/2026) · Devuelve el PUNTO DE REFERENCIA vivo que estorba el
     objetivo de un reingreso, o None si el camino esta libre.
@@ -597,6 +599,20 @@ def _punto_de_referencia(res, i, e, t, nd):
             if not (e < p < t): continue
             if any(D[m]['c'] > p for m in range(j+1, i+1)): continue
             mejor = p if mejor is None else min(mejor, p)
+    return mejor
+
+def _zona_a_testear(Z, i, t, nd):
+    """R-26 paso 6, plan 3.47 (14/10/2026, con el operador) · La zona activa a la que el precio
+    puede ir a testear: una zona activa en la direccion del reingreso, ENTERA mas alla del
+    objetivo. Cualquier zona activa (tambien de premercado), a cualquier distancia; el objetivo
+    no tiene que llegar a ella. Devuelve la mas cercana, o None: camino libre, no hay reingreso."""
+    mejor = None
+    for z in Z:
+        if z.i > i: continue
+        if z.fin is not None and z.fin <= i: continue
+        lo, hi = z.en(i)
+        if (hi <= t) if nd < 0 else (lo >= t):
+            if mejor is None or ((hi > mejor.en(i)[1]) if nd < 0 else (lo < mejor.en(i)[0])): mejor = z
     return mejor
 
 class Fluidez:
@@ -811,6 +827,7 @@ def detectar_setups(res, solo_reingresos=False):
                 elif o['tipo'] == 'Reingreso':
                     pr = _punto_de_referencia(res, i, o['e'], t2, o['dir'])
                     if pr is not None: motivo = f"el objetivo pasa del punto de referencia {pr:.2f}"
+                    elif _zona_a_testear(Z, i, t2, o['dir']) is None: motivo = SIN_ZONA
             T0 = o.pop('pausa')
             if motivo:
                 ev.append(f"{hh(k)}  orden no se recoloca tras la noticia de las {_hhmm(T0)} — {motivo}"); orden=None
@@ -898,6 +915,8 @@ def detectar_setups(res, solo_reingresos=False):
                 pr=_punto_de_referencia(res,i,e,t,nd)
                 if pr is not None:
                     o, motivo = None, f"el objetivo pasa del punto de referencia {pr:.2f}" 
+                elif _zona_a_testear(Z, i, t, nd) is None:
+                    o, motivo = None, SIN_ZONA
             tag=(f"{hh(k)}  REINGRESO {'bajista' if nd<0 else 'alcista'} · entrada {e:.2f} · stop {st:.2f}"
                  + (f" · objetivo {t:.2f} · riesgo {r:.2f}" if t else ""))
             if o: orden=_colocar(o, tag, ev, dia, k)
