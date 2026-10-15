@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:c34779e2540b816d C:bd2fe10e016df0cb";
+        public const string SELLO = "L:e31bf640f7b93ec3 C:49aec5952aba371f";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -244,6 +244,17 @@ namespace NinjaTrader.NinjaScript
                 string tipo;
                 if (ap == null) tipo = k.C >= k.O ? "R" : "S";
                 else tipo = hi < ap.Value ? "S" : (lo > ap.Value ? "R" : "P");
+                // R-13 también en el premercado (14/10/2026): la que toca una del mismo tipo la estira; dentro, sin cambios
+                Zona ya = null;
+                foreach (var zz in Z) if (zz.Tipo == tipo && zz.Toca(lo, hi)) { ya = zz; break; }
+                if (ya != null)
+                {
+                    if (lo < ya.Lo || hi > ya.Hi)
+                    {
+                        ya.Lo = Math.Min(ya.Lo, lo); ya.Hi = Math.Max(ya.Hi, hi); ya.Historia.Add(new Hist { J = i, Lo = ya.Lo, Hi = ya.Hi });
+                    }
+                    continue;
+                }
                 var z = new Zona(lo, hi, tipo, i, FloorDiv(Col(k), 100) + ":" + k.T.Substring(2, 2) + " pm", null);
                 z.Pm = true;
                 Z.Add(z);

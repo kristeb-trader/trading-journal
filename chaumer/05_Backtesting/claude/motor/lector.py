@@ -182,6 +182,15 @@ def zonas_premercado(V):
         lo,hi = z_res(k) if k['c']>=k['o'] else z_sop(k)
         if ap is None: tipo = 'R' if k['c']>=k['o'] else 'S'
         else:          tipo = 'S' if hi < ap else ('R' if lo > ap else 'P')
+        # R-13 (y R-15: "R-13 fusiona las que se tocan"), aplicado tambien al premercado el 14/10/2026: si
+        # la candidata toca una zona de premercado del mismo tipo, no nace otra: se estira la existente
+        # solo hacia el extremo nuevo; si cae dentro, sin cambios. Caso: 11/09, el soporte de la 7:32
+        # dentro del de la 3:25.
+        ya = next((z for z in Z if z.tipo == tipo and z.toca(lo, hi)), None)
+        if ya is not None:
+            if lo < ya.lo or hi > ya.hi:
+                ya.lo = min(ya.lo, lo); ya.hi = max(ya.hi, hi); ya.hist.append((i, ya.lo, ya.hi))
+            continue
         z=Zona(lo,hi,tipo,i,f"{col(k)//100}:{k['t'][2:4]} pm"); z.pm=True
         Z.append(z)
     return Z
