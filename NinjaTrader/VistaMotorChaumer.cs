@@ -239,6 +239,16 @@ namespace NinjaTrader.NinjaScript.Indicators
             foreach (var re in r.Reingresos)
             {
                 if (re.I > corteZ) continue;
+                // ni los que quedan DETRÁS de una zona viva del camino: el precio choca antes con la zona (Kris, 15/10/2026)
+                double? muro = null;
+                foreach (var zm in r.Z)
+                {
+                    if (zm.I > re.I || (zm.Fin != null && zm.Fin <= re.I)) continue;
+                    var gm = zm.En(re.I);
+                    if (!(gm[1] > Math.Min(re.E, re.T) && gm[0] < Math.Max(re.E, re.T))) continue;
+                    double m = re.Nd < 0 ? Math.Min(gm[1], re.E) : Math.Max(gm[0], re.E);
+                    muro = muro == null ? m : (re.Nd < 0 ? Math.Max(muro.Value, m) : Math.Min(muro.Value, m));
+                }
                 foreach (var v in r.Piv)
                 {
                     int j = v.I; double pv = v.Precio;
@@ -249,6 +259,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                     if (fuera) continue;
                     // solo los que quedan ENTRE la entrada y el objetivo: los únicos que pueden descartar el reingreso (Kris, 07/10/2026)
                     if (re.Nd < 0 ? pv <= re.T : pv >= re.T) continue;
+                    if (muro != null && (re.Nd < 0 ? pv <= muro.Value : pv >= muro.Value)) continue;
                     int roto = -1;
                     for (int m = j + 1; m <= corte; m++)
                         if (bajo ? D[m].C < pv : D[m].C > pv) { roto = m; break; }

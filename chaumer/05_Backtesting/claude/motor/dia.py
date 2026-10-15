@@ -96,6 +96,15 @@ def dibujar(dia, salida, datos):
     # seguian VIVOS en la vela del reingreso y quedan del lado del objetivo.
     for (ir, er, tr, ndr) in r.get('reingresos', []):
         if ir > corte_z: continue
+        # Ni los que quedan DETRAS de una zona viva del camino: el precio choca antes con la zona, y el punto
+        # no aporta nada (operador, 15/10/2026, el de la 9:48 tras la resistencia de la 9:44).
+        muro = None
+        for z in Z:
+            if z.i > ir or (z.fin is not None and z.fin <= ir): continue
+            zl, zh = z.en(ir)
+            if not (zh > min(er, tr) and zl < max(er, tr)): continue
+            m_ = min(zh, er) if ndr < 0 else max(zl, er)
+            muro = m_ if muro is None else (max(muro, m_) if ndr < 0 else min(muro, m_))
         for (j, pv) in r['piv']:
             if j >= ir: continue
             bajo = abs(pv - D[j]['l']) < 1e-9
@@ -106,6 +115,7 @@ def dibujar(dia, salida, datos):
             # el reingreso (lector._punto_de_referencia). Los de mas alla del objetivo no deciden nada
             # (operador, 07/10/2026, sobre las mechas de 8:32 y 8:34).
             if (pv <= tr) if ndr < 0 else (pv >= tr): continue
+            if muro is not None and ((pv <= muro) if ndr < 0 else (pv >= muro)): continue
             roto = None
             for m in range(j+1, corte+1):
                 if (D[m]['c'] < pv) if bajo else (D[m]['c'] > pv):
