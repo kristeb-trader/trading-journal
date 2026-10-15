@@ -44,6 +44,10 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
   bot y la vista piden el premercado al servidor (diseño v1.14) y la vista dibuja las zonas de premercado desde donde
   nacen. **Kris:** copiar `ChaumerNT.cs` (AddOns), `BotChaumer.cs` (Strategies), `VistaMotorChaumer.cs` (Indicators), un F5
   fuera de la ventana
+- [x] **Plan 3.48** (15/10, Kris): si la ventana abre dentro de una zona de premercado, su salida cuenta como su primer
+  traspaso; traspasada luego en el otro sentido, inválida. Plan (`633b871`) y los dos motores (sello `L:1cc3609c…`). Ningún
+  día del histórico cambia. **Kris:** copiar `MotorChaumer.cs` y F5 (editor y gráfico) **después de las 10:30**.
+  **Claude:** a las 10:32, con las velas del 15/10, comprobar que la zona de la 7:31 muere a las 8:35 y qué cambia
 - [x] **Plan 3.47** (14/10, Kris): el reingreso necesita una zona activa más allá del objetivo, a la que ir a testear
   (cualquiera, también de premercado, sin distancia máxima). Plan (`fb3223d`), portal (`8e3dd48`), los dos motores con
   sello `L:c34779e2…` (`924843c`, 70/70). Cambian: 14/10 STOP −65,50 → Reingreso bajista 8:49 TARGET +34,25; 08/07 → no opera
