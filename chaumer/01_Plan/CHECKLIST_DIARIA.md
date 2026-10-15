@@ -3,7 +3,7 @@
 > **Se ejecuta de arriba abajo. No se decide nada que no esté aquí.**
 > Cada línea cita su regla. Si una respuesta es **NO** donde dice parar, **se para** — no se evalúa, no se matiza.
 
-**Versión del plan:** 3.47 · 2026-10-14 · **34 reglas**
+**Versión del plan:** 3.48 · 2026-10-15 · **34 reglas**
 
 ---
 
@@ -45,7 +45,7 @@
 
 | ☐ | Comprobación | Regla |
 |---|---|---|
-| ☐ | **Al abrir:** cada zona de premercado **por debajo** del precio de apertura → **soporte**; **por encima** → **resistencia**. Si abre **dentro**, no es ninguna de las dos hasta que el precio salga con rompimiento + consecución. Lo anterior a la apertura no cuenta | `R-15` |
+| ☐ | **Al abrir:** cada zona de premercado **por debajo** del precio de apertura → **soporte**; **por encima** → **resistencia**. Si abre **dentro**, no es ninguna de las dos hasta que el precio salga con rompimiento + consecución, **y esa salida cuenta como su primer traspaso**: si luego la traspasa en el otro sentido, queda **inválida**. Lo anterior a la apertura no cuenta | `R-15`, `R-21` |
 | ☐ | ¿La zona candidata cae dentro de una **banda ya gastada** hoy? → **no se marca** | `R-17` |
 | ☐ | ¿Hay una zona viva con **rompimiento esperando consecución** entre el precio y la zona candidata? → **no se marca** | `R-18` |
 | ☐ | El rompimiento se lee por la **mecha**, no por el cierre | `R-20` |

@@ -1,6 +1,6 @@
 # FICHA DE MARCADO — generada automáticamente
 
-> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-10-14 con `generar_ficha.py`.
+> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-10-15 con `generar_ficha.py`.
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
@@ -269,7 +269,7 @@ En la ventana de premercado —desde las `PREMERCADO_INICIO` del día anterior h
 - **El umbral:** `UMBRAL_VOL`, sobre la barra del indicador Volume Up Down (`R-03`). Es un **parámetro ajustable**, no un número fijo del método: lo fija el operador y **no se cambia con la sesión empezada**.
 - **Se marcan TODAS las velas que superen el umbral,** sin seleccionar. No solo el extremo del grupo; `R-13` fusiona las que se tocan.
 - **El color decide dónde va la zona:** vela alcista → sobre la **mecha superior**; vela bajista → sobre la **mecha inferior**.
-- **La apertura decide si es soporte o resistencia.** Con la apertura de la primera vela de la ventana (`R-07`): la zona que queda **por debajo** es **soporte**; la que queda **por encima**, **resistencia**. Si esa vela abre **dentro** de una zona, la zona no es ni una cosa ni la otra hasta que el precio salga de ella con **rompimiento y consecución** (`R-18`): si sale por arriba queda soporte, y si sale por abajo, resistencia.
+- **La apertura decide si es soporte o resistencia.** Con la apertura de la primera vela de la ventana (`R-07`): la zona que queda **por debajo** es **soporte**; la que queda **por encima**, **resistencia**. Si esa vela abre **dentro** de una zona, la zona no es ni una cosa ni la otra hasta que el precio salga de ella con **rompimiento y consecución** (`R-18`): si sale por arriba queda soporte, y si sale por abajo, resistencia. **Esa salida cuenta como su primer traspaso** (`R-21`): si después el precio la traspasa también en el otro sentido —rompimiento y consecución—, la zona queda superada en las dos direcciones y es **inválida**.
 - **Todo se lee desde la primera vela de la ventana,** ella incluida. Lo que haga el precio con una zona de premercado **antes** de la apertura no cuenta: ni rompimientos ni consecuciones.
 - **Los límites:** del borde del cuerpo al extremo de la mecha, igual que `R-09`.
 - **Después se comporta como cualquier zona:** `R-21`, `R-10`, `R-11`, `R-12`, `R-13` y `R-14` aplican sin excepción. También hace de **borde de banda** para `R-17`.
