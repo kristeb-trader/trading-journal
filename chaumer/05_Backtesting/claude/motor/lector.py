@@ -358,9 +358,11 @@ def leer_sesion(V, dia, minimo=30):
                     if z.tipo=='P':
                         # R-15 (28/09/2026): la zona de premercado dentro de la que abrio la
                         # ventana toma su papel al salir: por arriba soporte, por abajo
-                        # resistencia. Nace ahi, con el precio a un lado y sin traspasos.
+                        # resistencia. Plan 3.48 (15/10/2026): ESA SALIDA ES SU PRIMER TRASPASO
+                        # (hasta hoy nacia sin traspasos): si luego la traspasa en el otro
+                        # sentido, queda superada en las dos direcciones e invalida (R-21).
                         z.tipo = 'S' if d=='arriba' else 'R'
-                        z.arriba=False; z.abajo=False; z.i_papel=i
+                        z.arriba = d=='arriba'; z.abajo = d=='abajo'; z.i_papel=i
                         log.append(f"{col(k)//100}:{k['t'][2:4]} la zona de premercado "
                                    f"{z.lo:.2f}-{z.hi:.2f} sale {d}: queda como "
                                    f"{'soporte' if z.tipo=='S' else 'resistencia'}")
@@ -437,7 +439,7 @@ def leer_sesion(V, dia, minimo=30):
                 p2=z.pend2
                 if p2 is not None and p2[1] < i and ((k['h'] > p2[2]) if p2[0]=='arriba' else (k['l'] < p2[2])):
                     z.tipo = 'S' if p2[0]=='arriba' else 'R'
-                    z.arriba=False; z.abajo=False; z.i_papel=i; z.pend2=None
+                    z.arriba = p2[0]=='arriba'; z.abajo = p2[0]=='abajo'; z.i_papel=i; z.pend2=None   # plan 3.48
                     log.append(f"{col(k)//100}:{k['t'][2:4]} la zona de premercado "
                                f"{z.lo:.2f}-{z.hi:.2f} sale {p2[0]}: queda como "
                                f"{'soporte' if z.tipo=='S' else 'resistencia'}")

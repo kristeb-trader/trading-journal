@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:e31bf640f7b93ec3 C:49aec5952aba371f";
+        public const string SELLO = "L:1cc3609c82551926 C:df10f820c2427cba";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -398,7 +398,7 @@ namespace NinjaTrader.NinjaScript
                             if (z.Tipo == "P")
                             {
                                 z.Tipo = d == "arriba" ? "S" : "R";
-                                z.Arriba = false; z.Abajo = false; z.IPapel = i;
+                                z.Arriba = d == "arriba"; z.Abajo = d == "abajo"; z.IPapel = i;   // plan 3.48: la salida es su primer traspaso
                                 log.Add(Hh(k) + " la zona de premercado " + F2(z.Lo) + "-" + F2(z.Hi) + " sale " + d + ": queda como "
                                         + (z.Tipo == "S" ? "soporte" : "resistencia"));
                             }
@@ -451,7 +451,7 @@ namespace NinjaTrader.NinjaScript
                         if (p2 != null && p2.I < i && (p2.Dir == "arriba" ? k.H > p2.Ex : k.L < p2.Ex))
                         {
                             z.Tipo = p2.Dir == "arriba" ? "S" : "R";
-                            z.Arriba = false; z.Abajo = false; z.IPapel = i; z.Pend2 = null;
+                            z.Arriba = p2.Dir == "arriba"; z.Abajo = p2.Dir == "abajo"; z.IPapel = i; z.Pend2 = null;   // plan 3.48
                             log.Add(Hh(k) + " la zona de premercado " + F2(z.Lo) + "-" + F2(z.Hi) + " sale " + p2.Dir + ": queda como "
                                     + (z.Tipo == "S" ? "soporte" : "resistencia"));
                         }
