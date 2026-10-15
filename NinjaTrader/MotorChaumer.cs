@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:1cc3609c82551926 C:df10f820c2427cba";
+        public const string SELLO = "L:a78eddb06afbebb0 C:bb48ac9bf491171e";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -101,6 +101,7 @@ namespace NinjaTrader.NinjaScript
             public int Dir;                                // +1 / -1
             public int? RIni, RFin;
             public List<Hist> Historia;
+            public List<int> Cierres = new List<int>();   // velas en que se estiró y su rompimiento se cerró (R-10, plan 3.45)
 
             public Zona(double lo, double hi, string tipo, int i, string origen, int? iOrg)
             {
@@ -443,6 +444,7 @@ namespace NinjaTrader.NinjaScript
                             // Con la apéndice el rompimiento sigue pendiente (R-20); si la zona se estira, se CIERRA:
                             // hace falta un rompimiento nuevo de su borde nuevo con su propia consecución (plan 3.45, R-10)
                             z.Pend = estirada ? null : new Pend { Dir = d, I = ir, Ex = ex, Hecho = true };
+                            if (estirada) z.Cierres.Add(i);   // el registro de setups también lo cierra (15/10/2026)
                         }
                     }
                     if (z.Tipo == "P" && z.Pend != null && !resuelto)
@@ -829,6 +831,11 @@ namespace NinjaTrader.NinjaScript
             for (int i = b; i <= fin; i++)
             {
                 var k = D[i];
+
+                // ---------- R-10, plan 3.45: al estirarse la zona, el rompimiento que la estiró se cierra ----------
+                // también en el registro de los setups (15/10/2026): si no, el rompimiento nuevo no se anota
+                foreach (var z in Z)
+                    if (z.Cierres.Contains(i) && z.Roto != null && !z.Consec) { z.Roto = null; z.ReinOk = false; }
 
                 // ---------- consecución de rompimientos previos ----------
                 foreach (var z in Z)

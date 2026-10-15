@@ -157,6 +157,7 @@ class Zona:
         self.dir=0                                # sentido de esa corrida: +1 / -1
         self.r_ini=None; self.r_fin=None          # retroceso que la origina
         self.hist=[(i,lo,hi)]                     # geometria a lo largo del dia
+        self.cierres=[]                           # velas en que se estiro y su rompimiento se cerro (R-10, plan 3.45)
     def en(self,i):
         g=[(j,a,b) for (j,a,b) in self.hist if j<=i]
         return (g[-1][1],g[-1][2]) if g else (self.lo,self.hi)
@@ -430,6 +431,7 @@ def leer_sesion(V, dia, minimo=30):
                     # y, como su consecucion es el borde nuevo, pasar 1 tick de la zona estirada
                     # ya la daba por traspasada (07/10: la resistencia de las 8:32 murio a las 9:28).
                     z.pend = None if estirada else (d,ir,ex,True)
+                    if estirada: z.cierres.append(i)   # el registro de setups tambien lo cierra (15/10/2026)
             if z.tipo=='P' and z.pend is not None and not resuelto:
                 # R-15 (30/09/2026, jornada del 8/09): una zona sin papel sale por el lado que PRIMERO
                 # consiga rompimiento + consecucion. Hasta hoy, anotado un lado, el motor ya no miraba el
@@ -784,6 +786,14 @@ def detectar_setups(res, solo_reingresos=False):
 
     for i in range(b, fin+1):
         k=D[i]
+
+        # ---------- R-10, plan 3.45: al estirarse la zona, el rompimiento que la estiro se cierra ----------
+        # La vigencia (leer_sesion) ya lo cerraba; este registro, el de los setups, no: el rompimiento viejo
+        # seguia anotado y el NUEVO no se registraba, asi que su consecucion y su reingreso eran invisibles.
+        # Caso: 15/10/2026, la R de la 8:44 se estira a las 8:51; rompe 9:11, consecucion 9:12, reingreso 9:13.
+        for z in Z:
+            if i in z.cierres and z.roto and not z.consec:
+                z.roto=None; z.rein_ok=False
 
         # ---------- consecucion de rompimientos previos ----------
         for z in Z:
