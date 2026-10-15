@@ -44,6 +44,9 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
   bot y la vista piden el premercado al servidor (diseño v1.14) y la vista dibuja las zonas de premercado desde donde
   nacen. **Kris:** copiar `ChaumerNT.cs` (AddOns), `BotChaumer.cs` (Strategies), `VistaMotorChaumer.cs` (Indicators), un F5
   fuera de la ventana
+- [x] **Motor, 15/10:** al estirarse la zona, el rompimiento se cierra también en el registro de los setups (`910c9c2`,
+  sello `L:a78eddb0…`, compilado por Kris). Validados por Kris: el reingreso bajista del 15/10 a las 9:13, descartado por el
+  punto de referencia 29.780,25; y el que aparece el 01/07 (Reingreso bajista 9:09, consecución en la misma vela, STOP −26,75)
 - [x] **Plan 3.48** (15/10, Kris): si la ventana abre dentro de una zona de premercado, su salida cuenta como su primer
   traspaso; traspasada luego en el otro sentido, inválida. Plan (`633b871`) y los dos motores (sello `L:1cc3609c…`). Ningún
   día del histórico cambia. **Kris:** copiar `MotorChaumer.cs` y F5 (editor y gráfico) **después de las 10:30**.
