@@ -71,7 +71,7 @@ no existía: NinjaTrader se abrió a las 8:01 y la vela de las 8:03, armada en v
   bajista 8:49 TARGET +34,25) y el 08/07 (→ no opera).
 
 **Aprendido.** Tras compilar en NinjaTrader hace falta **F5 en el gráfico** para que el indicador cargue la versión
-nueva. Y el motor **no fusiona** las zonas de premercado que se tocan (solo el 11/09 en 72 días): queda en tareas.
+nueva. Y el motor **no fusionaba** las zonas de premercado que se tocan (11/09 y 14/07): arreglado el mismo día (`51f382c`).
 
 ## Checkpoint 2026-10-13 — Las 3 gráficas: sin scroll, en dos filas y con su resultado
 

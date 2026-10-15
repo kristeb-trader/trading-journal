@@ -56,8 +56,8 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
   (cualquiera, también de premercado, sin distancia máxima). Plan (`fb3223d`), portal (`8e3dd48`), los dos motores con
   sello `L:c34779e2…` (`924843c`, 70/70). Cambian: 14/10 STOP −65,50 → Reingreso bajista 8:49 TARGET +34,25; 08/07 → no opera
 - [x] **Kris** (14/10): `MotorChaumer.cs` con el sello `L:c34779e2…` compilado. Validado el reingreso nuevo del 14/10 (8:49, zona del CPI): **coincide**
-- [ ] **El motor no fusiona las zonas de premercado que se tocan** (la regla de superposición): solo el 11/09 en 72 días.
-  Arreglarlo en los dos motores cuando Kris lo apruebe
+- [x] **Las zonas de premercado que se tocan se fusionan** (14/10, `51f382c`): la regla de superposición también en el
+  premercado, en los dos motores. Cambió el marcado del 11/09 y el 14/07, ninguna operación
 - [x] **Plan 3.46** (09/10): cierre por hora a las 16:50 de Nueva York, en el plan, el portal, los dos motores (caso sintético en la sincronía), el bot, la cadena, `bot_operaciones` y el calendario
 - [ ] **Kris, fuera de la ventana:** copiar `MotorChaumer.cs`, `CadenaDiaria.cs` (a `Custom\AddOns\`), `BotChaumer.cs` (a `Custom\Strategies\`) y `VistaMotorChaumer.cs` (a `Custom\Indicators\`), y un solo F5. Sin el motor nuevo, el bot y la vista dicen «motor desincronizado»
 - [ ] **§12 D2** `VistaMotorChaumer`: código hecho (07/10). **Kris:** copiar a `Custom/Indicators`, F5 y el Market Replay del 23/09 y el 02/10 con el bot y la vista
