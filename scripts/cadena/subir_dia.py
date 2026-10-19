@@ -356,6 +356,10 @@ def procesar(fecha, umbral, desde, fed_set, huella_motor):
         avisos.extend(f'  {x}' for x in dif_bot[:12])
         if len(dif_bot) > 12: avisos.append(f'  … y {len(dif_bot) - 12} más')
         if dif_bot: log(f'{fecha}  velas del bot: {len(dif_bot)} distintas del servidor')
+        try:        # una nota en el .meta.json del bot (p. ej. una vela reconstruida a mano, 19/10/2026) va a los avisos
+            nota = json.load(open(os.path.join(DIA_BOT, f'{fecha}.meta.json'), encoding='utf-8')).get('nota')
+            if nota: avisos.append(nota)
+        except Exception: pass
     if manual and auto:
         dif = comparar(manual, auto, d)
         if dif: avisos.append(dif); log(f'{fecha}  ⚠️ {dif}')
