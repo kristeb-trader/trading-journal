@@ -83,7 +83,7 @@ sobre la implementación.** Ya pasó que se implementara otra cosa y hubo que re
 | `sesion_checklist` | 1 fila = sesión × regla. **Sin fila = N/A**, no cuenta en disciplina. La sesión nace **limpia** (D-013) |
 | `catalogo_reglas` | Rulebook canónico. Tres ejes deciden si una regla se evalúa: `bloquea_go`, `aplica_si` (siempre/dia_fomc/hay_noticia), `evidencia` (auto/declarada). `setup` NULL = común. **`etapa`** decide en qué disciplina cuenta. La etapa 2 (`origen` plan_*) la escribe **solo** `scripts/plan/sincronizar.mjs`: ni a mano ni desde la app |
 | `diagnostico_errores` | `regla_codigo` = la regla que el error contradice → cuenta incumplida **aunque la casilla esté marcada**. NULL = psicológico |
-| `sesion_noticias` | UNIQUE (fecha, hora): el CPI son 4 cifras a las 7:30 pero **un** evento con **una** ventana (±5 min) |
+| `sesion_noticias` | UNIQUE (fecha, hora): el CPI son 4 cifras a las 7:30 pero **un** evento con **una** ventana (±5 min). Se escribe **solo desde el Diario** («Guardar noticias», antes de la apertura: el bot las lee al armarse), D-040 |
 | `objetivos` | Fila única. `cuenta_principal` alimenta P&L/Análisis/Coach y la lee el indicador NT8. `limite_perdida_dia`, **obsoleto** |
 | `chaumer_operativas` | **Solo el lado de Chaumer**: el de Kris se lee de `sesiones`+`trades`. `hora_entrada` en hora Colombia, **sin** `horaEt()` (D-017); `puntos` en puntos. El veredicto se calcula, no se guarda |
 | `bt_*` | La bitácora de backtesting: nunca se mezcla con `trades` ni `apex_trades`. Se escribe con `bt_guardar_jornada` (una transacción, calcula el P&L). `pnl` **neto y congelado**: una jornada corregida **conserva** sus valores; `puntos` siempre positivo (el signo, `resultado`); `hora` en hora Colombia. El portal lee `portal_bt_*` |
@@ -140,13 +140,14 @@ js/backtesting.js Bitácora de backtesting: registrar, corregir, borrar (bt_*)
 js/account-filter.js  Filtro de cuentas compartido (nombre COMPLETO)
 js/table.js       Trades · js/data.js  Datos (catálogos) · js/gallery.js  Imágenes
 css/styles.css    Dark mode + responsive
-NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) · ChecklistChaumer ·
+NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) ·
                   RR (Risk Reward en PUNTOS) · CadenaDiaria (AddOn: exporta el día y lanza el puente) ·
                   MarcacionChaumer (el zigzag blanco, en el gráfico manual de Kris: independiente del bot, no se toca) ·
                   MotorChaumer (lector.py en C#, sellado: lo usa el bot) · pruebas/ArnesMotor ·
                   BotChaumer (la estrategia: opera lo que marca el motor, solo en su lista blanca) ·
                   VistaMotorChaumer (el motor del bot dibujado en vivo: zonas, zigzag, operación) ·
-                  ChaumerNT (lo común del bot y la vista: config, sello, Supabase, velas UTC)
+                  ChaumerNT (lo común del bot y la vista: config, sello, Supabase, velas UTC) ·
+                  archivo/ChecklistChaumer (archivado el 19/10, no se instala: las noticias van por el Diario, D-040)
 scripts/bot/      sincronia.py: los dos motores, vela a vela, y el SELLO · scripts/hooks/pre-commit lo exige ·
                   comparar.py: el CSV del Strategy Analyzer contra el motor
 scripts/cadena/   El puente de la cadena diaria: motor → gráfico → ficha en Supabase → portal;

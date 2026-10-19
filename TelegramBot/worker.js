@@ -67,8 +67,8 @@ const SETUPS_FALLBACK = [
   { codigo: 'reingreso_bajista',    nombre: 'Reingreso Bajista' },
 ];
 
-// (El checklist ya no se llena en el bot; lo maneja el Add-On ChecklistChaumer de
-// NinjaTrader, que escribe directo en sesiones.checklist.)
+// (El checklist ya no se llena en el bot: se marca en el Diario del Journal. El AddOn
+// ChecklistChaumer de NinjaTrader que lo hacía está archivado desde el 19/10/2026, D-040.)
 
 // ── Helpers de Telegram API ─────────────────────────────────────────────────
 async function tg(token, method, body) {
@@ -227,9 +227,9 @@ function buildResumen(data) {
 
 // ── Supabase upsert de sesión ────────────────────────────────────────────────
 async function saveSession(data, env) {
-  // El checklist NO lo maneja el bot: lo escribe el Add-On ChecklistChaumer de
-  // NinjaTrader en `sesiones.checklist`. Como el upsert es merge-duplicates, al no
-  // enviar `checklist` ni las columnas `chk_*` se conservan las que ya escribió el Add-On.
+  // El checklist NO lo maneja el bot: vive en `sesion_checklist` y se marca en el Diario.
+  // Como el upsert es merge-duplicates, al no enviar `checklist` ni las columnas `chk_*`
+  // se conserva lo que ya hubiera.
   const payload = {
     sesion_date:       data.sesion_date,
     no_opero:          data.no_opero         ?? false,
@@ -249,8 +249,8 @@ async function saveSession(data, env) {
     // overnight precio_max_pre/min_pre) — los escribe el indicador
     // SupabaseDailyLevels. Mandarlos aquí (en null) los borraría.
     se_conecto:            data.se_conecto            ?? true,
-    // OJO: NO se incluyen soportes_naranja / resistencias_naranja - los escribe el
-    // AddOn ChecklistChaumer en premercado. Mandarlos aqui (en []) los BORRARIA,
+    // OJO: NO se incluyen soportes_naranja / resistencias_naranja: ya no los escribe nadie
+    // (5 oct), pero los de días viejos siguen ahí. Mandarlos (en []) los BORRARIA,
     // exactamente igual que pasaria con los niveles de precio.
     noticias:              data.noticias              ?? null,
     // Registrar el día abre el candado de la ficha del motor (fase 7). Un trigger
@@ -491,8 +491,7 @@ async function handleCallback(cbq, env) {
   }
 
   // ── Setup seleccionado → directo al análisis ──────────────────────────────
-  // El checklist ya NO se llena en el bot (lo maneja el Add-On ChecklistChaumer
-  // de NinjaTrader, que escribe en sesiones.checklist).
+  // El checklist ya NO se llena en el bot (se marca en el Diario del Journal).
   if (action.startsWith('setup_')) {
     const codigo = action.slice(6);
     const setups = await fetchSetups(env);
@@ -526,8 +525,7 @@ async function handleCallback(cbq, env) {
 
   // ── Flujo principal ───────────────────────────────────────────────────────
   switch (action) {
-    // Las zonas naranjas ya NO se piden aqui (ago 2026): las escribe el AddOn
-    // ChecklistChaumer en premercado, en el momento de marcarlas en el grafico.
+    // Las zonas naranjas ya NO se piden aqui (ago 2026): el plan nuevo no las usa.
     case 'opero_si': {
       state.data.no_opero = false;
       state.data.se_conecto = true;
@@ -641,8 +639,8 @@ async function handleText(msg, env) {
     }
 
     // ── Premercado (flujo viejo) ──
-    // El bot ya NO pregunta zonas naranjas ni noticias: las escribe el AddOn
-    // ChecklistChaumer mientras se marcan en el grafico. Estos 3 pasos se
+    // El bot ya NO pregunta zonas naranjas ni noticias: las noticias se guardan en el
+    // Diario del Journal («Guardar noticias», D-040). Estos 3 pasos se
     // conservan SOLO por si quedo un estado a medias en KV: no preguntan nada,
     // solo dejan avanzar para que la sesion se pueda cerrar.
     case STEPS.PRE_SOPORTES:

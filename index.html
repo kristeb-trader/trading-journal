@@ -373,9 +373,17 @@
                 <div class="nr-block">
                   <div class="nr-title">Noticias rojas <span class="lbl-hint">— no se opera ±5 min alrededor de cada una</span></div>
                   <div id="noticiasRojasList" class="nr-list"></div>
-                  <button type="button" class="btn-add-nr" id="addNoticiaRoja">
-                    <i class="ti ti-plus"></i> Añadir noticia roja
-                  </button>
+                  <!-- Se guardan al momento, sin enviar el Diario: el bot de NT8 las lee al
+                       armarse, antes de la apertura (docs/disenos/2026-10-19-noticias-sin-addon.md). -->
+                  <div class="nr-acciones">
+                    <button type="button" class="btn-add-nr" id="addNoticiaRoja">
+                      <i class="ti ti-plus"></i> Añadir noticia roja
+                    </button>
+                    <button type="button" class="btn-add-nr btn-save-nr" id="guardarNoticias" disabled>
+                      <i class="ti ti-device-floppy"></i> Guardar noticias
+                    </button>
+                    <span class="nr-estado" id="nrEstado" aria-live="polite"></span>
+                  </div>
                 </div>
                 <div class="premkt-puntos" id="premktPuntos">
                   <span class="rg">Rango ayer <b id="rangoPrevDay">— pts</b></span>

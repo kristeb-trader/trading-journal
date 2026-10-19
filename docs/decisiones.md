@@ -10,6 +10,37 @@
 
 ---
 
+## D-040 — Se archiva el AddOn ChecklistChaumer; las noticias rojas se guardan desde el Diario
+
+**Decisión (Kris, 19/10/2026).** El AddOn `ChecklistChaumer` de NinjaTrader se **archiva**: pasa a
+`NinjaTrader/archivo/` y deja de instalarse. El código se conserva, no se borra. Las **noticias rojas**, lo
+único suyo que se seguía necesitando, se guardan desde **Sesión → Diario → Noticias rojas**, con el botón
+**«Guardar noticias»**, que las escribe al momento, sin enviar el Diario. Diseño:
+`docs/disenos/2026-10-19-noticias-sin-addon.md`.
+
+**Motivo.** En la etapa 2 solo quedaban dos reglas para marcar a mano (`p2_corrida_fluida` y
+`p2_punto_referencia`), y Kris ya las tiene interiorizadas: marcarlas no aportaba. El GO
+(`sesiones.checklist_go_at`) no lo lee nadie, porque el bot tiene `exigir_go = false`. Las noticias, en cambio,
+sí hacen falta **antes de la apertura**: el bot las lee al armarse y la cadena de las 10:32 las copia para el
+motor (R-35). Por eso el Diario necesitaba guardarlas al instante y no solo al final de la sesión.
+
+**Qué cambia.**
+- Las 2 reglas manuales, si no se marcan en el Diario, quedan sin fila, y sin fila son N/A (D-013): la
+  disciplina de la etapa 2 se mide con las reglas automáticas.
+- `DB.saveNoticias` ya no borra todo para volver a insertar: hace upsert por (fecha, hora) y luego borra solo
+  las que se quitaron, para que el bot nunca lea la tabla vacía a medias. Dos noticias a la misma hora se
+  funden en una fila con « / », como hacía el AddOn.
+- La fila del día en `sesiones` la crea el botón (`DB.asegurarSesion`) sin `registrada_at`: guardar noticias
+  no cuenta como registrar el día ni abre el candado del motor.
+
+**Alternativas descartadas.**
+- **Un comando en el bot de Telegram** (`/noticia 07:30 CPI`): es más cómodo desde el celular, pero es código
+  nuevo en el Worker. Queda para más adelante si el Diario se queda corto.
+- **Un AddOn reducido, solo de noticias**: era seguir dependiendo de NinjaTrader para algo que no es de
+  NinjaTrader.
+
+---
+
 ## D-039 — La cuenta real está configurada, pero la principal sigue siendo Sim101
 
 **Decisión (Kris, 12/10/2026).** La cuenta real de NinjaTrader (se llama `334118`, no `APEX-…`) ya está

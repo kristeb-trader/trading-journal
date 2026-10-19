@@ -40,7 +40,7 @@ solo porque el mercado sea de NY.
 |---|---|
 | `SupabaseAutoExport.cs` | Exporta trades. Una instancia monitorea varias cuentas |
 | `SupabaseDailyLevels.cs` | Escribe los niveles de referencia del día en `sesiones` |
-| `ChecklistChaumer.cs` | Pinta el checklist en el gráfico; lee de `catalogo_reglas` y `catalogo_setups` |
+| `archivo/ChecklistChaumer.cs` | **Archivado el 19/10/2026, no se instala** (D-040). Era el panel del checklist, las noticias y el GO. Las noticias se guardan desde el Diario («Guardar noticias»); el GO ya no lo escribe nadie, así que `exigir_go` tiene que seguir en `false` |
 | `CadenaDiaria.cs` | AddOn sin ventana: exporta las velas del día y lanza el puente del motor (fase 7) |
 | `MarcacionChaumer.cs` | El zigzag blanco del motor en tiempo real, con su propia copia `ZigzagChaumer` (probada en 100 días el 5 oct). **Es el indicador del gráfico operativo de Kris y no se toca sin su sí; independiente del bot** (07/10/2026: se restauró tal cual tras un día dependiendo de `MotorChaumer`). `scripts/bot/sincronia.py` compara su zigzag con el motor sin modificarlo |
 | `MotorChaumer.cs` | **`lector.py` en C#**, traducción literal y sellada (D-038). Lo usa el bot. Va en `Custom\AddOns\`. Se cambia junto con `lector.py`: `.claude/rules/bot.md` |
@@ -59,10 +59,10 @@ F5: `BotChaumer` y `VistaMotorChaumer` no compilan sin `MotorChaumer` y `Chaumer
 | Carpeta de `Documentos\NinjaTrader 8\bin\Custom\` | Archivos |
 |---|---|
 | `Indicators\` | `SupabaseAutoExport.cs` · `SupabaseDailyLevels.cs` · `MarcacionChaumer.cs` · `VistaMotorChaumer.cs` |
-| `AddOns\` | `ChecklistChaumer.cs` · `CadenaDiaria.cs` · `MotorChaumer.cs` · `ChaumerNT.cs` |
+| `AddOns\` | `CadenaDiaria.cs` · `MotorChaumer.cs` · `ChaumerNT.cs` |
 | `Strategies\` | `BotChaumer.cs` |
 | `DrawingTools\` | `RR.cs` |
-| **No se instala** | `pruebas/ArnesMotor.cs` (solo para `scripts/bot/sincronia.py`) |
+| **No se instala** | `pruebas/ArnesMotor.cs` (solo para `scripts/bot/sincronia.py`) · `archivo/ChecklistChaumer.cs` (archivado, D-040) |
 
 En `Documentos\NinjaTrader 8\` (fuera del repo):
 
@@ -70,8 +70,7 @@ En `Documentos\NinjaTrader 8\` (fuera del repo):
 |---|---|---|
 | `supabase-service-key.txt` | La service_role key. **Secreta: no está en git.** Sin ella no escriben a Supabase ni los indicadores, ni el bot, ni la cadena | **No**: copiarla del gestor de contraseñas |
 | `cadena-diaria.json` | Carpeta de las velas, Python y el puente | Sí |
-| `bot-chaumer.json` | Ruta del repositorio, lista blanca de cuentas, exigir GO | Sí |
-| `checklist-chaumer-config.json` | Posición y tamaño del panel del checklist | Sí |
+| `bot-chaumer.json` | Ruta del repositorio, lista blanca de cuentas, exigir GO (**en `false`**: sin el AddOn nadie sella el GO) | Sí |
 
 Además: zona horaria de NT **Bogotá (UTC−5)**; la cuenta de simulación **`SimBot`** creada a mano; el repositorio en
 `E:\Proyectos\Trading Journal` (el bot y la vista leen de él `lector.py`, `MotorChaumer.cs` y `reglas.json` para el
@@ -163,9 +162,9 @@ se conserven al guardar.
 
 ## Guarda de fin de semana
 
-`ChecklistChaumer` tiene `EsFinDeSemana()` en `UpsertSesionAsync` / `UpsertChecklistAsync`:
-abrir NT8 un sábado ya no deja filas fantasma en `sesiones`. Ver
-`.claude/rules/disciplina.md`, invariante 1.
+`ChecklistChaumer` (archivado el 19/10/2026) tenía `EsFinDeSemana()` para no dejar filas fantasma
+en `sesiones` al abrir NT8 un sábado. Las que ya dejó antes siguen en la BD: por eso sigue haciendo falta
+el filtro de `.claude/rules/disciplina.md`, invariante 1.
 
 
 ## Anti-replay de ejecuciones (18 ago 2026) — trades fantasma

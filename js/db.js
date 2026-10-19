@@ -659,8 +659,8 @@ const DB = {
 
   // ── Noticias rojas del día (sesion_noticias) ──────────────────────────────
   // Varias por día, cada una con su ventana de ±5 min sobre la ENTRADA del trade.
-  // Un trigger mantiene sincronizado `sesiones.hora_noticia_roja` (texto) para el
-  // Worker y el AddOn, que aún escriben esa columna.
+  // Un trigger mantiene sincronizado `sesiones.hora_noticia_roja` (texto). Desde el
+  // 19/10/2026 se escriben SOLO desde el Diario (el AddOn ChecklistChaumer está archivado).
   async getNoticiasByDate(date) {
     if (!date) return []
     const { data, error } = await supa
@@ -672,17 +672,40 @@ const DB = {
     return (data || []).map(n => ({ ...n, hora: String(n.hora).slice(0, 5) }))
   },
 
-  // Reemplaza el set completo del día (más simple y sin huérfanos que un diff).
+  // Deja el día con la lista tal como se ve: upsert por (fecha, hora) y DESPUÉS borra solo
+  // las que ya no están. Nunca hay un instante con la tabla vacía: el bot de NT8 las lee al
+  // armarse y vería cero noticias. Dos a la misma hora se funden en una fila (UNIQUE fecha +
+  // hora: un evento, una ventana) con los nombres unidos por « / », como hacía el AddOn.
   async saveNoticias(sesionDate, noticias) {
     if (!sesionDate) return
-    const rows = (noticias || [])
-      .filter(n => n && /^\d{1,2}:\d{2}/.test(String(n.hora || '')))
-      .map(n => ({ sesion_date: sesionDate, hora: String(n.hora).slice(0, 5), nombre: (n.nombre || '').trim() || null }))
-    const { error: delErr } = await supa.from('sesion_noticias').delete().eq('sesion_date', sesionDate)
-    if (delErr) { console.warn('No se pudieron limpiar las noticias:', delErr.message); return }
-    if (!rows.length) return
-    const { error } = await supa.from('sesion_noticias').insert(rows)
-    if (error) console.warn('No se pudieron guardar las noticias:', error.message)
+    const porHora = new Map()
+    ;(noticias || []).forEach(n => {
+      const m = /^(\d{1,2}):(\d{2})/.exec(String(n?.hora || ''))
+      if (!m) return
+      const hora = m[1].padStart(2, '0') + ':' + m[2]
+      const nombres = porHora.get(hora) || []
+      const nombre = (n.nombre || '').trim()
+      if (nombre && !nombres.includes(nombre)) nombres.push(nombre)
+      porHora.set(hora, nombres)
+    })
+    const rows = [...porHora].map(([hora, ns]) => ({ sesion_date: sesionDate, hora, nombre: ns.join(' / ') || null }))
+    if (rows.length) {
+      const { error } = await supa.from('sesion_noticias').upsert(rows, { onConflict: 'sesion_date,hora' })
+      if (error) throw new Error('No se pudieron guardar las noticias: ' + error.message)
+    }
+    let borrar = supa.from('sesion_noticias').delete().eq('sesion_date', sesionDate)
+    if (rows.length) borrar = borrar.not('hora', 'in', `(${rows.map(r => `"${r.hora}:00"`).join(',')})`)
+    const { error: delErr } = await borrar
+    if (delErr) throw new Error('No se pudieron quitar las noticias borradas: ' + delErr.message)
+  },
+
+  // La fila del día en `sesiones`, sin tocar nada si ya existe (la exige la FK de
+  // sesion_noticias). Directa, NO por el Worker y SIN `registrada_at`: guardar las noticias
+  // antes de la apertura no cuenta como registrar el día ni abre el candado del motor.
+  async asegurarSesion(sesionDate) {
+    const { error } = await supa.from('sesiones')
+      .upsert({ sesion_date: sesionDate }, { onConflict: 'sesion_date', ignoreDuplicates: true })
+    if (error) throw new Error('No se pudo crear la sesión del día: ' + error.message)
   },
 
   // ── Checklist de disciplina (catálogo dinámico) ───────────────────────────

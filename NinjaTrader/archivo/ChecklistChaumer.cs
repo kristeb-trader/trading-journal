@@ -1,4 +1,10 @@
 // ═══════════════════════════════════════════════════════════════════════════
+//  ⚠️ ARCHIVADO el 19/10/2026 (D-040). NO SE INSTALA en NinjaTrader.
+//  Kris dejó de usarlo: las 2 reglas manuales ya las tiene interiorizadas y el GO no lo
+//  lee nadie (bot-chaumer.json: exigir_go = false). Las noticias rojas, lo único que se
+//  seguía necesitando, se guardan desde el Diario del Journal (botón «Guardar noticias»).
+//  Se conserva tal cual, como referencia, por si algún día se quiere recuperar.
+// ═══════════════════════════════════════════════════════════════════════════
 //  ChecklistChaumer — AddOn de NinjaTrader 8
 //
 //  Panel flotante con el checklist de disciplina (metodología Chaumer, NQ/MNQ)

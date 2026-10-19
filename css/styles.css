@@ -5422,7 +5422,17 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
   transition: all 0.15s;
 }
 .btn-add-nr:hover { border-color: var(--accent); color: var(--accent); }
+.nr-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.btn-save-nr { border-style: solid; }
+.btn-save-nr:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-txt); }
+.btn-save-nr:disabled { opacity: 0.45; cursor: default; }
+.btn-save-nr:disabled:hover { border-color: var(--border); color: var(--text2); }
+.nr-estado { font-size: 0.76rem; color: var(--text3); }
+.nr-estado.sucio { color: var(--warning-txt); }
+.nr-estado.ok    { color: var(--accent-txt); }
+.nr-estado.error { color: var(--red-txt); }
 @media (max-width: 640px) {
+  .nr-estado { flex-basis: 100%; }
   .nr-edit { grid-template-columns: 100px minmax(0,1fr) 28px; row-gap: 4px; }
   .nr-read { flex-wrap: wrap; gap: 4px 12px; }
 }

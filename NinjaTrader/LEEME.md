@@ -1,6 +1,6 @@
 # NinjaTrader — qué hay, qué instalar y cómo se usa
 
-**Actualizado:** 12/10/2026 · Es la referencia para **reinstalar NinjaTrader desde cero** y para recordar qué hace cada
+**Actualizado:** 19/10/2026 · Es la referencia para **reinstalar NinjaTrader desde cero** y para recordar qué hace cada
 pieza. La versión buena de cada archivo es **la de esta carpeta** del repositorio.
 
 ---
@@ -22,7 +22,6 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 
 | Archivo | Qué hace | Cómo se usa | Depende de |
 |---|---|---|---|
-| **ChecklistChaumer** | El **panel flotante del checklist**, sincronizado con el Journal: casillas, noticias rojas y el GO | Control Center → **New → Checklist Chaumer**. Se reinicia solo a las 9:00 de Nueva York | la clave de Supabase |
 | **CadenaDiaria** | Sin ventana. A las **10:32** (11:32 en invierno) exporta las velas del día y lanza el puente: el motor, la ficha en Supabase, el gráfico y la publicación en el portal. Si el motor deja la operación abierta, vuelve a exportar **cada 30 minutos** hasta las 16:50 de Nueva York (la hora del cierre por hora); mientras, el calendario «Claude» la muestra como «abierta» | Nada: arranca solo con NinjaTrader | Python, el repositorio, la clave |
 | **MotorChaumer** | **El motor del plan en C#**: la traducción literal de `lector.py`, **sellada** | No se ve: lo usan el bot y la vista | nada |
 | **ChaumerNT** | Lo común del bot y la vista: configuración, sello, lecturas de Supabase, velas del día | No se ve | `MotorChaumer` |
@@ -44,6 +43,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 | Archivo | Para qué |
 |---|---|
 | `pruebas/ArnesMotor.cs` | Solo lo usa `scripts/bot/sincronia.py` fuera de NinjaTrader, para comparar los dos motores |
+| `archivo/ChecklistChaumer.cs` | **Archivado el 19/10/2026** (D-040): el panel del checklist, las noticias y el GO. Las noticias rojas se guardan ahora en el Journal: **Sesión → Diario → Noticias rojas → «Guardar noticias»**, antes de la apertura. Si estaba instalado: borrar `Custom\AddOns\ChecklistChaumer.cs`, F5, y si se quiere `checklist-chaumer-config.json` |
 
 ---
 
@@ -53,8 +53,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 |---|---|---|
 | `supabase-service-key.txt` | La clave secreta de Supabase (service_role). Sin ella nada escribe en el Journal | **No.** Está en el gestor de contraseñas. **Nunca en el repositorio** (es público) |
 | `cadena-diaria.json` | Configuración de la cadena: carpeta de las velas, Python, el puente | Sí |
-| `bot-chaumer.json` | Configuración del bot y la vista: ruta del repositorio, cuentas permitidas, si exige el GO | Sí |
-| `checklist-chaumer-config.json` | Posición y tamaño del panel del checklist | Sí |
+| `bot-chaumer.json` | Configuración del bot y la vista: ruta del repositorio, cuentas permitidas, si exige el GO. **`exigir_go` en `false`**: el GO lo sellaba el AddOn archivado y ya no lo escribe nadie; en `true`, el bot no se armaría nunca | Sí |
 | `cadena-diaria\registro.txt` · `bot-chaumer\registro.txt` | Lo que hicieron la cadena y el bot. En `bot-chaumer\` quedan también los CSV del Strategy Analyzer | Sí |
 
 ---
@@ -62,7 +61,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 ## 3 · Instalar desde cero
 
 1. **NinjaTrader:** zona horaria **(UTC−05:00) Bogotá** (Tools → Options → General).
-2. **La librería JSON, antes de compilar** (ChecklistChaumer, CadenaDiaria, ChaumerNT y BotChaumer la usan). NinjaTrader
+2. **La librería JSON, antes de compilar** (CadenaDiaria, ChaumerNT y BotChaumer la usan). NinjaTrader
    la trae, pero **no la referencia**: sin este paso salen ~50 errores `CS0246`/`CS0103` con «`Newtonsoft`» y «`JObject`»
    (reinstalación del 12/10/2026).
    1. Copiar `C:\Program Files\NinjaTrader 8\bin\Newtonsoft.Json.dll` a `Documentos\NinjaTrader 8\bin\Custom\`.

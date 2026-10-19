@@ -503,6 +503,7 @@ const SessionForm = (() => {
       document.getElementById(id)?.addEventListener('input', updatePremktPuntos))
     document.getElementById('seConecto')?.addEventListener('change', updatePremercadoVisibility)
     document.getElementById('addNoticiaRoja')?.addEventListener('click', addNoticiaRoja)
+    document.getElementById('guardarNoticias')?.addEventListener('click', guardarNoticias)
     renderNoticiasRojas([])
     updatePremercadoVisibility()
   }
@@ -534,32 +535,32 @@ const SessionForm = (() => {
       </div>`
   }
 
+  const NR_VACIO = '<div class="nr-empty">Sin noticias rojas</div>'
+
+  // Pinta la lista tal como está guardada: el bloque queda "limpio" (sin cambios).
   function renderNoticiasRojas(lista) {
     const cont = document.getElementById('noticiasRojasList')
     if (!cont) return
     const rows = (lista || [])
-    cont.innerHTML = rows.length
-      ? rows.map(filaNoticiaHtml).join('')
-      : '<div class="nr-empty">Sin noticias rojas</div>'
-    wireNoticiasRojas()
+    cont.innerHTML = rows.length ? rows.map(filaNoticiaHtml).join('') : NR_VACIO
+    cont.querySelectorAll('.nr-row').forEach(wireFilaNoticia)
+    setNrEstado('limpio')
   }
 
-  function wireNoticiasRojas() {
+  function wireFilaNoticia(row) {
     const cont = document.getElementById('noticiasRojasList')
-    if (!cont) return
-    cont.querySelectorAll('.nr-row').forEach(row => {
-      // Escribir en los inputs actualiza la cara de lectura de esa misma fila,
-      // para que al guardar no salte de un texto a otro.
-      const hora   = row.querySelector('.nr-hora')
-      const nombre = row.querySelector('.nr-nombre')
-      const hTxt   = row.querySelector('.nr-hora-txt')
-      const nTxt   = row.querySelector('.nr-nombre-txt')
-      hora?.addEventListener('input',   () => { if (hTxt) hTxt.textContent = hora.value || '--:--' })
-      nombre?.addEventListener('input', () => { if (nTxt) nTxt.textContent = nombre.value || 'Sin nombre' })
-      row.querySelector('.nr-del')?.addEventListener('click', () => {
-        row.remove()
-        if (!cont.querySelector('.nr-row')) renderNoticiasRojas([])
-      })
+    // Escribir en los inputs actualiza la cara de lectura de esa misma fila,
+    // para que al guardar no salte de un texto a otro.
+    const hora   = row.querySelector('.nr-hora')
+    const nombre = row.querySelector('.nr-nombre')
+    const hTxt   = row.querySelector('.nr-hora-txt')
+    const nTxt   = row.querySelector('.nr-nombre-txt')
+    hora?.addEventListener('input',   () => { if (hTxt) hTxt.textContent = hora.value || '--:--'; setNrEstado('sucio') })
+    nombre?.addEventListener('input', () => { if (nTxt) nTxt.textContent = nombre.value || 'Sin nombre'; setNrEstado('sucio') })
+    row.querySelector('.nr-del')?.addEventListener('click', () => {
+      row.remove()
+      if (cont && !cont.querySelector('.nr-row')) cont.innerHTML = NR_VACIO
+      setNrEstado('sucio')
     })
   }
 
@@ -568,8 +569,39 @@ const SessionForm = (() => {
     if (!cont) return
     cont.querySelector('.nr-empty')?.remove()
     cont.insertAdjacentHTML('beforeend', filaNoticiaHtml())
-    wireNoticiasRojas()
+    wireFilaNoticia(cont.querySelector('.nr-row:last-child'))
+    setNrEstado('sucio')
     cont.querySelector('.nr-row:last-child .nr-hora')?.focus()
+  }
+
+  // Estado del bloque: limpio (nada que guardar) · sucio · guardando · ok · error.
+  function setNrEstado(estado) {
+    const btn = document.getElementById('guardarNoticias')
+    const el  = document.getElementById('nrEstado')
+    if (!btn || !el) return
+    const hhmm = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false })
+    const txt = { limpio: '', sucio: '● Sin guardar', guardando: 'Guardando…', ok: `✓ Guardadas ${hhmm}`, error: '✕ No se pudo guardar' }
+    el.textContent = txt[estado] ?? ''
+    el.className = 'nr-estado ' + (estado === 'sucio' ? 'sucio' : estado === 'ok' ? 'ok' : estado === 'error' ? 'error' : '')
+    btn.disabled = !(estado === 'sucio' || estado === 'error')
+  }
+
+  // Guarda las noticias YA, sin enviar el Diario: el bot de NT8 las lee al armarse, antes de
+  // la apertura, y la cadena de las 10:32 las copia para el motor (R-35). Sustituye a lo
+  // que hacía el AddOn ChecklistChaumer (archivado el 19/10/2026).
+  async function guardarNoticias() {
+    const fecha = document.getElementById('sesionDate')?.value
+    if (!fecha) { Toast.show('Selecciona una fecha', 'warning'); return }
+    setNrEstado('guardando')
+    try {
+      await DB.asegurarSesion(fecha)
+      await DB.saveNoticias(fecha, getNoticiasRojas())
+      renderNoticiasRojas(await DB.getNoticiasByDate(fecha))   // lo guardado, ya fundido por hora
+      setNrEstado('ok')
+    } catch (err) {
+      setNrEstado('error')
+      Toast.show(err.message, 'error')
+    }
   }
 
   // Lee las filas para guardar en `sesion_noticias`
@@ -785,6 +817,9 @@ const SessionForm = (() => {
     // Premercado
     soportesNaranja?.clear()
     resistenciasNaranja?.clear()
+    // El reset del form no quita las filas: sin esto, un día sin sesión enseñaba las
+    // noticias del anterior, y el botón de guardarlas las copiaría a ese día.
+    renderNoticiasRojas([])
     const seConectoEl = document.getElementById('seConecto')
     if (seConectoEl) seConectoEl.checked = true
     updatePremktPuntos()

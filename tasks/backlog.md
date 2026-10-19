@@ -6,7 +6,6 @@
 
 Cosas hechas que no se pudieron probar del todo. Ninguna bloquea.
 
-- **Kris, en NinjaTrader:** que `ChecklistChaumer` enseña la casilla nueva de la etapa 2 (sin recompilar)
 - **Datos, con la sesión iniciada:** agregar, renombrar, borrar, activar/desactivar y arrastrar para
   reordenar; que el orden se guarde `1, 2, 3…` (`docs/disenos/2026-08-19-otros-y-datos.md` § 6.1)
 - **Ajustes:** el cambio de contraseña real y Cerrar sesión (probados sin ejecutarlos)

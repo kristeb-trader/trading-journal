@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-10-14
+**Última actualización:** 2026-10-19
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-19 | ChecklistChaumer archivado: las noticias rojas, desde el Diario |
 | 2026-10-14 | El premercado, del servidor; zonas de premercado desde donde nacen; plan 3.47 (el reingreso necesita una zona a la que ir) |
 | 2026-10-13 | Las 3 gráficas: sin scroll, en dos filas y con su resultado |
 | 2026-10-12b | Las 3 gráficas del día en una pantalla |
@@ -48,6 +49,25 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-19 — ChecklistChaumer archivado: las noticias rojas, desde el Diario
+
+**Lo que pasó.** Kris dejó de ver útil el AddOn del checklist en NinjaTrader: solo quedaban 2 reglas manuales y ya
+las tiene interiorizadas; el GO no lo lee nadie (`exigir_go = false`). Lo único suyo que hacía falta eran las
+**noticias rojas**, y antes de la apertura: el bot las lee al armarse y la cadena de las 10:32 las copia al motor.
+
+**Lo que se cambió** (D-040, diseño `docs/disenos/2026-10-19-noticias-sin-addon.md`).
+- **«Guardar noticias»** en Sesión → Diario → Noticias rojas: las guarda al momento, sin enviar el Diario, con su
+  estado (sin guardar / guardadas HH:MM / no se pudo). Crea la fila del día **sin** `registrada_at`: no abre el
+  candado del motor.
+- `DB.saveNoticias` ya no borra todo y reinserta: upsert por (fecha, hora) y luego borra solo las quitadas; dos a la
+  misma hora se funden con « / ». Probado contra la BD en una fecha de prueba (05/01/2099, borrada después).
+- Arreglado de paso: `clearForm` no limpiaba las noticias, así que un día sin sesión enseñaba las del anterior.
+- El AddOn pasa a `NinjaTrader/archivo/` con su nota; sale de las guías de instalación.
+
+**Pendiente de Kris:** borrar `Custom\AddOns\ChecklistChaumer.cs` en NinjaTrader y F5.
 
 ---
 
