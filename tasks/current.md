@@ -44,10 +44,9 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
   bot y la vista piden el premercado al servidor (diseño v1.14) y la vista dibuja las zonas de premercado desde donde
   nacen. **Kris:** copiar `ChaumerNT.cs` (AddOns), `BotChaumer.cs` (Strategies), `VistaMotorChaumer.cs` (Indicators), un F5
   fuera de la ventana
-- [ ] **Las velas del bot mandan** (19/10, Kris, diseño `2026-10-19-velas-del-bot.md`): el bot guarda la ventana como la vio
-  en vivo y la ficha se hace con ellas. Código hecho y migración aplicada. **Kris:** copiar `ChaumerNT.cs` (AddOns),
-  `BotChaumer.cs` (Strategies) y `VistaMotorChaumer.cs` (Indicators), F5 en el editor y en el gráfico, **sin recargar antes
-  el gráfico**: el bot vuelca las velas del 19/10 que tiene en memoria. **Claude:** rehacer la ficha del 19/10 con ellas
+- [x] **Las velas del bot mandan** (19/10, Kris, diseño `2026-10-19-velas-del-bot.md`): el bot guarda la ventana como la vio
+  en vivo (`datos/dia_bot/`) y la ficha se hace con ellas. Instalado por Kris. El 19/10, la 8:31 reconstruida (las velas en vivo
+  se perdieron en la reconexión de las 9:34): ficha = Continuación bajista 9:04, STOP −43,75, como el bot. Validado por Kris
 - [x] **Motor, 15/10:** al estirarse la zona, el rompimiento se cierra también en el registro de los setups (`910c9c2`,
   sello `L:a78eddb0…`, compilado por Kris). Validados por Kris: el reingreso bajista del 15/10 a las 9:13, descartado por el
   punto de referencia 29.780,25; y el que aparece el 01/07 (Reingreso bajista 9:09, consecución en la misma vela, STOP −26,75)
