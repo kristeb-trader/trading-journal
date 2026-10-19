@@ -93,7 +93,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 | Antes de las **8:31** (9:31 en invierno) | Anotar las noticias rojas en el checklist. Activar BotChaumer en **SimBot**. En el Output: `[BotChaumer] listo · cuenta SimBot · … · sello L:…` |
 | **8:31** | En el Output: `premercado del servidor: N velas · …` (si alguna vela del gráfico era distinta, la lista) y `armado AAAA-MM-DD · noticias N · GO …` |
 | Durante la ventana | **Nada de F5 ni recompilar**: desactiva o reinicia el bot |
-| **10:32** | La cadena hace la ficha del motor; se compara con lo que hizo el bot |
+| **10:32** | La cadena hace la ficha del motor **con las velas que guardó el bot** (`datos/dia_bot/`): la imagen dice lo mismo que hizo el bot. Las velas que difieren del servidor salen en los avisos de la ficha |
 
 **Si dice `NO OPERA en esta sesión` o `no se arma`**, el motivo viene en la misma línea. Los más comunes:
 

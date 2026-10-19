@@ -249,6 +249,67 @@ namespace NinjaTrader.NinjaScript
 
         private static readonly CultureInfo ES = CultureInfo.GetCultureInfo("es-ES");
 
+        // ── las velas del bot (19/10/2026, docs/disenos/2026-10-19-velas-del-bot.md) ──
+        // La ventana tal como la vio el bot en vivo, vela a vela: la ficha del motor se hace con ellas.
+        // Mismo formato que la exportación de la cadena. Solo se añade: una vela ya escrita no se cambia.
+
+        public static string RutaVelasBot(string repo, string fecha)
+        {
+            return Path.Combine(repo, @"chaumer\05_Backtesting\claude\motor\datos\dia_bot", fecha + ".txt");
+        }
+
+        public static string LineaVela(MotorChaumer.Vela k)
+        {
+            return k.D + " " + k.T + ";" + k.O.ToString(INV) + ";" + k.H.ToString(INV) + ";" + k.L.ToString(INV) + ";"
+                 + k.C.ToString(INV) + ";" + k.V.ToString(INV);
+        }
+
+        /// <summary>Las velas ya escritas en el archivo del bot, por fecha+hora (vacío si no existe).</summary>
+        public static Dictionary<string, MotorChaumer.Vela> LeerVelasBot(string path)
+        {
+            var r = new Dictionary<string, MotorChaumer.Vela>();
+            try
+            {
+                if (!File.Exists(path)) return r;
+                foreach (string l in File.ReadAllLines(path))
+                {
+                    string[] p = l.Trim().Split(';');
+                    if (p.Length < 6) continue;
+                    string[] dt = p[0].Split(' ');
+                    var k = new MotorChaumer.Vela
+                    {
+                        D = dt[0], T = dt[1], O = double.Parse(p[1], INV), H = double.Parse(p[2], INV),
+                        L = double.Parse(p[3], INV), C = double.Parse(p[4], INV), V = long.Parse(p[5], INV)
+                    };
+                    if (!r.ContainsKey(k.D + k.T)) r[k.D + k.T] = k;
+                }
+            }
+            catch { }
+            return r;
+        }
+
+        /// <summary>Añade velas al archivo del bot (y su .meta.json la primera vez). Devuelve el fallo o null.</summary>
+        public static string AnadirVelasBot(string path, List<MotorChaumer.Vela> nuevas, string instrumento, string cuenta, bool volcado)
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                string meta = path.Substring(0, path.Length - 4) + ".meta.json";
+                if (!File.Exists(meta))
+                {
+                    var j = new JObject();
+                    j["instrumento"] = instrumento; j["fuente"] = "bot"; j["cuenta"] = cuenta; j["sello"] = MotorChaumer.SELLO;
+                    j["volcado_al_arrancar"] = volcado; j["creado"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", INV);
+                    File.WriteAllText(meta, j.ToString(), new UTF8Encoding(false));
+                }
+                var sb = new StringBuilder();
+                foreach (var k in nuevas) sb.Append(LineaVela(k)).Append("\r\n");
+                File.AppendAllText(path, sb.ToString(), new UTF8Encoding(false));
+                return null;
+            }
+            catch (Exception e) { return e.Message; }
+        }
+
         /// <summary>La hora Colombia (UTC−5) del cierre de una vela, "19:07" — también la de la noche anterior.</summary>
         public static string HoraCol(MotorChaumer.Vela k)
         {

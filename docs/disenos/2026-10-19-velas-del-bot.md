@@ -1,6 +1,6 @@
 # Las velas del bot mandan — la ficha del motor con las velas con las que decidió el bot
 
-**Versión:** v1.0 · **Estado:** 🟡 PROPUESTO (19/10/2026), pendiente del sí de Kris · Relacionado: D-038 (el bot),
+**Versión:** v1.1 · **Estado:** ✅ APROBADO por Kris (19/10/2026) e implementado · v1.1: el archivo del bot guarda solo la ventana; el premercado lo pone la cadena desde el servidor (la misma fuente que usa el bot) · Relacionado: D-038 (el bot),
 `docs/disenos/2026-10-06-bot-chaumer.md` (v1.14: el premercado, del servidor).
 
 ---
@@ -36,7 +36,8 @@ La ficha, la imagen, el calendario «Claude» y la comparación bot↔motor se h
 - Archivo: `chaumer/05_Backtesting/claude/motor/datos/dia_bot/AAAA-MM-DD.txt` (en el repositorio, carpeta ignorada
   por git como el resto de `datos/`), **mismo formato** que la exportación de la cadena (`yyyyMMdd HHmmss;o;h;l;c;v`,
   UTC, hora de cierre) y su `.meta.json` (`instrumento`, `fuente: "bot"`, `cuenta`, `sello`).
-- **Al armarse (8:31):** escribe el premercado del servidor con el que se armó.
+- **Solo la ventana** (v1.1): el premercado no se guarda; la cadena lo toma de la exportación del servidor, que es de
+  donde lo saca también el bot (v1.14).
 - **En cada vela cerrada**, desde la vela base hasta la de las **16:50 de Nueva York** (la del cierre por hora), la
   añade **tal como la tenía al decidir**. Sigue escribiendo aunque ya haya operado o no se haya armado: la ficha
   necesita la ventana entera y, si la operación sigue abierta, el resto del día.
@@ -48,8 +49,9 @@ La ficha, la imagen, el calendario «Claude» y la comparación bot↔motor se h
 
 ### 3.2 La cadena (`subir_dia.py`) — prefiere las velas del bot
 
-- `archivos(fecha)` gana una tercera fuente, `datos/dia_bot/`, que **manda** sobre la exportación del servidor
-  cuando trae la ventana completa (120 velas). Si no está o le faltan velas, se usa el servidor como hasta hoy.
+- `fuente(fecha)`: si hay `datos/dia_bot/AAAA-MM-DD.txt`, escribe una **mezcla** (`AAAA-MM-DD.mezcla.txt`): la
+  exportación del servidor con las velas del bot encima, vela a vela por su hora; las que el bot vio más tarde que la
+  exportación, se añaden. Sin archivo del bot, el servidor como hasta hoy.
 - `motor_fichas.origen_datos` = `'bot'` (hoy `'manual'` / `'addon'`).
 - **Se compara con el servidor** y las diferencias van a los avisos de la ficha, como el registro del bot hace con el
   premercado: *«8:31 · bot 29.778,75 → 29.778,25 / servidor 29.778,25 → 29.778,25»*. Las que cambian algo

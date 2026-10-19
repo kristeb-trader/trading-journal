@@ -131,6 +131,10 @@ namespace NinjaTrader.NinjaScript.Strategies
         private int pmIntentos;
         private int primeraVentana = -1;            // índice en el gráfico de la vela base (la primera de la ventana)
         private int decisionPendiente = -1;         // la vela cerrada que espera al premercado para decidirse
+
+        // ── las velas del bot (19/10/2026): la ventana tal como la vio en vivo; la ficha del motor se hace con ellas ──
+        private string archivoVelas;                // datos/dia_bot/AAAA-MM-DD.txt del repositorio (null: no se guardan)
+        private Dictionary<string, MotorChaumer.Vela> apuntadas;   // las ya escritas, por fecha+hora: mandan sobre el gráfico
         private const int PM_ESPERA_S = 60, PM_INTENTOS = 3;
 
         // ── estado de la operación (sobrevive al cambio de día si sigue abierta) ──
@@ -235,6 +239,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                     PedirCierrePorHora();
             }
             if (d != dia) NuevoDia(d, cerrada);
+            if (State != State.Historical) Apuntar(cerrada, d);
             if (terminado) return;
             int hm = utc.Hour * 100 + utc.Minute;
             int ap = MotorChaumer.AperturaUtc(d), ci = MotorChaumer.CierreUtc(d);
@@ -323,6 +328,8 @@ namespace NinjaTrader.NinjaScript.Strategies
             armadoIntentado = armado = terminado = finalizado = false;
             motor = null; fila = null; eventos = new List<string>();
             pmEstado = 0; pmServidor = null; pmFallo = null; pmIntentos = 0; primeraVentana = -1; decisionPendiente = -1;
+            archivoVelas = UsaServidor() ? ChaumerNT.RutaVelasBot(cfg.Repo, d.Substring(0, 4) + "-" + d.Substring(4, 2) + "-" + d.Substring(6, 2)) : null;
+            apuntadas = archivoVelas != null ? ChaumerNT.LeerVelasBot(archivoVelas) : null;
             if (Position.MarketPosition == MarketPosition.Flat && (llenados == 0 || salidos >= llenados))
             {
                 ordenMotor = pendienteTrasCancelar = null; entrada = stopO = objetivoO = cierreO = null; cierrePedido = cierreEnviado = false;
@@ -592,9 +599,42 @@ namespace NinjaTrader.NinjaScript.Strategies
             });
         }
 
+        /// <summary>La vela i como la vio el bot: la apuntada en su archivo si ya está (también tras un reinicio), si no la del gráfico.</summary>
+        private MotorChaumer.Vela VelaDecidida(int i)
+        {
+            var v = ChaumerNT.Vela(Bars, i, tzNt);
+            MotorChaumer.Vela f;
+            if (apuntadas != null && apuntadas.TryGetValue(v.D + v.T, out f)) return f;
+            return v;
+        }
+
+        /// <summary>Apunta en el archivo del día cada vela cerrada de la ventana (de la vela base a la de CIERRE_POR_HORA)
+        /// que aún no esté, tal como está ahora en el gráfico. Solo añade. Si al arrancar faltan velas que ya pasaron
+        /// (el bot se encendió tarde o es una versión nueva), las vuelca del gráfico y lo marca.</summary>
+        private void Apuntar(int cerrada, string d)
+        {
+            if (archivoVelas == null || apuntadas == null || inicioDia < 0) return;
+            int ap = MotorChaumer.AperturaUtc(d), fin = MotorChaumer.HoraUtc(d, P.CierrePorHoraEt);
+            var nuevas = new List<MotorChaumer.Vela>();
+            for (int i = inicioDia; i <= cerrada; i++)
+            {
+                DateTime u = Utc(i); int hm = u.Hour * 100 + u.Minute;
+                if (hm < ap || hm > fin) continue;
+                var v = ChaumerNT.Vela(Bars, i, tzNt);
+                if (apuntadas.ContainsKey(v.D + v.T)) continue;
+                apuntadas[v.D + v.T] = v; nuevas.Add(v);
+            }
+            if (nuevas.Count == 0) return;
+            bool volcado = nuevas.Count > 1 && !File.Exists(archivoVelas);
+            string fallo = ChaumerNT.AnadirVelasBot(archivoVelas, nuevas, Instrument.FullName, Account.Name, volcado);
+            if (fallo != null) Log("⚠ no pude apuntar las velas en " + archivoVelas + ": " + fallo);
+            else if (nuevas.Count > 1) Log("velas del bot: " + nuevas.Count + " velas de la ventana apuntadas de golpe (" + ChaumerNT.HoraCol(nuevas[0]) + " → "
+                                           + ChaumerNT.HoraCol(nuevas[nuevas.Count - 1]) + ")" + (volcado ? ", volcadas del gráfico al arrancar" : ""));
+        }
+
         private List<MotorChaumer.Vela> VelasHasta(int cerrada)
         {
-            for (int i = ultimaVela + 1; i <= cerrada; i++) velas.Add(ChaumerNT.Vela(Bars, i, tzNt));
+            for (int i = ultimaVela + 1; i <= cerrada; i++) velas.Add(VelaDecidida(i));
             if (cerrada > ultimaVela) ultimaVela = cerrada;
             return velas;
         }

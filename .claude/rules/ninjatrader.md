@@ -100,6 +100,10 @@ día **sin archivo** en `datos\dia\` lo pide con `BarsRequest` y lo escribe como
   (la huella de datos mira el día entero). Después queda ABIERTA. Mientras tanto, el calendario «Claude» del Journal la
   pinta como **«abierta»** (ámbar, reloj de arena) y no suma puntos.
   El motor sigue la operación hasta la última vela que haya, no hasta el fin de ventana (R-33).
+- **Las velas del bot mandan** (19/10/2026, `docs/disenos/2026-10-19-velas-del-bot.md`): `BotChaumer` guarda cada vela de la
+  ventana (8:31 → 16:50 de Nueva York) tal como la vio en vivo en `datos\dia_bot\AAAA-MM-DD.txt`, solo añadiendo, y la
+  relee al reiniciarse. `subir_dia.py` (`fuente()`) hace la ficha con una mezcla: el servidor y, encima, las velas del bot;
+  `origen_datos = 'bot'` y las velas distintas en los avisos. Caso de origen: 19/10, la 8:31 un tick distinta cambió el día.
 - **Publica solo:** al terminar, `subir_dia.py` hace commit y push de los gráficos de `chaumer\05_Backtesting\claude\`
   de los días **ya registrados** (el candado del motor, D-029). Es el único proceso que hace push sin nadie delante.
 - **Configuración:** `Documentos\NinjaTrader 8\cadena-diaria.json` (la relee cada minuto: cambiarla no

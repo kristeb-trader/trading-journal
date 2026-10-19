@@ -32,6 +32,7 @@ BT = os.path.join(SESIONES, 'motor')
 PARAMETROS = os.path.join(RAIZ, 'chaumer', '01_Plan', 'PARAMETROS.md')
 DIA_MANUAL = os.path.join(BT, 'datos', 'dia')         # la exportación de Kris (y del AddOn tras la 7e)
 DIA_AUTO = os.path.join(BT, 'datos', 'dia_auto')      # la del AddOn mientras dura la verificación (7e)
+DIA_BOT = os.path.join(BT, 'datos', 'dia_bot')        # la ventana como la vio el bot en vivo: manda (19/10/2026)
 SALIDA = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), 'TradingJournal', 'cadena')   # el registro
 CLAVE = os.path.join(os.path.expanduser('~'), 'Documents', 'NinjaTrader 8', 'supabase-service-key.txt')
 SUPABASE = 'https://jothoslozctflfrnysrx.supabase.co'
@@ -279,6 +280,49 @@ def archivos(fecha):
     return (m if os.path.exists(m) else None), (a if os.path.exists(a) else None)
 
 
+def _ohlc(linea):
+    p = linea.strip().split(';')
+    return tuple(float(x) for x in p[1:5]) if len(p) >= 6 else None
+
+
+def fuente(fecha):
+    """(ruta, origen, diferencias) de las velas con las que se hace la ficha. Si el bot guardó la ventana tal como la
+    vio en vivo (`datos/dia_bot/`), MANDAN sus velas: se escribe una mezcla —la exportación del servidor con las velas
+    del bot encima— y se usa esa. Las diferencias con el servidor van a los avisos de la ficha. Diseño:
+    docs/disenos/2026-10-19-velas-del-bot.md. (None, None, []) si no hay exportación del servidor."""
+    manual, auto = archivos(fecha)
+    servidor = manual or auto
+    if not servidor: return None, None, []
+    origen = 'manual' if manual else 'addon'
+    bot = os.path.join(DIA_BOT, f'{fecha}.txt')
+    if not os.path.exists(bot): return servidor, origen, []
+    del_bot = {}
+    for l in open(bot, encoding='utf-8'):
+        if len(l) >= 15 and l[:15] not in del_bot: del_bot[l[:15]] = l.rstrip('\r\n')
+    if not del_bot: return servidor, origen, []
+    salida, dif, vistas = [], [], set()
+    for l in open(servidor, encoding='utf-8'):
+        l = l.rstrip('\r\n')
+        if len(l) < 15: continue
+        b = del_bot.get(l[:15])
+        if b is not None:
+            vistas.add(l[:15])
+            so, sb_ = _ohlc(l), _ohlc(b)
+            if so != sb_:
+                hm = int(l[9:13]) - 500
+                cuerpo = (lambda t: (t[3] > t[0]) - (t[3] < t[0]))
+                marca = '  ← cambia el cuerpo' if cuerpo(so) != cuerpo(sb_) else ''
+                f = lambda t: ' '.join(f'{x:.2f}' for x in t)
+                dif.append(f'{(hm + 2400) % 2400 // 100}:{l[11:13]} · bot {f(sb_)} / servidor {f(so)}{marca}')
+            l = b
+        salida.append(l)
+    salida += [b for k, b in sorted(del_bot.items()) if k not in vistas]      # lo que el bot vio después del servidor
+    salida.sort(key=lambda x: x[:15])
+    mezcla = os.path.join(DIA_BOT, f'{fecha}.mezcla.txt')
+    with open(mezcla, 'w', encoding='utf-8', newline='\n') as fh: fh.write('\n'.join(salida) + '\n')
+    return mezcla, 'bot', dif
+
+
 def instrumento(path):
     meta = path[:-4] + '.meta.json'       # lo deja el AddOn al lado del archivo
     try: return json.load(open(meta, encoding='utf-8')).get('instrumento') or 'MNQ'
@@ -287,7 +331,7 @@ def instrumento(path):
 
 def procesar(fecha, umbral, desde, fed_set, huella_motor):
     manual, auto = archivos(fecha)
-    path = manual or auto
+    path, origen, dif_bot = fuente(fecha)
     if not path:
         log(f'{fecha}  sin archivo de velas: nada que subir'); return False
     d = fecha.replace('-', '')
@@ -307,6 +351,11 @@ def procesar(fecha, umbral, desde, fed_set, huella_motor):
     if not fed and estado == 'ok':
         nf = noticias_fed(fecha)
         if nf: avisos.append(f"noticia roja de la Fed ({'; '.join(nf)}) y el día no está en Fechas Especiales como FOMC")
+    if origen == 'bot':
+        avisos.append('velas de la ventana: las del bot en vivo' + (f' · {len(dif_bot)} distintas del servidor' if dif_bot else ' · iguales al servidor'))
+        avisos.extend(f'  {x}' for x in dif_bot[:12])
+        if len(dif_bot) > 12: avisos.append(f'  … y {len(dif_bot) - 12} más')
+        if dif_bot: log(f'{fecha}  velas del bot: {len(dif_bot)} distintas del servidor')
     if manual and auto:
         dif = comparar(manual, auto, d)
         if dif: avisos.append(dif); log(f'{fecha}  ⚠️ {dif}')
@@ -321,10 +370,10 @@ def procesar(fecha, umbral, desde, fed_set, huella_motor):
         guardar_sesion(fecha, estado, ficha)
         ficha['motor'] = {'umbral_vol': umbral, 'dia_fed': fed, 'huella': huella_motor}
     velas = velas_del_dia(path, d)
-    fila = {'fecha': fecha, 'estado': estado, 'instrumento': instrumento(path), 'umbral_vol': umbral,
+    fila = {'fecha': fecha, 'estado': estado, 'instrumento': instrumento(manual or auto), 'umbral_vol': umbral,
             'dia_fed': fed, 'ficha': ficha, 'velas': velas, 'grafico_url': grafico,
             'huella_motor': huella_motor, 'huella_datos': huella(todas_del_dia(path, d)),
-            'origen_datos': 'manual' if manual else 'addon',
+            'origen_datos': origen,
             'generada_en': datetime.datetime.now(datetime.timezone.utc).isoformat()}
     sb('POST', 'motor_fichas?on_conflict=fecha', fila, 'resolution=merge-duplicates,return=minimal')
     op = ficha.get('operacion') if estado == 'ok' else None
@@ -333,7 +382,7 @@ def procesar(fecha, umbral, desde, fed_set, huella_motor):
            + (f"{op['resultado']} {op['puntos']:+.2f}" if op['puntos'] is not None else 'ABIERTA al acabar los datos')
            if op
            else 'sin operación' if estado == 'ok' else ficha.get('motivo'))
-    log(f"{fecha}  {estado} · {res} · {len(avisos)} aviso(s) · {'Fed · ' if fed else ''}{'manual' if manual else 'addon'}")
+    log(f"{fecha}  {estado} · {res} · {len(avisos)} aviso(s) · {'Fed · ' if fed else ''}{origen}")
     return True
 
 
@@ -366,8 +415,7 @@ def pendientes(n_dias, huella_motor):
     hay = {f['fecha']: f for f in sb('GET', f"motor_fichas?fecha=gte.{fechas[0]}&select=fecha,huella_motor,huella_datos")}
     fuera = []
     for f in fechas:
-        m, a = archivos(f)
-        h = huella(todas_del_dia(m or a, f.replace('-', '')))
+        h = huella(todas_del_dia(fuente(f)[0], f.replace('-', '')))
         if f not in hay or hay[f]['huella_motor'] != huella_motor or hay[f]['huella_datos'] != h:
             fuera.append(f)
     return fuera
@@ -392,12 +440,12 @@ def medir_pendientes(n_dias, huella_motor, fed_set):
             f = fila['fecha']; ficha = fila['ficha'] or {}
             del_dia = por_dia.get(f, [])
             if (ficha.get('tu_operacion') or {}).get('huella') == medir.huella_trades(del_dia): continue
-            manual, auto = archivos(f)
-            if not (manual or auto): continue
+            path = fuente(f)[0]
+            if not path: continue
             d = f.replace('-', '')
             lector.UMBRAL_VOL = fila.get('umbral_vol') or lector.UMBRAL_VOL
             lector.FOMC = set(fed_set)
-            r = lector.leer_sesion(lector.cargar(manual or auto), d)
+            r = lector.leer_sesion(lector.cargar(path), d)
             if not r or 'error' in r: continue
             ev, t = lector.detectar_setups(r, solo_reingresos=bool(fila.get('dia_fed')))
             ficha['tu_operacion'] = tu_operacion(r, ev, t, del_dia, d)

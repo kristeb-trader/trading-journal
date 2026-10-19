@@ -61,6 +61,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         private string problema;            // sin sello: no se dibuja nada
         private MotorChaumer.Parametros P;
         private HttpClient http;
+        private string repo;                // para leer las velas del bot (19/10/2026)
         private TimeZoneInfo tzNt;
 
         // estado del día que se calcula
@@ -92,6 +93,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             {
                 tzNt = Core.Globals.GeneralOptions.TimeZoneInfo;
                 var cfg = ChaumerNT.LeerConfig(null);
+                repo = cfg.Repo;
                 problema = ChaumerNT.ComprobarMotor(cfg.Repo, out P);
                 if (problema == null) http = ChaumerNT.Cliente();
                 if (problema != null) Print("[VistaMotorChaumer] no dibuja: " + problema);
@@ -133,7 +135,19 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private void Calcular()
         {
-            var r = motor.Decidir(velas, dia, null);
+            // Las velas de la ventana que el bot ya apuntó mandan sobre las del gráfico: tras recargar el gráfico la vista
+            // sigue viendo lo que vio el bot en vivo (19/10/2026, docs/disenos/2026-10-19-velas-del-bot.md)
+            var vs = velas;
+            if (repo != null && dia != null)
+            {
+                var bot = ChaumerNT.LeerVelasBot(ChaumerNT.RutaVelasBot(repo, dia.Substring(0, 4) + "-" + dia.Substring(4, 2) + "-" + dia.Substring(6, 2)));
+                if (bot.Count > 0)
+                {
+                    vs = new List<MotorChaumer.Vela>(velas.Count);
+                    foreach (var k in velas) { MotorChaumer.Vela f; vs.Add(bot.TryGetValue(k.D + k.T, out f) ? f : k); }
+                }
+            }
+            var r = motor.Decidir(vs, dia, null);
             foto = Fotografiar(r);
             ForceRefresh();
         }
