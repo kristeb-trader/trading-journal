@@ -329,7 +329,9 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
   }
   .bt .setup { color: color-mix(in srgb, var(--c) 55%, var(--texto)); }
   .bt .setup.continuacion { --c: var(--info); }
-  .bt .setup.reingreso { --c: #A78BFA; } /* el violeta de «Las reglas» en el menu */
+  /* Gris pizarra: neutro (el violeta se leia rosa, 20/10/2026) y lejos del
+     azul verdoso de la Continuacion, que es saturado. */
+  .bt .setup.reingreso { --c: #94A3B8; }
 
   .bt .dir { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--texto); }
   .bt .dir svg { width: 0.85rem; height: 0.85rem; }
