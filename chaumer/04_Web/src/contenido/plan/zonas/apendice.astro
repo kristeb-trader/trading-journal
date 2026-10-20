@@ -1,0 +1,73 @@
+---
+/**
+ * Plan · zonas · «La zona apéndice».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { v } from './_datos.mjs';
+---
+
+<!-- 5 ─────────────────────────────────────────────────────────────── -->
+
+<section class="ap" id="apendice">
+  <h2>La zona apéndice <Refs cods="R-11" /></h2>
+  <!-- Cabecera reescrita el 22/09/2026 con el texto que quedo en el plan el
+       15/09/2026 (PROPUESTAS_AL_PLAN.md): los dos finales van juntos y con
+       el mismo rango, no uno en la ficha y el otro como nota al pie. -->
+  <p>
+    El precio rompe una zona <strong>con cuerpo</strong> —el cierre queda
+    fuera— y la consecución no llega. Se acaba igual que al estirar, de dos
+    maneras, y vale <strong>la que llegue primero</strong>: o pasan
+    <strong>{v('PLAZO_CONSECUCION')}</strong> desde la siguiente a la del rompimiento, o antes
+    el mercado arma la <strong>estructura completa en sentido
+    contrario</strong> —la misma de tres velas—, y entonces la apéndice nace
+    en la tercera, sin esperar más.
+  </p>
+  <p>
+    En cualquiera de los dos casos <strong>la zona original no se
+    toca</strong> y nace una <strong>segunda zona</strong> sobre la mecha de
+    la vela de rompimiento: la <strong>zona apéndice</strong>. Un borde es el
+    borde del cuerpo de esa vela; el otro, la punta de su mecha.
+  </p>
+  <p>
+    Con la mecha se estira la zona; con el cuerpo nace otra.
+    <strong>Lo único que cambia es dónde cierra la vela de
+    rompimiento.</strong>
+  </p>
+
+  <figure class="gr">
+    <img src="/conceptos/10-zona-apendice.png" alt="Caso 1: pasan las cinco velas sin consecución y ahí se marca la zona apéndice" loading="eager" />
+    <figcaption class="meta">Caso 1: ninguna de las cinco velas vuelve a pasar de la mecha. Al vencer el plazo se marca la apéndice, y la original se queda intacta.</figcaption>
+  </figure>
+
+  <dl class="datos">
+    <dt>Qué lo dispara</dt>
+    <dd>Rompimiento con cuerpo sin consecución: o pasan <strong>{v('PLAZO_CONSECUCION')}</strong>, o antes el mercado arma la estructura en contra. Lo que llegue primero</dd>
+    <dt>La zona original</dt>
+    <dd>No se modifica</dd>
+    <dt>Un borde de la apéndice</dt>
+    <dd>El borde del cuerpo de la vela que rompió</dd>
+    <dt>El otro borde</dt>
+    <dd>El extremo de su mecha</dd>
+    <dt>Zonas resultantes</dt>
+    <dd><span class="cifra-en">2</span>: la original y su apéndice</dd>
+    <dt>Desde dónde se dibuja</dt>
+    <dd>Desde la vela que rompió, aunque no quede marcada hasta más tarde. Del mismo gris que cualquier otra zona</dd>
+  </dl>
+
+  <div class="duro">
+    <p>
+      <strong>La apéndice no nace por acción del precio sobre ella.</strong>
+      No es una zona más que apareció: es el rastro de un rompimiento que se
+      quedó sin consecución.
+    </p>
+  </div>
+  
+
+  <figure class="gr">
+    <img src="/conceptos/10-zona-apendice-caso2.png" alt="Caso 2: antes de las cinco velas el mercado arma una estructura en sentido contrario" loading="lazy" />
+    <figcaption class="meta">Caso 2: antes de que venza el plazo el mercado arma una estructura completa en sentido contrario. La apéndice se marca ahí.</figcaption>
+  </figure>
+</section>

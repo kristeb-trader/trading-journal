@@ -1,0 +1,52 @@
+---
+/**
+ * Plan · premercado · «El gráfico».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { v } from './_datos.mjs';
+---
+
+<section class="ap" id="instrumento">
+  <h2>El gráfico <Refs cods="R-01 · R-03" /></h2>
+  <p>
+    Se trabaja únicamente con el micro Nasdaq, <strong>MNQ</strong>. Aquí
+    se marcan las zonas, se lee el volumen, se leen los niveles de
+    entrada, stop y objetivo, y desde aquí se manda la orden.
+  </p>
+
+  <figure class="gr">
+    <img src="/screenshots/premercado/grafico-mnq.jpg" width="1171" height="912" loading="lazy"
+         alt="El gráfico de MNQ a un minuto, con el indicador de volumen" />
+  </figure>
+
+  <div class="duro duro-espaciado">
+    <p><strong>Para todo, el mismo gráfico:</strong> análisis y ejecución. No hay un segundo instrumento de referencia.</p>
+  </div>
+
+  <p>
+    Va a <strong>un minuto</strong>. No hay ningún otro marco temporal en
+    el método: ni cinco minutos para «ver el contexto», ni diario para
+    «ver la tendencia».
+  </p>
+
+  <dl class="datos">
+    <dt>Indicadores en pantalla</dt>
+    <dd><strong>Uno solo: Volume Up Down.</strong> Nada más</dd>
+    <dt>Prohibidos</dt>
+    <dd>Medias, osciladores, VWAP, perfil de volumen</dd>
+    <dt>Qué vale un punto</dt>
+    <dd><span class="cifra-en">$2,00</span></dd>
+    <dt>Qué vale un tick</dt>
+    <dd><span class="cifra-en">{v('TICK')}</span> · <span class="cifra-en">$0,50</span></dd>
+  </dl>
+</section>
+
+<style>
+
+  /* El aviso de «El gráfico» quedaba pegado al párrafo de después: el margen
+     inferior normal de .duro no bastaba aquí. */
+  .duro-espaciado { margin-bottom: var(--e-7); }
+</style>

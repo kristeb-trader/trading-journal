@@ -1,0 +1,62 @@
+---
+/**
+ * Plan · premercado · «Zonas por volumen».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { v } from './_datos.mjs';
+---
+
+<section class="ap" id="zonas-vol">
+  <h2>Zonas por volumen <Refs cods="R-15" /></h2>
+  <p>
+    Si en el premercado se forma una vela con un volumen por encima del
+    umbral (<strong>{v('UMBRAL_VOL')}</strong>), se debe
+    marcar una zona. Es la única manera de que nazca una zona sin que haya
+    habido un movimiento y su descanso.
+  </p>
+
+  <figure class="gr">
+    <img src="/conceptos/09-zona-volumen.png" alt="Vela de premercado con volumen por encima del umbral y la zona que deja" loading="eager" />
+    <figcaption class="meta">Una vela de premercado por encima del umbral y la zona que deja. La zona se comporta después como cualquier otra.</figcaption>
+  </figure>
+
+  <ol class="secuencia">
+    <li><strong>Se escanea desde las {v('PREMERCADO_INICIO')}</strong> del día anterior, hasta la apertura americana.</li>
+    <li><strong>Toda vela que supere el umbral de volumen deja zona.</strong> Todas, no solo las más altas o las más bajas del grupo.</li>
+    <li><strong>El color de la vela decide el tipo:</strong> vela alcista deja resistencia sobre su mecha superior; vela bajista deja soporte sobre su mecha inferior.</li>
+    <li><strong>Los límites son los de siempre:</strong> del borde del cuerpo a la punta de la mecha.</li>
+  </ol>
+
+  <dl class="datos">
+    <dt>Umbral</dt>
+    <dd><strong>{v('UMBRAL_VOL')}</strong>, en una vela de un minuto</dd>
+    <dt>Desde cuándo</dt>
+    <dd>{v('PREMERCADO_INICIO')}</dd>
+    <dt>Hasta cuándo</dt>
+    <dd>La apertura del mercado americano</dd>
+  </dl>
+
+  <div class="duro">
+    <p>
+      <strong>En la apertura, la regla del volumen se apaga.</strong> A partir
+      de ahí las zonas solo nacen de la estructura, por alto que sea el
+      volumen de una vela.
+    </p>
+  </div>
+
+  <p>
+    Estas zonas se comportan luego <strong>igual que cualquier otra</strong>:
+    se rompen igual, se estiran igual, caducan igual y sirven de borde para
+    medir las que vengan después.
+  </p>
+</section>
+
+<style>
+
+  /* El aviso de «El gráfico» quedaba pegado al párrafo de después: el margen
+     inferior normal de .duro no bastaba aquí. */
+  .duro-espaciado { margin-bottom: var(--e-7); }
+</style>

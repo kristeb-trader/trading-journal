@@ -1,0 +1,32 @@
+---
+/**
+ * Plan · filtros · «Las noticias».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+---
+
+<section class="ap" id="noticias">
+  <h2>Las noticias <Refs cods="R-35" /></h2>
+  <p>
+    Alrededor de cada noticia roja hay una ventana de once minutos en la que
+    no se opera.
+  </p>
+
+  <dl class="datos">
+    <dt>Fuente</dt>
+    <dd><strong>Forex Factory</strong>, y solo esa</dd>
+    <dt>Nivel</dt>
+    <dd>Solo <strong>rojo</strong>. Naranja y amarillo no bloquean nada</dd>
+    <dt>Antes</dt>
+    <dd><span class="cifra-en">5</span> minutos antes de la hora publicada</dd>
+    <dt>Después</dt>
+    <dd><span class="cifra-en">5</span> minutos después</dd>
+    <dt>Con orden ya puesta</dt>
+    <dd><strong>Se cancela</strong> al entrar la ventana</dd>
+    <dt>Pasada la ventana</dt>
+    <dd>Si el setup sigue vivo, se vuelve a colocar la orden</dd>
+  </dl>
+</section>

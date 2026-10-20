@@ -1,0 +1,58 @@
+---
+/**
+ * Plan · premercado · «Estrategia ATM».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import * as P from '../../../lib/parsers.mjs';
+import { v } from './_datos.mjs';
+---
+
+<section class="ap" id="atm">
+  <h2>Estrategia ATM <Refs cods="R-31" /></h2>
+  <p>
+    La estrategia ATM de NinjaTrader se deja configurada antes de empezar y
+    no se toca durante la sesión.
+  </p>
+
+  <figure class="gr">
+    <img src="/screenshots/premercado/atm.jpg" width="1331" height="784" loading="lazy"
+         alt="La estrategia ATM K1 configurada en NinjaTrader" />
+  </figure>
+
+  <dl class="datos">
+    <dt>Cuál</dt>
+    <dd><strong>K1</strong></dd>
+    <dt>Contratos</dt>
+    <dd><strong>Los que caben</strong> sin pasar de {v('RIESGO_MAX')}: se ponen antes de enviar la orden</dd>
+    <dt>Auto Breakeven</dt>
+    <dd><strong>Apagado</strong></dd>
+    <dt>Auto Trail</dt>
+    <dd><strong>Apagado</strong></dd>
+    <dt>Stop y objetivo por defecto</dt>
+    <dd><strong>{v('ATM_DEFECTO')}</strong>: {P.equivalencias('ATM_DEFECTO').join(' · ')}</dd>
+  </dl>
+
+  <div class="duro">
+    <p>
+      <strong>Ese valor por defecto no es el stop de la operación:</strong> es
+      lo que protege la posición entre el llenado y el ajuste a mano, que son
+      unos segundos. El stop de verdad se coloca después, y sale de la
+      estructura del mercado.
+    </p>
+  </div>
+
+  <p>
+    <strong>El valor por defecto es igual al tope de stop a propósito.</strong>
+    Si algún día cambia el tope, hay que cambiar la ATM con él.
+  </p>
+</section>
+
+<style>
+
+  /* El aviso de «El gráfico» quedaba pegado al párrafo de después: el margen
+     inferior normal de .duro no bastaba aquí. */
+  .duro-espaciado { margin-bottom: var(--e-7); }
+</style>

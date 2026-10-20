@@ -1,0 +1,54 @@
+---
+/**
+ * Plan · riesgo · «Cuánto se arriesga».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import * as P from '../../../lib/parsers.mjs';
+import { v, riesgo } from './_datos.mjs';
+---
+
+<section class="ap" id="cuanto">
+  <h2>Cuánto se arriesga <Refs cods="R-31" /></h2>
+  <p>
+    El riesgo de cada operación no lo decide una cuenta: lo decide la
+    estructura del mercado. Lo único que hay es un techo.
+  </p>
+
+  <dl class="datos">
+    <dt>Riesgo máximo</dt>
+    <dd><strong>{v('RIESGO_MAX')}</strong>, con los contratos que quepan</dd>
+    <dt>Tope de stop</dt>
+    <dd><strong>{v('STOP_MAX')}</strong> = {P.equivalencias('STOP_MAX').join(' = ')}</dd>
+    <dt>Objetivo</dt>
+    <dd>La misma distancia, al otro lado. Relación {v('RATIO_TARGET')}</dd>
+    <dt>Sobre la cuenta objetivo de {riesgo.cuenta}</dt>
+    <dd><strong>{riesgo.porcentaje}</strong> por operación</dd>
+  </dl>
+
+  <figure class="gr">
+    <img src="/conceptos/07-stop-objetivo.png" alt="La distancia al stop y la misma distancia al objetivo desde la entrada" loading="lazy" />
+    <figcaption class="meta">El riesgo lo pone la estructura: la distancia hasta el stop, repetida al otro lado. El tope solo dice hasta dónde se acepta esa distancia.</figcaption>
+  </figure>
+
+  <div class="duro">
+    <p>
+      <strong>El tope es una línea dura.</strong> Un stop de 79,75 puntos se
+      opera igual que uno de 30. Y si el stop estructural sale a 80,25, no se
+      opera, por buena que sea la figura.
+    </p>
+  </div>
+
+  <figure class="gr">
+    <img src="/conceptos/08-descarte.png" alt="Un setup válido descartado porque el stop estructural supera el tope de riesgo" loading="lazy" />
+    <figcaption class="meta">El tope en acción: un setup que cumple todo lo demás y se descarta entero porque el stop no cabe.</figcaption>
+  </figure>
+
+  <p>
+    Con una sola operación al día y una relación de uno a uno, hace falta
+    acertar <strong>más de la mitad de las veces</strong> solo para no perder
+    dinero.
+  </p>
+</section>

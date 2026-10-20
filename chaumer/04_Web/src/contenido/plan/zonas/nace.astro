@@ -1,0 +1,75 @@
+---
+/**
+ * Plan · zonas · «Generación de zonas».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+---
+
+<!-- 2 ─────────────────────────────────────────────────────────────── -->
+
+<section class="ap" id="nace">
+  <h2>Generación de zonas <Refs cods="R-09 · R-16" /></h2>
+  <p>
+    Cuando una corrida termina, deja un rastro en el gráfico: una franja de
+    precio que se llama <strong>zona</strong>. No se dibuja a ojo. Sale
+    siempre de la misma vela y con los mismos límites.
+  </p>
+
+  <ol class="secuencia">
+    <li><strong>Se Identifica fin de corrida</strong>: Se busca la vela del máximo más alto si la corrida fue alcista, la del mínimo más bajo si fue bajista.</li>
+    <li><strong>Se dibuja una zona del borde del cuerpo a la punta de la mecha</strong> de esa vela. Ese es todo el criterio.</li>
+    <li><strong>Se extiende hacia la derecha</strong>, a lo largo del gráfico.</li>
+  </ol>
+
+  <figure class="gr">
+    <img src="/conceptos/17-vela-designada.png" alt="La vela que genera la zona y los dos bordes exactos que la delimitan" loading="eager" />
+    <figcaption class="meta">La vela que genera zona y sus dos bordes: del borde del cuerpo a la punta de la mecha. Ni un tick más, ni un tick menos.</figcaption>
+  </figure>
+
+  <dl class="datos">
+    <dt>Corrida alcista</dt>
+    <dd>Deja una zona de <strong>resistencia</strong> en la parte de arriba</dd>
+    <dt>Corrida bajista</dt>
+    <dd>Deja una zona de <strong>soporte</strong> en la parte de abajo</dd>
+    <dt>Y su retroceso</dt>
+    <dd>El retroceso de una corrida alcista deja <strong>soporte</strong>; el de una corrida bajista genera una <strong>resistencia</strong> arriba</dd>
+    <dt>Vela sin mecha</dt>
+    <dd>La zona queda dibujada como una línea sobre el precio de cierre o apertura</dd>
+    <dt>Vela sin cuerpo</dt>
+    <dd>La zona se traza desde el precio de apertura o cierre hasta la punta de la mecha</dd>
+    <dt>Una vela con máximo mayor y mínimo menor</dt>
+    <dd>El orden dentro de la vela decide cuál sostiene la zona</dd>
+  </dl>
+
+  <figure class="gr">
+    <img src="/conceptos/03-zona.png" alt="La zona ya dibujada y extendida hacia la derecha sobre una sesión real" loading="lazy" />
+    <figcaption class="meta">Ya extendida: el rectángulo se dibuja desde la vela de origen, no desde donde el precio vuelva más tarde.</figcaption>
+  </figure>
+
+  <h3>Cuándo se dibuja cada una</h3>
+  <p>
+    Las dos zonas de un movimiento no nacen a la vez, y confundirlo lleva a
+    operar algo que todavía no existe:
+  </p>
+  <div class="rejilla dos">
+    <div class="tarj">
+      <h3>La zona de la corrida</h3>
+      <p>Se dibuja <strong>en cuanto aparece el retroceso</strong>, en vivo. Ya se puede operar.</p>
+    </div>
+    <div class="tarj">
+      <h3>La zona del retroceso</h3>
+      <p>Mientras el retroceso vive es solo una <strong>línea provisional</strong> que se mueve con cada vela. Se convierte en zona cuando aparece el movimiento contrario.</p>
+    </div>
+  </div>
+
+  <div class="veto">
+    <p>
+      <strong>Una línea provisional no opera.</strong> No admite rompimiento,
+      ni consecución, ni reingreso. Hasta que no es zona, no existe para el
+      método.
+    </p>
+  </div>
+</section>

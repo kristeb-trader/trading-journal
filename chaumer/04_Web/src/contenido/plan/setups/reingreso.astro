@@ -1,0 +1,100 @@
+---
+/**
+ * Plan · setups · «Reingreso · rompimiento fallido».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { v } from './_datos.mjs';
+---
+
+<section class="ap" id="reingreso">
+  <h2>Reingreso · rompimiento fallido <Refs cods="R-26" /></h2>
+  <p>
+    Es el contrario exacto de la Continuación. Aquí el rompimiento se confirmó pero el
+    precio <strong>no continuó</strong>: se dio la vuelta y se comió la zona
+    entera. Se opera esa vuelta.
+  </p>
+
+  <figure class="gr">
+    <img src="/conceptos/11-reingreso.png" alt="Un Reingreso: rompimiento con consecución que falla y el precio recupera la zona entera" loading="lazy" />
+    <figcaption class="meta">El rompimiento se confirmó y no siguió. El precio atraviesa la zona completa y sale por el borde contrario: ahí empieza el Reingreso.</figcaption>
+  </figure>
+
+  <ol class="secuencia">
+    <li><strong>Sobre una zona hubo rompimiento y confirmación.</strong> El traspaso está hecho.</li>
+    <li><strong>El precio no continúa</strong> en esa dirección.</li>
+    <li><strong>El precio atraviesa la zona entera y sobrepasa el borde contrario.</strong> No basta con tocarla ni con meterse dentro: tiene que salir por el otro lado. Esa vela hace de vela de rompimiento del Reingreso.</li>
+    <li><strong>Confirmación: y esa es la entrada.</strong> Una vela pasa el extremo de la vela anterior, igual que en la Continuación.</li>
+  </ol>
+
+  <dl class="datos">
+    <dt>Dirección</dt>
+    <dd>Contraria a la del rompimiento que falló</dd>
+    <dt>Plazo para que aparezca</dt>
+    <dd><strong>Ninguno.</strong> El límite de {v('PLAZO_CONSECUCION')} no aplica aquí</dd>
+    <dt>Dónde va el stop</dt>
+    <dd>En el extremo de la <strong>corrida fallida</strong>, la que rompió y no continuó</dd>
+    <dt>Filtros propios</dt>
+    <dd>El objetivo <strong>no puede pasar del punto de referencia</strong>, y <strong>tiene que haber una zona a la que ir</strong></dd>
+  </dl>
+
+  <h3>Una zona a la que ir</h3>
+  <p>
+    Con el Reingreso se busca una probabilidad en esa dirección: que el precio
+    <strong>tenga adónde ir a testear</strong>. Por eso, en la dirección del
+    Reingreso tiene que quedar <strong>otra zona activa, entera más allá del
+    objetivo</strong>. Vale cualquiera, también una de premercado, y a
+    cualquier distancia.
+  </p>
+  <dl class="datos">
+    <dt>El objetivo</dt>
+    <dd>Sigue siendo 1:1. <strong>No tiene que llegar</strong> a esa zona: basta con que exista</dd>
+    <dt>Cuándo se mira</dt>
+    <dd>Al poner la orden, con las zonas activas de ese momento</dd>
+  </dl>
+  <div class="duro">
+    <p>
+      <strong>Sin zona a la que ir, no hay Reingreso.</strong> Si en esa
+      dirección no queda ninguna zona activa, el precio tiene camino libre, y el
+      camino libre es terreno de la Continuación.
+    </p>
+  </div>
+
+  <!-- Unificado el 14/09/2026: antes era solo el extremo del retroceso que
+       origino la zona. Ahora vale el de cualquier retroceso vivo. -->
+  <h3>El punto de referencia <Refs cods="R-41" /></h3>
+  <p>
+    El Reingreso es el único setup con este filtro. <strong>Todo retroceso
+    deja un punto de referencia:</strong> su nivel de referencia, el mínimo
+    más bajo si el retroceso baja y el máximo más alto si sube. Es el mismo
+    vértice que ya dibuja el zigzag.
+  </p>
+
+  <dl class="datos">
+    <dt>Cuál manda</dt>
+    <dd>El punto de referencia vivo más cercano a la entrada que quede entre la entrada y el objetivo. Vale el de cualquier retroceso, no solo el del que originó la zona. Los que quedan fuera de ese tramo no estorban</dd>
+    <dt>Cuándo descarta</dt>
+    <dd>Si el objetivo <strong>pasa</strong> de ese nivel, el Reingreso no se opera. Si cae justo encima, se opera: solo descarta pasarlo</dd>
+    <dt>Cuándo deja de contar</dt>
+    <dd>Cuando una vela <strong>cierra</strong> más allá del nivel. A partir de ahí no estorba ningún objetivo</dd>
+  </dl>
+
+  <div class="duro">
+    <p>
+      <strong>Aquí manda el cierre, no la mecha.</strong> Un pinchazo de mecha
+      no rompe el punto de referencia. Es al revés que con una zona, que se
+      rompe con solo pasar la mecha.
+    </p>
+  </div>
+
+  <div class="duro">
+    <p>
+      <strong>El Reingreso es inmediato o no es.</strong> La ventana se abre
+      con la vela de la consecución y se cierra en cuanto el precio supera el
+      extremo de esa misma vela.
+    </p>
+    <p>Cuando el precio sigue de largo, la ventana se cerró para siempre. No se espera a que vuelva.</p>
+  </div>
+</section>

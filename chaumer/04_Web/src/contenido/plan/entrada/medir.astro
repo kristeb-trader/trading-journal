@@ -1,0 +1,46 @@
+---
+/**
+ * Plan · entrada · «Stop y objetivo».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { v } from './_datos.mjs';
+---
+
+<section class="ap" id="medir">
+  <h2>Stop y objetivo <Refs cods="R-32" /></h2>
+  <p>
+    Los dos se miden desde el nivel de entrada, y en este orden: primero el
+    stop, que lo decide la estructura; después el objetivo, que sale del stop.
+  </p>
+
+  <figure class="gr">
+    <img src="/conceptos/07-stop-objetivo.png" alt="La distancia al stop y la misma distancia al objetivo desde la entrada" loading="lazy" />
+    <figcaption class="meta">La distancia hasta el stop, repetida al otro lado. Esa es toda la aritmética.</figcaption>
+  </figure>
+
+  <ol class="secuencia">
+    <li><strong>Se ancla en la entrada.</strong> Todo se mide desde ahí.</li>
+    <li><strong>Se coloca el stop en su referencia estructural.</strong> En una Continuación, el punto más extremo que alcanzó el precio <strong>desde que nació la zona hasta la vela que rompió</strong> — no solo el extremo del retroceso que la originó. En un Reingreso, el extremo de la corrida fallida.</li>
+    <li><strong>Se mide esa distancia</strong> y se pone el objetivo a la misma distancia al otro lado.</li>
+  </ol>
+
+  <dl class="datos">
+    <dt>Relación</dt>
+    <dd><strong>{v('RATIO_TARGET')}.</strong> El objetivo recorre exactamente lo mismo que el stop</dd>
+    <dt>Stop de una Continuación</dt>
+    <dd>El punto más extremo alcanzado desde que nació la zona hasta la vela de rompimiento</dd>
+    <dt>Stop de un Reingreso</dt>
+    <dd>El extremo de la corrida que rompió y no continuó</dd>
+  </dl>
+
+  <div class="veto">
+    <p>
+      <strong>El objetivo nunca se acorta para que quepa.</strong> Si no cabe,
+      la entrada se descarta entera.
+    </p>
+    <p>No existe media entrada, ni relación reducida, ni «lo tomo más corto por esta vez».</p>
+  </div>
+</section>

@@ -1,0 +1,45 @@
+---
+/**
+ * Plan · entrada · «Antes de enviar».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import { v } from './_datos.mjs';
+---
+
+<section class="ap" id="antes">
+  <h2>Antes de enviar</h2>
+  <p>
+    Con el stop y el objetivo ya medidos, y <strong>antes</strong> de tocar el
+    botón, se comprueban los filtros. Basta que falle uno para que no haya
+    operación.
+  </p>
+
+  <div class="rejilla dos">
+    <div class="tarj">
+      <h3>¿El stop cabe?</h3>
+      <p>La distancia hasta el stop no puede pasar de <strong>{v('STOP_MAX')}</strong>.</p>
+    </div>
+    <div class="tarj">
+      <h3>¿El camino está libre?</h3>
+      <p>Entre la entrada y el objetivo no puede haber ninguna zona viva.</p>
+    </div>
+    <div class="tarj">
+      <h3>¿Es día de la Fed?</h3>
+      <p>Ese día la Continuación no se opera.</p>
+    </div>
+    <div class="tarj">
+      <h3>¿Hay noticia cerca?</h3>
+      <p>Dentro de la ventana de una noticia roja no se coloca nada.</p>
+    </div>
+  </div>
+
+  <p class="mas-filtros">
+    Los cuatro filtros, con sus casos límite, están en el módulo siguiente.
+  </p>
+</section>
+
+<style>
+  .mas-filtros { color: var(--texto-3); font-size: var(--t-3); }
+</style>

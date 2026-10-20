@@ -1,0 +1,45 @@
+---
+/**
+ * Plan · jornada · «Ventana Operativa».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { ventana } from './_datos.mjs';
+---
+
+<section class="ap" id="ventana">
+  <h2>Ventana Operativa <Refs cods="R-02" /></h2>
+  <p>
+    Se opera durante las <strong> primeras {ventana.duracion} del
+    mercado americano</strong>. Fuera de esa ventana no se coloca ninguna
+    orden, pase lo que pase en el gráfico.
+  </p>
+
+  <figure class="gr">
+    <img src="/conceptos/01-ventana.png" alt="Una jornada completa con la ventana operativa de dos horas marcada" loading="eager" />
+    <figcaption class="meta">Una jornada real. La franja marca las dos horas en las que se puede colocar una orden.</figcaption>
+  </figure>
+
+  <dl class="datos">
+    <dt>Referencia</dt>
+    <dd><strong>La apertura americana</strong>, no el número del reloj</dd>
+    <dt>Duración</dt>
+    <dd><strong>{ventana.minutos} minutos</strong> exactos</dd>
+    <dt>En el plan</dt>
+    <dd><span class="cifra-en">{ventana.plan}</span>, hora de Nueva York</dd>
+    <dt>En pantalla, verano de Nueva York</dt>
+    <dd><span class="cifra-en">{ventana.verano}</span> hora Colombia</dd>
+    <dt>En pantalla, invierno de Nueva York</dt>
+    <dd><span class="cifra-en">{ventana.invierno}</span> hora Colombia</dd>
+  </dl>
+
+  <div class="duro">
+    <p>
+      <strong>El fin de la ventana prohíbe abrir, no obliga a cerrar.</strong>
+      Si a esa hora hay una operación viva, se queda viva hasta su stop o su
+      objetivo.
+    </p>
+  </div>
+</section>

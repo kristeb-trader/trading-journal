@@ -1,0 +1,63 @@
+---
+/**
+ * Plan · zonas · «Corrida y retroceso».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+---
+
+<!-- 1 ─────────────────────────────────────────────────────────────── -->
+
+<section class="ap" id="movimiento">
+  <h2>Corrida y retroceso <Refs cods="R-05 · R-06" /></h2>
+  <p>
+    El mercado solo tiene dos fases: se mueve con fuerza hacia una dirección
+    (arriba o abajo) o hace una pausa y retrocede un poco, ya sea para
+    continuar el movimiento o para cambiar de sentido. El movimiento con
+    dirección es la <strong>corrida</strong>; la pausa es el
+    <strong>retroceso</strong>. Todo lo que pasa en el gráfico cae en una de
+    esas dos categorías.
+  </p>
+
+  <figure class="gr">
+    <img src="/conceptos/02-corrida-retroceso.png" alt="Un movimiento alcista real separado en su corrida y su retroceso" loading="eager" />
+    <figcaption class="meta">Movimiento alcista: la corrida sube y el retroceso baja.</figcaption>
+  </figure>
+
+  <figure class="gr">
+    <img src="/conceptos/16-corrida-bajista.png" alt="El mismo mecanismo en un movimiento bajista real" loading="eager" />
+    <figcaption class="meta">El mismo mecanismo hacia abajo: la corrida baja y el retroceso sube.</figcaption>
+  </figure>
+
+  <dl class="datos">
+    <dt>Cuándo nace una corrida</dt>
+    <dd>Surge en la vela que rompe y supera el extremo de la anterior</dd>
+    <dt>Continuidad del movimiento</dt>
+    <dd>Se mantiene activa mientras cada vela respete el extremo opuesto de la previa. Si empatan al tick, continúa vigente</dd>
+    <dt>Cuándo termina</dt>
+    <dd>Termina en la primera vela que rompe en dirección contraria, así sea por <span class="cifra-en">1</span> solo tick</dd>
+    <dt>Duración</dt>
+    <dd>No tiene límite</dd>
+    <dt>El color de la vela</dt>
+    <dd>No importa en absoluto</dd>
+    <dt>Una vela dentro de la anterior</dt>
+    <dd>No interrumpe ni altera la continuidad de la corrida</dd>
+  </dl>
+
+  <div class="duro">
+    <p>
+      <strong>Un retroceso no tiene tamaño mínimo ni máximo de velas.</strong>
+      Puede ser una sola vela. No se descarta un movimiento por parecer
+      demasiado corto o demasiado largo.
+    </p>
+  </div>
+
+  <p>
+    Del retroceso interesa un punto concreto: <strong>su extremo</strong> — el
+    más bajo si la corrida era alcista, el más alto si era bajista. Ahí irá el
+    stop cuando llegue el momento, y ese punto reaparece en casi todas las
+    decisiones que vienen después.
+  </p>
+</section>

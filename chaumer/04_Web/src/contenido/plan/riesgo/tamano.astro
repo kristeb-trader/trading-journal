@@ -1,0 +1,60 @@
+---
+/**
+ * Plan · riesgo · «Con cuántos contratos».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { v, EJEMPLOS } from './_datos.mjs';
+---
+
+<section class="ap" id="tamano">
+  <h2>Con cuántos contratos <Refs cods="R-04" /></h2>
+
+  <p>
+    El tope es de dinero: <strong>{v('RIESGO_MAX')}</strong>. Se operan los
+    contratos que caben sin pasarlo, redondeando hacia abajo: cuanto más
+    corto el stop, más contratos.
+  </p>
+
+  <div class="tabla-env">
+    <table class="comp">
+      <thead>
+        <tr><th>Stop</th><th>Contratos</th><th>Riesgo</th></tr>
+      </thead>
+      <tbody>
+        {EJEMPLOS.map((e) => (
+          <tr><th>{e.pts} puntos</th><td>{e.c}</td><td>${e.usd}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="duro">
+    <p>
+      <strong>Lo decide solo el stop.</strong> No cambia porque la cuenta
+      crezca, tras una mala racha ni por convicción. Si no cabe ni un
+      contrato, no se opera.
+    </p>
+  </div>
+</section>
+
+<style>
+  .tabla-env { overflow-x: auto; margin: var(--e-5) 0; }
+  .comp { width: 100%; border-collapse: collapse; font-size: var(--t-3); }
+  .comp th, .comp td {
+    padding: var(--e-3) var(--e-4);
+    text-align: left; /* alineacion-ok: celdas de tabla, no prosa */
+    border-bottom: 1px solid var(--borde-sutil);
+  }
+  .comp thead th {
+    font-size: var(--t-1);
+    letter-spacing: var(--track-etiqueta);
+    text-transform: uppercase;
+    color: var(--texto-3);
+    border-bottom-color: var(--borde);
+  }
+  .comp tbody th { color: var(--texto-2); font-weight: var(--peso-normal); font-size: inherit; letter-spacing: normal; text-transform: none; }
+  .comp td { color: var(--texto-2); font-variant-numeric: tabular-nums; }
+</style>

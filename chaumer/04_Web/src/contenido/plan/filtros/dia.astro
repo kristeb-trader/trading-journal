@@ -1,0 +1,34 @@
+---
+/**
+ * Plan · filtros · «No abrir el día».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+---
+
+<section class="ap" id="dia">
+  <h2>No abrir el día <Refs cods="R-37 · R-36" /></h2>
+  <p>
+    Hay dos cosas que se deciden antes de mirar un solo gráfico, y las dos
+    pueden cerrar el día entero.
+  </p>
+
+  <div class="rejilla dos">
+    <div class="tarj">
+      <h3>No estar bien</h3>
+      <p>Enfermo o mal mentalmente: <strong>no se opera</strong>. El día se cierra sin abrir la plataforma.</p>
+    </div>
+    <div class="tarj">
+      <h3>Día de la Fed</h3>
+      <p>Si Forex Factory marca en rojo un evento de la Fed, ese día <strong>la Continuación queda prohibida</strong>. Solo se permite <strong>Reingreso</strong>.</p>
+    </div>
+  </div>
+
+  <p>
+    El veto del día de la Fed dura <strong>toda la jornada</strong>, no solo la
+    hora del anuncio, e incluye decisión de tipos, actas y discursos de <strong>Powell</strong>
+    siempre que aparezcan en rojo.
+  </p>
+</section>

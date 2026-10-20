@@ -1,0 +1,68 @@
+---
+/**
+ * Plan · zonas · «Zonas entre zonas».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { v } from './_datos.mjs';
+---
+
+<!-- 6 ─────────────────────────────────────────────────────────────── -->
+
+<section class="ap" id="convivencia">
+  <h2>Zonas entre zonas <Refs cods="R-12 · R-17 · R-18" /></h2>
+  <p>
+    A lo largo de la mañana el precio deja muchas zonas candidatas. Si se marcaran todas,
+    el gráfico acabaría siendo una reja de rectángulos y se operaría con demasiado ruido. 
+    Dos reglas lo impiden, y las dos se aplican en el mismo momento.
+  </p>
+
+  <h3>Solo una zona entre zonas</h3>
+  <p>
+    Cuando hay una zona por arriba y otra por abajo, se calcula el punto medio
+    entre sus bordes internos. Solo se marca zona nueva si el movimiento que la
+    genera <strong>no supera el 50%</strong> entre esas dos zonas.
+  </p>
+
+  <figure class="gr">
+    <img src="/conceptos/22-entre-zonas.png" alt="Una zona marcada entre otras dos: el movimiento se quedó de un lado de la mitad" loading="eager" />
+    <figcaption class="meta">El movimiento entero se queda del lado en el que empezó. Por eso esta zona sí se marca.</figcaption>
+  </figure>
+
+  <figure class="gr">
+    <img src="/conceptos/26-entre-zonas-no.png" alt="Un movimiento entre dos zonas que cruza la mitad y por eso no marca zona" loading="lazy" />
+    <figcaption class="meta">El mismo caso al revés: el movimiento cruzó la mitad, así que ahí no se marca nada.</figcaption>
+  </figure>
+
+  <div class="duro">
+    <p>
+      <strong>Solo se marca una sola zona entre zonas</strong> entre cada
+      resistencia y soporte, si cumple las reglas. Es decir: si se presentan
+      más zonas en el día entre ese rango de resistencia y soporte, ya no se
+      marcan más zonas.
+    </p>
+  </div>
+
+  <h3>Una sola por franja y por jornada</h3>
+  <p>
+    La franja entre dos zonas admite <strong>una zona en todo el día</strong>,
+    y el turno lo resuelve el primer retroceso que aparezca dentro. Si ese
+    primero respeta la mitad, se marca; si no la respeta, no se marca. En los
+    dos casos <strong>la franja queda cerrada</strong> para el resto de la
+    jornada, y no se reabre aunque las zonas que la formaban se mueran.
+  </p>
+  <p>
+    Cualquier zona viva sirve de borde de la franja, incluidas las que se
+    marcaron de madrugada por volumen.
+  </p>
+
+  <div class="veto">
+    <p>
+      <strong>Salir de una zona es rompimiento y tambien consecución</strong>
+      No solo rompimiento. Mientras un rompimiento espera su consecución, no se marca zona al otro
+      lado de esa zona, a menos que pasen las {v('PLAZO_CONSECUCION')} sin consecución o aparezca un retroceso nuevo. En ese caso sí se marca zona, aunque no haya habido consecución.
+    </p>
+  </div>
+</section>

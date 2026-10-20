@@ -1,0 +1,151 @@
+---
+/**
+ * Plan · setups · «Diferencias».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import { v } from './_datos.mjs';
+---
+
+<section class="ap" id="comparar">
+  <h2>Diferencias</h2>
+  <p>
+    Comparten la mecánica de entrada — los dos entran con la confirmación —
+    pero se diferencian en casi todo lo demás.
+  </p>
+
+  <div class="tabla-env">
+    <table class="comp">
+      <thead>
+        <tr><th></th><th>Continuación</th><th>Reingreso</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>Qué opera</th>
+          <td>El rompimiento que funciona</td>
+          <td>El rompimiento que falló</td>
+        </tr>
+        <tr>
+          <th>Dirección</th>
+          <td>A favor del movimiento</td>
+          <td>Contraria al rompimiento</td>
+        </tr>
+        <tr>
+          <th>Plazo</th>
+          <td>{v('PLAZO_CONSECUCION')} para la consecución</td>
+          <td>Sin plazo para aparecer; inmediato para entrar</td>
+        </tr>
+        <tr>
+          <th>Stop</th>
+          <td>Extremo del retroceso</td>
+          <td>Extremo de la corrida fallida</td>
+        </tr>
+        <tr>
+          <th>Filtros de objetivo</th>
+          <td>Camino libre de zonas vivas</td>
+          <td>Camino libre <em>y</em> sin pasar del punto de referencia</td>
+        </tr>
+        <tr>
+          <th>Corrida fluida</th>
+          <td>Obligatoria</td>
+          <td>No aplica</td>
+        </tr>
+        <tr>
+          <th>Día de la Fed</th>
+          <td><span class="no">Prohibido</span></td>
+          <td><span class="si">Permitido</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="duro">
+    <p>
+      <strong>El stop del Reingreso suele salir más ancho.</strong> Se mide
+      contra la corrida fallida, que está al otro lado de la zona, así que
+      incluye la zona entera. Por eso el tope de riesgo descarta más
+      Reingresos que Continuaciones.
+    </p>
+  </div>
+</section>
+
+<style>
+
+  .flujo-iri {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--e-3);
+    margin: var(--e-5) 0 var(--e-6);
+    padding: var(--e-4) 0;
+    border-top: 1px solid var(--borde);
+    border-bottom: 1px solid var(--borde);
+    text-align: center;
+  }
+
+  .flujo-etapa {
+    color: var(--texto);
+    font-size: var(--t-6);
+    font-weight: var(--peso-fuerte);
+    line-height: var(--alto-corto);
+  }
+
+  .flujo-flecha {
+    color: var(--texto-3);
+    font-size: var(--t-6);
+    line-height: 1;
+  }
+
+  .flujo-impulso { color: var(--texto); }
+  .flujo-retroceso { color: var(--aviso); }
+
+  .flujo-entrada {
+    display: inline-flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--e-2);
+    color: var(--positivo);
+  }
+
+  .flujo-entrada strong { color: var(--acento-vivo); }
+
+  .flujo-entrada small {
+    color: var(--texto-3);
+    font-family: var(--fuente-mono);
+    font-size: var(--t-1);
+    font-weight: var(--peso-normal);
+    letter-spacing: var(--track-etiqueta);
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 40rem) {
+    .flujo-iri {
+      flex-wrap: wrap;
+      gap: var(--e-2) var(--e-3);
+    }
+
+    .flujo-etapa {
+      font-size: var(--t-5);
+    }
+  }
+
+  .tabla-env { overflow-x: auto; margin: var(--e-5) 0; }
+  .comp { width: 100%; border-collapse: collapse; font-size: var(--t-3); min-width: 34rem; }
+  .comp th, .comp td {
+    padding: var(--e-3) var(--e-4);
+    vertical-align: top;
+    border-bottom: 1px solid var(--borde-sutil);
+  }
+  .comp thead th {
+    font-size: var(--t-1);
+    letter-spacing: var(--track-etiqueta);
+    text-transform: uppercase;
+    color: var(--texto-3);
+    border-bottom-color: var(--borde);
+  }
+  .comp tbody th { color: var(--texto-3); font-weight: var(--peso-normal); width: 11rem; }
+  .comp td { color: var(--texto-2); }
+  .si { color: var(--positivo); }
+  .no { color: var(--negativo); }
+</style>

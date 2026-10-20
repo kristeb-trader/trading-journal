@@ -1,0 +1,32 @@
+---
+/**
+ * Plan · jornada · «El registro».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+---
+
+<section class="ap" id="registro">
+  <h2>El registro <Refs cods="R-38" /></h2>
+  <p>
+    Se registran <strong>todas las sesiones</strong>, incluidas aquellas en
+    las que no se operó — y en esas, el motivo por el que no se operó.
+  </p>
+
+  <dl class="datos">
+    <dt>Automático</dt>
+    <dd>Entrada, salida, niveles, hora y resultado, del propio indicador</dd>
+    <dt>A mano</dt>
+    <dd>Qué setup fue, la imagen, los errores y las observaciones</dd>
+    <dt>Los días sin operar</dt>
+    <dd><strong>También se registran</strong>, con el motivo</dd>
+  </dl>
+
+  <p>
+    Los días en que no se opera son los que más información dan sobre el
+    método. Sin ellos no hay forma de saber cuántas veces el plan dijo que no,
+    ni por qué.
+  </p>
+</section>

@@ -1,0 +1,42 @@
+---
+/**
+ * Plan · premercado · «El calendario».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+---
+
+<section class="ap" id="noticias">
+  <h2>El calendario <Refs cods="R-35 · R-36" /></h2>
+  <p>
+    Se mira Forex Factory, y solo Forex Factory. Un único calendario evita
+    el problema de dos fuentes que no siempre coinciden.
+  </p>
+
+  <figure class="gr">
+    <img src="/screenshots/premercado/calendario-fomc.jpg" width="1737" height="608" loading="lazy"
+         alt="El calendario de Forex Factory con un evento de la Fed en rojo" />
+  </figure>
+
+  <h3>Qué se anota</h3>
+  <ol class="secuencia">
+    <li>
+      <strong>¿Hay hoy un evento de la Fed en rojo?</strong> Si lo hay, el
+      día entero cambia de reglas:
+      <div class="duro">
+        <p><strong>Día con la Fed en rojo:</strong> ese día no se opera el setup de continuación. Solo se permite el <strong>Reingreso</strong>, con todas sus condiciones normales.</p>
+      </div>
+    </li>
+    <li><strong>La hora exacta de cada noticia roja.</strong> Solo aplica el <strong>Rojo</strong>: naranja y amarillo no cuentan, no bloquean nada.</li>
+    <li><strong>La ventana de cada una:</strong> no se opera cinco minutos antes y cinco después.</li>
+  </ol>
+</section>
+
+<style>
+
+  /* El aviso de «El gráfico» quedaba pegado al párrafo de después: el margen
+     inferior normal de .duro no bastaba aquí. */
+  .duro-espaciado { margin-bottom: var(--e-7); }
+</style>

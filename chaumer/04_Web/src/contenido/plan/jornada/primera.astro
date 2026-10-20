@@ -1,0 +1,51 @@
+---
+/**
+ * Plan · jornada · «La primera vela».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { ventana } from './_datos.mjs';
+---
+
+<section class="ap" id="primera">
+  <h2>La primera vela <Refs cods="R-07" /></h2>
+  <p>
+    La primera vela después de la apertura — la de las <span class="cifra-en">08:31</span>
+    en horario de verano de Nueva York — tiene un papel especial y es donde
+    arranca todo el análisis del día.
+  </p>
+
+  <figure class="gr">
+    <img src="/conceptos/12-vela-0831.png" alt="La primera vela de la sesión declarando la dirección inicial del día" loading="eager" />
+    <figcaption class="meta">La primera vela de la ventana declara la dirección con su propio cuerpo, y es el origen desde el que se mide el primer movimiento.</figcaption>
+  </figure>
+
+  <dl class="datos">
+    <dt>Qué declara</dt>
+    <dd>La dirección inicial del día, <strong>con su propio cuerpo</strong>: cierra por encima de su apertura, el día empieza alcista; por debajo, bajista</dd>
+    <dt>Qué papel tiene</dt>
+    <dd>Es la <strong>vela origen</strong>. El primer movimiento se mide desde su mínimo si es alcista, desde su máximo si es bajista</dd>
+    <dt>Las velas anteriores</dt>
+    <dd>No sirven de referencia. La estructura del día empieza aquí</dd>
+    <dt>¿Puede sostener una zona?</dt>
+    <dd>Sí</dd>
+  </dl>
+
+  <h3>Por dónde empieza el día <Refs cods="R-07" /></h3>
+  <p>
+    Que la primera vela declare una dirección no significa que haya que
+    operar en ese sentido toda la mañana.
+  </p>
+     <div class="duro">
+    <p>
+      <strong>Marca por dónde empieza el día, no en qué sentido se opera.</strong>
+      Se buscan entradas de continuación en los dos sentidos.
+    </p>
+    <p>
+      Cada movimiento deja su zona al terminar, y esa zona se opera a favor de ese
+      movimiento — sea el que sea.
+    </p>
+  </div>
+</section>

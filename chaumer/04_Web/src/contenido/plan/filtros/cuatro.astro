@@ -1,0 +1,74 @@
+---
+/**
+ * Plan · filtros · «Los seis filtros».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { v } from './_datos.mjs';
+---
+
+<section class="ap" id="cuatro">
+  <h2>Los seis filtros <Refs cods="R-31 · R-32 · R-41 · R-26 · R-40 · R-36" /></h2>
+  <p>
+    Con el setup identificado y el stop y el objetivo ya medidos, se pasan
+    seis comprobaciones. <strong>Basta que falle una</strong> para que no
+    haya operación.
+  </p>
+
+  <ol class="secuencia">
+    <li>
+      <strong>El stop no pasa de {v('STOP_MAX')}.</strong> Se mide
+      desde la entrada hasta su referencia estructural. Si lo supera aunque sea
+      por un tick, no se opera.
+    </li>
+    <li>
+      <strong>El camino al objetivo está libre de zonas vivas.</strong> Una sola
+      zona viva entre la entrada y el objetivo descarta la operación.
+    </li>
+    <li>
+      <strong>Solo en Reingreso:</strong> el objetivo no pasa del punto de
+      referencia vivo más cercano que quede entre la entrada y el objetivo.
+      Solo lo rompe una vela que cierre más allá; la mecha no cuenta.
+    </li>
+    <li>
+      <strong>Solo en Reingreso:</strong> hay una zona a la que ir. En la
+      dirección del Reingreso queda otra zona activa, entera más allá del
+      objetivo, a la que el precio pueda ir a testear. Sin ella, el camino está
+      libre y eso es terreno de la Continuación.
+    </li>
+    <li>
+      <strong>Solo en Continuación:</strong> la corrida es fluida. Si no lo es, ese
+      rompimiento no se opera; la zona sigue viva y se espera otro IRI que
+      deje una zona nueva entera más allá.
+    </li>
+    <li>
+      <strong>No es día de la Fed con una Continuación delante.</strong>
+    </li>
+  </ol>
+
+  <figure class="gr">
+    <img src="/conceptos/08-descarte.png" alt="Un setup válido descartado porque el stop estructural supera el tope de riesgo" loading="eager" />
+    <figcaption class="meta">Un setup que cumple todo menos el tope de riesgo. El stop estructural queda por encima del máximo, y no se opera.</figcaption>
+  </figure>
+
+  <div class="duro">
+    <p>
+      <strong>El tope de riesgo es una línea dura, no una zona de aviso.</strong>
+      Un stop de 79,75 puntos se opera exactamente igual que uno de 30.
+    </p>
+    <p>
+      No existe «está muy cerca del límite, mejor la dejo». Un caso real de
+      julio se tomó con el <span class="cifra-en">94 %</span> del tope
+      consumido, y se ganó.
+    </p>
+  </div>
+
+  <div class="veto">
+    <p>
+      <strong>El objetivo nunca se acorta para que quepa.</strong> Si no cabe,
+      se descarta la entrada entera.
+    </p>
+  </div>
+</section>

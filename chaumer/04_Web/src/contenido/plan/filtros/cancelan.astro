@@ -1,0 +1,62 @@
+---
+/**
+ * Plan · filtros · «Lo que cancela la orden».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { v } from './_datos.mjs';
+---
+
+<section class="ap" id="cancelan">
+  <h2>Lo que cancela la orden <Refs cods="R-29" /></h2>
+  <p>
+    Una orden puesta que todavía no se ha llenado muere con lo primero que
+    llegue de esta lista.
+  </p>
+
+  <div class="rejilla dos">
+    <div class="tarj">
+      <h3>Se agota el plazo</h3>
+      <p>Pasan {v('PLAZO_CONSECUCION')} desde el rompimiento sin que el precio llegue al nivel de la orden.</p>
+    </div>
+    <div class="tarj">
+      <h3>El precio vuelve al stop</h3>
+      <p>El precio regresa al punto del stop: el extremo alcanzado desde que nació la zona hasta la vela que rompió.</p>
+    </div>
+    <div class="tarj">
+      <h3>Se acaba la ventana</h3>
+      <p>Un minuto antes del final de las dos horas.</p>
+    </div>
+    <div class="tarj">
+      <h3>Entra una noticia</h3>
+      <p>Empieza la ventana de once minutos de una noticia roja.</p>
+    </div>
+  </div>
+
+  <div class="duro">
+    <p>
+      <strong>El plazo se comprueba antes del llenado.</strong> Pasado el
+      plazo la orden ya no existe, y no puede llenarse aunque el precio toque
+      el nivel en esa misma vela.
+    </p>
+  </div>
+
+  <div class="veto">
+    <p>
+      <strong>Un retroceso nuevo NO cancela la orden.</strong> Marca zona
+      nueva, sí, pero la orden sigue viva.
+    </p>
+    <p>
+      Esto estuvo escrito al revés hasta finales de agosto. Con el criterio
+      equivocado, una orden real del 9 de julio se canceló dos minutos antes
+      de que se hubiera llenado.
+    </p>
+  </div>
+
+  <p>
+    Una orden cancelada <strong>no consume el cupo del día</strong>: se puede
+    esperar otro setup mientras quede ventana.
+  </p>
+</section>

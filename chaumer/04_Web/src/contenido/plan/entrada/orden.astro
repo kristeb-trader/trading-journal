@@ -1,0 +1,51 @@
+---
+/**
+ * Plan · entrada · «Qué orden y dónde».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { v } from './_datos.mjs';
+---
+
+<section class="ap" id="orden">
+  <h2>Qué orden y dónde <Refs cods="R-24" /></h2>
+  <p>
+    La entrada no se hace a mano. Se deja una orden puesta y se espera a que
+    el mercado la llene solo.
+  </p>
+
+  <figure class="gr">
+    <img src="/conceptos/06-entrada.png" alt="La orden colocada un tick más allá del extremo de la vela de rompimiento" loading="eager" />
+    <figcaption class="meta">La orden se coloca al cierre de la vela que rompió, un tick más allá de su extremo.</figcaption>
+  </figure>
+
+  <dl class="datos">
+    <dt>Tipo de orden</dt>
+    <dd><strong>Stop Market.</strong> Buy Stop para largos, Sell Stop para cortos</dd>
+    <dt>Cuándo se coloca</dt>
+    <dd>Al <strong>cierre de la vela de rompimiento</strong>, ni antes ni después</dd>
+    <dt>A qué nivel, en largo</dt>
+    <dd>Máximo de esa vela <strong>+ 1 tick</strong> ({v('TICK')})</dd>
+    <dt>A qué nivel, en corto</dt>
+    <dd>Mínimo de esa vela <strong>− 1 tick</strong> ({v('TICK')})</dd>
+    <dt>Dónde se lee el nivel</dt>
+    <dd>En el gráfico de <strong>MNQ</strong>, no en el de NQ</dd>
+    <dt>Desde dónde se manda</dt>
+    <dd>Desde el Chart Trader de MNQ</dd>
+  </dl>
+
+  <div class="veto">
+    <p>
+      <strong>Orden a mercado: prohibida. Orden límite: prohibida.</strong>
+    </p>
+    <p>No se persigue el precio a mano. Se coloca la orden y se espera.</p>
+  </div>
+
+  <p>
+    Colocar la orden un tick más allá del extremo de la vela que rompió es lo
+    mismo que decir que <strong>entra sola cuando llega la confirmación</strong>.
+    La orden es la confirmación, convertida en instrucción.
+  </p>
+</section>

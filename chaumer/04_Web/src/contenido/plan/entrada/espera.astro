@@ -1,0 +1,37 @@
+---
+/**
+ * Plan · entrada · «La orden esperando».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+---
+
+<section class="ap" id="espera">
+  <h2>La orden esperando <Refs cods="R-29" /></h2>
+  <p>
+    Entre que se coloca la orden y que se llena pueden pasar varias cosas. Solo
+    una de ellas es entrar.
+  </p>
+
+  <div class="duro">
+    <p>
+      <strong>Un retroceso nuevo NO cancela la orden.</strong> Es lo más fácil
+      de confundir: la aparición de una estructura nueva marca zona nueva, sí,
+      pero deja la orden pendiente intacta.
+    </p>
+  </div>
+
+  <p>
+    Lo que sí la cancela — el plazo, la vuelta al stop, la hora y las noticias
+    — está en el módulo siguiente, junto con el resto de lo que impide operar.
+  </p>
+
+  <dl class="datos">
+    <dt>Si se llena</dt>
+    <dd>Empieza el módulo <strong>Dentro de la operación</strong></dd>
+    <dt>Si se cancela</dt>
+    <dd><strong>No consume el cupo del día.</strong> Se puede esperar otro setup dentro de la ventana</dd>
+  </dl>
+</section>

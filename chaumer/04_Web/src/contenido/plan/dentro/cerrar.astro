@@ -1,0 +1,29 @@
+---
+/**
+ * Plan · dentro · «Al cerrar».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+---
+
+<section class="ap" id="cerrar">
+  <h2>Al cerrar <Refs cods="R-28" /></h2>
+  <p>
+    Terminada la operación, con el resultado que sea:
+  </p>
+
+  <ol class="secuencia">
+    <li><strong>Se anota en la bitácora:</strong> el setup, la imagen, los errores y las observaciones.</li>
+    <li><strong>Se cierra NinjaTrader.</strong></li>
+  </ol>
+
+  <div class="duro">
+    <p>
+      <strong>El cupo del día está consumido.</strong> No se coloca ninguna
+      orden más, aunque aparezcan setups perfectamente válidos y quede
+      ventana de sobra.
+    </p>
+  </div>
+</section>

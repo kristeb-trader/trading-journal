@@ -1,0 +1,29 @@
+---
+/**
+ * Plan · riesgo · «Cuántas veces».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { v } from './_datos.mjs';
+---
+
+<section class="ap" id="cuantas">
+  <h2>Cuántas veces <Refs cods="R-28" /></h2>
+
+  <dl class="datos">
+    <dt>Operaciones por sesión</dt>
+    <dd><strong>{v('OPS_POR_SESION')}, como máximo</strong></dd>
+    <dt>¿Y si la orden se cancela sin llenarse?</dt>
+    <dd>No consume el cupo. Se puede esperar otro setup</dd>
+    <dt>¿Cambia algo el resultado?</dt>
+    <dd>No. Ganada o perdida, el día terminó igual</dd>
+  </dl>
+
+  <p>
+    Una operación al día es también lo que hace lenta la recuperación: no hay
+    forma de compensar un mal día dentro del mismo día, y eso es
+    deliberado.
+  </p>
+</section>

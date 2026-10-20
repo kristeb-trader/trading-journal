@@ -1,0 +1,86 @@
+---
+/**
+ * Plan · setups · «Corrida fluida».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+---
+
+<!-- Corrida fluida — nueva el 14/09/2026, ampliada el 21/09/2026. Todo lo
+     de esta seccion sale de su regla en reglas.json; nada de price action
+     generico. -->
+
+<section class="ap" id="fluida">
+  <h2>Corrida fluida <Refs cods="R-40" /></h2>
+  <p>
+    La Continuación solo se opera si la corrida que la arma es <strong>fluida</strong>.
+    La secuencia tiene que salir bien tres veces seguidas; si falla una, ese
+    rompimiento no se opera.
+  </p>
+
+  <ol class="secuencia">
+    <li><strong>La corrida deja su zona</strong> al terminar.</li>
+    <li><strong>El retroceso no se pasa.</strong> Mide menos que su corrida. Se miden los dos sobre el zigzag: la corrida desde su arranque hasta su extremo, y el retroceso desde ese mismo extremo hasta su nivel de referencia. Si empatan, no se pasa.</li>
+    <li><strong>La corrida siguiente rompe esa zona.</strong> Ese es el rompimiento que opera la Continuación.</li>
+  </ol>
+
+  <dl class="datos">
+    <dt>Quién declara el sentido</dt>
+    <dd>La vela de apertura. Desde ahí el mercado alterna corrida en ese sentido y retroceso en contra</dd>
+    <dt>Cómo se emparejan</dt>
+    <dd>Cada corrida con el retroceso que viene justo después de ella. Las parejas no se solapan: tras una pareja rota, la cuenta empieza de nuevo con la corrida siguiente</dd>
+    <dt>A qué setup afecta</dt>
+    <dd>Solo a la Continuación. El Reingreso no se toca</dd>
+    <dt>El tope de riesgo</dt>
+    <dd>No tiene nada que ver. Una entrada puede caber de sobra en el tope y quedar fuera igual</dd>
+  </dl>
+
+  <h3>Cuando falla</h3>
+  <dl class="datos">
+    <dt>El retroceso se pasa</dt>
+    <dd>Mide más que su corrida. Quedan fuera para entrar las dos zonas de la pareja: la de la corrida y la que deja el propio retroceso</dd>
+    <dt>La corrida siguiente no rompe</dt>
+    <dd>Se devuelve sin romper la zona. El mercado está lateral y esa zona queda bloqueada</dd>
+  </dl>
+
+  <div class="veto">
+    <p>
+      <strong>Perdida la fluidez, se bloquea el sentido del día entero.</strong>
+      No se opera ningún rompimiento en el sentido que declaró la vela de
+      apertura, sea cual sea la zona — tampoco las de premercado. El sentido
+      contrario no se toca.
+    </p>
+  </div>
+
+  <h3>El rompimiento directo</h3>
+  <p>
+    Es el rompimiento de una zona mientras el sentido está bloqueado. Por
+    parámetros cumple, pero el mercado está lateral: <strong>no se opera
+    nunca</strong>. Solo sirve como primer paso para recuperar la fluidez.
+  </p>
+
+  <h3>Cómo se recupera</h3>
+  <ol class="secuencia">
+    <li><strong>La zona bloqueada queda rota con su consecución.</strong> Ese es el rompimiento directo, y no se opera.</li>
+    <li><strong>El mercado arma un IRI nuevo entero más allá:</strong> corrida que deja su zona, retroceso que la confirma y rompimiento de esa zona con su consecución. La zona nueva tiene que quedar <strong>entera</strong> más allá de la bloqueada: por encima si se busca largo, por debajo si se busca corto. Se entra en ese rompimiento, no antes.</li>
+  </ol>
+
+  <div class="duro">
+    <p>
+      <strong>La fluidez se puede volver a perder.</strong> Recuperarla no
+      vale para toda la jornada: cada movimiento se juzga por separado. Si el
+      IRI siguiente tampoco es fluido, el sentido se vuelve a bloquear y hay
+      que esperar otro.
+    </p>
+  </div>
+
+  <div class="duro">
+    <p>
+      <strong>La zona bloqueada sigue viva.</strong> Se dibuja, tapa
+      objetivos, hace de borde de franja y se rompe e invalida como cualquier
+      otra. Lo único que se descarta es entrar en su rompimiento.
+    </p>
+  </div>
+</section>

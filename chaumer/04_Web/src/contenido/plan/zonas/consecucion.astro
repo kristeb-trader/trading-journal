@@ -1,0 +1,70 @@
+---
+/**
+ * Plan · zonas · «Rompimiento y consecución».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+---
+
+<!-- 3 ─────────────────────────────────────────────────────────────── -->
+
+<section class="ap" id="consecucion">
+  <h2>Rompimiento y consecución <Refs cods="R-20 · R-22" /></h2>
+  <p>
+    Superar una zona son dos cosas, no una. Primero el <strong>rompimiento</strong>, después la
+    <strong>consecución</strong>. Y el mismo mecanismo que supera una zona es el que más tarde
+    dispara la entrada.
+  </p>
+
+  <div class="rejilla dos">
+    <div class="tarj">
+      <span class="tarj-n">1</span>
+      <h3>Rompimiento</h3>
+      <p>El precio pasa el borde de la zona por al menos <strong>un tick</strong>.</p>
+      <p>Basta la mecha. <strong>El cierre da igual.</strong></p>
+    </div>
+    <div class="tarj">
+      <span class="tarj-n">2</span>
+      <h3>Consecución</h3>
+      <p>Una vela posterior pasa por un tick el <strong>extremo de la vela que rompió</strong>.</p>
+      <p>Recién ahí la zona quedó traspasada.</p>
+    </div>
+  </div>
+  <br />
+
+  <figure class="gr">
+    <img src="/conceptos/14-traspaso.png" alt="La vela que pasa el borde de la zona y la que después pasa de su extremo" loading="eager" />
+    <figcaption class="meta">Las dos velas del traspaso sobre una sesión real: la que rompe, y la consecución que pasa de su extremo.</figcaption>
+  </figure>
+
+  <br />
+
+  <h3>Dos maneras de romper</h3>
+  <p>
+    Hay dos tipos de vela de rompimiento: Vela de rompimiento con mecha y vela de rompimiento con cuerpo. 
+    La diferencia es que la primera pasa el borde pero cierra dentro de la zona, y la segunda pasa el borde y cierra fuera de la zona.
+  </p>
+
+  <figure class="gr">
+    <img src="/conceptos/18-rompe-mecha.png" alt="Una vela que pasa el borde con la mecha y cierra dentro de la zona" loading="lazy" />
+    <figcaption class="meta">Rompimiento con mecha: la vela pasa el borde pero cierra dentro de la zona. Sigue siendo rompimiento.</figcaption>
+  </figure>
+
+  <figure class="gr">
+    <img src="/conceptos/19-rompe-cuerpo.png" alt="Una vela que pasa el borde y cierra fuera de la zona" loading="lazy" />
+    <figcaption class="meta">Rompimiento con cuerpo: la vela cierra al otro lado del borde.</figcaption>
+  </figure>
+
+  <div class="duro">
+    <p>
+      <strong>Un rompimiento solo, sin consecución, no invalida nada.</strong>
+      La zona sigue viva y sigue contando para todo.
+    </p>
+    <p>
+      Y la vela que da la consecución de un traspaso no abre a la vez el
+      rompimiento del lado contrario: eso se busca a partir de la siguiente.
+    </p>
+  </div>
+</section>

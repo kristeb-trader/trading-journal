@@ -1,0 +1,36 @@
+---
+/**
+ * Plan · dentro · «Al llenarse».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import * as P from '../../../lib/parsers.mjs';
+import { v } from './_datos.mjs';
+---
+
+<section class="ap" id="llenado">
+  <h2>Al llenarse <Refs cods="R-31 · R-32" /></h2>
+  <p>
+    La orden se llenó. Hay dos cosas que hacer, en este orden exacto, y
+    después no hay ninguna más.
+  </p>
+
+  <figure class="gr">
+    <img src="/conceptos/13-dentro.png" alt="Una operación desde el llenado hasta su resultado, con el stop y el objetivo colocados" loading="eager" />
+    <figcaption class="meta">Desde el llenado hasta el resultado. Colocados el stop y el objetivo, no se vuelve a intervenir.</figcaption>
+  </figure>
+
+  <ol class="secuencia">
+    <li><strong>Primero el stop</strong>, a su nivel estructural.</li>
+    <li><strong>Después el objetivo</strong>, a la misma distancia al otro lado.</li>
+  </ol>
+
+  <p>
+    El orden importa. Entre el llenado y este ajuste, la posición corre con el
+    valor por defecto de la ATM — <span class="cifra-en">{v('ATM_DEFECTO')}</span>,
+    {P.equivalencias('ATM_DEFECTO').slice(1).join(', ')}. Es así justo para que
+    nunca sea más ajustado que el stop real ni arriesgue más que el tope.
+  </p>
+</section>

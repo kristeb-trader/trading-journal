@@ -1,0 +1,153 @@
+---
+/**
+ * Plan · setups · «Continuación».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { v } from './_datos.mjs';
+---
+
+<section class="ap" id="continuacion">
+  <span class="ancla-vieja" id="iri" aria-hidden="true"></span>
+  <h2>Continuación <Refs cods="R-25" /></h2>
+  <h3>El concepto fundamental</h3>
+  <p>
+    La Continuación es un modelo de entrada autocontenido. Significa que no
+    necesitas buscar referencias del pasado ni indicadores externos: el
+    propio movimiento del precio crea en tiempo real la zona que va a romper.
+  </p>
+  <p>
+    Se construye sobre un <strong>IRI (Impulso - Retroceso - Impulso)</strong>:
+    una corrida deja su zona, el precio retrocede y la corrida siguiente
+    rompe esa zona. El IRI es la estructura, y no se opera por sí solo; la
+    Continuación es ese IRI más su consecución, que es la entrada.
+  </p>
+
+  <p>La lógica de la entrada es simple:</p>
+  <div class="flujo-iri" aria-label="Impulso 1, retroceso e Impulso 2, disparador de entrada">
+    <span class="flujo-etapa flujo-impulso">Impulso 1</span>
+    <span class="flujo-flecha" aria-hidden="true">→</span>
+    <span class="flujo-etapa flujo-retroceso">Retroceso</span>
+    <span class="flujo-flecha" aria-hidden="true">→</span>
+    <span class="flujo-etapa flujo-entrada">
+      <strong>Impulso 2</strong>
+      <small>(Disparador de entrada)</small>
+    </span>
+  </div>
+
+  <h3>La secuencia operativa en 5 pasos (sesión real)</h3>
+  <ol class="secuencia">
+    <li><strong>Una corrida (Impulso 1).</strong> Es el movimiento inicial donde el precio avanza con fuerza en una dirección.</li>
+    <li><strong>Un retroceso.</strong> El movimiento se detiene a descansar o “respirar”. Este punto define el extremo opuesto temporal.</li>
+    <li><strong>La zona.</strong> Se marca el nivel exacto en la vela extrema que dejó la corrida antes de empezar a retroceder. <strong>Sin zona marcada en la vela extrema, no existe la Continuación.</strong></li>
+    <li><strong>Rompimiento.</strong> El precio reanuda la marcha y rompe esa misma zona en el sentido del movimiento original por al menos un tick.</li>
+    <li><strong>Confirmación / consecución (la entrada).</strong> La entrada se ejecuta en la vela que da la consecución. Esto ocurre cuando una vela sobrepasa el extremo de la vela que rompió la zona.</li>
+  </ol>
+
+  <figure class="gr">
+    <img src="/conceptos/04-romper-confirmar.png" alt="Una Continuación completa: movimiento, retroceso, zona, rompimiento y consecución" loading="eager" />
+    <figcaption class="meta">Los cinco pasos sobre una sesión real. La vela de la consecución es la que entra.</figcaption>
+  </figure>
+
+  <h3>Reglas de tiempo e invalidación</h3>
+  <dl class="datos">
+    <dt>Plazo para la consecución (Regla R-14)</dt>
+    <dd>Hay un tope máximo de <strong>{v('PLAZO_CONSECUCION')}</strong>, contadas a partir de la vela siguiente a la que rompió la zona, para que aparezca la vela de confirmación.</dd>
+    <dt>Nota importante</dt>
+    <dd>Las <strong>{v('PLAZO_CONSECUCION')}</strong> son un límite máximo, no una espera obligatoria. Lo normal es que la consecución ocurra en la primera o segunda vela inmediatamente posterior al rompimiento.</dd>
+    <dt>Si no llega a tiempo</dt>
+    <dd>La entrada queda completamente invalidada. La orden o idea se descarta. La zona deja de funcionar para este setup y sigue su propio camino técnico.</dd>
+  </dl>
+
+  <h3>Gestión parametrizada (stop loss y filtro)</h3>
+  <dl class="datos">
+    <dt>Ubicación del stop loss (SL)</dt>
+    <dd>Se coloca en el punto más extremo alcanzado por el retroceso: el punto más lejano desde que nació la zona extrema hasta la vela que realizó el rompimiento.</dd>
+    <dt>Relación riesgo/beneficio</dt>
+    <dd>Se mantiene estrictamente en <strong>1:1</strong> con respecto a la distancia del stop.</dd>
+    <dt>Filtro de objetivo</dt>
+    <dd>Para que la operación sea válida, el camino desde el punto de entrada hasta el objetivo 1:1 debe estar completamente libre de zonas vivas que puedan frenar o rebotar el precio.</dd>
+  </dl>
+</section>
+
+<style>
+
+  .flujo-iri {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--e-3);
+    margin: var(--e-5) 0 var(--e-6);
+    padding: var(--e-4) 0;
+    border-top: 1px solid var(--borde);
+    border-bottom: 1px solid var(--borde);
+    text-align: center;
+  }
+
+  .flujo-etapa {
+    color: var(--texto);
+    font-size: var(--t-6);
+    font-weight: var(--peso-fuerte);
+    line-height: var(--alto-corto);
+  }
+
+  .flujo-flecha {
+    color: var(--texto-3);
+    font-size: var(--t-6);
+    line-height: 1;
+  }
+
+  .flujo-impulso { color: var(--texto); }
+  .flujo-retroceso { color: var(--aviso); }
+
+  .flujo-entrada {
+    display: inline-flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--e-2);
+    color: var(--positivo);
+  }
+
+  .flujo-entrada strong { color: var(--acento-vivo); }
+
+  .flujo-entrada small {
+    color: var(--texto-3);
+    font-family: var(--fuente-mono);
+    font-size: var(--t-1);
+    font-weight: var(--peso-normal);
+    letter-spacing: var(--track-etiqueta);
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 40rem) {
+    .flujo-iri {
+      flex-wrap: wrap;
+      gap: var(--e-2) var(--e-3);
+    }
+
+    .flujo-etapa {
+      font-size: var(--t-5);
+    }
+  }
+
+  .tabla-env { overflow-x: auto; margin: var(--e-5) 0; }
+  .comp { width: 100%; border-collapse: collapse; font-size: var(--t-3); min-width: 34rem; }
+  .comp th, .comp td {
+    padding: var(--e-3) var(--e-4);
+    vertical-align: top;
+    border-bottom: 1px solid var(--borde-sutil);
+  }
+  .comp thead th {
+    font-size: var(--t-1);
+    letter-spacing: var(--track-etiqueta);
+    text-transform: uppercase;
+    color: var(--texto-3);
+    border-bottom-color: var(--borde);
+  }
+  .comp tbody th { color: var(--texto-3); font-weight: var(--peso-normal); width: 11rem; }
+  .comp td { color: var(--texto-2); }
+  .si { color: var(--positivo); }
+  .no { color: var(--negativo); }
+</style>

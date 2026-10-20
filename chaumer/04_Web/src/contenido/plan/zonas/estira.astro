@@ -1,0 +1,78 @@
+---
+/**
+ * Plan · zonas · «Cuando no llega la consecución».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ *
+ * La R-13 (superposición de zonas: se estira, no se duplica) se cita aquí desde
+ * el 20/10/2026, por decisión del operador: era la única regla que no citaba
+ * ningún apartado.
+ */
+import Refs from '../../../componentes/Refs.astro';
+import { v } from './_datos.mjs';
+---
+
+<!-- 4 ─────────────────────────────────────────────────────────────── -->
+<!-- Reescrita el 22/09/2026 con el texto que quedo en el plan el 14/09/2026
+     (PROPUESTAS_AL_PLAN.md). Las dos graficas ya estaban bien y no cambian. -->
+
+<section class="ap" id="estira">
+  <h2>Cuando no llega la consecución <Refs cods="R-10 · R-13 · R-14" /></h2>
+  <p>
+    El precio rompe una zona <strong>con mecha</strong> —el cierre se queda
+    dentro— y la consecución no llega. Eso se puede acabar de dos maneras, y
+    vale <strong>la que llegue primero</strong>:
+  </p>
+
+  <p>
+    <strong>Una ·</strong> pasan <strong>{v('PLAZO_CONSECUCION')}</strong> desde la siguiente
+    a la del rompimiento, y la consecución no ha llegado.
+  </p>
+
+  <figure class="gr">
+    <img src="/conceptos/05-sin-confirmar.png" alt="Una vela cruza la zona y ninguna de las siguientes supera su extremo" loading="eager" />
+    <figcaption class="meta">El caso más común: la vela cruza la zona, pero ninguna de las siguientes pasa de su extremo. No hubo traspaso y la zona sigue viva.</figcaption>
+  </figure>
+
+  <p>
+    <strong>Otra ·</strong> antes de esas {v('PLAZO_CONSECUCION')}, el mercado arma una
+    <strong>estructura completa en sentido contrario</strong>:
+  </p>
+
+  <ol class="secuencia">
+    <li>Una vela que <strong>no da la consecución</strong> y se va en contra.</li>
+    <li>Otra que <strong>hace retroceso</strong>.</li>
+    <li>Una tercera que <strong>no sigue ese retroceso</strong> y vuelve en el sentido de la primera. <strong>La zona se estira en esa tercera vela</strong>, sin esperar más.</li>
+  </ol>
+
+  <figure class="gr">
+    <img src="/conceptos/24-estructura-antes.png" alt="Antes de las cinco velas el mercado arma una estructura en contra y la zona se estira en la tercera vela" loading="lazy" />
+    <figcaption class="meta">No hizo falta esperar: antes de las cinco velas el mercado armó la estructura en contra, y la zona se estiró en la tercera vela.</figcaption>
+  </figure>
+
+  <p>
+    En cualquiera de los dos casos, la zona <strong>se estira</strong> hasta
+    la punta de la mecha que la rompió. <strong>Si es una resistencia, se
+    estira solo por arriba; si es un soporte, solo por abajo.</strong> El
+    otro borde no se mueve. Sigue habiendo <strong>una sola zona</strong>,
+    más grande, y conserva su historial.
+  </p>
+
+  <div class="veto">
+    <p>
+      <strong>Un soporte nunca se estira hacia arriba, ni una resistencia
+      hacia abajo.</strong> Si el precio cruza la zona por el lado contrario,
+      no hay nada que estirar: ese cruce no la toca, solo la mata cuando
+      llegue su consecución.
+    </p>
+  </div>
+
+  <div class="duro">
+    <p>
+      <strong>Las {v('PLAZO_CONSECUCION')} son un tope, no una espera obligatoria.</strong>
+      Si antes de que se cumplan el mercado arma la estructura en contra,
+      todo se resuelve en ese momento y no se espera más.
+    </p>
+  </div>
+</section>

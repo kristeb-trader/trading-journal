@@ -1,0 +1,46 @@
+---
+/**
+ * Plan · zonas · «Cuándo quitar una zona».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+---
+
+<!-- 7 ─────────────────────────────────────────────────────────────── -->
+
+<section class="ap" id="caduca">
+  <h2>Cuándo quitar una zona<Refs cods="R-21" /></h2>
+  <p>
+    Una zona muere cuando ha sido superada <strong>en las dos direcciones</strong>:
+    rompimiento y consecución hacia un lado, y rompimiento y consecución hacia
+    el otro.
+  </p>
+
+  <figure class="gr">
+    <img src="/conceptos/23-zona-invalida.png" alt="Una zona traspasada primero hacia un lado y después hacia el otro" loading="eager" />
+    <figcaption class="meta">Traspasada en los dos sentidos. A partir de ahí no bloquea ni sirve para entrar.</figcaption>
+  </figure>
+
+  <dl class="datos">
+    <dt>Solo rompimiento, sin consecución</dt>
+    <dd>La zona sigue vigente. No ha pasado nada</dd>
+    <dt>Superada en un solo sentido</dt>
+    <dd>Sigue viva. Cambia de papel: el soporte pasa a resistencia y al revés</dd>
+    <dt>Superada en los dos</dt>
+    <dd><strong>No cuenta para nada.</strong> Ni bloquea un objetivo, ni sirve para entrar, ni cuenta para medir la mitad entre zonas</dd>
+    <dt>En pantalla</dt>
+    <dd>Se deja dibujada en tono muy tenue, solo como recuerdo</dd>
+  </dl>
+
+  <p>
+    Esa distinción importa más de lo que parece: una zona que sigue viva puede
+    impedir una entrada perfectamente válida, porque se cruza en el camino del
+    objetivo.
+  </p>
+
+  <p>
+    Cuando una zona <strong>no es válida visualmente</strong>, se baja el contraste de color de esa zona, para que no confunda. Pero sigue viva en la memoria del plan hasta que se cierre la jornada.
+  </p>
+</section>

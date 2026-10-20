@@ -1,0 +1,47 @@
+---
+/**
+ * Plan · setups · «Solo hay dos».
+ *
+ * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
+ * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ */
+import Refs from '../../../componentes/Refs.astro';
+---
+
+<section class="ap" id="dos">
+  <h2>Solo hay dos <Refs cods="R-28" /></h2>
+  <p>
+    El método no busca oportunidades: busca <strong>dos figuras concretas</strong>.
+    Si lo que hay delante no es una de las dos, no hay operación, por bien que
+    se vea el gráfico.
+  </p>
+
+  <div class="rejilla dos">
+    <div class="tarj">
+      <span class="tarj-n">Continuación</span>
+      <h3>Rompimiento que funciona</h3>
+      <p>El precio rompe una zona y sigue. Se opera <strong>a favor</strong> del rompimiento.</p>
+    </div>
+    <div class="tarj">
+      <span class="tarj-n">Reingreso</span>
+      <h3>Rompimiento fallido</h3>
+      <p>El precio rompe una zona, no sigue y se da la vuelta. Se opera <strong>en contra</strong> del rompimiento.</p>
+    </div>
+  </div>
+
+  <figure class="gr">
+    <img src="/conceptos/27-setup-continuacion.png" alt="Lámina del setup Continuación: sobre un IRI fluido —impulso, retroceso, impulso— el segundo impulso rompe la zona y la entrada va en la vela que confirma" loading="eager" />
+  </figure>
+
+  <figure class="gr">
+    <img src="/conceptos/28-setup-reingreso.png" alt="Lámina del setup Reingreso: el precio rompe la zona y confirma, falla, y vuelve a atravesarla entera hasta salir por el borde contrario, donde está la entrada" loading="eager" />
+  </figure>
+
+  <div class="duro">
+    <p>
+      <strong>Se toma el primero que aparezca y se llene.</strong> No se
+      compara con lo que pueda venir después, ni se espera «uno mejor». El
+      criterio es el reloj, no la calidad.
+    </p>
+  </div>
+</section>
