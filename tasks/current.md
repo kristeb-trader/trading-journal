@@ -3,16 +3,6 @@
 > Solo lo que está en curso. Lo terminado va a `docs/historial-proyecto.md`; las ideas y lo que
 > está por comprobar, a `backlog.md`.
 
-## ⚠️ PRUEBA ACTIVA — Operativa diaria del portal enseña octubre (20/10/2026)
-
-A petición de Kris, la vista `portal_op_jornadas` arranca **temporalmente el 01/10/2026** en vez del
-21/10/2026 (cambio solo en la BD; el `.sql` del repo sigue diciendo 21/10). **Revertir cuando Kris lo diga**:
-
-```sql
-do $$ begin execute 'create or replace view portal_op_jornadas as ' ||
-  replace(pg_get_viewdef('portal_op_jornadas'::regclass), '2026-10-01', '2026-10-21'); end $$;
-```
-
 ## El bot: BotChaumer en NinjaTrader (D-038)
 
 Aprobado el 06/10. Diseño: `docs/disenos/2026-10-06-bot-chaumer.md`. Se valida en `SimBot` en vivo y con el Strategy
