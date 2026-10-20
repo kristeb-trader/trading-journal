@@ -114,6 +114,7 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-10-06-bot-operaciones.sql` | ✅ MCP | tabla `bot_operaciones` (D-038): lo que hizo BotChaumer cada día y cuenta, también sin operación. RLS + `auth_all` + grants a `service_role` |
 | `2026-10-09-bot-cierre-por-hora.sql` | ✅ MCP | `bot_operaciones.resultado` acepta 'CIERRE POR HORA' (plan 3.46). Solo amplía la lista |
 | `2026-10-19-motor-fichas-origen-bot.sql` | ✅ MCP | `motor_fichas.origen_datos` acepta 'bot': la ficha hecha con las velas con las que decidió el bot (diseño 2026-10-19-velas-del-bot). Solo amplía la lista |
+| `2026-10-20-portal-operativa.sql` | ✅ MCP | vista `portal_op_jornadas` (D-041): los trades de la cuenta principal desde el 21/10/2026, con la forma de `portal_bt_jornadas`. Solo `portal_lector` y `service_role` |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.
