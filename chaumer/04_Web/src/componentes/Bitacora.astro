@@ -120,8 +120,10 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
           <span class="placa-eti">{titulo}</span>
           <h2 class="placa-fecha" id="lupa-fecha" data-lupa-fecha></h2>
         </div>
-        <span class="placa-cuenta" data-lupa-cuenta></span>
-        <button class="cerrar" type="button" data-cerrar aria-label="Cerrar">&times;</button>
+        <div class="placa-der">
+          <span class="placa-cuenta" data-lupa-cuenta></span>
+          <button class="cerrar" type="button" data-cerrar aria-label="Cerrar">&times;</button>
+        </div>
       </header>
       <!-- El foco entra aqui al abrir, no en el boton de cerrar: si no, el
            boton se abre con su aro de foco encendido. -->
@@ -383,16 +385,23 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
     opacity: 0.65;
   }
 
+  /* La fecha, centrada en la placa (pedido del operador, 20/10/2026). Tres
+     columnas, las de los lados iguales: asi el centro es el de la placa y no
+     el del hueco que dejan el contador y el boton de cerrar. */
   .bt-lupa .placa-arriba {
-    display: flex; align-items: center; gap: var(--e-4);
-    padding: var(--e-3) var(--e-3) var(--e-3) var(--e-5);
+    display: grid; grid-template-columns: 1fr minmax(0, max-content) 1fr; align-items: center; gap: var(--e-4);
+    padding: var(--e-3);
   }
-  .bt-lupa .placa-txt { flex: 1; min-width: 0; display: grid; gap: 2px; }
+  .bt-lupa .placa-txt { grid-column: 2; min-width: 0; display: grid; gap: 2px; text-align: center; } /* alineacion-ok: titulo de la placa, centrado a peticion del operador */
+  .bt-lupa .placa-der { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: var(--e-3); }
   .bt-lupa .placa-eti {
     font-size: var(--t-1); text-transform: uppercase; letter-spacing: var(--track-etiqueta);
     font-weight: var(--peso-fuerte); color: var(--texto-3);
   }
+  /* base.css justifica los h2 de <main> con la ultima linea a la izquierda
+     (y con guiones): la fecha va centrada, en las dos lineas y sin cortar. */
   .bt-lupa .placa-fecha {
+    text-align: center; text-align-last: center; hyphens: none; /* alineacion-ok: titulo de la placa, centrado a peticion del operador */
     margin: 0; font-size: var(--t-6); font-weight: var(--peso-max); letter-spacing: var(--track-titulo);
     line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     background: linear-gradient(180deg, var(--n-50), var(--n-300));
@@ -440,6 +449,26 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
   .bt-lupa .dato b.neg { color: var(--negativo); }
   .bt-lupa .dato.pnl b { font-size: var(--t-6); }
   .bt-lupa .dato .setup, .bt-lupa .dato .pil { justify-self: start; }
+  /* El resultado de la ficha: mas grande y en relieve, del color del
+     resultado (pedido del operador, 20/10/2026). Un degradado del propio
+     color, bisel claro arriba, canto oscuro del mismo tono abajo y un halo
+     corto. Lleva .bt delante para ganarle a la pastilla de la tabla. */
+  .bt .bt-lupa .dato .pil {
+    --c: var(--n-400);
+    font-size: var(--t-3); font-weight: var(--peso-max); letter-spacing: 0.02em;
+    padding: 0.4rem 1.05rem; border-radius: var(--radio-pill);
+    color: color-mix(in srgb, var(--c) 30%, white);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--c) 48%, transparent), color-mix(in srgb, var(--c) 20%, transparent));
+    border: 1px solid color-mix(in srgb, var(--c) 60%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.28),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.28),
+      0 3px 0 color-mix(in srgb, var(--c) 35%, black),
+      0 10px 20px -8px color-mix(in srgb, var(--c) 60%, transparent);
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  }
+  .bt .bt-lupa .dato .pil.target { --c: var(--positivo); }
+  .bt .bt-lupa .dato .pil.stop { --c: var(--negativo); }
   .bt-lupa .dato .setup { font-weight: var(--peso-medio); }
   .bt-lupa .ficha-vacia { display: flex; align-items: center; gap: var(--e-3); padding: var(--e-3) var(--e-2); color: var(--texto-2); }
 
@@ -479,8 +508,12 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
      fila no caben cinco y se montaban unos sobre otros. 900px es el unico
      punto de ruptura del portal (Marco.astro). */
   @media (max-width: 900px) {
-    .bt-lupa .placa-arriba { padding: var(--e-3) var(--e-3) var(--e-3) var(--e-4); gap: var(--e-2); }
-    .bt-lupa .placa-fecha { font-size: var(--t-5); white-space: normal; text-align: left; } /* alineacion-ok: base.css justifica los titulos y con dos lineas abria huecos entre palabras */
+    /* En el celular no cabe la fecha entre dos columnas: el contador y el
+       boton suben a su propia fila y la fecha queda centrada debajo. */
+    .bt-lupa .placa-arriba { grid-template-columns: 1fr; gap: var(--e-1); padding: var(--e-3); }
+    .bt-lupa .placa-der { grid-column: 1; grid-row: 1; }
+    .bt-lupa .placa-txt { grid-column: 1; grid-row: 2; padding-bottom: var(--e-1); }
+    .bt-lupa .placa-fecha { font-size: var(--t-5); white-space: normal; text-align: center; } /* alineacion-ok: base.css justifica los titulos y con dos lineas abria huecos entre palabras */
     .bt-lupa .placa-abajo { padding: var(--e-1) var(--e-3); }
     .bt-lupa .ficha-op { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e-3) 0; }
     .bt-lupa .dato { min-width: 0; padding: var(--e-1) var(--e-2); }
@@ -490,7 +523,7 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
   }
 
   /* Filas que abren el grafico al pulsarlas. */
-  .bt tbody tr.con-grafico { cursor: zoom-in; }
+  .bt tbody tr.con-grafico { cursor: pointer; }
 
   /* Sin valor inicial quedan cuatro tarjetas: en una fila. */
   .bt .cifras.cuatro { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -864,8 +897,19 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
         '</tr>';
     }
 
+    /** «Mar, 20 Oct»: dia de la semana, dia y mes (pedido del operador,
+     *  20/10/2026). El año ya lo dice la fila del mes. Al mediodia, para que
+     *  ninguna zona horaria lo pase al dia anterior. */
+    var DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    function fechaFila(iso) {
+      var p = String(iso).split('-');
+      var dia = DIAS[new Date(iso + 'T12:00:00').getDay()];
+      var mes = MESES[Number(p[1]) - 1] || '?';
+      return dia + ', ' + Number(p[2]) + ' ' + mes.charAt(0).toUpperCase() + mes.slice(1);
+    }
+
     function celdaFecha(j) {
-      var texto = escapa(fechaCorta(j.fecha));
+      var texto = escapa(fechaFila(j.fecha));
       return '<td class="fecha">' + texto + '</td>';
     }
 
