@@ -1,100 +1,448 @@
 ---
 /**
- * Portada — la que abre Alfredo.
+ * Portada — la que abre Alfredo. Un tablero de cómo va (20/10/2026, diseño
+ * docs/disenos/2026-10-20-portada-tablero.md).
  *
- * Direccion «Terminal», elegida por el operador el 06/09/2026 entre tres
- * propuestas. Sustituye a la portada densa anterior: el pidio «no tanta
- * cosa», un banner con movimiento arriba y tres tarjetas debajo. Eso es todo
- * lo que hay.
+ *   - Banner «Terminal»: la cinta, el titular a la izquierda y los cuatro
+ *     datos de la operativa a la derecha.
+ *   - Cómo va: la operativa diaria y el backtesting, con sus cifras y su
+ *     curva. Se leen en el navegador de las mismas funciones que sus páginas
+ *     (/api/operativa y /api/backtesting): ninguna cifra escrita a mano.
+ *   - Último día operado: su gráfico y su ficha.
+ *   - Los ocho módulos del plan, en el orden de la jornada.
  *
- *   - Banner: cinta de cotizacion en marcha, malla de pantalla encendida y
- *     los cuatro datos que definen la operativa.
- *   - Tres puertas: el recorrido, las reglas y los casos reales.
- *
- * Lo que NO va aqui: el titular de marca, que ya esta en la cabecera, y las
- * listas de modulos, que ya estan en el menu de la izquierda.
+ * Lo que salió: las puertas de El plan operativo, Las reglas y Casos reales, y
+ * el bloque del mapa. Esas secciones salieron del menú (D-042).
  */
 import Marco from '../componentes/Marco.astro';
 import BannerTerminal from '../componentes/BannerTerminal.astro';
-import TarjetasInicio from '../componentes/TarjetasInicio.astro';
 import Icono from '../componentes/Icono.astro';
-import * as P from '../lib/parsers.mjs';
-
-const grupos = P.categorias();
-const reglas = P.reglas().length;
+import { MODULOS } from '../lib/modulos.mjs';
 ---
 
 <Marco titulo="Inicio">
   <BannerTerminal
-    titulo="Plan de Trading Enfocado en la metodología de"
+    lado
+    eti="Plan de trading · Futuros del Nasdaq"
+    titulo="La metodología de"
     destacado="Alfredo Chaumer"
-    sub="Un método para operar trading de Futuros, enfocado en el Nasdaq: traducido a reglas que se pueden medir, seguir y operar todos los días." />
+    cola=", operada todos los días"
+    sub="Reglas que se miden, una operación por sesión y el registro de cada día a la vista." />
 
-  <section class="bloque">
-    <h2 class="rotulo">Por dónde entrar</h2>
-    <TarjetasInicio variante="rejilla" />
-  </section>
+  <div class="tablero" data-tablero>
+    <div class="rot entra">
+      <h2 class="rotulo">Cómo va</h2>
+      <span class="vivo">En vivo</span>
+    </div>
 
-  {/* El mapa no es una cuarta puerta: la rejilla es de tres y el operador
-      las fijó así. Va en su propio bloque, que además es lo que le pega:
-      no se entra a buscar un dato, se entra a ver la forma del método. */}
-  <section class="bloque">
-    <a class="mapa-puerta" href="/mapa">
-      <span class="mp-ic" aria-hidden="true"><Icono nombre="graph" /></span>
-      <span class="mp-txt">
-        <span class="mp-t">El método, de un vistazo</span>
-        <span class="mp-s">
-          Las {grupos.length} piezas y sus {reglas} reglas como un mapa que se recorre:
-          el orden de la jornada y qué regla depende de cuál.
+    <div class="dos">
+      <a class="panel entra" href="/operativa/" style="--c: #FBBF24" data-panel="operativa">
+        <span class="pc">
+          <span class="pc-ic" aria-hidden="true"><Icono nombre="chart-line-up" /></span>
+          <span class="pc-t"><b>Operativa diaria</b><small data-sub>Cuenta principal</small></span>
+          <span class="pc-fl" aria-hidden="true"><Icono nombre="arrow-right" /></span>
         </span>
+        <span class="grande" data-grande>—</span>
+        <span class="leyenda" data-leyenda>Cargando…</span>
+        <span class="mini">
+          <span><i>Efectividad</i><b data-m1>—</b></span>
+          <span><i>Puntos</i><b data-m2>—</b></span>
+          <span><i>Caída máx.</i><b data-m3>—</b></span>
+        </span>
+        <span class="curva" data-curva aria-hidden="true"></span>
+        <span class="ultimo" data-ultimo></span>
+      </a>
+
+      <a class="panel entra" href="/backtesting/" style="--c: #FB923C" data-panel="backtesting">
+        <span class="pc">
+          <span class="pc-ic" aria-hidden="true"><Icono nombre="notebook" /></span>
+          <span class="pc-t"><b>Backtesting</b><small data-sub>Bitácora</small></span>
+          <span class="pc-fl" aria-hidden="true"><Icono nombre="arrow-right" /></span>
+        </span>
+        <span class="grande" data-grande>—</span>
+        <span class="leyenda" data-leyenda>Cargando…</span>
+        <span class="mini">
+          <span><i>Efectividad</i><b data-m1>—</b></span>
+          <span><i>Operaciones</i><b data-m2>—</b></span>
+          <span><i>P&amp;L neto</i><b data-m3>—</b></span>
+        </span>
+        <span class="curva" data-curva aria-hidden="true"></span>
+        <span class="ultimo" data-ultimo></span>
+      </a>
+    </div>
+
+    <a class="dia entra" href="/operativa/" data-dia hidden>
+      <span class="dia-img"><img alt="" data-dia-img /></span>
+      <span class="dia-txt">
+        <span class="eti">Último día operado</span>
+        <b class="dia-fecha" data-dia-fecha></b>
+        <span class="dia-datos" data-dia-datos></span>
+        <span class="boton">Ver la operativa <Icono nombre="arrow-right" /></span>
       </span>
-      <span class="mp-n">{grupos.length}<i>piezas</i></span>
-      <span class="mp-fl" aria-hidden="true"><Icono nombre="arrow-right" /></span>
     </a>
+  </div>
+
+  <section class="recorrido entra">
+    <h2 class="rotulo">El plan, en el orden de la jornada</h2>
+    <ol class="pasos">
+      {MODULOS.map((m) => (
+        <li>
+          <a href={'/' + m.slug} style={`--c:${m.tono}`}>
+            <span class="paso-n num">{String(m.n).padStart(2, '0')}</span>
+            <span class="paso-t">{m.corto}</span>
+          </a>
+        </li>
+      ))}
+    </ol>
   </section>
 </Marco>
 
 <style>
-  .bloque { margin-top: var(--e-8); }
-
-  /* ── la puerta del mapa ─────────────────────────────────────────────── */
-  .mapa-puerta {
-    display: grid; align-items: center; gap: var(--e-5);
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
-    padding: var(--e-5) var(--e-6);
-    border: 1px solid var(--vidrio-borde); border-radius: var(--radio-4);
-    background: linear-gradient(120deg, rgba(76,141,255,.10), rgba(56,189,212,.05) 46%,
-                rgba(255,255,255,0) 72%), var(--vidrio-fondo);
-    backdrop-filter: var(--desenfoque);
-    color: var(--texto); text-decoration: none;
-    transition: border-color var(--normal), box-shadow var(--normal), transform var(--normal);
-  }
-  .mapa-puerta:hover { border-color: rgba(76,141,255,.42); box-shadow: var(--halo-azul); transform: translateY(-2px); }
-  .mp-ic {
-    display: grid; place-items: center; width: 46px; height: 46px; --i: 1.45rem;
-    color: var(--acento); border: 1px solid rgba(76,141,255,.3); border-radius: var(--radio-2);
-    background: var(--acento-flojo);
-  }
-  .mp-t { display: block; font-size: var(--t-6); font-weight: var(--peso-fuerte); letter-spacing: var(--track-titulo); }
-  .mp-s { display: block; margin-top: var(--e-1); font-size: var(--t-3); color: var(--texto-2); line-height: 1.5; }
-  .mp-n {
-    font-size: var(--t-8); font-weight: var(--peso-max); color: var(--acento);
-    letter-spacing: var(--track-cifra); line-height: 1; text-align: right;
-  }
-  .mp-n i { display: block; font-style: normal; font-size: var(--t-1); font-weight: var(--peso-normal);
-    color: var(--texto-3); letter-spacing: var(--track-etiqueta); text-transform: uppercase; margin-top: var(--e-1); }
-  .mp-fl { display: grid; place-items: center; --i: 1.1rem; color: var(--texto-3); transition: transform var(--normal), color var(--normal); }
-  .mapa-puerta:hover .mp-fl { transform: translateX(4px); color: var(--acento); }
-
-  @media (max-width: 640px) {
-    .mapa-puerta { grid-template-columns: auto minmax(0, 1fr); }
-    .mp-n, .mp-fl { grid-column: 2; text-align: left; } /* alineacion-ok: en movil la cifra cae bajo el texto */
-    .mp-n { margin-top: var(--e-2); }
-    .mp-fl { display: none; }
-  }
   .rotulo {
-    margin: 0 0 var(--e-5);
-    font-size: var(--t-2); color: var(--texto-3);
-    letter-spacing: var(--track-etiqueta); text-transform: uppercase;
+    margin: 0; font-size: var(--t-2); color: var(--texto-3);
+    letter-spacing: var(--track-etiqueta); text-transform: uppercase; font-weight: var(--peso-fuerte);
+  }
+  .eti, .tablero :global(.eti) {
+    font-style: normal; font-size: var(--t-1); color: var(--texto-3);
+    letter-spacing: var(--track-etiqueta); text-transform: uppercase; font-weight: var(--peso-fuerte);
+  }
+  .rot { display: flex; align-items: center; gap: var(--e-3); margin: var(--e-8) 0 var(--e-4); }
+  .vivo {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    font-size: var(--t-1); font-weight: var(--peso-max); letter-spacing: var(--track-etiqueta); text-transform: uppercase;
+    color: var(--positivo); padding: 0.2rem 0.65rem; border-radius: var(--radio-pill);
+    background: color-mix(in srgb, var(--positivo) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--positivo) 28%, transparent);
+  }
+  .vivo::before {
+    content: ''; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--positivo);
+    animation: latido 2.2s ease-in-out infinite;
+  }
+  @keyframes latido {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--positivo) 45%, transparent); }
+    50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--positivo) 0%, transparent); }
+  }
+
+  /* ── las dos tarjetas ───────────────────────────────────────────────────
+     El mismo relieve que las placas de la lupa (Bitacora.astro): bisel claro
+     arriba, canto oscuro abajo y sombra larga. El color de cada una es el de
+     su icono en el menú, solo en el filo de luz y en el icono. */
+  .dos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e-5); }
+  .panel, .dia {
+    position: relative; display: flex; flex-direction: column; overflow: hidden;
+    color: var(--texto); text-decoration: none; border-radius: 18px;
+    background: linear-gradient(180deg, rgba(30, 36, 49, 0.92), rgba(15, 18, 25, 0.92));
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.09),
+      0 5px 0 -1px rgba(6, 8, 12, 0.95),
+      0 24px 50px -22px rgba(0, 0, 0, 0.9);
+    transition: transform var(--normal), border-color var(--normal), box-shadow var(--normal);
+  }
+  .panel { padding: var(--e-5) var(--e-5) 0; }
+  .panel::before {
+    content: ''; position: absolute; inset: -1px 22% auto; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--c), transparent); opacity: 0.8;
+  }
+  .panel:hover, .dia:hover {
+    transform: translateY(-3px); border-color: rgba(255, 255, 255, 0.13);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.11),
+      0 5px 0 -1px rgba(6, 8, 12, 0.95),
+      0 30px 60px -22px rgba(0, 0, 0, 0.95);
+  }
+
+  .pc { display: flex; align-items: center; gap: var(--e-3); }
+  .pc-ic {
+    display: grid; place-items: center; width: 2.4rem; height: 2.4rem; flex: none; --i: 1.2rem;
+    border-radius: 11px; color: var(--c);
+    background: color-mix(in srgb, var(--c) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c) 32%, transparent);
+  }
+  .pc-t { flex: 1; min-width: 0; }
+  .pc-t b { display: block; font-size: var(--t-5); font-weight: var(--peso-max); }
+  .pc-t small { display: block; margin-top: 2px; font-size: var(--t-2); color: var(--texto-3); }
+  .pc-fl { --i: 1.1rem; color: var(--texto-3); transition: transform var(--normal), color var(--normal); }
+  .panel:hover .pc-fl { transform: translateX(4px); color: var(--texto); }
+
+  .grande {
+    margin-top: var(--e-5); font-family: var(--fuente-mono); font-size: clamp(2rem, 3.2vw, 2.6rem);
+    font-weight: var(--peso-fuerte); letter-spacing: var(--track-cifra); line-height: 1.1;
+    font-variant-numeric: tabular-nums; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
+  }
+  .leyenda { margin-top: var(--e-1); font-size: var(--t-2); color: var(--texto-3); }
+  .mini {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: var(--e-4); border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .mini > span { padding: var(--e-3) 0 var(--e-1); min-width: 0; }
+  .mini > span + span { padding-left: var(--e-4); border-left: 1px solid rgba(255, 255, 255, 0.06); }
+  .mini i {
+    display: block; font-style: normal; font-size: var(--t-1); color: var(--texto-3);
+    letter-spacing: var(--track-etiqueta); text-transform: uppercase; font-weight: var(--peso-fuerte);
+  }
+  .mini b {
+    display: block; margin-top: var(--e-1); font-family: var(--fuente-mono); font-size: var(--t-4);
+    font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .curva { display: block; height: 92px; margin: var(--e-3) calc(-1 * var(--e-5)) 0; }
+  .curva :global(svg) { display: block; width: 100%; height: 100%; }
+  .ultimo {
+    display: flex; align-items: center; gap: var(--e-2); flex-wrap: wrap;
+    margin: 0 calc(-1 * var(--e-5)); padding: var(--e-3) var(--e-5);
+    border-top: 1px solid rgba(255, 255, 255, 0.06); background: rgba(0, 0, 0, 0.22);
+    font-size: var(--t-2); color: var(--texto-2); min-height: 2.9rem;
+  }
+  .ultimo:empty { display: none; }
+  .ultimo :global(.cifra) { margin-left: auto; font-family: var(--fuente-mono); }
+
+  .pos, :global(.tablero .pos) { color: var(--positivo); }
+  .neg, :global(.tablero .neg) { color: var(--negativo); }
+
+  /* La pastilla y el setup, como en la tabla de la bitácora. */
+  .tablero :global(.pil) {
+    display: inline-flex; padding: 0.12rem 0.55rem; border-radius: var(--radio-pill);
+    font-size: var(--t-1); font-weight: var(--peso-fuerte);
+    background: rgba(255, 255, 255, 0.05); color: var(--texto-3); border: 1px solid var(--borde-sutil);
+  }
+  .tablero :global(.pil.target) {
+    background: color-mix(in srgb, var(--positivo) 16%, transparent); color: var(--positivo);
+    border-color: color-mix(in srgb, var(--positivo) 32%, transparent);
+  }
+  .tablero :global(.pil.stop) {
+    background: color-mix(in srgb, var(--negativo) 16%, transparent); color: var(--negativo);
+    border-color: color-mix(in srgb, var(--negativo) 32%, transparent);
+  }
+  .tablero :global(.setup) { display: inline-flex; align-items: center; gap: 0.45rem; color: color-mix(in srgb, var(--c2) 55%, var(--texto)); }
+  .tablero :global(.setup::before) {
+    content: ''; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--c2);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--c2) 18%, transparent);
+  }
+  .tablero :global(.setup.continuacion) { --c2: var(--info); }
+  .tablero :global(.setup.reingreso) { --c2: #94A3B8; }
+
+  /* ── el último día ─────────────────────────────────────────────────── */
+  .dia { margin-top: var(--e-5); display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
+  .dia[hidden] { display: none; }
+  .dia-img { display: block; background: #05070a; min-height: 16rem; }
+  .dia-img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .dia-txt { display: flex; flex-direction: column; gap: var(--e-4); padding: var(--e-6); }
+  .dia-fecha { font-size: var(--t-6); font-weight: var(--peso-max); letter-spacing: var(--track-titulo); line-height: 1.15; margin-top: calc(-1 * var(--e-2)); }
+  .dia-datos { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e-4) var(--e-5); }
+  .dia-datos > :global(span) { display: grid; gap: 0.35rem; justify-items: start; }
+  .dia-datos :global(b) { font-family: var(--fuente-mono); font-size: var(--t-5); font-variant-numeric: tabular-nums; }
+  /* El resultado en relieve, del color del resultado (como en la lupa). */
+  .dia-datos :global(.pil) {
+    --cr: var(--n-400);
+    font-size: var(--t-2); font-weight: var(--peso-max); padding: 0.3rem 0.9rem;
+    color: color-mix(in srgb, var(--cr) 30%, white);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--cr) 48%, transparent), color-mix(in srgb, var(--cr) 20%, transparent));
+    border: 1px solid color-mix(in srgb, var(--cr) 60%, transparent);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 3px 0 color-mix(in srgb, var(--cr) 35%, black),
+      0 10px 20px -8px color-mix(in srgb, var(--cr) 60%, transparent);
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  }
+  .dia-datos :global(.pil.target) { --cr: var(--positivo); }
+  .dia-datos :global(.pil.stop) { --cr: var(--negativo); }
+  .boton {
+    margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: var(--e-2); --i: 1rem;
+    padding: 0.6rem 1rem; border-radius: var(--radio-2); font-size: var(--t-3); font-weight: var(--peso-fuerte);
+    background: var(--acento); color: var(--sobre-acento); box-shadow: var(--halo-boton);
+    transition: background var(--rapido);
+  }
+  .dia:hover .boton { background: var(--acento-vivo); }
+
+  /* ── los ocho módulos ──────────────────────────────────────────────── */
+  .recorrido { margin-top: var(--e-8); }
+  .pasos {
+    list-style: none; margin: var(--e-4) 0 0; padding: 0;
+    display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: var(--e-2);
+  }
+  /* base.css justifica los <li> de <main>: en nombres de dos palabras abria
+     huecos («Marcación      de zonas»). */
+  .pasos li { text-align: left; text-align-last: left; hyphens: none; } /* alineacion-ok: rotulos cortos de una tira, no texto corrido */
+  .pasos a {
+    display: block; height: 100%; padding: var(--e-3); border-radius: var(--radio-2);
+    border: 1px solid rgba(255, 255, 255, 0.07); background: rgba(255, 255, 255, 0.02);
+    color: var(--texto-2); text-decoration: none; font-size: var(--t-2); line-height: 1.3;
+    transition: border-color var(--normal), background var(--normal), color var(--normal), transform var(--normal);
+  }
+  .pasos a:hover {
+    color: var(--texto); transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--c) 45%, transparent);
+    background: color-mix(in srgb, var(--c) 8%, transparent);
+  }
+  .paso-n { display: block; margin-bottom: var(--e-2); font-family: var(--fuente-mono); font-weight: var(--peso-fuerte); color: var(--c); }
+
+  @media (max-width: 1100px) { .pasos { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (max-width: 900px) {
+    .dos, .dia { grid-template-columns: 1fr; }
+    .dia-img { min-height: 12rem; }
+  }
+  @media (max-width: 520px) {
+    .pasos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* «+$1.310,98» no cabia en un tercio del ancho de un telefono. */
+    .mini b { font-size: var(--t-3); }
+    .mini > span + span { padding-left: var(--e-3); }
   }
 </style>
+
+<script is:inline>
+  (function () {
+    var raiz = document.querySelector('[data-tablero]');
+    if (!raiz) return;
+
+    var dinero = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    var DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    var NOMBRE = { continuacion: 'Continuación', reingreso: 'Reingreso', target: 'Target', stop: 'Stop', otro: 'Otro' };
+
+    function usd(v) { return (v < 0 ? '−$' : '$') + dinero.format(Math.abs(v)); }
+    function firmado(v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + dinero.format(Math.abs(v)); }
+    function conSigno(v) { return (v > 0 ? '+' : '') + usd(v); }
+    function tono(v) { return v > 0 ? 'pos' : v < 0 ? 'neg' : ''; }
+    function escapa(t) {
+      return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function mayus(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
+    function fechaFila(iso) {
+      var p = iso.split('-');
+      return DIAS[new Date(iso + 'T12:00:00').getDay()] + ', ' + Number(p[2]) + ' ' + mayus(MESES[Number(p[1]) - 1]);
+    }
+    function mesAno(iso) { var p = iso.split('-'); return mayus(MESES[Number(p[1]) - 1]) + ' ' + p[0]; }
+    var LARGA = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+    function fechaLarga(iso) { return mayus(LARGA.format(new Date(iso + 'T12:00:00'))); }
+    function setup(s) { return NOMBRE[s] ? '<span class="setup ' + s + '">' + NOMBRE[s] + '</span>' : '—'; }
+    function pil(r) { return '<span class="pil ' + escapa(r) + '">' + escapa(NOMBRE[r] || r) + '</span>'; }
+
+    /** Los mismos calculos que la pagina de la bitacora (Bitacora.astro). */
+    function signo(o) {
+      if (o.resultado === 'stop') return -1;
+      if (o.resultado === 'target') return 1;
+      return Number(o.pnl) < 0 ? -1 : 1;
+    }
+    function resumir(d) {
+      var inicial = Number(d.cabecera && d.cabecera.valor_inicial) || 0;
+      var js = (d.jornadas || []).slice().sort(function (a, b) { return a.fecha < b.fecha ? -1 : 1; });
+      var saldo = inicial, techo = inicial, caida = 0, serie = [inicial], ops = [], puntos = 0, target = 0;
+      js.forEach(function (j) {
+        (j.operaciones || []).forEach(function (o) {
+          ops.push({ j: j, o: o });
+          saldo += Number(o.pnl);
+          puntos += signo(o) * Number(o.puntos);
+          if (o.resultado === 'target') target++;
+        });
+        serie.push(saldo);
+        if (saldo > techo) techo = saldo;
+        if (techo - saldo > caida) caida = techo - saldo;
+      });
+      return {
+        inicial: inicial, saldo: saldo, neto: saldo - inicial, serie: serie, ops: ops, puntos: puntos,
+        efec: ops.length ? (target / ops.length) * 100 : null, caida: caida, jornadas: js,
+      };
+    }
+
+    function curva(caja, serie, color) {
+      if (serie.length < 2) { caja.innerHTML = ''; return; }
+      var W = 500, H = 92, mn = Math.min.apply(null, serie), mx = Math.max.apply(null, serie), r = (mx - mn) || 1;
+      var pts = serie.map(function (v, i) {
+        return (i * W / (serie.length - 1)).toFixed(1) + ',' + (8 + (1 - (v - mn) / r) * (H - 16)).toFixed(1);
+      });
+      var id = 'g' + Math.random().toString(36).slice(2, 8);
+      caja.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' +
+        '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="' + color + '" stop-opacity=".32"/><stop offset="1" stop-color="' + color + '" stop-opacity="0"/>' +
+        '</linearGradient></defs>' +
+        '<path d="M' + pts.join(' L') + ' L' + W + ',' + H + ' L0,' + H + ' Z" fill="url(#' + id + ')"/>' +
+        '<path d="M' + pts.join(' L') + '" fill="none" stroke="' + color + '" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>' +
+        '</svg>';
+    }
+
+    /** La cifra grande sube desde cero en lugar de aparecer de golpe. */
+    function contar(el, valor, formato) {
+      var t0 = performance.now(), dur = 900;
+      (function paso(t) {
+        var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        el.textContent = formato(valor * e);
+        if (k < 1) requestAnimationFrame(paso);
+      })(t0);
+    }
+
+    var COLOR = { pos: '#3FCF8E', neg: '#EF5F63', neutro: '#8790A1' };
+    function $(p, s) { return p.querySelector(s); }
+
+    function pintar(nombre, d) {
+      var p = raiz.querySelector('[data-panel="' + nombre + '"]');
+      var r = resumir(d);
+      var ultimo = r.ops[r.ops.length - 1];
+
+      if (nombre === 'operativa') {
+        $(p, '[data-sub]').textContent = r.jornadas.length
+          ? 'Cuenta principal · desde el ' + fechaFila(r.jornadas[0].fecha)
+          : 'Cuenta principal';
+        if (!r.ops.length) {
+          $(p, '[data-grande]').textContent = usd(0);
+          $(p, '[data-leyenda]').textContent = 'Todavía sin operaciones';
+        } else {
+          var g = $(p, '[data-grande]'); g.className = 'grande ' + tono(r.neto);
+          contar(g, r.neto, conSigno);
+          $(p, '[data-leyenda]').textContent = 'P&L neto · ' + r.ops.length +
+            (r.ops.length === 1 ? ' operación' : ' operaciones') + ' en ' + r.jornadas.length +
+            (r.jornadas.length === 1 ? ' jornada' : ' jornadas');
+        }
+        $(p, '[data-m1]').textContent = r.efec == null ? '—' : dinero.format(r.efec) + ' %';
+        var m2 = $(p, '[data-m2]'); m2.textContent = r.ops.length ? firmado(r.puntos) : '—'; m2.className = tono(r.puntos);
+        var m3 = $(p, '[data-m3]'); m3.textContent = r.caida ? '−' + dinero.format(r.caida) : '—'; m3.className = r.caida ? 'neg' : '';
+        if (ultimo) {
+          $(p, '[data-ultimo]').innerHTML = '<span>Último · ' + fechaFila(ultimo.j.fecha) + '</span>' +
+            setup(ultimo.o.setup) + pil(ultimo.o.resultado) +
+            '<span class="cifra ' + tono(Number(ultimo.o.pnl)) + '">' + conSigno(Number(ultimo.o.pnl)) + '</span>';
+        }
+        pintarDia(r);
+      } else {
+        var js = r.jornadas;
+        $(p, '[data-sub]').textContent = js.length
+          ? mesAno(js[0].fecha) + ' → ' + mesAno(js[js.length - 1].fecha) + ' · ' + js.length + ' jornadas'
+          : 'Bitácora';
+        var g2 = $(p, '[data-grande]'); g2.className = 'grande ' + tono(r.neto);
+        contar(g2, r.saldo, usd);
+        $(p, '[data-leyenda]').innerHTML = 'Saldo · desde ' + usd(r.inicial) +
+          (r.inicial ? ' · <span class="' + tono(r.neto) + '">' + firmado((r.neto / r.inicial) * 100) + ' %</span>' : '');
+        $(p, '[data-m1]').textContent = r.efec == null ? '—' : dinero.format(r.efec) + ' %';
+        $(p, '[data-m2]').textContent = String(r.ops.length);
+        var n3 = $(p, '[data-m3]'); n3.textContent = conSigno(r.neto); n3.className = tono(r.neto);
+        if (js.length) $(p, '[data-ultimo]').innerHTML = '<span>Último · ' + fechaFila(js[js.length - 1].fecha) + '</span>';
+      }
+      curva($(p, '[data-curva]'), r.serie, r.ops.length ? COLOR[tono(r.neto) || 'neutro'] : COLOR.neutro);
+    }
+
+    /** El último día con gráfico de la operativa, con la ficha de su primera operación. */
+    function pintarDia(r) {
+      var caja = raiz.querySelector('[data-dia]');
+      var j = r.jornadas.slice().reverse().filter(function (x) { return x.imagen && (x.operaciones || []).length; })[0];
+      if (!j) return;
+      var o = j.operaciones[0], pnl = Number(o.pnl);
+      $(caja, '[data-dia-img]').src = j.imagen;
+      $(caja, '[data-dia-img]').alt = 'Gráfico del ' + fechaLarga(j.fecha);
+      $(caja, '[data-dia-fecha]').textContent = fechaLarga(j.fecha);
+      $(caja, '[data-dia-datos]').innerHTML =
+        '<span><i class="eti">Setup</i>' + setup(o.setup) + '</span>' +
+        '<span><i class="eti">Resultado</i>' + pil(o.resultado) + '</span>' +
+        '<span><i class="eti">Puntos</i><b>' + dinero.format(o.puntos) + '</b></span>' +
+        '<span><i class="eti">P&amp;L</i><b class="' + tono(pnl) + '">' + conSigno(pnl) + '</b></span>';
+      caja.hidden = false;
+    }
+
+    function fallo(nombre) {
+      var p = raiz.querySelector('[data-panel="' + nombre + '"]');
+      $(p, '[data-leyenda]').textContent = 'No se pudo leer en este momento';
+    }
+
+    [['operativa', '/api/operativa'], ['backtesting', '/api/backtesting']].forEach(function (x) {
+      fetch(x[1])
+        .then(function (res) { return res.json(); })
+        .then(function (d) { if (d.error) throw new Error(d.error); pintar(x[0], d); })
+        .catch(function () { fallo(x[0]); });
+    });
+  })();
+</script>

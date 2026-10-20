@@ -10,8 +10,17 @@
  * son cotizaciones: no hay conexión a mercado y no deben leerse como tal.
  * Por eso van marcados con «demo» en la propia cinta.
  */
-interface Props { titulo: string; destacado?: string; sub?: string }
-const { titulo, destacado, sub } = Astro.props;
+interface Props {
+  titulo: string; destacado?: string; sub?: string;
+  /** Texto normal despues del destacado. */
+  cola?: string;
+  /** Rotulo pequeño encima del titular. */
+  eti?: string;
+  /** Titular a la izquierda y los cuatro datos a su derecha en 2×2 (portada
+   *  como tablero, 20/10/2026). Sin ella, todo centrado y apilado. */
+  lado?: boolean;
+}
+const { titulo, destacado, sub, eti, cola, lado = false } = Astro.props;
 
 // Fijos a propósito: si cambiaran daría la impresión de ser precios en vivo.
 const CINTA = [
@@ -24,7 +33,7 @@ const CINTA = [
 ];
 ---
 
-<div class="banner">
+<div class:list={['banner', { lado }]}>
   <div class="malla" aria-hidden="true"></div>
 
   <div class="cinta" aria-hidden="true">
@@ -47,8 +56,11 @@ const CINTA = [
   </div>
 
   <div class="texto">
-    <h1>{titulo}{destacado && <> <span class="destacado">{destacado}</span></>}</h1>
+    <div class="titular">
+    {eti && <p class="eti-banner">{eti}</p>}
+    <h1>{titulo}{destacado && <> <span class="destacado">{destacado}</span></>}{cola}</h1>
     {sub && <p class="sub">{sub}</p>}
+    </div>
 
     <dl class="reloj">
       <div><dt>Instrumento</dt><dd>MNQ</dd></div>
@@ -150,6 +162,30 @@ const CINTA = [
     color: var(--texto); font-variant-numeric: tabular-nums;
   }
   .reloj dd span { color: var(--info); }
+
+  .eti-banner {
+    margin: 0 0 var(--e-3); font-size: var(--t-1); color: var(--texto-3);
+    letter-spacing: var(--track-etiqueta); text-transform: uppercase; font-weight: var(--peso-fuerte);
+  }
+
+  /* ── variante «lado» ── el titular a la izquierda y los datos a la derecha,
+     en dos por dos. Mas bajo que el apilado: la portada sigue con el tablero. */
+  .lado .texto {
+    display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: var(--e-7); align-items: center;
+  }
+  .lado .texto h1, .lado .sub { text-align: left; } /* alineacion-ok: en la variante lado el titular va a la izquierda, junto a los datos */
+  .lado .texto h1 { font-size: clamp(var(--t-7), 3.1vw, 2.5rem); }
+  .lado .sub { font-size: var(--t-4); }
+  .lado .reloj { margin: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lado .texto h1 .destacado {
+    background: linear-gradient(90deg, var(--acento-vivo), var(--info));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  @media (max-width: 900px) {
+    .lado .texto { grid-template-columns: 1fr; gap: var(--e-6); }
+  }
 
   @media (max-width: 46rem) {
     .texto { padding: var(--e-6) var(--e-5); }
