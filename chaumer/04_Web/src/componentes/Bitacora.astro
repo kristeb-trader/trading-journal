@@ -1,0 +1,762 @@
+---
+/**
+ * La bitacora de operaciones: tarjetas, curva, filtros y la tabla por meses
+ * plegables. La usan dos paginas (20/10/2026, diseño
+ * docs/disenos/2026-10-20-operativa-diaria-portal.md):
+ *
+ *   /backtesting   la bitacora de backtesting, con valor inicial y saldo
+ *   /operativa     los trades de la cuenta principal del Journal, sin valor
+ *                  inicial: la curva arranca en 0
+ *
+ * Las dos leen de una funcion de /api con la misma forma de datos:
+ * { cabecera, jornadas: [{ fecha, imagen, notas, operaciones: [...] }] }.
+ * Se pinta en el navegador porque los datos cambian sin recompilar.
+ */
+import Icono from './Icono.astro';
+
+interface Props {
+  titulo: string;
+  /** La funcion que devuelve { cabecera, jornadas }. */
+  api: string;
+  /** Con valor inicial: tarjetas de valor inicial, saldo y rentabilidad. Sin el, la de P&L neto. */
+  conSaldo?: boolean;
+  /** La direccion del boton Exportar; sin ella no hay boton. */
+  exportar?: string;
+  /** Lo que se dice cuando aun no hay ninguna jornada. */
+  vacio: string;
+}
+const { titulo, api, conSaldo = false, exportar, vacio } = Astro.props;
+---
+
+  <div class="bt">
+    <header class="cab entra">
+      <h1>{titulo}</h1>
+      <p class="apunte" data-resumen>Cargando…</p>
+    </header>
+
+    <section class:list={['cifras entra', { cuatro: !conSaldo }]}>
+      {conSaldo ? (<>
+      <div class="cifra">
+        <span class="etiqueta">Valor inicial</span>
+        <b data-valor-inicial>—</b>
+        <small data-sub-inicial></small>
+      </div>
+      <div class="cifra">
+        <span class="etiqueta">Saldo actual</span>
+        <b data-saldo>—</b>
+        <small data-sub-saldo></small>
+      </div>
+      <div class="cifra">
+        <span class="etiqueta">Rentabilidad</span>
+        <b data-rentabilidad>—</b>
+        <small data-sub-rentabilidad></small>
+      </div>
+      </>) : (
+      <div class="cifra">
+        <span class="etiqueta">P&amp;L neto</span>
+        <b data-pnl>—</b>
+        <small data-sub-pnl></small>
+      </div>
+      )}
+      <div class="cifra">
+        <span class="etiqueta">Efectividad</span>
+        <b data-efectividad>—</b>
+        <small data-sub-efectividad></small>
+      </div>
+      <div class="cifra">
+        <span class="etiqueta">Puntos netos</span>
+        <b data-puntos>—</b>
+        <small data-sub-puntos></small>
+      </div>
+      <div class="cifra">
+        <span class="etiqueta">Caída máxima</span>
+        <b data-caida>—</b>
+        <small data-sub-caida></small>
+      </div>
+    </section>
+
+    <section class="bloque entra">
+      <div class="b-cab"><h2>Curva de capital</h2></div>
+      <div data-curva></div>
+    </section>
+
+    <div class="barra entra">
+      <div class="chips" role="group" aria-label="Filtrar">
+        <button class="chip activa" type="button" data-filtro="">Todas</button>
+        <button class="chip" type="button" data-filtro="setup:continuacion">Continuación</button>
+        <button class="chip" type="button" data-filtro="setup:reingreso">Reingreso</button>
+        <button class="chip" type="button" data-filtro="resultado:target">Target</button>
+        <button class="chip" type="button" data-filtro="resultado:stop">Stop</button>
+        <button class="chip" type="button" data-filtro="obs">Con observación</button>
+      </div>
+      <div class="crece"></div>
+      {exportar && (
+        <a class="boton fantasma" href={exportar} data-exportar>
+          <Icono nombre="download-simple" /> Exportar
+        </a>
+      )}
+    </div>
+
+    <div class="tabla-envoltura entra">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Hora</th><th>Dirección</th><th>Setup</th>
+            <th class="n">Puntos</th><th class="n">P&amp;L</th><th>Resultado</th>
+            <th>Observaciones</th><th>Gráfico</th>
+          </tr>
+        </thead>
+        <tbody data-filas></tbody>
+      </table>
+    </div>
+    <p class="vacio" data-vacio hidden></p>
+  </div>
+
+  <dialog class="bt-lupa" data-lupa>
+    <button class="cerrar" type="button" data-cerrar aria-label="Cerrar">&times;</button>
+    <img alt="" data-lupa-img />
+  </dialog>
+<style is:global>
+  /* Global y no con ámbito porque la tabla y la curva se pintan en el
+     navegador: los nodos creados con innerHTML no llevan la marca de Astro y
+     los estilos con ámbito no les llegarían. Todo cuelga de .bt. */
+
+  .bt .apunte { margin: 0; color: var(--texto-3); font-size: var(--t-2); }
+
+  /* Seis tarjetas en dos filas de tres: arriba el dinero (valor inicial,
+     saldo, rentabilidad), abajo como va el metodo (efectividad, puntos,
+     caida). Seis en una fila no caben con cifras de cuatro digitos. */
+  .bt .cifras {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--e-3); margin: var(--e-6) 0 var(--e-5);
+  }
+  .bt .cifra {
+    position: relative; padding: var(--e-4); border-radius: var(--radio-3);
+    background: var(--vidrio-fondo); background-image: var(--vidrio-brillo);
+    border: 1px solid var(--vidrio-borde); backdrop-filter: var(--desenfoque);
+  }
+  .bt .cifra .etiqueta { display: block; margin-bottom: var(--e-2); }
+  .bt .cifra b {
+    display: block; font-family: var(--fuente-mono); font-size: var(--t-7);
+    font-weight: var(--peso-fuerte); letter-spacing: var(--track-cifra); line-height: 1.1;
+  }
+  .bt .cifra small { display: block; margin-top: var(--e-1); font-size: var(--t-2); color: var(--texto-3); }
+  .bt .pos { color: var(--positivo); }
+  .bt .neg { color: var(--negativo); }
+
+  /* ── controles ───────────────────────────────────────────────────────── */
+  /* .chip y .boton no son globales en el portal: cada pagina define los
+     suyos. Estos son los mismos valores que usa la galeria. */
+  .bt .chips { display: flex; gap: var(--e-2); flex-wrap: wrap; }
+  .bt .chip {
+    padding: var(--e-2) var(--e-3); border-radius: var(--radio-pill);
+    background: rgba(255, 255, 255, 0.04); border: 1px solid var(--borde-sutil);
+    color: var(--texto-2); font: inherit; font-size: var(--t-2); cursor: pointer;
+    transition: background var(--normal), border-color var(--normal), color var(--normal);
+  }
+  .bt .chip:hover { background: rgba(255, 255, 255, 0.08); color: var(--texto); }
+  .bt .chip.activa {
+    background: var(--acento-flojo); color: var(--texto);
+    border-color: color-mix(in srgb, var(--acento) 45%, transparent);
+  }
+  .bt .boton {
+    font: inherit; font-size: var(--t-3); font-weight: var(--peso-medio); cursor: pointer;
+    display: inline-flex; align-items: center; gap: var(--e-2); --i: 1rem;
+    min-height: var(--alto-control); padding: 0 var(--e-4); border-radius: var(--radio-2);
+    background: var(--acento); border: 1px solid var(--acento); color: var(--sobre-acento);
+    box-shadow: var(--halo-boton); transition: background var(--rapido), color var(--rapido);
+  }
+  .bt .boton:hover { background: var(--acento-vivo); }
+  .bt .boton.fantasma {
+    background: var(--vidrio-fondo); border-color: var(--vidrio-borde);
+    color: var(--texto-2); box-shadow: none;
+  }
+  .bt .boton.fantasma:hover {
+    background: var(--vidrio-hover); color: var(--texto);
+  }
+  /* El display de arriba le gana al atributo hidden: hay que decirlo. */
+  .bt .boton[hidden] { display: none; }
+
+  .bt .bloque {
+    margin: var(--e-5) 0; padding: var(--e-5); border-radius: var(--radio-3);
+    background: var(--tarjeta); border: 1px solid var(--borde-sutil); box-shadow: var(--sombra-1);
+  }
+  .bt .b-cab { margin-bottom: var(--e-4); }
+  .bt .b-cab h2 { margin: 0; font-size: var(--t-6); font-weight: var(--peso-fuerte); letter-spacing: var(--track-titulo); }
+  .bt svg.curva { width: 100%; height: auto; display: block; }
+
+  .bt .barra { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-3); margin: var(--e-5) 0 var(--e-4); }
+  .bt .crece { flex: 1; }
+
+  .bt .tabla-envoltura {
+    overflow-x: auto; border-radius: var(--radio-3);
+    border: 1px solid var(--borde-sutil); background: var(--tarjeta);
+  }
+  .bt table { width: 100%; border-collapse: collapse; font-size: var(--t-3); min-width: 52rem; }
+  .bt thead th {
+    text-align: left; padding: var(--e-3); /* alineacion-ok: cabecera de tabla, se alinea con su columna */
+    font-size: var(--t-1); text-transform: uppercase; letter-spacing: var(--track-etiqueta);
+    font-weight: var(--peso-fuerte); color: var(--texto-3);
+    background: var(--superficie); border-bottom: 1px solid var(--borde); white-space: nowrap;
+  }
+  .bt tbody td { padding: var(--e-3); border-bottom: 1px solid var(--borde-sutil); vertical-align: middle; color: var(--texto-2); }
+  .bt tbody tr:last-child td { border-bottom: 0; }
+  .bt tbody tr:hover td { background: var(--elevado); }
+  .bt td.n, .bt th.n { text-align: right; font-family: var(--fuente-mono); font-variant-numeric: tabular-nums; }
+  .bt td.fecha { color: var(--texto); font-weight: var(--peso-medio); white-space: nowrap; }
+  .bt td.fecha button {
+    font: inherit; color: inherit; background: none; border: 0; padding: 0;
+    cursor: pointer; text-align: left; /* alineacion-ok: es una celda de tabla disfrazada de boton */
+  }
+  .bt td.fecha button:hover { color: var(--acento-vivo); }
+  /* La observacion se recorta con puntos suspensivos y se despliega al
+     pulsarla. Sin tope, una nota larga empuja la tabla fuera de la pantalla y
+     esconde el P&L, que es lo que se viene a mirar. */
+  .bt td.obs { color: var(--texto-3); max-width: 13rem; cursor: pointer; } /* ancho-ok: celda de tabla que se despliega al pulsarla */
+  .bt td.obs span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bt tr.abierta td.obs span { white-space: normal; overflow: visible; }
+  .bt tr.vacia td { color: var(--texto-3); font-style: italic; }
+
+  /* La fila que abre cada mes, con sus totales. Tiene que separarse a la
+     primera de las filas de los dias: fondo tenido de acento, filete arriba,
+     mas aire y cifras en negrita. */
+  .bt tr.mes td {
+    padding: var(--e-4) var(--e-3);
+    font-family: var(--fuente-mono); font-variant-numeric: tabular-nums;
+    font-size: var(--t-4); font-weight: var(--peso-fuerte); color: var(--texto);
+    background: color-mix(in srgb, var(--acento) 11%, var(--superficie));
+    border-top: 1px solid color-mix(in srgb, var(--acento) 40%, transparent);
+    border-bottom: 1px solid var(--borde);
+    vertical-align: middle;
+  }
+  .bt tr.mes { cursor: pointer; }
+  .bt tr.mes:hover td { background: color-mix(in srgb, var(--acento) 16%, var(--superficie)); }
+  .bt tr.mes td.pos { color: var(--positivo); }
+  /* El mes se pliega: la flecha gira un cuarto de vuelta al abrirse. */
+  .bt .mes-boton {
+    display: inline-flex; align-items: center; gap: var(--e-2);
+    font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+  }
+  .bt .mes-flecha {
+    width: 0.95rem; height: 0.95rem; flex: none; color: var(--texto-3);
+    transition: transform var(--normal), color var(--normal);
+  }
+  .bt tr.mes.abierto .mes-flecha { transform: rotate(90deg); color: var(--acento-vivo); }
+  .bt tr.mes:hover .mes-flecha { color: var(--texto); }
+  .bt tr.mes td.neg { color: var(--negativo); }
+  /* Nombre y cuenta en una sola linea (pedido del operador): la fila se lee
+     de corrido, como el resto de la tabla. */
+  .bt tr.mes td:first-child { white-space: nowrap; }
+  .bt .mes-nombre {
+    display: inline; font-family: var(--fuente);
+    font-size: var(--t-3); text-transform: uppercase; letter-spacing: var(--track-etiqueta);
+    font-weight: var(--peso-max); color: var(--texto);
+  }
+  /* Todo en columnas de ancho fijo, para que de un mes a otro cada pieza
+     caiga en el mismo sitio (pedido del operador, 05/10/2026): el nombre de
+     «Septiembre» es el doble que el de «Mayo», y «1 operación» que
+     «12 operaciones». Los anchos caben la pieza mas larga posible. */
+  .bt .mes-boton { min-width: 11.5rem; vertical-align: middle; }
+  .bt .mes-cuenta {
+    display: inline-flex; align-items: center; vertical-align: middle;
+    margin-left: var(--e-3); font-family: var(--fuente);
+    font-size: var(--t-2); font-weight: var(--peso-medio); color: var(--texto-2);
+    font-variant-numeric: tabular-nums;
+  }
+  /* Sin «·»: con columnas fijas el separador quedaba suelto en medio del aire. */
+  .bt .mc-ops { min-width: 7.5rem; }
+  .bt .mc-t { min-width: 4.75rem; }
+  /* La efectividad: la cifra que mas se mira. En su propio color, que no es
+     ni el verde ni el rojo de la fila: no juzga, destaca. */
+  .bt .mes-efec {
+    display: inline-block; padding: 0.15rem 0.6rem; border-radius: var(--radio-pill);
+    font-family: var(--fuente-mono); font-size: var(--t-5); font-weight: var(--peso-max);
+    color: var(--info); white-space: nowrap;
+    background: color-mix(in srgb, var(--info) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--info) 38%, transparent);
+  }
+
+  .bt .pil {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.15rem 0.55rem; border-radius: var(--radio-pill);
+    font-size: var(--t-1); font-weight: var(--peso-fuerte); white-space: nowrap;
+  }
+  .bt .pil.target {
+    background: color-mix(in srgb, var(--positivo) 16%, transparent); color: var(--positivo);
+    border: 1px solid color-mix(in srgb, var(--positivo) 32%, transparent);
+  }
+  .bt .pil.stop {
+    background: color-mix(in srgb, var(--negativo) 16%, transparent); color: var(--negativo);
+    border: 1px solid color-mix(in srgb, var(--negativo) 32%, transparent);
+  }
+  .bt .pil.otro,
+  .bt .pil.neutra { background: rgba(255,255,255,0.05); color: var(--texto-3); border: 1px solid var(--borde-sutil); }
+  .bt .dir { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--texto); }
+  .bt .dir svg { width: 0.85rem; height: 0.85rem; }
+  .bt .dir.largo svg { color: var(--acento-vivo); }
+  .bt .dir.corto svg { color: var(--aviso); }
+
+  .bt .miniatura {
+    width: 3.25rem; height: 2rem; border-radius: var(--radio-1); object-fit: cover;
+    border: 1px solid var(--borde); cursor: zoom-in; display: block; background: var(--fondo);
+    transition: transform var(--rapido), border-color var(--rapido);
+  }
+  .bt .miniatura:hover { transform: scale(1.08); border-color: var(--acento); }
+  .bt .vacio { margin: var(--e-5) 0 0; color: var(--texto-3); font-size: var(--t-3); }
+
+  .bt-lupa::backdrop { background: rgba(5,8,14,0.72); backdrop-filter: blur(6px); }
+  .bt-lupa .cerrar {
+    background: none; border: 0; color: var(--texto-3); font-size: 1.25rem; cursor: pointer; line-height: 1;
+  }
+  .bt-lupa .cerrar:hover { color: var(--texto); }
+  .bt-lupa {
+    border: 0; background: transparent; padding: 0; max-width: 94vw; max-height: 94vh;
+  }
+  .bt-lupa img { display: block; max-width: 94vw; max-height: 88vh; border-radius: var(--radio-2); }
+  .bt-lupa .cerrar { position: absolute; top: 0.25rem; right: 0.5rem; font-size: 1.75rem; }
+
+  /* Sin valor inicial quedan cuatro tarjetas: en una fila. */
+  .bt .cifras.cuatro { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+  @media (max-width: 60rem) {
+    .bt .cifras, .bt .cifras.cuatro { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>
+
+<script is:inline define:vars={{ API: api, VACIO: vacio }}>
+  (function () {
+    var raiz = document.querySelector('.bt');
+    if (!raiz) return;
+
+    var dinero = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // Las dos paginas no tienen las mismas tarjetas (la operativa no tiene
+    // valor inicial ni saldo). Lo que no esta en la pagina se escribe en un
+    // nodo suelto que nadie ve, en vez de llenar el codigo de comprobaciones.
+    var NADA = document.createElement('span');
+    var $ = function (s, d) { return (d || raiz).querySelector(s) || NADA; };
+
+    function usd(v) { return (v < 0 ? '−$' : '$') + dinero.format(Math.abs(v)); }
+    function firmado(v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + dinero.format(Math.abs(v)); }
+    function escapa(t) {
+      return String(t == null ? '' : t)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /** El paso de escala mas cercano a rango/(marcas-1) entre 1, 2, 2,5, 5 y
+     *  10 por una potencia de diez. */
+    function pasoRedondo(rango, marcas) {
+      var bruto = rango / Math.max(marcas - 1, 1);
+      var mag = Math.pow(10, Math.floor(Math.log10(bruto)));
+      var n = bruto / mag;
+      return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * mag;
+    }
+
+    var MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    function fechaCorta(iso) {
+      var p = String(iso).split('-');
+      return p[2] + ' ' + (MESES[Number(p[1]) - 1] || '?') + ' ' + p[0];
+    }
+    var NOMBRE = {
+      largo: 'Largo', corto: 'Corto',
+      continuacion: 'Continuación', reingreso: 'Reingreso',
+      target: 'Target', stop: 'Stop', otro: 'Otro',
+    };
+    var FLECHA = {
+      largo: '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"/></svg>',
+      corto: '<svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M200,88V192a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h84.69L58.34,69.66A8,8,0,0,1,69.66,58.34L184,172.69V88a8,8,0,0,1,16,0Z"/></svg>',
+    };
+
+    /** El signo de los puntos de una operacion: el target suma, el stop
+     *  resta, y una salida que no fue ni lo uno ni lo otro («Otro», solo en
+     *  la operativa diaria) lleva el signo de su P&L. */
+    function signo(o) {
+      if (o.resultado === 'stop') return -1;
+      if (o.resultado === 'target') return 1;
+      return Number(o.pnl) < 0 ? -1 : 1;
+    }
+
+    var estado = { cabecera: null, jornadas: [] };
+    var filtro = '';
+    // Los meses desplegados ('AAAA-MM'). Sin filtro, todos plegados al entrar
+    // y lo que se abra se recuerda. Con un filtro, todos desplegados: se filtra
+    // para VER esas operaciones, y con los meses cerrados solo quedaban las
+    // cabeceras (05/10/2026). Al volver a «Todas» se recupera lo de antes.
+    var abiertos = {};
+    var abiertosFiltro = null;
+    function mesesAbiertos() { return filtro ? abiertosFiltro : abiertos; }
+
+    // ─────────────────────────────────────────────────────────── cargar
+    function cargar() {
+      return fetch(API)
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.error) throw new Error(d.error);
+          estado.cabecera = d.cabecera || { valor_inicial: 0, contratos: 1, instrumento: 'MNQ', comision: 0 };
+          estado.jornadas = d.jornadas || [];
+          pintar();
+        })
+        .catch(function (e) {
+          $('[data-resumen]').textContent = 'No se pudo leer la bitácora';
+          var v = $('[data-vacio]');
+          v.textContent = String(e.message || e);
+          v.hidden = false;
+        });
+    }
+
+    /** Las jornadas de vieja a nueva, con el saldo corriendo. Es la base de
+     *  todo lo que se pinta: la curva, la tabla y las cuatro cifras. */
+    function recorrido() {
+      var orden = estado.jornadas.slice().sort(function (a, b) {
+        return a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0;
+      });
+      var saldo = Number(estado.cabecera.valor_inicial) || 0;
+      return orden.map(function (j) {
+        var suma = (j.operaciones || []).reduce(function (t, o) { return t + Number(o.pnl); }, 0);
+        saldo += suma;
+        return { jornada: j, pnl: suma, saldo: saldo };
+      });
+    }
+
+    function pintar() {
+      var pasos = recorrido();
+      pintarCifras(pasos);
+      pintarCurva(pasos);
+      pintarTabla(pasos);
+    }
+
+    // ─────────────────────────────────────────────────────────── cifras
+    function pintarCifras(pasos) {
+      var c = estado.cabecera;
+      var inicial = Number(c.valor_inicial) || 0;
+      var saldo = pasos.length ? pasos[pasos.length - 1].saldo : inicial;
+
+      var ops = [];
+      var puntos = 0;
+      pasos.forEach(function (p) {
+        (p.jornada.operaciones || []).forEach(function (o) {
+          ops.push(o);
+          puntos += signo(o) * Number(o.puntos);
+        });
+      });
+      var ganadas = ops.filter(function (o) { return o.resultado === 'target'; }).length;
+
+      // Caida maxima: la peor distancia entre un techo y lo que vino despues.
+      var techo = inicial, caida = 0;
+      pasos.forEach(function (p) {
+        if (p.saldo > techo) techo = p.saldo;
+        if (techo - p.saldo > caida) caida = techo - p.saldo;
+      });
+
+      $('[data-resumen]').textContent = [
+        pasos.length + (pasos.length === 1 ? ' jornada' : ' jornadas'),
+        ops.length + (ops.length === 1 ? ' operación' : ' operaciones'),
+        'hora Colombia',
+      ].join(' · ');
+
+      $('[data-valor-inicial]').textContent = usd(inicial);
+      // Sin «1 contrato MNQ» (pedido del operador, 05/10/2026): solo la comisión, si la hay.
+      $('[data-sub-inicial]').textContent = c.comision ? usd(c.comision) + ' de comisión' : '';
+
+      var neto = saldo - inicial;
+      var tono = function (v) { return v > 0 ? 'pos' : v < 0 ? 'neg' : ''; };
+
+      // La operativa diaria no tiene saldo: su primera tarjeta es el P&L.
+      var pnlEl = $('[data-pnl]');
+      pnlEl.textContent = (neto > 0 ? '+' : '') + usd(neto);
+      pnlEl.className = tono(neto);
+
+      var saldoEl = $('[data-saldo]');
+      saldoEl.textContent = usd(saldo);
+      saldoEl.className = tono(neto);
+      var subSaldo = $('[data-sub-saldo]');
+      subSaldo.textContent = (neto > 0 ? '+' : '') + usd(neto);
+      subSaldo.className = tono(neto);
+
+      // La rentabilidad salio de la tarjeta del saldo a una propia, en grande
+      // y en color: es la cifra que el operador quiere leer de un vistazo.
+      var rent = inicial ? (neto / inicial) * 100 : 0;
+      var rentEl = $('[data-rentabilidad]');
+      rentEl.textContent = inicial ? firmado(rent) + ' %' : '—';
+      rentEl.className = tono(rent);
+
+      // Efectividad: targets sobre operaciones. Debajo, cuantos de cada uno,
+      // cada uno en su color.
+      var stops = ops.filter(function (o) { return o.resultado === 'stop'; }).length;
+      $('[data-efectividad]').textContent = ops.length
+        ? dinero.format((ganadas / ops.length) * 100) + ' %' : '—';
+      $('[data-sub-efectividad]').innerHTML =
+        '<span class="pos">' + ganadas + ' target</span> · <span class="neg">' + stops + ' stop</span>';
+
+      var puntosEl = $('[data-puntos]');
+      puntosEl.textContent = firmado(puntos);
+      puntosEl.className = tono(puntos);
+      var comisiones = ops.reduce(function (t, o) { return t + (Number(o.comision) || 0); }, 0);
+      $('[data-sub-puntos]').textContent = comisiones ? usd(comisiones) + ' en comisiones' : '';
+
+      var caidaEl = $('[data-caida]');
+      caidaEl.textContent = caida ? '−' + dinero.format(caida) : usd(0);
+      caidaEl.className = caida ? 'neg' : '';
+      $('[data-sub-caida]').textContent = caida && inicial ? '−' + dinero.format((caida / inicial) * 100) + ' %' : '';
+    }
+
+    // ──────────────────────────────────────────────────────────── curva
+    /** Estandar visual del metodo: sin cuadricula. Solo el eje horizontal y
+     *  el vertical de precios, y la linea del valor inicial de referencia. */
+    function pintarCurva(pasos) {
+      var caja = $('[data-curva]');
+      if (!pasos.length) { caja.innerHTML = ''; return; }
+
+      var inicial = Number(estado.cabecera.valor_inicial) || 0;
+      var serie = [inicial].concat(pasos.map(function (p) { return p.saldo; }));
+      var min = Math.min.apply(null, serie), max = Math.max.apply(null, serie);
+
+      // La escala del eje vertical sale de un paso «redondo» (1, 2, 2,5 o 5
+      // por una potencia de diez) para que las marcas caigan en cifras que se
+      // leen solas y a distancias iguales. Se buscan unas cinco: con mas se
+      // amontonan, con menos no se ve la escala.
+      var rango = max - min || Math.max(Math.abs(max) * 0.02, 1);
+      var paso = pasoRedondo(rango, 5);
+      var lo = Math.floor(min / paso) * paso;
+      var hi = Math.ceil(max / paso) * paso;
+      if (hi === lo) hi = lo + paso;
+      // Aire arriba y abajo: si la curva toca el borde, la etiqueta del ultimo
+      // punto se sale del dibujo.
+      if ((hi - max) / (hi - lo) < 0.1) hi += paso;
+      if ((min - lo) / (hi - lo) < 0.1) lo -= paso;
+
+      var EJE = 76, X0 = 92, X1 = 860, ARRIBA = 24, ABAJO = 200;
+      var y = function (v) { return ABAJO - ((v - lo) / (hi - lo)) * (ABAJO - ARRIBA); };
+      var x = function (i) { return serie.length === 1 ? X0 : X0 + (i * (X1 - X0)) / (serie.length - 1); };
+
+      var puntos = serie.map(function (v, i) { return x(i) + ',' + y(v).toFixed(1); });
+      var ultimo = serie[serie.length - 1];
+      var arriba = ultimo >= inicial;
+
+      // Como maximo doce fechas bajo el eje: mas se pisan entre ellas.
+      var salto = Math.ceil(pasos.length / 12);
+      var etiquetas = pasos.map(function (p, i) {
+        if (i % salto) return '';
+        var t = p.jornada.fecha.split('-');
+        return '<text x="' + x(i + 1).toFixed(1) + '" y="230">' + t[2] + ' ' + MESES[Number(t[1]) - 1] + '</text>';
+      }).join('');
+
+      var decimales = paso < 1 ? 2 : 0;
+      var cifraEje = new Intl.NumberFormat('es-CO', { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
+      var marcas = '';
+      for (var v = lo; v <= hi + paso / 2; v += paso) {
+        var yy = y(v).toFixed(1);
+        marcas += '<line x1="' + (EJE - 4) + '" y1="' + yy + '" x2="' + EJE + '" y2="' + yy + '" stroke="#3A4256"/>' +
+                  '<text x="' + (EJE - 8) + '" y="' + yy + '" dy="0.35em">' + cifraEje.format(v) + '</text>';
+      }
+
+      caja.innerHTML =
+        '<svg class="curva" viewBox="0 0 900 250" role="img" aria-label="Curva de capital: de ' +
+          dinero.format(inicial) + ' a ' + dinero.format(ultimo) + ' dólares en ' + pasos.length + ' jornadas">' +
+          '<defs><linearGradient id="bt-relleno" x1="0" y1="0" x2="0" y2="1">' +
+            '<stop offset="0%" stop-color="#4C8DFF" stop-opacity=".28"/>' +
+            '<stop offset="100%" stop-color="#4C8DFF" stop-opacity="0"/>' +
+          '</linearGradient></defs>' +
+          '<line x1="' + EJE + '" y1="' + (ARRIBA - 8) + '" x2="' + EJE + '" y2="210" stroke="#3A4256"/>' +
+          '<line x1="' + EJE + '" y1="210" x2="880" y2="210" stroke="#3A4256"/>' +
+          '<g fill="#8790A1" font-size="11" font-family="Geist Mono, monospace" text-anchor="end">' +
+            marcas +
+          '</g>' +
+          '<line x1="' + EJE + '" y1="' + y(inicial).toFixed(1) + '" x2="880" y2="' + y(inicial).toFixed(1) +
+            '" stroke="#8790A1" stroke-dasharray="3 5" opacity=".7"/>' +
+          '<path d="M' + puntos.join(' L') + ' L' + X1 + ',210 L' + X0 + ',210 Z" fill="url(#bt-relleno)"/>' +
+          '<polyline points="' + puntos.join(' ') + '" fill="none" stroke="#4C8DFF" stroke-width="2.25" ' +
+            'stroke-linejoin="round" stroke-linecap="round"/>' +
+          '<circle cx="' + x(serie.length - 1).toFixed(1) + '" cy="' + y(ultimo).toFixed(1) + '" r="4.5" fill="' +
+            (arriba ? '#3FCF8E' : '#EF5F63') + '"/>' +
+          '<text x="' + (x(serie.length - 1) - 4).toFixed(1) + '" y="' + (y(ultimo) - 13).toFixed(1) +
+            '" fill="' + (arriba ? '#3FCF8E' : '#EF5F63') + '" font-size="12" ' +
+            'font-family="Geist Mono, monospace" text-anchor="end">' + dinero.format(ultimo) + '</text>' +
+          '<g fill="#8790A1" font-size="11" font-family="Geist Mono, monospace" text-anchor="middle">' +
+            etiquetas +
+          '</g>' +
+        '</svg>';
+    }
+
+    // ──────────────────────────────────────────────────────────── tabla
+    function pasaElFiltro(op) {
+      if (!filtro) return true;
+      if (filtro === 'obs') return !!(op && String(op.observaciones || '').trim());
+      var partes = filtro.split(':');
+      return op && op[partes[0]] === partes[1];
+    }
+
+    var MESES_LARGOS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio',
+                        'Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    var COLUMNAS = 9;
+
+    /**
+     * Por meses, de nuevo a viejo. Cada mes abre con su nombre y cierra con
+     * una fila de totales.
+     *
+     * Los totales son de LO QUE SE VE: filtrando por «Stop», el total del mes
+     * es el de sus stops. Un mes sin nada que enseñar con ese filtro no sale.
+     */
+    function pintarTabla(pasos) {
+      var cuerpo = $('[data-filas]');
+      var vacio = $('[data-vacio]');
+      var meses = [];
+      var porClave = {};
+
+      pasos.slice().reverse().forEach(function (p) {
+        var j = p.jornada;
+        var ops = j.operaciones || [];
+        var visibles = ops.filter(pasaElFiltro);
+        var clave = j.fecha.slice(0, 7);
+        var filas = [];
+
+        // Un dia sin operaciones solo aparece si no hay filtro: filtrando por
+        // «Stop» no pinta nada un dia en el que no se entro.
+        if (!ops.length && !filtro) filas.push(filaVacia(j));
+        else visibles.forEach(function (o, i) { filas.push(filaOperacion(j, o, i === 0)); });
+        if (!filas.length) return;
+
+        if (!porClave[clave]) {
+          porClave[clave] = { clave: clave, filas: [], ops: [] };
+          meses.push(porClave[clave]);
+        }
+        porClave[clave].filas = porClave[clave].filas.concat(filas);
+        porClave[clave].ops = porClave[clave].ops.concat(visibles);
+      });
+
+      if (filtro && !abiertosFiltro) {
+        abiertosFiltro = {};
+        meses.forEach(function (m) { abiertosFiltro[m.clave] = true; });
+      }
+      cuerpo.innerHTML = meses.map(function (m) {
+        var abierto = !!mesesAbiertos()[m.clave];
+        // Cada fila del dia lleva su mes, para plegarla sin repintar la tabla.
+        var marca = '<tr data-de="' + m.clave + '"' + (abierto ? '' : ' hidden');
+        return filaMes(m.clave, m.ops, abierto) + m.filas.map(function (f) {
+          return marca + f.slice(3);
+        }).join('');
+      }).join('');
+
+      vacio.hidden = meses.length > 0;
+      vacio.textContent = pasos.length ? 'Ninguna operación pasa ese filtro.' : VACIO;
+    }
+
+    /**
+     * La fila que abre cada mes lleva sus totales (15/09/2026: antes iban en
+     * una fila aparte al final). Cada total cae bajo su columna: puntos bajo
+     * Puntos, P&L bajo P&L, y la efectividad —lo que el operador mas mira—
+     * bajo Resultado, en grande y en color.
+     */
+    var FLECHA_MES = '<svg class="mes-flecha" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/></svg>';
+
+    function filaMes(clave, ops, abierto) {
+      var t = clave.split('-');
+      var puntos = 0, pnl = 0, target = 0, stop = 0;
+      ops.forEach(function (o) {
+        puntos += signo(o) * Number(o.puntos);
+        pnl += Number(o.pnl);
+        if (o.resultado === 'target') target++;
+        if (o.resultado === 'stop') stop++;
+      });
+      var tono = function (v) { return v > 0 ? 'pos' : v < 0 ? 'neg' : ''; };
+      var hay = ops.length > 0;
+
+      return '<tr class="mes' + (abierto ? ' abierto' : '') + '" data-mes="' + clave + '">' +
+        '<td colspan="4">' +
+          '<button class="mes-boton" type="button" aria-expanded="' + abierto + '">' + FLECHA_MES +
+            '<span class="mes-nombre">' + MESES_LARGOS[Number(t[1]) - 1] + ' ' + t[0] + '</span>' +
+          '</button>' +
+          '<span class="mes-cuenta">' +
+            '<span class="mc-ops">' + ops.length + (ops.length === 1 ? ' operación' : ' operaciones') + '</span>' +
+            (hay ? '<span class="mc-t pos">' + target + ' target</span><span class="mc-s neg">' + stop + ' stop</span>' : '') +
+          '</span>' +
+        '</td>' +
+        '<td class="n ' + tono(puntos) + '">' + (hay ? firmado(puntos) : '—') + '</td>' +
+        '<td class="n ' + tono(pnl) + '">' + (hay ? (pnl > 0 ? '+' : '') + usd(pnl) : '—') + '</td>' +
+        '<td>' + (hay
+          ? '<span class="mes-efec">' + dinero.format((target / ops.length) * 100) + ' %</span>'
+          : '—') + '</td>' +
+        '<td colspan="2"></td>' +
+        '</tr>';
+    }
+
+    function celdaFecha(j) {
+      var texto = escapa(fechaCorta(j.fecha));
+      return '<td class="fecha">' + texto + '</td>';
+    }
+
+    function celdaGrafico(j) {
+      if (!j.imagen) return '<td></td>';
+      // La direccion completa de Cloudinary, tal cual la guarda la jornada.
+      var url = escapa(j.imagen);
+      return '<td><img class="miniatura" loading="lazy" src="' + url +
+             '" alt="Gráfico del ' + escapa(fechaCorta(j.fecha)) + '" data-lupa-abrir="' + url + '"></td>';
+    }
+
+    function filaVacia(j) {
+      return '<tr class="vacia">' + celdaFecha(j) +
+        '<td>—</td><td>—</td><td>—</td><td class="n">—</td><td class="n">' + usd(0) + '</td>' +
+        '<td><span class="pil neutra">Sin operación</span></td>' +
+        '<td class="obs"><span>' + escapa(j.notas || '') + '</span></td>' +
+        celdaGrafico(j) + '</tr>';
+    }
+
+    function filaOperacion(j, o, primera) {
+      var pnl = Number(o.pnl);
+      return '<tr>' +
+        (primera ? celdaFecha(j) : '<td class="fecha"></td>') +
+        '<td class="mono">' + escapa(o.hora) + '</td>' +
+        (o.direccion
+          ? '<td><span class="dir ' + o.direccion + '">' + FLECHA[o.direccion] + ' ' + NOMBRE[o.direccion] + '</span></td>'
+          : '<td>—</td>') +
+        '<td>' + (NOMBRE[o.setup] || '—') + '</td>' +
+        '<td class="n">' + dinero.format(o.puntos) + '</td>' +
+        '<td class="n ' + (pnl > 0 ? 'pos' : pnl < 0 ? 'neg' : '') + '">' +
+          (pnl > 0 ? '+' : '') + usd(pnl).replace('−$', '−$') + '</td>' +
+        '<td><span class="pil ' + o.resultado + '">' + (NOMBRE[o.resultado] || o.resultado) + '</span></td>' +
+        '<td class="obs"><span>' + escapa(o.observaciones || '') + '</span></td>' +
+        (primera ? celdaGrafico(j) : '<td></td>') +
+        '</tr>';
+    }
+
+    // ─────────────────────────────────────────────────────── interaccion
+    raiz.addEventListener('click', function (e) {
+      var chip = e.target.closest('[data-filtro]');
+      if (chip) {
+        filtro = chip.dataset.filtro;
+        abiertosFiltro = null;
+        raiz.querySelectorAll('[data-filtro]').forEach(function (c) { c.classList.toggle('activa', c === chip); });
+        pintarTabla(recorrido());
+        return;
+      }
+      var mes = e.target.closest('tr.mes');
+      if (mes) { plegar(mes); return; }
+      var mini = e.target.closest('[data-lupa-abrir]');
+      if (mini) { abrirLupa(mini.dataset.lupaAbrir, mini.alt); return; }
+
+      var obs = e.target.closest('td.obs');
+      if (obs) obs.parentElement.classList.toggle('abierta');
+    });
+
+    function plegar(fila) {
+      var clave = fila.dataset.mes;
+      var abierto = !mesesAbiertos()[clave];
+      mesesAbiertos()[clave] = abierto;
+      fila.classList.toggle('abierto', abierto);
+      fila.querySelector('.mes-boton').setAttribute('aria-expanded', String(abierto));
+      raiz.querySelectorAll('tr[data-de="' + clave + '"]').forEach(function (f) { f.hidden = !abierto; });
+    }
+
+    var lupa = document.querySelector('[data-lupa]');
+    function abrirLupa(url, alt) {
+      var img = lupa.querySelector('[data-lupa-img]');
+      img.src = url; img.alt = alt || '';
+      lupa.showModal();
+    }
+
+    document.querySelectorAll('[data-cerrar]').forEach(function (b) {
+      b.addEventListener('click', function () { b.closest('dialog').close(); });
+    });
+
+    cargar();
+  })();
+</script>
