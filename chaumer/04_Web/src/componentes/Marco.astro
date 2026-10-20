@@ -49,15 +49,15 @@ const GRUPOS = [
       // submenú de grupos). Se queda marcado también en la lista y en la ficha
       // de cada regla, que siguen existiendo: el mapa enlaza a ellas.
       // Se llama «Mapa» desde el 20/10/2026.
-      { icono: 'graph', href: '/mapa', tambien: '/reglas', texto: 'Mapa', cuenta: P.reglas().length, tono: '#A78BFA' },
+      { icono: 'graph', href: '/mapa', tambien: '/reglas', texto: 'Mapa', cuenta: P.reglas().length, tono: '#A78BFA', oculto: true },
       // Sesiones y ejemplos en una sola pagina (22/09/2026; Sesiones unificadas el 28/09/2026).
-      { icono: 'images', href: '/galeria', texto: 'Casos reales', cuenta: P.casosReales().total, tono: '#F472B6' },
+      { icono: 'images', href: '/galeria', texto: 'Casos reales', cuenta: P.casosReales().total, tono: '#F472B6', oculto: true },
       // Los trades de la cuenta principal del Journal (20/10/2026, D-041).
       { icono: 'chart-line-up', href: '/operativa', texto: 'Operativa diaria', tono: '#FBBF24' },
       { icono: 'notebook', href: '/backtesting', texto: 'Backtesting', tono: '#FB923C' },
       { icono: 'sliders-horizontal', href: '/parametros', texto: 'Parámetros', tono: '#38BDF8' },
-      { icono: 'check-square', href: '/checklist', texto: 'Checklist diaria', tono: '#4ADE80' },
-      { icono: 'chat-teardrop-text', href: '/observaciones', texto: 'Observaciones', tono: '#22D3EE' },
+      { icono: 'check-square', href: '/checklist', texto: 'Checklist diaria', tono: '#4ADE80', oculto: true },
+      { icono: 'chat-teardrop-text', href: '/observaciones', texto: 'Observaciones', tono: '#22D3EE', oculto: true },
     ],
   },
 ];
@@ -75,6 +75,28 @@ const marcada = (s: { href: string; tambien?: string }) => activa(s.href) || (!!
     <meta name="robots" content="noindex, nofollow" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{titulo} · Trading Plan de Futuros MNQ</title>
+    <!-- Los items `oculto` del menu (20/10/2026): no salen para nadie salvo
+         en el navegador del operador. `?todo` marca ese navegador y `?normal`
+         lo desmarca; la marca vive en su localStorage. Va en el <head> para
+         que el menu salga ya completo en la primera pintura, sin parpadeo.
+         OCULTAR NO ES CERRAR: las paginas siguen abiertas para quien tenga la
+         direccion. Opcion A del operador; la que cierra es Cloudflare Access. -->
+    <script is:inline>
+      (function () {
+        var CLAVE = 'portal-ver-todo';
+        var q = new URLSearchParams(location.search);
+        try {
+          if (q.has('todo')) localStorage.setItem(CLAVE, '1');
+          if (q.has('normal')) localStorage.removeItem(CLAVE);
+          if (localStorage.getItem(CLAVE) === '1') document.documentElement.classList.add('ver-todo');
+        } catch (e) { /* sin almacenamiento: se queda el menu corto */ }
+        if (q.has('todo') || q.has('normal')) {
+          q.delete('todo'); q.delete('normal');
+          var resto = q.toString();
+          history.replaceState(null, '', location.pathname + (resto ? '?' + resto : '') + location.hash);
+        }
+      })();
+    </script>
   </head>
 
   <body class="sin-js">
@@ -95,7 +117,7 @@ const marcada = (s: { href: string; tambien?: string }) => activa(s.href) || (!!
               {g.grupo && <p class="etiqueta nav-t">{g.grupo}</p>}
               {g.items.map((s) => (
                 <a href={s.href} title={s.texto}
-                   class:list={['nav-i', { activa: marcada(s) }]}>
+                   class:list={['nav-i', { activa: marcada(s), 'nav-oculto': s.oculto }]}>
                   <span class="nav-ic" style={s.tono ? `--tono:${s.tono}` : undefined}><Icono nombre={s.icono} /></span>
                   <span class="nav-x">{s.texto}</span>
                   {s.n && <span class="nav-n num">{String(s.n).padStart(2, '0')}</span>}
@@ -215,6 +237,9 @@ const marcada = (s: { href: string; tambien?: string }) => activa(s.href) || (!!
       .nav-g { margin-bottom: var(--e-3); }
       .nav-g + .nav-g { padding-top: var(--e-3); border-top: 1px solid var(--borde-sutil); }
       .nav-t { margin: 0 0 var(--e-2); padding-left: var(--e-3); }
+
+      /* Fuera del menu salvo en el navegador del operador (ver el <head>). */
+      html:not(.ver-todo) .nav-oculto { display: none; }
 
       .nav-i {
         position: relative;

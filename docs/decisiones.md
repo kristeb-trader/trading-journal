@@ -10,6 +10,24 @@
 
 ---
 
+## D-042 — El portal oculta cuatro secciones del menú, salvo en el navegador de Kris
+
+**Decisión (Kris, 20/10/2026).** **Mapa** (antes «Las reglas»), **Casos reales**, **Checklist diaria** y
+**Observaciones** salen del menú del portal. Kris los sigue viendo en su navegador: abre el portal una vez con
+`?todo` al final de la dirección y ese navegador queda marcado (`localStorage`, clave `portal-ver-todo`);
+`?normal` lo desmarca. Se hace en `Marco.astro` con `oculto: true` en el ítem.
+
+**Lo que se acepta a sabiendas.** **Ocultar no es cerrar:** las cuatro páginas siguen abiertas para quien tenga
+la dirección, el texto de las reglas sigue enlazando a cada regla, y el bloque del mapa de la portada se queda
+(Kris lo pidió así). Si algún día hay que impedir la entrada, la vía es Cloudflare Access sobre esas rutas
+(`chaumer/04_Web/DESPLIEGUE.md`, «Si algún día hay que cerrar la puerta»).
+
+**Alternativas descartadas.**
+- **Un grupo plegado «Más»**: Alfredo también lo vería.
+- **Cloudflare Access ya**: cierra de verdad, pero obliga a iniciar sesión y el portal es de entrada libre.
+
+---
+
 ## D-041 — El portal enseña la operativa real de la cuenta principal
 
 **Decisión (Kris, 20/10/2026).** El portal tiene una página nueva, **Operativa diaria**, encima de Backtesting, con
