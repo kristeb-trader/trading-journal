@@ -24,8 +24,10 @@ interface Props {
   exportar?: string;
   /** Lo que se dice cuando aun no hay ninguna jornada. */
   vacio: string;
+  /** El mes en curso sale desplegado al entrar (operativa); el resto, plegados. */
+  abrirMesActual?: boolean;
 }
-const { titulo, api, conSaldo = false, exportar, vacio } = Astro.props;
+const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false } = Astro.props;
 ---
 
   <div class="bt">
@@ -114,7 +116,14 @@ const { titulo, api, conSaldo = false, exportar, vacio } = Astro.props;
 
   <dialog class="bt-lupa" data-lupa>
     <button class="cerrar" type="button" data-cerrar aria-label="Cerrar">&times;</button>
+    <button class="paso atras" type="button" data-paso="-1" aria-label="Gráfico anterior">
+      <Icono nombre="caret-left" />
+    </button>
     <img alt="" data-lupa-img />
+    <button class="paso adelante" type="button" data-paso="1" aria-label="Gráfico siguiente">
+      <Icono nombre="caret-right" />
+    </button>
+    <p class="pie-lupa" data-lupa-pie></p>
   </dialog>
 <style is:global>
   /* Global y no con ámbito porque la tabla y la curva se pintan en el
@@ -212,7 +221,7 @@ const { titulo, api, conSaldo = false, exportar, vacio } = Astro.props;
   /* La observacion se recorta con puntos suspensivos y se despliega al
      pulsarla. Sin tope, una nota larga empuja la tabla fuera de la pantalla y
      esconde el P&L, que es lo que se viene a mirar. */
-  .bt td.obs { color: var(--texto-3); max-width: 13rem; cursor: pointer; } /* ancho-ok: celda de tabla que se despliega al pulsarla */
+  .bt td.obs { color: var(--texto-3); max-width: 11.5rem; cursor: pointer; } /* ancho-ok: celda de tabla que se despliega al pulsarla */
   .bt td.obs span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .bt tr.abierta td.obs span { white-space: normal; overflow: visible; }
   .bt tr.vacia td { color: var(--texto-3); font-style: italic; }
@@ -247,6 +256,8 @@ const { titulo, api, conSaldo = false, exportar, vacio } = Astro.props;
   /* Nombre y cuenta en una sola linea (pedido del operador): la fila se lee
      de corrido, como el resto de la tabla. */
   .bt tr.mes td:first-child { white-space: nowrap; }
+  /* Las cifras del mes, en una linea: «−$396,50» se partia con el signo arriba. */
+  .bt tr.mes td.n { white-space: nowrap; }
   .bt .mes-nombre {
     display: inline; font-family: var(--fuente);
     font-size: var(--t-3); text-transform: uppercase; letter-spacing: var(--track-etiqueta);
@@ -291,6 +302,20 @@ const { titulo, api, conSaldo = false, exportar, vacio } = Astro.props;
   }
   .bt .pil.otro,
   .bt .pil.neutra { background: rgba(255,255,255,0.05); color: var(--texto-3); border: 1px solid var(--borde-sutil); }
+  /* El setup, cada uno con su color (pedido del operador, 20/10/2026). Sobrio
+     a proposito: un punto y el texto apenas tenido, no una pastilla. Las
+     pastillas son del resultado, y dos pastillas de color por fila se leian
+     como un semaforo. Los colores no repiten los de la fila: verde y rojo son
+     del resultado, azul y ambar de la direccion. */
+  .bt .setup { display: inline-flex; align-items: center; gap: 0.45rem; }
+  .bt .setup::before {
+    content: ''; width: 0.45rem; height: 0.45rem; border-radius: 50%; flex: none;
+    background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 18%, transparent);
+  }
+  .bt .setup { color: color-mix(in srgb, var(--c) 55%, var(--texto)); }
+  .bt .setup.continuacion { --c: var(--info); }
+  .bt .setup.reingreso { --c: #A78BFA; } /* el violeta de «Las reglas» en el menu */
+
   .bt .dir { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--texto); }
   .bt .dir svg { width: 0.85rem; height: 0.85rem; }
   .bt .dir.largo svg { color: var(--acento-vivo); }
@@ -313,7 +338,24 @@ const { titulo, api, conSaldo = false, exportar, vacio } = Astro.props;
     border: 0; background: transparent; padding: 0; max-width: 94vw; max-height: 94vh;
   }
   .bt-lupa img { display: block; max-width: 94vw; max-height: 88vh; border-radius: var(--radio-2); }
-  .bt-lupa .cerrar { position: absolute; top: 0.25rem; right: 0.5rem; font-size: 1.75rem; }
+  .bt-lupa .cerrar { position: absolute; top: 0.25rem; right: 0.5rem; font-size: 1.75rem; z-index: 1; }
+  /* Las flechas, sobre la imagen y a media altura: se pasa de un dia a otro
+     sin cerrar (tambien con las flechas del teclado). */
+  .bt-lupa .paso {
+    position: absolute; top: calc(50% - 1.6rem); z-index: 1;
+    width: 2.75rem; height: 2.75rem; border-radius: 50%; --i: 1.25rem;
+    display: grid; place-items: center; cursor: pointer;
+    background: rgba(10, 13, 19, 0.72); border: 1px solid var(--vidrio-borde); color: var(--texto-2);
+    transition: background var(--rapido), color var(--rapido), opacity var(--rapido);
+  }
+  .bt-lupa .paso:hover { background: rgba(10, 13, 19, 0.92); color: var(--texto); }
+  .bt-lupa .paso:disabled { opacity: 0; pointer-events: none; }
+  .bt-lupa .atras { left: 0.75rem; }
+  .bt-lupa .adelante { right: 0.75rem; }
+  .bt-lupa .pie-lupa {
+    margin: var(--e-2) 0 0; color: var(--texto-2);
+    font-size: var(--t-2); font-variant-numeric: tabular-nums;
+  }
 
   /* Sin valor inicial quedan cuatro tarjetas: en una fila. */
   .bt .cifras.cuatro { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -323,7 +365,7 @@ const { titulo, api, conSaldo = false, exportar, vacio } = Astro.props;
   }
 </style>
 
-<script is:inline define:vars={{ API: api, VACIO: vacio }}>
+<script is:inline define:vars={{ API: api, VACIO: vacio, ABRIR_MES_ACTUAL: abrirMesActual }}>
   (function () {
     var raiz = document.querySelector('.bt');
     if (!raiz) return;
@@ -382,6 +424,14 @@ const { titulo, api, conSaldo = false, exportar, vacio } = Astro.props;
     // para VER esas operaciones, y con los meses cerrados solo quedaban las
     // cabeceras (05/10/2026). Al volver a «Todas» se recupera lo de antes.
     var abiertos = {};
+    // En la operativa, el mes en curso entra desplegado (pedido del operador,
+    // 20/10/2026): es el que se viene a mirar. Fecha LOCAL, no UTC: desde las
+    // 19:00 de Colombia la UTC ya es el dia siguiente, y el dia 31 a esa hora
+    // abriria el mes que aun no empezo.
+    if (ABRIR_MES_ACTUAL) {
+      var hoy = new Date();
+      abiertos[hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0')] = true;
+    }
     var abiertosFiltro = null;
     function mesesAbiertos() { return filtro ? abiertosFiltro : abiertos; }
 
@@ -708,7 +758,7 @@ const { titulo, api, conSaldo = false, exportar, vacio } = Astro.props;
         (o.direccion
           ? '<td><span class="dir ' + o.direccion + '">' + FLECHA[o.direccion] + ' ' + NOMBRE[o.direccion] + '</span></td>'
           : '<td>—</td>') +
-        '<td>' + (NOMBRE[o.setup] || '—') + '</td>' +
+        '<td>' + (NOMBRE[o.setup] ? '<span class="setup ' + o.setup + '">' + NOMBRE[o.setup] + '</span>' : '—') + '</td>' +
         '<td class="n">' + dinero.format(o.puntos) + '</td>' +
         '<td class="n ' + (pnl > 0 ? 'pos' : pnl < 0 ? 'neg' : '') + '">' +
           (pnl > 0 ? '+' : '') + usd(pnl).replace('−$', '−$') + '</td>' +
@@ -731,7 +781,7 @@ const { titulo, api, conSaldo = false, exportar, vacio } = Astro.props;
       var mes = e.target.closest('tr.mes');
       if (mes) { plegar(mes); return; }
       var mini = e.target.closest('[data-lupa-abrir]');
-      if (mini) { abrirLupa(mini.dataset.lupaAbrir, mini.alt); return; }
+      if (mini) { abrirLupa(mini.dataset.lupaAbrir); return; }
 
       var obs = e.target.closest('td.obs');
       if (obs) obs.parentElement.classList.toggle('abierta');
@@ -747,11 +797,40 @@ const { titulo, api, conSaldo = false, exportar, vacio } = Astro.props;
     }
 
     var lupa = document.querySelector('[data-lupa]');
-    function abrirLupa(url, alt) {
-      var img = lupa.querySelector('[data-lupa-img]');
-      img.src = url; img.alt = alt || '';
+    var lupaImg = lupa.querySelector('[data-lupa-img]');
+    var lupaPie = lupa.querySelector('[data-lupa-pie]');
+    var galeria = [], posicion = 0;
+
+    /** Los graficos de la tabla, del dia mas viejo al mas nuevo: la flecha
+     *  izquierda va al dia anterior y la derecha al siguiente. Se leen de la
+     *  tabla al abrir, asi respetan el filtro (los meses plegados cuentan:
+     *  sus filas estan, solo ocultas). */
+    function abrirLupa(url) {
+      galeria = [].slice.call(raiz.querySelectorAll('[data-lupa-abrir]')).reverse()
+        .map(function (m) { return { url: m.dataset.lupaAbrir, alt: m.alt }; });
+      posicion = Math.max(0, galeria.findIndex(function (g) { return g.url === url; }));
+      mostrarLupa();
       lupa.showModal();
     }
+    function mostrarLupa() {
+      var g = galeria[posicion];
+      lupaImg.src = g.url; lupaImg.alt = g.alt || '';
+      lupaPie.textContent = (g.alt || '').replace(/^Gráfico del /, '') + ' · ' + (posicion + 1) + ' de ' + galeria.length;
+      lupa.querySelector('.atras').disabled = posicion === 0;
+      lupa.querySelector('.adelante').disabled = posicion === galeria.length - 1;
+    }
+    function pasoLupa(d) {
+      var n = posicion + d;
+      if (n < 0 || n >= galeria.length) return;
+      posicion = n; mostrarLupa();
+    }
+    lupa.querySelectorAll('[data-paso]').forEach(function (b) {
+      b.addEventListener('click', function () { pasoLupa(Number(b.dataset.paso)); });
+    });
+    lupa.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); pasoLupa(-1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); pasoLupa(1); }
+    });
 
     document.querySelectorAll('[data-cerrar]').forEach(function (b) {
       b.addEventListener('click', function () { b.closest('dialog').close(); });
