@@ -26,7 +26,7 @@ tipo Secret. **Nunca** en el repositorio ni en el navegador.
 
 | Secreto | Para qué | Estado |
 |---|---|---|
-| `SUPABASE_PORTAL_KEY` | Leer la bitácora de backtesting del Journal: un JWT del rol `portal_lector`, que solo ve `portal_bt_cabecera` y `portal_bt_jornadas`. Se genera con `node scripts/llave-portal.mjs` (pide el *Legacy JWT Secret* de Supabase sin enseñarlo, firma la llave, la prueba y la deja en `.dev.vars`). Sin ella, `/backtesting` dice «No se pudo leer la bitácora» | puesto |
+| `SUPABASE_PORTAL_KEY` | Leer la bitácora de backtesting del Journal: un JWT del rol `portal_lector`, que solo ve `portal_bt_cabecera`, `portal_bt_jornadas` y `portal_op_jornadas` (la operativa diaria, D-041). Se genera con `node scripts/llave-portal.mjs` (pide el *Legacy JWT Secret* de Supabase sin enseñarlo, firma la llave, la prueba y la deja en `.dev.vars`). Sin ella, `/backtesting` dice «No se pudo leer la bitácora» | puesto |
 | `CLAVE_OPERADOR` | Responder, marcar, exportar y borrar observaciones. Cualquier cadena larga: `node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"`, y `npx wrangler pages secret put CLAVE_OPERADOR --project-name=plan-operativo-nq` | **pendiente** (`tasks/current.md`) |
 
 ## Los dos enlaces

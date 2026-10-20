@@ -1,10 +1,11 @@
 # Operativa diaria en el portal
 
-**Versión:** v1 · **Estado:** 🟢 aprobado (20/10/2026), en implementación · **Fecha:** 20/10/2026
+**Versión:** v1 · **Estado:** ✅ implementado (20/10/2026) · **Fecha:** 20/10/2026
 
 | Versión | Qué cambió |
 |---|---|
 | v1 | Primera propuesta, con las cuatro respuestas del operador del 20/10/2026 |
+| v1.1 | Implementado. Una precisión del §2: el análisis del día viaja en las observaciones de la **primera** operación (así la página no cambia); `notas` de la jornada es solo el motivo de un día sin operación |
 
 ---
 

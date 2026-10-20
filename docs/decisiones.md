@@ -10,6 +10,29 @@
 
 ---
 
+## D-041 — El portal enseña la operativa real de la cuenta principal
+
+**Decisión (Kris, 20/10/2026).** El portal tiene una página nueva, **Operativa diaria**, encima de Backtesting, con
+los trades de la cuenta principal del Journal (`objetivos.cuenta_principal`) **a partir del 21/10/2026**, con todo:
+P&L, setup, el análisis del día y su gráfico. Sin valor inicial: la curva arranca en $0. Diseño:
+`docs/disenos/2026-10-20-operativa-diaria-portal.md`.
+
+**Motivo.** Que Alfredo vea cómo se está aplicando su plan día a día, con la misma página que ya conoce del
+backtesting. Lo anterior al 21/10 no sale: era otra etapa y mezclaría dos métodos en una misma curva.
+
+**Lo que se acepta a sabiendas.** El portal es de entrada libre (02/09/2026): **cualquiera con la dirección** ve
+los trades, el P&L y las notas del día. Kris lo aceptó explícitamente («sí, muéstralo todo»). Y como la página
+sigue a la cuenta principal, **el día que pase a `334118` (D-039) enseñará la cuenta real** sin tocar nada.
+
+**Cómo.** Una vista `portal_op_jornadas` con la misma forma que `portal_bt_jornadas`, leída con la misma llave
+de `portal_lector` (ningún secreto nuevo); la página reutiliza el componente de Backtesting (`Bitacora.astro`).
+
+**Alternativas descartadas.**
+- **Ocultar las observaciones**: se ofreció, y Kris prefirió enseñarlo todo.
+- **Mostrar desde febrero**: mezclaba la etapa 1 con el plan de Chaumer.
+
+---
+
 ## D-040 — Se archiva el AddOn ChecklistChaumer; las noticias rojas se guardan desde el Diario
 
 **Decisión (Kris, 19/10/2026).** El AddOn `ChecklistChaumer` de NinjaTrader se **archiva**: pasa a
