@@ -1,0 +1,22 @@
+---
+/**
+ * Operativa diaria: los trades de la cuenta principal del Journal.
+ *
+ * La misma página que Backtesting (componentes/Bitacora.astro), con otros
+ * datos: los lee /api/operativa de la vista `portal_op_jornadas`, que ya
+ * filtra la cuenta principal y arranca el 21/10/2026. Sin valor inicial: la
+ * curva arranca en 0 y la primera tarjeta es el P&L neto.
+ *
+ * Diseño: docs/disenos/2026-10-20-operativa-diaria-portal.md · D-041.
+ */
+import Marco from '../componentes/Marco.astro';
+import Bitacora from '../componentes/Bitacora.astro';
+---
+
+<Marco titulo="Operativa diaria">
+  <Bitacora
+    titulo="Operativa diaria"
+    api="/api/operativa"
+    vacio="Todavía no hay operaciones registradas."
+  />
+</Marco>

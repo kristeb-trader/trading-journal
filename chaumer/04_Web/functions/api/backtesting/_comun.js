@@ -9,8 +9,8 @@
  * llave ni habla con Supabase.
  *
  * La llave (`SUPABASE_PORTAL_KEY`, secreto de Cloudflare) es un JWT de rol
- * `portal_lector`: solo puede leer las vistas `portal_bt_cabecera` y
- * `portal_bt_jornadas`. Ni una tabla, ni escribir. La genera
+ * `portal_lector`: solo puede leer las vistas `portal_bt_cabecera`,
+ * `portal_bt_jornadas` y `portal_op_jornadas`. Ni una tabla, ni escribir. La genera
  * `scripts/llave-portal.mjs`.
  */
 
@@ -31,7 +31,9 @@ export const json = (datos, estado = 200) =>
 export const soloLectura = () =>
   json({ error: 'La bitácora es de solo lectura en el portal: se registra desde el Journal' }, 405);
 
-async function vista(env, ruta) {
+/** Lee una vista `portal_*` con la llave de `portal_lector`. La usa también
+ *  /api/operativa (20/10/2026): la misma llave lee `portal_op_jornadas`. */
+export async function vista(env, ruta) {
   if (!env.SUPABASE_PORTAL_KEY) throw new Error('Falta el secreto SUPABASE_PORTAL_KEY');
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${ruta}`, {
     headers: {
