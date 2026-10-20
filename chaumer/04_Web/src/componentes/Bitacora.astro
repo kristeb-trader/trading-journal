@@ -112,19 +112,32 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
       </table>
     </div>
     <p class="vacio" data-vacio hidden></p>
+
+    <!-- Dentro de .bt para que le lleguen las pastillas y los colores del setup. -->
+    <dialog class="bt-lupa" data-lupa aria-labelledby="lupa-fecha">
+      <header class="placa placa-arriba" data-lupa-placa>
+        <div class="placa-txt">
+          <span class="placa-eti">{titulo}</span>
+          <h2 class="placa-fecha" id="lupa-fecha" data-lupa-fecha></h2>
+        </div>
+        <span class="placa-cuenta" data-lupa-cuenta></span>
+        <button class="cerrar" type="button" data-cerrar aria-label="Cerrar">&times;</button>
+      </header>
+      <!-- El foco entra aqui al abrir, no en el boton de cerrar: si no, el
+           boton se abre con su aro de foco encendido. -->
+      <div class="lupa-marco" tabindex="-1" autofocus>
+        <button class="paso atras" type="button" data-paso="-1" aria-label="Gráfico anterior">
+          <Icono nombre="caret-left" />
+        </button>
+        <img alt="" data-lupa-img />
+        <button class="paso adelante" type="button" data-paso="1" aria-label="Gráfico siguiente">
+          <Icono nombre="caret-right" />
+        </button>
+      </div>
+      <footer class="placa placa-abajo" data-lupa-ficha></footer>
+    </dialog>
   </div>
 
-  <dialog class="bt-lupa" data-lupa>
-    <button class="cerrar" type="button" data-cerrar aria-label="Cerrar">&times;</button>
-    <button class="paso atras" type="button" data-paso="-1" aria-label="Gráfico anterior">
-      <Icono nombre="caret-left" />
-    </button>
-    <img alt="" data-lupa-img />
-    <button class="paso adelante" type="button" data-paso="1" aria-label="Gráfico siguiente">
-      <Icono nombre="caret-right" />
-    </button>
-    <p class="pie-lupa" data-lupa-pie></p>
-  </dialog>
 <style is:global>
   /* Global y no con ámbito porque la tabla y la curva se pintan en el
      navegador: los nodos creados con innerHTML no llevan la marca de Astro y
@@ -329,33 +342,155 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
   .bt .miniatura:hover { transform: scale(1.08); border-color: var(--acento); }
   .bt .vacio { margin: var(--e-5) 0 0; color: var(--texto-3); font-size: var(--t-3); }
 
-  .bt-lupa::backdrop { background: rgba(5,8,14,0.72); backdrop-filter: blur(6px); }
-  .bt-lupa .cerrar {
-    background: none; border: 0; color: var(--texto-3); font-size: 1.25rem; cursor: pointer; line-height: 1;
-  }
-  .bt-lupa .cerrar:hover { color: var(--texto); }
+  /* ── la lupa ──────────────────────────────────────────────────────────
+     Tres piezas apiladas: la placa con la fecha, el grafico y la ficha con
+     los numeros. Las placas tienen relieve (pedido del operador, 20/10/2026):
+     un bisel claro arriba, un canto oscuro abajo que hace de grosor y una
+     sombra larga. Sin colores nuevos: el relieve sale de la luz, no de la
+     paleta. Entran con un giro corto sobre el eje horizontal, como una
+     tarjeta que se asienta, y lo repiten al pasar de dia. */
+  .bt-lupa::backdrop { background: rgba(5, 8, 14, 0.78); backdrop-filter: blur(6px); }
   .bt-lupa {
-    border: 0; background: transparent; padding: 0; max-width: 94vw; max-height: 94vh;
+    border: 0; background: transparent; padding: 0; overflow: visible;
+    max-width: 94vw; max-height: 96vh; color: var(--texto);
   }
-  .bt-lupa img { display: block; max-width: 94vw; max-height: 88vh; border-radius: var(--radio-2); }
-  .bt-lupa .cerrar { position: absolute; top: 0.25rem; right: 0.5rem; font-size: 1.75rem; z-index: 1; }
-  /* Las flechas, sobre la imagen y a media altura: se pasa de un dia a otro
+  .bt-lupa[open] { display: flex; flex-direction: column; align-items: stretch; gap: var(--e-3); }
+  /* Las placas ocupan el ancho del grafico y no lo empujan: ancho 0 con
+     minimo del 100 % hace que no cuenten al medir el dialogo. */
+  .bt-lupa .placa { width: 0; min-width: 100%; box-sizing: border-box; }
+
+  .bt-lupa .lupa-marco { position: relative; align-self: center; perspective: 1200px; outline: none; }
+  .bt-lupa img {
+    display: block; max-width: 94vw; max-height: 64vh; border-radius: var(--radio-2);
+    box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  }
+
+  .bt-lupa .placa {
+    position: relative; border-radius: 14px;
+    background: linear-gradient(180deg, rgba(34, 41, 55, 0.94), rgba(15, 18, 25, 0.94));
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.11),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+      0 5px 0 -1px rgba(6, 8, 12, 0.95),
+      0 22px 44px -16px rgba(0, 0, 0, 0.85);
+    transform-origin: 50% 50%;
+  }
+  /* El filo de luz sobre el canto superior. */
+  .bt-lupa .placa::before {
+    content: ''; position: absolute; inset: -1px 18% auto; height: 1px; border-radius: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--acento) 75%, white), transparent);
+    opacity: 0.65;
+  }
+
+  .bt-lupa .placa-arriba {
+    display: flex; align-items: center; gap: var(--e-4);
+    padding: var(--e-3) var(--e-3) var(--e-3) var(--e-5);
+  }
+  .bt-lupa .placa-txt { flex: 1; min-width: 0; display: grid; gap: 2px; }
+  .bt-lupa .placa-eti {
+    font-size: var(--t-1); text-transform: uppercase; letter-spacing: var(--track-etiqueta);
+    font-weight: var(--peso-fuerte); color: var(--texto-3);
+  }
+  .bt-lupa .placa-fecha {
+    margin: 0; font-size: var(--t-6); font-weight: var(--peso-max); letter-spacing: var(--track-titulo);
+    line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    background: linear-gradient(180deg, var(--n-50), var(--n-300));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.55));
+  }
+  .bt-lupa .placa-cuenta {
+    font-family: var(--fuente-mono); font-size: var(--t-2); color: var(--texto-2);
+    padding: 0.3rem 0.7rem; border-radius: var(--radio-pill); white-space: nowrap;
+    background: rgba(0, 0, 0, 0.28); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  .bt-lupa .cerrar {
+    width: 2.25rem; height: 2.25rem; border-radius: 50%; flex: none; cursor: pointer;
+    display: grid; place-items: center; line-height: 1; font-size: 1.4rem;
+    background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--texto-3); transition: background var(--rapido), color var(--rapido);
+  }
+  .bt-lupa .cerrar:hover { background: rgba(255, 255, 255, 0.09); color: var(--texto); }
+
+  /* La ficha: una fila por operacion, cada dato con su rotulo encima y un
+     filete entre datos. */
+  .bt-lupa .placa-abajo { padding: var(--e-2) var(--e-4); }
+  .bt-lupa .ficha-op {
+    display: flex; flex-wrap: wrap; align-items: stretch; justify-content: space-between;
+    padding: var(--e-2) 0;
+  }
+  .bt-lupa .ficha-op + .ficha-op { border-top: 1px solid rgba(255, 255, 255, 0.06); }
+  .bt-lupa .dato {
+    /* Rotulos en una misma linea arriba; el valor, centrado en lo que queda
+       (la cifra del P&L es mas grande que la pastilla del resultado). */
+    flex: 1 1 0; min-width: 6.5rem; display: grid; grid-template-rows: auto 1fr; align-items: center; gap: 0.3rem;
+    padding: var(--e-1) var(--e-4);
+  }
+  .bt-lupa .dato + .dato { border-left: 1px solid rgba(255, 255, 255, 0.06); }
+  .bt-lupa .dato .etiq {
+    font-size: var(--t-1); text-transform: uppercase; letter-spacing: var(--track-etiqueta);
+    font-weight: var(--peso-fuerte); color: var(--texto-3);
+  }
+  .bt-lupa .dato b {
+    font-family: var(--fuente-mono); font-size: var(--t-5); font-weight: var(--peso-fuerte);
+    letter-spacing: var(--track-cifra); font-variant-numeric: tabular-nums; color: var(--texto);
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
+  }
+  .bt-lupa .dato b.pos { color: var(--positivo); }
+  .bt-lupa .dato b.neg { color: var(--negativo); }
+  .bt-lupa .dato.pnl b { font-size: var(--t-6); }
+  .bt-lupa .dato .setup, .bt-lupa .dato .pil { justify-self: start; }
+  .bt-lupa .dato .setup { font-weight: var(--peso-medio); }
+  .bt-lupa .ficha-vacia { display: flex; align-items: center; gap: var(--e-3); padding: var(--e-3) var(--e-2); color: var(--texto-2); }
+
+  .bt-lupa .placa-arriba.entra-3d { animation: placa-cae 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .bt-lupa .placa-abajo.entra-3d  { animation: placa-sube 460ms cubic-bezier(0.2, 0.8, 0.2, 1) 60ms both; }
+  .bt-lupa img.entra-3d           { animation: grafico-entra 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  @keyframes placa-cae {
+    from { opacity: 0; transform: perspective(900px) rotateX(-22deg) translateY(-10px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes placa-sube {
+    from { opacity: 0; transform: perspective(900px) rotateX(22deg) translateY(12px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes grafico-entra {
+    from { opacity: 0.35; transform: scale(0.985); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* Las flechas, sobre el grafico y a media altura: se pasa de un dia a otro
      sin cerrar (tambien con las flechas del teclado). */
   .bt-lupa .paso {
-    position: absolute; top: calc(50% - 1.6rem); z-index: 1;
+    position: absolute; top: calc(50% - 1.4rem); z-index: 1;
     width: 2.75rem; height: 2.75rem; border-radius: 50%; --i: 1.25rem;
     display: grid; place-items: center; cursor: pointer;
     background: rgba(10, 13, 19, 0.72); border: 1px solid var(--vidrio-borde); color: var(--texto-2);
+    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.8);
     transition: background var(--rapido), color var(--rapido), opacity var(--rapido);
   }
   .bt-lupa .paso:hover { background: rgba(10, 13, 19, 0.92); color: var(--texto); }
   .bt-lupa .paso:disabled { opacity: 0; pointer-events: none; }
   .bt-lupa .atras { left: 0.75rem; }
   .bt-lupa .adelante { right: 0.75rem; }
-  .bt-lupa .pie-lupa {
-    margin: var(--e-2) 0 0; color: var(--texto-2);
-    font-size: var(--t-2); font-variant-numeric: tabular-nums;
+
+  /* En el celular: la fecha baja a dos lineas en vez de cortarse, y los
+     datos van en una cuadricula de dos columnas, con el P&L a lo ancho. En
+     fila no caben cinco y se montaban unos sobre otros. 900px es el unico
+     punto de ruptura del portal (Marco.astro). */
+  @media (max-width: 900px) {
+    .bt-lupa .placa-arriba { padding: var(--e-3) var(--e-3) var(--e-3) var(--e-4); gap: var(--e-2); }
+    .bt-lupa .placa-fecha { font-size: var(--t-5); white-space: normal; text-align: left; } /* alineacion-ok: base.css justifica los titulos y con dos lineas abria huecos entre palabras */
+    .bt-lupa .placa-abajo { padding: var(--e-1) var(--e-3); }
+    .bt-lupa .ficha-op { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e-3) 0; }
+    .bt-lupa .dato { min-width: 0; padding: var(--e-1) var(--e-2); }
+    .bt-lupa .dato + .dato { border-left: 0; }
+    .bt-lupa .dato.pnl { grid-column: 1 / -1; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: var(--e-3); }
+    .bt-lupa .paso { width: 2.25rem; height: 2.25rem; --i: 1rem; top: calc(50% - 1.125rem); }
   }
+
+  /* Filas que abren el grafico al pulsarlas. */
+  .bt tbody tr.con-grafico { cursor: zoom-in; }
 
   /* Sin valor inicial quedan cuatro tarjetas: en una fila. */
   .bt .cifras.cuatro { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -739,11 +874,12 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
       // La direccion completa de Cloudinary, tal cual la guarda la jornada.
       var url = escapa(j.imagen);
       return '<td><img class="miniatura" loading="lazy" src="' + url +
-             '" alt="Gráfico del ' + escapa(fechaCorta(j.fecha)) + '" data-lupa-abrir="' + url + '"></td>';
+             '" alt="Gráfico del ' + escapa(fechaCorta(j.fecha)) + '" data-lupa-abrir="' + url +
+             '" data-fecha="' + j.fecha + '"></td>';
     }
 
     function filaVacia(j) {
-      return '<tr class="vacia">' + celdaFecha(j) +
+      return '<tr class="vacia' + (j.imagen ? ' con-grafico' : '') + '" data-fecha="' + j.fecha + '">' + celdaFecha(j) +
         '<td>—</td><td>—</td><td>—</td><td class="n">—</td><td class="n">' + usd(0) + '</td>' +
         '<td><span class="pil neutra">Sin operación</span></td>' +
         '<td class="obs"><span>' + escapa(j.notas || '') + '</span></td>' +
@@ -752,7 +888,7 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
 
     function filaOperacion(j, o, primera) {
       var pnl = Number(o.pnl);
-      return '<tr>' +
+      return '<tr' + (j.imagen ? ' class="con-grafico"' : '') + ' data-fecha="' + j.fecha + '">' +
         (primera ? celdaFecha(j) : '<td class="fecha"></td>') +
         '<td class="mono">' + escapa(o.hora) + '</td>' +
         (o.direccion
@@ -781,10 +917,24 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
       var mes = e.target.closest('tr.mes');
       if (mes) { plegar(mes); return; }
       var mini = e.target.closest('[data-lupa-abrir]');
-      if (mini) { abrirLupa(mini.dataset.lupaAbrir); return; }
+      if (mini) { abrirLupa(mini.dataset.fecha); return; }
 
+      // La observacion recortada se despliega al pulsarla; si cabe entera,
+      // la celda se porta como el resto de la fila.
       var obs = e.target.closest('td.obs');
-      if (obs) obs.parentElement.classList.toggle('abierta');
+      if (obs) {
+        var txt = obs.querySelector('span');
+        var fila0 = obs.parentElement;
+        if (fila0.classList.contains('abierta') || (txt && txt.scrollWidth > txt.clientWidth)) {
+          fila0.classList.toggle('abierta');
+          return;
+        }
+      }
+
+      // Cualquier otra parte de la fila abre el grafico de su dia (pedido del
+      // operador, 20/10/2026): no hace falta acertar en la miniatura.
+      var fila = e.target.closest('tr.con-grafico');
+      if (fila) abrirLupa(fila.dataset.fecha);
     });
 
     function plegar(fila) {
@@ -798,26 +948,74 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
 
     var lupa = document.querySelector('[data-lupa]');
     var lupaImg = lupa.querySelector('[data-lupa-img]');
-    var lupaPie = lupa.querySelector('[data-lupa-pie]');
+    var lupaFecha = lupa.querySelector('[data-lupa-fecha]');
+    var lupaCuenta = lupa.querySelector('[data-lupa-cuenta]');
+    var lupaFicha = lupa.querySelector('[data-lupa-ficha]');
+    var lupaPlaca = lupa.querySelector('[data-lupa-placa]');
     var galeria = [], posicion = 0;
+
+    var FECHA_LARGA = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    function fechaLarga(iso) {
+      // Al mediodia: a las 00:00 locales, una conversion de zona podria dar el dia anterior.
+      var t = FECHA_LARGA.format(new Date(iso + 'T12:00:00'));
+      return t.charAt(0).toUpperCase() + t.slice(1);
+    }
 
     /** Los graficos de la tabla, del dia mas viejo al mas nuevo: la flecha
      *  izquierda va al dia anterior y la derecha al siguiente. Se leen de la
      *  tabla al abrir, asi respetan el filtro (los meses plegados cuentan:
      *  sus filas estan, solo ocultas). */
-    function abrirLupa(url) {
+    function abrirLupa(fecha) {
       galeria = [].slice.call(raiz.querySelectorAll('[data-lupa-abrir]')).reverse()
-        .map(function (m) { return { url: m.dataset.lupaAbrir, alt: m.alt }; });
-      posicion = Math.max(0, galeria.findIndex(function (g) { return g.url === url; }));
+        .map(function (m) { return { url: m.dataset.lupaAbrir, alt: m.alt, fecha: m.dataset.fecha }; });
+      posicion = Math.max(0, galeria.findIndex(function (g) { return g.fecha === fecha; }));
       mostrarLupa();
       lupa.showModal();
     }
+
+    function dato(etiqueta, valor, clase) {
+      return '<div class="dato' + (clase ? ' ' + clase : '') + '"><span class="etiq">' + etiqueta + '</span>' + valor + '</div>';
+    }
+
+    /** Debajo del grafico, una fila por operacion del dia (las que pasan el
+     *  filtro): setup, resultado, puntos, contratos y P&L. */
+    function ficha(fecha) {
+      var j = estado.jornadas.filter(function (x) { return x.fecha === fecha; })[0];
+      if (!j) return '';
+      var ops = (j.operaciones || []).filter(pasaElFiltro);
+      if (!ops.length) {
+        return '<div class="ficha-vacia"><span class="pil neutra">Sin operación</span>' +
+               (j.notas ? '<span>' + escapa(j.notas) + '</span>' : '') + '</div>';
+      }
+      return ops.map(function (o, i) {
+        var pnl = Number(o.pnl);
+        var contratos = o.contratos || j.contratos || (estado.cabecera && estado.cabecera.contratos) || 1;
+        return '<div class="ficha-op">' +
+          (ops.length > 1 ? dato('Operación ' + (i + 1), '<b>' + escapa(o.hora) + '</b>') : '') +
+          dato('Setup', NOMBRE[o.setup] ? '<span class="setup ' + o.setup + '">' + NOMBRE[o.setup] + '</span>' : '<b>—</b>') +
+          dato('Resultado', '<span class="pil ' + o.resultado + '">' + (NOMBRE[o.resultado] || o.resultado) + '</span>') +
+          dato('Puntos', '<b>' + dinero.format(o.puntos) + '</b>') +
+          dato('Contratos', '<b>' + contratos + '</b>') +
+          dato('P&amp;L', '<b class="' + (pnl > 0 ? 'pos' : pnl < 0 ? 'neg' : '') + '">' + (pnl > 0 ? '+' : '') + usd(pnl) + '</b>', 'pnl') +
+          '</div>';
+      }).join('');
+    }
+
+    function reanimar(el) {
+      el.classList.remove('entra-3d');
+      void el.offsetWidth; // fuerza el reinicio de la animacion
+      el.classList.add('entra-3d');
+    }
+
     function mostrarLupa() {
       var g = galeria[posicion];
       lupaImg.src = g.url; lupaImg.alt = g.alt || '';
-      lupaPie.textContent = (g.alt || '').replace(/^Gráfico del /, '') + ' · ' + (posicion + 1) + ' de ' + galeria.length;
+      lupaFecha.textContent = fechaLarga(g.fecha);
+      lupaCuenta.textContent = (posicion + 1) + ' de ' + galeria.length;
+      lupaFicha.innerHTML = ficha(g.fecha);
       lupa.querySelector('.atras').disabled = posicion === 0;
       lupa.querySelector('.adelante').disabled = posicion === galeria.length - 1;
+      reanimar(lupaPlaca); reanimar(lupaFicha); reanimar(lupaImg);
     }
     function pasoLupa(d) {
       var n = posicion + d;

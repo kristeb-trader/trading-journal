@@ -116,6 +116,7 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-10-19-motor-fichas-origen-bot.sql` | ✅ MCP | `motor_fichas.origen_datos` acepta 'bot': la ficha hecha con las velas con las que decidió el bot (diseño 2026-10-19-velas-del-bot). Solo amplía la lista |
 | `2026-10-20-portal-operativa.sql` | ✅ MCP | vista `portal_op_jornadas` (D-041): los trades de la cuenta principal desde el 21/10/2026, con la forma de `portal_bt_jornadas`. Solo `portal_lector` y `service_role` |
 | `2026-10-20-portal-operativa-notas.sql` | ✅ MCP | `portal_op_jornadas`: las observaciones salen de las «Notas adicionales» (`resumen_ia`), no del análisis del día |
+| `2026-10-20-portal-operativa-contratos.sql` | ✅ MCP | `portal_op_jornadas`: cada operación lleva `contratos` (`trades.qty`), para la ficha de la lupa |
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.
