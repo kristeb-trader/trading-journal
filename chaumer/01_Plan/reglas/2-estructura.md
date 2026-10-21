@@ -9,7 +9,7 @@
 | | |
 |---|---|
 | Aplica a | Continuación · Reingreso |
-| Parámetros | `TICK` |
+| Parámetros | `TICK` · `VUELTA_EN_VELA_DESDE` |
 | Relacionadas | R-06 · R-07 |
 | Casos | G-11 · G-12 |
 
@@ -22,6 +22,7 @@
   - **No se exige** que cada vela haga máximos más altos. Una **vela interior no corta**.
   - **Empate:** `mínimo[n] = mínimo[n−1]` → **no corta**.
   - **Muere:** `mínimo[n] ≤ mínimo[n−1] − 1 TICK`. Esa vela es ya **la primera del retroceso**.
+- **🕯️ La misma vela puede matar el retroceso y ser corrida** *(desde `VUELTA_EN_VELA_DESDE`)*. Si una vela hace **primero** un mínimo por debajo del de la anterior —muere la corrida— y **después**, en el mismo minuto, un máximo por encima del de la anterior, esa vela es a la vez **el final del retroceso** (su mínimo) y **la corrida nueva** (su máximo). La corrida nueva nace en esa vela, que es su origen: es la excepción al tamaño mínimo de 2 velas. **Y al revés:** si una vela **primero** termina el retroceso y **después**, en el mismo minuto, hace mínimo por debajo del de la anterior, la corrida que acaba de nacer muere en esa misma vela: su máximo es el extremo de la corrida y su mínimo empieza el retroceso siguiente. **El orden lo dice el color**, como en `R-09`: vela azul, primero el mínimo; vela blanca, primero el máximo. Espejo en la bajista.
 - **Corrida bajista (espejo):** nace con `mínimo[n] < mínimo[n−1]` · vive mientras `máximo[n] ≤ máximo[n−1]` · muere con `máximo[n] ≥ máximo[n−1] + 1 TICK`.
 - **Primero la corrida:** se identifican su inicio y su fin antes de evaluar el retroceso.
 - **En NinjaTrader:** a ojo sobre el gráfico de 1 minuto de MNQ, comparando extremos de velas consecutivas. Sin indicadores.
@@ -50,7 +51,7 @@ Diagrama: `../02_Assets/diagramas/R-05_corrida.png`
 | | |
 |---|---|
 | Aplica a | Continuación · Reingreso |
-| Parámetros | `TICK` · `STOP_MAX` |
+| Parámetros | `TICK` · `STOP_MAX` · `VUELTA_EN_VELA_DESDE` |
 | Relacionadas | R-05 · R-31 · R-32 · R-41 |
 | Casos | G-11 · G-12 |
 
@@ -61,6 +62,7 @@ Diagrama: `../02_Assets/diagramas/R-05_corrida.png`
   - **🎯 Su nivel de referencia = el mínimo MÁS BAJO de todas las velas del retroceso.** No el de la primera, no el de la última.
   - **Color irrelevante:** una vela verde dentro del retroceso no lo termina si no hace máximo más alto.
 - **Tras una corrida bajista (espejo):** empieza con `máximo[n] ≥ máximo[n−1] + 1 TICK` · termina con `mínimo[n] < mínimo[n−1]` · su nivel de referencia es el **máximo más alto**.
+- **Un retroceso puede durar una sola vela y terminar en ella misma** *(desde `VUELTA_EN_VELA_DESDE`)*: es la vela que mata la corrida y, después, hace máximo por encima del de la anterior (`R-05`). Su nivel de referencia es el mínimo de esa vela.
 - **Número de velas:** irrelevante, sin mínimo ni máximo. **Tamaño mínimo:** ninguno (`P-12`). **Tamaño máximo:** ≤ `STOP_MAX` (`R-31`).
 - **El nivel de referencia define el retroceso, no el stop.** El stop se mide con `R-32`: el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento — no solo el extremo del retroceso que la originó.
 

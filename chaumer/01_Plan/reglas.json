@@ -193,7 +193,8 @@
         "Reingreso"
       ],
       "parametros": [
-        "TICK"
+        "TICK",
+        "VUELTA_EN_VELA_DESDE"
       ],
       "relacionadas": [
         "R-06",
@@ -207,7 +208,7 @@
       "fuente": null,
       "pendiente": null,
       "absorbe": [],
-      "como_se_aplica": "- **Corrida alcista:**\n  - **Nace:** `máximo[n] > máximo[n−1]`. La forman la vela `n−1` (**origen**) y la vela `n`.\n  - **Tamaño mínimo:** **2 velas**. **Tamaño máximo:** **ninguno** — la sobreextensión no es un parámetro operativo, es contextualización (`C-01`).\n  - **Vive mientras:** `mínimo[n] ≥ mínimo[n−1]`. El **color de la vela es irrelevante**.\n  - **No se exige** que cada vela haga máximos más altos. Una **vela interior no corta**.\n  - **Empate:** `mínimo[n] = mínimo[n−1]` → **no corta**.\n  - **Muere:** `mínimo[n] ≤ mínimo[n−1] − 1 TICK`. Esa vela es ya **la primera del retroceso**.\n- **Corrida bajista (espejo):** nace con `mínimo[n] < mínimo[n−1]` · vive mientras `máximo[n] ≤ máximo[n−1]` · muere con `máximo[n] ≥ máximo[n−1] + 1 TICK`.\n- **Primero la corrida:** se identifican su inicio y su fin antes de evaluar el retroceso.\n- **En NinjaTrader:** a ojo sobre el gráfico de 1 minuto de MNQ, comparando extremos de velas consecutivas. Sin indicadores.\n- **Terminología:** «corrida» e «impulso» son sinónimos. **El plan usa solo «corrida».**",
+      "como_se_aplica": "- **Corrida alcista:**\n  - **Nace:** `máximo[n] > máximo[n−1]`. La forman la vela `n−1` (**origen**) y la vela `n`.\n  - **Tamaño mínimo:** **2 velas**. **Tamaño máximo:** **ninguno** — la sobreextensión no es un parámetro operativo, es contextualización (`C-01`).\n  - **Vive mientras:** `mínimo[n] ≥ mínimo[n−1]`. El **color de la vela es irrelevante**.\n  - **No se exige** que cada vela haga máximos más altos. Una **vela interior no corta**.\n  - **Empate:** `mínimo[n] = mínimo[n−1]` → **no corta**.\n  - **Muere:** `mínimo[n] ≤ mínimo[n−1] − 1 TICK`. Esa vela es ya **la primera del retroceso**.\n- **🕯️ La misma vela puede matar el retroceso y ser corrida** *(desde `VUELTA_EN_VELA_DESDE`)*. Si una vela hace **primero** un mínimo por debajo del de la anterior —muere la corrida— y **después**, en el mismo minuto, un máximo por encima del de la anterior, esa vela es a la vez **el final del retroceso** (su mínimo) y **la corrida nueva** (su máximo). La corrida nueva nace en esa vela, que es su origen: es la excepción al tamaño mínimo de 2 velas. **Y al revés:** si una vela **primero** termina el retroceso y **después**, en el mismo minuto, hace mínimo por debajo del de la anterior, la corrida que acaba de nacer muere en esa misma vela: su máximo es el extremo de la corrida y su mínimo empieza el retroceso siguiente. **El orden lo dice el color**, como en `R-09`: vela azul, primero el mínimo; vela blanca, primero el máximo. Espejo en la bajista.\n- **Corrida bajista (espejo):** nace con `mínimo[n] < mínimo[n−1]` · vive mientras `máximo[n] ≤ máximo[n−1]` · muere con `máximo[n] ≥ máximo[n−1] + 1 TICK`.\n- **Primero la corrida:** se identifican su inicio y su fin antes de evaluar el retroceso.\n- **En NinjaTrader:** a ojo sobre el gráfico de 1 minuto de MNQ, comparando extremos de velas consecutivas. Sin indicadores.\n- **Terminología:** «corrida» e «impulso» son sinónimos. **El plan usa solo «corrida».**",
       "porque": "> **Nace mirando máximos, muere mirando mínimos.** Dos criterios distintos, intencionadamente.\n\n#### Casos frontera resueltos\n\n| Caso | Resolución |\n|---|---|\n| Vela roja dentro de corrida alcista | **No corta** — el color es irrelevante |\n| Vela interior (máximo más bajo + mínimo más alto) | **No corta** — todavía no hay retroceso |\n| Mínimos exactamente idénticos | **No corta** — hace falta ≥1 tick por debajo |\n\nNo existe tope de velas: el propio Chaumer (nota de voz del 24/08/2026) confirma que la sobreextensión no es un parámetro operativo sino un elemento de contextualización.\n\nDiagrama: `../02_Assets/diagramas/R-05_corrida.png`",
       "si_no_se_cumple": null,
       "excepciones": null,
@@ -227,7 +228,8 @@
       ],
       "parametros": [
         "TICK",
-        "STOP_MAX"
+        "STOP_MAX",
+        "VUELTA_EN_VELA_DESDE"
       ],
       "relacionadas": [
         "R-05",
@@ -243,7 +245,7 @@
       "fuente": null,
       "pendiente": null,
       "absorbe": [],
-      "como_se_aplica": "- **Tras una corrida alcista:**\n  - **Empieza:** primera vela con `mínimo[n] ≤ mínimo[n−1] − 1 TICK`. **Termina:** primera vela con `máximo[n] > máximo[n−1]`.\n  - **🎯 Su nivel de referencia = el mínimo MÁS BAJO de todas las velas del retroceso.** No el de la primera, no el de la última.\n  - **Color irrelevante:** una vela verde dentro del retroceso no lo termina si no hace máximo más alto.\n- **Tras una corrida bajista (espejo):** empieza con `máximo[n] ≥ máximo[n−1] + 1 TICK` · termina con `mínimo[n] < mínimo[n−1]` · su nivel de referencia es el **máximo más alto**.\n- **Número de velas:** irrelevante, sin mínimo ni máximo. **Tamaño mínimo:** ninguno (`P-12`). **Tamaño máximo:** ≤ `STOP_MAX` (`R-31`).\n- **El nivel de referencia define el retroceso, no el stop.** El stop se mide con `R-32`: el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento — no solo el extremo del retroceso que la originó.",
+      "como_se_aplica": "- **Tras una corrida alcista:**\n  - **Empieza:** primera vela con `mínimo[n] ≤ mínimo[n−1] − 1 TICK`. **Termina:** primera vela con `máximo[n] > máximo[n−1]`.\n  - **🎯 Su nivel de referencia = el mínimo MÁS BAJO de todas las velas del retroceso.** No el de la primera, no el de la última.\n  - **Color irrelevante:** una vela verde dentro del retroceso no lo termina si no hace máximo más alto.\n- **Tras una corrida bajista (espejo):** empieza con `máximo[n] ≥ máximo[n−1] + 1 TICK` · termina con `mínimo[n] < mínimo[n−1]` · su nivel de referencia es el **máximo más alto**.\n- **Un retroceso puede durar una sola vela y terminar en ella misma** *(desde `VUELTA_EN_VELA_DESDE`)*: es la vela que mata la corrida y, después, hace máximo por encima del de la anterior (`R-05`). Su nivel de referencia es el mínimo de esa vela.\n- **Número de velas:** irrelevante, sin mínimo ni máximo. **Tamaño mínimo:** ninguno (`P-12`). **Tamaño máximo:** ≤ `STOP_MAX` (`R-31`).\n- **El nivel de referencia define el retroceso, no el stop.** El stop se mide con `R-32`: el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento — no solo el extremo del retroceso que la originó.",
       "porque": "> **El suelo de $40 de la guía v4 desaparece.** Solo sobrevive el techo. Coste cuantificado en `P-12`: con R:R 1:1, un retroceso de 5 pts exige **57,5 %** de aciertos para no perder; uno de 60 pts, **50,6 %**.\n\nDiagrama: `../02_Assets/diagramas/R-06_retroceso.png`",
       "si_no_se_cumple": null,
       "excepciones": null,
@@ -320,7 +322,7 @@
         "R-19"
       ],
       "pendiente": null,
-      "como_se_aplica": "- **La vela designada:** la de **máximo más alto** (corrida alcista) o **mínimo más bajo** (corrida bajista), contando desde el origen de la corrida **hasta la vela que dispara el retroceso, ambas incluidas**.\n- **Cuándo:** al aparecer el retroceso (`R-06`), no antes.\n- **Los límites:** del borde del cuerpo al extremo de la mecha. En una resistencia, el límite inferior es el borde superior del cuerpo —el cierre si la vela es verde, la apertura si es roja— y el superior, el máximo de la vela.\n- **Vela sin mecha:** la zona es una línea en el extremo de la vela.\n- **Vela sin cuerpo** (apertura = cierre): el cuerpo mide cero; la zona va de ese precio a la punta de la mecha.\n- **El retroceso también marca zona:** el retroceso de una corrida alcista marca **soporte**, y el de una corrida bajista, **resistencia**. Sujeto a `R-12`: si el movimiento cruza el 50 % entre las zonas vecinas, no se marca.\n- **Se extiende hacia la derecha** a lo largo del gráfico.\n- **El rectángulo se dibuja desde la vela origen**, no desde la vela que confirma la zona.\n- **Cuando una vela hace máximo mayor y mínimo menor, el orden de lo que hace por dentro decide qué vela sostiene la zona.**",
+      "como_se_aplica": "- **La vela designada:** la de **máximo más alto** (corrida alcista) o **mínimo más bajo** (corrida bajista), contando desde el origen de la corrida **hasta la vela que dispara el retroceso, ambas incluidas**.\n- **Cuándo:** al aparecer el retroceso (`R-06`), no antes.\n- **Los límites:** del borde del cuerpo al extremo de la mecha. En una resistencia, el límite inferior es el borde superior del cuerpo —el cierre si la vela es verde, la apertura si es roja— y el superior, el máximo de la vela.\n- **Vela sin mecha:** la zona es una línea en el extremo de la vela.\n- **Vela sin cuerpo** (apertura = cierre): el cuerpo mide cero; la zona va de ese precio a la punta de la mecha.\n- **El retroceso también marca zona:** el retroceso de una corrida alcista marca **soporte**, y el de una corrida bajista, **resistencia**. Sujeto a `R-12`: si el movimiento cruza el 50 % entre las zonas vecinas, no se marca.\n- **Se extiende hacia la derecha** a lo largo del gráfico.\n- **El rectángulo se dibuja desde la vela origen**, no desde la vela que confirma la zona.\n- **Cuando una vela hace máximo mayor y mínimo menor, el orden de lo que hace por dentro decide qué vela sostiene la zona.** **Desde `VUELTA_EN_VELA_DESDE`, si la vela da las dos vueltas (`R-05`), sostiene las dos zonas**: la del retroceso, sobre su mínimo, y la de la corrida, sobre su máximo, cada una cuando se confirma.",
       "porque": "La búsqueda de la vela extrema **incluye la vela que dispara el retroceso**: una vela puede hacer máximo mayor y mínimo menor a la vez —dispara el retroceso— y aun así ser la más alta del movimiento. Caso real: 10/07/2026, vela 8:36.\n\n**El dibujo, sobre casos reales** que el operador corrigió al auditor:\n- **Desde la vela origen:** 8/07, la resistencia de la vela 8:33 arranca en la 8:33, no en la 8:36.\n- **El orden de lo que hace la vela por dentro:** 8/07, vela 8:36 (primero baja) frente a 10/07, vela 8:36 (primero sube).\n\nLa definición de *zona* está en `GLOSARIO.md`.\n\nDiagramas: `../02_Assets/diagramas/R-09_zona.png` · `R-20_vigencia.png` · `R-10_extension_apendice.png`",
       "si_no_se_cumple": null,
       "excepciones": null,
@@ -1280,6 +1282,10 @@
     "UMBRAL_50": {
       "texto": "50 %",
       "numero": 50
+    },
+    "VUELTA_EN_VELA_DESDE": {
+      "texto": "20261021 (21/10/2026)",
+      "numero": 20261021
     },
     "UMBRAL_VOL": {
       "texto": "> 8.000 contratos en MNQ",

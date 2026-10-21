@@ -3,7 +3,7 @@
 > **Un solo sitio para los números que pueden cambiar.**
 > Las reglas citan el **nombre** del parámetro, no el valor. Se cambia aquí y se propaga a todo el plan.
 
-**Actualizado:** 2026-10-09
+**Actualizado:** 2026-10-21
 
 ---
 
@@ -31,6 +31,7 @@
 | **`PLAZO_CONSECUCION`** | **5 velas — es un TOPE, no una espera obligatoria** *(`R-14`, precisada 01/09/2026)* | `R-20`, `R-25`, `R-10`, `R-11` y **`R-29`** (vida de la orden). 🔴 **Gobierna la geometría de la zona y la vida de la orden, NO el traspaso de la zona:** la consecución que invalida una zona **no tiene plazo** *(27/08/2026)*. 🔵 **Y se resuelve antes si el mercado arma una estructura completa en sentido contrario** — `R-14` *(01/09/2026)* |
 | **`VENTANA_REINGRESO`** | **hasta que el precio supere el extremo de la vela de consecución** | `R-26`. El reingreso es **inmediato o no es**: en cuanto el precio sigue de largo, la ventana se cierra para siempre *(27/08/2026)* |
 | **`UMBRAL_50`** | 50 % | zonas entre zonas (`R-12`) |
+| **`VUELTA_EN_VELA_DESDE`** | **20261021** (21/10/2026) | `R-05` · `R-06`: desde ese día, una vela puede dar dos vueltas. Los días anteriores se leen con una sola, como se leyeron |
 
 ## Volumen y sesión
 

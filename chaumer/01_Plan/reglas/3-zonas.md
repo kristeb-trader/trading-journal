@@ -51,7 +51,7 @@ La zona nueva de fuera y la que se acaba de superar forman **otra banda**, y esa
 - **El retroceso también marca zona:** el retroceso de una corrida alcista marca **soporte**, y el de una corrida bajista, **resistencia**. Sujeto a `R-12`: si el movimiento cruza el 50 % entre las zonas vecinas, no se marca.
 - **Se extiende hacia la derecha** a lo largo del gráfico.
 - **El rectángulo se dibuja desde la vela origen**, no desde la vela que confirma la zona.
-- **Cuando una vela hace máximo mayor y mínimo menor, el orden de lo que hace por dentro decide qué vela sostiene la zona.**
+- **Cuando una vela hace máximo mayor y mínimo menor, el orden de lo que hace por dentro decide qué vela sostiene la zona.** **Desde `VUELTA_EN_VELA_DESDE`, si la vela da las dos vueltas (`R-05`), sostiene las dos zonas**: la del retroceso, sobre su mínimo, y la de la corrida, sobre su máximo, cada una cuando se confirma.
 
 ### Por qué
 
