@@ -17,7 +17,8 @@
 | una definición | `src\content\plan\GLOSARIO.md` |
 | el porqué de una regla | su apartado **«Por qué»**, en la misma regla |
 | cómo se ve el portal | el código (`src\pages\`, `src\estilos\tokens.css`) y las reglas de abajo. El diseño original (31/08) está archivado en `docs/archivo/chaumer/`: ya no describe el portal |
-| la bitácora de backtesting | `docs/disenos/2026-09-09-bitacora-backtesting.md` (raíz del repo) — el diseño cerrado, y manda sobre el código |
+| el texto de un apartado del plan (Premercado, Zonas…) | **`src\contenido\plan\<paso>\<apartado>.astro`**: lo usan la página del paso y «Reglas» (`/plan`). El orden y el nombre corto, en `src\contenido\plan\indice.mjs`. Diseño: `docs/disenos/2026-10-20-reglas-plan-jornada.md` |
+| la bitácora de backtesting | `docs/disenos/2026-09-09-bitacora-backtesting.md` (raíz del repo) — el diseño cerrado, y manda sobre el código. La tabla la comparte con la operativa diaria: `src\componentes\Bitacora.astro` |
 | cómo se publica, los secretos, las observaciones en D1 | `DESPLIEGUE.md` |
 
 > ⚠️ **El documento maestro (`TRADING_PLAN_CHAUMER.md`) ya no existe** (26/09/2026): cada regla trae su explicación. Su historia está en `..\01_Plan\HISTORIAL.md`, que el portal no enseña.
@@ -61,7 +62,9 @@ npm run verificar    build + enlaces + maquetación + referencias + vista
 
 ```
 src\pages\          una por vista
-src\componentes\    Marco (la plantilla), Modulo, Marca, Observaciones…
+src\componentes\    Marco (la plantilla y el menú), Modulo, Bitacora (backtesting y operativa), Observaciones…
+src\contenido\plan\ los 37 apartados del plan, uno por archivo — la única copia de su texto
+src\lib\plan\       «Reglas» (/plan): disposición y orquestador; reutiliza la cámara y las pistas de src\lib\mapa\
 src\lib\parsers.mjs   convierte los .md del plan en datos — el archivo delicado
 src\estilos\        tokens.css (las variables) + base.css
 src\content\        🚫 generado, no tocar
@@ -78,10 +81,12 @@ scripts\            sync, diagramas, y los verificadores
 2. **Los cuatro huecos declarados NO van al portal** *(decisión del operador, 07/09/2026)*. Siguen abiertos en el plan y ahí quedan escritos; el portal no tiene que enseñarlos, ni a ellos ni a la cifra del backtesting. **Lo único que sigue en pie:** si algún día el portal llegara a mostrar los **−91,00 pts**, los cuatro motivos van en la misma pantalla. Hoy no los muestra, así que no aplica.
 3. **Nada de `CONTEXTUALIZACION.md` se convierte en regla.** Son recordatorios de criterio, nunca condiciones automáticas.
 4. **El portal no manda órdenes ni se conecta a la cuenta.**
-5. **Nunca uses códigos de regla al hablarle al operador.** En la página sí; en el chat no.
-6. **Cero claves en el paquete, nada de escritura directa desde el navegador.** Lo que lee datos lo hace una función de `functions\api\` con un secreto de Cloudflare (`DESPLIEGUE.md`).
-7. **Una imagen se asocia solo por el nombre del archivo.** Un caso de una sesión lleva el gráfico de su fecha (`05_Backtesting\claude\AAAA-MM-DD.png`); una regla o un ejemplo, su prefijo (`R-xx_…`, `G-xx_…`) en `02_Assets\`. El campo `**Archivo:**` del plan no se usa. Sin imagen, el caso sale igual: nada de suplentes.
-8. **Los códigos del texto se enlazan solos** al renderizar (`markdownRico`, `src\lib\parsers.mjs`): no se escriben enlaces a mano.
+5. **El texto de un apartado del plan se edita en su componente** (`src\contenido\plan\`), nunca en la página del paso ni en `/plan`: los dos lo leen de ahí (D-043). Copiarlo a otro sitio es la forma de que las dos vistas acaben diciendo cosas distintas.
+6. **Un ítem del menú se oculta con `oculto: true`** en `Marco.astro` (D-042): solo lo ve el navegador marcado con `?todo`. Ocultar no es cerrar: la página sigue abierta para quien tenga la dirección.
+7. **Nunca uses códigos de regla al hablarle al operador.** En la página sí; en el chat no.
+8. **Cero claves en el paquete, nada de escritura directa desde el navegador.** Lo que lee datos lo hace una función de `functions\api\` con un secreto de Cloudflare (`DESPLIEGUE.md`).
+9. **Una imagen se asocia solo por el nombre del archivo.** Un caso de una sesión lleva el gráfico de su fecha (`05_Backtesting\claude\AAAA-MM-DD.png`); una regla o un ejemplo, su prefijo (`R-xx_…`, `G-xx_…`) en `02_Assets\`. El campo `**Archivo:**` del plan no se usa. Sin imagen, el caso sale igual: nada de suplentes.
+10. **Los códigos del texto se enlazan solos** al renderizar (`markdownRico`, `src\lib\parsers.mjs`): no se escriben enlaces a mano.
 
 ---
 

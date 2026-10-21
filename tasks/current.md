@@ -107,19 +107,17 @@ Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md
 La publicación automática funciona desde el 29/09: el AddOn exportó a las 10:32 en `claude\motor\datos\dia\` y
 el puente subió el día solo (`6461e1a`).
 
-## El mapa del método — implementado, queda una decisión
+## El portal: «Reglas», «Mapa» y las páginas de cada paso
 
-`/mapa`: el método como mapa navegable (núcleo, las 7 piezas en corona y las reglas de cada una
-con sus relaciones), enlazado desde la portada. Las 5 fases dentro y verificadas el 29/09: 20/20
-comprobaciones en modo normal y con movimiento reducido, `npm run verificar` limpio (57 páginas),
-y sin JavaScript queda la lista de las 34 reglas. Diseño: `docs/disenos/2026-09-29-mapa-del-metodo.md`.
+Desde el 20/10 el plan se ve en **«Reglas»** (`/plan`, D-043): los 8 pasos como mapa, sus apartados y cada apartado
+completo. El mapa de las 7 piezas (`/mapa`) y las 8 páginas de paso siguen publicados, pero **solo los ve Kris**
+(D-042). El contenido de cada apartado se edita en `chaumer/04_Web/src/contenido/plan/` y cambia en las dos vistas.
 
-- [ ] **Decidir el color dentro de una pieza** — **Kris**. Hoy las 13 reglas de Zonas comparten el
-  tono del grupo y se ve monótono. La recomendación es variar la intensidad por **número de
-  relaciones**: es el único eje con datos en las siete piezas (el apartado solo existe en Zonas y
-  `aplica_a` casi no varía). El §11 del diseño lo compara.
-- [ ] **El móvil**, sin mirar de verdad: solo la reordenación básica del menú. Un mapa de este
-  tamaño en un teléfono merece su propia decisión.
+- [ ] **Kris compara** las 8 páginas de paso con «Reglas» y decide si se quedan o se retiran. Si se retiran: sacarlas
+  del menú no basta, hay que decidir qué hacer con los enlaces `/<paso>/#apartado` de la lista de «Reglas» sin JavaScript
+- [ ] **R-13** (superposición: se estira, no se duplica) se **cita** en «Cuando no llega la consecución», pero **no se
+  explica** en ningún apartado (aviso de `src/pages/zonas.astro`). Con la pregunta abierta del 07/10 sobre R-13 en el bot
+- [ ] El **mapa de las 7 piezas en el celular** sigue sin mirar de verdad. Mientras esté oculto, no corre prisa
 
 ## Portal de Alfredo
 
@@ -131,10 +129,11 @@ Rescatados de `chaumer/04_Web/ESTADO_FASE_2.md` al archivarlo (28/09, D-030). Es
   filtros, dentro y riesgo): solo en casos reales y vocabulario, y `/observaciones` es de solo lectura. Es la razón
   de ser del portal
 - [ ] Simplificar la prosa de los casos reales, que todavía suena a auditoría
-- [ ] Pasarle la dirección a Alfredo — **Kris**, cuando termine su revisión del portal
+- [ ] Pasarle la dirección a Alfredo — **Kris**. El 20/10 iba a mandarle `/operativa/`; Alfredo ve el menú corto (D-042)
 
 ## Con fecha (las hace Claude)
 
+- **21/10**: primer día de la Operativa diaria en el portal: que el trade salga en `/operativa/` y en la portada, con su setup, su nota y su gráfico
 - **28/10** (Fed): la ficha sale con `dia_fed` y el motor ve reingresos
 - **2/11** (invierno): vela base 9:31; el AddOn exporta a las 11:32
 - **≈10/12** (cambio de contrato): el AddOn pasa solo a `MNQ 03-27`

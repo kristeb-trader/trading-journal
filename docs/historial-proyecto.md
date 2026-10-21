@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-10-19
+**Última actualización:** 2026-10-20
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-20 | El portal: Operativa diaria, la portada como tablero, menú corto y «Reglas» como mapa |
 | 2026-10-19 | ChecklistChaumer archivado: las noticias rojas, desde el Diario |
 | 2026-10-14 | El premercado, del servidor; zonas de premercado desde donde nacen; plan 3.47 (el reingreso necesita una zona a la que ir) |
 | 2026-10-13 | Las 3 gráficas: sin scroll, en dos filas y con su resultado |
@@ -49,6 +50,32 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-20 — El portal: Operativa diaria, la portada como tablero, menú corto y «Reglas» como mapa
+
+**Lo que pasó.** Del 05 al 20/10 Kris rehízo el portal pensando en Alfredo: que vea **cómo opera Kris cada día** y
+el plan como un recorrido, sin las secciones que no le sirven.
+
+**Lo que se cambió.**
+- **Backtesting** (05 y 12/10): meses plegables con la cabecera en columnas; al filtrar se despliegan; fuera MNQ
+  y «1 contrato». La tabla, la curva y los filtros pasaron a `componentes/Bitacora.astro`, que comparten dos páginas.
+- **Operativa diaria** (`/operativa`, D-041): los trades de la cuenta principal desde el 21/10, con la vista
+  `portal_op_jornadas`. Observaciones = «Notas adicionales» del Diario (`resumen_ia`); la fila abre el gráfico;
+  la lupa lleva la fecha y la ficha (setup, resultado en relieve, puntos, contratos, P&L) y pasa de día con flechas;
+  Continuación y Reingreso con su color. Probado con octubre (13 trades, −$396,50, cuadra con `trades`) y vuelto al 21.
+- **Portada** (diseño `2026-10-20-portada-tablero.md`): un tablero, con Operativa y Backtesting en vivo, el último
+  día operado y los 8 pasos. Fuera las puertas al plan, a las reglas, a los casos y al mapa.
+- **Menú corto** (D-042): Mapa, Casos reales, Checklist y Observaciones solo los ve Kris (`?todo`).
+- **«Reglas»** (`/plan`, D-043, diseño `2026-10-20-reglas-plan-jornada.md`): los 8 pasos como mapa dentro del
+  portal; sus apartados con su gráfico; la lámina con el apartado completo. Para no perder nada, los 37 apartados
+  pasaron a `src/contenido/plan/` y los usan las dos vistas. **Comprobado:** HTML de las 8 páginas idéntico
+  antes y después, y las 37 láminas con el mismo texto y los mismos 32 gráficos. Las 8 páginas de paso, solo para
+  Kris. La R-13 se cita en «Cuando no llega la consecución».
+
+**Pendiente:** ver el primer día real de la Operativa (21/10) y decidir con el tiempo si las 8 páginas de paso se
+quedan o se retiran (`tasks/current.md`).
 
 ---
 
