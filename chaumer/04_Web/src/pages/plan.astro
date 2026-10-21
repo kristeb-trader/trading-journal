@@ -1,0 +1,155 @@
+---
+/**
+ * «Reglas» — el plan de la jornada como mapa, dentro del portal.
+ *
+ * Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
+ *
+ * Los 8 pasos alrededor del núcleo; al entrar en uno, sus apartados en
+ * serpiente con su gráfico; al pulsar un apartado, la lámina con el apartado
+ * COMPLETO. Ese contenido son los mismos componentes que usan las páginas de
+ * cada paso (src/contenido/plan/), dentro de un <template> cada uno: no hay
+ * una segunda copia del texto en ningún sitio.
+ *
+ * Sin JavaScript, y en el celular, queda la lista de los 8 pasos con sus
+ * apartados (cada enlace lleva a la página del paso en ese apartado).
+ *
+ * Todo lo que se cuenta sale de modulos.mjs, indice.mjs y reglas.json.
+ */
+import Marco from '../componentes/Marco.astro';
+import Icono from '../componentes/Icono.astro';
+import * as P from '../lib/parsers.mjs';
+import { MODULOS } from '../lib/modulos.mjs';
+import { APARTADOS, apartadosDe } from '../contenido/plan/indice.mjs';
+import '../estilos/plan.css';
+
+// Todos los apartados, por su ruta: así la página no lista 37 imports a mano.
+const COMPONENTES = import.meta.glob('../contenido/plan/*/*.astro', { eager: true });
+const componente = (paso: string, id: string) => {
+  const m = COMPONENTES[`../contenido/plan/${paso}/${id}.astro`] as any;
+  if (!m) throw new Error('plan.astro: no existe el apartado ' + paso + '/' + id);
+  return m.default;
+};
+
+const reglas = P.reglas();
+const nombres = Object.fromEntries(reglas.map((r) => [r.id, r.nombre]));
+
+/** Qué pasos citan cada regla: de ahí salen los cruces entre pasos. */
+const citadaEn: Record<string, Set<string>> = {};
+for (const a of APARTADOS) for (const c of a.reglas) (citadaEn[c] ||= new Set()).add(a.paso);
+
+const pasos = MODULOS.map((m) => {
+  const aps = apartadosDe(m.slug);
+  const suyas = [...new Set(aps.flatMap((a) => a.reglas))];
+  const comparte: Record<string, string[]> = {};
+  for (const c of suyas) {
+    const otros = [...citadaEn[c]].filter((x) => x !== m.slug);
+    if (otros.length) comparte[c] = otros;
+  }
+  return {
+    slug: m.slug, n: m.n, titulo: m.titulo, corto: m.corto, sub: m.sub, tono: m.tono,
+    reglasN: suyas.length,
+    cruces: Object.keys(comparte).length,
+    comparte,
+    apartados: aps.map(({ id, corto, titulo, reglas, imagen, graficos }) =>
+      ({ id, corto, titulo, reglas, imagen, graficos })),
+  };
+});
+
+const datos = { reglas: reglas.length, pasos, nombres };
+const dos = (n: number) => String(n).padStart(2, '0');
+---
+
+<Marco titulo="Reglas">
+  <div class="pl" data-plan>
+    <div class="pl-marco" id="plan-marco">
+      <div class="pl-escena" id="plan-escena">
+        <div class="pl-rejilla" id="plan-rejilla" aria-hidden="true"></div>
+        <div class="pl-capa-pistas" id="plan-pistas" aria-hidden="true"></div>
+        <div class="pl-mundo" id="plan-mundo"></div>
+
+        <header class="pl-cab">
+          <nav class="pl-tira" id="plan-tira" aria-label="Los pasos de la jornada" hidden>
+            {pasos.map((p) => (
+              <button type="button" data-paso={p.slug} style={`--t:${p.tono}`}>
+                <b>{dos(p.n)}</b><span>{p.corto}</span>
+              </button>
+            ))}
+          </nav>
+          <div class="pl-titular">
+            <p class="pl-eti" id="plan-eti">El plan de la jornada</p>
+            <h1 class="pl-titulo" id="plan-titulo">Reglas</h1>
+            <p class="pl-sub" id="plan-sub"></p>
+          </div>
+        </header>
+
+        <div class="pl-barrido" id="plan-barrido" aria-hidden="true"></div>
+        <div class="pl-pista" id="plan-pista" role="tooltip" aria-hidden="true"></div>
+
+        <button class="pl-volver" type="button" id="plan-volver" hidden>
+          <Icono nombre="arrow-left" /> La jornada
+        </button>
+        <div class="pl-hud">
+          <button type="button" id="plan-menos" aria-label="Alejar">−</button>
+          <span class="pl-zoom" id="plan-zoom" aria-live="off">100%</span>
+          <button type="button" id="plan-mas" aria-label="Acercar">+</button>
+          <button type="button" id="plan-ajustar">Ajustar</button>
+        </div>
+      </div>
+
+      <div class="pl-velo" id="plan-velo" hidden></div>
+      <article class="pl-lamina" id="plan-lamina" role="dialog" aria-modal="true" aria-label="Apartado" tabindex="-1" hidden>
+        <header class="pl-l-cab">
+          <p class="pl-l-miga" id="plan-l-miga"></p>
+          <span class="pl-l-pasos" id="plan-l-pasos" aria-hidden="true"></span>
+          <button type="button" class="pl-l-cerrar" id="plan-l-cerrar" aria-label="Cerrar">&times;</button>
+        </header>
+        <div class="pl-l-cuerpo" id="plan-l-cuerpo"></div>
+        <footer class="pl-l-pie">
+          <button type="button" class="pl-l-b atras" id="plan-l-atras" hidden></button>
+          <button type="button" class="pl-l-b alante" id="plan-l-alante" hidden></button>
+        </footer>
+      </article>
+    </div>
+
+    {/* La lista: en el celular (el mapa no cabe al lado del menú) y sin
+        JavaScript. Cada enlace lleva a la página del paso en ese apartado; con
+        JavaScript abre la lámina aquí mismo. */}
+    <nav class="pl-lista" id="plan-lista" aria-label="Los pasos de la jornada y sus apartados">
+      <p class="pl-eti">El plan de la jornada</p>
+      <h1 class="pl-lista__h">Reglas</h1>
+      {pasos.map((p) => (
+        <details class="pl-lista__paso" id={p.slug} style={`--t:${p.tono}`}>
+          <summary>
+            <b>{dos(p.n)}</b>
+            <span><strong>{p.titulo}</strong><small>{p.apartados.length} apartados · {p.reglasN} reglas</small></span>
+          </summary>
+          <ol>
+            {p.apartados.map((a, k) => (
+              <li>
+                <a href={`/${p.slug}/#${a.id}`} data-paso={p.slug} data-id={a.id}>
+                  {a.imagen
+                    ? <img src={a.imagen} alt="" loading="lazy" decoding="async" />
+                    : <span class="pl-lista__sin" aria-hidden="true">{dos(k + 1)}</span>}
+                  <span><strong>{a.titulo}</strong><small>{a.reglas.join(' · ') || 'Contexto'}</small></span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </details>
+      ))}
+    </nav>
+
+    {/* El contenido de cada apartado, una sola vez y dormido: un <template> no
+        se pinta ni carga sus imágenes hasta que la lámina lo clona. */}
+    {pasos.map((p) => p.apartados.map((a) => {
+      const C = componente(p.slug, a.id);
+      return <template id={`plan-tpl-${p.slug}--${a.id}`}><C /></template>;
+    }))}
+  </div>
+
+  <script is:inline set:html={`window.__PLAN=${JSON.stringify(datos)};`} />
+  <script>
+    import { iniciarPlan } from '../lib/plan/plan.mjs';
+    iniciarPlan(window['__PLAN']);
+  </script>
+</Marco>

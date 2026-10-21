@@ -37,7 +37,9 @@ const GRUPOS = [
     // El tono sale de modulos.mjs, que es donde se calcula una sola vez, para
     // que el menu y el titulo de los apartados usen exactamente el mismo.
     items: MODULOS.map((m) => ({
-      n: m.n, icono: m.icono, href: '/' + m.slug, texto: m.corto, tono: m.tono,
+      // La version actual del plan: solo la ve el operador desde el 20/10/2026
+      // (D-043). Para todos, el plan de la jornada es «Reglas» (/plan).
+      n: m.n, icono: m.icono, href: '/' + m.slug, texto: m.corto, tono: m.tono, oculto: true,
     })),
   },
   {
@@ -48,6 +50,8 @@ const GRUPOS = [
       // «Las reglas» abre el mapa del método (12/10/2026: el operador quitó el
       // submenú de grupos). Se queda marcado también en la lista y en la ficha
       // de cada regla, que siguen existiendo: el mapa enlaza a ellas.
+      // «Reglas»: el plan de la jornada como mapa (D-043, 20/10/2026).
+      { icono: 'path', href: '/plan', texto: 'Reglas', tono: '#5B9DFF' },
       // Se llama «Mapa» desde el 20/10/2026.
       { icono: 'graph', href: '/mapa', tambien: '/reglas', texto: 'Mapa', cuenta: P.reglas().length, tono: '#A78BFA', oculto: true },
       // Sesiones y ejemplos en una sola pagina (22/09/2026; Sesiones unificadas el 28/09/2026).
@@ -113,7 +117,7 @@ const marcada = (s: { href: string; tambien?: string }) => activa(s.href) || (!!
       <aside class="rail">
         <nav class="nav" id="nav-secciones" aria-label="Secciones">
           {GRUPOS.map((g) => (
-            <div class="nav-g">
+            <div class:list={['nav-g', { 'nav-oculto': g.items.every((s) => s.oculto) }]}>
               {g.grupo && <p class="etiqueta nav-t">{g.grupo}</p>}
               {g.items.map((s) => (
                 <a href={s.href} title={s.texto}

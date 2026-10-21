@@ -10,6 +10,31 @@
 
 ---
 
+## D-043 — «Reglas»: el plan de la jornada como mapa; las páginas de cada paso, solo para Kris
+
+**Decisión (Kris, 20/10/2026).** El portal tiene **«Reglas»** (`/plan`): los 8 pasos de la jornada alrededor de un
+núcleo, como el mapa; al entrar en un paso, sus apartados en orden con su gráfico; al pulsar uno, el apartado
+**completo**. Las 8 páginas de cada paso siguen existiendo, idénticas, pero **salen del menú de todos menos el
+de Kris** (`oculto`, D-042), para que él compare. El mapa de las 7 piezas sigue como «Mapa», oculto. Diseño:
+`docs/disenos/2026-10-20-reglas-plan-jornada.md`.
+
+**Motivo.** El plan se entiende mejor como recorrido del día que como lista de páginas, y Kris quería la estética
+del mapa. Lo innegociable era no perder nada: cada apartado explica con texto y gráficos.
+
+**Cómo se garantiza que no se pierde nada.** El contenido de los 37 apartados vive **una sola vez**, en
+`src/contenido/plan/<paso>/<apartado>.astro`, y lo usan las dos vistas. Comprobado al hacerlo: el HTML publicado
+de las 8 páginas quedó idéntico, y las 37 láminas tienen el mismo texto y los mismos 32 gráficos que su página.
+**Para corregir un apartado se edita su componente**, y cambia en las dos vistas.
+
+**De paso:** la R-13, la única regla que no citaba ningún apartado, se cita en «Cuando no llega la consecución».
+
+**Alternativas descartadas.**
+- **Copiar el contenido a la página nueva:** se desincroniza a la primera corrección.
+- **Que el mapa lleve a la página de cada paso:** Kris pidió que no fuera otra página.
+- **Al entrar en un paso, enseñar sus reglas en vez de sus apartados:** se pierde el orden del día.
+
+---
+
 ## D-042 — El portal oculta cuatro secciones del menú, salvo en el navegador de Kris
 
 **Decisión (Kris, 20/10/2026).** **Mapa** (antes «Las reglas»), **Casos reales**, **Checklist diaria** y

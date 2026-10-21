@@ -1,10 +1,11 @@
 # «Reglas»: el plan de la jornada como mapa
 
-**Versión:** v1 · **Estado:** ✅ aprobado (20/10/2026), en implementación · **Fecha:** 20/10/2026
+**Versión:** v1 · **Estado:** ✅ implementado (20/10/2026) · **Fecha:** 20/10/2026
 
 | Versión | Qué cambió |
 |---|---|
 | v1 | Primera propuesta, tras el análisis con bocetos de los tres niveles. Decisiones de Kris del 20/10/2026 incluidas |
+| v1.1 | Implementado. Desviaciones: (1) las fases 2, 3 y 4 se publicaron juntas, porque comparten el orquestador (`plan.mjs`); cada una se verificó con su criterio. (2) El contenido de las láminas va en un `<template>` por apartado, no en el HTML a la vista: así `/plan` no descarga los 32 gráficos al entrar; sin JavaScript queda la lista, que enlaza a la página de cada paso. (3) La rueda del ratón solo hace zoom con Ctrl (el pellizco del trackpad también): sin Ctrl desplaza la página, que tiene menú y pie. (4) El escenario usa `overflow: clip`: con `hidden` el navegador lo desplazaba al enfocar un botón. (5) Cada paso de la lista lleva su `id`, para que `/plan#zonas` (la portada) sea un ancla válida |
 
 ---
 
