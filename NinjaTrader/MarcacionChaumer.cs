@@ -183,6 +183,12 @@ namespace NinjaTrader.NinjaScript.Indicators
                 Grosor                   = 2;
                 Puntos                   = true;
             }
+            else if (State == State.Configure)
+            {
+                // Un indicador ya puesto en un gráfico guarda su «Calculate» en el workspace, y SetDefaults
+                // no lo cambia: se fuerza aquí, o con «On bar close» no vería el orden de la vela (21/10/2026).
+                Calculate = Calculate.OnPriceChange;
+            }
             else if (State == State.DataLoaded)
             {
                 try   { et = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"); }
@@ -200,7 +206,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         protected override void OnBarUpdate()
         {
             if (et == null || CurrentBar < 1) return;
-            if (State == State.Historical) { Procesar(CurrentBar); return; }
+            if (State == State.Historical || Calculate == Calculate.OnBarClose) { Procesar(CurrentBar); return; }
 
             // En vivo. El primer tick de una vela dice que la anterior ya cerró: se apunta su orden y se
             // marca. Una vela solo se sigue si se la ve nacer (aún sin rango); si no, manda su color.
