@@ -10,6 +10,8 @@
 //   Termina  cuando la cuenta vigilada vuelve a plano tras operar (target o stop), o a los
 //            120 minutos de la apertura (11:30 ET) si no hay operación.
 //   Solo el día de hoy. Calcula al cierre de cada vela de 1 minuto, como el motor.
+//   Plan 3.49 (21/10/2026): una vela puede ser dos puntos de la línea (bajar a su mínimo y subir a
+//            su máximo, o al revés). El orden lo dan los ticks en vivo; sin ellos, el color.
 //
 // Instalación: copiar a Documentos > NinjaTrader 8 > bin > Custom > Indicators, F5, y añadirlo
 // al gráfico de 1 minuto de MNQ con la cuenta a vigilar en sus propiedades.
@@ -44,9 +46,24 @@ namespace NinjaTrader.NinjaScript.Indicators
             public int Confirma;   // vela en que se sabe el vértice; -1 = el último, sin confirmar
         }
 
-        /// <summary>null si aún no se sabe la dirección del día (vela base sin cuerpo y ninguna
-        /// vela ha salido de su rango) o si no hay forma de saberla.</summary>
+        /// <summary>Plan 3.49 (21/10/2026, R-05/R-06): desde este día (AAAAMMDD) una vela que pasa de los dos
+        /// extremos de la anterior puede dar DOS vueltas. Es VUELTA_EN_VELA_DESDE de PARAMETROS.md; el indicador
+        /// no lee el repositorio, así que va aquí escrito, y sincronia.py lo compara con el motor.</summary>
+        public const int VUELTA_EN_VELA_DESDE = 20261021;
+
+        /// <summary>El zigzag con la regla anterior al 21/10/2026 (una sola vuelta por vela, orden por color).</summary>
         public static List<Vertice> Calcular(double[] o, double[] h, double[] l, double[] c, int n)
+        {
+            return Calcular(o, h, l, c, n, 0, null);
+        }
+
+        /// <summary>null si aún no se sabe la dirección del día (vela base sin cuerpo y ninguna
+        /// vela ha salido de su rango) o si no hay forma de saberla.
+        /// fecha: el día, AAAAMMDD (decide si una vela puede dar dos vueltas).
+        /// minPrimero: el orden REAL de cada vela, visto en los ticks (true = primero el mínimo); null, o
+        /// sin valor en esa vela, = lo dice el color, como el motor: azul o sin cuerpo, primero el mínimo.</summary>
+        public static List<Vertice> Calcular(double[] o, double[] h, double[] l, double[] c, int n,
+                                             int fecha, bool?[] minPrimero)
         {
             if (n < 1) return null;
             // Dirección del día por la vela base (R-07). Sin cuerpo: la da la primera vela que
@@ -77,34 +94,47 @@ namespace NinjaTrader.NinjaScript.Indicators
             for (int i = 1; i < n; i++)
             {
                 int p = i - 1;
-                if (corrida)
+                bool mp = (minPrimero != null && i < minPrimero.Length && minPrimero[i].HasValue)
+                          ? minPrimero[i].Value : c[i] >= o[i];
+                // Plan 3.49: tras la primera vuelta, si el otro extremo llegó DESPUÉS, la misma vela
+                // se vuelve a leer en el estado nuevo (la segunda vuelta).
+                bool dosVueltas = fecha >= VUELTA_EN_VELA_DESDE && h[i] > h[p] && l[i] < l[p];
+                bool segunda = false;
+                while (true)
                 {
-                    bool muere    = alc ? l[i] < l[p] : h[i] > h[p];
-                    bool nuevoExt = alc ? h[i] > h[ext] : l[i] < l[ext];
-                    if (nuevoExt && !muere) ext = i;
-                    else if (nuevoExt && muere)
+                    if (corrida)
                     {
-                        // La vela hace las dos cosas: el extremo cuenta solo si ocurrió antes.
-                        bool extremoPrimero = alc ? c[i] < o[i] : c[i] >= o[i];
-                        if (extremoPrimero) ext = i;
+                        bool muere    = alc ? l[i] < l[p] : h[i] > h[p];
+                        bool nuevoExt = alc ? h[i] > h[ext] : l[i] < l[ext];
+                        if (nuevoExt && !muere) ext = i;
+                        else if (nuevoExt && muere)
+                        {
+                            // La vela hace las dos cosas: el extremo cuenta solo si ocurrió antes.
+                            bool extremoPrimero = alc ? !mp : mp;
+                            if (extremoPrimero) ext = i;
+                        }
+                        if (!muere) break;
+                        piv.Add(new Vertice { I = ext, Precio = alc ? h[ext] : l[ext], Confirma = i });
+                        corrida = false; rExt = i;
+                        if (dosVueltas && !segunda && mp == alc) { segunda = true; continue; }
+                        break;
                     }
-                    if (!muere) continue;
-                    piv.Add(new Vertice { I = ext, Precio = alc ? h[ext] : l[ext], Confirma = i });
-                    corrida = false; rExt = i;
-                }
-                else
-                {
-                    bool confirma = alc ? h[i] > h[p] : l[i] < l[p];
-                    bool hunde    = alc ? l[i] < l[rExt] : h[i] > h[rExt];
-                    if (hunde && !confirma) rExt = i;
-                    else if (hunde && confirma)
+                    else
                     {
-                        bool extremoPrimero = alc ? c[i] >= o[i] : c[i] < o[i];
-                        if (extremoPrimero) rExt = i;
+                        bool confirma = alc ? h[i] > h[p] : l[i] < l[p];
+                        bool hunde    = alc ? l[i] < l[rExt] : h[i] > h[rExt];
+                        if (hunde && !confirma) rExt = i;
+                        else if (hunde && confirma)
+                        {
+                            bool extremoPrimero = alc ? mp : !mp;
+                            if (extremoPrimero) rExt = i;
+                        }
+                        if (!confirma) break;
+                        piv.Add(new Vertice { I = rExt, Precio = alc ? l[rExt] : h[rExt], Confirma = i });
+                        corrida = true; ext = i;
+                        if (dosVueltas && !segunda && mp != alc) { segunda = true; continue; }
+                        break;
                     }
-                    if (!confirma) continue;
-                    piv.Add(new Vertice { I = rExt, Precio = alc ? l[rExt] : h[rExt], Confirma = i });
-                    corrida = true; ext = i;
                 }
             }
             if (corrida) piv.Add(new Vertice { I = ext,  Precio = alc ? h[ext]  : l[ext],  Confirma = -1 });
@@ -124,13 +154,25 @@ namespace NinjaTrader.NinjaScript.Indicators
         private int corteBar = -1;                    // vela en que la operación dio resultado
         private List<KeyValuePair<int, double>> puntos = new List<KeyValuePair<int, double>>();
 
+        // El orden REAL de cada vela (plan 3.49, 21/10/2026): en vivo se apunta en qué momento llegó su
+        // máximo y en qué momento su mínimo. Clave: la hora de cierre de la vela; valor: true = primero el
+        // mínimo. Se guarda en un archivo del día para no perderlo al recompilar o reabrir el gráfico. Las
+        // velas que no se vieron enteras en vivo no están: para ellas manda el color, como en el motor.
+        private Dictionary<DateTime, bool> orden = new Dictionary<DateTime, bool>();
+        private string archivoOrden;
+        private int tickBar = -1;                     // la vela que se está siguiendo tick a tick
+        private double tickMax, tickMin;
+        private long tickSeq, seqMax, seqMin;
+
         protected override void OnStateChange()
         {
             if (State == State.SetDefaults)
             {
                 Name                     = "Marcacion Chaumer";
                 Description              = "La línea blanca de corridas y retrocesos del motor, en tiempo real.";
-                Calculate                = Calculate.OnBarClose;
+                // Recibe cada cambio de precio para saber el orden real de la vela, pero solo marca al
+                // cierre de cada vela, como el motor.
+                Calculate                = Calculate.OnPriceChange;
                 IsOverlay                = true;
                 DisplayInDataBox         = false;
                 DrawOnPricePanel         = true;
@@ -145,6 +187,7 @@ namespace NinjaTrader.NinjaScript.Indicators
             {
                 try   { et = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"); }
                 catch { et = null; }
+                CargarOrden();
             }
         }
 
@@ -157,7 +200,66 @@ namespace NinjaTrader.NinjaScript.Indicators
         protected override void OnBarUpdate()
         {
             if (et == null || CurrentBar < 1) return;
-            DateTime tEt   = AEt(Time[0]);
+            if (State == State.Historical) { Procesar(CurrentBar); return; }
+
+            // En vivo. El primer tick de una vela dice que la anterior ya cerró: se apunta su orden y se
+            // marca. Una vela solo se sigue si se la ve nacer (aún sin rango); si no, manda su color.
+            if (IsFirstTickOfBar)
+            {
+                if (tickBar == CurrentBar - 1) ApuntarOrden(tickBar);
+                Procesar(CurrentBar - 1);
+                tickBar = High[0] == Low[0] ? CurrentBar : -1;
+                tickMax = tickMin = Close[0]; tickSeq = 0; seqMax = seqMin = 0;
+                return;
+            }
+            if (tickBar != CurrentBar) return;
+            tickSeq++;
+            if (Close[0] > tickMax) { tickMax = Close[0]; seqMax = tickSeq; }
+            if (Close[0] < tickMin) { tickMin = Close[0]; seqMin = tickSeq; }
+        }
+
+        // La vela que se siguió tick a tick acaba de cerrar: ¿llegó antes su mínimo o su máximo?
+        private void ApuntarOrden(int barra)
+        {
+            if (seqMax == seqMin) return;                 // no se movió: no hay orden que apuntar
+            bool minPrimero = seqMin < seqMax;
+            DateTime t = Bars.GetTime(barra);
+            orden[t] = minPrimero;
+            if (archivoOrden == null) return;
+            try
+            {
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(archivoOrden));
+                System.IO.File.AppendAllText(archivoOrden, t.ToString("HH:mm") + (minPrimero ? ";minimo" : ";maximo") + Environment.NewLine);
+            }
+            catch (Exception ex) { Print("MarcacionChaumer: no pude guardar el orden de la vela: " + ex.Message); }
+        }
+
+        // El orden de las velas de hoy que ya se vieron en vivo: Documentos\NinjaTrader 8\marcacion-chaumer\AAAA-MM-DD.txt,
+        // una línea por vela, "HH:mm;minimo" o "HH:mm;maximo" (hora de cierre, la de NinjaTrader: Colombia).
+        private void CargarOrden()
+        {
+            orden.Clear();
+            DateTime hoy = Core.Globals.Now.Date;
+            archivoOrden = System.IO.Path.Combine(Core.Globals.UserDataDir, "marcacion-chaumer", hoy.ToString("yyyy-MM-dd") + ".txt");
+            try
+            {
+                if (!System.IO.File.Exists(archivoOrden)) return;
+                foreach (var linea in System.IO.File.ReadAllLines(archivoOrden))
+                {
+                    var p = linea.Split(';');
+                    TimeSpan hm;
+                    if (p.Length != 2 || !TimeSpan.TryParse(p[0], out hm)) continue;
+                    orden[hoy.Add(hm)] = p[1].Trim() == "minimo";
+                }
+            }
+            catch (Exception ex) { Print("MarcacionChaumer: no pude leer el orden de las velas: " + ex.Message); }
+        }
+
+        // Marca con las velas de la ventana hasta `barra`, ya cerrada.
+        private void Procesar(int barra)
+        {
+            if (barra < 1) return;
+            DateTime tEt   = AEt(Bars.GetTime(barra));
             DateTime hoyEt = AEt(Core.Globals.Now).Date;
             if (tEt.Date != hoyEt) return;                       // solo el día de hoy
             if (tEt.TimeOfDay < APERTURA_ET || tEt.TimeOfDay > FIN_ET) return;
@@ -166,22 +268,26 @@ namespace NinjaTrader.NinjaScript.Indicators
             // faltara la de 09:31, manda la siguiente).
             if (baseBar < 0 || AEt(Bars.GetTime(baseBar)).Date != hoyEt)
             {
-                baseBar = CurrentBar; corteBar = -1;
+                baseBar = barra; corteBar = -1;
             }
-            ultimaBar = CurrentBar;
+            ultimaBar = barra;
 
             int n = ultimaBar - baseBar + 1;
             var o = new double[n]; var h = new double[n]; var l = new double[n]; var c = new double[n];
+            var mp = new bool?[n];
             for (int k = 0; k < n; k++)
             {
                 int idx = baseBar + k;
                 o[k] = Bars.GetOpen(idx); h[k] = Bars.GetHigh(idx);
                 l[k] = Bars.GetLow(idx);  c[k] = Bars.GetClose(idx);
+                bool v;
+                if (orden.TryGetValue(Bars.GetTime(idx), out v)) mp[k] = v;
             }
 
             if (corteBar < 0) corteBar = BuscarCorte();
 
-            var piv = ZigzagChaumer.Calcular(o, h, l, c, n);
+            int fecha = hoyEt.Year * 10000 + hoyEt.Month * 100 + hoyEt.Day;
+            var piv = ZigzagChaumer.Calcular(o, h, l, c, n, fecha, mp);
             var nuevos = new List<KeyValuePair<int, double>>();
             if (piv != null)
                 foreach (var v in piv)

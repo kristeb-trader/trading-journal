@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-10-20
+**Última actualización:** 2026-10-21
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-21 | Una vela puede ser dos puntos de la marcación (plan 3.49), en el plan, los dos motores y el indicador |
 | 2026-10-20 | El portal: Operativa diaria, la portada como tablero, menú corto y «Reglas» como mapa |
 | 2026-10-19 | ChecklistChaumer archivado: las noticias rojas, desde el Diario |
 | 2026-10-14 | El premercado, del servidor; zonas de premercado desde donde nacen; plan 3.47 (el reingreso necesita una zona a la que ir) |
@@ -50,6 +51,25 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-21 — Una vela puede ser dos puntos de la marcación
+
+**Lo que pasó.** En vivo, la vela azul de las 08:40 bajó bajo el mínimo de la anterior y después superó su máximo; la
+línea de `MarcacionChaumer` bajó al mínimo y no subió al pico (29.884,75). No era un fallo del indicador: el motor da
+una sola vuelta por vela, y el color ya acertaba el orden. Medido: 166 velas así en 34 días.
+
+**Lo que se cambió** (D-044, plan 3.49 en `25a355c`, diseño `docs/disenos/2026-10-21-vuelta-en-la-vela.md`).
+- **Plan:** `R-05`, `R-06`, `R-09` y el parámetro `VUELTA_EN_VELA_DESDE` = 20261021. Sincronizado (`plan_documentos`
+  con huellas verificadas; `catalogo_reglas` sin cambios).
+- **Motores:** tras la primera vuelta, si el color dice que el otro extremo llegó después, la misma vela se lee otra vez
+  en el estado nuevo, por el mismo código (zona, 50 %, todo igual). `lector.py` y `MotorChaumer.cs`, sellados: 74 de 74
+  días idénticos y ningún día anterior cambia. Con las velas del 21/10: los dos motores y el indicador, iguales, con la
+  08:40 en 29.813,50 y 29.884,75.
+- **Indicador:** la misma regla y, en vivo, el orden real de cada vela por los ticks, guardado por día.
+
+**Pendiente de Kris:** copiar `MotorChaumer.cs` (AddOns) y `MarcacionChaumer.cs` (Indicators) a NinjaTrader y F5.
 
 ---
 

@@ -13,7 +13,8 @@ import os, re, json
 # VENTANA_NOTICIA iban escritos aqui y se habrian quedado viejos si el plan los cambiaba.
 # UMBRAL_VOL es AJUSTABLE (R-15, P-37). Para cambiarlo desde fuera:  lector.UMBRAL_VOL = 2000
 #   NQ -> 2000   <- solo para releer el archivo historico 'NQ 09-26.Last.txt'
-_DEL_PLAN = ('TICK', 'STOP_MAX', 'RIESGO_MAX', 'PLAZO_CONSECUCION', 'UMBRAL_VOL', 'VENTANA_NOTICIA')
+_DEL_PLAN = ('TICK', 'STOP_MAX', 'RIESGO_MAX', 'PLAZO_CONSECUCION', 'UMBRAL_VOL', 'VENTANA_NOTICIA',
+             'VUELTA_EN_VELA_DESDE')
 
 def parametros_del_plan():
     """{nombre: numero} de reglas.json. Si falta uno, falla: no se inventa.
@@ -22,7 +23,8 @@ def parametros_del_plan():
     (scripts/cadena/prueba_motor.py lo hace). Solo para eso: el motor de verdad lee el plan."""
     if '__file__' not in globals():
         return dict(TICK=0.25, STOP_MAX=80.0, RIESGO_MAX=160.0, PLAZO_CONSECUCION=5,
-                    UMBRAL_VOL=None, VENTANA_NOTICIA=5, CIERRE_POR_HORA=1650)
+                    UMBRAL_VOL=None, VENTANA_NOTICIA=5, CIERRE_POR_HORA=1650,
+                    VUELTA_EN_VELA_DESDE=20261021)
     ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '01_Plan', 'reglas.json')
     P = json.load(open(ruta, encoding='utf-8')).get('parametros', {})
     out = {}
@@ -64,6 +66,9 @@ FOMC = dias_fed()
 # en hora Colombia; la reescribe scripts/cadena/subir_dia.py. Un dia sin noticias anotadas cuenta
 # como dia sin noticia roja.
 VENTANA_NOTICIA = int(PARAMETROS['VENTANA_NOTICIA'])
+# Plan 3.49 (21/10/2026, R-05/R-06): desde este dia (AAAAMMDD) una vela puede dar DOS vueltas. Los
+# dias anteriores se leen con una sola, como se leyeron: el operador no quiso rectificar lo anterior.
+VUELTA_EN_VELA_DESDE = int(PARAMETROS['VUELTA_EN_VELA_DESDE'])
 def noticias_rojas():
     """{'AAAAMMDD': [minutos del dia, hora Colombia]}. Sin __file__ (la regresion carga una
     version de git con exec) no hay noticias: el motor anterior al 28/09 no las aplicaba."""
@@ -465,73 +470,92 @@ def leer_sesion(V, dia, minimo=30):
                     elif z.abajo and not z.arriba and k['h'] > z.hi: z.pend=('arriba',i,k['h'],False)
             if z.arriba and z.abajo: z.fin=i
         if i==b: continue                              # la vela base solo cuenta para la vigencia
-        if estado=='corrida':
-            muere = (k['l'] < p['l']) if alc else (k['h'] > p['h'])
-            nuevo_ext = (k['h'] > D[ext]['h']) if alc else (k['l'] < D[ext]['l'])
-            if nuevo_ext and not muere:
-                ext=i
-            elif nuevo_ext and muere:
-                # la vela hace las dos cosas. Solo cuenta para el extremo si el
-                # extremo ocurrio ANTES de la vuelta. Vela azul = minimo primero,
-                # vela blanca = maximo primero  (confirmado por el operador 26/08/2026)
-                extremo_primero = (k['c'] < k['o']) if alc else (k['c'] >= k['o'])
-                if extremo_primero: ext=i
-            if not muere: continue
-            # cerrar la zona pendiente que venia del retroceso: su pullback fue
-            # justamente esta corrida, y termina aqui.
-            if z_pend is not None:
-                z_pend.ref = D[ext]['h'] if alc else D[ext]['l']
-                z_pend.r_fin = max(ext, i-1)
-                z_pend = None
-            kx=D[ext]
-            if alc:
-                lo,hi=z_res(kx); tipo='R'; extremo=kx['h']
-            else:
-                lo,hi=z_sop(kx); tipo='S'; extremo=kx['l']
-            z,(que,mid)=anadir(Z,lo,hi,tipo,i,f"{col(kx)//100}:{kx['t'][2:4]}",extremo,ext if estado=='corrida' else r_ext,rangos)
-            log.append(f"{col(k)//100}:{k['t'][2:4]} muere corrida → zona {tipo} "
-                       f"{lo:.2f}-{hi:.2f} sobre {col(kx)//100}:{kx['t'][2:4]} [{que}"
-                       + (f" mitad {mid:.3f}" if mid else "") + "]")
-            if z is not None and que=='nueva' and z.tipo==tipo:
-                z.de_corrida=True; z.dir = 1 if alc else -1
-                z.r_ini=i; z.r_fin=None
-            else:
-                z=None
-            z_pend = z
-            piv.append((ext, D[ext]['h'] if alc else D[ext]['l'])); pconf.append(i)
-            estado='retro'; r_ini=i; r_ext=i
-        else:
-            confirma = (k['h'] > p['h']) if alc else (k['l'] < p['l'])
-            hunde = (k['l'] < D[r_ext]['l']) if alc else (k['h'] > D[r_ext]['h'])
-            if hunde and not confirma:
-                r_ext=i
-            elif hunde and confirma:
-                # misma logica: el extremo del retroceso solo cuenta si ocurrio antes
-                extremo_primero = (k['c'] >= k['o']) if alc else (k['c'] < k['o'])
-                if extremo_primero: r_ext=i
-            if not confirma: continue
-            kx=D[r_ext]
-            if alc:
-                lo,hi=z_sop(kx); tipo='S'; extremo=kx['l']
-            else:
-                lo,hi=z_res(kx); tipo='R'; extremo=kx['h']
-            z,(que,mid)=anadir(Z,lo,hi,tipo,i,f"{col(kx)//100}:{kx['t'][2:4]}",extremo,ext if estado=='corrida' else r_ext,rangos)
-            log.append(f"{col(k)//100}:{k['t'][2:4]} confirma retroceso → zona {tipo} "
-                       f"{lo:.2f}-{hi:.2f} sobre {col(kx)//100}:{kx['t'][2:4]} [{que}"
-                       + (f" mitad {mid:.3f}" if mid else "") + "]")
-            ref_actual = kx['l'] if alc else kx['h']
-            retros.append((i, ref_actual))
-            if z_pend is not None: z_pend.ref=ref_actual; z_pend.r_fin=max(r_ext,i-1); z_pend=None
-            # El retroceso es un movimiento en si mismo y su zona TAMBIEN es zona de
-            # corrida, pero en sentido contrario. La direccion de la vela de apertura
-            # NO sesga la jornada: se opera en los dos sentidos.
-            # (confirmado por el operador 27/08/2026, caso del 9 de julio)
-            if z is not None and que=='nueva' and z.tipo==tipo:
-                z.de_corrida=True; z.dir = -1 if alc else 1
-                z.r_ini=i; z.r_fin=None
-                z_pend=z
-            piv.append((r_ext, D[r_ext]['l'] if alc else D[r_ext]['h'])); pconf.append(i)
-            estado='corrida'; ini=i-1; ext=i
+        # Plan 3.49 (21/10/2026, R-05/R-06): una vela que pasa de los dos extremos de la anterior
+        # puede cerrar un movimiento y abrir el siguiente. Tras la primera vuelta, si su color dice
+        # que el otro extremo llego DESPUES, la misma vela se vuelve a leer en el estado nuevo (la
+        # segunda vuelta). Azul (o sin cuerpo) = primero el minimo; blanca = primero el maximo.
+        # Caso de origen: 21/10/2026, vela 8:40. Solo desde VUELTA_EN_VELA_DESDE.
+        dos_vueltas = int(dia) >= VUELTA_EN_VELA_DESDE and k['h'] > p['h'] and k['l'] < p['l']
+        min_primero = k['c'] >= k['o']
+        segunda = False
+        while True:
+          if estado=='corrida':
+              muere = (k['l'] < p['l']) if alc else (k['h'] > p['h'])
+              nuevo_ext = (k['h'] > D[ext]['h']) if alc else (k['l'] < D[ext]['l'])
+              if nuevo_ext and not muere:
+                  ext=i
+              elif nuevo_ext and muere:
+                  # la vela hace las dos cosas. Solo cuenta para el extremo si el
+                  # extremo ocurrio ANTES de la vuelta. Vela azul = minimo primero,
+                  # vela blanca = maximo primero  (confirmado por el operador 26/08/2026)
+                  extremo_primero = (k['c'] < k['o']) if alc else (k['c'] >= k['o'])
+                  if extremo_primero: ext=i
+              if not muere: break
+              # cerrar la zona pendiente que venia del retroceso: su pullback fue
+              # justamente esta corrida, y termina aqui.
+              if z_pend is not None:
+                  z_pend.ref = D[ext]['h'] if alc else D[ext]['l']
+                  z_pend.r_fin = max(ext, i-1)
+                  z_pend = None
+              kx=D[ext]
+              if alc:
+                  lo,hi=z_res(kx); tipo='R'; extremo=kx['h']
+              else:
+                  lo,hi=z_sop(kx); tipo='S'; extremo=kx['l']
+              z,(que,mid)=anadir(Z,lo,hi,tipo,i,f"{col(kx)//100}:{kx['t'][2:4]}",extremo,ext if estado=='corrida' else r_ext,rangos)
+              log.append(f"{col(k)//100}:{k['t'][2:4]} muere corrida → zona {tipo} "
+                         f"{lo:.2f}-{hi:.2f} sobre {col(kx)//100}:{kx['t'][2:4]} [{que}"
+                         + (f" mitad {mid:.3f}" if mid else "") + "]")
+              if z is not None and que=='nueva' and z.tipo==tipo:
+                  z.de_corrida=True; z.dir = 1 if alc else -1
+                  z.r_ini=i; z.r_fin=None
+              else:
+                  z=None
+              z_pend = z
+              piv.append((ext, D[ext]['h'] if alc else D[ext]['l'])); pconf.append(i)
+              estado='retro'; r_ini=i; r_ext=i
+              # segunda vuelta: el retroceso que acaba de nacer termina en esta misma vela si
+              # despues paso del otro extremo de la anterior (alcista: azul, primero el minimo)
+              if dos_vueltas and not segunda and min_primero == alc:
+                  segunda=True; continue
+              break
+          else:
+              confirma = (k['h'] > p['h']) if alc else (k['l'] < p['l'])
+              hunde = (k['l'] < D[r_ext]['l']) if alc else (k['h'] > D[r_ext]['h'])
+              if hunde and not confirma:
+                  r_ext=i
+              elif hunde and confirma:
+                  # misma logica: el extremo del retroceso solo cuenta si ocurrio antes
+                  extremo_primero = (k['c'] >= k['o']) if alc else (k['c'] < k['o'])
+                  if extremo_primero: r_ext=i
+              if not confirma: break
+              kx=D[r_ext]
+              if alc:
+                  lo,hi=z_sop(kx); tipo='S'; extremo=kx['l']
+              else:
+                  lo,hi=z_res(kx); tipo='R'; extremo=kx['h']
+              z,(que,mid)=anadir(Z,lo,hi,tipo,i,f"{col(kx)//100}:{kx['t'][2:4]}",extremo,ext if estado=='corrida' else r_ext,rangos)
+              log.append(f"{col(k)//100}:{k['t'][2:4]} confirma retroceso → zona {tipo} "
+                         f"{lo:.2f}-{hi:.2f} sobre {col(kx)//100}:{kx['t'][2:4]} [{que}"
+                         + (f" mitad {mid:.3f}" if mid else "") + "]")
+              ref_actual = kx['l'] if alc else kx['h']
+              retros.append((i, ref_actual))
+              if z_pend is not None: z_pend.ref=ref_actual; z_pend.r_fin=max(r_ext,i-1); z_pend=None
+              # El retroceso es un movimiento en si mismo y su zona TAMBIEN es zona de
+              # corrida, pero en sentido contrario. La direccion de la vela de apertura
+              # NO sesga la jornada: se opera en los dos sentidos.
+              # (confirmado por el operador 27/08/2026, caso del 9 de julio)
+              if z is not None and que=='nueva' and z.tipo==tipo:
+                  z.de_corrida=True; z.dir = -1 if alc else 1
+                  z.r_ini=i; z.r_fin=None
+                  z_pend=z
+              piv.append((r_ext, D[r_ext]['l'] if alc else D[r_ext]['h'])); pconf.append(i)
+              estado='corrida'; ini=(i if segunda else i-1); ext=i
+              # segunda vuelta: la corrida que acaba de nacer muere en esta misma vela si despues
+              # paso del otro extremo de la anterior (alcista: blanca, primero el maximo)
+              if dos_vueltas and not segunda and min_primero != alc:
+                  segunda=True; continue
+              break
 
 
 

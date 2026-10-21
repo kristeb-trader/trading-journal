@@ -70,7 +70,7 @@ static class ArnesMotor
         int n = r.Fin - r.B + 1;
         double[] o = new double[n], h = new double[n], l2 = new double[n], c = new double[n];
         for (int k = 0; k < n; k++) { var x = r.D[r.B + k]; o[k] = x.O; h[k] = x.H; l2[k] = x.L; c[k] = x.C; }
-        var zz = ZigzagChaumer.Calcular(o, h, l2, c, n);
+        var zz = ZigzagChaumer.Calcular(o, h, l2, c, n, int.Parse(dia, CultureInfo.InvariantCulture), null);
         if (zz != null)
             foreach (var v in zz) w.WriteLine("ZZ " + v.I + " " + MotorChaumer.F2(v.Precio) + " " + (v.Confirma < 0 ? "-" : v.Confirma.ToString()));
     }

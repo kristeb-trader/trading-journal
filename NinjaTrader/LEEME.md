@@ -115,4 +115,7 @@ sello nuevo (`.claude/rules/bot.md`). Lo único que te toca: **copiar `MotorChau
 la ventana.** Si no se hace, el bot y la vista dicen *«motor desincronizado»* y no operan: es el candado funcionando.
 
 `MarcacionChaumer` no cambia con las reglas de zonas; si alguna vez un cambio de corridas o retrocesos lo descuadra, la
-sincronía lo avisa y el cambio se te pide a ti.
+sincronía lo avisa y el cambio se te pide a ti. **Desde el 21/10/2026 (plan 3.49)** una vela puede ser dos puntos de su
+línea, igual que en el motor, y el orden de cada vela lo saca de los **ticks en vivo**: lo guarda en
+`Documentos\NinjaTrader 8\marcacion-chaumer\AAAA-MM-DD.txt` para no perderlo al recompilar o reabrir el gráfico. Las
+velas que no vio nacer en vivo usan el color, como el motor.

@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:a78eddb06afbebb0 C:bb48ac9bf491171e";
+        public const string SELLO = "L:8cd29d32f7b8aed2 C:8d0eb1c3b2ccf4af";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -44,6 +44,7 @@ namespace NinjaTrader.NinjaScript
         {
             public double Tick, StopMax, RiesgoMax;
             public int Plazo, VentanaNoticia;
+            public int VueltaEnVelaDesde;    // AAAAMMDD: desde ese dia una vela puede dar dos vueltas (R-05, plan 3.49)
             public long UmbralVol;
             public int CierrePorHoraEt;      // HHMM de Nueva York: lo abierto se cierra a mercado (R-33, plan 3.46)
 
@@ -62,6 +63,7 @@ namespace NinjaTrader.NinjaScript
                 p.Plazo          = (int)Numero(bloque, "PLAZO_CONSECUCION");
                 p.UmbralVol      = (long)Numero(bloque, "UMBRAL_VOL");
                 p.VentanaNoticia = (int)Numero(bloque, "VENTANA_NOTICIA");
+                p.VueltaEnVelaDesde = (int)Numero(bloque, "VUELTA_EN_VELA_DESDE");
                 // CIERRE_POR_HORA es una hora ("16:50 ET"), no un número: se lee del texto
                 var h = Regex.Match(bloque, "\"CIERRE_POR_HORA\"\\s*:\\s*\\{\\s*\"texto\"\\s*:\\s*\"\\s*(\\d{1,2}):(\\d{2})\\s*ET");
                 if (!h.Success) throw new InvalidDataException("CIERRE_POR_HORA no es una hora \"HH:MM ET\" en reglas.json");
@@ -485,71 +487,90 @@ namespace NinjaTrader.NinjaScript
                 }
                 if (i == b) continue;                              // la vela base solo cuenta para la vigencia
                 var p = D[i - 1];
-                if (estado == "corrida")
+                // Plan 3.49 (21/10/2026, R-05/R-06): una vela que pasa de los dos extremos de la anterior
+                // puede cerrar un movimiento y abrir el siguiente. Tras la primera vuelta, si su color dice
+                // que el otro extremo llego DESPUES, la misma vela se vuelve a leer en el estado nuevo (la
+                // segunda vuelta). Azul (o sin cuerpo) = primero el minimo; blanca = primero el maximo.
+                // Caso de origen: 21/10/2026, vela 8:40. Solo desde VUELTA_EN_VELA_DESDE.
+                bool dosVueltas = int.Parse(dia, CultureInfo.InvariantCulture) >= P.VueltaEnVelaDesde && k.H > p.H && k.L < p.L;
+                bool minPrimero = k.C >= k.O;
+                bool segunda = false;
+                while (true)
                 {
-                    bool muere = alc ? k.L < p.L : k.H > p.H;
-                    bool nuevoExt = alc ? k.H > D[ext].H : k.L < D[ext].L;
-                    if (nuevoExt && !muere) ext = i;
-                    else if (nuevoExt && muere)
+                    if (estado == "corrida")
                     {
-                        bool extremoPrimero = alc ? k.C < k.O : k.C >= k.O;
-                        if (extremoPrimero) ext = i;
-                    }
-                    if (!muere) continue;
-                    if (zPend != null)
-                    {
-                        zPend.Ref = alc ? D[ext].H : D[ext].L;
-                        zPend.RFin = Math.Max(ext, i - 1);
-                        zPend = null;
-                    }
-                    var kx = D[ext];
-                    double[] lh; string tipo; double extremo;
-                    if (alc) { lh = ZRes(kx); tipo = "R"; extremo = kx.H; }
-                    else     { lh = ZSop(kx); tipo = "S"; extremo = kx.L; }
-                    string que; double? mid;
-                    var z = Anadir(Z, lh[0], lh[1], tipo, i, Hh(kx), extremo, ext, rangos, out que, out mid);
-                    log.Add(Hh(k) + " muere corrida → zona " + tipo + " " + F2(lh[0]) + "-" + F2(lh[1]) + " sobre " + Hh(kx) + " [" + que
-                            + (mid.HasValue ? " mitad " + F3(mid.Value) : "") + "]");
-                    if (z != null && que == "nueva" && z.Tipo == tipo)
-                    {
-                        z.DeCorrida = true; z.Dir = alc ? 1 : -1;
-                        z.RIni = i; z.RFin = null;
-                    }
-                    else z = null;
-                    zPend = z;
-                    piv.Add(new Vertice { I = ext, Precio = alc ? D[ext].H : D[ext].L, Confirma = i });
-                    estado = "retro"; rExt = i;
-                }
-                else
-                {
-                    bool confirma = alc ? k.H > p.H : k.L < p.L;
-                    bool hunde = alc ? k.L < D[rExt].L : k.H > D[rExt].H;
-                    if (hunde && !confirma) rExt = i;
-                    else if (hunde && confirma)
-                    {
-                        bool extremoPrimero = alc ? k.C >= k.O : k.C < k.O;
-                        if (extremoPrimero) rExt = i;
-                    }
-                    if (!confirma) continue;
-                    var kx = D[rExt];
-                    double[] lh; string tipo; double extremo;
-                    if (alc) { lh = ZSop(kx); tipo = "S"; extremo = kx.L; }
-                    else     { lh = ZRes(kx); tipo = "R"; extremo = kx.H; }
-                    string que; double? mid;
-                    var z = Anadir(Z, lh[0], lh[1], tipo, i, Hh(kx), extremo, rExt, rangos, out que, out mid);
-                    log.Add(Hh(k) + " confirma retroceso → zona " + tipo + " " + F2(lh[0]) + "-" + F2(lh[1]) + " sobre " + Hh(kx) + " [" + que
-                            + (mid.HasValue ? " mitad " + F3(mid.Value) : "") + "]");
-                    double refActual = alc ? kx.L : kx.H;
-                    retros.Add(new Retro { I = i, Ref = refActual });
-                    if (zPend != null) { zPend.Ref = refActual; zPend.RFin = Math.Max(rExt, i - 1); zPend = null; }
-                    if (z != null && que == "nueva" && z.Tipo == tipo)
-                    {
-                        z.DeCorrida = true; z.Dir = alc ? -1 : 1;
-                        z.RIni = i; z.RFin = null;
+                        bool muere = alc ? k.L < p.L : k.H > p.H;
+                        bool nuevoExt = alc ? k.H > D[ext].H : k.L < D[ext].L;
+                        if (nuevoExt && !muere) ext = i;
+                        else if (nuevoExt && muere)
+                        {
+                            bool extremoPrimero = alc ? k.C < k.O : k.C >= k.O;
+                            if (extremoPrimero) ext = i;
+                        }
+                        if (!muere) break;
+                        if (zPend != null)
+                        {
+                            zPend.Ref = alc ? D[ext].H : D[ext].L;
+                            zPend.RFin = Math.Max(ext, i - 1);
+                            zPend = null;
+                        }
+                        var kx = D[ext];
+                        double[] lh; string tipo; double extremo;
+                        if (alc) { lh = ZRes(kx); tipo = "R"; extremo = kx.H; }
+                        else     { lh = ZSop(kx); tipo = "S"; extremo = kx.L; }
+                        string que; double? mid;
+                        var z = Anadir(Z, lh[0], lh[1], tipo, i, Hh(kx), extremo, ext, rangos, out que, out mid);
+                        log.Add(Hh(k) + " muere corrida → zona " + tipo + " " + F2(lh[0]) + "-" + F2(lh[1]) + " sobre " + Hh(kx) + " [" + que
+                                + (mid.HasValue ? " mitad " + F3(mid.Value) : "") + "]");
+                        if (z != null && que == "nueva" && z.Tipo == tipo)
+                        {
+                            z.DeCorrida = true; z.Dir = alc ? 1 : -1;
+                            z.RIni = i; z.RFin = null;
+                        }
+                        else z = null;
                         zPend = z;
+                        piv.Add(new Vertice { I = ext, Precio = alc ? D[ext].H : D[ext].L, Confirma = i });
+                        estado = "retro"; rExt = i;
+                        // segunda vuelta: el retroceso que acaba de nacer termina en esta misma vela si
+                        // despues paso del otro extremo de la anterior (alcista: azul, primero el minimo)
+                        if (dosVueltas && !segunda && minPrimero == alc) { segunda = true; continue; }
+                        break;
                     }
-                    piv.Add(new Vertice { I = rExt, Precio = alc ? D[rExt].L : D[rExt].H, Confirma = i });
-                    estado = "corrida"; ext = i;
+                    else
+                    {
+                        bool confirma = alc ? k.H > p.H : k.L < p.L;
+                        bool hunde = alc ? k.L < D[rExt].L : k.H > D[rExt].H;
+                        if (hunde && !confirma) rExt = i;
+                        else if (hunde && confirma)
+                        {
+                            bool extremoPrimero = alc ? k.C >= k.O : k.C < k.O;
+                            if (extremoPrimero) rExt = i;
+                        }
+                        if (!confirma) break;
+                        var kx = D[rExt];
+                        double[] lh; string tipo; double extremo;
+                        if (alc) { lh = ZSop(kx); tipo = "S"; extremo = kx.L; }
+                        else     { lh = ZRes(kx); tipo = "R"; extremo = kx.H; }
+                        string que; double? mid;
+                        var z = Anadir(Z, lh[0], lh[1], tipo, i, Hh(kx), extremo, rExt, rangos, out que, out mid);
+                        log.Add(Hh(k) + " confirma retroceso → zona " + tipo + " " + F2(lh[0]) + "-" + F2(lh[1]) + " sobre " + Hh(kx) + " [" + que
+                                + (mid.HasValue ? " mitad " + F3(mid.Value) : "") + "]");
+                        double refActual = alc ? kx.L : kx.H;
+                        retros.Add(new Retro { I = i, Ref = refActual });
+                        if (zPend != null) { zPend.Ref = refActual; zPend.RFin = Math.Max(rExt, i - 1); zPend = null; }
+                        if (z != null && que == "nueva" && z.Tipo == tipo)
+                        {
+                            z.DeCorrida = true; z.Dir = alc ? -1 : 1;
+                            z.RIni = i; z.RFin = null;
+                            zPend = z;
+                        }
+                        piv.Add(new Vertice { I = rExt, Precio = alc ? D[rExt].L : D[rExt].H, Confirma = i });
+                        estado = "corrida"; ext = i;
+                        // segunda vuelta: la corrida que acaba de nacer muere en esta misma vela si despues
+                        // paso del otro extremo de la anterior (alcista: blanca, primero el maximo)
+                        if (dosVueltas && !segunda && minPrimero != alc) { segunda = true; continue; }
+                        break;
+                    }
                 }
             }
 

@@ -10,6 +10,30 @@
 
 ---
 
+## D-044 — Una vela puede ser dos puntos de la marcación, desde el 21/10/2026, en todo a la vez
+
+**Decisión (Kris, 21/10/2026, plan 3.49).** Si una vela pasa de los dos extremos de la anterior, puede cerrar un
+movimiento y abrir el siguiente: la marcación baja a su mínimo y sube a su máximo, o al revés. Cambia **a la vez** el
+plan (`R-05`, `R-06`, `R-09`), el motor (`lector.py`), el del bot (`MotorChaumer.cs`) y el indicador del gráfico
+operativo (`MarcacionChaumer`), **desde el 21/10/2026** (`VUELTA_EN_VELA_DESDE`): los días anteriores se leen como se
+leyeron. Diseño: `docs/disenos/2026-10-21-vuelta-en-la-vela.md`.
+
+**Motivo.** La vela de las 08:40 del 21/10 bajó primero bajo el mínimo de la anterior y después superó su máximo; la
+marcación bajó al mínimo y perdió el pico. El color ya acertaba el orden: lo que faltaba era dejar dar la segunda
+vuelta. Medido: 166 velas así en 34 días, todos los días.
+
+**El orden.** El motor y el bot, por el color (azul o sin cuerpo, primero el mínimo), porque el motor de Python no ve
+ticks y el sello no podría comprobar un bot que los usara. El indicador, por los **ticks en vivo** (guarda el orden en
+`Documentos\NinjaTrader 8\marcacion-chaumer\AAAA-MM-DD.txt`) y, sin ellos, por el color.
+
+**Alternativas descartadas.**
+- **Solo en el indicador** (opción A): la línea de Kris en vivo tendría puntos y zonas que el motor, el bot y el
+  backtesting no tienen. Kris: *«la idea es que quede todo bien»*.
+- **Sin fecha, para todo el histórico:** cambiar `lector.py` hace que la cadena rehaga los últimos días; sin la fecha
+  se habrían rectificado días ya cerrados, que Kris no quiso.
+
+---
+
 ## D-043 — «Reglas»: el plan de la jornada como mapa; las páginas de cada paso, solo para Kris
 
 **Decisión (Kris, 20/10/2026).** El portal tiene **«Reglas»** (`/plan`): los 8 pasos de la jornada alrededor de un
