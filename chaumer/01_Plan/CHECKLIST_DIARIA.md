@@ -3,7 +3,7 @@
 > **Se ejecuta de arriba abajo. No se decide nada que no esté aquí.**
 > Cada línea cita su regla. Si una respuesta es **NO** donde dice parar, **se para** — no se evalúa, no se matiza.
 
-**Versión del plan:** 3.49 · 2026-10-21 · **34 reglas**
+**Versión del plan:** 3.50 · 2026-10-22 · **34 reglas**
 
 ---
 
@@ -52,6 +52,8 @@
 | ☐ | Una zona **no queda inválida** hasta que llega la **consecución** — y esa consecución **no tiene plazo** | `R-20`, `R-21` |
 | ☐ | La vela que confirma un traspaso **no abre** el rompimiento contrario: se busca desde la siguiente | `R-22` |
 | ☐ | Vencido el plazo sin consecución: **mecha → se estira** · **cuerpo → nace apéndice** | `R-10`, `R-11` |
+| ☐ | La apéndice y su zona son **un bloque**: para entrar hay que **romper la apéndice**, y quedan inválidas **juntas**, superadas por sus bordes exteriores | `R-11`, `R-21` |
+| ☐ | ¿La zona candidata toca una zona que **ya fue traspasada**? → **no se estira**: nace aparte, **recortada en su borde** | `R-13` |
 | ☐ | El rectángulo se dibuja **desde la vela origen** | `R-09` |
 
 ### Identificar

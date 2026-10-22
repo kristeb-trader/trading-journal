@@ -108,8 +108,8 @@ Diagramas: `../04_Web/public/conceptos/05-sin-confirmar.png` (un soporte que cre
 | | |
 |---|---|
 | Aplica a | Continuación · Reingreso |
-| Parámetros | `PLAZO_CONSECUCION` |
-| Relacionadas | R-09 · R-10 · R-14 |
+| Parámetros | `PLAZO_CONSECUCION` · `BLOQUE_DESDE` |
+| Relacionadas | R-09 · R-10 · R-13 · R-14 · R-21 |
 | Casos | G-15 |
 | Apartado | Marcado |
 | Pendiente | dos reglas de entrada asociadas, anotadas desde F1.3 y nunca confirmadas: «la zona apéndice alta solo sirve para largo» y «no se puede entrar entre zonas apéndices». Hoy el motor no las aplica |
@@ -126,11 +126,21 @@ En cualquiera de los dos casos **la zona original no se toca** y nace una **segu
 
 La apéndice se dibuja **desde la vela de rompimiento**, su vela origen, aunque no quede marcada hasta ese momento. Es del **mismo gris** que cualquier otra zona (`R-09`).
 
+**🧱 La apéndice y su zona forman un BLOQUE** *(desde `BLOQUE_DESDE`)*:
+
+- **Se dibujan por separado, pero se rompen y mueren juntas.** Si la apéndice tiene a su vez otra apéndice, todas son el mismo bloque.
+- **Al nacer la apéndice, el rompimiento que la creó se cierra**, igual que cuando la zona se estira (`R-10`): para romper el bloque hace falta un rompimiento **nuevo** de su borde exterior, con su propia consecución.
+- **Para entrar hay que romper el borde exterior del bloque**, la apéndice. Romper solo la zona original no da entrada: tendría la apéndice en contra.
+- **El bloque queda inactivo cuando se supera en las dos direcciones por sus bordes exteriores** (`R-21`): rompimiento y consecución por la apéndice, y después por el otro lado de la zona original.
+- **Solo es apéndice la zona que nace de un rompimiento SIN consecución.** La que deja una estructura nueva tras rompimiento **y** consecución es una zona normal e independiente, no forma bloque (`R-13`).
+
 ### Por qué
 
 > 🔑 **La apéndice no nace por acción del precio sobre ella** — es el rastro de un rompimiento que se quedó sin terminar.
 
 **Es la misma regla que `R-10`, con un solo cambio.** Las dos arrancan igual —rompimiento sin consecución— y las dos se acaban con los mismos dos finales. Lo único que las separa es **dónde cierra la vela de rompimiento**: si el cierre se queda dentro, la zona **se estira** y sigue siendo una; si el cierre queda fuera, la original queda intacta y **nace la apéndice**. Por eso el texto es calcado. **Palabras del operador:** *"la zona apéndice es básicamente igual que lo que pasa con una zona que se estira cuando hay rompimiento sin consecución. La diferencia es que en este caso el rompimiento no es con mecha, sino con cuerpo por fuera. Los casos son los mismos 2"*.
+
+**El bloque, validado con Alfredo** (22/10/2026). Palabras del operador: *"una zona es llamada zona apéndice cuando es una zona creada por un movimiento que se generó con rompimiento pero SIN consecución, y esa es la que forma el bloque. Una zona que se genera cuando hay rompimiento y consecución ya no es zona apéndice, sino una zona normal generada por la acción de precio"*. Y sobre la entrada: *"sería incorrecto entrar en la zona 1, sabiendo que tiene la zona apéndice en contra"*. Caso de origen: 21/10/2026, la apéndice de la vela 8:44 bajo la zona de la 8:40.
 
 Diagramas: `../02_Assets/diagramas/apendice_caso1_plazo.png` *(por plazo)* y `../02_Assets/diagramas/apendice_caso2_estructura.png` *(por estructura contraria)*
 
@@ -168,15 +178,16 @@ El curso y Chaumer en vivo cierran el marcado entre dos zonas tras el primer ret
 | | |
 |---|---|
 | Aplica a | Continuación · Reingreso |
-| Parámetros | — |
-| Relacionadas | R-09 · R-10 · R-21 |
+| Parámetros | `BLOQUE_DESDE` |
+| Relacionadas | R-09 · R-10 · R-11 · R-21 |
 | Casos | G-13 |
 | Apartado | Marcado |
 
 ### Cómo se aplica
 
 - **El disparador:** la zona candidata toca en cualquier punto una zona ya marcada **del mismo tipo**; el contacto de bordes cuenta.
-- **Crear una zona nueva está prohibido:** se estira la existente hasta el extremo más lejano de la candidata. Queda **una** zona.
+- **Crear una zona nueva está prohibido** —salvo si la existente ya fue traspasada, punto siguiente—: se estira la existente hasta el extremo más lejano de la candidata. Queda **una** zona.
+- **Si la existente ya fue traspasada** —tuvo rompimiento **y** consecución— *(desde `BLOQUE_DESDE`)*: **no se estira**. La candidata es una zona **normal e independiente**: nace aparte, **recortada en el borde** de la existente, porque dos zonas nunca se montan. Si queda entera dentro, no se marca nada. Cada una lleva su propia cuenta de traspasos (`R-21`). No es una apéndice ni forma bloque (`R-11`). Caso de origen: 21/10/2026, el soporte de la vela 8:40 bajo el de la 8:34, que la 8:38 rompió y la 8:40 traspasó: nace aparte (29.813,50 – 29.825,75) y el de la 8:34 muere solo a las 8:48.
 - **Se estira SOLO hacia el nuevo extremo;** el otro borde no se mueve. No se engloba.
 - **La zona estirada conserva su historial** de rompimientos y consecuciones (`R-21`).
 - **Candidata dentro de la existente:** sin cambios; no hay nada que extender.
@@ -427,6 +438,7 @@ Caso real 13/07/2026: la consecución que traspasa la zona llega **25 velas** de
 - **Pero sigue ocupando su sitio:** la banda que ya gastó su zona no se reabre porque la zona muera (`R-17`, punto 8). **Deja de valer como zona; no deja de ocupar el sitio.**
 - **Se conserva dibujada** en tono muy tenue, solo como recuerdo visual.
 - **Las zonas no envejecen** (`D-07`): una zona es activa o inactiva, sin grados.
+- **Un bloque —una zona y sus apéndices (`R-11`)— se supera como una sola zona**, por sus bordes exteriores *(desde `BLOQUE_DESDE`)*, y queda inactivo entero: todas sus zonas a la vez.
 
 ## R-22 · La vela que confirma un traspaso no abre el rompimiento contrario
 

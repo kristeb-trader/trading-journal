@@ -3,7 +3,7 @@
 > **Un solo sitio para los números que pueden cambiar.**
 > Las reglas citan el **nombre** del parámetro, no el valor. Se cambia aquí y se propaga a todo el plan.
 
-**Actualizado:** 2026-10-21
+**Actualizado:** 2026-10-22
 
 ---
 
@@ -32,6 +32,7 @@
 | **`VENTANA_REINGRESO`** | **hasta que el precio supere el extremo de la vela de consecución** | `R-26`. El reingreso es **inmediato o no es**: en cuanto el precio sigue de largo, la ventana se cierra para siempre *(27/08/2026)* |
 | **`UMBRAL_50`** | 50 % | zonas entre zonas (`R-12`) |
 | **`VUELTA_EN_VELA_DESDE`** | **20261021** (21/10/2026) | `R-05` · `R-06`: desde ese día, una vela puede dar dos vueltas. Los días anteriores se leen con una sola, como se leyeron |
+| **`BLOQUE_DESDE`** | **20261022** (22/10/2026) | `R-11` · `R-13` · `R-21`: desde ese día, la apéndice forma bloque con su zona y la zona que nace tras un traspaso no estira la vieja. Los días anteriores, como se leyeron |
 
 ## Volumen y sesión
 

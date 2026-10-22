@@ -199,7 +199,9 @@ La **segunda zona** que nace cuando una zona se rompe **con cuerpo** —el cierr
 
 > **Origen del término:** `Parámetros Chaumer.pdf`, diapositiva "ZONA APÉNDICE (pág 1)" — *"Marcamos una nueva zona no por acción del precio sino porque es un movimiento sin consecución. Es una zona apéndice de la otra."*
 
-**Reglas:** `R-11`, `R-14` · **Diagramas:** `../02_Assets/diagramas/apendice_caso1_plazo.png` (por plazo) y `../02_Assets/diagramas/apendice_caso2_estructura.png` (por estructura contraria)
+**El bloque** *(22/10/2026)*: la zona y sus apéndices —y las apéndices de sus apéndices— forman **un bloque**. Se dibujan por separado, pero para entrar hay que romper el borde exterior del bloque, y se superan y quedan inactivas juntas, por los bordes exteriores. **Solo es apéndice la que nace de un rompimiento sin consecución:** la que deja una estructura nueva tras rompimiento y consecución es una zona normal, independiente (`R-13`).
+
+**Reglas:** `R-11`, `R-13`, `R-14`, `R-21` · **Diagramas:** `../02_Assets/diagramas/apendice_caso1_plazo.png` (por plazo) y `../02_Assets/diagramas/apendice_caso2_estructura.png` (por estructura contraria)
 
 ---
 

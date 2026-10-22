@@ -373,12 +373,15 @@
         "Reingreso"
       ],
       "parametros": [
-        "PLAZO_CONSECUCION"
+        "PLAZO_CONSECUCION",
+        "BLOQUE_DESDE"
       ],
       "relacionadas": [
         "R-09",
         "R-10",
-        "R-14"
+        "R-13",
+        "R-14",
+        "R-21"
       ],
       "casos": [
         "G-15"
@@ -387,8 +390,8 @@
       "pendiente": "dos reglas de entrada asociadas, anotadas desde F1.3 y nunca confirmadas: «la zona apéndice alta solo sirve para largo» y «no se puede entrar entre zonas apéndices». Hoy el motor no las aplica",
       "fuente": null,
       "absorbe": [],
-      "como_se_aplica": "El rompimiento con cuerpo sin consecución se acaba de dos maneras, y vale **la que llegue primero** — el disparador es el plazo **resuelto**, no el plazo vencido (`R-14`):\n\n**Una ·** pasa el `PLAZO_CONSECUCION`, contado desde la vela siguiente a la del rompimiento, y la consecución no ha llegado.\n\n**Otra ·** antes de que se cumpla ese plazo, el mercado arma una **estructura completa en sentido contrario**: una vela que no da la consecución y se va en contra, otra que hace retroceso, y una tercera que no sigue ese retroceso y vuelve en el sentido de la primera. **La apéndice nace en esa tercera vela**, sin esperar más.\n\nEn cualquiera de los dos casos **la zona original no se toca** y nace una **segunda zona** sobre la mecha de la vela de rompimiento: un borde es el **borde del cuerpo** de esa vela, el otro es la **punta de su mecha**. Quedan **dos zonas**, la original y su apéndice.\n\nLa apéndice se dibuja **desde la vela de rompimiento**, su vela origen, aunque no quede marcada hasta ese momento. Es del **mismo gris** que cualquier otra zona (`R-09`).",
-      "porque": "> 🔑 **La apéndice no nace por acción del precio sobre ella** — es el rastro de un rompimiento que se quedó sin terminar.\n\n**Es la misma regla que `R-10`, con un solo cambio.** Las dos arrancan igual —rompimiento sin consecución— y las dos se acaban con los mismos dos finales. Lo único que las separa es **dónde cierra la vela de rompimiento**: si el cierre se queda dentro, la zona **se estira** y sigue siendo una; si el cierre queda fuera, la original queda intacta y **nace la apéndice**. Por eso el texto es calcado. **Palabras del operador:** *\"la zona apéndice es básicamente igual que lo que pasa con una zona que se estira cuando hay rompimiento sin consecución. La diferencia es que en este caso el rompimiento no es con mecha, sino con cuerpo por fuera. Los casos son los mismos 2\"*.\n\nDiagramas: `../02_Assets/diagramas/apendice_caso1_plazo.png` *(por plazo)* y `../02_Assets/diagramas/apendice_caso2_estructura.png` *(por estructura contraria)*",
+      "como_se_aplica": "El rompimiento con cuerpo sin consecución se acaba de dos maneras, y vale **la que llegue primero** — el disparador es el plazo **resuelto**, no el plazo vencido (`R-14`):\n\n**Una ·** pasa el `PLAZO_CONSECUCION`, contado desde la vela siguiente a la del rompimiento, y la consecución no ha llegado.\n\n**Otra ·** antes de que se cumpla ese plazo, el mercado arma una **estructura completa en sentido contrario**: una vela que no da la consecución y se va en contra, otra que hace retroceso, y una tercera que no sigue ese retroceso y vuelve en el sentido de la primera. **La apéndice nace en esa tercera vela**, sin esperar más.\n\nEn cualquiera de los dos casos **la zona original no se toca** y nace una **segunda zona** sobre la mecha de la vela de rompimiento: un borde es el **borde del cuerpo** de esa vela, el otro es la **punta de su mecha**. Quedan **dos zonas**, la original y su apéndice.\n\nLa apéndice se dibuja **desde la vela de rompimiento**, su vela origen, aunque no quede marcada hasta ese momento. Es del **mismo gris** que cualquier otra zona (`R-09`).\n\n**🧱 La apéndice y su zona forman un BLOQUE** *(desde `BLOQUE_DESDE`)*:\n\n- **Se dibujan por separado, pero se rompen y mueren juntas.** Si la apéndice tiene a su vez otra apéndice, todas son el mismo bloque.\n- **Al nacer la apéndice, el rompimiento que la creó se cierra**, igual que cuando la zona se estira (`R-10`): para romper el bloque hace falta un rompimiento **nuevo** de su borde exterior, con su propia consecución.\n- **Para entrar hay que romper el borde exterior del bloque**, la apéndice. Romper solo la zona original no da entrada: tendría la apéndice en contra.\n- **El bloque queda inactivo cuando se supera en las dos direcciones por sus bordes exteriores** (`R-21`): rompimiento y consecución por la apéndice, y después por el otro lado de la zona original.\n- **Solo es apéndice la zona que nace de un rompimiento SIN consecución.** La que deja una estructura nueva tras rompimiento **y** consecución es una zona normal e independiente, no forma bloque (`R-13`).",
+      "porque": "> 🔑 **La apéndice no nace por acción del precio sobre ella** — es el rastro de un rompimiento que se quedó sin terminar.\n\n**Es la misma regla que `R-10`, con un solo cambio.** Las dos arrancan igual —rompimiento sin consecución— y las dos se acaban con los mismos dos finales. Lo único que las separa es **dónde cierra la vela de rompimiento**: si el cierre se queda dentro, la zona **se estira** y sigue siendo una; si el cierre queda fuera, la original queda intacta y **nace la apéndice**. Por eso el texto es calcado. **Palabras del operador:** *\"la zona apéndice es básicamente igual que lo que pasa con una zona que se estira cuando hay rompimiento sin consecución. La diferencia es que en este caso el rompimiento no es con mecha, sino con cuerpo por fuera. Los casos son los mismos 2\"*.\n\n**El bloque, validado con Alfredo** (22/10/2026). Palabras del operador: *\"una zona es llamada zona apéndice cuando es una zona creada por un movimiento que se generó con rompimiento pero SIN consecución, y esa es la que forma el bloque. Una zona que se genera cuando hay rompimiento y consecución ya no es zona apéndice, sino una zona normal generada por la acción de precio\"*. Y sobre la entrada: *\"sería incorrecto entrar en la zona 1, sabiendo que tiene la zona apéndice en contra\"*. Caso de origen: 21/10/2026, la apéndice de la vela 8:44 bajo la zona de la 8:40.\n\nDiagramas: `../02_Assets/diagramas/apendice_caso1_plazo.png` *(por plazo)* y `../02_Assets/diagramas/apendice_caso2_estructura.png` *(por estructura contraria)*",
       "si_no_se_cumple": null,
       "excepciones": null,
       "orden": 10,
@@ -440,10 +443,13 @@
         "Continuación",
         "Reingreso"
       ],
-      "parametros": [],
+      "parametros": [
+        "BLOQUE_DESDE"
+      ],
       "relacionadas": [
         "R-09",
         "R-10",
+        "R-11",
         "R-21"
       ],
       "casos": [
@@ -453,7 +459,7 @@
       "fuente": null,
       "pendiente": null,
       "absorbe": [],
-      "como_se_aplica": "- **El disparador:** la zona candidata toca en cualquier punto una zona ya marcada **del mismo tipo**; el contacto de bordes cuenta.\n- **Crear una zona nueva está prohibido:** se estira la existente hasta el extremo más lejano de la candidata. Queda **una** zona.\n- **Se estira SOLO hacia el nuevo extremo;** el otro borde no se mueve. No se engloba.\n- **La zona estirada conserva su historial** de rompimientos y consecuciones (`R-21`).\n- **Candidata dentro de la existente:** sin cambios; no hay nada que extender.\n- **Si no se tocan, son dos zonas,** aunque las separe un tick. No hay distancia mínima que las junte.\n- **No se solapan zonas de tipo distinto** mientras una esté vigente: una zona viva ocupa su franja de precio.\n- **Una resistencia superada cambia de papel a soporte** y sigue ocupando su franja.",
+      "como_se_aplica": "- **El disparador:** la zona candidata toca en cualquier punto una zona ya marcada **del mismo tipo**; el contacto de bordes cuenta.\n- **Crear una zona nueva está prohibido** —salvo si la existente ya fue traspasada, punto siguiente—: se estira la existente hasta el extremo más lejano de la candidata. Queda **una** zona.\n- **Si la existente ya fue traspasada** —tuvo rompimiento **y** consecución— *(desde `BLOQUE_DESDE`)*: **no se estira**. La candidata es una zona **normal e independiente**: nace aparte, **recortada en el borde** de la existente, porque dos zonas nunca se montan. Si queda entera dentro, no se marca nada. Cada una lleva su propia cuenta de traspasos (`R-21`). No es una apéndice ni forma bloque (`R-11`). Caso de origen: 21/10/2026, el soporte de la vela 8:40 bajo el de la 8:34, que la 8:38 rompió y la 8:40 traspasó: nace aparte (29.813,50 – 29.825,75) y el de la 8:34 muere solo a las 8:48.\n- **Se estira SOLO hacia el nuevo extremo;** el otro borde no se mueve. No se engloba.\n- **La zona estirada conserva su historial** de rompimientos y consecuciones (`R-21`).\n- **Candidata dentro de la existente:** sin cambios; no hay nada que extender.\n- **Si no se tocan, son dos zonas,** aunque las separe un tick. No hay distancia mínima que las junte.\n- **No se solapan zonas de tipo distinto** mientras una esté vigente: una zona viva ocupa su franja de precio.\n- **Una resistencia superada cambia de papel a soporte** y sigue ocupando su franja.",
       "porque": "Desviación consciente `D-08`: el curso recorta la zona nueva y deja dos zonas; el operador las une en una sola.\n\n**Caso real 8/07/2026, vela 8:43:** no se puede dibujar soporte donde ya vive la zona de la 8:37.\n\n**Sin tocarse, dos zonas** (28/09/2026, cierra `P-28`). Palabras del operador: *\"si no se tocan son dos\"*. No es un caso raro: en 52 jornadas con datos hay 43 parejas de zonas del mismo tipo vivas a la vez a 5 puntos o menos, alguna a un solo tick (4/08, 0,25 puntos). Y a veces decide el día: el 10/09 la resistencia de la 8:37 queda 2,25 puntos por encima de la de la 8:32, que estaba bloqueada; por ser dos, la de la 8:37 queda **entera más allá** y da la entrada del día (`R-40`), +40,50.",
       "si_no_se_cumple": null,
       "excepciones": null,
@@ -705,7 +711,7 @@
       "fuente": null,
       "pendiente": null,
       "absorbe": [],
-      "como_se_aplica": "- **Dos estados, sin grises.** **Activa** = cuenta para la operativa. **Inactiva** = superada en las dos direcciones.\n- **Superada en una dirección** = rompimiento **y** consecución en ese sentido. Solo rompimiento, sin consecución → la zona sigue vigente.\n- **Una zona inválida no cuenta para nada como zona:** ni bloquea el objetivo, ni sirve para entrar, ni cuenta para medir el 50 % entre zonas. Se retira del cálculo de los filtros.\n- **Pero sigue ocupando su sitio:** la banda que ya gastó su zona no se reabre porque la zona muera (`R-17`, punto 8). **Deja de valer como zona; no deja de ocupar el sitio.**\n- **Se conserva dibujada** en tono muy tenue, solo como recuerdo visual.\n- **Las zonas no envejecen** (`D-07`): una zona es activa o inactiva, sin grados.",
+      "como_se_aplica": "- **Dos estados, sin grises.** **Activa** = cuenta para la operativa. **Inactiva** = superada en las dos direcciones.\n- **Superada en una dirección** = rompimiento **y** consecución en ese sentido. Solo rompimiento, sin consecución → la zona sigue vigente.\n- **Una zona inválida no cuenta para nada como zona:** ni bloquea el objetivo, ni sirve para entrar, ni cuenta para medir el 50 % entre zonas. Se retira del cálculo de los filtros.\n- **Pero sigue ocupando su sitio:** la banda que ya gastó su zona no se reabre porque la zona muera (`R-17`, punto 8). **Deja de valer como zona; no deja de ocupar el sitio.**\n- **Se conserva dibujada** en tono muy tenue, solo como recuerdo visual.\n- **Las zonas no envejecen** (`D-07`): una zona es activa o inactiva, sin grados.\n- **Un bloque —una zona y sus apéndices (`R-11`)— se supera como una sola zona**, por sus bordes exteriores *(desde `BLOQUE_DESDE`)*, y queda inactivo entero: todas sus zonas a la vez.",
       "si_no_se_cumple": null,
       "excepciones": null,
       "porque": null,
@@ -1286,6 +1292,10 @@
     "VUELTA_EN_VELA_DESDE": {
       "texto": "20261021 (21/10/2026)",
       "numero": 20261021
+    },
+    "BLOQUE_DESDE": {
+      "texto": "20261022 (22/10/2026)",
+      "numero": 20261022
     },
     "UMBRAL_VOL": {
       "texto": "> 8.000 contratos en MNQ",
