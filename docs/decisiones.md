@@ -10,6 +10,29 @@
 
 ---
 
+## D-046 — El reingreso no tiene plazo de velas: vale mientras la zona esté viva y tenga espacio de recorrido
+
+**Decisión (Kris, 22/10/2026, plan 3.51).** Se quita *«el reingreso es inmediato o no es»* (27/08/2026): pasar del extremo
+de la vela de consecución ya no cierra la ventana. El reingreso puede llegar en cualquier vela mientras la zona esté viva,
+siempre que tenga espacio de recorrido: riesgo dentro de `STOP_MAX`, ninguna zona activa ni punto de referencia vivo entre
+la entrada y el objetivo, y una zona a la que ir. **Aplica a todos los días**, no desde una fecha.
+
+**Motivo.** El 22/10 la vela de las 9:00 pasó 2,5 puntos del extremo de la consecución y después atravesó la resistencia
+entera; la de las 9:01 dio la consecución. Para Kris era un reingreso válido (él lo operó) y el motor no lo veía: operó una
+Continuación alcista una vela después (−53,25).
+
+**Medido antes de cambiar nada**, en una copia aparte sobre 76 días: cambia la operación de 4 (22/10, 20/08, 29/07, 9/07),
+de 59 a 61 operaciones y de −107,75 a −97,00. Kris los revisó uno a uno en imágenes. El 9/07 cambia sin que el reingreso se
+llene: su orden va primero y la Continuación entra una vela después (Kris: *«c, pero nunca la llenó»*).
+
+**Alternativas descartadas.**
+- **Un límite de velas:** Kris: *«mientras la zona esté viva, sin límite de velas»*.
+- **Desde una fecha, como D-044 y D-045:** los cuatro días que cambian se revisaron y se dieron por buenos.
+- **Que un reingreso a la espera de su consecución no tape una Continuación:** Kris eligió que la orden del reingreso va
+  primero.
+
+---
+
 ## D-045 — La apéndice forma bloque con su zona; tras un traspaso la zona nueva no estira la vieja
 
 **Decisión (Kris, validado con Alfredo, 22/10/2026, plan 3.50).** Solo es **apéndice** la zona que nace de un rompimiento

@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-22 | El reingreso no tiene plazo de velas (plan 3.51), en el plan, los dos motores, las fichas y el portal; la imagen del reingreso operado enseña el punto de referencia de más allá del objetivo |
 | 2026-10-22 | La apéndice forma bloque con su zona; tras un traspaso la zona nueva no estira la vieja (plan 3.50); el portal, con las dos al día |
 | 2026-10-21 | Una vela puede ser dos puntos de la marcación (plan 3.49), en el plan, los dos motores y el indicador; la apéndice del retroceso y el bloque de zonas, en estudio |
 | 2026-10-20 | El portal: Operativa diaria, la portada como tablero, menú corto y «Reglas» como mapa |
@@ -52,6 +53,31 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-22 (tarde) — El reingreso no tiene plazo de velas (plan 3.51)
+
+**Lo que pasó.** Al revisar la sesión, Kris preguntó por el reingreso bajista de las 9:01 que él operó y el motor no vio: lo
+cerraba *«el reingreso es inmediato o no es»*, porque la 9:00 pasó 2,5 puntos del extremo de la consecución antes de
+atravesar la zona. Kris redefinió el plazo: mientras la zona esté viva, con espacio de recorrido. Se midió en una copia
+aparte (4 días cambian) y Kris revisó cada uno en imágenes; el 9/07 obligó a decidir qué orden va primero cuando un reingreso
+espera su consecución y aparece una Continuación (el reingreso).
+
+**Lo que se cambió** (D-046).
+- **Plan 3.51** (`2e6d9bd`): `R-26` (paso 2, el plazo, el caso de origen del 22/10 y el del 13/07 reescrito: sigue sin ser
+  reingreso, ahora por el punto de referencia), glosario, `VENTANA_REINGRESO`, checklist. Sincronizado (`catalogo_reglas`: la
+  línea nueva, la vieja desactivada; `plan_documentos`, huellas verificadas).
+- **Los dos motores** (`9af91d0`), sello `L:3fcd94fe…`: 76/76 iguales entre ellos; 36 días cambian eventos (reingresos que
+  ahora se evalúan y se descartan) y 4 la operación.
+- **La cadena** rehízo las fichas del 01/09 al 22/10: solo cambia el 22/10, Reingreso bajista 9:01, STOP −29,25. La fila del
+  bot de ese día sigue siendo la Continuación que operó con el motor anterior.
+- **El portal**: «Reingreso» y la comparación de setups, sin el «inmediato».
+- **La imagen y la vista** (`9c42c85`, `7254b72`): el reingreso que se opera deja también el punto de referencia más cercano de
+  más allá del objetivo, para ver que el objetivo no lo pasa (Kris, sobre el de la 8:49 del 20/08).
+
+**Pendiente.** Kris tiene que copiar `MotorChaumer.cs` a NinjaTrader y recompilar fuera de la ventana: sin eso el bot dice
+*«motor desincronizado»* y no opera.
 
 ---
 
