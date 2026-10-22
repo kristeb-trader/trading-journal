@@ -42,7 +42,7 @@ import { v } from './_datos.mjs';
     <li><strong>Una corrida (Impulso 1).</strong> Es el movimiento inicial donde el precio avanza con fuerza en una dirección.</li>
     <li><strong>Un retroceso.</strong> El movimiento se detiene a descansar o “respirar”. Este punto define el extremo opuesto temporal.</li>
     <li><strong>La zona.</strong> Se marca el nivel exacto en la vela extrema que dejó la corrida antes de empezar a retroceder. <strong>Sin zona marcada en la vela extrema, no existe la Continuación.</strong></li>
-    <li><strong>Rompimiento.</strong> El precio reanuda la marcha y rompe esa misma zona en el sentido del movimiento original por al menos un tick.</li>
+    <li><strong>Rompimiento.</strong> El precio reanuda la marcha y rompe esa misma zona en el sentido del movimiento original por al menos un tick. <strong>Si la zona tiene una apéndice en ese sentido, lo que hay que romper es la apéndice</strong>: el borde de fuera del bloque.</li>
     <li><strong>Confirmación / consecución (la entrada).</strong> La entrada se ejecuta en la vela que da la consecución. Esto ocurre cuando una vela sobrepasa el extremo de la vela que rompió la zona.</li>
   </ol>
 

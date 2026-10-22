@@ -54,6 +54,30 @@ import Refs from '../../../componentes/Refs.astro';
     </p>
   </div>
 
+  <h3>Una vela puede cerrar un movimiento y abrir el siguiente</h3>
+  <p>
+    A veces una sola vela pasa de los dos extremos de la anterior: primero
+    rompe hacia un lado y, en el mismo minuto, se da la vuelta y rompe hacia
+    el otro. Esa vela da <strong>dos vueltas</strong>: la línea de corridas y
+    retrocesos baja hasta su mínimo <strong>y</strong> sube hasta su máximo
+    (o al revés), y la vela es a la vez el final de un movimiento y el
+    comienzo del siguiente.
+  </p>
+
+  <figure class="gr">
+    <img src="/conceptos/29-vela-dos-vueltas.png" alt="Una vela que primero baja del mínimo de la anterior y después sube de su máximo: la línea marca los dos extremos" loading="lazy" />
+    <figcaption class="meta">La vela 5 mata la corrida al bajar y, en el mismo minuto, arranca la siguiente al subir: la línea marca sus dos extremos.</figcaption>
+  </figure>
+
+  <dl class="datos">
+    <dt>Qué hizo primero</dt>
+    <dd>Lo dice su color: <strong>azul, primero el mínimo</strong>; <strong>blanca, primero el máximo</strong>. En el gráfico en vivo, la marcación lo saca de los ticks</dd>
+    <dt>Una corrida de una sola vela</dt>
+    <dd>Si la corrida que nace en esa vela muere en ella misma, dura esa sola vela: es la única excepción al mínimo de dos velas</dd>
+    <dt>Las zonas</dt>
+    <dd>La vela sostiene las dos: la del retroceso, sobre su mínimo, y la de la corrida, sobre su máximo, cada una cuando se confirma</dd>
+  </dl>
+
   <p>
     Del retroceso interesa un punto concreto: <strong>su extremo</strong> — el
     más bajo si la corrida era alcista, el más alto si era bajista. Ahí irá el

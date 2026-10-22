@@ -11,7 +11,7 @@ import Refs from '../../../componentes/Refs.astro';
 <!-- 2 ─────────────────────────────────────────────────────────────── -->
 
 <section class="ap" id="nace">
-  <h2>Generación de zonas <Refs cods="R-09 · R-16" /></h2>
+  <h2>Generación de zonas <Refs cods="R-09 · R-13 · R-16" /></h2>
   <p>
     Cuando una corrida termina, deja un rastro en el gráfico: una franja de
     precio que se llama <strong>zona</strong>. No se dibuja a ojo. Sale
@@ -41,7 +41,9 @@ import Refs from '../../../componentes/Refs.astro';
     <dt>Vela sin cuerpo</dt>
     <dd>La zona se traza desde el precio de apertura o cierre hasta la punta de la mecha</dd>
     <dt>Una vela con máximo mayor y mínimo menor</dt>
-    <dd>El orden dentro de la vela decide cuál sostiene la zona</dd>
+    <dd>El orden dentro de la vela decide cuál sostiene la zona. Si la vela da las dos vueltas, <strong>sostiene las dos</strong>: la del retroceso y la de la corrida</dd>
+    <dt>Si toca una zona que ya existe</dt>
+    <dd>Si esa zona <strong>no ha sido traspasada</strong>, no se marca otra: <strong>se estira</strong> la que ya estaba hasta el extremo nuevo. Si <strong>ya fue traspasada</strong>, la nueva nace aparte, recortada en su borde: dos zonas nunca se montan una encima de otra (se explica en «La zona apéndice»)</dd>
   </dl>
 
   <figure class="gr">

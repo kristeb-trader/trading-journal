@@ -11,7 +11,7 @@ import Refs from '../../../componentes/Refs.astro';
 <!-- 7 ─────────────────────────────────────────────────────────────── -->
 
 <section class="ap" id="caduca">
-  <h2>Cuándo quitar una zona<Refs cods="R-21" /></h2>
+  <h2>Cuándo quitar una zona<Refs cods="R-21 · R-11" /></h2>
   <p>
     Una zona muere cuando ha sido superada <strong>en las dos direcciones</strong>:
     rompimiento y consecución hacia un lado, y rompimiento y consecución hacia
@@ -32,6 +32,10 @@ import Refs from '../../../componentes/Refs.astro';
     <dd><strong>No cuenta para nada.</strong> Ni bloquea un objetivo, ni sirve para entrar, ni cuenta para medir la mitad entre zonas</dd>
     <dt>En pantalla</dt>
     <dd>Se deja dibujada en tono muy tenue, solo como recuerdo</dd>
+    <dt>Una zona con su apéndice</dt>
+    <dd>Forman un <strong>bloque</strong> y se superan como una sola zona, <strong>por los bordes de fuera</strong>: rompimiento y consecución por la apéndice y después por el otro lado de la zona original. Mueren las dos a la vez. Mientras el precio se mueva dentro del bloque, no le pasa nada</dd>
+    <dt>Una zona que nació tras una consecución</dt>
+    <dd>No es apéndice: lleva su propia cuenta, y la zona de la que salió muere sola con sus dos traspasos</dd>
   </dl>
 
   <p>
