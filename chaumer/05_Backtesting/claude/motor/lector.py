@@ -884,13 +884,11 @@ def detectar_setups(res, solo_reingresos=False):
                 if (z.roto[0]=='arriba' and k['h']>z.roto[2]) or (z.roto[0]=='abajo' and k['l']<z.roto[2]):
                     z.consec=True; z.i_consec=i; z.rein_ok=True
                     z.consec_ext = k['h'] if z.roto[0]=='arriba' else k['l']
-            elif z.consec and z.rein_ok and z.i_consec is not None and i > z.i_consec:
-                # EL REINGRESO ES INMEDIATO. Si el precio pasa del extremo de la vela de
-                # consecucion, el rompimiento quedo bueno y la ventana se cierra para
-                # siempre.  (operador 27/08/2026, comparacion 6 vs 13 de julio)
-                if (z.roto[0]=='arriba' and k['h'] > z.consec_ext) or \
-                   (z.roto[0]=='abajo'  and k['l'] < z.consec_ext):
-                    z.rein_ok=False
+            # Plan 3.51 (22/10/2026, R-26): EL REINGRESO NO TIENE PLAZO DE VELAS. Hasta la 3.50 la ventana
+            # se cerraba en cuanto el precio pasaba del extremo de la vela de consecucion ("inmediato o no
+            # es", 27/08/2026). Ahora sigue abierta mientras la zona este viva; lo que filtra es el espacio
+            # de recorrido (STOP_MAX, zona en el camino, punto de referencia, zona a la que ir).
+            # Caso de origen: 22/10/2026, resistencia de la 8:35, consecucion 8:59, reingreso 9:00.
 
         # ---------- rompimiento de las zonas de premercado (R-15, cierra la mitad de P-34) ----------
         # Hasta el 28/09/2026 un rompimiento solo se anotaba en el bloque de Continuacion, que exige

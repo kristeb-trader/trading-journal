@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:59bfb14f35ae15f2 C:0bca2d2116b8ff2f";
+        public const string SELLO = "L:3fcd94fe1067bcad C:13554ee643b9a2d2";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -957,11 +957,8 @@ namespace NinjaTrader.NinjaScript
                             z.ConsecExt = z.Roto.Dir == "arriba" ? k.H : k.L;
                         }
                     }
-                    else if (z.Consec && z.ReinOk && z.IConsec != null && i > z.IConsec)
-                    {
-                        if ((z.Roto.Dir == "arriba" && k.H > z.ConsecExt) || (z.Roto.Dir == "abajo" && k.L < z.ConsecExt))
-                            z.ReinOk = false;
-                    }
+                    // Plan 3.51 (22/10/2026, R-26): el reingreso no tiene plazo de velas. Pasar del extremo de la
+                    // vela de consecución ya no cierra la ventana: sigue abierta mientras la zona esté viva.
                 }
 
                 // ---------- rompimiento de las zonas de premercado (R-15) ----------
