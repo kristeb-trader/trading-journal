@@ -263,6 +263,10 @@ namespace NinjaTrader.NinjaScript.Indicators
                     double m = re.Nd < 0 ? Math.Min(gm[1], re.E) : Math.Max(gm[0], re.E);
                     muro = muro == null ? m : (re.Nd < 0 ? Math.Max(muro.Value, m) : Math.Min(muro.Value, m));
                 }
+                // el reingreso que se OPERÓ deja además el punto de más allá del objetivo, el más cercano: no decide nada, pero
+                // tiene que verse que el objetivo no lo pasa (Kris, 22/10/2026, el de la 8:49 del 20/08). Igual que dia.py.
+                bool entrada = t != null && t.Tipo == "Reingreso" && t.I == re.I;
+                RefDib detras = null;
                 foreach (var v in r.Piv)
                 {
                     int j = v.I; double pv = v.Precio;
@@ -271,14 +275,31 @@ namespace NinjaTrader.NinjaScript.Indicators
                     if ((re.Nd < 0) != bajo) continue;
                     bool fuera = re.Nd < 0 ? pv >= re.E : pv <= re.E;
                     if (fuera) continue;
-                    // solo los que quedan ENTRE la entrada y el objetivo: los únicos que pueden descartar el reingreso (Kris, 07/10/2026)
-                    if (re.Nd < 0 ? pv <= re.T : pv >= re.T) continue;
-                    if (muro != null && (re.Nd < 0 ? pv <= muro.Value : pv >= muro.Value)) continue;
                     int roto = -1;
                     for (int m = j + 1; m <= corte; m++)
                         if (bajo ? D[m].C < pv : D[m].C > pv) { roto = m; break; }
                     if (roto >= 0 && roto <= re.I) continue;
-                    f.Refs.Add(new RefDib { X0 = B(Math.Max(j, b)), X1 = roto >= 0 ? B(roto + 1) : -1, Precio = pv, Vivo = roto < 0 });
+                    var p = new RefDib { X0 = B(Math.Max(j, b)), X1 = roto >= 0 ? B(roto + 1) : -1, Precio = pv, Vivo = roto < 0 };
+                    // solo los que quedan ENTRE la entrada y el objetivo: los únicos que pueden descartar el reingreso (Kris, 07/10/2026)
+                    if (re.Nd < 0 ? pv <= re.T : pv >= re.T)
+                    {
+                        if (entrada && (detras == null || (re.Nd < 0 ? pv > detras.Precio : pv < detras.Precio))) detras = p;
+                        continue;
+                    }
+                    if (muro != null && (re.Nd < 0 ? pv <= muro.Value : pv >= muro.Value)) continue;
+                    f.Refs.Add(p);
+                }
+                // tampoco ese si una zona viva queda entre el objetivo y el punto: el precio choca antes con la zona (15/10/2026)
+                if (detras != null && muro == null)
+                {
+                    bool tapado = false;
+                    foreach (var zm in r.Z)
+                    {
+                        if (zm.I > re.I || (zm.Fin != null && zm.Fin <= re.I)) continue;
+                        var gm = zm.En(re.I);
+                        if (gm[1] > Math.Min(re.T, detras.Precio) && gm[0] < Math.Max(re.T, detras.Precio)) { tapado = true; break; }
+                    }
+                    if (!tapado) f.Refs.Add(detras);
                 }
             }
 
