@@ -5,10 +5,10 @@
  * Contenido único: lo usan la página del paso y «Reglas» (/plan). Se edita
  * aquí y cambia en los dos sitios. Diseño: docs/disenos/2026-10-20-reglas-plan-jornada.md
  *
- * Reescrito el 22/10/2026 con el plan 3.50 (D-045, R-11 · R-13 · R-21): qué es una
- * apéndice y qué no, el bloque que forma con su zona, cómo se entra y cuándo muere,
- * con los casos que el operador validó con Alfredo y el caso real del 21/10.
- * Diseño de la regla: docs/disenos/2026-10-21-zona-apendice-bloque.md.
+ * Plan 3.50 (22/10/2026, D-045, R-11 · R-13 · R-21). Reescrito el mismo día a petición
+ * del operador: la definición primero, corta y clara («que al leer el primer párrafo se
+ * entienda qué es»), el bloque en tres tarjetas y los casos con imágenes plegados, para
+ * que el apartado se lea de un vistazo sin perder ningún caso.
  */
 import Refs from '../../../componentes/Refs.astro';
 import { v } from './_datos.mjs';
@@ -18,203 +18,135 @@ import { v } from './_datos.mjs';
 
 <section class="ap" id="apendice">
   <h2>La zona apéndice <Refs cods="R-11 · R-13 · R-21" /></h2>
-  <p>
-    Una <strong>zona apéndice</strong> es una zona <strong>hija de otra</strong>.
-    Nace cuando el precio rompe una zona <strong>con cuerpo</strong> —la vela
-    cierra fuera de ella— pero <strong>la consecución nunca llega</strong>.
-    Ese rompimiento que se quedó a medias deja su rastro en la mecha de la vela
-    que rompió, y ahí se marca la apéndice: <strong>desde el borde del cuerpo de
-    esa vela hasta la punta de su mecha</strong>. La zona original no se toca,
-    y las dos pasan a ser <strong>un bloque</strong>.
+
+  <p class="lead">
+    <strong>Una zona apéndice es la zona que nace de un rompimiento sin consecución.</strong>
+    Cuando el precio rompe una zona pero no consigue la consecución, ese rompimiento
+    a medias deja una zona nueva pegada a la original —su apéndice—, y las dos forman
+    <strong>un bloque</strong>.
   </p>
   <p>
-    <strong>No se marca en el momento del rompimiento</strong>: primero hay que
-    ver si llega la consecución. Se marca con lo primero que pase de estas dos:
-    que se cumplan <strong>{v('PLAZO_CONSECUCION')}</strong>, contadas desde la
-    siguiente a la del rompimiento, sin consecución; o que antes el mercado arme
-    una <strong>estructura completa en sentido contrario</strong> —las mismas
-    tres velas de «Sin consecución»—, y entonces nace en la tercera, sin esperar más.
-  </p>
-  <p>
-    <strong>Lo que decide si hay apéndice es dónde cierra la vela que rompió.</strong>
-    Si cierra <strong>dentro</strong> de la zona —solo la mecha salió—, no hay
-    apéndice: la zona se estira. Si cierra <strong>fuera</strong> —con cuerpo—,
-    nace la apéndice.
+    <strong>Solo nace si la vela que rompió cerró fuera de la zona.</strong> Si cerró
+    dentro —solo salió la mecha—, no hay apéndice: la zona se estira. Y
+    <strong>si hubo consecución, la zona que deja el precio no es apéndice</strong>: es una
+    zona normal, independiente, que nace aparte, recortada en el borde de la original.
   </p>
 
-  <figure class="gr">
-    <img src="/conceptos/10-zona-apendice.png" alt="Caso 1: pasan las cinco velas sin consecución y ahí se marca la zona apéndice" loading="eager" />
-    <figcaption class="meta">Por plazo: ninguna de las cinco velas vuelve a pasar de la mecha. Al vencer el plazo se marca la apéndice, y la original se queda intacta.</figcaption>
-  </figure>
-
-  <figure class="gr">
-    <img src="/conceptos/10-zona-apendice-caso2.png" alt="Caso 2: antes de las cinco velas el mercado arma una estructura en sentido contrario" loading="lazy" />
-    <figcaption class="meta">Por estructura: antes de que venza el plazo el mercado arma una estructura completa en sentido contrario. La apéndice se marca ahí.</figcaption>
-  </figure>
-
-  <dl class="datos">
-    <dt>Qué lo dispara</dt>
-    <dd>Rompimiento con cuerpo <strong>sin consecución</strong>: o pasan <strong>{v('PLAZO_CONSECUCION')}</strong>, o antes el mercado arma la estructura en contra. Lo que llegue primero</dd>
-    <dt>La zona original</dt>
-    <dd>No se modifica</dd>
-    <dt>Un borde de la apéndice</dt>
-    <dd>El borde del cuerpo de la vela que rompió</dd>
-    <dt>El otro borde</dt>
-    <dd>El extremo de su mecha</dd>
-    <dt>Desde dónde se dibuja</dt>
-    <dd>Desde la vela que rompió, aunque no quede marcada hasta más tarde. Del mismo gris que cualquier otra zona</dd>
-    <dt>Lo que forma</dt>
-    <dd><strong>Un bloque con su zona</strong>: se explica más abajo</dd>
-  </dl>
-
-  <div class="duro">
-    <p>
-      <strong>La apéndice no nace por acción del precio sobre ella.</strong>
-      No es una zona más que apareció: es el rastro de un rompimiento que se
-      quedó sin consecución.
-    </p>
-  </div>
-
-  <h3>¿Apéndice o zona nueva? Lo decide la consecución</h3>
-  <p>
-    Que una vela rompa una zona y se dé la vuelta puede dejar dos cosas muy
-    distintas, y confundirlas cambia la lectura de todo lo que viene después.
-    <strong>La única pregunta es si hubo consecución.</strong>
-  </p>
-
-  <figure class="gr">
-    <img src="/conceptos/32-apendice-o-zona-nueva.png" alt="El mismo soporte roto dos veces: con consecución deja una zona normal, sin consecución deja una apéndice" loading="lazy" />
-    <figcaption class="meta">El mismo soporte, roto en los dos lados. Con consecución deja una zona normal; sin consecución, una apéndice que forma bloque con el soporte.</figcaption>
-  </figure>
-
-  <div class="rejilla dos">
+  <h3>El bloque, en tres reglas</h3>
+  <div class="rejilla tres">
     <div class="tarj">
-      <h3>Sin consecución → apéndice</h3>
-      <p>El rompimiento no terminó. Es <strong>una apéndice</strong>, hija de la zona que se rompió, y las dos forman <strong>un bloque</strong>.</p>
+      <span class="tarj-n">Para entrar</span>
+      <p>Hay que <strong>romper la apéndice</strong>: es el borde de fuera del bloque. Romper solo la zona original no da entrada.</p>
     </div>
     <div class="tarj">
-      <h3>Con consecución → zona normal</h3>
-      <p>El traspaso está hecho y el precio arma estructura nueva. Lo que deja es <strong>una zona normal e independiente</strong>: no es apéndice y no forma bloque.</p>
+      <span class="tarj-n">Cuándo muere</span>
+      <p>Las dos <strong>mueren juntas</strong>, cuando el precio supera los bordes de fuera del bloque en las dos direcciones.</p>
+    </div>
+    <div class="tarj">
+      <span class="tarj-n">El rompimiento</span>
+      <p>El que creó la apéndice <strong>se cierra</strong>: para romper el bloque hace falta uno nuevo, con su consecución.</p>
     </div>
   </div>
 
-  <h3>Con consecución: la zona nueva nace aparte</h3>
-  <p>
-    Cuando la zona ya fue traspasada y la estructura nueva deja su zona encima
-    de ella, <strong>ya no se estira la vieja</strong>. La nueva nace aparte,
-    como cualquier zona: del borde del cuerpo de su vela a la punta de su
-    mecha. Y como <strong>dos zonas nunca se montan una encima de otra</strong>,
-    si se mete dentro de la vieja <strong>se recorta en su borde</strong>.
-  </p>
-
   <figure class="gr">
-    <img src="/conceptos/30-zona-aparte-borde.png" alt="La vela que hace la consecución abre dentro del soporte: su zona se recorta en el borde y nace aparte" loading="lazy" />
-    <figcaption class="meta">La vela de la consecución abrió dentro del soporte: su zona empieza en el borde. Cuando el soporte muere por sus dos traspasos, la zona nueva sigue viva.</figcaption>
-  </figure>
-
-  <figure class="gr">
-    <img src="/conceptos/31-zona-aparte-cuerpo.png" alt="La vela que hace la consecución cierra por debajo del soporte: su zona va de su cuerpo a su mecha y queda separada" loading="lazy" />
-    <figcaption class="meta">Si la vela cierra fuera, la zona va de su cuerpo a su mecha, aunque quede un hueco. Sigue siendo una zona normal, no una apéndice.</figcaption>
-  </figure>
-
-  <dl class="datos">
-    <dt>Si la vela abrió dentro de la zona vieja</dt>
-    <dd>La nueva empieza en el <strong>borde</strong> de la vieja y llega a la punta de la mecha</dd>
-    <dt>Si la vela cerró fuera</dt>
-    <dd>La nueva va del <strong>cuerpo</strong> de la vela a la punta de su mecha</dd>
-    <dt>Si queda entera dentro de la vieja</dt>
-    <dd>No se marca nada</dd>
-    <dt>La cuenta de traspasos</dt>
-    <dd><strong>Cada una lleva la suya.</strong> La vieja muere con sus dos traspasos, aunque la nueva siga viva</dd>
-    <dt>Si la zona que se toca no ha sido traspasada</dt>
-    <dd>Lo de siempre: <strong>se estira</strong> la que ya estaba, hasta el extremo nuevo. Queda una sola</dd>
-  </dl>
-
-  <h3>La apéndice y su zona son un bloque</h3>
-  <p>
-    La apéndice y la zona que se rompió <strong>se dibujan por separado, pero
-    son un solo bloque</strong>: se rompen juntas y se superan juntas, siempre
-    por los bordes de fuera. Si la apéndice tiene a su vez otra apéndice, todas
-    son el mismo bloque.
-  </p>
-
-  <figure class="gr">
-    <img src="/conceptos/33-bloque.png" alt="Un soporte y su apéndice debajo forman un bloque con un borde exterior arriba y otro abajo" loading="lazy" />
+    <img src="/conceptos/33-bloque.png" alt="Un soporte y su apéndice debajo forman un bloque con un borde de fuera arriba y otro abajo" loading="eager" />
     <figcaption class="meta">Dos zonas dibujadas, un solo bloque. Lo que cuenta son sus dos bordes de fuera.</figcaption>
   </figure>
 
-  <ol class="secuencia">
-    <li><strong>Al nacer la apéndice, el rompimiento que la creó se cierra</strong>, igual que cuando la zona se estira. Para romper el bloque hace falta un rompimiento nuevo de su borde de fuera, con su propia consecución.</li>
-    <li><strong>Para entrar hay que romper el borde de fuera del bloque</strong>: la apéndice. Romper solo la zona original no da entrada.</li>
-    <li><strong>El bloque muere entero</strong> cuando se supera por los dos bordes de fuera: rompimiento y consecución por la apéndice, y después por el otro lado de la zona original. Mientras el precio se mueva dentro, no le pasa nada.</li>
-  </ol>
-
-  <figure class="gr">
-    <img src="/conceptos/34-bloque-entrada.png" alt="El precio rompe el soporte pero no la apéndice: todavía no hay entrada; al romper la apéndice, sí" loading="lazy" />
-    <figcaption class="meta">Romper el soporte no basta: la apéndice sigue en contra. La entrada solo puede llegar cuando el precio rompe la apéndice.</figcaption>
-  </figure>
-
-  <figure class="gr">
-    <img src="/conceptos/35-bloque-muere.png" alt="El bloque se traspasa por abajo y después por arriba, y mueren las dos zonas a la vez" loading="lazy" />
-    <figcaption class="meta">Primero se traspasa por abajo y el bloque pasa a ser resistencia; después por arriba, y mueren las dos zonas a la vez.</figcaption>
-  </figure>
-
-  <div class="veto">
-    <p>
-      <strong>No se entra en una zona con su apéndice en contra.</strong>
-      En palabras del operador: <em>«sería incorrecto entrar en la zona 1,
-      sabiendo que tiene la zona apéndice en contra»</em>.
-    </p>
-  </div>
-
-  <h3>Los casos, de un vistazo</h3>
-  <div class="tabla-env">
-    <table class="comp">
-      <thead>
-        <tr><th>Qué pasa</th><th>Qué queda</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>Rompe con mecha, sin consecución</th>
-          <td>Al vencer el plazo o con la estructura en contra, la zona <strong>se estira</strong></td>
-        </tr>
-        <tr>
-          <th>Rompe con cuerpo, sin consecución</th>
-          <td>Nace una <strong>apéndice</strong> desde el cierre de la vela, y forma <strong>bloque</strong> con la zona</td>
-        </tr>
-        <tr>
-          <th>Sin consecución, aunque el precio se dé la vuelta</th>
-          <td>Ni apéndice ni zona nueva todavía: se espera al plazo o a la estructura en contra</td>
-        </tr>
-        <tr>
-          <th>Rompe, hace consecución y arma estructura nueva</th>
-          <td>Una <strong>zona normal</strong>, aparte y recortada si hace falta. Cada una con su cuenta</td>
-        </tr>
-        <tr>
-          <th>El precio rompe la zona original de un bloque</th>
-          <td>Todavía <strong>no hay entrada</strong>: falta romper la apéndice</td>
-        </tr>
-        <tr>
-          <th>El precio se mueve dentro del bloque</th>
-          <td>No le pasa nada al bloque</td>
-        </tr>
-        <tr>
-          <th>Traspasado por fuera en los dos sentidos</th>
-          <td>Mueren <strong>todas</strong> las zonas del bloque a la vez</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <h3>Un caso real</h3>
   <p>
-    El día en que se aclaró la regla. Una vela rompe un soporte, hace la
-    consecución y se da la vuelta; minutos después, otra rompe con cuerpo la
-    zona que dejó, y la consecución no llega.
+    <strong>Cuándo se marca.</strong> No en el momento del rompimiento: primero hay que ver si
+    llega la consecución. Se marca al cumplirse <strong>{v('PLAZO_CONSECUCION')}</strong> sin
+    consecución, o antes si el mercado arma una estructura completa en sentido contrario. Va
+    del borde del cuerpo de la vela que rompió a la punta de su mecha, y se dibuja desde esa vela.
   </p>
 
+  <h3>¿Apéndice o zona normal?</h3>
+  <p>Lo decide una sola cosa: <strong>si hubo consecución</strong>.</p>
+
   <figure class="gr">
-    <img src="/conceptos/36-caso-real-21-10.png" alt="Sesión real con tres zonas: una muere sola, otra nace aparte y la tercera es su apéndice" loading="lazy" />
-    <figcaption class="meta">La zona de la 8:34 ya estaba traspasada hacia abajo y muere sola al traspasarse hacia arriba. La de la 8:40 nace aparte, recortada. La de la 8:44 es su apéndice: las dos forman un bloque.</figcaption>
+    <img src="/conceptos/32-apendice-o-zona-nueva.png" alt="El mismo soporte roto dos veces: con consecución deja una zona normal, sin consecución deja una apéndice" loading="lazy" />
+    <figcaption class="meta">Con consecución, una zona normal que lleva su propia cuenta. Sin consecución, una apéndice que forma bloque con la original.</figcaption>
   </figure>
+
+  <details class="mas">
+    <summary><span class="mas-t">Ver todos los casos, con imágenes</span></summary>
+
+    <h4>Cómo nace la apéndice</h4>
+    <figure class="gr">
+      <img src="/conceptos/10-zona-apendice.png" alt="Pasan las cinco velas sin consecución y ahí se marca la zona apéndice" loading="lazy" />
+      <figcaption class="meta">Por plazo: ninguna de las cinco velas pasa de la mecha. Al vencer el plazo se marca la apéndice.</figcaption>
+    </figure>
+    <figure class="gr">
+      <img src="/conceptos/10-zona-apendice-caso2.png" alt="Antes de las cinco velas el mercado arma una estructura en sentido contrario" loading="lazy" />
+      <figcaption class="meta">Por estructura: antes de que venza el plazo, el mercado arma una estructura en sentido contrario. La apéndice se marca ahí.</figcaption>
+    </figure>
+
+    <h4>Con consecución: zona normal, aparte</h4>
+    <figure class="gr">
+      <img src="/conceptos/30-zona-aparte-borde.png" alt="La vela de la consecución abre dentro del soporte: su zona se recorta en el borde" loading="lazy" />
+      <figcaption class="meta">La vela abrió dentro de la zona original: la nueva empieza en su borde. Cada una lleva su cuenta: la original muere sola y la nueva sigue.</figcaption>
+    </figure>
+    <figure class="gr">
+      <img src="/conceptos/31-zona-aparte-cuerpo.png" alt="La vela de la consecución cierra por debajo del soporte: su zona va de su cuerpo a su mecha" loading="lazy" />
+      <figcaption class="meta">Si la vela cerró fuera, la nueva va de su cuerpo a su mecha, aunque quede un hueco.</figcaption>
+    </figure>
+
+    <h4>El bloque: la entrada y cuándo muere</h4>
+    <figure class="gr">
+      <img src="/conceptos/34-bloque-entrada.png" alt="El precio rompe el soporte pero no la apéndice: todavía no hay entrada" loading="lazy" />
+      <figcaption class="meta">Romper el soporte no basta: la apéndice sigue en contra. La entrada solo puede llegar al romper la apéndice.</figcaption>
+    </figure>
+    <figure class="gr">
+      <img src="/conceptos/35-bloque-muere.png" alt="El bloque se traspasa por abajo y después por arriba, y mueren las dos zonas a la vez" loading="lazy" />
+      <figcaption class="meta">Dentro del bloque no pasa nada. Traspasado por fuera, primero abajo y después arriba, mueren las dos.</figcaption>
+    </figure>
+
+    <h4>Todos los casos en una tabla</h4>
+    <div class="tabla-env">
+      <table class="comp">
+        <thead>
+          <tr><th>Qué pasa</th><th>Qué queda</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>Rompe solo con mecha, sin consecución</th><td>La zona <strong>se estira</strong></td></tr>
+          <tr><th>Rompe con cuerpo, sin consecución</th><td>Una <strong>apéndice</strong>, en <strong>bloque</strong> con la zona</td></tr>
+          <tr><th>Sin consecución, aunque el precio se dé la vuelta</th><td>Nada todavía: se espera al plazo o a la estructura en contra</td></tr>
+          <tr><th>Rompe, hace consecución y arma estructura nueva</th><td>Una <strong>zona normal</strong>, aparte y recortada si hace falta</td></tr>
+          <tr><th>Rompe la zona original de un bloque</th><td>Todavía <strong>no hay entrada</strong>: falta romper la apéndice</td></tr>
+          <tr><th>Traspasa el bloque por fuera en los dos sentidos</th><td>Mueren <strong>todas</strong> sus zonas a la vez</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <details class="mas">
+    <summary><span class="mas-t">Ver el caso real del 21/10/2026</span></summary>
+    <figure class="gr">
+      <img src="/conceptos/36-caso-real-21-10.png" alt="Sesión real con tres zonas: una muere sola, otra nace aparte y la tercera es su apéndice" loading="lazy" />
+      <figcaption class="meta">La zona de la 8:34 ya estaba traspasada hacia abajo y muere sola al traspasarse hacia arriba. La de la 8:40 nace aparte, recortada. La de la 8:44 es su apéndice: las dos forman un bloque.</figcaption>
+    </figure>
+  </details>
 </section>
+
+<style>
+  .lead { font-size: var(--t-4); }
+  /* El texto va justificado: en el móvil, cuando las referencias bajan de línea, el título
+     quedaba estirado («La      zona      apéndice»). */
+  h2 { text-align: left; } /* alineacion-ok: un título corto con sus referencias se estiraba en el móvil */
+  .mas { margin-top: var(--e-5); }
+  .mas summary {
+    display: inline-flex; align-items: baseline; gap: var(--e-3);
+    cursor: pointer; list-style: none;
+    padding: var(--e-2) var(--e-4);
+    border-radius: var(--radio-2);
+    border: 1px solid var(--vidrio-borde);
+    background: var(--vidrio-fondo);
+  }
+  .mas summary::-webkit-details-marker { display: none; }
+  .mas summary:hover { border-color: var(--n-600); }
+  .mas-t { color: var(--acento); font-size: var(--t-3); }
+  .mas[open] summary { margin-bottom: var(--e-5); }
+  .mas[open] .mas-t::after { content: ' ·  plegar'; color: var(--texto-3); }
+  .mas h4 { margin: var(--e-6) 0 var(--e-3); color: var(--texto); }
+  @media print { .mas summary { display: none; } }
+</style>
