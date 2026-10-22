@@ -105,23 +105,40 @@ def dibujar(dia, salida, datos):
             if not (zh > min(er, tr) and zl < max(er, tr)): continue
             m_ = min(zh, er) if ndr < 0 else max(zl, er)
             muro = m_ if muro is None else (max(muro, m_) if ndr < 0 else min(muro, m_))
+        # El reingreso que se OPERO deja ademas el punto de mas alla del objetivo, el mas cercano: no decide nada,
+        # pero la imagen tiene que enseñar que el objetivo no lo pasa (operador, 22/10/2026, el de la 8:49 del 20/08).
+        entrada = bool(t) and t.get('tipo') == 'Reingreso' and t.get('i') == ir
+        detras = None
+        puntos = []
         for (j, pv) in r['piv']:
             if j >= ir: continue
             bajo = abs(pv - D[j]['l']) < 1e-9
             if (ndr < 0) != bajo: continue
             fuera = (pv >= er) if ndr < 0 else (pv <= er)
             if fuera: continue
-            # Solo los que quedan ENTRE la entrada y el objetivo: son los unicos que pueden descartar
-            # el reingreso (lector._punto_de_referencia). Los de mas alla del objetivo no deciden nada
-            # (operador, 07/10/2026, sobre las mechas de 8:32 y 8:34).
-            if (pv <= tr) if ndr < 0 else (pv >= tr): continue
-            if muro is not None and ((pv <= muro) if ndr < 0 else (pv >= muro)): continue
             roto = None
             for m in range(j+1, corte+1):
                 if (D[m]['c'] < pv) if bajo else (D[m]['c'] > pv):
                     roto = m; break
             if roto is not None and roto <= ir: continue      # ya estaba roto
-            x0 = max(j-off, b-off-1); x1 = (roto-off+1) if roto is not None else W
+            # Solo los que quedan ENTRE la entrada y el objetivo: son los unicos que pueden descartar
+            # el reingreso (lector._punto_de_referencia). Los de mas alla del objetivo no deciden nada
+            # (operador, 07/10/2026, sobre las mechas de 8:32 y 8:34), salvo el de arriba.
+            if (pv <= tr) if ndr < 0 else (pv >= tr):
+                if entrada and (detras is None or ((pv > detras[1]) if ndr < 0 else (pv < detras[1]))):
+                    detras = (j, pv, bajo, roto)
+                continue
+            if muro is not None and ((pv <= muro) if ndr < 0 else (pv >= muro)): continue
+            puntos.append((j, pv, bajo, roto))
+        # Tampoco ese si una zona viva queda entre el objetivo y el punto: el precio choca antes con la zona (15/10/2026).
+        if detras is not None and muro is None and not any(
+                z.i <= ir and (z.fin is None or z.fin > ir)
+                and z.en(ir)[1] > min(tr, detras[1]) and z.en(ir)[0] < max(tr, detras[1]) for z in Z):
+            puntos.append(detras)
+        for (j, pv, bajo, roto) in puntos:
+            y0_, y1_ = ax.get_ylim()                          # el de mas alla del objetivo puede caer fuera
+            if not (y0_ < pv < y1_): ax.set_ylim(min(y0_, pv - pad), max(y1_, pv + pad))
+            x0 =max(j-off, b-off-1); x1 = (roto-off+1) if roto is not None else W
             vivo = roto is None
             ax.plot([x0, x1], [pv, pv], color=NAR, lw=2.0 if vivo else 1.1,
                     ls=(0, (2, 3)), alpha=.80 if vivo else .25, zorder=6)

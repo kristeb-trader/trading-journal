@@ -91,7 +91,7 @@ protocolo) y este archivo.
 | Velas | 🔵 azul `#2E86FF` alcista · ⬜ blanca `#FFFFFF` bajista |
 | Zonas | **todas del mismo gris** `#8B93A7`. Las **vigentes acaban en la última vela de la ventana** (10:30 Col; 11:30 en invierno), no en el borde del gráfico (07/10/2026). Las **de premercado se dibujan desde la vela donde nacen**: el gráfico empieza en esa vela, aunque sea de madrugada (14/10/2026) |
 | Corridas y retrocesos | línea blanca en zigzag uniendo extremos |
-| Puntos de referencia | flecha punteada **naranja oscuro `#FF9A3C`**, contraste bajo, extendida a la derecha. Roto: más tenue y cortado una vela después. **Solo se dibujan cuando hay un reingreso, y solo los que quedan entre su entrada y su objetivo** (07/10/2026), **y no los que quedan detrás de una zona viva del camino**: el precio choca antes con la zona (15/10/2026) |
+| Puntos de referencia | flecha punteada **naranja oscuro `#FF9A3C`**, contraste bajo, extendida a la derecha. Roto: más tenue y cortado una vela después. **Solo se dibujan cuando hay un reingreso, y solo los que quedan entre su entrada y su objetivo** (07/10/2026), **y no los que quedan detrás de una zona viva del camino**: el precio choca antes con la zona (15/10/2026). **El reingreso que se opera deja además el más cercano de más allá del objetivo**, para que la imagen enseñe que el objetivo no lo pasa (22/10/2026, el de la 8:49 del 20/08) |
 | La operación | franja roja entrada→stop, verde entrada→objetivo, **solo sobre el tramo** |
 | Líneas de entrada / stop / objetivo | **no se dibujan** |
 | Otros | oro `#F5C542` · rojo `#FF5C5C` · verde `#4ADE80` · naranja `#FF9A3C` |
