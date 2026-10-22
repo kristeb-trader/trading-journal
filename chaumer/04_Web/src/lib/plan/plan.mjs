@@ -53,6 +53,7 @@ export function iniciarPlan(datos) {
     pistas: $('plan-pistas'),
     mundo: $('plan-mundo'),
     tira: $('plan-tira'),
+    cab: $('plan-cab'),
     eti: $('plan-eti'),
     titulo: $('plan-titulo'),
     sub: $('plan-sub'),
@@ -116,7 +117,9 @@ export function iniciarPlan(datos) {
   function encuadre() {
     return D.encuadrar(caja, {
       ancho, alto,
-      arriba: vista === 'paso' ? 168 : 56,
+      // En el inicio, el titular centrado queda encima del paso 01: el mapa
+      // empieza debajo de él.
+      arriba: vista === 'paso' ? 168 : el.cab.offsetHeight + 12,
       abajo: vista === 'paso' ? 34 : 30,
       zMax: vista === 'paso' ? 1 : 1.05,
     });
@@ -331,6 +334,8 @@ export function iniciarPlan(datos) {
     const enPaso = vista === 'paso';
     el.volver.hidden = !enPaso;
     el.tira.hidden = !enPaso;
+    el.eti.hidden = !enPaso;
+    el.raiz.classList.toggle('pl--inicio', !enPaso);
     if (enPaso) {
       const p = porSlug[pasoActual];
       el.raiz.style.setProperty('--paso', p.lcss);
@@ -345,7 +350,6 @@ export function iniciarPlan(datos) {
       }
     } else {
       el.raiz.style.removeProperty('--paso');
-      el.eti.textContent = 'El plan de la jornada';
       el.titulo.textContent = 'Reglas';
       el.sub.textContent = 'Los ' + P.length + ' pasos del día, en su orden. Elige uno para ver sus apartados.';
     }

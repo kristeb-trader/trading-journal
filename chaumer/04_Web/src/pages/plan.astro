@@ -60,14 +60,14 @@ const dos = (n: number) => String(n).padStart(2, '0');
 ---
 
 <Marco titulo="Reglas">
-  <div class="pl" data-plan>
+  <div class="pl pl--inicio" data-plan>
     <div class="pl-marco" id="plan-marco">
       <div class="pl-escena" id="plan-escena">
         <div class="pl-rejilla" id="plan-rejilla" aria-hidden="true"></div>
         <div class="pl-capa-pistas" id="plan-pistas" aria-hidden="true"></div>
         <div class="pl-mundo" id="plan-mundo"></div>
 
-        <header class="pl-cab">
+        <header class="pl-cab" id="plan-cab">
           <nav class="pl-tira" id="plan-tira" aria-label="Los pasos de la jornada" hidden>
             {pasos.map((p) => (
               <button type="button" data-paso={p.slug} style={`--t:${p.tono}`}>
@@ -76,7 +76,7 @@ const dos = (n: number) => String(n).padStart(2, '0');
             ))}
           </nav>
           <div class="pl-titular">
-            <p class="pl-eti" id="plan-eti">El plan de la jornada</p>
+            <p class="pl-eti" id="plan-eti" hidden></p>
             <h1 class="pl-titulo" id="plan-titulo">Reglas</h1>
             <p class="pl-sub" id="plan-sub"></p>
           </div>
@@ -86,7 +86,7 @@ const dos = (n: number) => String(n).padStart(2, '0');
         <div class="pl-pista" id="plan-pista" role="tooltip" aria-hidden="true"></div>
 
         <button class="pl-volver" type="button" id="plan-volver" hidden>
-          <Icono nombre="arrow-left" /> La jornada
+          <Icono nombre="arrow-left" /> Home Rules
         </button>
         <div class="pl-hud">
           <button type="button" id="plan-menos" aria-label="Alejar">−</button>
@@ -115,7 +115,6 @@ const dos = (n: number) => String(n).padStart(2, '0');
         JavaScript. Cada enlace lleva a la página del paso en ese apartado; con
         JavaScript abre la lámina aquí mismo. */}
     <nav class="pl-lista" id="plan-lista" aria-label="Los pasos de la jornada y sus apartados">
-      <p class="pl-eti">El plan de la jornada</p>
       <h1 class="pl-lista__h">Reglas</h1>
       {pasos.map((p) => (
         <details class="pl-lista__paso" id={p.slug} style={`--t:${p.tono}`}>
