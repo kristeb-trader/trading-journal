@@ -11,7 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
-| 2026-10-21 | Una vela puede ser dos puntos de la marcación (plan 3.49), en el plan, los dos motores y el indicador |
+| 2026-10-21 | Una vela puede ser dos puntos de la marcación (plan 3.49), en el plan, los dos motores y el indicador; la apéndice del retroceso y el bloque de zonas, en estudio |
 | 2026-10-20 | El portal: Operativa diaria, la portada como tablero, menú corto y «Reglas» como mapa |
 | 2026-10-19 | ChecklistChaumer archivado: las noticias rojas, desde el Diario |
 | 2026-10-14 | El premercado, del servidor; zonas de premercado desde donde nacen; plan 3.47 (el reingreso necesita una zona a la que ir) |
@@ -67,9 +67,25 @@ una sola vuelta por vela, y el color ya acertaba el orden. Medido: 166 velas as�
   en el estado nuevo, por el mismo código (zona, 50 %, todo igual). `lector.py` y `MotorChaumer.cs`, sellados: 74 de 74
   días idénticos y ningún día anterior cambia. Con las velas del 21/10: los dos motores y el indicador, iguales, con la
   08:40 en 29.813,50 y 29.884,75.
-- **Indicador:** la misma regla y, en vivo, el orden real de cada vela por los ticks, guardado por día.
+- **Indicador:** la misma regla y, en vivo, el orden real de cada vela por los ticks, guardado por día en
+  `Documentos\NinjaTrader 8\marcacion-chaumer\AAAA-MM-DD.txt`.
 
-**Pendiente de Kris:** copiar `MotorChaumer.cs` (AddOns) y `MarcacionChaumer.cs` (Indicators) a NinjaTrader y F5.
+**Instalado y comprobado el mismo día.**
+- Kris copió los dos `.cs` y recompiló. Al revisarlo apareció un fallo: el indicador ya puesto en el gráfico tenía
+  guardado `Calculate = OnBarClose` en el workspace, y `SetDefaults` no lo cambia. Con ese ajuste habría marcado una vela
+  tarde y no habría visto el orden real. Se fuerza `OnPriceChange` en `State.Configure` (`fc93b75`). Tras la segunda
+  recompilación (10:42) el archivo del orden empezó a escribirse (`10:45;minimo`).
+- **La cadena con el motor nuevo:** a las 10:10 rehízo del 13/10 al 20/10, porque cambió la huella del motor, y **no
+  cambió nada**: ni operaciones ni gráficos. La fecha de vigencia funcionó. A las 10:32 hizo el 21/10 con la regla nueva:
+  Continuación alcista 10:15 → STOP −30,25, la misma operación que con la regla vieja (6 puntos más en la línea).
+
+**En estudio: la apéndice del retroceso y el bloque de zonas.** Kris preguntó por qué el soporte de las 08:34, estirado
+con la mecha de las 08:40, quedaba inválido. Su lectura: la vela de las 08:40 hace la consecución y arma estructura nueva,
+así que no se estira, sino que **nace una apéndice** (29.825,75 – 29.813,50) y las zonas forman un **bloque**. Se
+revisaron siete casos dibujados y el gráfico del día, y casi todo quedó decidido. Queda una duda abierta: en los casos
+inventados la zona madre muere sola con sus dos traspasos, y el 21/10, con los mismos dos traspasos, espera al bloque.
+Diseño `docs/disenos/2026-10-21-zona-apendice-bloque.md` (v0.1, en estudio, `43f4e78`). **No se tocó el plan, el motor
+ni el bot.** Kris pidió no cambiar el bot sin ver antes, en imágenes, qué cambia en cada día.
 
 ---
 
