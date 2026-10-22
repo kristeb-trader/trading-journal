@@ -94,6 +94,11 @@ debía. El bot operó con el motor de la 3.49: Continuación alcista llenada 9:0
     publicarlos: la vela de dos vueltas, ¿apéndice o zona nueva?, la zona aparte (por el borde y desde el cuerpo), el bloque,
     la entrada, el bloque que muere y el caso real.
   - `npm run verificar` limpio (59 páginas, 0 enlaces rotos); capturas en escritorio y móvil; comprobado en el portal publicado.
+  - **Segunda vuelta, el mismo día** (`ee9319e`), a petición de Kris: la definición no le gustó porque empezaba por «con
+    cuerpo». La nueva arranca por lo esencial: *«la zona que nace de un rompimiento sin consecución»*, y forma bloque; el
+    cuerpo y la consecución van en el segundo párrafo. Y el apartado, más corto: sin el cuadro de datos («solo genera
+    espacio»), el bloque en tres tarjetas, cuándo se marca en un párrafo, y los casos con imágenes y el caso real del 21/10
+    en dos desplegables. De paso, el título ya no se estira en el móvil.
 
 ---
 
