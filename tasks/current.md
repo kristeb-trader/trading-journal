@@ -3,6 +3,12 @@
 > Solo lo que está en curso. Lo terminado va a `docs/historial-proyecto.md`; las ideas y lo que
 > está por comprobar, a `backlog.md`.
 
+## Zona apéndice del retroceso y bloque de zonas — EN ESTUDIO (21/10)
+
+`docs/disenos/2026-10-21-zona-apendice-bloque.md`. Decidido casi todo (§2), pero queda **una duda abierta** (§4):
+cuándo una zona muere sola por sus traspasos (casos 1 y 2) y cuándo espera al bloque (el 21/10). **No se toca el plan,
+el motor ni el bot** hasta que Kris la cierre, quizá consultándolo con Chaumer.
+
 ## El bot: BotChaumer en NinjaTrader (D-038)
 
 Aprobado el 06/10. Diseño: `docs/disenos/2026-10-06-bot-chaumer.md`. Se valida en `SimBot` en vivo y con el Strategy
