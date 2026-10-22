@@ -10,6 +10,28 @@
 
 ---
 
+## D-045 — La apéndice forma bloque con su zona; tras un traspaso la zona nueva no estira la vieja
+
+**Decisión (Kris, validado con Alfredo, 22/10/2026, plan 3.50).** Solo es **apéndice** la zona que nace de un rompimiento
+**sin** consecución, y forma un **bloque** con su zona: se entra rompiendo la apéndice, y se superan y mueren juntas por los
+bordes exteriores; el rompimiento que la creó se cierra. La zona que deja una estructura nueva **tras** rompimiento y
+consecución es normal e independiente: si toca la zona ya traspasada, no la estira, nace aparte recortada en su borde.
+**Desde el 22/10/2026** (`BLOQUE_DESDE`). Diseño: `docs/disenos/2026-10-21-zona-apendice-bloque.md`.
+
+**Motivo.** El 21/10 la vela de las 8:40 traspasó el soporte de las 8:34 y se dio la vuelta: el motor estiraba ese soporte y
+lo mataba con un traspaso que para Kris no era de esa zona. Y entrar en una zona con su apéndice en contra es, en palabras
+de Kris, *«incorrecto»*.
+
+**Medido antes de cambiar nada**, en una copia aparte sobre 76 días: cambian las zonas de 39 y la operación de uno (31/07,
++72,00 → +61,25). Kris lo revisó en imágenes antes de aprobarlo.
+
+**Alternativas descartadas.**
+- **Contar el bloque también para las zonas nacidas tras la consecución:** era lo que se planteó el 21/10 y no cuadraba con
+  los casos dibujados; Alfredo lo aclaró: esa zona no es apéndice.
+- **Aplicarlo a todo el histórico:** Kris no quiere rectificar días cerrados (como en D-044).
+
+---
+
 ## D-044 — Una vela puede ser dos puntos de la marcación, desde el 21/10/2026, en todo a la vez
 
 **Decisión (Kris, 21/10/2026, plan 3.49).** Si una vela pasa de los dos extremos de la anterior, puede cerrar un

@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:8cd29d32f7b8aed2 C:8d0eb1c3b2ccf4af";
+        public const string SELLO = "L:59bfb14f35ae15f2 C:0bca2d2116b8ff2f";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -45,6 +45,7 @@ namespace NinjaTrader.NinjaScript
             public double Tick, StopMax, RiesgoMax;
             public int Plazo, VentanaNoticia;
             public int VueltaEnVelaDesde;    // AAAAMMDD: desde ese dia una vela puede dar dos vueltas (R-05, plan 3.49)
+            public int BloqueDesde;          // AAAAMMDD: desde ese dia, zona aparte tras el traspaso y bloque (R-11/R-13, plan 3.50)
             public long UmbralVol;
             public int CierrePorHoraEt;      // HHMM de Nueva York: lo abierto se cierra a mercado (R-33, plan 3.46)
 
@@ -64,6 +65,7 @@ namespace NinjaTrader.NinjaScript
                 p.UmbralVol      = (long)Numero(bloque, "UMBRAL_VOL");
                 p.VentanaNoticia = (int)Numero(bloque, "VENTANA_NOTICIA");
                 p.VueltaEnVelaDesde = (int)Numero(bloque, "VUELTA_EN_VELA_DESDE");
+                p.BloqueDesde = (int)Numero(bloque, "BLOQUE_DESDE");
                 // CIERRE_POR_HORA es una hora ("16:50 ET"), no un número: se lee del texto
                 var h = Regex.Match(bloque, "\"CIERRE_POR_HORA\"\\s*:\\s*\\{\\s*\"texto\"\\s*:\\s*\"\\s*(\\d{1,2}):(\\d{2})\\s*ET");
                 if (!h.Success) throw new InvalidDataException("CIERRE_POR_HORA no es una hora \"HH:MM ET\" en reglas.json");
@@ -104,6 +106,8 @@ namespace NinjaTrader.NinjaScript
             public int? RIni, RFin;
             public List<Hist> Historia;
             public List<int> Cierres = new List<int>();   // velas en que se estiró y su rompimiento se cerró (R-10, plan 3.45)
+            public Zona Madre;                             // BLOQUE (R-11, plan 3.50): la apéndice y su zona
+            public List<Zona> Hijas = new List<Zona>();
 
             public Zona(double lo, double hi, string tipo, int i, string origen, int? iOrg)
             {
@@ -298,8 +302,73 @@ namespace NinjaTrader.NinjaScript
             return Z.Any(z => z.Hi > zb.Hi + 1e-9 && z.Lo < za.Lo - 1e-9);
         }
 
+        // ─────────────────────────────────────────────── el bloque (plan 3.50, 22/10/2026)
+        // La apéndice (rompimiento con cuerpo sin consecución, R-11) es hija de la zona que se rompió y forman un
+        // BLOQUE: se dibujan aparte, pero la vigencia se lleva con los bordes exteriores del bloque (rompimiento +
+        // consecución por un borde y después por el otro, y mueren todas a la vez), y para entrar hay que romper el
+        // borde exterior. La vigencia la lleva la zona raíz; las hijas copian su estado al final de cada vela.
+        public static Zona Raiz(Zona z) { while (z.Madre != null) z = z.Madre; return z; }
+
+        public static double[] Borde(Zona z)
+        {
+            var r = Raiz(z); double lo = r.Lo, hi = r.Hi;
+            foreach (var m in r.Hijas) { if (m.Lo < lo) lo = m.Lo; if (m.Hi > hi) hi = m.Hi; }
+            return new[] { lo, hi };
+        }
+
+        /// <summary>Los bordes exteriores del bloque en la vela i: solo las zonas ya nacidas y su geometría de entonces
+        /// (la búsqueda de setups recorre el día entero DESPUÉS de la vigencia: sin esto miraría al futuro).</summary>
+        public static double[] Borde(Zona z, int i)
+        {
+            var r = Raiz(z); double lo = double.MaxValue, hi = double.MinValue;
+            var ms = new List<Zona> { r }; ms.AddRange(r.Hijas);
+            foreach (var m in ms)
+            {
+                if (m.I > i) continue;
+                var e = m.En(i); if (e[0] < lo) lo = e[0]; if (e[1] > hi) hi = e[1];
+            }
+            return new[] { lo, hi };
+        }
+
+        public static bool ConHijas(Zona z, int i) { return Raiz(z).Hijas.Any(h => h.I <= i); }
+
+        private class EstadoBloque { public double Lo0, Hi0, ELo, EHi; public int NH; }
+
+        /// <summary>Antes de la vigencia de la raíz de un bloque: sus bordes pasan a ser los del bloque.</summary>
+        private static EstadoBloque BloqueEntrar(Zona z)
+        {
+            if (z.Hijas.Count == 0) return null;
+            var st = new EstadoBloque { Lo0 = z.Lo, Hi0 = z.Hi, NH = z.Historia.Count };
+            var bb = Borde(z); z.Lo = bb[0]; z.Hi = bb[1]; st.ELo = z.Lo; st.EHi = z.Hi;
+            return st;
+        }
+
+        /// <summary>Después: la raíz recupera su geometría; si el bloque se estiró (R-10), se estira la zona del borde
+        /// que se movió; y las hijas copian el estado del bloque.</summary>
+        private static void BloqueSalir(Zona z, EstadoBloque st, int i)
+        {
+            if (st != null)
+            {
+                double nlo = z.Lo, nhi = z.Hi;
+                z.Historia.RemoveRange(st.NH, z.Historia.Count - st.NH);
+                z.Lo = st.Lo0; z.Hi = st.Hi0;
+                var ms = new List<Zona> { z }; ms.AddRange(z.Hijas);
+                if (nlo < st.ELo - 1e-9)
+                {
+                    Zona m = ms[0]; foreach (var x in ms) if (x.Lo < m.Lo) m = x;
+                    m.Lo = nlo; m.Historia.Add(new Hist { J = i, Lo = m.Lo, Hi = m.Hi });
+                }
+                if (nhi > st.EHi + 1e-9)
+                {
+                    Zona m = ms[0]; foreach (var x in ms) if (x.Hi > m.Hi) m = x;
+                    m.Hi = nhi; m.Historia.Add(new Hist { J = i, Lo = m.Lo, Hi = m.Hi });
+                }
+            }
+            foreach (var h in z.Hijas) { h.Arriba = z.Arriba; h.Abajo = z.Abajo; h.Fin = z.Fin; }
+        }
+
         private static Zona Anadir(List<Zona> Z, double lo, double hi, string tipo, int i, string origen, double extremo,
-                                   int? iOrg, List<Banda> rangos, out string que, out double? mid)
+                                   int? iOrg, List<Banda> rangos, out string que, out double? mid, bool bloque)
         {
             Banda banda;
             bool blo = Bloqueada(Z, lo, hi, extremo, tipo, out mid, out banda);
@@ -326,6 +395,17 @@ namespace NinjaTrader.NinjaScript
             foreach (var z in Z)
                 if (z.Activa && z.Tipo == tipo && z.Toca(lo, hi))
                 {
+                    if (bloque && (Raiz(z).Arriba || Raiz(z).Abajo))
+                    {
+                        // Plan 3.50 (22/10/2026, R-13): la zona que toca ya fue traspasada: la nueva es una zona NORMAL e
+                        // independiente. No la estira: nace aparte, recortada en su borde. Si queda dentro, nada.
+                        var bb = Borde(z);
+                        if (tipo == "R") lo = Math.Max(lo, bb[1]);
+                        else hi = Math.Min(hi, bb[0]);
+                        if (hi - lo < 1e-9) { que = "dentro"; mid = null; return null; }
+                        var na = new Zona(lo, hi, tipo, i, origen, iOrg); Z.Add(na);
+                        que = "aparte"; mid = null; return na;
+                    }
                     if (tipo == "R") z.Hi = Math.Max(z.Hi, hi);
                     else z.Lo = Math.Min(z.Lo, lo);
                     z.Historia.Add(new Hist { J = i, Lo = z.Lo, Hi = z.Hi });
@@ -347,6 +427,7 @@ namespace NinjaTrader.NinjaScript
             if (S.Count < minimo) return null;
             int b = S[0];
             var bse = D[b];
+            bool bloque = int.Parse(dia, CultureInfo.InvariantCulture) >= P.BloqueDesde;   // plan 3.50 (22/10/2026)
             bool alc = bse.C > bse.O;
             int? decide = null;
             if (bse.C == bse.O)
@@ -390,6 +471,8 @@ namespace NinjaTrader.NinjaScript
                 {
                     var z = Z[zi];
                     if (z.Fin != null || z.I > i) continue;
+                    if (z.Madre != null) continue;          // zona de un bloque: su vigencia la lleva la raíz
+                    var blq = BloqueEntrar(z);
                     bool resuelto = false;
                     if (z.Pend != null)
                     {
@@ -410,7 +493,7 @@ namespace NinjaTrader.NinjaScript
                         {
                             var kr = D[ir];
                             bool estiraOk = (z.Tipo == "R" && d == "arriba") || (z.Tipo == "S" && d == "abajo");
-                            bool estirada = false;
+                            bool estirada = false, apNacio = false;
                             if (d == "abajo")
                             {
                                 bool cuerpo = kr.C < z.Lo;
@@ -419,6 +502,7 @@ namespace NinjaTrader.NinjaScript
                                 {
                                     var ap = new Zona(a, bb, "S", i, FloorDiv(Col(kr), 100) + ":" + kr.T.Substring(2, 2) + " ap", ir);
                                     Z.Add(ap);
+                                    if (bloque) { ap.Madre = z; z.Hijas.Add(ap); apNacio = true; }   // plan 3.50: forman bloque
                                     log.Add(Hh(k) + " plazo vencido → ZONA APÉNDICE S " + F2(ap.Lo) + "-" + F2(ap.Hi) + " sobre " + Hh(kr));
                                 }
                                 else if (!cuerpo && estiraOk)
@@ -435,6 +519,7 @@ namespace NinjaTrader.NinjaScript
                                 {
                                     var ap = new Zona(a, bb, "R", i, FloorDiv(Col(kr), 100) + ":" + kr.T.Substring(2, 2) + " ap", ir);
                                     Z.Add(ap);
+                                    if (bloque) { ap.Madre = z; z.Hijas.Add(ap); apNacio = true; }   // plan 3.50: forman bloque
                                     log.Add(Hh(k) + " plazo vencido → ZONA APÉNDICE R " + F2(ap.Lo) + "-" + F2(ap.Hi) + " sobre " + Hh(kr));
                                 }
                                 else if (!cuerpo && estiraOk)
@@ -445,8 +530,10 @@ namespace NinjaTrader.NinjaScript
                             }
                             // Con la apéndice el rompimiento sigue pendiente (R-20); si la zona se estira, se CIERRA:
                             // hace falta un rompimiento nuevo de su borde nuevo con su propia consecución (plan 3.45, R-10)
-                            z.Pend = estirada ? null : new Pend { Dir = d, I = ir, Ex = ex, Hecho = true };
-                            if (estirada) z.Cierres.Add(i);   // el registro de setups también lo cierra (15/10/2026)
+                            // Plan 3.50 (22/10/2026): con la apéndice en bloque también se CIERRA: para romper el bloque hace
+                            // falta un rompimiento nuevo de su borde exterior, con su propia consecución.
+                            z.Pend = (estirada || apNacio) ? null : new Pend { Dir = d, I = ir, Ex = ex, Hecho = true };
+                            if (estirada || apNacio) z.Cierres.Add(i);   // el registro de setups también lo cierra (15/10/2026)
                         }
                     }
                     if (z.Tipo == "P" && z.Pend != null && !resuelto)
@@ -484,6 +571,7 @@ namespace NinjaTrader.NinjaScript
                         }
                     }
                     if (z.Arriba && z.Abajo) z.Fin = i;
+                    BloqueSalir(z, blq, i);
                 }
                 if (i == b) continue;                              // la vela base solo cuenta para la vigencia
                 var p = D[i - 1];
@@ -519,10 +607,10 @@ namespace NinjaTrader.NinjaScript
                         if (alc) { lh = ZRes(kx); tipo = "R"; extremo = kx.H; }
                         else     { lh = ZSop(kx); tipo = "S"; extremo = kx.L; }
                         string que; double? mid;
-                        var z = Anadir(Z, lh[0], lh[1], tipo, i, Hh(kx), extremo, ext, rangos, out que, out mid);
+                        var z = Anadir(Z, lh[0], lh[1], tipo, i, Hh(kx), extremo, ext, rangos, out que, out mid, bloque);
                         log.Add(Hh(k) + " muere corrida → zona " + tipo + " " + F2(lh[0]) + "-" + F2(lh[1]) + " sobre " + Hh(kx) + " [" + que
                                 + (mid.HasValue ? " mitad " + F3(mid.Value) : "") + "]");
-                        if (z != null && que == "nueva" && z.Tipo == tipo)
+                        if (z != null && (que == "nueva" || que == "aparte") && z.Tipo == tipo)
                         {
                             z.DeCorrida = true; z.Dir = alc ? 1 : -1;
                             z.RIni = i; z.RFin = null;
@@ -552,13 +640,13 @@ namespace NinjaTrader.NinjaScript
                         if (alc) { lh = ZSop(kx); tipo = "S"; extremo = kx.L; }
                         else     { lh = ZRes(kx); tipo = "R"; extremo = kx.H; }
                         string que; double? mid;
-                        var z = Anadir(Z, lh[0], lh[1], tipo, i, Hh(kx), extremo, rExt, rangos, out que, out mid);
+                        var z = Anadir(Z, lh[0], lh[1], tipo, i, Hh(kx), extremo, rExt, rangos, out que, out mid, bloque);
                         log.Add(Hh(k) + " confirma retroceso → zona " + tipo + " " + F2(lh[0]) + "-" + F2(lh[1]) + " sobre " + Hh(kx) + " [" + que
                                 + (mid.HasValue ? " mitad " + F3(mid.Value) : "") + "]");
                         double refActual = alc ? kx.L : kx.H;
                         retros.Add(new Retro { I = i, Ref = refActual });
                         if (zPend != null) { zPend.Ref = refActual; zPend.RFin = Math.Max(rExt, i - 1); zPend = null; }
-                        if (z != null && que == "nueva" && z.Tipo == tipo)
+                        if (z != null && (que == "nueva" || que == "aparte") && z.Tipo == tipo)
                         {
                             z.DeCorrida = true; z.Dir = alc ? -1 : 1;
                             z.RIni = i; z.RFin = null;
@@ -881,7 +969,7 @@ namespace NinjaTrader.NinjaScript
                 {
                     if (!z.Pm || z.Roto != null || (z.Fin != null && z.Fin < i)) continue;
                     if (z.Tipo == "P" || (z.IPapel != null && i <= z.IPapel)) continue;
-                    var lohi = z.En(i); double zlo = lohi[0], zhi = lohi[1];
+                    var lohi = ConHijas(z, i) ? Borde(z, i) : z.En(i); double zlo = lohi[0], zhi = lohi[1];
                     if (z.Tipo == "R" && k.L <= zhi && k.H > zhi + P.Tick / 2) z.Roto = new Roto { Dir = "arriba", I = i, Ex = k.H };
                     else if (z.Tipo == "S" && k.H >= zlo && k.L < zlo - P.Tick / 2) z.Roto = new Roto { Dir = "abajo", I = i, Ex = k.L };
                     else continue;
@@ -981,7 +1069,7 @@ namespace NinjaTrader.NinjaScript
                 {
                     if (!(z.Roto != null && z.Consec && z.ReinOk) || z.Roto.I >= i) continue;
                     string d = z.Roto.Dir;
-                    var lohi = z.En(i); double zlo = lohi[0], zhi = lohi[1];
+                    var lohi = ConHijas(z, i) ? Borde(z, i) : z.En(i); double zlo = lohi[0], zhi = lohi[1];
                     int nd;
                     if (d == "arriba" && k.H >= zhi && k.L < zlo) nd = -1;
                     else if (d == "abajo" && k.L <= zlo && k.H > zhi) nd = 1;
@@ -1011,7 +1099,7 @@ namespace NinjaTrader.NinjaScript
                 foreach (var z in vivas)
                 {
                     if (z.Roto != null || !z.DeCorrida || z.RIni == null) continue;
-                    var lohi = z.En(i); double zlo = lohi[0], zhi = lohi[1]; int nd = z.Dir;
+                    var lohi = ConHijas(z, i) ? Borde(z, i) : z.En(i); double zlo = lohi[0], zhi = lohi[1]; int nd = z.Dir;
                     string d; double e0;
                     if (nd > 0 && k.L <= zhi && k.H > zhi + P.Tick / 2) { d = "arriba"; e0 = k.H; }
                     else if (nd < 0 && k.H >= zlo && k.L < zlo - P.Tick / 2) { d = "abajo"; e0 = k.L; }

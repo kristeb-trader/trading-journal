@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-10-21
+**Última actualización:** 2026-10-22
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-22 | La apéndice forma bloque con su zona; tras un traspaso la zona nueva no estira la vieja (plan 3.50) |
 | 2026-10-21 | Una vela puede ser dos puntos de la marcación (plan 3.49), en el plan, los dos motores y el indicador; la apéndice del retroceso y el bloque de zonas, en estudio |
 | 2026-10-20 | El portal: Operativa diaria, la portada como tablero, menú corto y «Reglas» como mapa |
 | 2026-10-19 | ChecklistChaumer archivado: las noticias rojas, desde el Diario |
@@ -51,6 +52,26 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-22 — La apéndice forma bloque con su zona (plan 3.50)
+
+**Lo que pasó.** Kris validó con Alfredo la duda que quedó abierta el 21/10: solo es **apéndice** la zona que nace de un
+rompimiento sin consecución, y esa forma **bloque** con su zona; la que nace tras rompimiento y consecución es una zona
+normal. Con eso se resolvieron también las dos preguntas abiertas desde el 07/10. Antes de tocar nada, la regla se pasó por
+los 76 días en una copia aparte del motor y Kris revisó en imágenes el 21/10 y el 31/07 (el único día cuya operación
+cambia). La «duda 3» resultó no existir: las reglas de la banda no dejan marcar esa zona.
+
+**Lo que se cambió** (D-045, diseño `docs/disenos/2026-10-21-zona-apendice-bloque.md` v1.0).
+- **Plan 3.50** (`3520f28`): `R-11` (bloque), `R-13` (la zona traspasada no se estira), `R-21`, glosario, dos líneas de la
+  checklist y `BLOQUE_DESDE` = 20261022. Sincronizado (`catalogo_reglas` con las dos líneas nuevas; `plan_documentos`, huellas
+  verificadas).
+- **Los dos motores**, con sello `L:59bfb14f…`: 75 días anteriores idénticos, 76/76 iguales entre ellos y con la simulación.
+  El 22/10 cambian zonas después de las 9:32 y no la operación.
+- Un fallo de la simulación corregido antes de enseñarla: el bloque contaba apéndices que aún no habían nacido.
+
+**Pendiente de Kris:** copiar `MotorChaumer.cs` (AddOns) y F5 fuera de la ventana.
 
 ---
 

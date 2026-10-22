@@ -14,7 +14,7 @@ import os, re, json
 # UMBRAL_VOL es AJUSTABLE (R-15, P-37). Para cambiarlo desde fuera:  lector.UMBRAL_VOL = 2000
 #   NQ -> 2000   <- solo para releer el archivo historico 'NQ 09-26.Last.txt'
 _DEL_PLAN = ('TICK', 'STOP_MAX', 'RIESGO_MAX', 'PLAZO_CONSECUCION', 'UMBRAL_VOL', 'VENTANA_NOTICIA',
-             'VUELTA_EN_VELA_DESDE')
+             'VUELTA_EN_VELA_DESDE', 'BLOQUE_DESDE')
 
 def parametros_del_plan():
     """{nombre: numero} de reglas.json. Si falta uno, falla: no se inventa.
@@ -24,7 +24,7 @@ def parametros_del_plan():
     if '__file__' not in globals():
         return dict(TICK=0.25, STOP_MAX=80.0, RIESGO_MAX=160.0, PLAZO_CONSECUCION=5,
                     UMBRAL_VOL=None, VENTANA_NOTICIA=5, CIERRE_POR_HORA=1650,
-                    VUELTA_EN_VELA_DESDE=20261021)
+                    VUELTA_EN_VELA_DESDE=20261021, BLOQUE_DESDE=20261022)
     ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '01_Plan', 'reglas.json')
     P = json.load(open(ruta, encoding='utf-8')).get('parametros', {})
     out = {}
@@ -69,6 +69,9 @@ VENTANA_NOTICIA = int(PARAMETROS['VENTANA_NOTICIA'])
 # Plan 3.49 (21/10/2026, R-05/R-06): desde este dia (AAAAMMDD) una vela puede dar DOS vueltas. Los
 # dias anteriores se leen con una sola, como se leyeron: el operador no quiso rectificar lo anterior.
 VUELTA_EN_VELA_DESDE = int(PARAMETROS['VUELTA_EN_VELA_DESDE'])
+# Plan 3.50 (22/10/2026, R-11/R-13): desde este dia (AAAAMMDD), la zona que nace tras rompimiento + consecucion
+# no estira la vieja (nace aparte, recortada) y la apendice forma BLOQUE con su zona. Antes, como se leyeron.
+BLOQUE_DESDE = int(PARAMETROS['BLOQUE_DESDE'])
 def noticias_rojas():
     """{'AAAAMMDD': [minutos del dia, hora Colombia]}. Sin __file__ (la regresion carga una
     version de git con exec) no hay noticias: el motor anterior al 28/09 no las aplicaba."""
@@ -163,6 +166,7 @@ class Zona:
         self.r_ini=None; self.r_fin=None          # retroceso que la origina
         self.hist=[(i,lo,hi)]                     # geometria a lo largo del dia
         self.cierres=[]                           # velas en que se estiro y su rompimiento se cerro (R-10, plan 3.45)
+        self.madre=None; self.hijas=[]            # BLOQUE (R-11, plan 3.50): la apendice y su zona
     def en(self,i):
         g=[(j,a,b) for (j,a,b) in self.hist if j<=i]
         return (g[-1][1],g[-1][2]) if g else (self.lo,self.hi)
@@ -171,6 +175,42 @@ class Zona:
     def toca(self,lo,hi): return not (hi < self.lo or lo > self.hi)
     def __repr__(self):
         return f"{self.tipo} {self.lo:.2f}-{self.hi:.2f} (vela {self.origen})"
+
+# ---------------------------------------------------------------- el bloque (plan 3.50, 22/10/2026)
+# La apendice (rompimiento con cuerpo sin consecucion, R-11) es hija de la zona que se rompio y forman un
+# BLOQUE: se dibujan aparte, pero la vigencia se lleva con los bordes exteriores del bloque (rompimiento +
+# consecucion por un borde y despues por el otro, y mueren todas a la vez), y para entrar hay que romper el
+# borde exterior. La vigencia la lleva la zona raiz; las hijas copian su estado al final de cada vela.
+def raiz(z):
+    while z.madre is not None: z=z.madre
+    return z
+def borde(z, i=None):
+    """Los bordes exteriores del bloque de z. Con i, solo las zonas ya nacidas en esa vela y su geometria de
+    entonces (la busqueda de setups recorre el dia entero DESPUES de la vigencia: sin esto miraria al futuro)."""
+    r=raiz(z); ms=[r]+r.hijas
+    if i is None: return min(m.lo for m in ms), max(m.hi for m in ms)
+    g=[m.en(i) for m in ms if m.i <= i]; return min(a for a,_ in g), max(b for _,b in g)
+def con_hijas(z, i):
+    return any(h.i <= i for h in raiz(z).hijas)
+def _bloque_entrar(z):
+    """Antes de la vigencia de la raiz de un bloque: sus bordes pasan a ser los del bloque."""
+    if not z.hijas: return None
+    st=(z.lo,z.hi,len(z.hist)); z.lo,z.hi=borde(z); return st+(z.lo,z.hi)
+def _bloque_salir(z, st, i):
+    """Despues: la raiz recupera su geometria; si el bloque se estiro (R-10), se estira la zona del borde
+    que se movio; y las hijas copian el estado del bloque."""
+    if st is not None:
+        lo0,hi0,nh,elo,ehi=st
+        nlo,nhi=z.lo,z.hi
+        del z.hist[nh:]
+        z.lo,z.hi=lo0,hi0
+        ms=[z]+z.hijas
+        if nlo<elo-1e-9:
+            m=min(ms,key=lambda x:x.lo); m.lo=nlo; m.hist.append((i,m.lo,m.hi))
+        if nhi>ehi+1e-9:
+            m=max(ms,key=lambda x:x.hi); m.hi=nhi; m.hist.append((i,m.lo,m.hi))
+    for h in z.hijas:
+        h.arriba,h.abajo,h.fin=z.arriba,z.abajo,z.fin
 
 # ---------------------------------------------------------------- premercado
 def zonas_premercado(V):
@@ -246,7 +286,7 @@ def banda_ocupada(Z, lo, hi):
     zb = max(aba, key=lambda z: z.hi)
     return any(z.hi > zb.hi + 1e-9 and z.lo < za.lo - 1e-9 for z in Z)
 
-def anadir(Z, lo, hi, tipo, i, origen, extremo, i_org=None, rangos=None):
+def anadir(Z, lo, hi, tipo, i, origen, extremo, i_org=None, rangos=None, bloque=False):
     blo, mid, banda = bloqueada(Z, lo, hi, extremo, tipo)
     if rangos is not None:
         # UNA SOLA zona entre zonas por banda y por jornada (Alfredo, 27/08/2026).
@@ -283,6 +323,17 @@ def anadir(Z, lo, hi, tipo, i, origen, extremo, i_org=None, rangos=None):
             return None, ('solapa', None)
     for z in Z:
         if z.activa and z.tipo==tipo and z.toca(lo,hi):
+            if bloque and (raiz(z).arriba or raiz(z).abajo):
+                # Plan 3.50 (22/10/2026, R-13): la zona que toca ya fue traspasada (tuvo rompimiento + consecucion):
+                # la nueva es una zona NORMAL e independiente. No la estira: nace aparte, recortada en su borde,
+                # porque dos zonas nunca se montan. Si queda entera dentro, no hay nada que marcar.
+                # Caso de origen: 21/10/2026, la S de la 8:40 sobre la de la 8:34 (Kris y Alfredo).
+                blo,bhi=borde(z)
+                if tipo=='R': lo=max(lo,bhi)
+                else:         hi=min(hi,blo)
+                if hi-lo < 1e-9: return None, ('dentro', None)
+                nz=Zona(lo,hi,tipo,i,origen,i_org); Z.append(nz)
+                return nz, ('aparte', None)
             # se estira SOLO hacia el nuevo extremo. El otro borde no se mueve.
             if tipo=='R': z.hi=max(z.hi,hi)
             else:         z.lo=min(z.lo,lo)
@@ -302,6 +353,7 @@ def leer_sesion(V, dia, minimo=30):
     S=[i for i,k in enumerate(D) if ini<=hm(k)<=fin_v]
     if len(S)<minimo: return None
     b=S[0]                                   # indice de la vela base 08:31
+    bloque = int(dia) >= BLOQUE_DESDE        # plan 3.50 (22/10/2026): zona aparte tras el traspaso y bloque
     base=D[b]
     alc = base['c']>base['o']                # direccion del dia
     decide=None
@@ -347,6 +399,8 @@ def leer_sesion(V, dia, minimo=30):
         k=D[i]; p=D[i-1]
         for z in Z:                                   # vigencia, en cada vela
             if z.fin is not None or z.i > i: continue
+            if z.madre is not None: continue          # zona de un bloque: su vigencia la lleva la raiz
+            _blq=_bloque_entrar(z)
             # Una zona nace con el precio a UN lado. Cuenta como traspaso cruzarla
             # hacia el otro lado, y luego volver a cruzarla de vuelta.
             # Un pinchazo de mecha NO cuenta: hace falta que el CUERPO quede fuera.
@@ -390,7 +444,7 @@ def leer_sesion(V, dia, minimo=30):
                     # hacia arriba a las 10:07, que antes lo estiraba dentro de la
                     # resistencia viva de 9:09 y dejaba las dos zonas pisandose.
                     estira_ok = (z.tipo=='R' and d=='arriba') or (z.tipo=='S' and d=='abajo')
-                    estirada = False
+                    estirada = False; ap_nacio = False
                     if d=='abajo':
                         cuerpo = kr['c'] < z.lo
                         # 15/09/2026: la apendice tambien pasa por el filtro de la banda.
@@ -407,6 +461,7 @@ def leer_sesion(V, dia, minimo=30):
                             ap=Zona(kr['l'], min(kr['o'],kr['c']), 'S', i,
                                     f"{col(kr)//100}:{kr['t'][2:4]} ap", ir)
                             Z.append(ap)
+                            if bloque: ap.madre=z; z.hijas.append(ap); ap_nacio=True   # plan 3.50: forman bloque
                             log.append(f"{col(k)//100}:{k['t'][2:4]} plazo vencido → ZONA "
                                        f"APÉNDICE S {ap.lo:.2f}-{ap.hi:.2f} sobre "
                                        f"{col(kr)//100}:{kr['t'][2:4]}")
@@ -421,6 +476,7 @@ def leer_sesion(V, dia, minimo=30):
                             ap=Zona(max(kr['o'],kr['c']), kr['h'], 'R', i,
                                     f"{col(kr)//100}:{kr['t'][2:4]} ap", ir)
                             Z.append(ap)
+                            if bloque: ap.madre=z; z.hijas.append(ap); ap_nacio=True   # plan 3.50: forman bloque
                             log.append(f"{col(k)//100}:{k['t'][2:4]} plazo vencido → ZONA "
                                        f"APÉNDICE R {ap.lo:.2f}-{ap.hi:.2f} sobre "
                                        f"{col(kr)//100}:{kr['t'][2:4]}")
@@ -435,8 +491,10 @@ def leer_sesion(V, dia, minimo=30):
                     # falta un rompimiento nuevo con su propia consecucion. Antes seguia pendiente
                     # y, como su consecucion es el borde nuevo, pasar 1 tick de la zona estirada
                     # ya la daba por traspasada (07/10: la resistencia de las 8:32 murio a las 9:28).
-                    z.pend = None if estirada else (d,ir,ex,True)
-                    if estirada: z.cierres.append(i)   # el registro de setups tambien lo cierra (15/10/2026)
+                    # Plan 3.50 (22/10/2026): con la apendice en bloque tambien se CIERRA: para romper el bloque hace
+                    # falta un rompimiento nuevo de su borde exterior, con su propia consecucion.
+                    z.pend = None if (estirada or ap_nacio) else (d,ir,ex,True)
+                    if estirada or ap_nacio: z.cierres.append(i)   # el registro de setups tambien lo cierra (15/10/2026)
             if z.tipo=='P' and z.pend is not None and not resuelto:
                 # R-15 (30/09/2026, jornada del 8/09): una zona sin papel sale por el lado que PRIMERO
                 # consiga rompimiento + consecucion. Hasta hoy, anotado un lado, el motor ya no miraba el
@@ -469,6 +527,7 @@ def leer_sesion(V, dia, minimo=30):
                     if   not z.abajo and k['l'] < z.lo: z.pend=('abajo',i,k['l'],False)
                     elif z.abajo and not z.arriba and k['h'] > z.hi: z.pend=('arriba',i,k['h'],False)
             if z.arriba and z.abajo: z.fin=i
+            _bloque_salir(z,_blq,i)
         if i==b: continue                              # la vela base solo cuenta para la vigencia
         # Plan 3.49 (21/10/2026, R-05/R-06): una vela que pasa de los dos extremos de la anterior
         # puede cerrar un movimiento y abrir el siguiente. Tras la primera vuelta, si su color dice
@@ -502,11 +561,11 @@ def leer_sesion(V, dia, minimo=30):
                   lo,hi=z_res(kx); tipo='R'; extremo=kx['h']
               else:
                   lo,hi=z_sop(kx); tipo='S'; extremo=kx['l']
-              z,(que,mid)=anadir(Z,lo,hi,tipo,i,f"{col(kx)//100}:{kx['t'][2:4]}",extremo,ext if estado=='corrida' else r_ext,rangos)
+              z,(que,mid)=anadir(Z,lo,hi,tipo,i,f"{col(kx)//100}:{kx['t'][2:4]}",extremo,ext if estado=='corrida' else r_ext,rangos,bloque)
               log.append(f"{col(k)//100}:{k['t'][2:4]} muere corrida → zona {tipo} "
                          f"{lo:.2f}-{hi:.2f} sobre {col(kx)//100}:{kx['t'][2:4]} [{que}"
                          + (f" mitad {mid:.3f}" if mid else "") + "]")
-              if z is not None and que=='nueva' and z.tipo==tipo:
+              if z is not None and que in ('nueva','aparte') and z.tipo==tipo:
                   z.de_corrida=True; z.dir = 1 if alc else -1
                   z.r_ini=i; z.r_fin=None
               else:
@@ -534,7 +593,7 @@ def leer_sesion(V, dia, minimo=30):
                   lo,hi=z_sop(kx); tipo='S'; extremo=kx['l']
               else:
                   lo,hi=z_res(kx); tipo='R'; extremo=kx['h']
-              z,(que,mid)=anadir(Z,lo,hi,tipo,i,f"{col(kx)//100}:{kx['t'][2:4]}",extremo,ext if estado=='corrida' else r_ext,rangos)
+              z,(que,mid)=anadir(Z,lo,hi,tipo,i,f"{col(kx)//100}:{kx['t'][2:4]}",extremo,ext if estado=='corrida' else r_ext,rangos,bloque)
               log.append(f"{col(k)//100}:{k['t'][2:4]} confirma retroceso → zona {tipo} "
                          f"{lo:.2f}-{hi:.2f} sobre {col(kx)//100}:{kx['t'][2:4]} [{que}"
                          + (f" mitad {mid:.3f}" if mid else "") + "]")
@@ -545,7 +604,7 @@ def leer_sesion(V, dia, minimo=30):
               # corrida, pero en sentido contrario. La direccion de la vela de apertura
               # NO sesga la jornada: se opera en los dos sentidos.
               # (confirmado por el operador 27/08/2026, caso del 9 de julio)
-              if z is not None and que=='nueva' and z.tipo==tipo:
+              if z is not None and que in ('nueva','aparte') and z.tipo==tipo:
                   z.de_corrida=True; z.dir = -1 if alc else 1
                   z.r_ini=i; z.r_fin=None
                   z_pend=z
@@ -847,7 +906,7 @@ def detectar_setups(res, solo_reingresos=False):
         for z in Z:
             if not z.pm or z.roto or (z.fin is not None and z.fin < i): continue
             if z.tipo=='P' or (z.i_papel is not None and i <= z.i_papel): continue
-            zlo,zhi=z.en(i)
+            zlo,zhi=(borde(z,i) if con_hijas(z,i) else z.en(i))
             if   z.tipo=='R' and k['l']<=zhi and k['h'] > zhi+TICK/2: z.roto=('arriba',i,k['h'])
             elif z.tipo=='S' and k['h']>=zlo and k['l'] < zlo-TICK/2: z.roto=('abajo', i,k['l'])
             else: continue
@@ -938,7 +997,7 @@ def detectar_setups(res, solo_reingresos=False):
         for z in vivas:
             if not (z.roto and z.consec and z.rein_ok) or z.roto[1] >= i: continue
             d=z.roto[0]
-            zlo,zhi=z.en(i)
+            zlo,zhi=(borde(z,i) if con_hijas(z,i) else z.en(i))
             if   d=='arriba' and k['h']>=zhi and k['l']<zlo: nd=-1
             elif d=='abajo'  and k['l']<=zlo and k['h']>zhi: nd=+1
             else: continue
@@ -978,7 +1037,7 @@ def detectar_setups(res, solo_reingresos=False):
         # tiene que revalidar (PROPUESTAS_AL_PLAN, 24/09/2026).
         for z in vivas:
             if z.roto or not z.de_corrida or z.r_ini is None: continue
-            zlo,zhi=z.en(i); nd=z.dir
+            zlo,zhi=(borde(z,i) if con_hijas(z,i) else z.en(i)); nd=z.dir
             if   nd>0 and k['l']<=zhi and k['h'] > zhi+TICK/2: d,e0='arriba',k['h']
             elif nd<0 and k['h']>=zlo and k['l'] < zlo-TICK/2: d,e0='abajo', k['l']
             else: continue

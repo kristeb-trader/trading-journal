@@ -3,12 +3,6 @@
 > Solo lo que está en curso. Lo terminado va a `docs/historial-proyecto.md`; las ideas y lo que
 > está por comprobar, a `backlog.md`.
 
-## Zona apéndice del retroceso y bloque de zonas — EN ESTUDIO (21/10)
-
-`docs/disenos/2026-10-21-zona-apendice-bloque.md`. Decidido casi todo (§2), pero queda **una duda abierta** (§4):
-cuándo una zona muere sola por sus traspasos (casos 1 y 2) y cuándo espera al bloque (el 21/10). **No se toca el plan,
-el motor ni el bot** hasta que Kris la cierre, quizá consultándolo con Chaumer.
-
 ## El bot: BotChaumer en NinjaTrader (D-038)
 
 Aprobado el 06/10. Diseño: `docs/disenos/2026-10-06-bot-chaumer.md`. Se valida en `SimBot` en vivo y con el Strategy
@@ -29,8 +23,9 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
   motores con sello nuevo (`cc233a1`), fichas de sep–oct rehechas y publicadas. 18 días cambian zonas; 07/10 y 01/07
   pasan a no operar
 - [x] **Kris:** `MotorChaumer.cs` con el sello `L:bf7669a4…` compilado; el Analyzer con el motor nuevo da **18/18** (07/10)
-- [ ] **Abiertas del 07/10 (Kris):** ¿cierra también el rompimiento la **zona apéndice** (R-11)? ¿Y el estiramiento por
-  **superposición** (R-13, que dice que la zona conserva su historial)? Hoy los dos siguen como estaban
+- [x] **Abiertas del 07/10, cerradas el 22/10 con el plan 3.50** (D-045): la apéndice forma **bloque** con su zona y el
+  rompimiento que la creó **se cierra**; si la zona que se toca ya fue traspasada, **no se estira**: nace aparte, recortada.
+  Desde el 22/10. Los dos motores con sello `L:59bfb14f…`. **Kris:** copiar `MotorChaumer.cs` (AddOns) y F5 fuera de la ventana
 - [x] **Bot:** distingue «encendido tarde» de una diferencia (07/10). Compilado por Kris el 07/10
 - [x] **08/10 — primer día del bot en SimBot:** **COINCIDE** con el motor. Continuación alcista, orden 9:23, 2 × 31316.50
   (stop 31286.25, objetivo 31346.75), llena 9:24 sin deslizamiento, TARGET 9:29, +30.25 pts, **+$118.40 neto**.
@@ -68,7 +63,7 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
 - [x] **Las zonas de premercado que se tocan se fusionan** (14/10, `51f382c`): la regla de superposición también en el
   premercado, en los dos motores. Cambió el marcado del 11/09 y el 14/07, ninguna operación
 - [x] **Plan 3.46** (09/10): cierre por hora a las 16:50 de Nueva York, en el plan, el portal, los dos motores (caso sintético en la sincronía), el bot, la cadena, `bot_operaciones` y el calendario
-- [ ] **Kris, fuera de la ventana:** copiar `MotorChaumer.cs`, `CadenaDiaria.cs` (a `Custom\AddOns\`), `BotChaumer.cs` (a `Custom\Strategies\`) y `VistaMotorChaumer.cs` (a `Custom\Indicators\`), y un solo F5. Sin el motor nuevo, el bot y la vista dicen «motor desincronizado»
+- [x] **Kris, fuera de la ventana** (comprobado el 22/10: todo lo instalado es idéntico al repositorio): copiar `MotorChaumer.cs`, `CadenaDiaria.cs` (a `Custom\AddOns\`), `BotChaumer.cs` (a `Custom\Strategies\`) y `VistaMotorChaumer.cs` (a `Custom\Indicators\`), y un solo F5. Sin el motor nuevo, el bot y la vista dicen «motor desincronizado»
 - [ ] **§12 D2** `VistaMotorChaumer`: código hecho (07/10). **Kris:** copiar a `Custom/Indicators`, F5 y el Market Replay del 23/09 y el 02/10 con el bot y la vista
 - [ ] **Fase 4 · el pasado entero**: velas desde el 12/06/2025, Strategy Analyzer, Market Replay, informe
 - [ ] **Fase 5 · SimBot en vivo**, con la comparación diaria en la cadena

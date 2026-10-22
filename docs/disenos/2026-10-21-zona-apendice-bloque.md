@@ -1,67 +1,73 @@
-# La apéndice del retroceso y el bloque de zonas
+# La apéndice forma bloque con su zona; tras un traspaso la zona nueva no estira la vieja
 
 | Versión | Fecha | Estado |
 |---|---|---|
-| v0.1 | 21/10/2026 | **En estudio.** Queda una duda abierta (§4). **No se toca el plan, ni el motor, ni el bot** hasta cerrarla con el sí de Kris |
+| v0.1 | 21/10/2026 | En estudio: quedaba una duda abierta |
+| v1.0 | 22/10/2026 | **Aprobado por Kris** («sí, está bien, actualiza todo»), tras validarlo con Alfredo · implementado: plan 3.50, `lector.py` y `MotorChaumer.cs` (D-045) |
 
 ## 1 · La pregunta
 
 21/10/2026. El soporte de la vela 08:34 (29.847,00 – 29.825,75) lo rompe la vela 08:38 y la 08:40 hace la consecución.
-Esa misma vela de las 08:40 se da la vuelta y arma estructura nueva. Hoy el motor **estira** el soporte hasta el mínimo
-de las 08:40 y le deja contado el traspaso, así que a las 08:48 lo da por inválido. Kris lo lee de otra forma: nace una
-**zona apéndice**, hija del soporte, y las zonas forman un **bloque**.
+Esa misma vela se da la vuelta y arma estructura nueva. El motor **estiraba** el soporte hasta el mínimo de las 08:40 y le
+dejaba contado el traspaso. Kris no lo leía así, y la duda quedó abierta un día (v0.1): en unos casos la zona vieja moría
+sola y en otros esperaba «al bloque».
 
-Las respuestas de Kris salieron de dibujos con velas inventadas (soporte de 100 a 110) y del gráfico real del 21/10.
-Los dibujos no se guardan en el repositorio, pero cada caso se puede volver a dibujar con lo que dice §3.
+**Lo que lo resolvió** (Kris, tras validarlo con Alfredo, 22/10): *«una zona es llamada zona apéndice cuando es una zona
+creada por un movimiento que se generó con rompimiento pero SIN consecución, y esa es la que forma el bloque. Una zona que
+se genera cuando hay rompimiento y consecución ya no es zona apéndice, sino una zona normal generada por la acción de
+precio»*. La contradicción venía de llamar apéndice a las dos cosas.
 
-## 2 · Lo decidido
+## 2 · La regla
 
-1. **Con consecución y estructura nueva, nace una apéndice en lugar de estirar la zona.** Es la zona normal de la vela
-   (del borde del cuerpo a la punta de la mecha), **recortada en el borde de la zona madre**: dos zonas nunca se montan
-   una encima de otra. Si la vela abrió dentro de la zona madre, la apéndice empieza en el borde de la madre; si cerró
-   fuera, empieza en su cierre.
-2. **Sin consecución no cambia nada**, aunque el precio suba: se espera a las 5 velas o a la estructura contraria. Con
-   mecha, la zona se estira; con cuerpo fuera, nace la apéndice de siempre, desde el cierre.
-3. **Madre y apéndices (hijas, nietas) forman un bloque**: se dibujan por separado, pero se rompen juntas.
-4. **Para entrar hay que romper el borde exterior del bloque**, la última apéndice. Romper solo la madre no da entrada:
-   *«sería incorrecto entrar en la zona 1, sabiendo que tiene la zona apéndice en contra»*.
-5. **Un bloque muere** cuando se rompe, con rompimiento y consecución, primero por un borde exterior y después por el
-   otro. El 21/10: debajo de la apéndice 2 como soporte, y después encima de la Zona 1 como resistencia.
-6. **Las apéndices de siempre** (rompimiento con cuerpo sin consecución) también forman bloque con su madre.
-7. **Una caída con cuerpo por debajo del bloque anula un rompimiento hacia arriba** que esperaba su consecución
-   (21/10, la vela 08:44 anula el rompimiento hacia arriba de las 08:40).
-8. Vale igual en espejo para las resistencias.
+1. **La apéndice** solo nace de un rompimiento **sin** consecución (con cuerpo fuera, al vencer el plazo o con estructura
+   contraria: lo de siempre, `R-11`). **Forma un bloque con su zona**, y con las apéndices de sus apéndices:
+   - se dibujan por separado;
+   - **para entrar hay que romper el borde exterior del bloque** (la apéndice); romper solo la zona original no da entrada;
+   - **se superan y mueren juntas**, por los bordes exteriores: rompimiento y consecución por la apéndice, y después por
+     el otro lado de la zona original (`R-21`);
+   - **al nacer la apéndice, el rompimiento que la creó se cierra**, como al estirarse (`R-10`): para romper el bloque
+     hace falta uno nuevo, con su consecución.
+2. **Tras rompimiento y consecución**, la zona que deja la estructura nueva es **normal e independiente**: si toca la zona
+   ya traspasada, **no la estira** (`R-13`); nace aparte, **recortada en su borde**, porque dos zonas nunca se montan. Cada
+   una lleva su propia cuenta de traspasos.
+3. **Sin consecución y solo con mecha**, la zona se estira, como hasta ahora (`R-10`).
+4. **Vigente desde el 22/10/2026** (`BLOQUE_DESDE`), sin rectificar los días anteriores.
 
-## 3 · Los casos revisados por Kris
+El 21/10 leído con la regla: la zona de la 8:34 muere sola a las 8:48 (abajo 8:38–8:40, arriba 8:46–8:48); la de la 8:40
+nace aparte (29.813,50 – 29.825,75); la vela 8:44 la rompe con cuerpo sin consecución y a las 8:49 nace su apéndice
+(29.771,25 – 29.779,25), en bloque con ella.
 
-Soporte de 100 a 110 en todos los inventados.
+**La duda 3** (una zona traspasada que recibe otra del mismo tipo por el otro lado) no existe: las reglas de la banda
+(`R-12`, `R-17`) no dejan marcar esa zona. Medido: ni una vez en 76 días; las 48 veces que el motor estiraba una zona ya
+traspasada eran todas del tipo de la 8:40.
 
-| Caso | Qué pasa | Lo que dijo Kris |
-|---|---|---|
-| 1 | v5 rompe (mín. 97), v6 abre dentro (101), baja a 94 (consecución) y sube por encima de v5 | Bien: nace la apéndice 100→94. **Además, la Zona 1 queda inválida** porque tiene traspaso en los dos sentidos |
-| 2 | v5 rompe, v6 consecución (92) y cierra fuera (95), v7 sube | Bien: nace la zona 95→92. La Zona 1 queda inválida (v7 rompe arriba, v8 consecución) y **solo queda activa la 95→92** |
-| 3 | v5 rompe solo con mecha (96), sin consecución, y el precio sube | **Mal la apéndice**: sin consecución, a las 5 velas o con estructura nueva la zona **se estira** |
-| 4 | v5 rompe con cuerpo (cierra 99), sin consecución, y el precio sube | **Mal la apéndice en ese momento**: a las 5 velas o con estructura nueva nace la zona 99→96 |
-| 5 | Rompe sin consecución y el precio no sube | Bien: con mecha se estira; con cuerpo, apéndice desde el cierre |
-| 6 | Bloque de soporte 100–110 y apéndice 96–100 | Para que mueran las dos, hay que traspasar las dos zonas en los dos sentidos |
-| 7 | El precio rompe el soporte, pero queda la apéndice | Hay que romper todo el bloque para entrar |
-| 21/10 | Zona 1 (8:34), apéndice 1 de 29.825,75 a 29.813,50 (8:40) y apéndice 2 de 29.779,25 a 29.771,25 (vela 8:44, nace a las 8:49 por plazo, cuerpo sin consecución) | Las **tres activas**, en bloque. Mueren cuando se rompa la apéndice 2 como soporte y después la Zona 1 como resistencia |
+## 3 · Lo medido antes de cambiar nada
 
-## 4 · La duda abierta
+En una copia aparte del motor, sobre los 76 días con datos y aplicando la regla a todos (solo para medir):
 
-**¿Cuándo muere una zona sola por sus traspasos y cuándo espera al bloque?**
+| | |
+|---|---|
+| Días en que cambian las zonas | 39 de 76 |
+| Días en que cambia la operación | 1: el 31/07, Continuación bajista 9:02 TARGET +72,00 → 9:08 TARGET +61,25 |
+| Zonas que se estiraban y nacen aparte | 47 |
+| Apéndices que forman bloque | 36 |
 
-- En los **casos 1 y 2** la Zona 1 muere **sola** en cuanto tiene sus dos traspasos, aunque tenga apéndice.
-- El **21/10** la Zona 1 también tiene sus dos traspasos: abajo a las 08:38–08:40 y arriba con el rompimiento de las 08:46
-  (29.873,00) y la consecución de las 08:48 (29.903,25). **Y no muere**: espera al bloque. La apéndice 2 nace a las
-  08:49, después de esos dos traspasos.
+Un fallo de la primera pasada, corregido antes de enseñarlo: la búsqueda de entradas recorre el día entero después de la
+vigencia, y el bloque contaba apéndices **aún no nacidas** (le quitaba al 21/07 la entrada de las 8:34 por una apéndice de
+las 8:40). Ahora solo cuentan las zonas nacidas en esa vela (`borde(z, i)`, `con_hijas`).
 
-Mientras no se sepa qué distingue un caso del otro, vela a vela, la regla no se puede escribir sin inventar metodología.
-Kris puede consultarlo con Chaumer.
+Kris revisó el 21/10 y el 31/07 con el motor de antes y el nuevo, uno encima del otro: *«sí, está bien»*.
 
-## 5 · Cuando se cierre
+## 4 · Cómo está hecho
 
-Igual que el plan 3.49: el texto del plan con el sí de Kris, cambio a cambio, con fecha de vigencia y sin rectificar lo
-anterior. Antes de tocar el bot, la regla nueva se pasa **en una copia aparte** por todos los días con datos, y se le
-enseñan a Kris en imágenes los días que cambian. Solo con su visto bueno se cambian a la vez `lector.py` y
-`MotorChaumer.cs`, con el sello a 0 diferencias. Antes de empezar se marca en git la versión del bot que funciona hoy.
+- **Plan 3.50** (`3520f28`): `R-11`, `R-13`, `R-21`, glosario, dos líneas nuevas en la checklist y el parámetro `BLOQUE_DESDE`.
+- **`lector.py` y `MotorChaumer.cs`**, la misma traducción línea a línea:
+  - la `Zona` sabe de su bloque (`madre`, `hijas`);
+  - la vigencia la lleva la zona raíz con los bordes del bloque (`_bloque_entrar` / `_bloque_salir`): si el bloque se
+    estira, se estira la zona del borde que se movió, y al final de cada vela las hijas copian el estado del bloque;
+  - `anadir` recorta en lugar de estirar cuando la zona que toca ya tiene un traspaso (`que = 'aparte'`, que cuenta como
+    zona nueva de corrida o de retroceso);
+  - las tres comprobaciones de rompimiento de `detectar_setups` usan los bordes del bloque.
+- **Verificado:** los 75 días anteriores al 22/10, idénticos al motor anterior; con la fecha a 0, los 76 días con la misma
+  operación que la simulación; `sincronia.py --sellar --cambio-de-regla` a 76/76 días idénticos entre los dos motores. El
+  22/10 cambian zonas después de las 9:32, no la operación (Continuación alcista 9:04, STOP −53,25, como el bot).
