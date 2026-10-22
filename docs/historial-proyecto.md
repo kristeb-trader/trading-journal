@@ -11,7 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
-| 2026-10-22 | La apéndice forma bloque con su zona; tras un traspaso la zona nueva no estira la vieja (plan 3.50) |
+| 2026-10-22 | La apéndice forma bloque con su zona; tras un traspaso la zona nueva no estira la vieja (plan 3.50); el portal, con las dos al día |
 | 2026-10-21 | Una vela puede ser dos puntos de la marcación (plan 3.49), en el plan, los dos motores y el indicador; la apéndice del retroceso y el bloque de zonas, en estudio |
 | 2026-10-20 | El portal: Operativa diaria, la portada como tablero, menú corto y «Reglas» como mapa |
 | 2026-10-19 | ChecklistChaumer archivado: las noticias rojas, desde el Diario |
@@ -70,8 +70,30 @@ cambia). La «duda 3» resultó no existir: las reglas de la banda no dejan marc
 - **Los dos motores**, con sello `L:59bfb14f…`: 75 días anteriores idénticos, 76/76 iguales entre ellos y con la simulación.
   El 22/10 cambian zonas después de las 9:32 y no la operación.
 - Un fallo de la simulación corregido antes de enseñarla: el bloque contaba apéndices que aún no habían nacido.
+- **La cadena** rehízo las fichas del 12/10 al 22/10 con el motor nuevo: ninguna cambió de operación ni de resultado.
 
-**Pendiente de Kris:** copiar `MotorChaumer.cs` (AddOns) y F5 fuera de la ventana.
+**Instalado y comprobado.** Kris copió `MotorChaumer.cs` y recompiló (11:40): el archivo es idéntico al del repositorio,
+el código compilado trae `BLOQUE_DESDE` y el sello nuevo, y el bot arrancó a las 11:41 con él. Al reiniciarse **no pisó**
+la fila del día en `bot_operaciones` (Continuación alcista 9:04, STOP −53,25).
+
+**Antes, ese mismo día.** Todo lo instalado en NinjaTrader resultó idéntico al repositorio; el checklist, ya fuera, como
+debía. El bot operó con el motor de la 3.49: Continuación alcista llenada 9:04, STOP −53,25 (−$106,50), lo mismo que la ficha.
+
+**El portal** (`189701d`), las dos partes de las reglas al día con la 3.49 y la 3.50:
+- **El módulo técnico** (Mapa, oculto, y la ficha de cada regla) sale del plan por el sync: `R-05`/`R-06` con la vela que
+  da dos vueltas, `R-11` con el bloque, `R-13`, `R-21`, los parámetros y las dos líneas nuevas de la checklist.
+- **El módulo funcional** («Reglas», el visible), escrito a mano en `src/contenido/plan/`:
+  - **La zona apéndice**, reescrita entera. La definición la pidió Kris más clara («que al leer el primer párrafo se entienda
+    qué es»): *una zona hija de otra, que nace de un rompimiento con cuerpo sin consecución, del borde del cuerpo a la punta
+    de la mecha, y forma un bloque con la original*. Después, cuándo se marca; qué decide si hay apéndice; ¿apéndice o zona
+    nueva?; la zona que nace aparte tras la consecución; el bloque (se cierra el rompimiento, se entra rompiendo la
+    apéndice, muere entero); una tabla con todos los casos, y el caso real del 21/10.
+  - Corrida y retroceso (la vela que cierra un movimiento y abre el siguiente), Generación de zonas, Cuándo quitar una zona,
+    Continuación y Reingreso.
+  - **8 diagramas nuevos** (`public/conceptos/29` a `36`), con el estándar visual de los demás, revisados por Kris antes de
+    publicarlos: la vela de dos vueltas, ¿apéndice o zona nueva?, la zona aparte (por el borde y desde el cuerpo), el bloque,
+    la entrada, el bloque que muere y el caso real.
+  - `npm run verificar` limpio (59 páginas, 0 enlaces rotos); capturas en escritorio y móvil; comprobado en el portal publicado.
 
 ---
 

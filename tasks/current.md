@@ -25,7 +25,7 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
 - [x] **Kris:** `MotorChaumer.cs` con el sello `L:bf7669a4…` compilado; el Analyzer con el motor nuevo da **18/18** (07/10)
 - [x] **Abiertas del 07/10, cerradas el 22/10 con el plan 3.50** (D-045): la apéndice forma **bloque** con su zona y el
   rompimiento que la creó **se cierra**; si la zona que se toca ya fue traspasada, **no se estira**: nace aparte, recortada.
-  Desde el 22/10. Los dos motores con sello `L:59bfb14f…`. **Kris:** copiar `MotorChaumer.cs` (AddOns) y F5 fuera de la ventana
+  Desde el 22/10. Los dos motores con sello `L:59bfb14f…`, **instalado y compilado por Kris el 22/10** (el bot arrancó con él)
 - [x] **Bot:** distingue «encendido tarde» de una diferencia (07/10). Compilado por Kris el 07/10
 - [x] **08/10 — primer día del bot en SimBot:** **COINCIDE** con el motor. Continuación alcista, orden 9:23, 2 × 31316.50
   (stop 31286.25, objetivo 31346.75), llena 9:24 sin deslizamiento, TARGET 9:29, +30.25 pts, **+$118.40 neto**.
@@ -116,8 +116,10 @@ completo. El mapa de las 7 piezas (`/mapa`) y las 8 páginas de paso siguen publ
 
 - [ ] **Kris compara** las 8 páginas de paso con «Reglas» y decide si se quedan o se retiran. Si se retiran: sacarlas
   del menú no basta, hay que decidir qué hacer con los enlaces `/<paso>/#apartado` de la lista de «Reglas» sin JavaScript
-- [ ] **R-13** (superposición: se estira, no se duplica) se **cita** en «Cuando no llega la consecución», pero **no se
-  explica** en ningún apartado (aviso de `src/pages/zonas.astro`). Con la pregunta abierta del 07/10 sobre R-13 en el bot
+- [x] **R-13** (superposición) ya se explica, en «Generación de zonas» y en «La zona apéndice» (22/10, `189701d`), con la
+  3.50: la zona ya traspasada no se estira
+- [x] **Los planes 3.49 y 3.50 en el portal** (22/10, `189701d`): la vela de dos vueltas y la zona apéndice en bloque,
+  con 8 diagramas nuevos (`public/conceptos/29`–`36`) revisados por Kris
 - [ ] El **mapa de las 7 piezas en el celular** sigue sin mirar de verdad. Mientras esté oculto, no corre prisa
 
 ## Portal de Alfredo
