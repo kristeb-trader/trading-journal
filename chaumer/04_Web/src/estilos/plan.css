@@ -183,44 +183,49 @@
   background: color-mix(in srgb, var(--t) 15%, rgba(10, 13, 19, 0.9));
   box-shadow: 0 0 22px -8px var(--t), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
-.pl-titular { padding: 4px 10px; max-width: 46rem; } /* ancho-ok: rotulo flotante sobre el mapa; sin tope taparia el escenario */
-.pl-eti { margin: 0; font-family: var(--fuente-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--paso, var(--texto-3)); }
-.pl-titulo { margin: 4px 0 2px; font-size: var(--t-7); font-weight: var(--peso-max); letter-spacing: var(--track-titulo); line-height: 1.1; }
-.pl-sub { margin: 0; font-size: var(--t-3); color: var(--texto-3); }
-
-/* «Reglas», en el inicio (22/10/2026): el titular centrado, en mayúsculas,
-   con el brillo del núcleo y una pista de luz a cada lado que acaba en su
-   nodo, como las del mapa. Dentro de un paso, el titular de siempre. */
-.pl--inicio .pl-titular { margin: 0 auto; padding-top: 10px; text-align: center; } /* alineacion-ok: rotulo centrado del inicio */
-.pl--inicio .pl-titulo, .pl-lista__h {
+/* El titular (22/10/2026): centrado, en mayúsculas, con brillo y una pista
+   de luz a cada lado que acaba en su nodo, como las del mapa. En el inicio,
+   «REGLAS» grande y en los tonos del núcleo; dentro de un paso, su nombre en
+   el color del paso. */
+/* El centrado del texto lo pone base.css (la lista de lo que va centrado). */
+.pl-titular { padding: 4px 10px 0; }
+.pl--inicio .pl-titular { padding-top: 10px; }
+.pl-eti { margin: 0 0 8px; font-family: var(--fuente-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--paso, var(--texto-3)); }
+.pl-titulo, .pl-lista__h {
+  --tono: var(--paso, var(--info)); --tono-2: var(--paso, var(--acento-vivo)); --trk: 0.18em;
   display: flex; align-items: center; justify-content: center; gap: 14px;
-  margin: 0 0 8px; line-height: 1; white-space: nowrap; hyphens: none;
-  font-size: clamp(2rem, 1.1rem + 2.4vw, var(--t-9)); font-weight: var(--peso-max);
-  text-transform: uppercase; letter-spacing: 0.34em;
-  background: linear-gradient(100deg, var(--info) 30%, var(--n-50) 46%, var(--acento-vivo) 58%, var(--info) 72%) 0 0 / 220% 100%;
+  margin: 0 0 8px; line-height: 1.1; hyphens: none;
+  font-size: clamp(1.5rem, 0.8rem + 1.5vw, var(--t-8)); font-weight: var(--peso-max);
+  text-transform: uppercase; letter-spacing: var(--trk);
+  background: linear-gradient(100deg, var(--tono) 30%, var(--n-50) 46%, var(--tono-2) 58%, var(--tono) 72%) 0 0 / 220% 100%;
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  filter: drop-shadow(0 0 22px rgba(76, 141, 255, 0.32));
+  filter: drop-shadow(0 0 22px color-mix(in srgb, var(--tono-2) 32%, transparent));
   animation: pl-brillo 9s var(--curva) infinite alternate;
 }
+.pl--inicio .pl-titulo, .pl-lista__h {
+  --trk: 0.34em; line-height: 1; white-space: nowrap;
+  font-size: clamp(2rem, 1.1rem + 2.4vw, var(--t-9));
+}
+/* En pantalla ancha el nombre más largo cabe en una línea: que no se parta. */
+@media (min-width: 1280px) { .pl-titulo { white-space: nowrap; } }
 @keyframes pl-brillo { to { background-position: 100% 0; } }
 /* Las pistas. La de la izquierda lleva además el espacio que el tracking
    deja tras la última letra: así la palabra queda centrada de verdad. */
-.pl--inicio .pl-titulo::before, .pl--inicio .pl-titulo::after,
-.pl-lista__h::before, .pl-lista__h::after {
+.pl-titulo::before, .pl-titulo::after, .pl-lista__h::before, .pl-lista__h::after {
   content: ''; flex: 0 1 auto; width: clamp(28px, 9vw, 150px); height: 8px;
   background:
     radial-gradient(circle, var(--n-50) 0 2px, transparent 2.5px) right center / 8px 8px no-repeat,
-    linear-gradient(90deg, transparent, var(--info)) center / 100% 1px no-repeat;
+    linear-gradient(90deg, transparent, var(--tono)) center / 100% 1px no-repeat;
 }
-.pl--inicio .pl-titulo::before, .pl-lista__h::before { margin-right: 0.34em; }
-.pl--inicio .pl-titulo::after, .pl-lista__h::after {
+.pl-titulo::before, .pl-lista__h::before { margin-right: var(--trk); }
+.pl-titulo::after, .pl-lista__h::after {
   background:
     radial-gradient(circle, var(--n-50) 0 2px, transparent 2.5px) left center / 8px 8px no-repeat,
-    linear-gradient(270deg, transparent, var(--acento)) center / 100% 1px no-repeat;
+    linear-gradient(270deg, transparent, var(--paso, var(--acento))) center / 100% 1px no-repeat;
 }
-.pl--inicio .pl-sub { font-family: var(--fuente-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+.pl-sub { margin: 0; font-family: var(--fuente-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--texto-3); }
 @media (prefers-reduced-motion: reduce) {
-  .pl--inicio .pl-titulo, .pl-lista__h { animation: none; }
+  .pl-titulo, .pl-lista__h { animation: none; }
 }
 
 .pl-volver, .pl-hud button {

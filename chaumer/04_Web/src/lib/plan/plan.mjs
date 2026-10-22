@@ -117,9 +117,8 @@ export function iniciarPlan(datos) {
   function encuadre() {
     return D.encuadrar(caja, {
       ancho, alto,
-      // En el inicio, el titular centrado queda encima del paso 01: el mapa
-      // empieza debajo de él.
-      arriba: vista === 'paso' ? 168 : el.cab.offsetHeight + 12,
+      // El titular centrado queda encima del mapa: el mapa empieza debajo.
+      arriba: el.cab.offsetHeight + (vista === 'paso' ? 24 : 12),
       abajo: vista === 'paso' ? 34 : 30,
       zMax: vista === 'paso' ? 1 : 1.05,
     });
