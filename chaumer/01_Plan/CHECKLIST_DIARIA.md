@@ -3,7 +3,7 @@
 > **Se ejecuta de arriba abajo. No se decide nada que no esté aquí.**
 > Cada línea cita su regla. Si una respuesta es **NO** donde dice parar, **se para** — no se evalúa, no se matiza.
 
-**Versión del plan:** 3.50 · 2026-10-22 · **34 reglas**
+**Versión del plan:** 3.51 · 2026-10-22 · **34 reglas**
 
 ---
 
@@ -64,7 +64,7 @@
 | ☐ | Se buscan entradas en **los dos sentidos**; la vela de apertura no sesga el día | `R-07` |
 | ☐ | ¿Es **Continuación** o **Reingreso**? | `R-25` / `R-26` |
 | ☐ | *(solo Continuación)* **¿La corrida es FLUIDA?** Tres cosas seguidas: la corrida dejó su zona · **el retroceso no se pasó** (mide menos que su corrida) · y **ésta es la corrida siguiente, que la rompe**. Cada corrida se empareja con el retroceso que viene justo después de ella | `R-40` |
-| ☐ | *(solo Reingreso)* ¿El precio ya superó el extremo de la vela de consecución? → **no hay reingreso** | `R-26` |
+| ☐ | *(solo Reingreso)* ¿La zona sigue viva? El reingreso **no tiene plazo de velas**: vale aunque el precio ya haya pasado del extremo de la vela de consecución, si tiene espacio de recorrido (los filtros de abajo) | `R-26` |
 
 ### Medir · anclar la regla en el nivel de entrada
 

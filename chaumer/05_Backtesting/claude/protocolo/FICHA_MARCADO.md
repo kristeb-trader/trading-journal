@@ -1,6 +1,6 @@
 # FICHA DE MARCADO — generada automáticamente
 
-> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-10-15 con `generar_ficha.py`.
+> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-10-22 con `generar_ficha.py`.
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
@@ -114,6 +114,7 @@ Una corrida (= impulso) es la secuencia de velas que arranca cuando una vela sup
   - **No se exige** que cada vela haga máximos más altos. Una **vela interior no corta**.
   - **Empate:** `mínimo[n] = mínimo[n−1]` → **no corta**.
   - **Muere:** `mínimo[n] ≤ mínimo[n−1] − 1 TICK`. Esa vela es ya **la primera del retroceso**.
+- **🕯️ La misma vela puede matar el retroceso y ser corrida** *(desde `VUELTA_EN_VELA_DESDE`)*. Si una vela hace **primero** un mínimo por debajo del de la anterior —muere la corrida— y **después**, en el mismo minuto, un máximo por encima del de la anterior, esa vela es a la vez **el final del retroceso** (su mínimo) y **la corrida nueva** (su máximo). La corrida nueva nace en esa vela, que es su origen: es la excepción al tamaño mínimo de 2 velas. **Y al revés:** si una vela **primero** termina el retroceso y **después**, en el mismo minuto, hace mínimo por debajo del de la anterior, la corrida que acaba de nacer muere en esa misma vela: su máximo es el extremo de la corrida y su mínimo empieza el retroceso siguiente. **El orden lo dice el color**, como en `R-09`: vela azul, primero el mínimo; vela blanca, primero el máximo. Espejo en la bajista.
 - **Corrida bajista (espejo):** nace con `mínimo[n] < mínimo[n−1]` · vive mientras `máximo[n] ≤ máximo[n−1]` · muere con `máximo[n] ≥ máximo[n−1] + 1 TICK`.
 - **Primero la corrida:** se identifican su inicio y su fin antes de evaluar el retroceso.
 - **En NinjaTrader:** a ojo sobre el gráfico de 1 minuto de MNQ, comparando extremos de velas consecutivas. Sin indicadores.
@@ -130,6 +131,7 @@ El retroceso es la secuencia de velas que arranca en la vela que mata la corrida
   - **🎯 Su nivel de referencia = el mínimo MÁS BAJO de todas las velas del retroceso.** No el de la primera, no el de la última.
   - **Color irrelevante:** una vela verde dentro del retroceso no lo termina si no hace máximo más alto.
 - **Tras una corrida bajista (espejo):** empieza con `máximo[n] ≥ máximo[n−1] + 1 TICK` · termina con `mínimo[n] < mínimo[n−1]` · su nivel de referencia es el **máximo más alto**.
+- **Un retroceso puede durar una sola vela y terminar en ella misma** *(desde `VUELTA_EN_VELA_DESDE`)*: es la vela que mata la corrida y, después, hace máximo por encima del de la anterior (`R-05`). Su nivel de referencia es el mínimo de esa vela.
 - **Número de velas:** irrelevante, sin mínimo ni máximo. **Tamaño mínimo:** ninguno (`P-12`). **Tamaño máximo:** ≤ `STOP_MAX` (`R-31`).
 - **El nivel de referencia define el retroceso, no el stop.** El stop se mide con `R-32`: el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento — no solo el extremo del retroceso que la originó.
 
@@ -169,7 +171,7 @@ Marca la zona sobre la vela designada, desde el borde de su cuerpo hasta el extr
 - **El retroceso también marca zona:** el retroceso de una corrida alcista marca **soporte**, y el de una corrida bajista, **resistencia**. Sujeto a `R-12`: si el movimiento cruza el 50 % entre las zonas vecinas, no se marca.
 - **Se extiende hacia la derecha** a lo largo del gráfico.
 - **El rectángulo se dibuja desde la vela origen**, no desde la vela que confirma la zona.
-- **Cuando una vela hace máximo mayor y mínimo menor, el orden de lo que hace por dentro decide qué vela sostiene la zona.**
+- **Cuando una vela hace máximo mayor y mínimo menor, el orden de lo que hace por dentro decide qué vela sostiene la zona.** **Desde `VUELTA_EN_VELA_DESDE`, si la vela da las dos vueltas (`R-05`), sostiene las dos zonas**: la del retroceso, sobre su mínimo, y la de la corrida, sobre su máximo, cada una cuando se confirma.
 
 #### `R-10` · Estirar la zona · rompimiento con mecha sin consecución
 
@@ -205,6 +207,14 @@ En cualquiera de los dos casos **la zona original no se toca** y nace una **segu
 
 La apéndice se dibuja **desde la vela de rompimiento**, su vela origen, aunque no quede marcada hasta ese momento. Es del **mismo gris** que cualquier otra zona (`R-09`).
 
+**🧱 La apéndice y su zona forman un BLOQUE** *(desde `BLOQUE_DESDE`)*:
+
+- **Se dibujan por separado, pero se rompen y mueren juntas.** Si la apéndice tiene a su vez otra apéndice, todas son el mismo bloque.
+- **Al nacer la apéndice, el rompimiento que la creó se cierra**, igual que cuando la zona se estira (`R-10`): para romper el bloque hace falta un rompimiento **nuevo** de su borde exterior, con su propia consecución.
+- **Para entrar hay que romper el borde exterior del bloque**, la apéndice. Romper solo la zona original no da entrada: tendría la apéndice en contra.
+- **El bloque queda inactivo cuando se supera en las dos direcciones por sus bordes exteriores** (`R-21`): rompimiento y consecución por la apéndice, y después por el otro lado de la zona original.
+- **Solo es apéndice la zona que nace de un rompimiento SIN consecución.** La que deja una estructura nueva tras rompimiento **y** consecución es una zona normal e independiente, no forma bloque (`R-13`).
+
 #### `R-12` · Zonas entre zonas — la regla del 50 %
 
 Marca una zona entre dos zonas solo si el movimiento que la genera queda entero dentro de la mitad en la que empezó.
@@ -225,7 +235,8 @@ Si la zona que ibas a marcar toca una existente, no marques una nueva: estira la
 **Cómo se aplica**
 
 - **El disparador:** la zona candidata toca en cualquier punto una zona ya marcada **del mismo tipo**; el contacto de bordes cuenta.
-- **Crear una zona nueva está prohibido:** se estira la existente hasta el extremo más lejano de la candidata. Queda **una** zona.
+- **Crear una zona nueva está prohibido** —salvo si la existente ya fue traspasada, punto siguiente—: se estira la existente hasta el extremo más lejano de la candidata. Queda **una** zona.
+- **Si la existente ya fue traspasada** —tuvo rompimiento **y** consecución— *(desde `BLOQUE_DESDE`)*: **no se estira**. La candidata es una zona **normal e independiente**: nace aparte, **recortada en el borde** de la existente, porque dos zonas nunca se montan. Si queda entera dentro, no se marca nada. Cada una lleva su propia cuenta de traspasos (`R-21`). No es una apéndice ni forma bloque (`R-11`). Caso de origen: 21/10/2026, el soporte de la vela 8:40 bajo el de la 8:34, que la 8:38 rompió y la 8:40 traspasó: nace aparte (29.813,50 – 29.825,75) y el de la 8:34 muere solo a las 8:48.
 - **Se estira SOLO hacia el nuevo extremo;** el otro borde no se mueve. No se engloba.
 - **La zona estirada conserva su historial** de rompimientos y consecuciones (`R-21`).
 - **Candidata dentro de la existente:** sin cambios; no hay nada que extender.
@@ -350,6 +361,7 @@ Una zona deja de tener efecto cuando ha sido superada en las dos direcciones.
 - **Pero sigue ocupando su sitio:** la banda que ya gastó su zona no se reabre porque la zona muera (`R-17`, punto 8). **Deja de valer como zona; no deja de ocupar el sitio.**
 - **Se conserva dibujada** en tono muy tenue, solo como recuerdo visual.
 - **Las zonas no envejecen** (`D-07`): una zona es activa o inactiva, sin grados.
+- **Un bloque —una zona y sus apéndices (`R-11`)— se supera como una sola zona**, por sus bordes exteriores *(desde `BLOQUE_DESDE`)*, y queda inactivo entero: todas sus zonas a la vez.
 
 #### `R-22` · La vela que confirma un traspaso no abre el rompimiento contrario
 
@@ -407,14 +419,14 @@ Tras un rompimiento con consecución que falla, el precio recupera la zona enter
 | # | Paso |
 |---|---|
 | 1 | Sobre una zona hay **rompimiento + consecución** (`R-20`) |
-| 2 | 🔴 **La consecución falla EN EL ACTO**: el precio no continúa en esa dirección — ver el plazo, abajo |
+| 2 | 🔴 **La consecución falla**: el precio no continúa en esa dirección y vuelve a la zona — **sin plazo de velas** mientras la zona esté viva, ver abajo |
 | 3 | El precio **atraviesa la zona entera y SOBREPASA el borde contrario** → **vela de reingreso**. Alcista: supera el **borde superior** del soporte. Bajista: supera el **borde inferior** de la resistencia. **No basta con tocar la zona.** Esta vela hace de vela de rompimiento |
 | 4 | **Consecución** ≥1 `TICK` más allá de la vela de reingreso ← **ENTRADA** (`R-24`) |
 | 5 | 🔴 El **objetivo debe caber dentro del punto de referencia** (`R-41`) |
 | 6 | 🔴 **Tiene que haber una zona a la que ir a testear:** una zona **activa** (`R-21`) en la dirección del reingreso, **entera más allá del objetivo**. Bajista: por debajo del objetivo. Alcista: por encima. **Cualquier zona activa**, soporte o resistencia, también de premercado (`R-15`), **a cualquier distancia**. El objetivo sigue siendo 1:1 (`R-32`): **no tiene que llegar a esa zona, basta con que exista.** Sin esa zona **no hay reingreso** |
 
-- **🔴 El reingreso es inmediato o no es.** La ventana de reingreso se abre con la vela de consecución y **se cierra en cuanto el precio supera el extremo de esa vela de consecución**. Si el precio sigue de largo en el sentido del rompimiento, aunque sea un tick, **el rompimiento quedó bueno y ya no hay reingreso posible sobre esa zona** — por mucho que el precio vuelva a pasar por ella más tarde.
-- **El `PLAZO_CONSECUCION` de `R-20` no aplica al reingreso:** su límite es la ventana inmediata de arriba.
+- **🔴 El reingreso no tiene plazo de velas** *(plan 3.51, 22/10/2026)*. **Mientras la zona esté viva**, la vela de reingreso puede llegar en cualquier vela después de la consecución —también después de que el precio haya pasado del extremo de la vela de consecución—, **siempre que tenga espacio de recorrido**: el riesgo dentro de `STOP_MAX` (`R-31`), ninguna zona activa entre la entrada y el objetivo (`R-32`), ningún punto de referencia vivo en contra (`R-41`) y una zona a la que ir más allá del objetivo (paso 6). Hasta la 3.50 decía *«el reingreso es inmediato o no es»*: la ventana se cerraba en cuanto el precio pasaba del extremo de la vela de consecución (27/08/2026).
+- **El `PLAZO_CONSECUCION` de `R-20` no limita cuándo llega la vela de reingreso:** su límite es la vida de la zona. Sí limita la vida de la orden (`R-29`), como en cualquier setup.
 - **🔑 La misma vela puede cerrar el rompimiento fallido y abrir el reingreso.** Si la vela que da la **consecución** del rompimiento se da la vuelta dentro del mismo minuto, atraviesa la zona entera y sale por el borde contrario, **esa misma vela es a la vez consecución y vela de reingreso**. No se exige una vela posterior.
 - **🕯️ Pero solo si la consecución llegó primero.** Solo se piensa en reingreso **después** de que llega la consecución. Cuando la consecución y la vuelta a través de la zona caen en la misma vela, el orden lo dice su color —el mismo criterio que para las zonas (`R-09`) y para la orden (`R-29`)—: **vela blanca, primero el máximo; vela azul, primero el mínimo**. Un reingreso **bajista** de una sola vela necesita vela **blanca** (primero la consecución arriba, después la vuelta abajo); uno **alcista**, vela **azul**. Si el color dice lo contrario, el precio atravesó la zona **antes** de la consecución: no es un rompimiento que falla, y **en esa vela no hay reingreso**.
 - **Vela de consecución sin cuerpo** (apertura = cierre): la consecución **cuenta** —el precio pasó del extremo de la vela de rompimiento, sea cual sea el color—, pero sin color no se sabe qué llegó primero, así que **esa vela no es vela de reingreso**: se mira lo que hace el precio después.
@@ -663,7 +675,7 @@ Ejecuta la sesión siguiendo la checklist diaria **en orden**, y registra **toda
 > **Un solo sitio para los números que pueden cambiar.**
 > Las reglas citan el **nombre** del parámetro, no el valor. Se cambia aquí y se propaga a todo el plan.
 
-**Actualizado:** 2026-10-09
+**Actualizado:** 2026-10-22
 
 ---
 
@@ -689,8 +701,10 @@ Ejecuta la sesión siguiendo la checklist diaria **en orden**, y registra **toda
 |---|---|---|
 | **`TICK`** | 0,25 puntos | umbral de rompimiento y consecución (`R-20`) |
 | **`PLAZO_CONSECUCION`** | **5 velas — es un TOPE, no una espera obligatoria** *(`R-14`, precisada 01/09/2026)* | `R-20`, `R-25`, `R-10`, `R-11` y **`R-29`** (vida de la orden). 🔴 **Gobierna la geometría de la zona y la vida de la orden, NO el traspaso de la zona:** la consecución que invalida una zona **no tiene plazo** *(27/08/2026)*. 🔵 **Y se resuelve antes si el mercado arma una estructura completa en sentido contrario** — `R-14` *(01/09/2026)* |
-| **`VENTANA_REINGRESO`** | **hasta que el precio supere el extremo de la vela de consecución** | `R-26`. El reingreso es **inmediato o no es**: en cuanto el precio sigue de largo, la ventana se cierra para siempre *(27/08/2026)* |
+| **`VENTANA_REINGRESO`** | **mientras la zona esté viva** | `R-26`. Sin plazo de velas: el reingreso vale siempre que tenga espacio de recorrido *(plan 3.51, 22/10/2026)*. Hasta la 3.50, hasta que el precio superara el extremo de la vela de consecución (*«inmediato o no es»*, 27/08/2026) |
 | **`UMBRAL_50`** | 50 % | zonas entre zonas (`R-12`) |
+| **`VUELTA_EN_VELA_DESDE`** | **20261021** (21/10/2026) | `R-05` · `R-06`: desde ese día, una vela puede dar dos vueltas. Los días anteriores se leen con una sola, como se leyeron |
+| **`BLOQUE_DESDE`** | **20261022** (22/10/2026) | `R-11` · `R-13` · `R-21`: desde ese día, la apéndice forma bloque con su zona y la zona que nace tras un traspaso no estira la vieja. Los días anteriores, como se leyeron |
 
 ## Volumen y sesión
 

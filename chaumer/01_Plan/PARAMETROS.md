@@ -29,7 +29,7 @@
 |---|---|---|
 | **`TICK`** | 0,25 puntos | umbral de rompimiento y consecución (`R-20`) |
 | **`PLAZO_CONSECUCION`** | **5 velas — es un TOPE, no una espera obligatoria** *(`R-14`, precisada 01/09/2026)* | `R-20`, `R-25`, `R-10`, `R-11` y **`R-29`** (vida de la orden). 🔴 **Gobierna la geometría de la zona y la vida de la orden, NO el traspaso de la zona:** la consecución que invalida una zona **no tiene plazo** *(27/08/2026)*. 🔵 **Y se resuelve antes si el mercado arma una estructura completa en sentido contrario** — `R-14` *(01/09/2026)* |
-| **`VENTANA_REINGRESO`** | **hasta que el precio supere el extremo de la vela de consecución** | `R-26`. El reingreso es **inmediato o no es**: en cuanto el precio sigue de largo, la ventana se cierra para siempre *(27/08/2026)* |
+| **`VENTANA_REINGRESO`** | **mientras la zona esté viva** | `R-26`. Sin plazo de velas: el reingreso vale siempre que tenga espacio de recorrido *(plan 3.51, 22/10/2026)*. Hasta la 3.50, hasta que el precio superara el extremo de la vela de consecución (*«inmediato o no es»*, 27/08/2026) |
 | **`UMBRAL_50`** | 50 % | zonas entre zonas (`R-12`) |
 | **`VUELTA_EN_VELA_DESDE`** | **20261021** (21/10/2026) | `R-05` · `R-06`: desde ese día, una vela puede dar dos vueltas. Los días anteriores se leen con una sola, como se leyeron |
 | **`BLOQUE_DESDE`** | **20261022** (22/10/2026) | `R-11` · `R-13` · `R-21`: desde ese día, la apéndice forma bloque con su zona y la zona que nace tras un traspaso no estira la vieja. Los días anteriores, como se leyeron |
