@@ -4,6 +4,7 @@
 const Disciplina = (() => {
   let trades = [], sesiones = [], casuisticas = [], catalogo = [], setupsCat = []
   let fechasEsp = [], stopMax = 80   // contexto de disciplina (regla FOMC, stop máx)
+  let motor                          // la medida del plan (desde el 01/10); undefined = no cargó
   let DISC_FACTORS = []
   let period = 'month'
   let loaded = false, wired = false
@@ -173,7 +174,7 @@ const Disciplina = (() => {
 
     // Índices por día: se construyen con TODO el histórico (no con el rango ni con
     // el filtro de cuenta) — son "qué pasó ese día", no métricas del período.
-    ctx = discContexto({ trades, errores: casuisticas, fechasEsp, stopMaxPuntos: stopMax })
+    ctx = discContexto({ trades, errores: casuisticas, fechasEsp, stopMaxPuntos: stopMax, motor })
     const conectadas = ses.filter(seConecto)
     // "Operadas" = con operativa real (trades o setup declarado). `no_opero=false` no
     // basta: es el default de la columna y una sesión creada al abrir NT8 nace así.
@@ -279,12 +280,60 @@ const Disciplina = (() => {
     // Verificación automática: días que operaron dentro de la ventana de noticia roja
     const violacionesNoticia = log.filter(r => r.enVentana).length
 
+    // Desde el 01/10 el período puede medirse con el plan: días por su veredicto.
+    const medida = medidaDelPeriodo(ses, etapaActual, ctx)
+
     return {
       r, totalConectadas: conectadas.length, totalOperadas: operadas.length,
       disciplinaPct, dOk, dTotal, phases, faseDebil, racha, hist,
       tipoCount, erroresTotal: cas.length, erroresPsico, causaRaiz,
       diasLimpios, diasLimpiosPct, log, violacionesNoticia,
       cas,   // ocurrencias del período (para los modales de detalle por día)
+      medida, plan: medida === 'plan' ? computePlan(ses) : null,
+    }
+  }
+
+  // ── La medida del plan (desde el 01/10/2026) ──────────────────────────────
+  // El criterio vive en db.js (veredictoDia, ejecucionDia, alarmasDia, lecturaDia);
+  // aquí solo se ordena para pintarlo. Diseño: docs/disenos/2026-10-23-disciplina-plan.md (OPCIÓN A).
+  function computePlan(ses) {
+    const todos = DB.checklistTodos()
+    const dias = ses.filter(s => medidaDeFecha(s.sesion_date) === 'plan')
+      .sort((a, b) => a.sesion_date.localeCompare(b.sesion_date))
+      .map(s => {
+        const v = veredictoDia(s, ctx)
+        if (!v) return null
+        return { fecha: s.sesion_date, v, ej: ejecucionDia(s, ctx), al: alarmasDia(s, todos, ctx),
+                 lec: lecturaDia(s, todos, ctx), plan: ctx.motor.get(s.sesion_date)?.operacion || null }
+      }).filter(Boolean)
+    // El número es el mismo que dan el calendario y Análisis: sale de calcDisciplinaStats.
+    const st = calcDisciplinaStats(ses, todos, ctx)
+    const ejecutados = dias.filter(d => d.ej)
+    // Racha: días seguidos del plan (igual/bien) desde el más reciente. Los avisos y los
+    // pendientes ni suman ni cortan; un día fuera del plan la corta.
+    let racha = 0
+    for (const d of [...dias].reverse()) {
+      if (d.v === 'aviso' || d.v === 'pendiente') continue
+      if (VEREDICTO_A_FAVOR[d.v]) racha++; else break
+    }
+    // Alarmas: las que fallaron, por regla, y las que se cumplieron siempre.
+    const autos = todos.filter(i => i.etapa === 2 && i.evidencia === 'auto' && i.clave !== 'p2_una_operacion')
+    const alarmas = dias.flatMap(d => d.al.map(i => ({ fecha: d.fecha, clave: i.clave, texto: textoAlarma(i) })))
+    // «Sin fallos» solo para las que se comprobaron algún día: la del FOMC no se evalúa en
+    // un mes sin FOMC, y decir que se cumplió sería mentir.
+    const operadas = ses.filter(s => medidaDeFecha(s.sesion_date) === 'plan' && sesionOpero(s, ctx.conTrades))
+    const evaluada = i => operadas.some(s => discFactorAplica({ fase: i.fase || 1, setup: i.setup || null,
+      aplica_si: i.aplica_si || 'siempre' }, s, ctx) && reglaAutoResultado(i.clave, s, ctx) !== null)
+    const sinFallo = autos.filter(i => !alarmas.some(a => a.clave === i.clave) && evaluada(i)).map(textoAlarma)
+    const lecturas = dias.filter(d => d.lec)
+    return {
+      dias, pct: st.pct, ok: st.ok, total: st.total, racha,
+      ejOk: ejecutados.filter(d => d.ej.ok).length, ejTotal: ejecutados.length,
+      ejFallos: ejecutados.flatMap(d => d.ej.fallos.map(f => ({ fecha: d.fecha, texto: textoFalloEjecucion(f) }))),
+      alarmas, sinFallo, avisos: dias.filter(d => d.v === 'aviso'),
+      lecOk: lecturas.filter(d => d.lec.coincide).length, lecTotal: lecturas.length,
+      lecSiNo: lecturas.filter(d => d.lec.marco && !d.lec.coincide).map(d => d.fecha),
+      lecNoSi: lecturas.filter(d => !d.lec.marco && !d.lec.coincide).map(d => d.fecha),
     }
   }
 
@@ -351,6 +400,7 @@ const Disciplina = (() => {
       cont.innerHTML = `<p class="dd-empty">Sin días con actividad en el período (${esc(d.r.label)}).</p>`
       return
     }
+    if (d.medida === 'plan') { renderPlan(cont, d); return }
 
     // ── Stat strip ──
     const stats = [
@@ -434,7 +484,22 @@ const Disciplina = (() => {
         ${d.hist.length ? `<div class="dd-streak-hist" title="Últimas ${d.hist.length} sesiones operadas — verde: checklist 100%, ámbar: incumplimiento menor, rojo: error o varios incumplimientos">${histHtml}</div>` : ''}
       </div>`
 
-    // ── Errores por tipo + causa raíz ──
+    cont.innerHTML = `
+      <div class="dd-strip">${stripHtml}</div>
+
+      <div class="dd-sec-head"><span class="dd-sec-num">01</span><span class="dd-sec-title">Checklist por fase del proceso</span><div class="dd-sec-line"></div></div>
+      <div class="dd-phase-board">${phaseHtml}</div>
+      ${streakHtml}
+      ${erroresHtml(d, '02')}`
+
+    lastData = d
+    wireErrores(cont)
+    cont.querySelectorAll('[data-fail-key]').forEach(el =>
+      el.addEventListener('click', () => openFactorModal(el.dataset.failKey)))
+  }
+
+  // ── Errores por tipo + causa raíz (las dos medidas) ──
+  function erroresHtml(d, num) {
     const tipoOrder = ['psicologico', 'analitico', 'operativo', 'marcado']
     const maxTipo = Math.max(1, ...tipoOrder.map(t => d.tipoCount[t] || 0))
     const barsHtml = tipoOrder.filter(t => (d.tipoCount[t] || 0) > 0).map(t => {
@@ -456,27 +521,100 @@ const Disciplina = (() => {
         </div>`
     }).join('') : '<p class="dd-soft">Sin causas registradas.</p>'
 
-    cont.innerHTML = `
-      <div class="dd-strip">${stripHtml}</div>
-
-      <div class="dd-sec-head"><span class="dd-sec-num">01</span><span class="dd-sec-title">Checklist por fase del proceso</span><div class="dd-sec-line"></div></div>
-      <div class="dd-phase-board">${phaseHtml}</div>
-      ${streakHtml}
-
-      <div class="dd-sec-head"><span class="dd-sec-num">02</span><span class="dd-sec-title">Errores por tipo y causa raíz</span><div class="dd-sec-line"></div></div>
+    return `
+      <div class="dd-sec-head"><span class="dd-sec-num">${num}</span><span class="dd-sec-title">Errores por tipo y causa raíz</span><div class="dd-sec-line"></div></div>
       <div class="dd-error-grid">
         <div class="dd-panel"><div class="dd-panel-title">Distribución por tipo (${d.totalConectadas} sesiones)</div>${barsHtml}</div>
         <div class="dd-panel"><div class="dd-panel-title">Causa raíz más frecuente</div><div class="dd-cause-list">${causaHtml}</div></div>
       </div>`
-
-    // Clic en un tipo o una causa → modal con los días de esos errores
-    lastData = d
+  }
+  // Clic en un tipo o una causa → modal con los días de esos errores
+  function wireErrores(cont) {
     cont.querySelectorAll('[data-err-tipo]').forEach(el =>
       el.addEventListener('click', () => openErrorsModal({ tipo: el.dataset.errTipo })))
     cont.querySelectorAll('[data-err-causa]').forEach(el =>
       el.addEventListener('click', () => openErrorsModal({ causa: el.dataset.errCausa })))
-    cont.querySelectorAll('[data-fail-key]').forEach(el =>
-      el.addEventListener('click', () => openFactorModal(el.dataset.failKey)))
+  }
+
+  // ── La pantalla de la medida del plan (OPCIÓN A, 23/10/2026) ──────────────
+  // Cifras grandes arriba, un cuadrito por día y, debajo, lo que falló de cada capa.
+  // Kris entiende mirando: colores y números antes que frases.
+  const diaCorto = f => f.slice(8, 10)
+  const tonoPct = p => p == null ? '' : p >= 80 ? 'pos' : p < 55 ? 'neg' : 'ama'
+  function renderPlan(cont, d) {
+    const p = d.plan
+    const stats = [
+      { label: 'Disciplina · seguiste el plan', value: p.pct == null ? '—' : `${p.pct}%`, cls: `big ${tonoPct(p.pct)}`, sub: `${p.ok} de ${p.total} días` },
+      { label: 'Racha', value: `${p.racha}<span class="dd-unit">d</span>`, cls: p.racha ? 'pos' : '', sub: 'días seguidos con el plan' },
+      { label: 'Ejecución', value: p.ejTotal ? `${p.ejOk}/${p.ejTotal}` : '—', cls: p.ejTotal && p.ejOk < p.ejTotal ? 'ama' : 'pos', sub: 'trades del plan hechos igual' },
+      { label: 'Alarmas', value: `${p.alarmas.length}`, cls: p.alarmas.length ? 'neg' : 'pos', sub: 'reglas básicas rotas' },
+      { label: 'Avisos', value: `${p.avisos.length}`, cls: p.avisos.length ? 'ama' : '', sub: 'el plan operó y tú no' },
+    ]
+    const strip = stats.map(s => `
+      <div class="dd-stat">
+        <div class="dd-stat-label">${s.label}</div>
+        <div class="dd-stat-value ${s.cls}">${s.value}</div>
+        <div class="dd-stat-sub">${s.sub}</div>
+      </div>`).join('')
+
+    const cuadros = p.dias.map(x => {
+      const info = VEREDICTO_TXT[x.v]
+      const tit = info.largo + (x.plan && (x.v === 'otro' || x.v === 'aviso') ? ` — el plan: ${fmtOpPlan(x.plan)}` : '')
+      return `<div class="dd-dia ${info.tono}" data-dia="${x.fecha}" title="${esc(x.fecha)} · ${esc(tit)}">${diaCorto(x.fecha)}<small>${info.corto}</small></div>`
+    }).join('')
+    const leyenda = `
+      <div class="dd-ley">
+        <span><i class="dd-sw g"></i>Seguiste el plan</span>
+        <span><i class="dd-sw r"></i>Operaste fuera del plan</span>
+        <span><i class="dd-sw a"></i>Aviso: el plan operó y tú no</span>
+        ${p.dias.some(x => x.v === 'pendiente') ? '<span><i class="dd-sw n"></i>Pendiente: sin la ficha del motor</span>' : ''}
+      </div>`
+
+    const fila = (tono, fecha, x, y) => `
+      <div class="dd-fila"${fecha ? ` data-dia="${fecha}" title="Ver el día"` : ''}>
+        <span class="dd-pt ${tono}"></span><span class="x">${x}</span><span class="y">${y}</span>
+      </div>`
+    const fecha = f => `${diaCorto(f)}/${f.slice(5, 7)}`
+    const ejHtml = p.ejFallos.length
+      ? p.ejFallos.map(f => fila('fail', f.fecha, fecha(f.fecha), esc(f.texto))).join('')
+      : fila('ok', null, p.ejTotal ? 'Todos los trades del plan, igual al plan' : 'Ningún trade del plan en el período', '')
+    const alHtml = p.alarmas.map(a => fila('fail', a.fecha, fecha(a.fecha), esc(a.texto))).join('')
+      + (p.sinFallo.length ? fila('ok', null, esc(p.sinFallo.join(' · ')), 'sin fallos') : '')
+
+    const lista = fs => fs.length ? fs.map(diaCorto).join(', ') : '—'
+    const lecHtml = p.lecTotal ? `
+      ${fila(p.lecOk === p.lecTotal ? 'ok' : 'fail', null, 'Tu casilla coincidió con el motor', `<b>${p.lecOk} de ${p.lecTotal}</b> días`)}
+      ${fila('fail', null, 'Marcaste ✓ y no era del plan', lista(p.lecSiNo))}
+      ${fila('fail', null, 'Marcaste ✗ y sí era del plan', lista(p.lecNoSi))}`
+      : '<p class="dd-soft">Sin casillas que comparar en el período.</p>'
+
+    cont.innerHTML = `
+      <div class="dd-strip dd-strip-plan">${strip}</div>
+
+      <div class="dd-sec-head"><span class="dd-sec-num">01</span><span class="dd-sec-title">¿Hiciste lo que decía el plan?</span><div class="dd-sec-line"></div></div>
+      <div class="dd-dias">${cuadros}</div>
+      ${leyenda}
+
+      <div class="dd-sec-head"><span class="dd-sec-num">02</span><span class="dd-sec-title">Ejecución y alarmas</span><div class="dd-sec-line"></div></div>
+      <div class="dd-plan-grid">
+        <div class="dd-panel"><div class="dd-panel-title">Ejecución · entrada y contratos</div>${ejHtml}</div>
+        <div class="dd-panel"><div class="dd-panel-title">Alarmas · no bajan el porcentaje</div>${alHtml}</div>
+      </div>
+
+      <div class="dd-sec-head"><span class="dd-sec-num">03</span><span class="dd-sec-title">Tu lectura frente al motor</span><div class="dd-sec-line"></div></div>
+      <div class="dd-panel">${lecHtml}</div>
+
+      ${erroresHtml(d, '04')}`
+
+    lastData = d
+    wireErrores(cont)
+    cont.querySelectorAll('[data-dia]').forEach(el => el.addEventListener('click', () => abrirDia(el.dataset.dia)))
+  }
+
+  // La vista del día, igual que desde los modales (metrics.js) y el calendario.
+  async function abrirDia(fecha) {
+    const [trs, ses] = await Promise.all([DB.getTradesByDate(fecha), DB.getSesionByDate(fecha)])
+    await Modal.openDay(fecha, trs, ses)
   }
 
   // Agrupa los ítems de una fase por familia de setup. Devuelve un solo grupo sin
@@ -651,7 +789,7 @@ const Disciplina = (() => {
   async function load() {
     const cont = document.getElementById('disciplinaContent')
     try {
-      const [t, s, c, cat, items, fe, obj, sup] = await Promise.all([
+      const [t, s, c, cat, items, fe, obj, sup, mo] = await Promise.all([
         DB.getTrades(),
         DB.getSesiones(),
         DB.getAllCasuisticas(),
@@ -661,7 +799,9 @@ const Disciplina = (() => {
         DB.getFechasEspeciales().catch(() => []),
         DB.getObjetivos().catch(() => null),
         DB.getSetups ? DB.getSetups().catch(() => []) : [],
+        DB.getMotorDisciplina().catch(() => undefined),   // sin él, la medida de las reglas
       ])
+      motor = mo
       trades = t || []; sesiones = s || []; casuisticas = c || []; catalogo = cat || []
       fechasEsp = fe || []; stopMax = obj?.stop_max_puntos || 80; setupsCat = sup || []
       await DB.getEtapas().catch(() => [])

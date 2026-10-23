@@ -4734,10 +4734,43 @@ details.cz-det > summary:focus-visible {
 .dd-type-txt { font-size: 0.78rem; color: var(--text3); }
 .dd-empty, .dd-soft { color: var(--text3); font-size: 0.85rem; padding: 18px 2px; }
 
+/* La medida del plan (desde el 01/10/2026, OPCIÓN A): cifras, un cuadrito por día y lo
+   que falló. Diseño: docs/disenos/2026-10-23-disciplina-plan.md */
+.dd-strip-plan { grid-template-columns: 1.6fr repeat(4, 1fr); }
+.dd-stat-value.big { font-size: 2.5rem; }
+.dd-stat-value.ama { color: var(--warning-txt); }
+.dd-dias { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 6px; }
+.dd-dia {
+  border: 1px solid; border-radius: 8px; padding: 8px 2px 7px; text-align: center;
+  font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: filter var(--transition), transform var(--transition);
+}
+.dd-dia small { display: block; font-size: 0.6rem; font-weight: 500; margin-top: 2px; opacity: 0.85; }
+.dd-dia:hover { filter: brightness(1.2); transform: translateY(-1px); }
+.dd-dia.g, .dd-sw.g { background: var(--accent-dim); border-color: var(--accent); color: var(--accent-txt); }
+.dd-dia.r, .dd-sw.r { background: var(--red-dim); border-color: var(--red); color: var(--red-txt); }
+.dd-dia.a, .dd-sw.a { background: var(--warning-dim); border-color: var(--warning); color: var(--warning-txt); }
+.dd-dia.n, .dd-sw.n { background: var(--bg3); border-color: var(--border); color: var(--text3); }
+.dd-ley { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; font-size: 0.74rem; color: var(--text2); }
+.dd-sw { display: inline-block; width: 10px; height: 10px; border: 1px solid; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.dd-plan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.dd-fila { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 0.84rem; }
+.dd-fila:last-child { border-bottom: none; }
+/* Punto propio: `.dd-dot` lo redefine más abajo otro componente (22px, cuadrado). */
+.dd-pt { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dd-pt.ok { background: var(--accent); }
+.dd-pt.fail { background: var(--red); }
+.dd-fila .x { flex: 1; color: var(--text); }
+.dd-fila .y { color: var(--text2); font-size: 0.78rem; text-align: right; }
+.dd-fila .y b { color: var(--text); }
+.dd-fila[data-dia] { cursor: pointer; border-radius: 6px; transition: background var(--transition); }
+.dd-fila[data-dia]:hover { background: var(--bg3); }
+
 @media (max-width: 900px) {
   .dd-strip { grid-template-columns: repeat(2, 1fr); }
+  .dd-strip-plan .dd-stat:first-child { grid-column: 1 / -1; }
   .dd-phase-board { grid-template-columns: 1fr; }
   .dd-error-grid { grid-template-columns: 1fr; }
+  .dd-plan-grid { grid-template-columns: 1fr; }
 }
 
 /* ── Registrar sesión: hora de la noticia roja ───────────────────────────── */
