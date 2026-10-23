@@ -259,9 +259,14 @@ Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes.
     // `trades` sin filtrar por cuenta: la disciplina es del proceso del trader,
     // no de una cuenta (el análisis sí se restringe a la principal, pero las
     // reglas de riesgo aplican a lo que se ejecutó ese día, venga de donde venga).
+    // Desde el 01/10 (medida del plan): la ficha del motor entra en el contexto, así el
+    // stop y el riesgo se miden con el stop de medir.py y sale el veredicto del día.
+    const _motorDia = fichaMotor && medidaDeFecha(date) === 'plan'
+      ? new Map([[date, { estado: fichaMotor.estado, operacion: fichaMotor.ficha?.operacion || null,
+                          tu: fichaMotor.ficha?.tu_operacion || null }]]) : undefined
     const _discCtx = discContexto({
       trades, errores: casuisticas, fechasEsp,
-      stopMaxPuntos: objetivos?.stop_max_puntos,
+      stopMaxPuntos: objetivos?.stop_max_puntos, motor: _motorDia,
     })
     // Filtrado por setup Y por contexto del día: una regla condicional (día FOMC,
     // hay noticia) no debe ni aparecer si su contexto no se dio ese día, o el Coach
@@ -279,6 +284,28 @@ Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes.
           return `${(sesion.checklist?.[it.clave] ?? sesion[it.clave]) ? '✓' : '✗'} [F${it.fase}] ${it.texto}`
         }).join('\n  ')
       : 'Sin datos de checklist'
+    // La disciplina del día con la medida del plan: un HECHO calculado por el sistema,
+    // igual que en el dashboard (db.js). Va en el bloque B: es del día.
+    const disciplinaPlanStr = (() => {
+      if (!sesion || !_motorDia) return ''
+      const v = veredictoDia(sesion, _discCtx)
+      if (!v || v === 'pendiente') return ''
+      const op = fichaMotor.ficha?.operacion
+      const lineas = [`  Veredicto: ${VEREDICTO_TXT[v].largo}${op && (v === 'otro' || v === 'aviso') ? ` (el plan: ${fmtOpPlan(op)})` : ''}.`]
+      const ej = ejecucionDia(sesion, _discCtx)
+      if (ej) lineas.push(`  Ejecución: ${ej.ok ? 'igual al plan (entrada a ±5 pts, contratos dentro de los $160 con el stop del plan)' : ej.fallos.map(textoFalloEjecucion).join(' · ')}.`)
+      const al = alarmasDia(sesion, DB.checklistTodos(), _discCtx)
+      if (al.length) lineas.push(`  Alarmas: ${al.map(textoAlarma).join(' · ')}.`)
+      const lec = lecturaDia(sesion, DB.checklistTodos(), _discCtx)
+      if (lec) lineas.push(`  Lectura: el trader marcó «${lec.texto}» como ${lec.marco ? '✓' : '✗'} y el motor ${lec.coincide ? 'coincide' : 'NO coincide'}.`)
+      return `
+
+Disciplina del día (VERIFICADO POR DATOS con el motor; desde el 01/10 es la medida de la disciplina):
+${lineas.join('\n')}
+  (Un día cuenta a favor si hizo lo que decía el plan —o no operó cuando el plan no operaba—, sin
+   mirar el resultado: un trade fuera del plan que gana sigue siendo indisciplina. Si el plan operó
+   y el trader no, es un aviso, no un fallo. La casilla del setup ya no puntúa: se compara con el motor.)`
+    })()
     // Códigos de las reglas aplicables al día: el Coach los usa para vincular cada
     // error con la regla que contradice (9ª parte del formato de errores). Se
     // excluyen las automáticas: el sistema ya las detecta solo y vincularlas no
@@ -493,7 +520,7 @@ Checklist:
   (Las líneas marcadas "VERIFICADO POR DATOS" las comprobó el sistema con los trades
    reales, no las marcó el trader: son hechos, no autoevaluación. Si una sale ✗, la
    regla se rompió aunque el trader creyera cumplirla — dilo sin rodeos. El resto del
-   checklist SÍ es auto-reportado y puede no coincidir con lo que pasó.)
+   checklist SÍ es auto-reportado y puede no coincidir con lo que pasó.)${disciplinaPlanStr}
 
 Errores cometidos:
 ${casStr}
