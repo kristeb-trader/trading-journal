@@ -289,120 +289,25 @@ const Charts = (() => {
   }
 
   // ── Equity a ancho completo ─────────────────────────────────────────────
+  // La misma curva que el "P&L acumulado" del Resumen de backtesting
+  // (Metrics.pintarEquity): día a día, verde sobre el cero y rojo debajo, y la
+  // etiqueta con el acumulado a la derecha. Una mejora allí llega aquí.
   function renderEquity(trades) {
-    destroy('equity')
-    // Granularidad: día en Mes/Trimestre, mes en Anual
-    const byKey = {}
-    const keyOf = d => period === 'year' ? d.slice(0, 7) : d
-    trades.forEach(t => { if (t.trade_date) byKey[keyOf(t.trade_date)] = (byKey[keyOf(t.trade_date)] || 0) + (parseFloat(t.profit) || 0) })
-    const keys = Object.keys(byKey).sort()
-    let cum = 0
-    const equity = keys.map(k => { cum += byKey[k]; return parseFloat(cum.toFixed(2)) })
-    const diario = keys.map(k => parseFloat(byKey[k].toFixed(2)))
-    const labels = keys.map(k => period === 'year' ? MONTH_S[parseInt(k.slice(5, 7)) - 1] : k.slice(5))
-    const last = equity[equity.length - 1] || 0
-
-    // En Anual cada punto es un MES, no un día: la unidad tiene que decirlo o el
-    // aviso de muestra corta miente sobre qué se está contando.
-    const uni = n => period === 'year' ? (n === 1 ? 'mes' : 'meses') : (n === 1 ? 'día' : 'días')
+    const porDia = {}
+    trades.forEach(t => { if (t.trade_date) porDia[t.trade_date] = (porDia[t.trade_date] || 0) + (parseFloat(t.profit) || 0) })
+    const n = Object.keys(porDia).length
 
     const nota = document.getElementById('equityNota')
     if (nota) {
       nota.className = 'an-note'
-      nota.innerHTML = keys.length === 0
+      nota.innerHTML = n === 0
         ? '<i class="ti ti-info-circle"></i> Sin operaciones en el período.'
-        : keys.length < 3
-          ? `<i class="ti ti-alert-triangle"></i> Solo ${keys.length} ${uni(keys.length)} con operaciones: la curva no describe una tendencia todavía.`
+        : n < 3
+          ? `<i class="ti ti-alert-triangle"></i> Solo ${n} ${n === 1 ? 'día' : 'días'} con operaciones: la curva no describe una tendencia todavía.`
           : ''
-      if (keys.length < 3 && keys.length > 0) nota.classList.add('an-note-warn')
+      if (n < 3 && n > 0) nota.classList.add('an-note-warn')
     }
-    if (!keys.length) return
-
-    const ctx = document.getElementById('equityChart').getContext('2d')
-    const segColor = c => (c.p0.parsed.y < 0 || c.p1.parsed.y < 0) ? COLORS.red : COLORS.accent
-
-    instances.equity = new Chart(ctx, {
-      type: 'line',
-      data: { labels, datasets: [{
-        label: 'P&L Acumulado', data: equity,
-        borderColor: last >= 0 ? COLORS.accent : COLORS.red, borderWidth: 2.5,
-        segment: { borderColor: segColor },
-        // Solo el último punto visible: los intermedios ensucian y el tooltip ya
-        // los alcanza por índice.
-        pointRadius: c => c.dataIndex === equity.length - 1 ? 5 : 0,
-        pointHoverRadius: 6,
-        pointBackgroundColor: last >= 0 ? COLORS.accent : COLORS.red,
-        pointBorderColor: '#1a1a18', pointBorderWidth: 2.5,
-        tension: 0.35, fill: true, clip: 8,
-        backgroundColor: c => {
-          const { chart } = c
-          const { ctx: cx, chartArea } = chart
-          if (!chartArea) return 'rgba(29,158,117,0.15)'
-          const zeroY = chart.scales.y.getPixelForValue(0)
-          const top = chartArea.top, bottom = chartArea.bottom
-          // Si el lienzo aún no tiene alto (render con la sección oculta), la escala
-          // devuelve NaN y `addColorStop` lanza. Se cae al relleno plano.
-          if (!Number.isFinite(zeroY) || bottom - top <= 0) return 'rgba(29,158,117,0.15)'
-          const g = cx.createLinearGradient(0, top, 0, bottom)
-          const z = Math.max(0, Math.min(1, (zeroY - top) / (bottom - top)))
-          g.addColorStop(0, 'rgba(29,158,117,0.42)')
-          g.addColorStop(Math.max(0, z - 0.001), 'rgba(29,158,117,0.02)')
-          g.addColorStop(Math.min(1, z + 0.001), 'rgba(226,75,74,0.02)')
-          g.addColorStop(1, 'rgba(226,75,74,0.38)')
-          return g
-        },
-      }] },
-      options: {
-        ...baseOptions,
-        interaction: { mode: 'index', intersect: false },
-        layout: { padding: { left: 4, right: 12, top: 12, bottom: 2 } },
-        plugins: {
-          ...baseOptions.plugins,
-          legend: { display: false },
-          tooltip: { enabled: false, external: tipEquity(labels, diario, equity) },
-        },
-        scales: {
-          x: { ...baseOptions.scales.x, grid: { display: false },
-               ticks: { color: COLORS.text, maxRotation: 0, autoSkip: true, maxTicksLimit: 10, font: { size: 11 } } },
-          // Importes completos con separador de miles ($1.500), no abreviados a
-          // "1,5k": el eje carga los valores que no llevan etiqueta directa, así
-          // que tiene que poder leerse sin traducir.
-          y: { ...baseOptions.scales.y, border: { display: false },
-               grid: { color: 'rgba(255,255,255,0.04)' },
-               ticks: { color: COLORS.text, font: { size: 11 }, maxTicksLimit: 6,
-                        callback: v => fmtDinero(v, { masEnPositivo: false }) } },
-        },
-      },
-      plugins: [lineaCero],
-    })
-  }
-
-  // Tooltip HTML propio: el de Chart.js no permite esta jerarquía (fecha arriba,
-  // el P&L del día grande y el acumulado debajo).
-  function tipEquity(labels, diario, equity) {
-    return ctx => {
-      const { chart, tooltip } = ctx
-      let el = chart.canvas.parentNode.querySelector('.an-tip')
-      if (!el) {
-        el = document.createElement('div')
-        el.className = 'an-tip'
-        chart.canvas.parentNode.appendChild(el)
-      }
-      if (tooltip.opacity === 0) { el.style.opacity = 0; return }
-      const i = tooltip.dataPoints?.[0]?.dataIndex
-      if (i == null) return
-      const d = diario[i], acc = equity[i]
-      el.innerHTML = `
-        <div class="an-tip-fecha">${labels[i]}</div>
-        <div class="an-tip-row ${d >= 0 ? 'an-tip-pos' : 'an-tip-neg'}"><span>Del día</span><b>${fmtDinero(d)}</b></div>
-        <div class="an-tip-row"><span>Acumulado</span><b style="color:var(--text)">${fmtDinero(acc)}</b></div>`
-      // Se ancla dentro del contenedor y se voltea si se sale por la derecha.
-      const w = el.offsetWidth
-      const x = tooltip.caretX + w + 16 > chart.width ? tooltip.caretX - w - 12 : tooltip.caretX + 12
-      el.style.opacity = 1
-      el.style.left = `${Math.max(0, x)}px`
-      el.style.top = `${Math.max(0, tooltip.caretY - 10)}px`
-    }
+    Metrics.pintarEquity('equityChart', { porDia, unidad: '$' })
   }
 
   // Línea del cero: sin ella no se ve de un vistazo si la curva está en positivo.
