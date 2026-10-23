@@ -486,13 +486,17 @@ const DataManager = (() => {
     // (rulebook `reglas`, capa proceso con es_checklist). Ya no se edita aquí.
 
     // ── Capital inicial (para rentabilidad % en Análisis) ──
+    // Vive en objetivos.capital_inicial (antes en el localStorage, que se perdía).
     const capInput = document.getElementById('dataCapitalInicial')
     if (capInput) {
-      const saved = parseFloat(localStorage.getItem('annual_capital_inicial') || '0')
+      const saved = await DB.getCapitalInicial().catch(() => 0)
       if (saved > 0) capInput.value = saved
-      capInput.addEventListener('change', () => {
-        localStorage.setItem('annual_capital_inicial', String(parseFloat(capInput.value) || 0))
-        Toast.show('Capital inicial guardado', 'success')
+      capInput.addEventListener('change', async () => {
+        const v = parseFloat(capInput.value)
+        try {
+          await DB.saveObjetivos({ capital_inicial: v > 0 ? v : null })
+          Toast.show(v > 0 ? 'Capital inicial guardado' : 'Capital inicial borrado', 'success')
+        } catch (e) { Toast.show('Error al guardar: ' + e.message, 'error') }
       })
     }
 

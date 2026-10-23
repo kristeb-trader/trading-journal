@@ -120,3 +120,4 @@ registrar (ago) + 56 previas a la práctica.
 
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.
+| `2026-10-23-objetivos-capital-inicial.sql` | ✅ MCP | `objetivos.capital_inicial` (NULL = sin configurar): la base de la Rentabilidad % de Análisis pasa del localStorage a Supabase. Al abrir, si el navegador aún guarda el valor viejo, se sube una vez y se borra de allí |

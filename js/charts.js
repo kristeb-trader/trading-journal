@@ -10,7 +10,7 @@ const Charts = (() => {
   let curYear  = new Date().getFullYear()
   let curMonth = new Date().getMonth() + 1     // 1-12 (para period=month)
   let curQ     = Math.floor(new Date().getMonth() / 3) + 1  // 1-4 (para period=quarter)
-  let capital  = parseFloat(localStorage.getItem('annual_capital_inicial') || '0')
+  let capital  = 0   // objetivos.capital_inicial (Otros → Datos); 0 = sin configurar → «—»
 
   const MONTHS  = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
   const MONTH_S = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
@@ -524,7 +524,7 @@ const Charts = (() => {
   }
 
   async function init() {
-    ;[allTrades, allSesiones, allCas, allFechasEsp] = await Promise.all([DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getFechasEspeciales().catch(() => [])])
+    ;[allTrades, allSesiones, allCas, allFechasEsp, capital] = await Promise.all([DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getFechasEspeciales().catch(() => []), DB.getCapitalInicial().catch(() => 0)])
 
     AccountFilter.create('analysis', {
       mountId: 'accountFilterAnalysis',
@@ -638,9 +638,9 @@ const Charts = (() => {
   // Re-lee el capital (configurado en Datos) y re-renderiza. Las flechas de la
   // barra son compartidas, así que al volver hay que reclamar su rótulo: puede
   // haberlo dejado escrito Calendario o Disciplina.
-  function refresh() {
+  async function refresh() {
     if (!allTrades.length) return
-    capital = parseFloat(localStorage.getItem('annual_capital_inicial') || '0')
+    capital = await DB.getCapitalInicial().catch(() => capital)
     updateMonthNav()
     render()
   }

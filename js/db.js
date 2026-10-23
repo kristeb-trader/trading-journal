@@ -1538,6 +1538,24 @@ const DB = {
     if ('cuenta_principal' in payload && payload.cuenta_principal) _cuentaPrincipalCache = payload.cuenta_principal
   },
 
+  // Capital inicial (base de la Rentabilidad % de Análisis) en objetivos.capital_inicial.
+  // Antes vivía solo en el localStorage ('annual_capital_inicial'): si este navegador
+  // aún lo tiene y Supabase no, se sube una vez y se borra de aquí. 0 = sin configurar.
+  async getCapitalInicial() {
+    const o = await this.getObjetivos().catch(() => null)
+    const enBD = parseFloat(o?.capital_inicial) || 0
+    if (enBD > 0) return enBD
+    let viejo = 0
+    try { viejo = parseFloat(localStorage.getItem('annual_capital_inicial') || '0') || 0 } catch (_) {}
+    if (viejo > 0) {
+      try {
+        await this.saveObjetivos({ capital_inicial: viejo })
+        try { localStorage.removeItem('annual_capital_inicial') } catch (_) {}
+      } catch (_) {}
+    }
+    return viejo
+  },
+
   // Nombres de cuenta conocidos (de trades + apex_cuentas) para selectores.
   async getCuentasConocidas() {
     const [t, a] = await Promise.all([
