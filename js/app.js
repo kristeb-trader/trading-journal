@@ -44,7 +44,7 @@ const Modal = {
     // Datos extra: diagnóstico del Coach + errores + emociones + checklist dinámico
     // (catalogo_reglas) + total de trades del día SIN filtro de cuenta (para avisar
     // cuando el filtro está ocultando trades).
-    const [diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp] = await Promise.all([
+    const [diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp, fichaMotor] = await Promise.all([
       dateStr ? DB.getDiagnosticoByDate(dateStr) : null,
       dateStr ? DB.getCasuisticasByDate(dateStr) : [],
       DB.getCatalogoEmociones().catch(() => []),
@@ -52,8 +52,10 @@ const Modal = {
       DB.getChecklistItems().then(() => DB.checklistDeEtapa(etapaDeFecha(dateStr))).catch(() => []),
       dateStr ? DB.getTradesByDate(dateStr).catch(() => []) : [],
       DB.getFechasEspeciales().catch(() => []),   // la regla FOMC necesita saber si lo era
+      // La medida del plan (desde el 01/10): la ficha del motor, tras su candado.
+      dateStr && medidaDeFecha(dateStr) === 'plan' ? DB.getFichaMotor(dateStr).catch(() => null) : null,
     ])
-    const ctx = { dateStr, trades, sesion, diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp }
+    const ctx = { dateStr, trades, sesion, diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp, fichaMotor }
 
     // La imagen va fuera del contenedor con scroll (queda fija); el texto dentro.
     document.getElementById('modalDiaImg').innerHTML = this._renderImagenDia(ctx)
@@ -248,6 +250,28 @@ const Modal = {
     </div>`
   },
 
+  // La disciplina del día con la medida del plan (desde el 01/10): el veredicto, la
+  // ejecución y las alarmas. Mismo cálculo que el dashboard (db.js). Los trades, sin
+  // filtro de cuenta: la disciplina es del proceso, no de una cuenta.
+  // Diseño: docs/disenos/2026-10-23-disciplina-plan.md.
+  _bloquePlan({ dateStr, sesion, allDayTrades, fechasEsp, chkItems, fichaMotor }) {
+    if (!sesion || !dateStr || medidaDeFecha(dateStr) !== 'plan') return ''
+    const motor = new Map(fichaMotor ? [[dateStr, { estado: fichaMotor.estado,
+      operacion: fichaMotor.ficha?.operacion || null, tu: fichaMotor.ficha?.tu_operacion || null }]] : [])
+    const dctx = discContexto({ trades: allDayTrades, fechasEsp, motor })
+    const v = veredictoDia(sesion, dctx)
+    if (!v || v === 'pendiente') return ''
+    const info = VEREDICTO_TXT[v]
+    const opPlan = fichaMotor?.ficha?.operacion
+    const lineas = [`**${info.largo}**` + (opPlan && (v === 'otro' || v === 'aviso') ? ` — el plan: ${fmtOpPlan(opPlan)}` : '')]
+    const ej = ejecucionDia(sesion, dctx)
+    if (ej) lineas.push(ej.ok ? 'Ejecución igual al plan.' : `Ejecución: ${ej.fallos.map(textoFalloEjecucion).join(' · ')}.`)
+    const al = alarmasDia(sesion, DB.checklistTodos(), dctx)
+    if (al.length) lineas.push(`Alarmas: ${al.map(textoAlarma).join(' · ')}.`)
+    const tono = info.tono === 'r' ? 'red' : info.tono === 'a' ? 'amb' : ''
+    return this._bloque('Disciplina · el plan y tú', lineas.join('\n'), tono)
+  },
+
   _renderVistaDia(ctx) {
     const { sesion, diag } = ctx
 
@@ -258,6 +282,7 @@ const Modal = {
       .filter(s => s && s.trim()).join('\n\n')
 
     const cuerpo = [
+      this._bloquePlan(ctx),
       this._bloquePlegable('Resumen del Coach', diag?.sec_resumen_compacto, detalleCoach,
                            '', 'Ver análisis completo'),
       this._bloque('Tu reflexión', sesion?.analisis_trader, 'gry'),

@@ -4,6 +4,7 @@ const Charts = (() => {
   let allSesiones = []
   let allCas      = []
   let allFechasEsp = []   // para el contexto de disciplina (regla FOMC)
+  let allMotor            // la medida del plan (desde el 01/10); undefined = no cargó
   const instances = {}
 
   let period   = 'year'                        // month | quarter | year — Análisis abre en Anual
@@ -21,7 +22,7 @@ const Charts = (() => {
     kpiTrades:  { title: 'Total Trades', text: 'Trades reales del período (sin break-even). Mismo criterio que el calendario.' },
     kpiRent:    { title: 'Rentabilidad', text: 'P&L del período sobre el capital inicial configurado.' },
     kpiEfec:    { title: 'Efectividad', text: 'Tasa de acierto pura: Targets ÷ (Targets + Stops).' },
-    kpiDisc:    { title: 'Disciplina Total', text: 'Adherencia al checklist por fase (% de ítems cumplidos). No penaliza reglas sin registrar. Mismo cálculo que el calendario y el dashboard.' },
+    kpiDisc:    { title: 'Disciplina Total', text: 'Desde el 01/10: días en que hiciste lo que decía el plan, según el motor (los días en que el plan operó y tú no son aviso y no cuentan). Antes: % de ítems del checklist cumplidos. Mismo cálculo que el calendario y el dashboard.' },
     kpiCons:    { title: 'Consistencia', text: 'Sub-períodos positivos: en Mes cuenta semanas, en Trimestre/Año cuenta meses.' },
     equity:     { title: 'Curva de Equity', text: 'P&L acumulado a lo largo del período (por día en Mes/Trimestre, por mes en Anual). El relleno se tiñe de verde sobre cero y de rojo bajo cero. En la cabecera, "máx. caída" es el mayor retroceso desde un pico anterior.' },
     pnlBars:    { title: 'P&L por sub-período', text: 'P&L de cada semana (Mes) o mes (Trimestre/Anual).' },
@@ -228,7 +229,7 @@ const Charts = (() => {
   function calcDiscipline(sesiones) {
     if (!sesiones || !sesiones.length) return null
     return calcDisciplinaStats(sesiones, null, discContexto({
-      trades: allTrades, errores: allCas, fechasEsp: allFechasEsp,
+      trades: allTrades, errores: allCas, fechasEsp: allFechasEsp, motor: allMotor,
     })).pct
   }
 
@@ -524,7 +525,7 @@ const Charts = (() => {
   }
 
   async function init() {
-    ;[allTrades, allSesiones, allCas, allFechasEsp, capital] = await Promise.all([DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getFechasEspeciales().catch(() => []), DB.getCapitalInicial().catch(() => 0)])
+    ;[allTrades, allSesiones, allCas, allFechasEsp, capital, allMotor] = await Promise.all([DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getFechasEspeciales().catch(() => []), DB.getCapitalInicial().catch(() => 0), DB.getMotorDisciplina().catch(() => undefined)])
 
     AccountFilter.create('analysis', {
       mountId: 'accountFilterAnalysis',

@@ -406,6 +406,36 @@ function veredictoDia(s, opts) {
   return ops.every(op => op.coincide) ? 'igual' : 'otro'
 }
 const VEREDICTO_A_FAVOR = { igual: true, bien: true, fuera: false, otro: false }
+// Cómo se dice cada veredicto en pantalla (Disciplina y la vista del día). tono: g · r · a · n.
+const VEREDICTO_TXT = {
+  igual:     { corto: 'igual',     largo: 'Hiciste lo que decía el plan',     tono: 'g' },
+  bien:      { corto: 'ninguno',   largo: 'El plan no operaba y no operaste', tono: 'g' },
+  fuera:     { corto: 'sin plan',  largo: 'Operaste y el plan no operaba',    tono: 'r' },
+  otro:      { corto: 'otro',      largo: 'El plan operaba otra cosa',        tono: 'r' },
+  aviso:     { corto: 'no operé',  largo: 'El plan operó y tú no',            tono: 'a' },
+  pendiente: { corto: 'pendiente', largo: 'Aún sin la ficha del motor',       tono: 'n' },
+}
+// «Continuación ↑ 9:25»: una operación del motor o de `tu_operacion`, en corto.
+function fmtOpPlan(op) {
+  if (!op) return ''
+  const flecha = op.sentido === 'alcista' ? '↑' : op.sentido === 'bajista' ? '↓' : ''
+  return [op.setup, flecha, op.hora].filter(Boolean).join(' ')
+}
+// Las alarmas, en corto: los títulos del plan son frases enteras.
+const ALARMA_CORTA = {
+  p2_instrumento:       'no fue MNQ',
+  p2_ventana_horaria:   'fuera de la ventana 09:30–11:30 ET',
+  p2_noticia:           'entrada en la ventana de una noticia',
+  p2_fomc_continuacion: 'Continuación en día FOMC',
+  p2_stop_max:          'stop de más de 80 pts',
+  p2_un_contrato:       'más contratos de los que caben en $160',
+}
+const textoAlarma = i => ALARMA_CORTA[i.clave] || i.texto
+function textoFalloEjecucion(f) {
+  if (f.tipo === 'entrada') return `entrada a ${String(Math.round(f.dif * 100) / 100).replace('.', ',')} pts del plan`
+  if (f.tipo === 'contratos') return `${f.qty} contratos (cabían ${f.caben})`
+  return ''
+}
 
 // La ejecución de un día `igual`: la entrada al precio del plan y no más contratos de
 // los que caben con el stop DEL PLAN. El stop y el objetivo de Kris no se comparan:

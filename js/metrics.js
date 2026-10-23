@@ -11,6 +11,7 @@ const Metrics = (() => {
   // Las usa el desglose de días para separar festivos y FOMC de los "no conectados".
   let fechasEspByDate  = {}
   let allFechasEsp     = []   // crudas, para el contexto de disciplina (regla FOMC)
+  let allMotor                // la medida del plan (desde el 01/10); undefined = no cargó
 
   // Taxonomía de errores (debe coincidir con el catálogo)
   // Colores semánticos por tipo: color = punto/barra (sólido), text = etiqueta (claro)
@@ -250,7 +251,7 @@ const Metrics = (() => {
   // calendario, análisis y dashboard.
   function calcDisciplina(sesiones, opts) {
     const r = calcDisciplinaStats(sesiones, null, opts)
-    return { total: r.total, ok: r.ok, pct: r.pct ?? 0 }
+    return { total: r.total, ok: r.ok, pct: r.pct ?? 0, medida: r.medida }
   }
 
   // Modal "Experimentos"
@@ -441,13 +442,17 @@ const Metrics = (() => {
     // — la disciplina es del proceso del trader, no de una cuenta, y el contexto es
     // "qué pasó ese día". Con los trades filtrados, un día operado en otra cuenta
     // parecería "no operado" y sus Fases 2/3 desaparecerían del cálculo.
-    const disc = calcDisciplina(activeSesiones, discContexto({
+    // Desde el 01/10 cuenta DÍAS (¿hiciste lo que decía el plan?), no ítems: con
+    // `motor` el cálculo elige la medida del período (docs/disenos/2026-10-23-disciplina-plan.md).
+    const discCtx = discContexto({
       trades: allTrades, errores: allCasuisticas, fechasEsp: allFechasEsp,
-      stopMaxPuntos: allObjetivos?.stop_max_puntos,
-    }))
+      stopMaxPuntos: allObjetivos?.stop_max_puntos, motor: allMotor,
+    })
+    const disc = calcDisciplina(activeSesiones, discCtx)
     const chkItemsTotal = disc.total
     const chkItemsOk    = disc.ok
     const disciplinaProceso = disc.pct
+    const discUnidad = disc.medida === 'plan' ? 'días siguiendo el plan' : 'ítems de checklist'
 
     // ── Tasa de Errores: % de días registrados con al menos un error ──
     const diasConError = new Set(periodCasuisticas.map(c => c.sesion_date)).size
@@ -526,12 +531,15 @@ const Metrics = (() => {
     if (prevRange) {
       const pSes  = allSesiones.filter(s => s.sesion_date >= prevRange.from && s.sesion_date <= prevRange.to)
       const pCas  = allCasuisticas.filter(c => c.sesion_date >= prevRange.from && c.sesion_date <= prevRange.to)
-      const pDiscStat = calcDisciplina(pSes)
+      // Con el mismo contexto: sin él, el período anterior se medía con otro criterio.
+      const pDiscStat = calcDisciplina(pSes, discCtx)
       const pDisc     = pDiscStat.total > 0 ? pDiscStat.pct : null
       const pDiasErr  = new Set(pCas.map(c => c.sesion_date)).size
       const pTasa     = pSes.length > 0 ? Math.round(pDiasErr / pSes.length * 100) : null
       const pLimpios  = pSes.length > 0 ? Math.round((pSes.length - pDiasErr) / pSes.length * 100) : null
-      if (chkItemsTotal > 0) trendDisc    = trendChip(disciplinaProceso, pDisc, true, prevRange.label)
+      // Sin tendencia si el período anterior se mide con la otra medida (ítems frente a
+      // días): octubre contra septiembre salía «−33 pts» solo por cambiar de medida.
+      if (chkItemsTotal > 0 && pDiscStat.medida === disc.medida) trendDisc = trendChip(disciplinaProceso, pDisc, true, prevRange.label)
       if (totalDiasReg > 0)  trendErr     = trendChip(tasaErrorPct, pTasa, false, prevRange.label)
       if (totalDiasReg > 0)  trendLimpios = trendChip(diasLimpiosStat.pct, pLimpios, true, prevRange.label)
     }
@@ -565,7 +573,7 @@ const Metrics = (() => {
       // Mi calendario va en P&L, como siempre (Kris, 30 sep): los puntos se ven
       // en la pantalla de los cuatro calendarios, no aquí.
       { label: 'P&L Neto', value: fmtDinero(netPnl), icon: 'ti-currency-dollar', color: netPnl >= 0 ? 'green' : 'red', sub: `Promedio: ${fmtDinero(avgPnl)}/día` },
-      { label: 'Disciplina', value: `${disciplinaProceso}%`, icon: 'ti-checkup-list', color: disciplinaProceso >= 80 ? 'green' : disciplinaProceso >= 50 ? 'warning' : 'red', sub: chkItemsTotal > 0 ? `${chkItemsOk}/${chkItemsTotal} ítems de checklist${trendDisc}` : 'Sin días operados', clickable: true, action: 'disc-detail' },
+      { label: 'Disciplina', value: `${disciplinaProceso}%`, icon: 'ti-checkup-list', color: disciplinaProceso >= 80 ? 'green' : disciplinaProceso >= 50 ? 'warning' : 'red', sub: chkItemsTotal > 0 ? `${chkItemsOk}/${chkItemsTotal} ${discUnidad}${trendDisc}` : 'Sin días operados', clickable: true, action: 'disc-detail' },
       { label: 'Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días${costoErrores > 0 ? ` · ≈ <span style="color:var(--red)">-$${fmtMiles(costoErrores)}</span>` : ''}${trendErr}` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
       // El desglose T/S vive ahora en su propia tarjeta, así que aquí va el tamaño
       // de la muestra: un 60% sobre 5 operaciones no dice lo mismo que sobre 80.
@@ -911,10 +919,11 @@ const Metrics = (() => {
 
   async function init() {
     let checklistItems, fechasEsp
-    ;[allTrades, allSesiones, allCasuisticas, allCatalogo, allObjetivos, allExpCatalogo, allExpRegistros, checklistItems, fechasEsp] = await Promise.all([
+    ;[allTrades, allSesiones, allCasuisticas, allCatalogo, allObjetivos, allExpCatalogo, allExpRegistros, checklistItems, fechasEsp, allMotor] = await Promise.all([
       DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getCatalogoCasuisticas(), DB.getObjetivos(), DB.getCatalogoExperimentos(), DB.getAllExperimentoRegistros(),
       DB.getChecklistItems().catch(() => null),   // todas: cada día usa las de su etapa
       DB.getFechasEspeciales().catch(() => []),
+      DB.getMotorDisciplina().catch(() => undefined),   // sin él, la medida de las reglas
     ])
     // Índice por tipo → Set de fechas (festivos y FOMC del desglose de días)
     allFechasEsp = fechasEsp || []
