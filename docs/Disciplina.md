@@ -35,8 +35,42 @@ La disciplina se mide **por etapas**. Cada regla del checklist pertenece a una
 - El 24/09/2026 tiene además sus 17 casillas viejas guardadas; no cuentan (un día es de una
   sola etapa). Fue el piloto: 6/6.
 
-Todo lo que sigue explica el cálculo con la etapa 1 (julio de 2026). La mecánica es la misma
-en la 2; solo cambian las reglas.
+Desde el 01/10/2026 la etapa 2 se mide distinto: ver *La medida del plan* justo debajo. Lo que sigue después
+explica el cálculo de las reglas con la etapa 1 (julio de 2026); del 24 al 30/09 la mecánica es la misma.
+
+## La medida del plan (desde el 01/10/2026)
+
+Desde el 01/10 la etapa 2 no cuenta casillas: **cuenta días**, y cada día lo juzga el motor. La pregunta es una sola:
+**¿hiciste lo que decía el plan?** (D-047, diseño `docs/disenos/2026-10-23-disciplina-plan.md`).
+
+| Veredicto | Cuándo | Cuenta |
+|---|---|---|
+| ✅ igual | todos tus trades coinciden con la operación del motor (`tu_operacion.coincide`) | a favor |
+| ✅ bien | el motor no operó y tú tampoco | a favor |
+| ❌ fuera | operaste y el motor no operaba | en contra |
+| ❌ otro | los dos operasteis, pero algún trade tuyo no es el del motor | en contra |
+| ⚠️ aviso | el motor operó y tú no | **no cuenta**: se enseña |
+| pendiente | el día no tiene ficha (sin registrar: el candado) | no cuenta |
+
+> **Disciplina % = (igual + bien) ÷ (igual + bien + fuera + otro).** No mira el resultado: un trade fuera del plan que
+> gana sigue siendo `fuera`.
+
+**Octubre 2026** (verificado contra la BD): 9 igual, 1 bien, 3 fuera, 3 otro, 1 aviso → **10 de 16 = 63 %**. Con la medida
+de las reglas daba 98 %.
+
+Aparte, sin tocar el porcentaje:
+
+| Capa | Qué mira | Octubre |
+|---|---|---|
+| **Ejecución** (días igual) | entrada a ±5 pts del plan; contratos ≤ `floor(160 / (stop del plan × $2))` | 6 de 9 (08/10 y 21/10, contratos; 16/10, entrada) |
+| **Alarmas** | MNQ, ventana, noticia, FOMC, stop ≤ 80, riesgo ≤ $160 (este último solo en trades fuera del plan) | 1 (14/10) |
+| **Lectura** | ¿tu casilla del setup dijo lo mismo que el motor? | 7 de 15 |
+
+- El stop y el riesgo se miden con el **stop que deduce `medir.py`**, no con el MAE (el MAE es lo que fue en contra).
+- La **racha** son días seguidos `igual`/`bien`; los avisos y los pendientes ni suman ni cortan.
+- **Un período, una medida**, como con las etapas: la de su día más reciente. Septiembre se mide con las reglas (24–30/09);
+  octubre o «Todo», con el plan, solo desde el 01/10. La tendencia frente al mes anterior no sale si los dos se miden distinto.
+- Si se corrige el motor, las fichas se rehacen y el número cambia solo: el veredicto se calcula, no se guarda.
 
 ## Resumen rápido
 

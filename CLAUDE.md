@@ -8,7 +8,8 @@ Dashboard personal de operativa diaria en NQ/MNQ Futures (1 min), Metodología C
 Lo que no se toca sin aprobación explícita. Una línea cada una; el porqué, en el puntero.
 
 - **Disciplina** — el criterio vive SOLO en `js/db.js`, y un día cuenta las reglas de **su etapa**,
-  activas o no (`activa` solo decide qué se ve para marcar). `.claude/rules/disciplina.md` · D-004, D-024.
+  activas o no (`activa` solo decide qué se ve para marcar). Desde el 01/10 la etapa 2 cuenta **días** por el veredicto
+  del motor (¿era el trade del plan?), no casillas. `.claude/rules/disciplina.md` · D-004, D-024, D-047.
 - **P&L** — `trades.profit` es **NETO**; `commission` es el round-trip total. D-002.
 - **Riesgo en PUNTOS, no en dólares** — MNQ = $2/punto, NQ = $20/punto. D-005.
 - **Horas: NinjaTrader va en hora de Colombia (UTC-5), no ET.** Convertir a ET antes de razonar

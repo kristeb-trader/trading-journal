@@ -37,6 +37,19 @@ contiene su fecha (`disciplina_etapas`). **Un día cuenta las reglas de su etapa
   `soloActivos: true`: eso borraba del pasado las reglas desactivadas.
 - Sin etapas cargadas, `etapaDeFecha` da `undefined` y todo vuelve al criterio viejo (activas).
 
+## La medida del plan (23 oct, D-047)
+
+Desde `PLAN_MOTOR_DESDE` (01/10/2026) los días de la etapa 2 se miden **por veredicto** (`veredictoDia`: igual · bien ·
+fuera · otro · aviso · pendiente), con la ficha del motor y `ficha.tu_operacion`. Funciones: `medidaDeFecha` ·
+`medidaDelPeriodo` · `veredictoDia` · `ejecucionDia` · `alarmasDia` · `lecturaDia` · `DB.getMotorDisciplina`.
+- **Sin `motor` en `discContexto`, todo sigue con la medida de las reglas** (como sin etapas): cada pantalla que quiera la
+  medida nueva tiene que cargar `DB.getMotorDisciplina()` y pasarlo. Hoy lo hacen calendario, Análisis, Disciplina, la
+  vista del día y el Coach.
+- `aviso` y `pendiente` **no cuentan**. El veredicto no mira el resultado.
+- Ejecución, alarmas y lectura se enseñan, pero **no forman el porcentaje**.
+- El stop máximo y el riesgo usan el stop de `medir.py` cuando hay `tu_operacion`; sin ella, el MAE.
+- Un período no suma ítems con días: se mide con la medida de su día más reciente.
+
 ## Las siete invariantes
 
 1. **Sábados y domingos no cuentan en NADA.** El AddOn crea filas de `sesiones` al abrir

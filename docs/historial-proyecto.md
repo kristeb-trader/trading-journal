@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-10-22
+**Última actualización:** 2026-10-23
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-23 | La disciplina mide el plan: el motor dice si el trade era el del plan (desde el 01/10), y Telegram sin velas |
 | 2026-10-22 | El reingreso no tiene plazo de velas (plan 3.51), en el plan, los dos motores, las fichas y el portal; la imagen del reingreso operado enseña el punto de referencia de más allá del objetivo |
 | 2026-10-22 | La apéndice forma bloque con su zona; tras un traspaso la zona nueva no estira la vieja (plan 3.50); el portal, con las dos al día |
 | 2026-10-21 | Una vela puede ser dos puntos de la marcación (plan 3.49), en el plan, los dos motores y el indicador; la apéndice del retroceso y el bloque de zonas, en estudio |
@@ -53,6 +54,27 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-23 — La disciplina mide el plan con el motor
+
+**Lo que pasó.** Kris pidió repensar la disciplina con las reglas nuevas. Con los datos de la etapa 2, octubre salía al
+98 % mientras solo 10 de 16 días había hecho lo que decía el plan: las reglas automáticas son el perímetro y se cumplen
+operando fuera del plan, las casillas coincidían con el motor en la mitad de los días y el riesgo se medía con el MAE.
+Kris no entendió la primera explicación, en texto; con un cuadrito de color por día, sí. Decidió: los días que el plan
+operó y él no, aviso; la medida nueva, desde el 01/10; la pantalla, la opción A (D-047).
+
+**Lo que se cambió.**
+- **Telegram** (`091487f`): el bot ya no pregunta las velas de la corrida.
+- **El cálculo** (`fbfc179`): `db.js` — `veredictoDia`, `ejecucionDia`, `alarmasDia`, `lecturaDia`, la medida por
+  período; el stop y el riesgo, con el stop de `medir.py`. Verificado con `db.js` sobre la BD: 10/16 = 63 %, ejecución 6/9,
+  1 alarma, 1 aviso, lectura 7/15; septiembre sigue en 96 %.
+- **Calendario, Análisis y la vista del día** (`92e047e`): el mismo 63 %; sin tendencia si el mes anterior se mide distinto.
+- **Disciplina** (`d4d8630`): la opción A — cinco cifras, un cuadrito por día, ejecución, alarmas, lectura y errores.
+- **El Coach** (`221f55d`): «Disciplina del día» como hecho, en el bloque B.
+
+**Pendiente** (diseño §8): el trade del 20/10 con MAE 0; el campo de velas del Diario; las preguntas viejas de Telegram.
 
 ---
 

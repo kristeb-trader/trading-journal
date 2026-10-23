@@ -10,6 +10,35 @@
 
 ---
 
+## D-047 — Desde el 01/10 la disciplina pregunta «¿era ese el trade del plan?» y responde el motor
+
+**Decisión (Kris, 23/10/2026).** En la etapa 2, desde el **01/10/2026**, la disciplina cuenta **días** por su veredicto, no
+ítems: `igual` (operó lo que marcaba el motor) y `bien` (ninguno operó) a favor; `fuera` (el motor no operaba) y `otro`
+(operaba otra cosa) en contra. **Los días en que el plan operó y Kris no son un aviso**: se enseñan y no cuentan. La
+ejecución (entrada a ±5 pts, contratos con el stop del plan), las alarmas (las automáticas de siempre) y la lectura (la
+casilla frente al motor) se ven aparte y **no forman el porcentaje**. Del 24/09 al 30/09, la medida de las 9 reglas.
+Pantalla: la **OPCIÓN A** del boceto (*«soy más visual: estilo dashboard»*).
+
+**Motivo.** Octubre daba **98 %** con **10 de 16** días siguiendo el plan: las automáticas son el perímetro (MNQ, ventana,
+una operación…) y se cumplen operando fuera del plan; las dos casillas coincidían con el motor en 7 de 15 días (el 07/10 y
+el 15/10 Kris marcó ✓ el punto de referencia en trades que el motor descartó por el punto de referencia). Y el riesgo se
+medía con el MAE: el 08/10, 4 contratos donde cabían 2, salía cumplido. `ficha.tu_operacion` (D-034) ya decía, trade a
+trade, si coincidía con el motor.
+
+**No mira el resultado.** El 07/10 y el 15/10 Kris ganó saltándose el plan; con la medida en dinero esos días serían
+buenos. En este tramo el plan va en negativo, así que medir «el coste de la indisciplina» en dólares premiaría saltárselo.
+
+**Alternativas descartadas.**
+- **Una etapa 3:** el Coach y el catálogo preguntan por `etapa === 2` en varios sitios y la etapa 2 solo la escribe
+  `sincronizar.mjs`. Es una fecha dentro de la 2 (`PLAN_MOTOR_DESDE`), como `RIESGO_MAX_DESDE`.
+- **Recalcular desde el 24/09:** Kris eligió el 01/10.
+- **Que los días perdidos cuenten como fallo:** Kris, como aviso.
+- **Guardar el veredicto:** se calcula; si se corrige el motor, las fichas y `tu_operacion` se rehacen y el número también.
+
+Diseño: `docs/disenos/2026-10-23-disciplina-plan.md`.
+
+---
+
 ## D-046 — El reingreso no tiene plazo de velas: vale mientras la zona esté viva y tenga espacio de recorrido
 
 **Decisión (Kris, 22/10/2026, plan 3.51).** Se quita *«el reingreso es inmediato o no es»* (27/08/2026): pasar del extremo

@@ -1,6 +1,6 @@
 # La disciplina mide el plan — el motor responde «¿era ese el trade?»
 
-**Versión:** v2 · **Estado:** ✅ APROBADO por Kris (23/10/2026), **OPCIÓN A** · en implementación (fase 1 hecha) ·
+**Versión:** v3 · **Estado:** ✅ APROBADO por Kris (23/10/2026), **OPCIÓN A** · ✅ IMPLEMENTADO (23/10/2026) · D-047 ·
 Relacionado: D-004 y D-024 (el criterio de disciplina), D-034 (`medir.py`, «el motor mide, el Coach juzga»),
 `docs/Disciplina.md`, `.claude/rules/disciplina.md`. Boceto: OPCIÓN A / OPCIÓN B (imagen enviada el 23/10/2026).
 
@@ -161,6 +161,11 @@ Cada fase se verifica por separado (CLAUDE.md, «Verificación») y va en su com
 - Telegram también pregunta contexto, número de corrida y zonas en contra, del sistema viejo.
 
 ## Registro
+
+- **v3 (23/10/2026):** implementado en 5 fases (`fbfc179`, `92e047e`, `d4d8630`, `221f55d` y la documentación). Desvíos del
+  boceto, anotados: la tira lleva una quinta cifra, la **racha** (§5 ya la cambiaba); «sin fallos» en alarmas solo nombra
+  las que se comprobaron algún día (sin día FOMC no se dice que se cumplió); la vista del día pone el veredicto en un bloque
+  «Disciplina · el plan y tú» al principio. La copia local (`dev.local.js`) lleva la foto de octubre.
 
 - **v2 (23/10/2026):** Kris elige la **OPCIÓN A** («soy más visual: estilo dashboard antes que líneas de texto») y no
   objeta los ±5 puntos. Corregido en §6: sin `motor` en el contexto se usa la medida de las reglas (no «—»), para que
