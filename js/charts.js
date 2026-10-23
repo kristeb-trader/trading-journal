@@ -214,7 +214,8 @@ const Charts = (() => {
       : [1,2,3,4,5,6,7,8,9,10,11,12]
     return months.map(m => {
       const last = new Date(curYear, m, 0).getDate()
-      return { label: MONTH_S[m - 1], from: `${curYear}-${p2(m)}-01`, to: `${curYear}-${p2(m)}-${p2(last)}` }
+      // label corto para el eje de barras; nombre completo + año para la tabla
+      return { label: MONTH_S[m - 1], nombre: `${MONTHS[m - 1]} ${curYear}`, from: `${curYear}-${p2(m)}-01`, to: `${curYear}-${p2(m)}-${p2(last)}` }
     })
   }
 
@@ -447,7 +448,7 @@ const Charts = (() => {
         // Una fila por sub-período sin actividad. Se probó agruparlas en una sola
         // para ganar alto (19 ago) y quedaba demasiado apretado: el calendario del
         // año se lee mejor con sus doce meses a la vista, aunque estén vacíos.
-        return `<tr class="an-t-vacia"><td class="an-t-name">${sp.label}</td><td colspan="7">— sin actividad —</td></tr>`
+        return `<tr class="an-t-vacia"><td class="an-t-name">${sp.nombre || sp.label}</td><td colspan="7">— sin actividad —</td></tr>`
       }
       const rent = capital > 0 ? `${(st.pnl / capital * 100).toFixed(2)}%` : '—'
       const efec = st.efec != null ? `${st.efec.toFixed(1)}%` : '—'
@@ -461,7 +462,7 @@ const Charts = (() => {
         : '<span class="an-pill an-pill-be"><i class="ti ti-minus"></i>Neutro</span>'
       return `
         <tr>
-          <td class="an-t-name">${sp.label}</td>
+          <td class="an-t-name">${sp.nombre || sp.label}</td>
           <td class="num an-t-pnl ${st.pnl > 0 ? 'an-t-pos' : st.pnl < 0 ? 'an-t-neg' : ''}">${fmtDinero(st.pnl)}</td>
           <td class="num">${fmtDinero(cum)}</td>
           <td class="num">${rent}</td>
