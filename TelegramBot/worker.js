@@ -217,7 +217,6 @@ function buildResumen(data) {
     (stars ? `⭐ <b>Confianza entrada:</b> ${stars}\n` : '') +
     `📊 <b>Contexto:</b> ${data.contexto}\n` +
     `🔢 <b>Corrida:</b> ${data.num_corrida}ª\n` +
-    `🕯️ <b>Velas:</b> ${data.velas_corrida}\n` +
     `⚠️ <b>Zonas en contra:</b> ${data.zonas_contra ? 'Sí' : 'No'}\n` +
     `📐 <b>Setup:</b> ${data.setup}\n` +
     (data._emocionFinTxt ? `🏁 <b>Al cierre:</b> ${escHtml(data._emocionFinTxt)}\n` : '') +
@@ -236,7 +235,6 @@ async function saveSession(data, env) {
     motivo_no_opero:   data.motivo_no_opero   ?? null,
     contexto:          data.contexto          ?? null,
     num_corrida:       data.num_corrida       ?? null,
-    velas_corrida:     data.velas_corrida     ?? null,
     puntos_retroceso:  data.puntos_retroceso  ?? null,
     zonas_contra:      data.zonas_contra      ?? false,
     setup:             data.setup             ?? null,
@@ -595,11 +593,17 @@ async function handleCallback(cbq, env) {
           ]] }
         );
       } else if (action.startsWith('cor_')) {
+        // Las velas de la corrida ya no se preguntan (23/10/2026): Kris no las usa para
+        // nada, ni en las reglas ni al decidir. De la corrida se pasa a las zonas en contra.
         state.data.num_corrida = parseInt(action.slice(4));
-        state.step = STEPS.VELAS;
+        state.step = STEPS.ZONAS_CONTRA;
         await saveState(env.KV, chatId, state);
-        await sendMessage(token, chatId,
-          '🕯️ <b>Velas en corrida</b>\n\n¿Cuántas velas tuvo la corrida? (número del 1 al 20)'
+        await editMessage(token, chatId, msgId,
+          '⚠️ <b>Zonas en contra</b>\n\n¿Había zonas en contra del trade?',
+          { inline_keyboard: [[
+            { text: '✅ Sí', callback_data: 'zonas_si' },
+            { text: '❌ No', callback_data: 'zonas_no' },
+          ]] }
         );
       } else if (action === 'zonas_si' || action === 'zonas_no') {
         state.data.zonas_contra = action === 'zonas_si';
@@ -659,6 +663,8 @@ async function handleText(msg, env) {
       break;
     }
 
+    // Ya no se llega aquí (23/10/2026, las velas no se preguntan). Se conserva SOLO
+    // por si quedó un estado a medias en KV, para que la sesión se pueda cerrar.
     case STEPS.VELAS: {
       const n = parseInt(text);
       if (isNaN(n) || n < 1 || n > 20) {
