@@ -417,24 +417,38 @@ namespace NinjaTrader.NinjaScript.Indicators
             }
         }
 
-        protected override void OnBarUpdate()
+        // ── MAE / MFE: con cada precio, no al cerrar la vela (23 oct 2026) ────
+        // Antes se medían en OnBarUpdate, y con Calculate.OnBarClose eso es solo al
+        // CERRAR cada vela de 1 minuto: un trade que abría y cerraba dentro del mismo
+        // minuto nunca veía un cierre y quedaba con MAE = MFE = 0 (20/10 −$168, 10/09,
+        // 05/08, 08/07). En los demás faltaba el tramo de la última vela hasta la salida
+        // y sobraban los precios de la vela de entrada anteriores a entrar.
+        // OnMarketData llega con cada operación del mercado, sea cual sea el Calculate.
+        protected override void OnBarUpdate() { }
+
+        // Nombres completos: el archivo no importa NinjaTrader.Data.
+        protected override void OnMarketData(NinjaTrader.Data.MarketDataEventArgs e)
         {
+            if (e.MarketDataType != NinjaTrader.Data.MarketDataType.Last) return;
             lock (syncLock)
             {
                 foreach (var st in states.Values)
-                {
-                    if (!st.InTrade) continue;
-                    if (st.IsLong)
-                    {
-                        if (Low[0]  < st.MaeExtreme) st.MaeExtreme = Low[0];
-                        if (High[0] > st.MfeExtreme) st.MfeExtreme = High[0];
-                    }
-                    else
-                    {
-                        if (High[0] > st.MaeExtreme) st.MaeExtreme = High[0];
-                        if (Low[0]  < st.MfeExtreme) st.MfeExtreme = Low[0];
-                    }
-                }
+                    if (st.InTrade) Extremos(st, e.Price);
+            }
+        }
+
+        // Lleva el peor (MAE) y el mejor (MFE) precio del trade abierto. Llamar con syncLock.
+        private static void Extremos(AcctState st, double precio)
+        {
+            if (st.IsLong)
+            {
+                if (precio < st.MaeExtreme) st.MaeExtreme = precio;
+                if (precio > st.MfeExtreme) st.MfeExtreme = precio;
+            }
+            else
+            {
+                if (precio > st.MaeExtreme) st.MaeExtreme = precio;
+                if (precio < st.MfeExtreme) st.MfeExtreme = precio;
             }
         }
 
@@ -529,7 +543,9 @@ namespace NinjaTrader.NinjaScript.Indicators
                     }
                     else if (prevQty != 0 && st.NetQty == 0)
                     {
-                        // Cierre total del trade
+                        // Cierre total del trade. El precio de salida también lo tocó el
+                        // trade: en una salida por stop, el MAE es al menos hasta ahí.
+                        Extremos(st, ex.Price);
                         st.InTrade = false;
                         st.Commission += FillCommission(ex);   // comisión de la pata de salida
 

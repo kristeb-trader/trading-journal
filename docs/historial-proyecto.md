@@ -74,7 +74,12 @@ operó y él no, aviso; la medida nueva, desde el 01/10; la pantalla, la opción
 - **Disciplina** (`d4d8630`): la opción A — cinco cifras, un cuadrito por día, ejecución, alarmas, lectura y errores.
 - **El Coach** (`221f55d`): «Disciplina del día» como hecho, en el bloque B.
 
-**Pendiente** (diseño §8): el trade del 20/10 con MAE 0; el campo de velas del Diario; las preguntas viejas de Telegram.
+- **El MAE en 0** (`SupabaseAutoExport.cs` y dos migraciones `2026-10-23-mae-*`): el indicador medía el peor precio solo
+  al cerrar cada vela, así que los trades de un solo minuto se guardaban con MAE = MFE = 0 (el 20/10 −$168 con 0 en contra).
+  Ahora mide con cada precio (`OnMarketData`); los 9 guardados en 0 se corrigieron (lo que no se sabe, NULL).
+
+**Pendiente.** Kris: recompilar `SupabaseAutoExport.cs` en NinjaTrader. El campo de velas del Diario y las preguntas viejas
+de Telegram (diseño §8).
 
 ---
 

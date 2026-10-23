@@ -112,6 +112,16 @@ día **sin archivo** en `datos\dia\` lo pide con `BarsRequest` y lo escribe como
   con `datos\dia\` (las dos en `chaumer\05_Backtesting\claude\motor\` desde el 28/09/2026): para volver a verificar, se apunta la configuración a `dia_auto` unos días y se
   exporta a mano en paralelo. Verificado así el 24–25/09: 6 de 6 días idénticos.
 
+## MAE / MFE (23 oct 2026)
+
+`SupabaseAutoExport` mide el peor y el mejor precio del trade **con cada operación del mercado** (`OnMarketData`,
+`MarketDataType.Last`) y añade siempre el precio de salida. Antes lo hacía en `OnBarUpdate` con `Calculate.OnBarClose`,
+o sea **al cerrar cada vela**: un trade que abría y cerraba en el mismo minuto quedaba con **MAE = MFE = 0** (20/10,
+10/09, 05/08, 08/07 y 5 de `apex_trades`), y en los demás faltaba el tramo de la última vela y sobraban precios de la vela
+de entrada anteriores a entrar. Los 9 guardados en 0 se corrigieron (`docs/migrations/2026-10-23-mae-*.sql`): lo que no se
+puede saber queda en **NULL, no en 0**, porque `db.js` lee 0 como «0 puntos en contra» y aprobaba el stop y el riesgo.
+Los MAE anteriores al arreglo son aproximados (por vela), no exactos.
+
 ## Routing de trades (`SupabaseAutoExport`)
 
 Rutea **por nombre de cuenta**: la que empieza por `PA-` **o la cuenta principal

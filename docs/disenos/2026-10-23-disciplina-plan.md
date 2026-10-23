@@ -155,8 +155,8 @@ Cada fase se verifica por separado (CLAUDE.md, «Verificación») y va en su com
 
 ## 8 · Fuera de este diseño (anotado aparte)
 
-- El 20/10 el trade tiene **MAE 0** con −$168: `SupabaseAutoExport` no siguió ese trade. Con la medida nueva no
-  afecta (se usa `tu_operacion`), pero el dato sigue sucio.
+- ~~El 20/10 el trade tiene **MAE 0** con −$168~~ — **resuelto el 23/10**: el indicador medía al cerrar cada vela y los
+  trades de un minuto quedaban en 0. Arreglado en `SupabaseAutoExport.cs` y corregidos los 9 guardados (`2026-10-23-mae-*`).
 - El Diario (`index.html`) aún pide las **velas de la corrida**. Telegram ya no (`091487f`, 23/10).
 - Telegram también pregunta contexto, número de corrida y zonas en contra, del sistema viejo.
 

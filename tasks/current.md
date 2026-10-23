@@ -134,6 +134,12 @@ Rescatados de `chaumer/04_Web/ESTADO_FASE_2.md` al archivarlo (28/09, D-030). Es
 - [ ] Simplificar la prosa de los casos reales, que todavía suena a auditoría
 - [ ] Pasarle la dirección a Alfredo — **Kris**. El 20/10 iba a mandarle `/operativa/`; Alfredo ve el menú corto (D-042)
 
+## NinjaTrader: el MAE con cada precio (23/10)
+
+- [ ] **Kris:** copiar `NinjaTrader/SupabaseAutoExport.cs` a `Custom\Indicators\` y F5 **fuera de la ventana** (sin
+  operación abierta: al recompilar, el indicador se reinicia). Desde entonces el MAE/MFE se mide con cada precio y los
+  trades de un minuto dejan de guardarse en 0. Comprobar en el primer trade que `mae` no sale 0
+
 ## Con fecha (las hace Claude)
 
 - **21/10**: primer día de la Operativa diaria en el portal: que el trade salga en `/operativa/` y en la portada, con su setup, su nota y su gráfico

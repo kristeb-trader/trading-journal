@@ -121,3 +121,5 @@ registrar (ago) + 56 previas a la práctica.
 > La columna "Qué hace" se deriva del nombre del archivo. Para el detalle exacto de una
 > migración histórica, abrir el `.sql` — son cortos.
 | `2026-10-23-objetivos-capital-inicial.sql` | ✅ MCP | `objetivos.capital_inicial` (NULL = sin configurar): la base de la Rentabilidad % de Análisis pasa del localStorage a Supabase. Al abrir, si el navegador aún guarda el valor viejo, se sube una vez y se borra de allí |
+| `2026-10-23-mae-trades-mismo-minuto.sql` | ✅ MCP | MAE/MFE de los 9 trades guardados en 0/0 por abrir y cerrar en el mismo minuto (4 en `trades`, 5 en `apex_trades`): por stop, el MAE exacto; por objetivo, el MFE exacto; lo que no se sabe, NULL. Respaldo `_bak_20261023_mae_trades` / `_bak_20261023_mae_apex` (RLS sin políticas) |
+| `2026-10-23-mae-stop-en-ganancia.sql` | ✅ MCP | Corrige la anterior en el 23/06 (APEX-11): un stop movido a ganancia no da el MAE → NULL |
