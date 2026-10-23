@@ -354,6 +354,106 @@ const RIESGO_MAX_USD = 160
 // Se aplica desde el 28/09: Kris lo pidió así el 05/10, al cambiar la regla.
 const RIESGO_MAX_DESDE = '2026-09-28'
 
+// ── La medida del plan (desde el 01/10/2026) ─────────────────────────────────
+// En la etapa 2 las reglas automáticas son el perímetro (MNQ, ventana, una operación…)
+// y se cumplían aunque Kris operara fuera del plan: octubre daba 98 % con 10 de 16 días
+// siguiendo el plan. Desde el 01/10 la disciplina pregunta «¿era ese el trade del plan?»
+// y responde el motor: su ficha (`motor_fichas`) y `ficha.tu_operacion`, que escribe
+// scripts/cadena/medir.py. No es una etapa 3: es una fecha dentro de la 2, como
+// RIESGO_MAX_DESDE. Diseño: docs/disenos/2026-10-23-disciplina-plan.md.
+//
+// Sin `motor` en el contexto (quien llama no lo cargó) todo sigue con la medida de las
+// reglas, igual que sin etapas cargadas: un fallo de lectura no cambia ninguna cifra.
+const PLAN_MOTOR_DESDE = '2026-10-01'
+// La entrada de Kris cuenta como la del plan a ±5 puntos (lo normal es ±3: el llenado
+// frente al cierre de la vela). Más lejos, entró a otro precio.
+const TOL_ENTRADA_PTS = 5
+
+function medidaDeFecha(fecha) {
+  const f = String(fecha || '').slice(0, 10)
+  return (etapaDeFecha(f) === 2 && f >= PLAN_MOTOR_DESDE) ? 'plan' : 'reglas'
+}
+const _usaPlan = (s, o) => !!(o && o.motor) && medidaDeFecha(s && s.sesion_date) === 'plan'
+const _fichaDia = (s, o) => (o && o.motor && o.motor.get(s.sesion_date)) || null
+const _opsDia = m => (m && m.tu && m.tu.operaciones) || []
+// El trade de `trades` que midió cada operación de `tu_operacion` (misma hora de entrada).
+function _tradeDeOp(trades, op, i) {
+  return trades.find(t => String(t.entry_time || '').slice(0, 5) === op.hora) || trades[i] || null
+}
+// Contratos que caben en el riesgo máximo con un stop de `riesgoPts` (R-04: hacia abajo).
+function _cabenContratos(riesgoPts, t) {
+  const r = parseFloat(riesgoPts)
+  if (!(r > 0)) return null
+  return Math.floor(RIESGO_MAX_USD / (r * _usdPorPunto(t || { instrument: 'MNQ' })))
+}
+
+// El veredicto del día. Cuentan `igual` y `bien` (a favor) y `fuera` y `otro` (en
+// contra). `aviso` (el plan operó y Kris no) se enseña pero no cuenta, decisión de Kris
+// del 23/10. `pendiente` = sin ficha que mirar (día sin registrar: el candado de la BD).
+// null = el día no entra (fin de semana o sin conexión, invariantes 1 y 3).
+// No mira el resultado: un trade fuera del plan que gana sigue siendo `fuera`.
+function veredictoDia(s, opts) {
+  const o = opts || {}
+  if (!s || !esDiaHabil(s.sesion_date) || !_discSeConecto(s)) return null
+  const m = _fichaDia(s, o)
+  if (!m || m.estado !== 'ok') return 'pendiente'
+  const trades = (o.tradesPorDia && o.tradesPorDia.get(s.sesion_date)) || []
+  const opera = !!m.operacion
+  if (!trades.length) return opera ? 'aviso' : 'bien'
+  const ops = _opsDia(m)
+  if (ops.length < trades.length) return 'pendiente'   // medir.py aún no midió esos trades
+  if (!opera) return 'fuera'
+  return ops.every(op => op.coincide) ? 'igual' : 'otro'
+}
+const VEREDICTO_A_FAVOR = { igual: true, bien: true, fuera: false, otro: false }
+
+// La ejecución de un día `igual`: la entrada al precio del plan y no más contratos de
+// los que caben con el stop DEL PLAN. El stop y el objetivo de Kris no se comparan:
+// medir.py los deduce de la salida (1:1), no son los que puso.
+// → { ok, fallos: [{ tipo: 'entrada', dif, hora } | { tipo: 'contratos', qty, caben, hora }] } o null.
+function ejecucionDia(s, opts) {
+  const o = opts || {}
+  if (veredictoDia(s, o) !== 'igual') return null
+  const trades = (o.tradesPorDia && o.tradesPorDia.get(s.sesion_date)) || []
+  const fallos = []
+  _opsDia(_fichaDia(s, o)).forEach((op, i) => {
+    const t = _tradeDeOp(trades, op, i)
+    const mot = op.motor || {}
+    if (op.entrada != null && mot.entrada != null) {
+      const dif = Math.abs(op.entrada - mot.entrada)
+      if (dif > TOL_ENTRADA_PTS) fallos.push({ tipo: 'entrada', dif, hora: op.hora })
+    }
+    const caben = _cabenContratos(mot.riesgo, t)
+    const qty = t ? Number(t.qty) || 0 : 0
+    if (caben != null && qty > caben) fallos.push({ tipo: 'contratos', qty, caben, hora: op.hora })
+  })
+  return { ok: fallos.length === 0, fallos }
+}
+
+// La lectura: ¿la casilla del setup dijo lo mismo que el motor? Informativa, no puntúa.
+// Coincide si marcó ✓ y era el trade del plan, o ✗ y no lo era. Solo días operados.
+function lecturaDia(s, items, opts) {
+  const v = veredictoDia(s, opts)
+  if (v !== 'igual' && v !== 'fuera' && v !== 'otro') return null
+  const fam = _discSetupFamily(s)
+  const it = (items || []).find(i => (i.evidencia || 'declarada') === 'declarada' &&
+    i.setup && i.setup === fam && i.etapa === 2)
+  if (!it || s[it.clave] === undefined) return null
+  const marco = !!s[it.clave]
+  return { clave: it.clave, texto: it.texto, marco, coincide: marco === (v === 'igual'), veredicto: v }
+}
+
+// Las alarmas de un día de la medida del plan: las automáticas de la etapa 2 que el dato
+// resolvió en contra. No forman el porcentaje. «Una operación» no va: ya la cubre el
+// veredicto (un segundo trade que el plan no tenía hace el día `otro`).
+function alarmasDia(s, items, opts) {
+  const o = opts || {}
+  if (!_usaPlan(s, o) || !sesionOpero(s, o.conTrades)) return []
+  return (items || []).filter(i => i.etapa === 2 && i.evidencia === 'auto' && i.clave !== 'p2_una_operacion' &&
+    discFactorAplica({ fase: i.fase || 1, setup: i.setup || null, aplica_si: i.aplica_si || 'siempre' }, s, o) &&
+    reglaAutoResultado(i.clave, s, o) === false)
+}
+
 function reglaAutoResultado(codigo, s, opts) {
   const o = opts || {}
   const trades = (o.tradesPorDia && o.tradesPorDia.get(s.sesion_date)) || []
@@ -376,6 +476,18 @@ function reglaAutoResultado(codigo, s, opts) {
     // Antes del 28/09 se juzga con la regla vieja, «siempre 1 contrato» (plan 3.43). Del
     // 28/09 al 04/10 ya con la nueva: Kris decidió aplicarla desde ahí (05/10/2026).
     if (s.sesion_date < RIESGO_MAX_DESDE) return trades.every(t => Number(t.qty) === 1)
+    // Desde el 01/10, con la medida del plan: los contratos que caben con el stop que
+    // dedujo medir.py, y solo en los trades que NO son del plan (los del plan los mira
+    // ejecucionDia, con el stop del plan). El MAE no es el riesgo: el 08/10 con 4
+    // contratos donde cabían 2 lo daba por bueno.
+    const ops = _usaPlan(s, o) ? _opsDia(_fichaDia(s, o)) : []
+    if (ops.length) {
+      const res = ops.map((op, i) => ({ op, t: _tradeDeOp(trades, op, i) }))
+        .filter(x => !x.op.coincide && x.t)
+        .map(({ op, t }) => { const c = _cabenContratos(op.riesgo, t); return c == null ? null : Number(t.qty) <= c })
+        .filter(r => r !== null)
+      return res.length ? res.every(Boolean) : null
+    }
     // Desde el 28/09 (plan 3.44): los contratos que quepan sin pasar de $160. Sin el
     // stop en `trades`, el riesgo se mide con el MAE en dólares de toda la posición,
     // igual que el stop máximo se mide con el MAE en puntos.
@@ -392,6 +504,9 @@ function reglaAutoResultado(codigo, s, opts) {
 
   if (codigo === 'stop_max_puntos') {
     const lim = o.stopMaxPuntos || 80
+    // Con la medida del plan, el stop que dedujo medir.py (riesgo en puntos); sin él, el MAE.
+    const rs = _usaPlan(s, o) ? _opsDia(_fichaDia(s, o)).map(op => op.riesgo).filter(r => r != null) : []
+    if (rs.length) return rs.every(r => r <= lim)
     const pts = trades.map(maeEnPuntos).filter(p => p != null)
     if (!pts.length) return null                 // sin MAE no se puede afirmar nada
     return pts.every(p => p <= lim)
@@ -475,7 +590,9 @@ function etapaDelPeriodo(sesiones, pedida) {
   return ultima ? etapaDeFecha(ultima) : undefined
 }
 
-function discContexto({ trades, fechasEsp, errores, stopMaxPuntos, etapa } = {}) {
+// `motor`: lo de DB.getMotorDisciplina() (Map fecha → { estado, operacion, tu }) o sus
+// filas. Sin él, la medida del plan no se usa (ver PLAN_MOTOR_DESDE).
+function discContexto({ trades, fechasEsp, errores, stopMaxPuntos, etapa, motor } = {}) {
   const tradesPorDia = new Map()
   ;(trades || []).forEach(t => {
     const d = t.trade_date || t.entry_time?.slice(0, 10)
@@ -490,7 +607,22 @@ function discContexto({ trades, fechasEsp, errores, stopMaxPuntos, etapa } = {})
     rotas: reglasRotasPorDia(errores),
     stopMaxPuntos: stopMaxPuntos || 80,
     etapa,      // número, 'auto' o undefined (= 'auto'). Ver etapaDelPeriodo()
+    motor: motor instanceof Map ? motor
+      : Array.isArray(motor) ? new Map(motor.map(f => [f.fecha, f])) : undefined,
   }
+}
+
+// Con qué se mide un período: la medida de su día hábil más reciente de la etapa elegida,
+// como las etapas. Octubre → 'plan'; septiembre → 'reglas'. Los días de la otra medida no
+// entran: un período no suma ítems con días.
+function medidaDelPeriodo(sesiones, etapa, opts) {
+  if (!(opts && opts.motor) || etapa !== 2) return 'reglas'
+  let ultima = null
+  ;(sesiones || []).forEach(s => {
+    const d = s && s.sesion_date
+    if (d && esDiaHabil(d) && etapaDeFecha(d) === 2 && (!ultima || d > ultima)) ultima = d
+  })
+  return ultima ? medidaDeFecha(ultima) : 'reglas'
 }
 
 // % de disciplina sobre un conjunto de sesiones. Devuelve { total, ok, pct }.
@@ -509,10 +641,26 @@ function calcDisciplinaStats(sesiones, items, opts) {
       etapa: i.etapa, activo: i.activo,
     }))
   const etapa = etapaDelPeriodo(sesiones, o.etapa)
+  const medida = medidaDelPeriodo(sesiones, etapa, o)
+
+  // Medida del plan: se cuentan DÍAS por su veredicto, no ítems.
+  if (medida === 'plan') {
+    const veredictos = { igual: 0, bien: 0, fuera: 0, otro: 0, aviso: 0, pendiente: 0 }
+    ;(sesiones || []).forEach(s => {
+      if (medidaDeFecha(s.sesion_date) !== 'plan') return
+      const v = veredictoDia(s, o)
+      if (v) veredictos[v]++
+    })
+    const ok = veredictos.igual + veredictos.bien
+    const total = ok + veredictos.fuera + veredictos.otro
+    return { total, ok, pct: total > 0 ? Math.round(ok / total * 100) : null, medida, veredictos }
+  }
+
   let total = 0, ok = 0
   ;(sesiones || []).forEach(s => {
     const es = etapaDeFecha(s.sesion_date)
     if (etapa !== undefined && es !== etapa) return   // día de otra etapa: no se mezcla
+    if (o.motor && medidaDeFecha(s.sesion_date) === 'plan') return   // otra medida: tampoco
     factores.forEach(f => {
       if (!reglaEnEtapa(f, es)) return
       if (!discFactorAplica(f, s, o)) return
@@ -526,7 +674,7 @@ function calcDisciplinaStats(sesiones, items, opts) {
       total++; if (reglaCumplida(s, f.key, rotas)) ok++
     })
   })
-  return { total, ok, pct: total > 0 ? Math.round(ok / total * 100) : null }
+  return { total, ok, pct: total > 0 ? Math.round(ok / total * 100) : null, medida }
 }
 
 const DB = {
@@ -1132,11 +1280,19 @@ const DB = {
   // días registrados: los cerrados no llegan, y motorEstados dice cuáles son.
   async getMotorRango(desde, hasta) {
     const { data, error } = await supa.from('motor_fichas')
-      .select('fecha, estado, dia_fed, grafico_url, operacion:ficha->operacion')
+      .select('fecha, estado, dia_fed, grafico_url, operacion:ficha->operacion, tu:ficha->tu_operacion')
       .gte('fecha', desde).lte('fecha', hasta)
       .order('fecha')
     if (error) throw error
     return data || []
+  },
+
+  // Lo que necesita la medida del plan de la disciplina (PLAN_MOTOR_DESDE): la operación
+  // del motor y la de Kris medida por medir.py, día a día. Map fecha → fila. Las pantallas
+  // que entran a la vez comparten una sola petición.
+  async getMotorDisciplina() {
+    const filas = await this._compartido('motorDisciplina', () => this.getMotorRango(PLAN_MOTOR_DESDE, hoyISO()))
+    return new Map(filas.map(f => [f.fecha, f]))
   },
 
   // Sin `velas` (~48 KB/día): son para el agente de backtesting, el Journal no las lee.
