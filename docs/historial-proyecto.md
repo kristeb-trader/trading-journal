@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-10-23
+**Última actualización:** 2026-10-26
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-26 | Las 3 gráficas: el día desde los lados y ▲ ▼ entre las gráficas |
 | 2026-10-23 | La disciplina mide el plan: el motor dice si el trade era el del plan (desde el 01/10), y Telegram sin velas |
 | 2026-10-22 | El reingreso no tiene plazo de velas (plan 3.51), en el plan, los dos motores, las fichas y el portal; la imagen del reingreso operado enseña el punto de referencia de más allá del objetivo |
 | 2026-10-22 | La apéndice forma bloque con su zona; tras un traspaso la zona nueva no estira la vieja (plan 3.50); el portal, con las dos al día |
@@ -54,6 +55,31 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-26 — Las 3 gráficas: el día desde los lados y ▲ ▼ entre las gráficas
+
+Dos cambios a `TresGraficas` (`js/app.js`), pedidos por Kris para no tener que subir a la cabecera.
+La regla que los ordena: **en horizontal, los días; en vertical, las gráficas.**
+
+- **Día anterior / siguiente desde la misma pantalla:** una flecha a cada lado, a media altura
+  (`.tg-dia`), en un margen de 56 px que deja `.tg-cuerpo` para no tapar la gráfica. En el celular,
+  flechas pequeñas sobre el borde, y también **deslizar** a izquierda o derecha. Siguen valiendo ← / →
+  y las flechas de la cabecera; la de «siguiente» se apaga en hoy.
+- **Una gráfica sola, con ▲ / ▼ hacia las otras.** El clic ya no abre el `Lightbox` (que solo sabía
+  ← / →): la pantalla pasa a **modo foco** (`_foco`, `_enfocar`, `_render`) con la gráfica a todo el
+  alto, un botón **▲ con el nombre de la de arriba** y uno **▼ con el de la de abajo**. Desde Claude, ▲
+  es la mía y ▼ la de Chaumer; sin vuelta (desde la mía no se sube). También **↑ / ↓** y, en el
+  celular, deslizar hacia arriba o abajo. En el foco, ← / → cambian de día **sin soltar la gráfica**.
+  **Esc** (o el botón de las 3) vuelve a las tres; otro Esc cierra.
+- `_pintar` ahora solo carga y guarda los paneles; `_render` dibuja las tres o el foco. Mientras carga
+  un día, `_paneles` es `null` para que ↑ / ↓ no repinten el anterior.
+
+**Verificado** en la copia local con imágenes de prueba, consola limpia: a 1440×900, las flechas de los
+lados (17 ↔ 18 ago), clic en Claude → foco con ▲ Mía y ▼ Chaumer, ↑ hasta la mía y tope, ↓↓ hasta
+Chaumer, clic en ▲, ← en foco cambia de día sin soltar Claude, Esc → las tres, Esc → cerrada. A 375 px:
+deslizar en los dos ejes, sin scroll horizontal.
 
 ---
 

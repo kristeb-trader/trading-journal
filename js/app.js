@@ -1030,21 +1030,25 @@ const Lightbox = {
 }
 
 // ── Las 3 gráficas del día ─────────────────────────────────────────────────
-// Pantalla completa con las tres gráficas de un día, una debajo de otra y en este
-// orden (Kris, 12 oct): la mía, la de Claude (el motor) y la de Chaumer.
-//   · ← / → (o las flechas de la cabecera): día hábil anterior / siguiente.
-//   · Clic en una gráfica: se ve completa (Lightbox), y ahí ← / → pasan entre
-//     las tres. Esc vuelve a esta pantalla; otro Esc la cierra y deja la vista
-//     del día donde estaba.
+// Pantalla completa con las tres gráficas de un día, en este orden (Kris, 12 oct):
+// la mía, la de Claude (el motor) y la de Chaumer.
+//   · En horizontal, los DÍAS: ← / →, las flechas a los lados de las gráficas o deslizar.
+//   · Clic en una gráfica: se ve sola (modo foco). En vertical, las GRÁFICAS:
+//     ↑ / ↓, las flechas ▲ ▼ o deslizar (desde Claude, ↑ la mía y ↓ la de Chaumer).
+//     En el foco, ← / → cambian de día sin soltar la gráfica.
+//   · Esc vuelve del foco a las tres; otro Esc cierra y deja la vista del día donde estaba.
 // La de Claude respeta el candado del motor (D-026): sin el día registrado no se
 // pide ni se enseña.
 const TresGraficas = {
   _el: null,
   _fecha: null,
   _token: 0,
+  _paneles: null,   // los 3 del día pintado: { nombre, color, url, vacio, titulo }
+  _foco: null,      // índice de la gráfica que se ve sola; null = las tres
 
   open(fecha) {
     this._fecha = fecha
+    this._foco = null
     if (!this._el) this._montar()
     this._el.classList.remove('hidden')
     document.body.classList.add('modal-open')
@@ -1071,29 +1075,56 @@ const TresGraficas = {
         <h3 class="tg-fecha"></h3>
         <button type="button" class="btn-icon tg-sig" title="Día siguiente (→)" aria-label="Día siguiente"><i class="ti ti-chevron-right"></i></button>
       </div>
-      <div class="tg-cuerpo"></div>`
+      <div class="tg-cuerpo"></div>
+      <button type="button" class="tg-dia tg-dia-ant" title="Día anterior (←)" aria-label="Día anterior"><i class="ti ti-chevron-left"></i></button>
+      <button type="button" class="tg-dia tg-dia-sig" title="Día siguiente (→)" aria-label="Día siguiente"><i class="ti ti-chevron-right"></i></button>`
     document.body.appendChild(el)
     el.querySelector('.tg-cerrar').addEventListener('click', () => this.close())
     el.querySelector('.tg-ant').addEventListener('click', () => this._mover(-1))
     el.querySelector('.tg-sig').addEventListener('click', () => this._mover(1))
-    el.querySelector('.tg-cuerpo').addEventListener('click', e => {
-      const img = e.target.closest('.tg-img')
-      if (!img) return
-      const urls = [...el.querySelectorAll('.tg-img')].map(i => i.src)
-      Lightbox.open(img.src, urls, urls.indexOf(img.src))
+    el.querySelector('.tg-dia-ant').addEventListener('click', () => this._mover(-1))
+    el.querySelector('.tg-dia-sig').addEventListener('click', () => this._mover(1))
+    const cuerpo = el.querySelector('.tg-cuerpo')
+    cuerpo.addEventListener('click', e => {
+      if (e.target.closest('.tg-arriba')) return this._enfocar(this._foco - 1)
+      if (e.target.closest('.tg-abajo'))  return this._enfocar(this._foco + 1)
+      if (e.target.closest('.tg-volver')) return this._enfocar(null)
+      const panel = e.target.closest('.tg-panel')
+      if (panel && this._foco == null && e.target.closest('.tg-img')) this._enfocar(Number(panel.dataset.i))
     })
-    // En captura y antes que nadie: el Esc de la vista del día la cerraría por
-    // debajo, y el del Lightbox también cerraría esta pantalla.
+    // Deslizar en el celular: horizontal = día; vertical, solo en el foco = la otra gráfica
+    let toque = null
+    cuerpo.addEventListener('touchstart', e => { const t = e.touches[0]; toque = { x: t.clientX, y: t.clientY } }, { passive: true })
+    cuerpo.addEventListener('touchend', e => {
+      if (!toque) return
+      const t = e.changedTouches[0], dx = t.clientX - toque.x, dy = t.clientY - toque.y
+      toque = null
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) this._mover(dx < 0 ? 1 : -1)
+      else if (this._foco != null && Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx) * 1.5) this._enfocar(this._foco + (dy < 0 ? 1 : -1))
+    }, { passive: true })
+    // En captura y antes que nadie: el Esc de la vista del día la cerraría por debajo.
     window.addEventListener('keydown', e => {
       if (!this.abierta()) return
-      if (document.getElementById('lightbox')) {
-        if (e.key === 'Escape') { e.stopImmediatePropagation(); Lightbox.close(); document.body.classList.add('modal-open') }
-        return   // ← / → los atiende el Lightbox: pasan entre las tres gráficas
-      }
-      if (e.key === 'Escape') { e.stopImmediatePropagation(); this.close() }
-      else if (e.key === 'ArrowLeft')  { e.stopImmediatePropagation(); this._mover(-1) }
-      else if (e.key === 'ArrowRight') { e.stopImmediatePropagation(); this._mover(1) }
+      const tecla = {
+        Escape:     () => this._foco != null ? this._enfocar(null) : this.close(),
+        ArrowLeft:  () => this._mover(-1),
+        ArrowRight: () => this._mover(1),
+        ArrowUp:    () => this._foco != null && this._enfocar(this._foco - 1),
+        ArrowDown:  () => this._foco != null && this._enfocar(this._foco + 1),
+      }[e.key]
+      if (!tecla) return
+      e.stopImmediatePropagation()
+      e.preventDefault()   // ↑ / ↓ no hacen scroll de la página de debajo
+      tecla()
     }, true)
+  },
+
+  // i = la gráfica que se ve sola (0 mía · 1 Claude · 2 Chaumer); null = volver a las tres.
+  // Sin vuelta: desde la mía no se sube, desde la de Chaumer no se baja.
+  _enfocar(i) {
+    if (i != null && (i < 0 || i > 2)) return
+    this._foco = i
+    this._render()
   },
 
   // Día hábil anterior / siguiente; nunca más allá de hoy.
@@ -1112,10 +1143,11 @@ const TresGraficas = {
     const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
     const MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
     el.querySelector('.tg-fecha').textContent = `${DIAS[d.getDay()]} ${d.getDate()} ${MES[d.getMonth()]} ${d.getFullYear()} · Las 3 gráficas`
-    el.querySelector('.tg-sig').disabled = f >= hoyISO()
+    el.querySelector('.tg-sig').disabled = el.querySelector('.tg-dia-sig').disabled = f >= hoyISO()
     const cuerpo = el.querySelector('.tg-cuerpo')
+    cuerpo.classList.remove('foco')
+    this._paneles = null   // mientras carga, ↑ / ↓ no repintan el día anterior
     cuerpo.innerHTML = '<div class="tg-cargando"><i class="ti ti-loader-2"></i> Cargando…</div>'
-    cuerpo.scrollTop = 0
 
     const [ses, estado, ficha, ch] = await Promise.all([
       DB.getSesionByDate(f).catch(() => null),
@@ -1137,19 +1169,44 @@ const TresGraficas = {
       Calendarios.resumenDia(p.id, f).catch(err => { console.warn('[3 gráficas]', p.id, err); return null })))
     if (tok !== this._token) return
     // El título: tres pastillas en relieve — quién, resultado (con su color) y setup
-    const titulo = (p, r) => `<span class="tg-chip tg-quien">${p.nombre}</span>`
-      + (r ? `<span class="tg-chip tg-res-${r.tono}">${r.res}</span>` : '')
-      + (r?.setup ? `<span class="tg-chip tg-setup">${r.setup}</span>` : '')
-    cuerpo.innerHTML = paneles.map((p, i) => `
-      <section class="tg-panel hc-${p.color}">
-        <div class="tg-panel-cab">${titulo(p, resumenes[i])}</div>
+    paneles.forEach((p, i) => {
+      const r = resumenes[i]
+      p.titulo = `<span class="tg-chip tg-quien">${p.nombre}</span>`
+        + (r ? `<span class="tg-chip tg-res-${r.tono}">${r.res}</span>` : '')
+        + (r?.setup ? `<span class="tg-chip tg-setup">${r.setup}</span>` : '')
+    })
+    this._paneles = paneles
+    this._render()
+  },
+
+  // Las tres, o solo la del foco con ▲ / ▼ hacia la de arriba y la de abajo.
+  _render() {
+    const cuerpo = this._el.querySelector('.tg-cuerpo'), P = this._paneles
+    if (!P) return
+    const panel = (p, i, extra = '') => `
+      <section class="tg-panel hc-${p.color}" data-i="${i}">
+        <div class="tg-panel-cab">${p.titulo}${extra}</div>
         ${p.url
-          ? `<img class="tg-img" alt="Gráfico de ${p.nombre}" loading="lazy" title="Clic para verla completa">`
+          ? `<img class="tg-img" alt="Gráfico de ${p.nombre}"${this._foco == null ? ' title="Clic para verla sola"' : ''}>`
           : `<div class="tg-vacio">${p.vacio}</div>`}
-      </section>`).join('')
+      </section>`
+    const f = this._foco
+    cuerpo.classList.toggle('foco', f != null)
+    if (f == null) cuerpo.innerHTML = P.map((p, i) => panel(p, i)).join('')
+    else {
+      const vert = (cls, icono, j) => P[j]
+        ? `<button type="button" class="tg-vert ${cls} hc-${P[j].color}" title="${P[j].nombre} (${cls === 'tg-arriba' ? '↑' : '↓'})">
+             <i class="ti ${icono}"></i><span class="hub-dot"></span>${P[j].nombre}</button>`
+        : ''
+      cuerpo.innerHTML = vert('tg-arriba', 'ti-chevron-up', f - 1)
+        + panel(P[f], f, `<button type="button" class="btn-icon tg-volver" title="Volver a las 3 (Esc)" aria-label="Volver a las 3"><i class="ti ti-layout-rows"></i></button>`)
+        + vert('tg-abajo', 'ti-chevron-down', f + 1)
+    }
     // La URL por propiedad, no en el HTML: viene de la BD.
-    const imgs = [...cuerpo.querySelectorAll('.tg-img')]
-    paneles.filter(p => p.url).forEach((p, i) => { imgs[i].src = p.url })
+    cuerpo.querySelectorAll('.tg-panel').forEach(s => {
+      const img = s.querySelector('.tg-img')
+      if (img) img.src = P[s.dataset.i].url
+    })
   },
 }
 

@@ -5884,10 +5884,40 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
   border: 1px dashed var(--border); border-radius: var(--radius); color: var(--text3); font-size: 0.85rem;
 }
 .tg-cargando { color: var(--text3); padding: 40px; display: flex; gap: 6px; align-items: center; }
+/* Día anterior / siguiente sin subir a la cabecera: una flecha a cada lado, a media altura,
+   en el margen que deja .tg-cuerpo (56px) para no tapar la gráfica. */
+.tg-cuerpo { padding-left: 56px; padding-right: 56px; }
+.tg-dia {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+  width: 40px; height: 64px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg2);
+  color: var(--text2); font-size: 1.4rem; cursor: pointer; transition: var(--transition);
+}
+.tg-dia:hover:not(:disabled) { background: var(--bg3); color: var(--text); }
+.tg-dia:disabled { opacity: 0.3; cursor: default; }
+.tg-dia-ant { left: 8px; }
+.tg-dia-sig { right: 8px; }
+/* Una gráfica sola (clic): ▲ la de arriba, ▼ la de abajo, y la gráfica en medio con todo el alto */
+.tg-cuerpo.foco { display: flex; flex-direction: column; gap: 8px; }
+.tg-cuerpo.foco .tg-panel { flex: 1 1 auto; grid-column: auto; justify-self: auto; width: auto; }
+.tg-cuerpo.foco .tg-img { cursor: default; }
+.tg-volver { margin-left: auto; }
+.tg-vert {
+  flex: 0 0 auto; align-self: center; display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg2);
+  color: var(--c); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  cursor: pointer; transition: var(--transition);
+}
+.tg-vert:hover { background: var(--bg3); }
+.tg-vert i { font-size: 1rem; color: var(--text2); }
 @media (max-width: 768px) {
   .tg-cab { padding: 8px 10px; gap: 4px; }
   .tg-fecha { font-size: 0.8rem; }
   .tg-cuerpo { padding: 8px 10px; gap: 8px; }
+  /* En el celular no hay margen que perder: flechas pequeñas encima del borde (y deslizar también vale) */
+  .tg-dia { width: 28px; height: 48px; font-size: 1.1rem; opacity: 0.75; left: auto; right: auto; }
+  .tg-dia-ant { left: 2px; }
+  .tg-dia-sig { right: 2px; }
   .dv-tres { font-size: 0; gap: 0; padding: 6px 8px; }
   .dv-tres i { font-size: 1rem; }
 }
