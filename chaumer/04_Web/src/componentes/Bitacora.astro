@@ -624,17 +624,26 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
     }
 
     /** Las jornadas de vieja a nueva, con el saldo corriendo. Es la base de
-     *  todo lo que se pinta: la curva, la tabla y las cuatro cifras. */
+     *  todo lo que se pinta: la curva, la tabla y las cifras.
+     *
+     *  Con un filtro, solo cuentan las operaciones que lo pasan (pedido del
+     *  operador, 26/10/2026): filtrando por «Reingreso», la curva y las
+     *  tarjetas son las de los reingresos. Un dia sin ninguna que lo pase
+     *  no entra: no es un punto de la curva de ese filtro. */
     function recorrido() {
       var orden = estado.jornadas.slice().sort(function (a, b) {
         return a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0;
       });
       var saldo = Number(estado.cabecera.valor_inicial) || 0;
-      return orden.map(function (j) {
-        var suma = (j.operaciones || []).reduce(function (t, o) { return t + Number(o.pnl); }, 0);
+      var pasos = [];
+      orden.forEach(function (j) {
+        var ops = (j.operaciones || []).filter(pasaElFiltro);
+        if (filtro && !ops.length) return;
+        var suma = ops.reduce(function (t, o) { return t + Number(o.pnl); }, 0);
         saldo += suma;
-        return { jornada: j, pnl: suma, saldo: saldo };
+        pasos.push({ jornada: j, ops: ops, pnl: suma, saldo: saldo });
       });
+      return pasos;
     }
 
     function pintar() {
@@ -653,7 +662,7 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
       var ops = [];
       var puntos = 0;
       pasos.forEach(function (p) {
-        (p.jornada.operaciones || []).forEach(function (o) {
+        p.ops.forEach(function (o) {
           ops.push(o);
           puntos += signo(o) * Number(o.puntos);
         });
@@ -667,10 +676,12 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
         if (techo - p.saldo > caida) caida = techo - p.saldo;
       });
 
+      // Con un filtro, el resumen dice cual: las cifras de debajo son solo suyas.
+      var chip = filtro ? raiz.querySelector('[data-filtro].activa') : null;
       $('[data-resumen]').textContent = [
         pasos.length + (pasos.length === 1 ? ' jornada' : ' jornadas'),
         ops.length + (ops.length === 1 ? ' operación' : ' operaciones'),
-        'hora Colombia',
+        chip ? 'solo ' + chip.textContent.trim() : 'hora Colombia',
       ].join(' · ');
 
       $('[data-valor-inicial]').textContent = usd(inicial);
@@ -857,7 +868,7 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
       }).join('');
 
       vacio.hidden = meses.length > 0;
-      vacio.textContent = pasos.length ? 'Ninguna operación pasa ese filtro.' : VACIO;
+      vacio.textContent = estado.jornadas.length ? 'Ninguna operación pasa ese filtro.' : VACIO;
     }
 
     /**
@@ -957,7 +968,7 @@ const { titulo, api, conSaldo = false, exportar, vacio, abrirMesActual = false }
         filtro = chip.dataset.filtro;
         abiertosFiltro = null;
         raiz.querySelectorAll('[data-filtro]').forEach(function (c) { c.classList.toggle('activa', c === chip); });
-        pintarTabla(recorrido());
+        pintar();
         return;
       }
       var mes = e.target.closest('tr.mes');
