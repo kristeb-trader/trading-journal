@@ -505,8 +505,8 @@ Por lo tanto:
 Estado emocional al inicio: ${emocionInicio}
 Estado emocional al cierre: ${emocionFin}
 Confianza en la entrada (1-5, la convicción que tenía al entrar): ${confianza}
-Contexto de mercado: ${sesion?.contexto || 'No indicado'}
-Setup del día: ${sesion?.setup || 'No indicado'}
+${conPlan ? '' : `Contexto de mercado: ${sesion?.contexto || 'No indicado'}
+`}Setup del día: ${sesion?.setup || 'No indicado'}
 Noticias rojas (hora Colombia, las registra el trader): ${noticiasStr}
 
 ${conPlan ? `Zonas de premercado: las del plan (velas sobre el umbral de volumen) vienen en la sección del motor. El trader ya no marca zonas a mano.` : `Premercado / contexto técnico:

@@ -524,43 +524,19 @@
                       <option value="">Seleccionar setup...</option>
                     </select>
                   </div>
-                  <div class="form-group" data-vacio-auto>
-                    <label for="contexto">Contexto de mercado</label>
-                    <select id="contexto" name="contexto">
-                      <option value="">Seleccionar...</option>
-                      <option value="Alcista fuerte">📈 Alcista fuerte</option>
-                      <option value="Alcista">↗ Alcista</option>
-                      <option value="Mixto">↔ Mixto</option>
-                      <option value="Bajista">↘ Bajista</option>
-                      <option value="Bajista fuerte">📉 Bajista fuerte</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Bloque 2 · CÓMO se leyó el movimiento -->
-              <div class="op-bloque">
-                <div class="op-bloque-lbl">La lectura</div>
-                <div class="op-grid">
-                  <!-- La corrida (número y velas) ya no se pide desde el 27/10/2026:
-                       nadie la leía. Las columnas y lo registrado siguen en `sesiones`. -->
+                  <!-- «La lectura» era su propio bloque hasta el 27/10/2026: el contexto de
+                       mercado (el sesgo que el plan no usa, D-035), la corrida y las zonas en
+                       contra (las comprueba el motor) ya no se piden. Solo queda el retroceso,
+                       que es dato. Las columnas y lo registrado siguen en `sesiones`. -->
                   <div class="form-group">
                     <label>Puntos de retroceso</label>
                     <div id="puntosRetrocesoDisplay" class="op-dato">— pts</div>
                     <input type="hidden" id="puntosRetroceso">
                   </div>
-                  <div class="form-group op-ancho">
-                    <label>¿Había zonas vigentes en contra?</label>
-                    <div class="btn-group" id="zonasContra">
-                      <button type="button" class="btn-option" data-value="true">Sí había zonas</button>
-                      <button type="button" class="btn-option" data-value="false">No había zonas</button>
-                    </div>
-                    <input type="hidden" id="zonasContraVal" name="zonas_contra">
-                  </div>
                 </div>
               </div>
 
-              <!-- Bloque 3 · QUÉ pasó (lo trae NinjaTrader). `op-bloque-datos`
+              <!-- Bloque 2 · QUÉ pasó (lo trae NinjaTrader). `op-bloque-datos`
                    marca que NO es un bloque de campos: se ve también en lectura. -->
               <div class="op-bloque op-bloque-datos">
                 <div class="op-bloque-lbl">Los trades</div>

@@ -134,7 +134,8 @@ reutilice nombres en vez de duplicarlos. Ver `tasks/current.md`.
 
 Con el bloque A delante (`conPlan`), el bloque B **no lleva el contexto viejo**: ni «CÓMO LEER EL CONTEXTO DE
 PREMERCADO», ni PDH/PDL/ONH/ONL, ni deriva, ni «sesgo», **ni las zonas naranjas** (5 oct: Kris ya no las marca;
-las zonas de premercado del plan son las de las velas sobre el umbral, y las da el motor). El Contexto se escribe
+las zonas de premercado del plan son las de las velas sobre el umbral, y las da el motor), **ni el «Contexto de
+mercado»** (27 oct: era el sesgo por otra puerta; ya no se registra). El Contexto se escribe
 como **Apertura / Zonas / Noticias** (`formatoContexto`). Los días de la etapa 1, como siempre.
 
 ## Modo prueba (`?modelo=sonnet`)

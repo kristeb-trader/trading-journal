@@ -26,10 +26,9 @@ const STEPS = {
   // Resto del flujo operativo
   EMOCION:      'emocion',
   CONFIANZA:    'confianza',
-  CONTEXTO:     'contexto',
-  CORRIDA:      'corrida',       // ya no se pregunta (27/10/2026): solo por estados viejos en KV
-  VELAS:        'velas',         // ídem (23/10/2026)
-  ZONAS_CONTRA: 'zonas_contra',
+  // Contexto, corrida y zonas en contra ya no se preguntan (27/10/2026); las velas, desde
+  // el 23/10. VELAS se queda solo por si quedó un estado a medias en KV.
+  VELAS:        'velas',
   SETUP:        'setup',
   REFLEXION:    'reflexion',
   EMOCION_FIN:  'emocion_fin',   // "¿Cómo terminaste?", después del análisis
@@ -49,14 +48,6 @@ function parseNum(text) {
 function escHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
-
-const CONTEXTOS = [
-  { label: '📈 Alcista fuerte', value: 'Alcista fuerte' },
-  { label: '↗ Alcista',         value: 'Alcista'        },
-  { label: '↔ Mixto',           value: 'Mixto'          },
-  { label: '↘ Bajista',         value: 'Bajista'        },
-  { label: '📉 Bajista fuerte', value: 'Bajista fuerte' },
-];
 
 // Fallback si no se puede leer `catalogo_setup_variantes` (sin red / error).
 // La lista viva está en BD: los setups nuevos aparecen aquí sin tocar el bot.
@@ -215,8 +206,6 @@ function buildResumen(data) {
     `✅ <b>Sesión guardada</b>\n\n` +
     `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
     (stars ? `⭐ <b>Confianza entrada:</b> ${stars}\n` : '') +
-    `📊 <b>Contexto:</b> ${data.contexto}\n` +
-    `⚠️ <b>Zonas en contra:</b> ${data.zonas_contra ? 'Sí' : 'No'}\n` +
     `📐 <b>Setup:</b> ${data.setup}\n` +
     (data._emocionFinTxt ? `🏁 <b>Al cierre:</b> ${escHtml(data._emocionFinTxt)}\n` : '') +
     `\n✍️ <b>Análisis del día:</b>\n${escHtml(data.analisis_trader || '—')}`
@@ -232,9 +221,7 @@ async function saveSession(data, env) {
     sesion_date:       data.sesion_date,
     no_opero:          data.no_opero         ?? false,
     motivo_no_opero:   data.motivo_no_opero   ?? null,
-    contexto:          data.contexto          ?? null,
     puntos_retroceso:  data.puntos_retroceso  ?? null,
-    zonas_contra:      data.zonas_contra      ?? false,
     setup:             data.setup             ?? null,
     setup_codigo:      data.setup_codigo      ?? null,
     analisis_trader:       data.analisis_trader       ?? null,
@@ -572,29 +559,18 @@ async function handleCallback(cbq, env) {
       } else if (action.startsWith('conf_')) {
         const val = action.slice(5);
         state.data.nivel_confianza = val === 'skip' ? null : parseInt(val);
-        state.step = STEPS.CONTEXTO;
+        state.step = STEPS.SETUP;
         await saveState(env.KV, chatId, state);
         await editMessage(token, chatId, msgId,
-          '📊 <b>Contexto de mercado</b>\n\n¿Cómo estaba el mercado hoy?',
-          { inline_keyboard: CONTEXTOS.map(c => [{ text: c.label, callback_data: `ctx_${c.value}` }]) }
+          '📐 <b>Setup</b>\n\n¿Qué setup operaste?',
+          setupKeyboard(await fetchSetups(env))
         );
-      } else if (action.startsWith('ctx_') || action.startsWith('cor_')) {
-        // Ni el número de corrida (27/10/2026) ni sus velas (23/10/2026) se preguntan:
-        // nadie los leía, ni las reglas, ni el Coach, ni la disciplina. Del contexto se
-        // pasa a las zonas en contra. `cor_` se queda SOLO por si quedó en el chat el
-        // teclado de la corrida de un registro a medias: avanza sin guardar el número.
-        if (action.startsWith('ctx_')) state.data.contexto = action.slice(4);
-        state.step = STEPS.ZONAS_CONTRA;
-        await saveState(env.KV, chatId, state);
-        await editMessage(token, chatId, msgId,
-          '⚠️ <b>Zonas en contra</b>\n\n¿Había zonas en contra del trade?',
-          { inline_keyboard: [[
-            { text: '✅ Sí', callback_data: 'zonas_si' },
-            { text: '❌ No', callback_data: 'zonas_no' },
-          ]] }
-        );
-      } else if (action === 'zonas_si' || action === 'zonas_no') {
-        state.data.zonas_contra = action === 'zonas_si';
+      } else if (action.startsWith('ctx_') || action.startsWith('cor_') || action.startsWith('zonas_')) {
+        // De la confianza se pasa al setup (27/10/2026): ya no se pregunta el contexto de
+        // mercado (era el sesgo que el plan no usa, D-035), ni el número de corrida, ni las
+        // zonas en contra (las comprueba el motor); las velas de la corrida, desde el 23/10.
+        // Estas teclas se quedan SOLO por si quedó en el chat un teclado viejo de un registro
+        // a medias: avanzan al setup sin guardar nada.
         state.step = STEPS.SETUP;
         await saveState(env.KV, chatId, state);
         await editMessage(token, chatId, msgId,
@@ -652,22 +628,19 @@ async function handleText(msg, env) {
     }
 
     // Ya no se llega aquí (23/10/2026, las velas no se preguntan). Se conserva SOLO
-    // por si quedó un estado a medias en KV, para que la sesión se pueda cerrar.
+    // por si quedó un estado a medias en KV, para que la sesión se pueda cerrar: no
+    // guarda el número, pasa al setup.
     case STEPS.VELAS: {
       const n = parseInt(text);
       if (isNaN(n) || n < 1 || n > 20) {
         await sendMessage(token, chatId, '⚠️ Ingresa un número entre 1 y 20.');
         return;
       }
-      state.data.velas_corrida = n;
-      state.step = STEPS.ZONAS_CONTRA;
+      state.step = STEPS.SETUP;
       await saveState(env.KV, chatId, state);
       await sendMessage(token, chatId,
-        '⚠️ <b>Zonas en contra</b>\n\n¿Había zonas en contra del trade?',
-        { inline_keyboard: [[
-          { text: '✅ Sí', callback_data: 'zonas_si' },
-          { text: '❌ No', callback_data: 'zonas_no' },
-        ]] }
+        '📐 <b>Setup</b>\n\n¿Qué setup operaste?',
+        setupKeyboard(await fetchSetups(env))
       );
       break;
     }

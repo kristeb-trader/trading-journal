@@ -395,7 +395,7 @@ const SessionForm = (() => {
           group.querySelectorAll('.btn-option').forEach(b => b.classList.remove('active'))
           btn.classList.add('active')
           // write value to associated hidden input
-          const hiddenId = { zonasContra:'zonasContraVal', alertaVista:'alertaVistaVal' }[group.id]
+          const hiddenId = { alertaVista:'alertaVistaVal' }[group.id]
           const hidden = hiddenId && document.getElementById(hiddenId)
           if (hidden) hidden.value = btn.dataset.value
         })
@@ -725,12 +725,10 @@ const SessionForm = (() => {
     if (noOpero) {
       payload.motivo_no_opero = document.getElementById('motivoNoOpero').value || null
     } else {
-      payload.contexto = document.getElementById('contexto').value || null
-      // `num_corrida` y `velas_corrida` ya no se piden (27/10/2026): nadie los leía. No van
-      // en el payload, ni en null: editar un día viejo borraría lo que se registró entonces.
+      // `contexto`, `num_corrida`, `velas_corrida` y `zonas_contra` ya no se piden (27/10/2026):
+      // nadie los leía o eran el sesgo que el plan no usa. No van en el payload, ni en null:
+      // editar un día viejo borraría lo que se registró entonces.
       payload.puntos_retroceso = parseFloat(document.getElementById('puntosRetroceso').value) || null
-      const zonasVal = document.getElementById('zonasContraVal').value
-      payload.zonas_contra = zonasVal === 'true' ? true : zonasVal === 'false' ? false : null
       payload.setup = document.getElementById('setup').value || null
       // Alerta de riesgo (Bloque 1): solo si se mostró la alerta y se respondió
       const alertaShown = !document.getElementById('riesgoAlertGroup').classList.contains('hidden')
@@ -927,18 +925,12 @@ const SessionForm = (() => {
     await checklistReady
 
     if (!sesion.no_opero) {
-      document.getElementById('contexto').value = sesion.contexto || ''
       document.getElementById('setup').value = sesion.setup || ''
       // Asignar .value por código NO dispara 'change', así que el checklist se
       // quedaba con el filtro del render inicial (sin setup = todas las reglas
       // mezcladas). Hay que re-renderizar a mano.
       renderChecklist()
 
-      if (sesion.zonas_contra != null) {
-        const v = String(sesion.zonas_contra)
-        document.getElementById('zonasContraVal').value = v
-        document.querySelector(`#zonasContra [data-value="${v}"]`)?.classList.add('active')
-      }
       // Alerta de riesgo: updateRetroceso (más abajo) muestra/oculta el bloque;
       // aquí restauramos la respuesta guardada de "¿la viste?".
       if (sesion.alerta_riesgo_vista != null) {

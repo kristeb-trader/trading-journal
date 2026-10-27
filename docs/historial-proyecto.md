@@ -11,7 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
-| 2026-10-27 | La corrida ya no se registra: ni Telegram ni el Diario la piden |
+| 2026-10-27 | Lo que no se usaba ya no se registra: ni Telegram ni el Diario piden la corrida, el contexto de mercado ni las zonas en contra |
 | 2026-10-26b | La lupa del día: el gráfico ampliado pasa de día y lleva la fecha y la ficha, como el portal |
 | 2026-10-26 | Las 3 gráficas: el día desde los lados y ▲ ▼ entre las gráficas |
 | 2026-10-23 | La disciplina mide el plan: el motor dice si el trade era el del plan (desde el 01/10), y Telegram sin velas |
@@ -60,7 +60,7 @@
 
 ---
 
-## Checkpoint 2026-10-27 — La corrida ya no se registra
+## Checkpoint 2026-10-27 — Lo que no se usaba ya no se registra
 
 **Lo que pasó.** Mirando Telegram, Kris vio que el número de corrida solo lo apuntaba y nunca lo miraba. Comprobado:
 no lo leía nadie (ni el Coach, ni la disciplina, ni Análisis, ni el calendario), y las reglas del plan juzgan si la
@@ -74,6 +74,15 @@ quitadas de Telegram el 23/10.
   viejo. El guardado ya no manda `num_corrida` ni `velas_corrida`: ni en null, para no borrar lo de días anteriores.
 - **Lo registrado se queda:** las columnas siguen en `sesiones`, con 110 días de feb–oct. La idea del backlog de medir
   por número de corrida, si se hace, lo contará el motor.
+
+**La segunda vuelta, el mismo día: el contexto de mercado y las zonas en contra.** Revisadas a petición de Kris:
+- **Zonas en contra:** no la leía nadie; desde el 24/09, «No» los 24 días, y Telegram guardaba «No» aunque no se
+  contestara. Lo que pide el plan —el objetivo libre de zonas vigentes— ya lo comprueba el motor con las zonas reales.
+- **Contexto de mercado** (Alcista fuerte … Bajista fuerte): el Coach sí lo leía, también en los días del plan, y era
+  el sesgo que D-035 sacó («origen sí, sesgo no»); «Mixto» 14 de 20 días.
+- Fuera de **Telegram** (de la confianza se pasa al setup; un teclado viejo del contexto, la corrida o las zonas avanza
+  al setup sin guardar), del **Diario** («La operación» queda en el setup, el retroceso y los trades) y del **Coach** en
+  los días del plan (los de antes del 24/09 lo siguen viendo). Las columnas y lo registrado se quedan.
 
 ---
 

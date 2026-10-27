@@ -159,7 +159,8 @@ Cada fase se verifica por separado (CLAUDE.md, «Verificación») y va en su com
   trades de un minuto quedaban en 0. Arreglado en `SupabaseAutoExport.cs` y corregidos los 9 guardados (`2026-10-23-mae-*`).
 - ~~El Diario (`index.html`) aún pide las **velas de la corrida**~~ — **resuelto el 27/10**: ni el Diario ni Telegram
   piden ya la corrida (número ni velas); nadie la leía. Las columnas y lo registrado se quedan en `sesiones`.
-- Telegram también pregunta contexto y zonas en contra, del sistema viejo.
+- ~~Telegram también pregunta contexto y zonas en contra, del sistema viejo~~ — **resuelto el 27/10**: fuera de
+  Telegram y del Diario, y el Coach no recibe el contexto en los días del plan.
 
 ## Registro
 

@@ -312,6 +312,9 @@ escribe como lo lee el plan: **vela de apertura, zonas de premercado vigentes y 
 **05/10 (Kris):** fuera también las **zonas naranjas** que marcaba a mano —«eso ya no lo veo con el nuevo plan»—;
 las zonas de premercado del plan son las de las velas sobre el umbral de volumen, y las da el motor. Su captura
 en el AddOn de NinjaTrader se quita en otra sesión.
+**27/10 (Kris):** fuera también el **contexto de mercado** (Alcista fuerte … Bajista fuerte), que el Coach seguía
+recibiendo: era el mismo sesgo por otra puerta. Ni Telegram ni el Diario lo piden ya, igual que la corrida y las
+zonas en contra (esas las comprueba el motor); lo registrado se queda en `sesiones`.
 
 **Motivo.** El Coach mezclaba dos lecturas en la misma frase (24/09: «día rotacional» y «la vela de las 08:31
 declaró el día bajista»), y el plan dice que es la única fuente de reglas, sin análisis técnico genérico.
