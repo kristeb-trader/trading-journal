@@ -159,6 +159,19 @@ estrellas), del **Coach** en los días del plan (con la guía de cómo leer la c
 Verificado: el flujo de Telegram simulado en local (trade → setup → análisis → guardado sin esas columnas; no operé; los
 teclados viejos), el prompt del Coach con y sin plan, y las dos tarjetas del Diario en el navegador.
 
+**La cuarta vuelta: el setup y el análisis se quedan.** Revisados igual, y los dos se usan y llevan lo que nada más da:
+- **El setup** decide qué casilla del checklist toca y si el día cuenta como operado, y lo leen el Coach, el calendario,
+  la tabla de trades, el comparador Chaumer y el portal (`portal_op_jornadas`). El motor sabe qué operaba él, no qué
+  creía Kris que operaba, y esa diferencia es la que enseña: el 02/10 y el 06/10 reingreso frente a continuación del
+  motor, el 14/10 reingreso alcista frente a bajista, el 27/10 reingreso frente a continuación. Está en 19 de 20 días.
+- **El análisis** es el único sitio del porqué («el target sobrepasa unos ticks un punto de referencia» el 07/10, «lo
+  dudé» el 23/10); lo leen el Coach, la vista del día y el comparador. Está en 22 de 23 días.
+- Vistos y **dejados así por Kris**: varios análisis son solo «Mercado mixto» (el sesgo que se quitó, escrito a mano), y
+  cambiar la pregunta de Telegram por una que pida la zona, el porqué del setup y la duda quedó sin hacer; el 30/09 tiene
+  un trade sin setup ni análisis (antes del 01/10, no pesa en la disciplina nueva).
+
+**Commits:** `92795ad` (la corrida), `da2b251` (contexto y zonas en contra), `8aaae0a` (emoción y confianza, D-048).
+
 ---
 
 ## Checkpoint 2026-10-26b — La lupa del día
