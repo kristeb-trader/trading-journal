@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-27g | El 13/10 el bot sí operó: un reinicio borraba su fila, y ya no |
 | 2026-10-27f | Claude se funde en el Bot: un solo calendario, real desde el 07/10 y simulado antes |
 | 2026-10-27e | El Coach pasa a Sonnet 5.5, esfuerzo `medium` (D-050) |
 | 2026-10-27d | El Coach parte del veredicto del motor y lee solo las reglas del día (D-049) |
@@ -62,6 +63,29 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-27g — El 13/10 el bot sí operó: un reinicio borraba su fila
+
+El calendario del Bot daba el 13/10 como «No se armó: el bot ya operó hoy en esta cuenta», y Kris tenía ese día
+−48 pts. `registro.txt` del bot (`Documentos\NinjaTrader 8\bot-chaumer\`) lo cuenta entero: armado a las 8:43,
+orden Continuación alcista a las 8:49, llenada 1 × 30795.25 a las 8:50, **STOP a las 8:53, −47,50 pts, −$95**. A
+las 9:11 la estrategia se reinició; al rearmarse (9:12), el candado «ya operó hoy» llamaba a `NoArmado`, que
+guarda una fila **nueva y vacía** con `merge-duplicates`: pisó todas las columnas con NULL. La operación no se
+perdió en NinjaTrader, solo en `bot_operaciones`.
+
+- **`BotChaumer.cs`:** el candado llama a `YaOperado()`, que marca el día como terminado y **no toca la fila**.
+  Compilado contra la baseline con el `csc`: la misma lista de errores (los del entorno), ninguno nuevo. **Hay que
+  copiarlo a `Custom\Strategies\` y F5 en NinjaTrader.**
+- **La fila del 13/10, restaurada** desde el registro (`docs/migrations/2026-10-27-bot-operaciones-13-10.sql`,
+  respaldo `_bak_20261027_bot_13_10`): antes NO ARMADO; después STOP, −47,5 pts, −$95,00, 1 contrato, llenada a las
+  8:50. Los eventos del motor de ese día no quedaron en ninguna parte: van las líneas del registro y una nota.
+- Queda sin cubrir: si se reinicia **con la operación abierta**, la fila ya no se borra, pero su salida tampoco se
+  anota (el bot reiniciado no sigue órdenes de antes). En el registro de NinjaTrader sí queda.
+
+Octubre real del bot (SQL): 11 operaciones, −354,125 pts, −$593,90, 3/8. Con los 3 días simulados de antes del
+07/10, el calendario: 14 operaciones, −373,875 pts, −$775,56, 4/10.
 
 ---
 

@@ -358,7 +358,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 string fallo = ChaumerNT.LeerDia(http, fila.Fecha, out nots, out fed, out go);
                 if (fallo != null) { NoArmado("no pude leer de Supabase las noticias de hoy (" + fallo + ")"); return; }
                 if (!Account.Name.StartsWith("Playback", StringComparison.Ordinal) && YaOperoHoy(fila.Fecha))
-                { NoArmado("el bot ya operó hoy en esta cuenta"); return; }
+                { YaOperado(); return; }
             }
             fila.Go = go;
             if (Position.MarketPosition != MarketPosition.Flat) { NoArmado("sigue abierta una operación anterior"); return; }
@@ -399,6 +399,15 @@ namespace NinjaTrader.NinjaScript.Strategies
             Guardar(fila);
             Log("no se arma el " + fila.Fecha + ": " + motivo);
             if (State == State.Realtime) Avisar("BotChaumer no opera hoy: " + motivo);
+        }
+
+        // Reiniciado tras operar: la fila del día YA tiene su operación y no se toca. Con NoArmado se guardaba una
+        // fila nueva, vacía, que la pisaba entera (13/10/2026: un reinicio a las 9:11 borró el STOP de las 8:53).
+        private void YaOperado()
+        {
+            finalizado = terminado = true;
+            Log("no se arma el " + fila.Fecha + ": el bot ya operó hoy en esta cuenta (su fila se queda como está)");
+            if (State == State.Realtime) Avisar("BotChaumer no opera hoy: ya operó en esta cuenta");
         }
 
         // ═════════════════════════════════════════════════════════════ órdenes
