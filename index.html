@@ -542,23 +542,8 @@
               <div class="op-bloque">
                 <div class="op-bloque-lbl">La lectura</div>
                 <div class="op-grid">
-                  <!-- Corrida y velas van juntas: son un solo dato («2ª · 4
-                       velas»), y separarlas obligaba a leer dos campos. -->
-                  <div class="form-group op-ancho">
-                    <label>Corrida</label>
-                    <div class="corrida-row">
-                      <div class="btn-group" id="corrida">
-                        <button type="button" class="btn-option" data-value="1">1ª</button>
-                        <button type="button" class="btn-option" data-value="2">2ª</button>
-                        <button type="button" class="btn-option" data-value="3">3ª</button>
-                      </div>
-                      <input type="hidden" id="numCorrida" name="num_corrida">
-                      <div class="corrida-velas">
-                        <input type="number" id="velasCorrida" name="velas_corrida" min="1" max="20" placeholder="0">
-                        <span>velas</span>
-                      </div>
-                    </div>
-                  </div>
+                  <!-- La corrida (número y velas) ya no se pide desde el 27/10/2026:
+                       nadie la leía. Las columnas y lo registrado siguen en `sesiones`. -->
                   <div class="form-group">
                     <label>Puntos de retroceso</label>
                     <div id="puntosRetrocesoDisplay" class="op-dato">— pts</div>

@@ -73,7 +73,9 @@ unifican al migrar cada pantalla, no en bloque (cambian píxeles).
 ## Métricas que faltan
 
 - **Estadísticas de la 3ª corrida.** Hoy no se distingue el rendimiento por número de
-  corrida, y la metodología sí lo hace (apertura = 1ª–2ª, continuación = 3ª+).
+  corrida, y la metodología sí lo hace (apertura = 1ª–2ª, continuación = 3ª+). Desde el
+  27/10/2026 el número no se registra a mano (`sesiones.num_corrida` guarda feb–oct): si se
+  hace, se cuenta con el motor, desde las velas.
 - **Volumen en `trades`.** No se captura. Serviría para la señal opcional del Reingreso
   (rompimiento con mucho volumen que no continúa).
 - **Tasa de ejecución de setups válidos.** Cuántos setups válidos se vieron vs cuántos se

@@ -395,7 +395,7 @@ const SessionForm = (() => {
           group.querySelectorAll('.btn-option').forEach(b => b.classList.remove('active'))
           btn.classList.add('active')
           // write value to associated hidden input
-          const hiddenId = { corrida:'numCorrida', zonasContra:'zonasContraVal', alertaVista:'alertaVistaVal' }[group.id]
+          const hiddenId = { zonasContra:'zonasContraVal', alertaVista:'alertaVistaVal' }[group.id]
           const hidden = hiddenId && document.getElementById(hiddenId)
           if (hidden) hidden.value = btn.dataset.value
         })
@@ -726,8 +726,8 @@ const SessionForm = (() => {
       payload.motivo_no_opero = document.getElementById('motivoNoOpero').value || null
     } else {
       payload.contexto = document.getElementById('contexto').value || null
-      payload.num_corrida = parseInt(document.getElementById('numCorrida').value) || null
-      payload.velas_corrida = parseInt(document.getElementById('velasCorrida').value) || null
+      // `num_corrida` y `velas_corrida` ya no se piden (27/10/2026): nadie los leía. No van
+      // en el payload, ni en null: editar un día viejo borraría lo que se registró entonces.
       payload.puntos_retroceso = parseFloat(document.getElementById('puntosRetroceso').value) || null
       const zonasVal = document.getElementById('zonasContraVal').value
       payload.zonas_contra = zonasVal === 'true' ? true : zonasVal === 'false' ? false : null
@@ -928,17 +928,12 @@ const SessionForm = (() => {
 
     if (!sesion.no_opero) {
       document.getElementById('contexto').value = sesion.contexto || ''
-      document.getElementById('velasCorrida').value = sesion.velas_corrida || ''
       document.getElementById('setup').value = sesion.setup || ''
       // Asignar .value por código NO dispara 'change', así que el checklist se
       // quedaba con el filtro del render inicial (sin setup = todas las reglas
       // mezcladas). Hay que re-renderizar a mano.
       renderChecklist()
 
-      if (sesion.num_corrida) {
-        document.getElementById('numCorrida').value = sesion.num_corrida
-        document.querySelector(`#corrida [data-value="${sesion.num_corrida}"]`)?.classList.add('active')
-      }
       if (sesion.zonas_contra != null) {
         const v = String(sesion.zonas_contra)
         document.getElementById('zonasContraVal').value = v
@@ -1157,24 +1152,6 @@ const SessionForm = (() => {
 
     // Cambiar el setup del día re-filtra el checklist (Continuación / Reingreso / universales)
     document.getElementById('setup')?.addEventListener('change', renderChecklist)
-
-    // Auto-invalidar checklist de 5 velas si velas > 5
-    document.getElementById('velasCorrida').addEventListener('input', () => {
-      const velas = parseInt(document.getElementById('velasCorrida').value) || 0
-      const chk = document.getElementById('chk__chk_5velas')
-      if (!chk) return
-      const item = chk.closest('.check-item')
-      if (velas > 5) {
-        chk.checked = false
-        chk.disabled = true
-        item.style.opacity = '0.5'
-        item.title = `Invalidado: ${velas} velas superan el máximo de 5`
-      } else {
-        chk.disabled = false
-        item.style.opacity = '1'
-        item.title = ''
-      }
-    })
   }
 
   // ── Experimentos ─────────────────────────────────────────────────────────

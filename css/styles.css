@@ -1546,16 +1546,6 @@ textarea { resize: vertical; min-height: 80px; }
 .chip-exp.exp-t { background: var(--accent-dim); border-color: transparent; color: #3FE0A6; }
 .chip-exp.exp-s { background: rgba(226,75,74,0.14); border-color: transparent; color: #F2706F; }
 
-/* Corrida y velas en una fila: son un solo dato («2ª · 4 velas») */
-.corrida-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.corrida-row .btn-group { display: flex; gap: 6px; }
-.corrida-velas {
-  display: flex; align-items: center; gap: 8px;
-  padding-left: 12px; border-left: 1px solid var(--border);
-}
-.corrida-velas input { width: 70px; text-align: center; font-variant-numeric: tabular-nums; }
-.corrida-velas span { font-size: 0.8rem; color: var(--text3); }
-
 /* ── La operación: bloques con un rótulo, en vez de filas sueltas ─────────── */
 .op-bloque { margin-bottom: 18px; }
 .op-bloque:last-child { margin-bottom: 0; }

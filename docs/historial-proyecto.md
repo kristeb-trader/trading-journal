@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-10-26
+**Última actualización:** 2026-10-27
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-27 | La corrida ya no se registra: ni Telegram ni el Diario la piden |
 | 2026-10-26b | La lupa del día: el gráfico ampliado pasa de día y lleva la fecha y la ficha, como el portal |
 | 2026-10-26 | Las 3 gráficas: el día desde los lados y ▲ ▼ entre las gráficas |
 | 2026-10-23 | La disciplina mide el plan: el motor dice si el trade era el del plan (desde el 01/10), y Telegram sin velas |
@@ -56,6 +57,23 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-27 — La corrida ya no se registra
+
+**Lo que pasó.** Mirando Telegram, Kris vio que el número de corrida solo lo apuntaba y nunca lo miraba. Comprobado:
+no lo leía nadie (ni el Coach, ni la disciplina, ni Análisis, ni el calendario), y las reglas del plan juzgan si la
+corrida es fluida, que lo decide el motor con las velas, no el número. Era el mismo caso que las velas de la corrida,
+quitadas de Telegram el 23/10.
+
+**Lo que se cambió.**
+- **Telegram:** del contexto de mercado se pasa directo a las zonas en contra; el resumen ya no lleva la corrida. Un
+  teclado de la corrida que quede en el chat de un registro a medias avanza sin guardar nada.
+- **El Diario:** fuera la fila «Corrida» (1ª/2ª/3ª y las velas) y el aviso que tachaba «máx. 5 velas» del checklist
+  viejo. El guardado ya no manda `num_corrida` ni `velas_corrida`: ni en null, para no borrar lo de días anteriores.
+- **Lo registrado se queda:** las columnas siguen en `sesiones`, con 110 días de feb–oct. La idea del backlog de medir
+  por número de corrida, si se hace, lo contará el motor.
 
 ---
 
@@ -131,7 +149,7 @@ operó y él no, aviso; la medida nueva, desde el 01/10; la pantalla, la opción
   al cerrar cada vela, así que los trades de un solo minuto se guardaban con MAE = MFE = 0 (el 20/10 −$168 con 0 en contra).
   Ahora mide con cada precio (`OnMarketData`); los 9 guardados en 0 se corrigieron (lo que no se sabe, NULL).
 
-**Pendiente.** Kris: recompilar `SupabaseAutoExport.cs` en NinjaTrader. El campo de velas del Diario y las preguntas viejas
+**Pendiente.** Kris: recompilar `SupabaseAutoExport.cs` en NinjaTrader. ~~El campo de velas del Diario~~ (quitado el 27/10) y las preguntas viejas
 de Telegram (diseño §8).
 
 ---

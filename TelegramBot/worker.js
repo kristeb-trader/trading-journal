@@ -27,8 +27,8 @@ const STEPS = {
   EMOCION:      'emocion',
   CONFIANZA:    'confianza',
   CONTEXTO:     'contexto',
-  CORRIDA:      'corrida',
-  VELAS:        'velas',
+  CORRIDA:      'corrida',       // ya no se pregunta (27/10/2026): solo por estados viejos en KV
+  VELAS:        'velas',         // ídem (23/10/2026)
   ZONAS_CONTRA: 'zonas_contra',
   SETUP:        'setup',
   REFLEXION:    'reflexion',
@@ -216,7 +216,6 @@ function buildResumen(data) {
     `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
     (stars ? `⭐ <b>Confianza entrada:</b> ${stars}\n` : '') +
     `📊 <b>Contexto:</b> ${data.contexto}\n` +
-    `🔢 <b>Corrida:</b> ${data.num_corrida}ª\n` +
     `⚠️ <b>Zonas en contra:</b> ${data.zonas_contra ? 'Sí' : 'No'}\n` +
     `📐 <b>Setup:</b> ${data.setup}\n` +
     (data._emocionFinTxt ? `🏁 <b>Al cierre:</b> ${escHtml(data._emocionFinTxt)}\n` : '') +
@@ -234,7 +233,6 @@ async function saveSession(data, env) {
     no_opero:          data.no_opero         ?? false,
     motivo_no_opero:   data.motivo_no_opero   ?? null,
     contexto:          data.contexto          ?? null,
-    num_corrida:       data.num_corrida       ?? null,
     puntos_retroceso:  data.puntos_retroceso  ?? null,
     zonas_contra:      data.zonas_contra      ?? false,
     setup:             data.setup             ?? null,
@@ -580,22 +578,12 @@ async function handleCallback(cbq, env) {
           '📊 <b>Contexto de mercado</b>\n\n¿Cómo estaba el mercado hoy?',
           { inline_keyboard: CONTEXTOS.map(c => [{ text: c.label, callback_data: `ctx_${c.value}` }]) }
         );
-      } else if (action.startsWith('ctx_')) {
-        state.data.contexto = action.slice(4);
-        state.step = STEPS.CORRIDA;
-        await saveState(env.KV, chatId, state);
-        await editMessage(token, chatId, msgId,
-          '🔢 <b>Número de corrida</b>\n\n¿Qué corrida operaste?',
-          { inline_keyboard: [[
-            { text: '1ª corrida', callback_data: 'cor_1' },
-            { text: '2ª corrida', callback_data: 'cor_2' },
-            { text: '3ª corrida', callback_data: 'cor_3' },
-          ]] }
-        );
-      } else if (action.startsWith('cor_')) {
-        // Las velas de la corrida ya no se preguntan (23/10/2026): Kris no las usa para
-        // nada, ni en las reglas ni al decidir. De la corrida se pasa a las zonas en contra.
-        state.data.num_corrida = parseInt(action.slice(4));
+      } else if (action.startsWith('ctx_') || action.startsWith('cor_')) {
+        // Ni el número de corrida (27/10/2026) ni sus velas (23/10/2026) se preguntan:
+        // nadie los leía, ni las reglas, ni el Coach, ni la disciplina. Del contexto se
+        // pasa a las zonas en contra. `cor_` se queda SOLO por si quedó en el chat el
+        // teclado de la corrida de un registro a medias: avanza sin guardar el número.
+        if (action.startsWith('ctx_')) state.data.contexto = action.slice(4);
         state.step = STEPS.ZONAS_CONTRA;
         await saveState(env.KV, chatId, state);
         await editMessage(token, chatId, msgId,
