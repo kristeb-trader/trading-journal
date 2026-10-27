@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-26b | La lupa del día: el gráfico ampliado pasa de día y lleva la fecha y la ficha, como el portal |
 | 2026-10-26 | Las 3 gráficas: el día desde los lados y ▲ ▼ entre las gráficas |
 | 2026-10-23 | La disciplina mide el plan: el motor dice si el trade era el del plan (desde el 01/10), y Telegram sin velas |
 | 2026-10-22 | El reingreso no tiene plazo de velas (plan 3.51), en el plan, los dos motores, las fichas y el portal; la imagen del reingreso operado enseña el punto de referencia de más allá del objetivo |
@@ -55,6 +56,32 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-26b — La lupa del día
+
+Kris pidió que el gráfico ampliado de la vista del día deje pasar de un día a otro y enseñe, como la lupa de
+la bitácora del portal (`Bitacora.astro`), la fecha arriba y abajo setup, resultado, puntos, contratos y P&L.
+
+- **`LupaDia` (`js/app.js`)** sustituye al `Lightbox` al clicar el gráfico de la vista del día, en los cuatro
+  calendarios (`Modal._ampliar`; `openFuente` recibe ahora `fuente`). Arriba, una placa con quién y la fecha
+  larga, centrada, y el contador «5 de 27»; en medio el gráfico con una flecha a cada lado (también ← / → y
+  deslizar); abajo, la ficha, una fila por operación. Placas con relieve y la misma entrada con giro que el
+  portal (sin ella si el sistema pide menos movimiento). **Esc** cierra la lupa y deja la vista del día debajo
+  (escucha en captura y corta el evento).
+- **`Calendarios.lupa(id, fecha)`** arma los días: los que **tienen gráfico** en ese calendario, del más viejo
+  al más nuevo y sin mirar el mes (Mío, de `sesiones.imagen_url`; Claude, respetando el candado del motor). La
+  ficha sale de los mismos adaptadores que los calendarios (`diaDe`, que ahora usa también `resumenDia`), así
+  que dice lo mismo que ellos. Los puntos van **exactos** (en el calendario, redondeados).
+- **Contratos:** Mío, `trades.qty`; Chaumer y Claude, los de `bt_cabecera` con que se calcula su P&L; el
+  manual, `bt_jornadas.contratos`. Mío lleva también la hora de entrada, para cuando hay más de una operación.
+
+**Verificado** en la copia local, consola limpia: Mío 18/08 = Continuación Bajista · Target · +20 · 2 · +$78
+(SQL: +$77,96); Claude 15/09 = −23,25 · Stop · 1 contrato (SQL igual); el manual; flechas, ← / →, Esc solo
+cierra la lupa; a 375 px la ficha en dos columnas, deslizar en los dos sentidos, sin scroll horizontal. El
+título de las 3 gráficas sigue igual tras pasar `resumenDia` a `diaDe`. Sin probar: Chaumer con gráfico (la
+copia local no tiene ninguno).
 
 ---
 

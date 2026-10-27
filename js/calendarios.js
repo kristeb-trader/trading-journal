@@ -108,7 +108,10 @@ const Calendarios = (() => {
         puntos: puntosDeTrade(t) ?? 0,
         pnl: parseFloat(t.profit) || 0,
         res: resDeTrade(t),
-        dir: t.market_pos === 'Short' ? 'Corto' : 'Largo',      })
+        dir: t.market_pos === 'Short' ? 'Corto' : 'Largo',
+        hora: horaCorta(t.entry_time),   // NinjaTrader: hora Colombia
+        contratos: Number(t.qty) || null,
+      })
     })
     Object.values(dias).forEach(d => { d.estado = estadoPorOps(d.ops) })
     const pre = prefijo(y, m)
@@ -142,6 +145,7 @@ const Calendarios = (() => {
         res: c.resultado === 'target' || c.resultado === 'stop' ? c.resultado : 'be',
         setup: [SETUP[tipo] || tipo, sentido].filter(Boolean).join(' '),
         hora: horaCorta(c.hora_entrada),
+        contratos: Number(cab.contratos) || 1,   // los del P&L calculado
       }
       dias[c.fecha] = { fecha: c.fecha, ops: [op], estado: estadoPorOps([op]),
                         url: c.imagen_url || null, textos: textosChaumer(c) }
@@ -180,15 +184,17 @@ const Calendarios = (() => {
         res: res === 'target' || res === 'stop' ? res : res === 'cierre por hora' ? 'cierre' : 'be',
         setup: [o.setup, o.sentido].filter(Boolean).join(' '),
         hora: horaCorta(o.hora),
+        contratos: Number(cab.contratos) || 1,   // los del P&L calculado
       }
       dias[f] = { fecha: f, ops: [op], estado: estadoPorOps([op]), url: r.grafico_url || null }
     })
     return dias
   }
 
-  function diasManual(jornadas, y, m) {
+  function diasManual(jornadas, y, m, cab) {
     const pre = prefijo(y, m), dias = {}
     ;(jornadas || []).filter(j => j.fecha?.startsWith(pre)).forEach(j => {
+      const contratos = Number(j.contratos) || Number(cab?.contratos) || null
       // `puntos` va siempre en positivo: el signo lo pone el resultado.
       const ops = (j.operaciones || []).filter(o => o.puntos != null).map(o => ({
         puntos: o.resultado === 'stop' ? -Math.abs(o.puntos) : Math.abs(o.puntos),
@@ -198,6 +204,7 @@ const Calendarios = (() => {
         hora: horaCorta(o.hora),
         dir: o.direccion === 'corto' ? 'Corto' : o.direccion === 'largo' ? 'Largo' : '',
         obs: o.observaciones || '',
+        contratos,
       }))
       dias[j.fecha] = ops.length
         ? { fecha: j.fecha, ops, estado: estadoPorOps(ops), nota: j.notas || '', url: j.imagen || null }
@@ -216,7 +223,7 @@ const Calendarios = (() => {
       mio,
       chaumer: d.chaumer && diasChaumer(d.chaumer, y, m, d.cab),
       claude:  d.estados && diasClaude(d.estados, d.motor, y, m, d.cab),
-      manual:  d.manual && diasManual(d.manual, y, m),
+      manual:  d.manual && diasManual(d.manual, y, m, d.cab),
     }
   }
 
@@ -648,7 +655,7 @@ const Calendarios = (() => {
     const d = await (fuentes || cargarFuentes())
     if (id === 'chaumer') return d.chaumer && diasChaumer(d.chaumer, y, m, d.cab)
     if (id === 'claude')  return d.estados && diasClaude(d.estados, d.motor, y, m, d.cab)
-    if (id === 'manual')  return d.manual && diasManual(d.manual, y, m)
+    if (id === 'manual')  return d.manual && diasManual(d.manual, y, m, d.cab)
     return null
   }
 
@@ -841,20 +848,78 @@ const Calendarios = (() => {
   // El título de cada gráfica de TresGraficas (app.js): solo resultado y setup — Kris no quiere ahí ni
   // puntos ni P&L (13/10). Usa los mismos adaptadores que los calendarios, así que dice lo mismo que ellos.
   // { res: 'TARGET', tono: 't' | 's' | 'o', setup } · null = nada que decir (sin día o 🔒: ese aviso ya lo da el panel).
-  async function resumenDia(id, fe) {
+  async function diaDe(id, fe) {
     const [y, m] = fe.split('-').map(Number)
-    let dias
-    if (id === 'mio') dias = await diasMio(y, m)
-    else {
-      const src = await (fuentes || cargarFuentes())
-      dias = id === 'chaumer' ? diasChaumer(src.chaumer, y, m, src.cab)
-           : diasClaude(src.estados, src.motor, y, m, src.cab)
-    }
-    const d = dias[fe]
+    const dias = id === 'mio' ? await diasMio(y, m) : await diasFuente(id, y, m)
+    return dias ? dias[fe] : null
+  }
+
+  async function resumenDia(id, fe) {
+    const d = await diaDe(id, fe)
     if (!d || d.estado === 'bloqueado') return null
     const [res, rb] = etiquetaDe(d)
     const setup = [...new Set(d.ops.map(x => x.setup).filter(Boolean))].join(' / ')
     return { res, tono: rb.slice(2), setup: esc(setup) }   // setup ya escapado: va a innerHTML
+  }
+
+  // ── La lupa ──────────────────────────────────────────────────────────────
+  // El gráfico ampliado de la vista del día (LupaDia, app.js), como la lupa de la bitácora del
+  // portal: recorre los días CON gráfico de ese calendario, del más viejo al más nuevo y sin
+  // mirar el mes, y debajo pone una fila por operación (Kris, 26/10).
+  async function conGrafico(id) {
+    let filas
+    if (id === 'mio') {
+      filas = (await DB.getSesiones() || []).filter(s => esDiaHabil(s.sesion_date)).map(s => [s.sesion_date, s.imagen_url])
+    } else {
+      const src = await (fuentes || cargarFuentes())
+      if (id === 'chaumer') filas = (src.chaumer || []).map(c => [c.fecha, c.imagen_url])
+      else if (id === 'manual') filas = (src.manual || []).map(j => [j.fecha, j.imagen])
+      else {
+        // El candado del motor (D-026): un día sin registrar no se enseña, aunque su gráfico exista.
+        const cerrado = new Set((src.estados || []).filter(e => e.estado === 'bloqueada').map(e => e.fecha))
+        filas = (src.motor || []).filter(r => !cerrado.has(r.fecha)).map(r => [r.fecha, r.grafico_url])
+      }
+    }
+    return filas.filter(([f, u]) => f && u).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([fecha, url]) => ({ fecha, url }))
+  }
+
+  const RES_TXT = { target: 'Target', stop: 'Stop', be: 'B.E.', cierre: 'Cierre por hora' }
+  // Aquí sí, los puntos exactos: en el calendario van redondeados, pero esto es el detalle.
+  const ptsExactos = v => `${v < 0 ? '−' : v > 0 ? '+' : ''}${Math.abs(v).toLocaleString('es-ES', { maximumFractionDigits: 2 })}`
+
+  // Setup · resultado · puntos · contratos · P&L, una fila por operación (Bitacora.astro, ficha()).
+  function fichaHtml(d, calc) {
+    if (!d || !d.ops.length) {
+      const [txt] = d ? etiquetaDe(d) : ['SIN OPERACIÓN']
+      return `<div class="ld-vacia"><span class="ld-pil">${txt}</span>${d?.nota ? `<span>${esc(d.nota)}</span>` : ''}</div>`
+    }
+    const dato = (lab, val, cls = '') => `<div class="ld-dato ${cls}"><span class="ld-etiq">${lab}</span>${val}</div>`
+    return d.ops.map((o, i) => {
+      const setup = [o.setup, o.dir && !/alcista|bajista/i.test(o.setup || '') ? o.dir.toLowerCase() : ''].filter(Boolean).join(' ')
+      const signo = o.res === 'cierre' ? Math.sign(o.puntos) : 0
+      const tono = o.res === 'target' || signo > 0 ? 't' : o.res === 'stop' || signo < 0 ? 's' : 'o'
+      return '<div class="ld-op">' +
+        (d.ops.length > 1 ? dato(`Operación ${i + 1}`, `<b>${esc(o.hora || '—')}</b>`) : '') +
+        dato('Setup', `<span class="ld-setup">${esc(setup || '—')}</span>`) +
+        dato('Resultado', `<span class="ld-pil ld-${tono}">${RES_TXT[o.res] || '—'}</span>`) +
+        dato('Puntos', `<b class="${clsSigno(o.puntos)}">${ptsExactos(o.puntos)}</b>`) +
+        dato('Contratos', `<b>${o.contratos || '—'}</b>`) +
+        dato(calc ? 'P&amp;L calc.' : 'P&amp;L', `<b class="${clsSigno(o.pnl)}">${fmtDinero(o.pnl)}</b>`, 'ld-pnl') +
+        '</div>'
+    }).join('')
+  }
+
+  // url: la del gráfico que se clicó, por si ese día no saliera en la lista.
+  async function lupa(id, fe, url) {
+    const f = FUENTE[id]
+    const dias = await conGrafico(id).catch(err => { console.warn('[lupa]', err); return [] })
+    if (!dias.some(d => d.fecha === fe)) dias.push({ fecha: fe, url })
+    dias.sort((a, b) => (a.fecha < b.fecha ? -1 : 1))
+    LupaDia.open({
+      dias, idx: dias.findIndex(d => d.fecha === fe), quien: f.nombre, color: f.color,
+      ficha: fe => diaDe(id, fe).then(d => fichaHtml(d, f.calc)),
+    })
   }
 
   // La misma pantalla completa que abre "Mío" (Modal, app.js): cabecera con el
@@ -898,7 +963,7 @@ const Calendarios = (() => {
     ;(d.textos || []).forEach(([lbl, t]) => { cuerpo += bloque(lbl, t, 'blu') })
     if (d.ops.length && d.nota) cuerpo += bloque('Notas', d.nota, 'blu')
 
-    Modal.openFuente({ fecha: fe, titulo, stats: `<div class="mh-box ${tono}">${celdas.join('')}</div>`, imagen: d.url, cuerpo })
+    Modal.openFuente({ fecha: fe, fuente: f.id, titulo, stats: `<div class="mh-box ${tono}">${celdas.join('')}</div>`, imagen: d.url, cuerpo })
   }
 
   function tipEl() {
@@ -953,5 +1018,5 @@ const Calendarios = (() => {
     else if (vista !== 'mio') renderFuente(vista)
   }
 
-  return { init, alEntrar, alCambiarMes, resumenDia, vista: () => vista }
+  return { init, alEntrar, alCambiarMes, resumenDia, lupa, vista: () => vista }
 })()
