@@ -59,7 +59,6 @@ const Chaumer = (() => {
       resultado: opero ? trades[0].resultado : null,
       puntos: pts.length ? Math.round(pts.reduce((a, b) => a + b, 0) * 100) / 100 : null,
       dinero: opero ? trades.reduce((a, t) => a + (parseFloat(t.profit) || 0), 0) : null,
-      confianza: sesion?.nivel_confianza || null,
       notas: sesion?.analisis_trader || null,
       imagen: sesion?.imagen_url || null,
       // El "por qué no operé" del día ("Sin setup", "Noticia roja"…). En un día
@@ -172,7 +171,6 @@ const Chaumer = (() => {
         <dl class="ch-campos">
           <dt>Resultado</dt><dd class="${yo.puntos > 0 ? 'pos' : yo.puntos < 0 ? 'neg' : ''}">${RESULTADOS[yo.resultado] || '—'} · ${fmtPts(yo.puntos)}</dd>
           <dt>Entrada</dt><dd>${esc(yo.hora || '—')}</dd>
-          <dt>Confianza</dt><dd>${yo.confianza ? '★'.repeat(yo.confianza) + '☆'.repeat(5 - yo.confianza) : '—'}</dd>
         </dl>
         ${yo.notas ? `<p class="ch-notas">${esc(yo.notas)}</p>` : ''}
       </div>`

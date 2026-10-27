@@ -222,43 +222,6 @@ const SessionForm = (() => {
     pct.title = total ? `${ok} de ${total} reglas` : 'Sin reglas aplicables'
   }
 
-  // ── Emoción y confianza (antes vivían en el Coach) ────────────────────────
-  let emocionesCat = []
-
-  async function loadEmociones() {
-    try { emocionesCat = await DB.getCatalogoEmociones() } catch { emocionesCat = [] }
-    const opts = e => `<option value="${e.id}">${e.emoji || ''} ${e.nombre}</option>`
-    const ini = document.getElementById('emocionInicio')
-    const fin = document.getElementById('emocionFin')
-    if (ini) { const p = ini.value; ini.innerHTML = '<option value="">Estado al inicio</option>' + emocionesCat.map(opts).join(''); ini.value = p }
-    if (fin) { const p = fin.value; fin.innerHTML = '<option value="">Estado al cierre</option>' + emocionesCat.map(opts).join(''); fin.value = p }
-  }
-
-  function setConfianza(n) {
-    const val = document.getElementById('confianzaVal')
-    if (val) val.value = n || ''
-    document.querySelectorAll('#confianzaStars .emo-star').forEach(b =>
-      b.classList.toggle('on', n && parseInt(b.dataset.val) <= n))
-  }
-
-  // Delegación en el contenedor y con guarda: si `init()` llegara a correr dos
-  // veces, dos listeners por estrella harían que el segundo leyera el valor que
-  // acaba de poner el primero y lo interpretara como "volver a pulsar" → la
-  // valoración se borraba sola al hacer clic.
-  function setupConfianza() {
-    const cont = document.getElementById('confianzaStars')
-    if (!cont || cont.dataset.wired) return
-    cont.dataset.wired = '1'
-    cont.addEventListener('click', e => {
-      const b = e.target.closest('.emo-star')
-      if (!b) return
-      const n = parseInt(b.dataset.val)
-      // Volver a pulsar la misma estrella limpia la valoración
-      const actual = parseInt(document.getElementById('confianzaVal')?.value) || 0
-      setConfianza(actual === n ? 0 : n)
-    })
-  }
-
   // Chips del título de "Cierre del día". Con la tarjeta plegada este es el
   // único resumen del cierre, así que en vez de contar ("1 error") se nombra:
   // el error más significativo y el experimento del día.
@@ -749,10 +712,8 @@ const SessionForm = (() => {
     payload.analisis_trader = document.getElementById('analisisTrader').value || null
     payload.resumen_ia = document.getElementById('resumenIA').value || null
 
-    // Emoción de llegada y confianza son de la sesión. La de cierre pertenece al
-    // diagnóstico del día, así que va aparte (ver handleSubmit).
-    payload.estado_emocional_id = parseInt(document.getElementById('emocionInicio')?.value) || null
-    payload.nivel_confianza     = parseInt(document.getElementById('confianzaVal')?.value) || null
+    // La emoción al llegar y al cierre y la confianza ya no se piden (27/10/2026): no van
+    // en el payload, ni en null, para no borrar lo registrado en días anteriores.
     payload.imagen_url = document.getElementById('imagenUrl').value || null
 
     // ── Premercado (se captura si operó, o si no operó pero se conectó) ──
@@ -825,9 +786,6 @@ const SessionForm = (() => {
     updateRetroceso(document.getElementById('sesionDate').value)
     casPendientes = []
     renderCasList()
-    setConfianza(0)
-    const _ei = document.getElementById('emocionInicio'); if (_ei) _ei.value = ''
-    const _ef = document.getElementById('emocionFin');    if (_ef) _ef.value = ''
     editingDate = null
     setToday()
     setMode('edit')
@@ -845,16 +803,6 @@ const SessionForm = (() => {
 
     try {
       await DB.upsertSesion(payload)
-
-      // La emoción de cierre vive en `diagnosticos_diarios` (es del diagnóstico,
-      // no de la sesión). Se guarda solo si hay valor, para no crear filas vacías
-      // en días que nunca pasaron por el Coach.
-      const emoFin = parseInt(document.getElementById('emocionFin')?.value) || null
-      if (emoFin) {
-        await DB.saveDiagnostico({ sesion_date: sesionDate, estado_emocional_fin_id: emoFin })
-          .catch(e => Toast.show('La emoción de cierre no se pudo guardar: ' + e.message, 'warning'))
-      }
-
       Toast.show('Sesión guardada correctamente', 'success')
       clearForm()
       setTimeout(() => {
@@ -956,18 +904,6 @@ const SessionForm = (() => {
 
     // Cargar experimentos del día (se pre-llenan con los valores guardados)
     loadExperimentos(sesion.sesion_date)
-
-    // Emoción y confianza: la de llegada y la confianza vienen en la sesión; la
-    // de cierre hay que traerla del diagnóstico del día.
-    const selIni = document.getElementById('emocionInicio')
-    if (selIni) selIni.value = sesion.estado_emocional_id || ''
-    setConfianza(parseInt(sesion.nivel_confianza) || 0)
-    DB.getDiagnosticoByDate(sesion.sesion_date)
-      .then(d => {
-        const selFin = document.getElementById('emocionFin')
-        if (selFin) selFin.value = d?.estado_emocional_fin_id || ''
-      })
-      .catch(() => {})
 
     document.getElementById('analisisTrader').value = sesion.analisis_trader || ''
     const taIA = document.getElementById('resumenIA')
@@ -1093,8 +1029,6 @@ const SessionForm = (() => {
     setupNoOperoToggle()
     setupPremercado()
     loadSetups()
-    loadEmociones()
-    setupConfianza()
     loadChecklist()
     setupImageUpload()
     setupCasuisticas()

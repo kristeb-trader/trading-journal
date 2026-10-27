@@ -10,6 +10,31 @@
 
 ---
 
+## D-048 — El registro del día se queda en lo que se usa: setup, análisis, errores
+
+**Decisión (Kris, 27/10/2026).** Ni Telegram ni el Diario preguntan ya **la corrida** (número y velas), **el contexto
+de mercado**, **las zonas en contra**, **la emoción al llegar**, **la confianza en la entrada** ni **la emoción al
+cierre**. Telegram queda en ¿operaste? → setup → análisis. El Coach deja de recibirlas en los días del plan (los de la
+etapa 1 las siguen viendo), y el comparador Chaumer deja de enseñar la confianza. **Lo registrado se queda** en
+`sesiones` y `diagnosticos_diarios`; ni el Diario ni el bot mandan esas columnas, ni en null, para no borrarlo.
+
+**Motivo.** Revisadas una a una con los 23 días del plan (24/09–27/10):
+- **Corrida y zonas en contra:** no las leía nadie. Lo que el plan pide (corrida fluida, objetivo libre de zonas) lo
+  juzga el motor con las velas. Zonas en contra: «No» los 24 días, y Telegram guardaba «No» aunque no se contestara.
+- **Contexto de mercado:** el Coach lo leía y era el sesgo que D-035 sacó («origen sí, sesgo no»); «Mixto» 14 de 20.
+- **Emoción al llegar:** «Tranquilo» 12 de 15. **Al cierre:** repetía el resultado («Confiado» los días verdes).
+  **Confianza:** 3 estrellas 13 de 20 y anotada después del trade, teñida por el resultado. El Coach las mencionó en
+  3 días, el último el 06/10.
+- Lo psicológico que sí cuenta ya tiene su sitio: los **errores psicológicos** del diagnóstico (Duda, Miedo, Afán…),
+  que se anotan cuando pasan y cuentan en la disciplina.
+
+**Alternativas descartadas.**
+- **Conservar la confianza:** solo valdría anotada antes de que se resuelva el trade; Kris prefirió quitarla.
+- **Borrar las columnas:** guardan feb–oct (110 días con corrida); un estudio futuro por número de corrida lo contaría
+  el motor (`tasks/backlog.md`).
+
+---
+
 ## D-047 — Desde el 01/10 la disciplina pregunta «¿era ese el trade del plan?» y responde el motor
 
 **Decisión (Kris, 23/10/2026).** En la etapa 2, desde el **01/10/2026**, la disciplina cuenta **días** por su veredicto, no

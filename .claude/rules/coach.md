@@ -41,9 +41,10 @@ paths:
   sesión revisó la lista (`erroresRevisados`); si no, guardar los eliminaría.
 - **`sesiones.nivel_confianza` = confianza EN LA ENTRADA** desde el 11 ago (antes era
   "pre-sesión", que no discriminaba). Los valores previos significan lo viejo.
-- **El Coach NO escribe emoción ni confianza** (16 ago): las registra el Diario. Volver a
-  mandarlas desde aquí enviaría `null` —sus selectores ya no existen— y borraría lo que puso
-  el Diario. Para el prompt se leen del dato guardado.
+- **El Coach NO escribe emoción ni confianza** (16 ago). Volver a mandarlas desde aquí enviaría
+  `null` y borraría lo registrado. Para el prompt se leen del dato guardado, **solo en los días de
+  la etapa 1**: desde el 27/10/2026 nadie las registra (D-048) y en los días del plan (`conPlan`)
+  no entran ni ellas, ni el contexto de mercado, ni la sección «Confianza en la entrada».
 - **El Coach no tiene selector de fecha propio**: la manda la cabecera de Sesión Operativa
   vía `Coach.setFecha(date)`.
 

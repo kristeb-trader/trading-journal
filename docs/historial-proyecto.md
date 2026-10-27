@@ -11,7 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
-| 2026-10-27 | Lo que no se usaba ya no se registra: ni Telegram ni el Diario piden la corrida, el contexto de mercado ni las zonas en contra |
+| 2026-10-27 | Lo que no se usaba ya no se registra: ni Telegram ni el Diario piden la corrida, el contexto, las zonas en contra, la emoción ni la confianza (D-048) |
 | 2026-10-26b | La lupa del día: el gráfico ampliado pasa de día y lleva la fecha y la ficha, como el portal |
 | 2026-10-26 | Las 3 gráficas: el día desde los lados y ▲ ▼ entre las gráficas |
 | 2026-10-23 | La disciplina mide el plan: el motor dice si el trade era el del plan (desde el 01/10), y Telegram sin velas |
@@ -83,6 +83,14 @@ quitadas de Telegram el 23/10.
 - Fuera de **Telegram** (de la confianza se pasa al setup; un teclado viejo del contexto, la corrida o las zonas avanza
   al setup sin guardar), del **Diario** («La operación» queda en el setup, el retroceso y los trades) y del **Coach** en
   los días del plan (los de antes del 24/09 lo siguen viendo). Las columnas y lo registrado se quedan.
+
+**La tercera vuelta: la emoción y la confianza** (D-048). El Coach sí las leía, pero las mencionó en 3 días (el último el
+06/10): «Tranquilo» al llegar 12 de 15 días, la emoción al cierre repetía el resultado y la confianza, 3 estrellas 13 de
+20 y anotada después del trade. Fuera de **Telegram** (queda ¿operaste? → setup → análisis, y el análisis guarda; un botón
+viejo de «¿Cómo terminaste?» guarda sin el estado), del **Diario** (la fila de «¿Cómo llegué? / ¿Cómo terminé?» y las
+estrellas), del **Coach** en los días del plan (con la guía de cómo leer la confianza) y del **comparador Chaumer**.
+Verificado: el flujo de Telegram simulado en local (trade → setup → análisis → guardado sin esas columnas; no operé; los
+teclados viejos), el prompt del Coach con y sin plan, y las dos tarjetas del Diario en el navegador.
 
 ---
 

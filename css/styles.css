@@ -1502,7 +1502,6 @@ textarea { resize: vertical; min-height: 80px; }
 /* Etiquetas de campo: micro-mayúsculas discretas, el valor manda */
 .card-x .form-group > label,
 .card-x .premkt-field label,
-.card-x .emo-col > label,
 .card-x .premkt-lines-col > label {
   font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--text3);
@@ -1574,22 +1573,6 @@ textarea { resize: vertical; min-height: 80px; }
   width: 104px; flex: 0 0 auto; text-align: center;
   font-variant-numeric: tabular-nums;
 }
-
-.emo-row {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 14px; align-items: start;
-}
-.emo-col { display: flex; flex-direction: column; gap: 6px; }
-.emo-stars { display: flex; gap: 4px; }
-.emo-star {
-  background: none; border: none; padding: 0 2px; cursor: pointer;
-  font-size: 1.45rem; line-height: 1; color: var(--border2, #403F38);
-  transition: color var(--transition), transform 0.1s;
-}
-.emo-star:hover { transform: scale(1.12); }
-.emo-star.on { color: var(--warning); }
-#sessionFieldset:disabled .emo-star { cursor: default; }
-#sessionFieldset:disabled .emo-star:hover { transform: none; }
 
 .collapse-keep { margin-bottom: 4px; }
 .collapsible:not(.collapsed) > .collapse-keep { margin-bottom: 16px; }

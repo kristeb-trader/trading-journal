@@ -210,8 +210,9 @@ Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes.
       .map(c => `  - "${c.nombre}"${c.tipo ? ` [${tipoNombre[c.tipo] || c.tipo}]` : ''}`)
       .join('\n') || '  (catálogo vacío)'
 
-    // Emoción y confianza se registran en el Diario, así que se leen del dato
-    // guardado: la de llegada de `sesiones`, la de cierre del diagnóstico del día.
+    // Emoción y confianza se leen del dato guardado: la de llegada de `sesiones`, la de
+    // cierre del diagnóstico del día. Solo para los días de la etapa 1: desde el
+    // 27/10/2026 no se registran, y en los días del plan no entran en el prompt.
     const nombreEmocion = id => id
       ? (emociones.find(e => e.id === id)?.nombre || 'No indicado')
       : 'No indicado'
@@ -464,7 +465,7 @@ La estrategia opera SIEMPRE a 1:1 (está en "Antes de la Sesión" y en el paso 6
 
 Solo pregunta la magnitud si NINGUNO de los dos lados se puede derivar (p. ej. un cierre manual que no llegó ni a target ni a stop, y que el trader tampoco mencionó). Preguntar por un dato que ya se deduce del 1:1 hace perder el tiempo al trader: no lo hagas.
 
----
+${conPlan ? '' : `---
 
 ## CONFIANZA EN LA ENTRADA — CRÚZALA CON LO QUE PASÓ
 
@@ -477,7 +478,7 @@ El trader puntúa de 1 a 5 la convicción que tenía **al entrar** (no cómo ama
 
 Ojo: la confianza se registra DESPUÉS de operar, así que puede venir teñida por el resultado (un día verde se recuerda como más convencido de lo que fue). Si el número no cuadra con lo que muestran los datos, dilo. Si no está indicada, no la menciones.
 
----
+`}---
 
 ## HORAS Y SESIÓN (MUY IMPORTANTE)
 
@@ -502,10 +503,10 @@ Por lo tanto:
 
 ## SESIÓN DE HOY — ${date}
 
-Estado emocional al inicio: ${emocionInicio}
+${conPlan ? '' : `Estado emocional al inicio: ${emocionInicio}
 Estado emocional al cierre: ${emocionFin}
 Confianza en la entrada (1-5, la convicción que tenía al entrar): ${confianza}
-${conPlan ? '' : `Contexto de mercado: ${sesion?.contexto || 'No indicado'}
+Contexto de mercado: ${sesion?.contexto || 'No indicado'}
 `}Setup del día: ${sesion?.setup || 'No indicado'}
 Noticias rojas (hora Colombia, las registra el trader): ${noticiasStr}
 

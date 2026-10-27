@@ -23,15 +23,14 @@ const STEPS = {
   PRE_SOPORTES: 'pre_soportes',
   PRE_RESIST:   'pre_resist',
   PRE_NOTICIAS: 'pre_noticias',
-  // Resto del flujo operativo
-  EMOCION:      'emocion',
-  CONFIANZA:    'confianza',
-  // Contexto, corrida y zonas en contra ya no se preguntan (27/10/2026); las velas, desde
-  // el 23/10. VELAS se queda solo por si quedó un estado a medias en KV.
+  // Resto del flujo operativo: setup → análisis, y se guarda.
+  // Ya no se preguntan (27/10/2026) la emoción al llegar, la confianza, el contexto, la
+  // corrida, las zonas en contra ni la emoción al cierre; las velas, desde el 23/10.
+  // VELAS y EMOCION_FIN se quedan solo por si quedó un estado a medias en KV.
   VELAS:        'velas',
   SETUP:        'setup',
   REFLEXION:    'reflexion',
-  EMOCION_FIN:  'emocion_fin',   // "¿Cómo terminaste?", después del análisis
+  EMOCION_FIN:  'emocion_fin',
 };
 
 // Parsea un número (acepta coma decimal). Devuelve null si no es válido o es /skip.
@@ -103,62 +102,11 @@ const getState  = (kv, id) => kv.get(`s:${id}`, 'json');
 const saveState = (kv, id, state) => kv.put(`s:${id}`, JSON.stringify(state), { expirationTtl: 12 * 3600 });
 const delState  = (kv, id) => kv.delete(`s:${id}`);
 
-// ── Emociones ───────────────────────────────────────────────────────────────
-// Fallback local con los IDs REALES del catálogo (catalogo_emociones).
-// Se usa si la consulta a Supabase falla o devuelve vacío, para que el paso
-// emocional del bot SIEMPRE muestre opciones seleccionables.
-// Si actualizas el catálogo en la web, sincroniza esta lista.
-const EMOCIONES_FALLBACK = [
-  { id: 1,  nombre: 'En zona',       emoji: '🟢' },
-  { id: 2,  nombre: 'Tranquilo',     emoji: '😌' },
-  { id: 3,  nombre: 'Confiado',      emoji: '💪' },
-  { id: 4,  nombre: 'Neutral',       emoji: '😐' },
-  { id: 5,  nombre: 'Ansioso',       emoji: '😰' },
-  { id: 6,  nombre: 'Presionado',    emoji: '😤' },
-  { id: 7,  nombre: 'Cansado',       emoji: '😴' },
-  { id: 8,  nombre: 'Sobreconfiado', emoji: '🚫' },
-  { id: 9,  nombre: 'Rabia',         emoji: '😤' },
-  { id: 10, nombre: 'Con Duda',      emoji: '😕' },
-];
+// (La emoción al llegar y al cierre y la confianza en la entrada ya no se preguntan,
+// 27/10/2026: casi no variaban o repetían el resultado. Lo psicológico va en los errores
+// del diagnóstico —Duda, Miedo, Afán—, que se anotan cuando pasan.)
 
-async function fetchEmociones(env) {
-  try {
-    const res = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/catalogo_emociones?activa=eq.true&order=orden.asc&select=id,nombre,emoji`,
-      { headers: { apikey: env.SUPABASE_SERVICE_ROLE, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE}` } }
-    );
-    if (!res.ok) return EMOCIONES_FALLBACK;
-    const data = await res.json();
-    return Array.isArray(data) && data.length ? data : EMOCIONES_FALLBACK;
-  } catch { return EMOCIONES_FALLBACK; }
-}
-
-// `prefijo`: 'emoc' = cómo llegas (inicio) · 'emofin' = cómo terminaste (cierre).
-// Mismo catálogo para los dos, igual que en la web.
-function emocionKeyboard(emociones, prefijo = 'emoc') {
-  const rows = [];
-  for (let i = 0; i < emociones.length; i += 2) {
-    const row = [{ text: `${emociones[i].emoji} ${emociones[i].nombre}`, callback_data: `${prefijo}_${emociones[i].id}` }];
-    if (emociones[i + 1]) row.push({ text: `${emociones[i + 1].emoji} ${emociones[i + 1].nombre}`, callback_data: `${prefijo}_${emociones[i + 1].id}` });
-    rows.push(row);
-  }
-  rows.push([{ text: '⏭ Omitir', callback_data: `${prefijo}_skip` }]);
-  return { inline_keyboard: rows };
-}
-
-const PREGUNTA_INICIO = '😊 <b>Estado emocional</b>\n\n¿Cómo llegas a la sesión de hoy?';
-const PREGUNTA_CIERRE = '🏁 <b>Estado al cierre</b>\n\n¿Cómo terminaste la sesión?';
-
-const CONFIANZA_KEYBOARD = { inline_keyboard: [[
-  { text: '★☆☆☆☆ Muy baja', callback_data: 'conf_1' },
-  { text: '★★☆☆☆ Baja',     callback_data: 'conf_2' },
-],[
-  { text: '★★★☆☆ Normal',   callback_data: 'conf_3' },
-  { text: '★★★★☆ Alta',     callback_data: 'conf_4' },
-],[
-  { text: '★★★★★ Máxima',   callback_data: 'conf_5' },
-  { text: '⏭ Omitir',        callback_data: 'conf_skip' },
-]]};
+const PREGUNTA_SETUP = '📐 <b>Setup</b>\n\n¿Qué setup operaste?';
 
 // ── Setup keyboard ──────────────────────────────────────────────────────────
 // Las variantes se leen de BD (activas, en orden). El callback lleva el CÓDIGO,
@@ -195,19 +143,14 @@ function buildResumen(data) {
       `✅ <b>Sesión guardada</b>\n\n` +
       `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
       `🔌 Me conecté a analizar (sin setup válido)\n` +
-      (data._emocionFinTxt ? `🏁 <b>Al cierre:</b> ${escHtml(data._emocionFinTxt)}\n` : '') +
       `\n✍️ <b>Análisis del día:</b>\n${escHtml(data.analisis_trader || '—')}`
     );
   }
 
-  const stars = data.nivel_confianza ? '★'.repeat(data.nivel_confianza) + '☆'.repeat(5 - data.nivel_confianza) : null;
-
   return (
     `✅ <b>Sesión guardada</b>\n\n` +
     `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
-    (stars ? `⭐ <b>Confianza entrada:</b> ${stars}\n` : '') +
-    `📐 <b>Setup:</b> ${data.setup}\n` +
-    (data._emocionFinTxt ? `🏁 <b>Al cierre:</b> ${escHtml(data._emocionFinTxt)}\n` : '') +
+    `📐 <b>Setup:</b> ${escHtml(data.setup)}\n` +
     `\n✍️ <b>Análisis del día:</b>\n${escHtml(data.analisis_trader || '—')}`
   );
 }
@@ -225,8 +168,8 @@ async function saveSession(data, env) {
     setup:             data.setup             ?? null,
     setup_codigo:      data.setup_codigo      ?? null,
     analisis_trader:       data.analisis_trader       ?? null,
-    estado_emocional_id:   data.estado_emocional_id   ?? null,
-    nivel_confianza:       data.nivel_confianza        ?? null,
+    // Ni `estado_emocional_id` ni `nivel_confianza` (27/10/2026): ya no se preguntan, y
+    // mandarlos en null borraría lo que se registró en días anteriores.
     // Premercado / contexto técnico
     // OJO: NO se incluyen los niveles de precio (cierre/apertura, OHLC de ayer ni
     // overnight precio_max_pre/min_pre) — los escribe el indicador
@@ -261,30 +204,6 @@ async function saveSession(data, env) {
     if (res.ok) return { ok: true };
     const body = await res.text();
     return { ok: false, status: res.status, error: (body || '').slice(0, 300) };
-  } catch (e) {
-    return { ok: false, status: 0, error: String((e && e.message) || e) };
-  }
-}
-
-// ── Estado al cierre ────────────────────────────────────────────────────────
-// Va a `diagnosticos_diarios`, NO a `sesiones`: es donde lo guarda el
-// "¿Cómo terminé?" de la web y de donde lo lee el Coach. La columna homónima de
-// `sesiones` existe pero nadie la usa (0 filas con dato en oct 2026).
-// merge-duplicates + solo estas dos claves: no pisa el resto del diagnóstico.
-async function saveEmocionFin(env, sesionDate, emocionId) {
-  try {
-    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/diagnosticos_diarios?on_conflict=sesion_date`, {
-      method: 'POST',
-      headers: {
-        apikey:         env.SUPABASE_SERVICE_ROLE,
-        Authorization:  `Bearer ${env.SUPABASE_SERVICE_ROLE}`,
-        'Content-Type': 'application/json',
-        Prefer:         'resolution=merge-duplicates',
-      },
-      body: JSON.stringify({ sesion_date: sesionDate, estado_emocional_fin_id: emocionId }),
-    });
-    if (res.ok) return { ok: true };
-    return { ok: false, status: res.status, error: ((await res.text()) || '').slice(0, 300) };
   } catch (e) {
     return { ok: false, status: 0, error: String((e && e.message) || e) };
   }
@@ -359,7 +278,7 @@ async function startSesionFlow(chatId, token, kv, env) {
 }
 
 // Arranque automático tras un trade de NinjaTrader. Si llega un trade es que se
-// operó: se salta "¿Operaste hoy?" y se va directo a "¿Cómo llegas?".
+// operó: se salta "¿Operaste hoy?" y se va directo al setup.
 // NO arranca (solo queda el aviso del trade) si:
 //   - ya hay un registro a medias de hoy: un 2º trade no lo reinicia;
 //   - el día ya está registrado (`registrada_at`, la pone el primer guardado del
@@ -384,33 +303,28 @@ async function iniciarTrasTrade(env) {
   } catch { /* sin red: mejor preguntar de más que dejar el día sin registrar */ }
 
   await saveState(env.KV, chatId, {
-    step: STEPS.EMOCION,
+    step: STEPS.SETUP,
     data: { sesion_date: today, no_opero: false, se_conecto: true },
   });
-  const emociones = await fetchEmociones(env);
-  await sendMessage(env.BOT_TOKEN, chatId, PREGUNTA_INICIO, emocionKeyboard(emociones));
+  await sendMessage(env.BOT_TOKEN, chatId, PREGUNTA_SETUP, setupKeyboard(await fetchSetups(env)));
 }
 
-// Cierre del registro: guarda la sesión y el estado al cierre, y deja el resumen
-// en el mismo mensaje del teclado.
+// Cierre del registro: guarda la sesión y deja el resumen. Con `msgId` lo escribe en
+// el mismo mensaje del teclado (un botón viejo de «¿Cómo terminaste?»); sin él, en un
+// mensaje nuevo (el análisis, que es texto, cierra el registro desde el 27/10/2026).
 async function cerrarSesion(state, chatId, msgId, env) {
   const token = env.BOT_TOKEN;
+  const decir = text => msgId ? editMessage(token, chatId, msgId, text) : sendMessage(token, chatId, text);
   const r = await saveSession(state.data, env);
   if (!r.ok) {
-    // El estado se conserva: puede reintentar pulsando otra vez.
-    await editMessage(token, chatId, msgId,
+    // El estado se conserva: puede reintentar.
+    await decir(
       `⚠️ <b>Error al guardar (HTTP ${r.status})</b>\n<code>${(r.error || 'sin detalle').replace(/[<>]/g, '')}</code>\n\nReintenta con /sesion.`
     );
     return;
   }
   await delState(env.KV, chatId);
-
-  let aviso = '';
-  if (state.data.estado_emocional_fin_id != null) {
-    const f = await saveEmocionFin(env, state.data.sesion_date, state.data.estado_emocional_fin_id);
-    if (!f.ok) aviso = `\n\n⚠️ La sesión se guardó, pero el estado al cierre no (HTTP ${f.status}). Márcalo en la web.`;
-  }
-  await editMessage(token, chatId, msgId, buildResumen(state.data) + aviso);
+  await decir(buildResumen(state.data));
 }
 
 // ── Handlers principales ────────────────────────────────────────────────────
@@ -492,16 +406,10 @@ async function handleCallback(cbq, env) {
     return;
   }
 
-  // ── Estado al cierre → guardar ────────────────────────────────────────────
+  // ── «¿Cómo terminaste?» de un registro a medias de antes del 27/10/2026 ───
+  // Ya no se pregunta: el botón guarda la sesión sin el estado al cierre.
   if (action.startsWith('emofin_')) {
     if (state.step !== STEPS.EMOCION_FIN) return;   // botón viejo de otro registro
-    const val = action.slice(7);
-    const id = val === 'skip' ? null : parseInt(val);
-    state.data.estado_emocional_fin_id = id;
-    if (id != null) {
-      const e = (await fetchEmociones(env)).find(x => x.id === id);
-      if (e) state.data._emocionFinTxt = `${e.emoji} ${e.nombre}`;
-    }
     await cerrarSesion(state, chatId, msgId, env);
     return;
   }
@@ -509,15 +417,13 @@ async function handleCallback(cbq, env) {
   // ── Flujo principal ───────────────────────────────────────────────────────
   switch (action) {
     // Las zonas naranjas ya NO se piden aqui (ago 2026): el plan nuevo no las usa.
-    case 'opero_si': {
+    case 'opero_si':
       state.data.no_opero = false;
       state.data.se_conecto = true;
-      state.step = STEPS.EMOCION;
+      state.step = STEPS.SETUP;
       await saveState(env.KV, chatId, state);
-      const emociones = await fetchEmociones(env);
-      await editMessage(token, chatId, msgId, PREGUNTA_INICIO, emociones.length ? emocionKeyboard(emociones) : { inline_keyboard: [[{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]] });
+      await editMessage(token, chatId, msgId, PREGUNTA_SETUP, setupKeyboard(await fetchSetups(env)));
       break;
-    }
 
     case 'opero_no':
       state.data.no_opero = true;
@@ -547,36 +453,14 @@ async function handleCallback(cbq, env) {
       break;
 
     default:
-      if (action.startsWith('emoc_')) {
-        const val = action.slice(5);
-        state.data.estado_emocional_id = val === 'skip' ? null : parseInt(val);
-        state.step = STEPS.CONFIANZA;
-        await saveState(env.KV, chatId, state);
-        await editMessage(token, chatId, msgId,
-          '⭐ <b>Confianza en la entrada</b>\n\n¿Qué tan convencido estabas al entrar?',
-          CONFIANZA_KEYBOARD
-        );
-      } else if (action.startsWith('conf_')) {
-        const val = action.slice(5);
-        state.data.nivel_confianza = val === 'skip' ? null : parseInt(val);
+      // Teclados de preguntas que ya no se hacen (27/10/2026): la emoción al llegar, la
+      // confianza, el contexto de mercado (el sesgo que el plan no usa, D-035), la corrida y
+      // las zonas en contra (las comprueba el motor). Se quedan SOLO por si quedó en el chat
+      // uno de un registro a medias: avanzan al setup sin guardar nada.
+      if (/^(emoc|conf|ctx|cor|zonas)_/.test(action)) {
         state.step = STEPS.SETUP;
         await saveState(env.KV, chatId, state);
-        await editMessage(token, chatId, msgId,
-          '📐 <b>Setup</b>\n\n¿Qué setup operaste?',
-          setupKeyboard(await fetchSetups(env))
-        );
-      } else if (action.startsWith('ctx_') || action.startsWith('cor_') || action.startsWith('zonas_')) {
-        // De la confianza se pasa al setup (27/10/2026): ya no se pregunta el contexto de
-        // mercado (era el sesgo que el plan no usa, D-035), ni el número de corrida, ni las
-        // zonas en contra (las comprueba el motor); las velas de la corrida, desde el 23/10.
-        // Estas teclas se quedan SOLO por si quedó en el chat un teclado viejo de un registro
-        // a medias: avanzan al setup sin guardar nada.
-        state.step = STEPS.SETUP;
-        await saveState(env.KV, chatId, state);
-        await editMessage(token, chatId, msgId,
-          '📐 <b>Setup</b>\n\n¿Qué setup operaste?',
-          setupKeyboard(await fetchSetups(env))
-        );
+        await editMessage(token, chatId, msgId, PREGUNTA_SETUP, setupKeyboard(await fetchSetups(env)));
       }
   }
 }
@@ -619,10 +503,9 @@ async function handleText(msg, env) {
         await saveState(env.KV, chatId, state);
         await sendMessage(token, chatId, '✍️ <b>Análisis del día</b>\n\nEscribe tu análisis de la sesión (no hubo setup válido):');
       } else {
-        state.step = STEPS.EMOCION;
+        state.step = STEPS.SETUP;
         await saveState(env.KV, chatId, state);
-        const emociones = await fetchEmociones(env);
-        await sendMessage(token, chatId, PREGUNTA_INICIO, emociones.length ? emocionKeyboard(emociones) : { inline_keyboard: [[{ text: '⏭ Omitir', callback_data: 'emoc_skip' }]] });
+        await sendMessage(token, chatId, PREGUNTA_SETUP, setupKeyboard(await fetchSetups(env)));
       }
       break;
     }
@@ -638,23 +521,15 @@ async function handleText(msg, env) {
       }
       state.step = STEPS.SETUP;
       await saveState(env.KV, chatId, state);
-      await sendMessage(token, chatId,
-        '📐 <b>Setup</b>\n\n¿Qué setup operaste?',
-        setupKeyboard(await fetchSetups(env))
-      );
+      await sendMessage(token, chatId, PREGUNTA_SETUP, setupKeyboard(await fetchSetups(env)));
       break;
     }
 
-    // El análisis ya no cierra el registro: falta "¿Cómo terminaste?". Se guarda
-    // al pulsar el estado al cierre (o Omitir), en `cerrarSesion`.
-    case STEPS.REFLEXION: {
+    // El análisis cierra el registro (27/10/2026: ya no se pregunta «¿Cómo terminaste?»).
+    case STEPS.REFLEXION:
       state.data.analisis_trader = text;
-      state.step = STEPS.EMOCION_FIN;
-      await saveState(env.KV, chatId, state);
-      const emociones = await fetchEmociones(env);
-      await sendMessage(token, chatId, PREGUNTA_CIERRE, emocionKeyboard(emociones, 'emofin'));
+      await cerrarSesion(state, chatId, null, env);
       break;
-    }
   }
 }
 
@@ -694,7 +569,7 @@ async function handleNotify(request, env) {
     }),
   });
 
-  // Sin botón "Registrar sesión": el registro sigue solo con "¿Cómo llegas?".
+  // Sin botón "Registrar sesión": el registro sigue solo con el setup.
   await iniciarTrasTrade(env);
 
   return new Response('OK');

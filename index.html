@@ -565,31 +565,10 @@
               <span class="card-meta" id="cierreMeta"></span>
             </div>
 
-            <!-- Estado emocional y confianza. Vivían en el Coach IA, que era el
-                 único sitio donde se podían anotar; son datos de la sesión
-                 (`sesiones.estado_emocional_id` / `nivel_confianza`) salvo la
-                 emoción de cierre, que pertenece al diagnóstico del día. -->
-            <div class="form-group emo-row">
-              <div class="emo-col">
-                <label for="emocionInicio">¿Cómo llegué?</label>
-                <select id="emocionInicio"><option value="">Estado al inicio</option></select>
-              </div>
-              <div class="emo-col">
-                <label for="emocionFin">¿Cómo terminé?</label>
-                <select id="emocionFin"><option value="">Estado al cierre</option></select>
-              </div>
-              <div class="emo-col">
-                <label title="Qué tan convencido estabas al apretar el gatillo">Confianza en la entrada</label>
-                <div class="emo-stars" id="confianzaStars">
-                  <button type="button" class="emo-star" data-val="1" title="Muy baja — entré con dudas">★</button>
-                  <button type="button" class="emo-star" data-val="2" title="Baja">★</button>
-                  <button type="button" class="emo-star" data-val="3" title="Normal">★</button>
-                  <button type="button" class="emo-star" data-val="4" title="Alta">★</button>
-                  <button type="button" class="emo-star" data-val="5" title="Máxima — setup de libro">★</button>
-                </div>
-                <input type="hidden" id="confianzaVal">
-              </div>
-            </div>
+            <!-- «¿Cómo llegué?», «¿Cómo terminé?» y la confianza en la entrada ya no se
+                 piden (27/10/2026): casi no variaban o repetían el resultado. Lo
+                 psicológico va en los errores de abajo. Lo registrado sigue en
+                 `sesiones` y `diagnosticos_diarios`. -->
 
             <!-- Experimentos del día (solo cuando sí operó) -->
             <div class="form-group op-only">
