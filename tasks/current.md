@@ -96,7 +96,7 @@ El motor corre sobre cualquier día del que haya velas de 1 minuto; lo que limit
 - **Cómo va:** Kris pide el día; Claude lo marca a ciegas con el motor (corrida fluida 3.38), lo revisa a mano y
   entrega; se compara. **Si Kris dice «sí» o «perfecto» es que coincide, y va a la galería sin volver a preguntar**
   (30/09); un cambio de regla o un día que no coincide sí se le pregunta. **Al cerrar cada día se pasa el puente**
-  (`python scripts/cadena/subir_dia.py AAAA-MM-DD`) para que el Journal —calendario «Claude» y Coach— tenga su ficha
+  (`python scripts/cadena/subir_dia.py AAAA-MM-DD`) para que el Journal —las 3 gráficas, la disciplina y el Coach— tenga su ficha
   y su gráfico, igual que el portal (Kris, 30/09). Hechos: 1/09 (+15,75), 2/09 (+29,00), 3/09 (+24,00), 4/09 (+16,75), 8/09 (no opera) y 9/09 (+67,25)
 - **Arreglado (30/09):** los dos huecos del motor que salieron el 4/09 y el 8/09 — la corrida de la apertura se juzga
   siempre, deje o no zona de corrida; y la zona de premercado sin papel mira los dos lados. Ninguna operación cambia

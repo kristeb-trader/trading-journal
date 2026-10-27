@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-27f | Claude se funde en el Bot: un solo calendario, real desde el 07/10 y simulado antes |
 | 2026-10-27e | El Coach pasa a Sonnet 5.5, esfuerzo `medium` (D-050) |
 | 2026-10-27d | El Coach parte del veredicto del motor y lee solo las reglas del día (D-049) |
 | 2026-10-27c | El calendario del Bot: lo que operó de verdad, desde `bot_operaciones` |
@@ -61,6 +62,39 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-27f — Claude se funde en el Bot
+
+Kris: «el bot es el mismo Claude», así que sobra un calendario. Pero algunos días no daban lo mismo, y el porqué
+decide cómo se juntan: **las fichas del motor se recalculan con el motor de hoy** (las 40, del 1/09 al 27/10, se
+rehicieron hoy a las 11:05) y **el bot operó cada día con la versión de ese día**. Desde el 14/10 el motor cambió 10
+veces. En octubre coinciden 11 de 15 días; los 4 que no:
+
+| Día | Motor de hoy (lo que enseñaba Claude) | El bot | Por qué |
+|---|---|---|---|
+| 14/10 | Reingreso 8:50 → target +34,25 | Reingreso 8:32 → stop −69,75 | Entró sin zona a la que ir: el plan 3.47 llegó esa tarde (18:50) |
+| 22/10 | Reingreso 9:01 → stop −29,25 | Continuación 9:02 → stop −53,25 | El reingreso de las 9:00 caducaba entonces; «sin plazo de velas» (3.51) entró a las 16:07 |
+| 21/10 | Continuación 10:15 → stop −30,25 | No operó | Se armó a las 10:16, tarde |
+| 13/10 | Continuación 8:50 → stop −47,5 | No se armó | «Ya operó hoy en esta cuenta»: contó otra operación de SimBot |
+
+- **Un solo calendario, «Bot»** (Kris eligió esta opción entre tres): lo que **operó** el bot desde su primera fila de
+  `bot_operaciones` (07/10), con su P&L real; **antes**, lo que marca el motor, **simulado** —borde discontinuo,
+  etiqueta «SIM», P&L calculado con los contratos que caben en $160—. `diasBot` (`js/calendarios.js`) junta
+  `diasBotReal` y `diasMotor` (el antiguo `diasClaude`). Vuelven a ser **cuatro cuadros** (2×2; en escritorio, en fila).
+- **El gráfico del día es el del motor** (el bot no guarda el suyo): en la vista del día, en la lupa y en las 3
+  gráficas, que pasan a ser Mía · **Bot** · Chaumer. Cuando el motor de hoy marca otra operación que la del bot, la
+  vista del día y la lupa lo dicen: «El gráfico es el motor de hoy… el de hoy marca Reingreso bajista a las 8:50 →
+  Target +34,25 pts».
+- **«P&L calc.»** solo cuando todo lo sumado es simulado (septiembre); un mes con días de los dos (octubre) dice «P&L»
+  y la leyenda y «Días operados» avisan de los simulados. Los días simulados sin registrar siguen con el candado (D-026);
+  lo que operó el bot, no.
+
+**Verificado** en la copia local, con las fichas reales del 2, 13, 14, 20 y 22/10 inyectadas: la vista del día y la lupa
+del 14 y el 22 avisan del gráfico, el 20 (coinciden) no; el 2/10 sale SIM con 3 contratos y −$162 calc. SQL: octubre =
+13 operaciones (10 reales + 3 simuladas), −326,375 pts, −$680,56, 4/9; septiembre = 16 simuladas, +90 pts, +$419,28
+calc., 10/6. Consola sin errores de JS.
 
 ---
 

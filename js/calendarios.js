@@ -1,14 +1,16 @@
-// Calendarios — la pantalla de los calendarios (Mío · Chaumer · Claude · Bot ·
-// Backtesting manual) y la vista completa de los que no son el mío.
-// Diseño: docs/disenos/2026-09-29-cuatro-calendarios.md (el del Bot llegó el 27/10).
+// Calendarios — la pantalla de los calendarios (Mío · Chaumer · Bot · Backtesting
+// manual) y la vista completa de los que no son el mío.
+// Diseño: docs/disenos/2026-09-29-cuatro-calendarios.md. El 27/10 el de Claude (lo que
+// marcó el motor) se fundió en el del Bot: el bot ES el motor, operando.
 //
 // Reglas que no se rompen aquí:
-//   · Todo se lee en PUNTOS y el P&L va debajo. En Chaumer y Claude el P&L se
-//     CALCULA con los datos de inicio del backtesting (bt_cabecera); el del
-//     manual está congelado; el de Mío y el del Bot, los reales (`trades.profit`,
-//     `bot_operaciones.pnl_neto`).
-//   · El calendario de Claude respeta el candado del motor (D-026): un día sin
-//     registrar se pinta 🔒, y su operación ni se pide ni se enseña.
+//   · Todo se lee en PUNTOS y el P&L va debajo. En Chaumer y en los días simulados
+//     del Bot el P&L se CALCULA con los datos de inicio del backtesting
+//     (bt_cabecera); el del manual está congelado; el de Mío y el del Bot, los
+//     reales (`trades.profit`, `bot_operaciones.pnl_neto`).
+//   · Los días simulados del Bot (antes de que operara) respetan el candado del
+//     motor (D-026): un día sin registrar se pinta 🔒, y su operación ni se pide
+//     ni se enseña. Lo que operó el bot de verdad no espera al registro.
 //   · El mes es UNO para todos y vive en Calendar (getYear / getMonth).
 //   · "Mío" es la pantalla de siempre (#calMio, calendar.js + metrics.js): aquí
 //     solo se resume para su cuadro y para la curva comparada.
@@ -17,7 +19,6 @@ const Calendarios = (() => {
   const FUENTES = [
     { id: 'mio',     nombre: 'Mío',                icono: 'ti-user',        color: 'accent' },
     { id: 'chaumer', nombre: 'Chaumer',            icono: 'ti-arrows-diff', color: 'blue',   calc: true },
-    { id: 'claude',  nombre: 'Claude',             icono: 'ti-robot',       color: 'violet', calc: true },
     { id: 'bot',     nombre: 'Bot',                icono: 'ti-cpu',         color: 'warning' },
     { id: 'manual',  nombre: 'Backtesting manual', icono: 'ti-history',     color: 'neutro' },
   ]
@@ -28,8 +29,8 @@ const Calendarios = (() => {
   const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
   const SETUP = { continuacion: 'Continuación', reingreso: 'Reingreso' }
 
-  let vista = 'hub'            // hub · mio · chaumer · claude · manual
-  let fuentes = null           // promesa de los datos de Chaumer, Claude y el manual
+  let vista = 'hub'            // hub · mio · chaumer · bot · manual
+  let fuentes = null           // promesa de los datos de Chaumer, el Bot (y su motor) y el manual
   let especiales = {}          // año → { fecha: 'festivo' | 'fomc' }
   let pedido = 0               // descarta respuestas de un mes que ya no se ve
   let curvaInst = null
@@ -53,7 +54,7 @@ const Calendarios = (() => {
   const horaCorta = h => (h ? String(h).slice(0, 5).replace(/^0/, '') : '')
 
   // ── Datos ────────────────────────────────────────────────────────────────
-  // Chaumer, Claude y el manual son pocas filas (decenas), así que se piden
+  // Chaumer, el Bot, el motor y el manual son pocas filas (decenas), así que se piden
   // enteros una vez por entrada a la pantalla y se filtran por mes aquí. Así el
   // enlace "última: enero 2026" sabe adónde ir sin otra consulta.
   function cargarFuentes() {
@@ -87,8 +88,13 @@ const Calendarios = (() => {
     return p * Number(cab.valor_punto) * c - Number(cab.comision) * c
   }
 
+  // «P&L calc.» cuando TODO lo que se suma es calculado: Chaumer siempre; el Bot, si son solo días
+  // simulados. Un mes con días reales y simulados dice «P&L» y avisa en la leyenda.
+  const opsDe = dias => Object.values(dias || {}).flatMap(d => d.ops)
+  const esCalc = (f, ops) => !!f.calc || (ops.length > 0 && ops.every(o => o.calc))
+
   // Un día, en el mismo formato para las cuatro fuentes (diseño §3):
-  //   { fecha, estado, ops: [{ puntos, pnl, res, setup, hora, dir, obs }], nota, url }
+  //   { fecha, estado, ops: [{ puntos, pnl, res, setup, hora, dir, obs, contratos, calc }], nota, url, textos, simulado }
   //   estado: target · stop · mixed · be · sin-entradas · no-opero · sin-op · bloqueado · error
   function estadoPorOps(ops) {
     // El cierre por hora (plan 3.46) colorea el día por su signo, pero no cuenta como target ni stop en las cifras
@@ -156,7 +162,8 @@ const Calendarios = (() => {
     return dias
   }
 
-  function diasClaude(estados, motor, y, m, cab) {
+  // Lo que marcó el motor (motor_fichas): la base de los días simulados del Bot.
+  function diasMotor(estados, motor, y, m, cab) {
     const pre = prefijo(y, m), dias = {}
     const fichas = Object.fromEntries((motor || []).map(r => [r.fecha, r]))
     ;(estados || []).filter(e => e.fecha?.startsWith(pre)).forEach(e => {
@@ -219,12 +226,12 @@ const Calendarios = (() => {
     return dias
   }
 
-  // El bot (bot_operaciones, D-038): lo que operó DE VERDAD, no lo que marcó el motor (eso es Claude).
-  // P&L real (`pnl_neto`, el que anota el bot) y sus contratos. Una fila por día y cuenta: si un día
-  // operaran dos cuentas, son dos operaciones. Horas en hora Colombia, como las escribe el bot.
+  // El bot (bot_operaciones, D-038): lo que operó DE VERDAD. P&L real (`pnl_neto`, el que anota el
+  // bot) y sus contratos. Una fila por día y cuenta: si un día operaran dos cuentas, son dos
+  // operaciones. Horas en hora Colombia, como las escribe el bot.
   //   TARGET · STOP · CIERRE POR HORA → la operación · NO OPERA → sin operación (morado) ·
   //   NO ARMADO → gris, con su motivo · EN CURSO → abierta si se llenó, si no, armado y esperando.
-  function diasBot(filas, y, m) {
+  function diasBotReal(filas, y, m) {
     const pre = prefijo(y, m), dias = {}
     const px = v => v == null ? '—' : Number(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     const porDia = {}
@@ -260,12 +267,53 @@ const Calendarios = (() => {
       } else if (rs.every(x => x.resultado === 'NO ARMADO')) d = { fecha: f, ops: [], estado: 'no-armado', nota: r.motivo || 'El bot no se armó' }
       else if (rs.some(x => x.resultado === 'EN CURSO')) d = { fecha: f, ops: [], estado: 'sin-op', nota: 'El bot está armado y aún no ha entrado' }
       else d = { fecha: f, ops: [], estado: 'sin-op', nota: rs.find(x => x.motivo)?.motivo || 'El motor no dio operación' }
-      dias[f] = { ...d, url: null, textos }
+      dias[f] = { ...d, url: null, textos, orden: rs.find(x => x.entrada != null) }
     })
     return dias
   }
 
-  // Los días de las cinco fuentes para el mes. `null` = esa fuente no cargó.
+  // El calendario del Bot (27/10, Kris: «el bot es el mismo Claude»): lo que operó de verdad y, en los
+  // días de antes de su primera fila, lo que marca el motor, SIMULADO (P&L calculado, borde discontinuo).
+  // El gráfico es siempre el del motor. Ojo: las fichas se recalculan con el motor de HOY y el bot operó
+  // con el de su día, así que a veces no coinciden (14/10, 22/10): ese día se dice qué marca el gráfico.
+  function diasBot(filas, estados, motor, y, m, cab) {
+    const reales = diasBotReal(filas, y, m)
+    const desde = (filas || []).map(r => r.fecha).sort()[0] || '9999'
+    const sim = diasMotor(estados, motor, y, m, cab)
+    const fichas = Object.fromEntries((motor || []).map(r => [r.fecha, r]))
+    const dias = {}
+    Object.values(sim).forEach(d => {
+      if (d.fecha >= desde) return
+      d.simulado = true
+      d.ops.forEach(o => { o.calc = true })
+      dias[d.fecha] = d
+    })
+    Object.values(reales).forEach(d => {
+      const r = fichas[d.fecha]
+      d.url = r?.grafico_url || null
+      const nota = r && distintoDelMotor(d.orden, r.operacion)
+      if (nota) d.textos = [...(d.textos || []), ['El gráfico', nota]]
+      delete d.orden
+      dias[d.fecha] = d
+    })
+    return dias
+  }
+
+  // Si el gráfico (el motor de hoy) no enseña la operación del bot, qué enseña. null = coinciden.
+  function distintoDelMotor(orden, o) {
+    if (!orden && !o) return null
+    const misma = orden && o && Math.abs(Number(orden.entrada) - Number(o.entrada)) <= 1
+      && String(orden.setup || '').toLowerCase() === String(o.setup || '').toLowerCase()
+    if (misma) return null
+    const pre = 'El gráfico es el motor de hoy, que se ha ido afinando; el bot iba con el de ese día.'
+    if (!o) return `${pre} El de hoy no marca operación.`
+    const res = String(o.resultado || '').toLowerCase()
+    const que = res === 'target' || res === 'stop' ? `${cap(res)} ${ptsTexto(o.puntos)} pts` : cap(res || 'sin resultado')
+    return `${pre} El de hoy marca ${[o.setup, o.sentido].filter(Boolean).join(' ')}${o.hora ? ` a las ${horaCorta(o.hora)}` : ''} → ${que}.`
+  }
+  const ptsTexto = v => `${v < 0 ? '−' : v > 0 ? '+' : ''}${Math.abs(Number(v) || 0).toLocaleString('es-ES', { maximumFractionDigits: 2 })}`
+
+  // Los días de las cuatro fuentes para el mes. `null` = esa fuente no cargó.
   async function diasDelMes(y, m) {
     const [d, mio] = await Promise.all([
       fuentes || cargarFuentes(),
@@ -274,9 +322,8 @@ const Calendarios = (() => {
     return {
       mio,
       chaumer: d.chaumer && diasChaumer(d.chaumer, y, m, d.cab),
-      claude:  d.estados && diasClaude(d.estados, d.motor, y, m, d.cab),
+      bot:     d.bot && diasBot(d.bot, d.estados, d.motor, y, m, d.cab),
       manual:  d.manual && diasManual(d.manual, y, m, d.cab),
-      bot:     d.bot && diasBot(d.bot, y, m),
     }
   }
 
@@ -284,9 +331,8 @@ const Calendarios = (() => {
   async function ultimoMes(id) {
     const d = await (fuentes || cargarFuentes())
     const fechas = id === 'chaumer' ? (d.chaumer || []).map(c => c.fecha)
-      : id === 'claude' ? (d.estados || []).map(e => e.fecha)
       : id === 'manual' ? (d.manual || []).map(j => j.fecha)
-      : id === 'bot' ? (d.bot || []).map(r => r.fecha) : []
+      : id === 'bot' ? [...(d.bot || []).map(r => r.fecha), ...(d.estados || []).map(e => e.fecha)] : []
     const f = fechas.sort().at(-1)
     return f ? { y: +f.slice(0, 4), m: +f.slice(5, 7) } : null
   }
@@ -331,7 +377,7 @@ const Calendarios = (() => {
       const cuerpo = d?.estado === 'bloqueado' ? '<i class="ti ti-lock"></i>'
         : d?.estado === 'abierta' ? '<i class="ti ti-hourglass"></i>'
         : pts != null ? fmtPts(pts) : ''
-      const cls = ['hub-dia', estado && `est-${estado}`, f > hoy && 'futuro', f === hoy && 'hoy'].filter(Boolean).join(' ')
+      const cls = ['hub-dia', estado && `est-${estado}`, d?.simulado && 'sim', f > hoy && 'futuro', f === hoy && 'hoy'].filter(Boolean).join(' ')
       return `<div class="${cls}"><span class="hub-dia-n">${+f.slice(8)}</span><span class="hub-dia-p">${cuerpo}</span></div>`
     }).join('')
     return `<div class="hub-mini">${cab}${celdas}</div>`
@@ -351,6 +397,7 @@ const Calendarios = (() => {
     } else {
       // Tres tarjetas sobre cada calendario (30 sep): P&L · Acierto · Targets/Stops.
       const r = resumen(dias)
+      const calc = esCalc(f, opsDe(dias))
       const conRes = r.targets + r.stops
       const ac = conRes ? Math.round(r.targets / conRes * 100) : null
       const ratio = r.stops ? (r.targets / r.stops).toFixed(2).replace('.', ',') : r.targets ? '∞' : '—'
@@ -361,7 +408,7 @@ const Calendarios = (() => {
           <span class="hub-kpi-s">${sub}</span>
         </div>`
       const cifras = `<div class="hub-kpis${r.n ? '' : ' vacias'}">
-        ${kpi(f.calc ? 'P&amp;L calc.' : 'P&amp;L', r.n ? fmtDinero(r.pnl) : '—', r.n ? clsSigno(r.pnl) : '',
+        ${kpi(calc ? 'P&amp;L calc.' : 'P&amp;L', r.n ? fmtDinero(r.pnl) : '—', r.n ? clsSigno(r.pnl) : '',
               r.n ? `${fmtPts(r.puntos)} pts` : '&nbsp;')}
         ${kpi('Acierto', ac == null ? '—' : `${ac}%`, ac == null ? '' : ac >= 50 ? 'pos' : 'neg',
               r.n ? `${conRes} op.` : '&nbsp;')}
@@ -493,7 +540,7 @@ const Calendarios = (() => {
     const tok = (n, def) => css.getPropertyValue(n).trim() || def
     const COLOR = {
       mio: tok('--accent-txt', '#3FE0A6'), chaumer: tok('--blue-txt', '#8FBDE8'),
-      claude: tok('--violet-txt', '#AFA9EC'), manual: tok('--text2', '#A8A89B'),
+      manual: tok('--text2', '#A8A89B'),
       bot: tok('--warning-txt', '#E0A33B'),
     }
     const TINTA = tok('--text', '#F4F3EF'), TINTA3 = tok('--text3', '#6B6B60')
@@ -526,7 +573,7 @@ const Calendarios = (() => {
           <span class="hub-dot"></span>
           <span class="hub-rank-nom">${s.f.nombre}</span>
           <span class="hub-rank-pts ${clsSigno(v)}">${fmtPts(v)}<small>pts</small></span>
-          <span class="hub-rank-usd">${fmtDinero(r.pnl)}${s.f.calc ? ' calc.' : ''} · ${r.targets}/${r.stops}</span>
+          <span class="hub-rank-usd">${fmtDinero(r.pnl)}${esCalc(s.f, opsDe(dias[s.f.id])) ? ' calc.' : ''} · ${r.targets}/${r.stops}</span>
         </div>`).join('') : ''
 
     const rgba = (hex, a) => {
@@ -678,7 +725,7 @@ const Calendarios = (() => {
     }
   }
 
-  // ── Vista completa de Chaumer, Claude y el manual (diseño §5.2) ─────────
+  // ── Vista completa de Chaumer, el Bot y el manual (diseño §5.2) ─────────
   // Las mismas piezas que "Mío" —.metric-card, .cal-cell, la curva y el recuadro
   // del día—, con lo que cada fuente tiene: sin disciplina, errores ni desglose.
   const CLASE_DIA = {
@@ -700,9 +747,8 @@ const Calendarios = (() => {
   }
   const LEYENDA = {
     chaumer: [['green', 'Target'], ['red', 'Stop'], ['sinsetup', 'No operó'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
-    claude:  [['green', 'Target'], ['red', 'Stop'], ['mixed', 'Abierta'], ['sinsetup', 'Sin operación'], ['gray', 'Registra tu día'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
     manual:  [['green', 'Target'], ['red', 'Stop'], ['sinsetup', 'Sin operación'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
-    bot:     [['green', 'Target'], ['red', 'Stop'], ['mixed', 'Abierta'], ['sinsetup', 'Sin operación'], ['gray', 'No se armó'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
+    bot:     [['green', 'Target'], ['red', 'Stop'], ['mixed', 'Abierta'], ['sinsetup', 'Sin operación'], ['gray', 'No se armó'], ['simulado', 'Simulado'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
   }
 
   let diasVista = {}   // fecha → día, de la vista abierta (lo lee el recuadro)
@@ -711,9 +757,8 @@ const Calendarios = (() => {
   async function diasFuente(id, y, m) {
     const d = await (fuentes || cargarFuentes())
     if (id === 'chaumer') return d.chaumer && diasChaumer(d.chaumer, y, m, d.cab)
-    if (id === 'claude')  return d.estados && diasClaude(d.estados, d.motor, y, m, d.cab)
+    if (id === 'bot')     return d.bot && diasBot(d.bot, d.estados, d.motor, y, m, d.cab)
     if (id === 'manual')  return d.manual && diasManual(d.manual, y, m, d.cab)
-    if (id === 'bot')     return d.bot && diasBot(d.bot, y, m)
     return null
   }
 
@@ -727,6 +772,8 @@ const Calendarios = (() => {
 
   function tarjetasFuente(f, dias, y, m, esp) {
     const r = resumen(dias)
+    const calc = esCalc(f, opsDe(dias))
+    const sim = Object.values(dias).filter(d => d.simulado && d.ops.length).length
     const conRes = r.targets + r.stops
     const acierto = conRes ? Math.round(r.targets / conRes * 100) : null
     const ratio = r.stops ? (r.targets / r.stops).toFixed(2).replace('.', ',') : r.targets ? '∞' : '—'
@@ -734,7 +781,7 @@ const Calendarios = (() => {
     const cards = [
       // 30 sep: aquí manda el P&L y los puntos van debajo (Kris). En la principal,
       // en las celdas y en la curva siguen mandando los puntos.
-      { label: f.calc ? 'P&L calc.' : 'P&L Neto', value: r.n ? fmtDinero(r.pnl) : '—',
+      { label: calc ? 'P&L calc.' : 'P&L Neto', value: r.n ? fmtDinero(r.pnl) : '—',
         color: r.n ? tono(r.pnl) : 'neutral',
         sec: r.n ? `<span class="${clsSigno(r.puntos)}">${fmtPts(r.puntos)} pts</span> · ${fmtPts(r.puntos / r.n)} pts/op.` : 'Sin operaciones' },
       { label: 'Acierto', value: acierto == null ? '—' : `${acierto}%`,
@@ -745,7 +792,7 @@ const Calendarios = (() => {
         tono: r.targets > r.stops ? 'green' : r.stops > r.targets ? 'red' : 'neutral',
         sec: `Ratio T/S: ${ratio}` },
       { label: 'Días operados', value: `${r.diasOp}`, color: 'neutral',
-        sec: `de ${habilesHastaHoy(y, m, esp)} días hábiles` },
+        sec: `de ${habilesHastaHoy(y, m, esp)} días hábiles${sim && !calc ? ` · ${sim} simulado${sim !== 1 ? 's' : ''}` : ''}` },
     ]
     return cards.map(c => `
       <div class="metric-card" data-tono="${c.tono || c.color}">
@@ -771,6 +818,7 @@ const Calendarios = (() => {
         const estado = d ? d.estado : esp[fe] || null
         let cls = 'cal-cell'
         if (estado) cls += ` ${CLASE_DIA[estado] || ''}`
+        if (d?.simulado) cls += ' cal-sim'
         if (futuro) cls += esp[fe] ? ' future-especial' : ' future'
         if (fe === hoy) cls += ' today'
 
@@ -793,7 +841,7 @@ const Calendarios = (() => {
         })() : ''
         const clicable = !futuro && d ? ` data-date="${fe}" style="cursor:pointer"` : ''
         html += `<div class="${cls}"${clicable}>
-                   <div class="cal-day-num">${+fe.slice(8)}</div>${cifra}${badge}${dir}</div>`
+                   <div class="cal-day-num">${+fe.slice(8)}</div>${cifra}${badge}${dir}${d?.simulado ? '<span class="cal-sim-tag" title="Simulado: lo que marca el motor; el bot aún no operaba">SIM</span>' : ''}</div>`
       })
       html += sOps
         ? `<div class="cal-cell cal-week-summary ${sPts >= 0 ? 'week-positive' : 'week-negative'}">
@@ -811,7 +859,7 @@ const Calendarios = (() => {
     html += `
       <div class="cal-month-total-widget ${r.pnl >= 0 ? 'positive' : 'negative'}">
         <span class="cmt-label">TOTAL ${MESES[m - 1].toUpperCase()} ${y}</span>
-        <span class="cmt-sub">${r.diasOp} día${r.diasOp !== 1 ? 's' : ''} · ${r.n} operaci${r.n !== 1 ? 'ones' : 'ón'}${f.calc ? ' · P&L calc.' : ''}</span>
+        <span class="cmt-sub">${r.diasOp} día${r.diasOp !== 1 ? 's' : ''} · ${r.n} operaci${r.n !== 1 ? 'ones' : 'ón'}${esCalc(f, opsDe(dias)) ? ' · P&L calc.' : ''}</span>
         <span class="cmt-amount ${r.pnl >= 0 ? 'positive' : 'negative'}">${fmtDinero(r.pnl)}
           <small class="cmt-usd">${fmtPts(r.puntos)} pts</small></span>
       </div>`
@@ -833,7 +881,9 @@ const Calendarios = (() => {
       : tarjetasFuente(f, dias, y, m, esp)
     $('fuenteLeyenda').innerHTML = LEYENDA[id].map(([c, t]) =>
       `<span class="legend-item"><span class="dot ${c}"></span> ${t}</span>`).join('') +
-      (f.calc ? `<span class="legend-item cal-leyenda-nota">P&amp;L calculado a ${cabTexto(id)}</span>` : '')
+      (f.calc ? `<span class="legend-item cal-leyenda-nota">P&amp;L calculado a ${cabTexto(id)}</span>`
+        : Object.values(diasVista).some(d => d.simulado)
+          ? `<span class="legend-item cal-leyenda-nota">Simulado: lo que marca el motor antes de que operara el bot · P&amp;L calculado a ${cabTexto(id)}</span>` : '')
     const grid = $('fuenteGrid')
     grid.innerHTML = cuadricula(f, diasVista, y, m, esp)
     grid.querySelectorAll('[data-date]').forEach(cell => {
@@ -848,7 +898,7 @@ const Calendarios = (() => {
     Object.values(diasVista).forEach(d => { if (d.ops.length) porDia[d.fecha] = ptsDe(d) })
     Metrics.pintarEquity('fuenteEquity', {
       porDia, unidad: 'pts',
-      pie: fe => `${f.calc ? 'P&L calc.' : 'P&L'}  ${fmtDinero(pnlDe(diasVista[fe]))}`,
+      pie: fe => `${esCalc(f, diasVista[fe].ops) ? 'P&L calc.' : 'P&L'}  ${fmtDinero(pnlDe(diasVista[fe]))}`,
     })
   }
 
@@ -856,7 +906,7 @@ const Calendarios = (() => {
   function cabTexto(id) {
     const c = cabActual || { valor_punto: 2, contratos: 1, comision: 1.02 }
     const n = Number(c.contratos) || 1
-    const cuantos = id === 'claude' ? `los contratos que caben en ${fmtDinero(RIESGO_MAX_USD, { masEnPositivo: false })} de riesgo`
+    const cuantos = id === 'bot' ? `los contratos que caben en ${fmtDinero(RIESGO_MAX_USD, { masEnPositivo: false })} de riesgo`
       : `${n} contrato${n !== 1 ? 's' : ''}`
     return `${cuantos} · $${String(c.valor_punto).replace('.', ',')}/punto · ` +
            `$${Number(c.comision).toFixed(2).replace('.', ',')} de comisión por contrato`
@@ -871,7 +921,7 @@ const Calendarios = (() => {
     if (!d) return null
     const f = new Date(`${fe}T12:00:00`)
     const fila = (lab, val) => `<div class="cal-tip-fila"><span class="cal-tip-lab">${lab}</span><span class="cal-tip-val">${val}</span></div>`
-    let html = `<div class="cal-tip-fecha">${DIAS[f.getDay()]} ${f.getDate()} ${MES_CORTO[f.getMonth()]} · ${fuenteVista.nombre}</div>`
+    let html = `<div class="cal-tip-fecha">${DIAS[f.getDay()]} ${f.getDate()} ${MES_CORTO[f.getMonth()]} · ${fuenteVista.nombre}${d.simulado ? ' · simulado' : ''}</div>`
     if (d.estado === 'bloqueado') {
       html += `<div class="cal-tip-muted"><i class="ti ti-lock"></i> Registra tu día para ver lo que marcó el motor</div>`
       return html
@@ -886,7 +936,7 @@ const Calendarios = (() => {
       html += fila('Setup', `${esc(setup || '—')}${o.hora ? ` <span class="cal-tip-muted">· ${esc(o.hora)}</span>` : ''}`)
       html += fila('Resultado', { target: 'Target', stop: 'Stop', be: 'B.E.', cierre: 'Cierre por hora' }[o.res])
       html += fila('Puntos', `<span class="${clsSigno(o.puntos)}">${fmtPts(o.puntos)} pts</span>`)
-      html += fila(fuenteVista.calc ? 'P&L calc.' : 'P&L', `<span class="${clsSigno(o.pnl)}">${fmtDinero(o.pnl)}</span>`)
+      html += fila(fuenteVista.calc || o.calc ? 'P&L calc.' : 'P&L', `<span class="${clsSigno(o.pnl)}">${fmtDinero(o.pnl)}</span>`)
       if (o.obs) html += `<div class="cal-tip-muted cal-tip-obs">${esc(o.obs)}</div>`
     })
     return html
@@ -935,8 +985,8 @@ const Calendarios = (() => {
       const src = await (fuentes || cargarFuentes())
       if (id === 'chaumer') filas = (src.chaumer || []).map(c => [c.fecha, c.imagen_url])
       else if (id === 'manual') filas = (src.manual || []).map(j => [j.fecha, j.imagen])
-      else if (id === 'bot') filas = []   // el bot no guarda gráfico
       else {
+        // El Bot enseña el gráfico del motor (el bot no guarda el suyo).
         // El candado del motor (D-026): un día sin registrar no se enseña, aunque su gráfico exista.
         const cerrado = new Set((src.estados || []).filter(e => e.estado === 'bloqueada').map(e => e.fecha))
         filas = (src.motor || []).filter(r => !cerrado.has(r.fecha)).map(r => [r.fecha, r.grafico_url])
@@ -951,11 +1001,15 @@ const Calendarios = (() => {
   const ptsExactos = v => `${v < 0 ? '−' : v > 0 ? '+' : ''}${Math.abs(v).toLocaleString('es-ES', { maximumFractionDigits: 2 })}`
 
   // Setup · resultado · puntos · contratos · P&L, una fila por operación (Bitacora.astro, ficha()).
+  // Debajo, si el gráfico no enseña lo que operó el bot (el motor de hoy marca otra cosa), el aviso.
   function fichaHtml(d, calc) {
+    const grafico = (d?.textos || []).find(t => t[0] === 'El gráfico')
+    const aviso = grafico ? `<div class="ld-aviso"><i class="ti ti-info-circle"></i>${esc(grafico[1])}</div>` : ''
     if (!d || !d.ops.length) {
       const [txt] = d ? etiquetaDe(d) : ['SIN OPERACIÓN']
-      return `<div class="ld-vacia"><span class="ld-pil">${txt}</span>${d?.nota ? `<span>${esc(d.nota)}</span>` : ''}</div>`
+      return `<div class="ld-vacia"><span class="ld-pil">${txt}</span>${d?.nota ? `<span>${esc(d.nota)}</span>` : ''}</div>${aviso}`
     }
+    if (d.simulado) calc = true
     const dato = (lab, val, cls = '') => `<div class="ld-dato ${cls}"><span class="ld-etiq">${lab}</span>${val}</div>`
     return d.ops.map((o, i) => {
       const setup = [o.setup, o.dir && !/alcista|bajista/i.test(o.setup || '') ? o.dir.toLowerCase() : ''].filter(Boolean).join(' ')
@@ -969,7 +1023,7 @@ const Calendarios = (() => {
         dato('Contratos', `<b>${o.contratos || '—'}</b>`) +
         dato(calc ? 'P&amp;L calc.' : 'P&amp;L', `<b class="${clsSigno(o.pnl)}">${fmtDinero(o.pnl)}</b>`, 'ld-pnl') +
         '</div>'
-    }).join('')
+    }).join('') + aviso
   }
 
   // url: la del gráfico que se clicó, por si ese día no saliera en la lista.
@@ -986,7 +1040,7 @@ const Calendarios = (() => {
 
   // La misma pantalla completa que abre "Mío" (Modal, app.js): cabecera con el
   // resultado, el gráfico fijo —se amplía al clicar— y debajo lo escrito del día.
-  // El día 🔒 de Claude no enseña ni gráfico ni operación.
+  // El día 🔒 (simulado del Bot sin registrar) no enseña ni gráfico ni operación.
   function abrirDia(fe) {
     const d = diasVista[fe]
     if (!d) return
@@ -1008,13 +1062,14 @@ const Calendarios = (() => {
       celdas.push(celda('Puntos', `<span class="mh-val ${p < 0 ? 'neg' : 'pos'}">${fmtPts(p)}</span>`))
       const nc = d.ops.reduce((s, o) => s + (o.contratos || 0), 0)
       if (nc) celdas.push(celda('Contratos', `<span class="mh-val">${nc}</span>`))
-      celdas.push(celda(f.calc ? 'P&amp;L calc.' : 'P&amp;L', `<span class="mh-val ${usd < 0 ? 'neg' : 'pos'}">${fmtDinero(usd)}</span>`))
+      celdas.push(celda(f.calc || d.simulado ? 'P&amp;L calc.' : 'P&amp;L', `<span class="mh-val ${usd < 0 ? 'neg' : 'pos'}">${fmtDinero(usd)}</span>`))
       const o = d.ops[0]
       const setup = [o.setup, o.dir && !/alcista|bajista/i.test(o.setup) ? o.dir.toLowerCase() : ''].filter(Boolean).join(' ')
       if (setup) celdas.push(`<div class="mh-stat mh-stat-setup"><label>Setup</label><span class="mh-setup">${esc(setup)}${o.hora ? ` · ${esc(o.hora)}` : ''}</span></div>`)
     }
 
     let cuerpo = ''
+    if (d.simulado) cuerpo += bloque('Simulado', `El bot aún no operaba: esto es lo que marca el motor, con el P&L calculado a ${cabTexto(f.id)}.`, 'gry')
     if (!d.ops.length && d.nota) cuerpo += bloque(d.estado === 'no-opero' ? 'Por qué no operó'
       : d.estado === 'no-armado' ? 'Por qué no se armó'
       : d.estado === 'abierta' ? 'Operación abierta' : 'Sin operación', d.nota, 'gry')

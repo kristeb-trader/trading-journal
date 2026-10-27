@@ -483,6 +483,7 @@ body[data-modo-local]::before {
 .dot.mixed { background: var(--warning); }
 .dot.sinsetup { background: rgba(99,102,241,0.85); }
 .dot.gray     { background: var(--bg3); border: 1px solid var(--border); }
+.dot.simulado { background: transparent; border: 1px dashed var(--text2); }
 .dot.festivo  { background: rgba(56,131,246,0.75); }
 .dot.fomc     { background: rgba(194,137,72,0.85); }
 
@@ -536,6 +537,12 @@ body[data-modo-local]::before {
 .cal-cell.day-fomc     { background: rgba(194,137,72,0.12);  border-color: rgba(194,137,72,0.35); }
 /* Operación del motor que sigue abierta: aún no hay resultado (borde discontinuo, no suma puntos) */
 .cal-cell.day-abierta  { background: var(--warning-dim); border: 1px dashed color-mix(in srgb, var(--warning) 55%, transparent); }
+/* Bot: día de antes de que el bot operara, con lo que marca el motor (simulado, P&L calculado) */
+.cal-cell.cal-sim { border-style: dashed; }
+.cal-sim-tag {
+  position: absolute; top: 6px; right: 7px;
+  font-size: 0.55rem; font-weight: 700; letter-spacing: 0.06em; color: var(--text3);
+}
 .cal-cell.day-vacaciones { background: rgba(45,178,133,0.10); border-color: rgba(45,178,133,0.30); }
 .cal-cell.day-especial   { background: rgba(224,163,59,0.10); border-color: rgba(224,163,59,0.28); }
 /* Fecha especial futura (FOMC, festivo, vacaciones…): se pinta desde ya con su color,
@@ -795,6 +802,8 @@ body[data-modo-local]::before {
 }
 .hub-card[data-fuente="mio"] .hub-dia.est-no-opero, .hub-dia.est-error, .hub-dia.est-no-armado { background: var(--bg3); opacity: 0.6; }
 .hub-dia.est-bloqueado { background: var(--bg3); border-style: dashed; }
+/* Bot: los días de antes de que el bot operara son los del motor, simulados (27/10). Borde discontinuo. */
+.hub-dia.sim { border-style: dashed; }
 .hub-dia.est-abierta   { background: var(--warning-dim); border-style: dashed; border-color: color-mix(in srgb, var(--warning) 55%, transparent); }
 .hub-dia.est-abierta .hub-dia-p { color: var(--warning-txt); }
 .hub-dia.est-bloqueado .hub-dia-p { color: var(--text3); font-size: 0.8rem; }
@@ -826,12 +835,8 @@ body[data-modo-local]::before {
 /* Escritorio: los cuatro cuadros en UNA fila y la curva se queda con el alto que
    sobra, así todo entra en una pantalla sin scroll ni hueco al pie. Por debajo de
    1280 px vuelven a 2×2: en una fila las celdas ya no darían para los puntos. */
-/* Con el del Bot (27/10) son cinco: en escritorio, los cinco en una fila; por debajo, el quinto (el
-   manual) ocupa la fila entera, sin dejar un hueco al lado. */
-.hub-grid .hub-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
 @media (min-width: 1280px) {
-  .hub-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
-  .hub-grid .hub-card:last-child:nth-child(odd) { grid-column: auto; }
+  .hub-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
   .hub-card { padding: 14px 12px 12px; gap: 10px; }
   .hub-kpis { gap: 6px; }
   .hub-kpi { padding: 8px 3px 7px; }
@@ -848,7 +853,7 @@ body[data-modo-local]::before {
   color: var(--text3); font-size: 0.85rem;
 }
 
-/* Vista completa (Chaumer, Claude, manual) y "Mío" en puntos: el P&L va debajo,
+/* Vista completa (Chaumer, Bot, manual) y "Mío" en puntos: el P&L va debajo,
    pequeño, sin competir con los puntos. */
 .metrics-grid-compact .metric-sec {
   margin-top: 6px; font-size: 0.7rem; color: var(--text3); font-variant-numeric: tabular-nums;
@@ -5895,6 +5900,9 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 }
 .ld-t { --pc: var(--accent-txt); }
 .ld-s { --pc: var(--red-txt); }
+/* Bot: el gráfico es el motor de hoy y a veces marca otra operación que la del bot */
+.ld-aviso { display: flex; gap: 8px; align-items: flex-start; padding: 8px 6px 0; color: var(--text3); font-size: 0.8rem; line-height: 1.4; }
+.ld-aviso i { color: var(--warning-txt); font-size: 0.95rem; margin-top: 1px; }
 .ld-vacia { display: flex; align-items: center; gap: 12px; padding: 12px 6px; color: var(--text2); font-size: 0.9rem; }
 @media (prefers-reduced-motion: no-preference) {
   .ld-arriba.entra { animation: ld-cae 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
@@ -5942,7 +5950,7 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 }
 .tg-panel { min-height: 0; display: flex; flex-direction: column; }
 /* En pantalla ancha, tres filas dejan las gráficas (apaisadas) estrechas y con hueco a los lados:
-   la mía y la de Claude arriba, lado a lado, y la de Chaumer abajo, centrada. Casi el doble de ancho.
+   la mía y la del Bot arriba, lado a lado, y la de Chaumer abajo, centrada. Casi el doble de ancho.
    El corte 6/5 es donde las dos filas empiezan a dar más tamaño que las tres. */
 @media (min-aspect-ratio: 6/5) {
   .tg-cuerpo { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }

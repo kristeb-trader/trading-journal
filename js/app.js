@@ -86,7 +86,7 @@ const Modal = {
     document.body.classList.add('modal-open')
   },
 
-  // La misma vista del día, para un día que NO es del journal: Chaumer, Claude o
+  // La misma vista del día, para un día que NO es del journal: Chaumer, el Bot o
   // el backtesting manual (calendarios.js). Misma cabecera, misma imagen fija con
   // ampliación y mismo cuerpo con bloques; el contenido lo trae quien llama, ya
   // escapado. No toca currentSesion: aquí no hay diario que abrir.
@@ -951,7 +951,7 @@ async function boot() {
   })
   // Esc sigue cerrando aunque ya no se anuncie con una leyenda en la cabecera.
   document.addEventListener('keydown', e => { if (e.key === 'Escape') Modal.close() })
-  // Las 3 gráficas del día que se está viendo (la mía, Claude y Chaumer).
+  // Las 3 gráficas del día que se está viendo (la mía, la del Bot y la de Chaumer).
   document.getElementById('modalTresGraficas')?.addEventListener('click', () => {
     if (Modal.currentDate) TresGraficas.open(Modal.currentDate)
   })
@@ -1157,14 +1157,14 @@ const LupaDia = {
 
 // ── Las 3 gráficas del día ─────────────────────────────────────────────────
 // Pantalla completa con las tres gráficas de un día, en este orden (Kris, 12 oct):
-// la mía, la de Claude (el motor) y la de Chaumer.
+// la mía, la del Bot (el gráfico del motor) y la de Chaumer.
 //   · En horizontal, los DÍAS: ← / →, las flechas a los lados de las gráficas o deslizar.
 //   · Clic en una gráfica: se ve sola (modo foco). En vertical, las GRÁFICAS:
-//     ↑ / ↓, las flechas ▲ ▼ o deslizar (desde Claude, ↑ la mía y ↓ la de Chaumer).
+//     ↑ / ↓, las flechas ▲ ▼ o deslizar (desde la del Bot, ↑ la mía y ↓ la de Chaumer).
 //     En el foco, ← / → cambian de día sin soltar la gráfica.
 //   · Esc vuelve del foco a las tres; otro Esc cierra y deja la vista del día donde estaba.
-// La de Claude respeta el candado del motor (D-026): sin el día registrado no se
-// pide ni se enseña.
+// La del Bot respeta el candado del motor (D-026): sin el día registrado el gráfico no
+// se pide ni se enseña (el resultado del bot, sí: no espera al registro).
 const TresGraficas = {
   _el: null,
   _fecha: null,
@@ -1245,7 +1245,7 @@ const TresGraficas = {
     }, true)
   },
 
-  // i = la gráfica que se ve sola (0 mía · 1 Claude · 2 Chaumer); null = volver a las tres.
+  // i = la gráfica que se ve sola (0 mía · 1 Bot · 2 Chaumer); null = volver a las tres.
   // Sin vuelta: desde la mía no se sube, desde la de Chaumer no se baja.
   _enfocar(i) {
     if (i != null && (i < 0 || i > 2)) return
@@ -1285,7 +1285,7 @@ const TresGraficas = {
 
     const paneles = [
       { id: 'mio', nombre: 'Mía', color: 'accent', url: ses?.imagen_url, vacio: 'No subiste gráfico este día' },
-      { id: 'claude', nombre: 'Claude', color: 'violet', url: ficha?.grafico_url,
+      { id: 'bot', nombre: 'Bot', color: 'warning', url: ficha?.grafico_url,
         vacio: estado === 'bloqueada' ? '<i class="ti ti-lock"></i> Registra tu día para ver lo que marcó el motor'
                                        : 'El motor no tiene gráfico de este día' },
       { id: 'chaumer', nombre: 'Chaumer', color: 'blue', url: ch?.imagen_url, vacio: 'Chaumer no tiene gráfico de este día' },

@@ -22,7 +22,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 
 | Archivo | Qué hace | Cómo se usa | Depende de |
 |---|---|---|---|
-| **CadenaDiaria** | Sin ventana. A las **10:32** (11:32 en invierno) exporta las velas del día y lanza el puente: el motor, la ficha en Supabase, el gráfico y la publicación en el portal. Si el motor deja la operación abierta, vuelve a exportar **cada 30 minutos** hasta las 16:50 de Nueva York (la hora del cierre por hora); mientras, el calendario «Claude» la muestra como «abierta» | Nada: arranca solo con NinjaTrader | Python, el repositorio, la clave |
+| **CadenaDiaria** | Sin ventana. A las **10:32** (11:32 en invierno) exporta las velas del día y lanza el puente: el motor, la ficha en Supabase, el gráfico y la publicación en el portal. Si el motor deja la operación abierta, vuelve a exportar **cada 30 minutos** hasta las 16:50 de Nueva York (la hora del cierre por hora); mientras, el calendario «Bot» del Journal la muestra como «abierta» | Nada: arranca solo con NinjaTrader | Python, el repositorio, la clave |
 | **MotorChaumer** | **El motor del plan en C#**: la traducción literal de `lector.py`, **sellada** | No se ve: lo usan el bot y la vista | nada |
 | **ChaumerNT** | Lo común del bot y la vista: configuración, sello, lecturas de Supabase, velas del día | No se ve | `MotorChaumer` |
 
