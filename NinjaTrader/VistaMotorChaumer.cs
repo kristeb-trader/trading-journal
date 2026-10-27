@@ -87,7 +87,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 DrawOnPricePanel = true;
                 PaintPriceMarkers = false;
                 IsSuspendedWhileInactive = false;
-                VerZonas = true; VerZigzag = true; VerReferencias = true; VerOperacion = true; VerEtiquetas = true; VerCabecera = true;
+                VerZonas = true; VerZigzag = true; VerPuntos = false; VerReferencias = true; VerOperacion = true; VerEtiquetas = true; VerCabecera = true;
             }
             else if (State == State.DataLoaded)
             {
@@ -372,7 +372,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 if (VerOperacion && f.Op != null)
                 {
                     float x0 = X(chartControl, f.Op.X0) - medio, x1 = f.Op.X1 >= 0 ? X(chartControl, f.Op.X1) + medio : xDer;
-                    float a = f.Op.Pendiente ? .07f : .13f;
+                    float a = f.Op.Pendiente ? .16f : .30f;   // más contraste (Kris, 27/10/2026; antes .07 / .13)
                     Rect(rt, rojo, a, x0, x1, chartScale.GetYByValue(f.Op.E), chartScale.GetYByValue(f.Op.S));
                     Rect(rt, verde, a, x0, x1, chartScale.GetYByValue(f.Op.E), chartScale.GetYByValue(f.Op.T));
                 }
@@ -407,11 +407,12 @@ namespace NinjaTrader.NinjaScript.Indicators
                     var xy = f.Zigzag.Select(v => new SharpDX.Vector2(X(chartControl, v.Key), chartScale.GetYByValue(v.Value))).ToList();
                     for (int k = 1; k < xy.Count; k++) rt.DrawLine(xy[k - 1], xy[k], fondo, 5.2f);
                     for (int k = 1; k < xy.Count; k++) rt.DrawLine(xy[k - 1], xy[k], blanco, 2.3f);
-                    foreach (var v in xy)
-                    {
-                        var el = new SharpDX.Direct2D1.Ellipse(v, 3.5f, 3.5f);
-                        rt.FillEllipse(el, blanco); rt.DrawEllipse(el, fondo, 1.2f);
-                    }
+                    if (VerPuntos)
+                        foreach (var v in xy)
+                        {
+                            var el = new SharpDX.Direct2D1.Ellipse(v, 3.5f, 3.5f);
+                            rt.FillEllipse(el, blanco); rt.DrawEllipse(el, fondo, 1.2f);
+                        }
                 }
 
                 // etiquetas de las zonas vigentes, a la derecha y sin pisarse
@@ -474,6 +475,8 @@ namespace NinjaTrader.NinjaScript.Indicators
         [Display(Name = "Operación", Order = 4, GroupName = "Qué dibuja")] public bool VerOperacion { get; set; }
         [Display(Name = "Etiquetas", Order = 5, GroupName = "Qué dibuja")] public bool VerEtiquetas { get; set; }
         [Display(Name = "Cabecera", Order = 6, GroupName = "Qué dibuja")] public bool VerCabecera { get; set; }
+        [Display(Name = "Puntos del zigzag", Order = 7, GroupName = "Qué dibuja", Description = "Los puntos en los vértices del zigzag. Apagados por defecto (Kris, 27/10/2026).")]
+        public bool VerPuntos { get; set; }
         #endregion
     }
 }

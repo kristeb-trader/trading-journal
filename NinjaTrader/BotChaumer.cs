@@ -56,7 +56,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
     public class BotChaumer : Strategy
     {
-        private const string N_ENTRADA = "Chaumer entrada", N_STOP = "Chaumer stop", N_OBJETIVO = "Chaumer objetivo", N_CIERRE = "Chaumer cierre";
+        private const string N_ENTRADA = "Entrada Bot", N_STOP = "Stop Bot", N_OBJETIVO = "Target Bot", N_CIERRE = "Cierre Bot";   // lo que se lee en el gráfico (Kris, 27/10/2026)
         private static readonly CultureInfo INV = CultureInfo.InvariantCulture;
         private static readonly string DIR_NT = ChaumerNT.DIR_NT;
 
