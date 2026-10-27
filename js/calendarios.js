@@ -179,12 +179,15 @@ const Calendarios = (() => {
         return
       }
       const p = parseFloat(o.puntos) || 0
+      // Los contratos del plan (R-04): los que caben en $160 con el stop de esa operación, como entra
+      // el bot (27/10: 34,5 pts de stop → 2). Sin riesgo en la ficha, los de los datos de inicio.
+      const contratos = _cabenContratos(o.riesgo) || Number(cab.contratos) || 1
       const op = {
-        puntos: p, pnl: pnlCalc(p, cab),
+        puntos: p, pnl: pnlCalc(p, { ...cab, contratos }),
         res: res === 'target' || res === 'stop' ? res : res === 'cierre por hora' ? 'cierre' : 'be',
         setup: [o.setup, o.sentido].filter(Boolean).join(' '),
         hora: horaCorta(o.hora),
-        contratos: Number(cab.contratos) || 1,   // los del P&L calculado
+        contratos,
       }
       dias[f] = { fecha: f, ops: [op], estado: estadoPorOps([op]), url: r.grafico_url || null }
     })
@@ -775,7 +778,7 @@ const Calendarios = (() => {
       : tarjetasFuente(f, dias, y, m, esp)
     $('fuenteLeyenda').innerHTML = LEYENDA[id].map(([c, t]) =>
       `<span class="legend-item"><span class="dot ${c}"></span> ${t}</span>`).join('') +
-      (f.calc ? `<span class="legend-item cal-leyenda-nota">P&amp;L calculado a ${cabTexto()}</span>` : '')
+      (f.calc ? `<span class="legend-item cal-leyenda-nota">P&amp;L calculado a ${cabTexto(id)}</span>` : '')
     const grid = $('fuenteGrid')
     grid.innerHTML = cuadricula(f, diasVista, y, m, esp)
     grid.querySelectorAll('[data-date]').forEach(cell => {
@@ -795,11 +798,13 @@ const Calendarios = (() => {
   }
 
   let cabActual = null
-  function cabTexto() {
+  function cabTexto(id) {
     const c = cabActual || { valor_punto: 2, contratos: 1, comision: 1.02 }
     const n = Number(c.contratos) || 1
-    return `${n} contrato${n !== 1 ? 's' : ''} · $${String(c.valor_punto).replace('.', ',')}/punto · ` +
-           `$${Number(c.comision).toFixed(2).replace('.', ',')} de comisión`
+    const cuantos = id === 'claude' ? `los contratos que caben en ${fmtDinero(RIESGO_MAX_USD, { masEnPositivo: false })} de riesgo`
+      : `${n} contrato${n !== 1 ? 's' : ''}`
+    return `${cuantos} · $${String(c.valor_punto).replace('.', ',')}/punto · ` +
+           `$${Number(c.comision).toFixed(2).replace('.', ',')} de comisión por contrato`
   }
 
   // ── Recuadro del día ─────────────────────────────────────────────────────

@@ -12,6 +12,7 @@
 | Fecha | Checkpoint |
 |---|---|
 | 2026-10-27 | Lo que no se usaba ya no se registra: ni Telegram ni el Diario piden la corrida, el contexto, las zonas en contra, la emoción ni la confianza (D-048) |
+| 2026-10-27 | El calendario de Claude, con los contratos del plan: los que caben en $160 |
 | 2026-10-26b | La lupa del día: el gráfico ampliado pasa de día y lleva la fecha y la ficha, como el portal |
 | 2026-10-26 | Las 3 gráficas: el día desde los lados y ▲ ▼ entre las gráficas |
 | 2026-10-23 | La disciplina mide el plan: el motor dice si el trade era el del plan (desde el 01/10), y Telegram sin velas |
@@ -91,6 +92,28 @@ viejo de «¿Cómo terminaste?» guarda sin el estado), del **Diario** (la fila 
 estrellas), del **Coach** en los días del plan (con la guía de cómo leer la confianza) y del **comparador Chaumer**.
 Verificado: el flujo de Telegram simulado en local (trade → setup → análisis → guardado sin esas columnas; no operé; los
 teclados viejos), el prompt del Coach con y sin plan, y las dos tarjetas del Diario en el navegador.
+
+---
+
+## Checkpoint 2026-10-27 — El calendario de Claude, con los contratos del plan
+
+Kris vio en el calendario de Claude el trade del bot de hoy con 1 contrato, cuando el bot entró con 2. El
+calendario calculaba el P&L de **todas** las operaciones del motor con el contrato fijo de `bt_cabecera` (1),
+y el plan (R-04, plan 3.44) entra con **los contratos que caben en $160** con el stop de la operación, que es
+lo que hace el bot: hoy, 34,5 pts de stop → 2 contratos.
+
+- `diasClaude` (`js/calendarios.js`) usa `_cabenContratos(operacion.riesgo)` de `db.js` —la misma función con
+  la que la disciplina juzga los contratos de Kris— y calcula el P&L con ellos; sin riesgo en la ficha, los de
+  `bt_cabecera`. Se aplica a **todos** los días del motor, no solo desde el 28/09: el motor rehace los días con
+  el plan de hoy, así que también su tamaño. 21 de las 31 operaciones del motor llevan 2 contratos o más.
+- La leyenda dice ahora «los contratos que caben en $160 de riesgo» y que la comisión es **por contrato**.
+- Chaumer sigue con 1 contrato: de sus operaciones no se sabe con cuántos entró.
+
+Hoy en el calendario: +34,5 × 2 × $2 − 2 × $1,02 = **+$135,96**. El bot anota +$138 porque la cuenta de
+simulación no cobra comisión.
+
+**Verificado:** en la copia local (sin riesgo en sus fichas viejas, se le inyectó), 34,5 → 2 contratos y −53 pts
+→ −$214; la leyenda nueva; los 31 días con operación tienen riesgo en Supabase.
 
 ---
 
