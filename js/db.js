@@ -1831,6 +1831,17 @@ const DB = {
     return data
   },
 
+  // Lo que hizo el bot (D-038): una fila por día y cuenta, también los días sin operación. Para el
+  // calendario «Bot» (calendarios.js). Sin `sello_motor` ni los campos de la cadena (fase 5).
+  async getBotOperaciones() {
+    const { data, error } = await supa.from('bot_operaciones')
+      .select('id, fecha, cuenta, resultado, motivo, setup, direccion, hora_orden, entrada, stop, objetivo, riesgo, ' +
+              'contratos, hora_llenado, precio_llenado, deslizamiento_ticks, hora_salida, precio_salida, puntos, pnl_neto, eventos')
+      .order('fecha').order('id')
+    if (error) throw error
+    return data || []
+  },
+
   async getChaumerOperativas({ from = null, to = null } = {}) {
     let q = supa.from('chaumer_operativas').select('*')
     if (from) q = q.gte('fecha', from)

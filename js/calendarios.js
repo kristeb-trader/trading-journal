@@ -1,14 +1,15 @@
-// Calendarios — la pantalla de los cuatro calendarios (Mío · Chaumer · Claude ·
-// Backtesting manual) y la vista completa de los tres que no son el mío.
-// Diseño: docs/disenos/2026-09-29-cuatro-calendarios.md
+// Calendarios — la pantalla de los calendarios (Mío · Chaumer · Claude · Bot ·
+// Backtesting manual) y la vista completa de los que no son el mío.
+// Diseño: docs/disenos/2026-09-29-cuatro-calendarios.md (el del Bot llegó el 27/10).
 //
 // Reglas que no se rompen aquí:
 //   · Todo se lee en PUNTOS y el P&L va debajo. En Chaumer y Claude el P&L se
 //     CALCULA con los datos de inicio del backtesting (bt_cabecera); el del
-//     manual está congelado y el de Mío es el real (`trades.profit`).
+//     manual está congelado; el de Mío y el del Bot, los reales (`trades.profit`,
+//     `bot_operaciones.pnl_neto`).
 //   · El calendario de Claude respeta el candado del motor (D-026): un día sin
 //     registrar se pinta 🔒, y su operación ni se pide ni se enseña.
-//   · El mes es UNO para los cuatro y vive en Calendar (getYear / getMonth).
+//   · El mes es UNO para todos y vive en Calendar (getYear / getMonth).
 //   · "Mío" es la pantalla de siempre (#calMio, calendar.js + metrics.js): aquí
 //     solo se resume para su cuadro y para la curva comparada.
 const Calendarios = (() => {
@@ -17,6 +18,7 @@ const Calendarios = (() => {
     { id: 'mio',     nombre: 'Mío',                icono: 'ti-user',        color: 'accent' },
     { id: 'chaumer', nombre: 'Chaumer',            icono: 'ti-arrows-diff', color: 'blue',   calc: true },
     { id: 'claude',  nombre: 'Claude',             icono: 'ti-robot',       color: 'violet', calc: true },
+    { id: 'bot',     nombre: 'Bot',                icono: 'ti-cpu',         color: 'warning' },
     { id: 'manual',  nombre: 'Backtesting manual', icono: 'ti-history',     color: 'neutro' },
   ]
   const FUENTE = Object.fromEntries(FUENTES.map(f => [f.id, f]))
@@ -62,11 +64,12 @@ const Calendarios = (() => {
       DB.motorEstados('2000-01-01', hoy).catch(aviso('motor_estados')),
       DB.getMotorRango('2000-01-01', hoy).catch(aviso('motor_fichas')),
       DB.getBacktesting().catch(aviso('backtesting')),
-    ]).then(([chaumer, estados, motor, bt]) => {
+      DB.getBotOperaciones().catch(aviso('bot_operaciones')),
+    ]).then(([chaumer, estados, motor, bt, bot]) => {
       // Los datos de inicio del backtesting ponen el precio del punto al P&L
       // calculado. Sin ellos, los del plan: MNQ, 1 contrato, $1,02.
       cabActual = { valor_punto: 2, contratos: 1, comision: 1.02, ...(bt && bt.cabecera || {}) }
-      return { chaumer, estados, motor, manual: bt ? bt.jornadas : null, cab: cabActual }
+      return { chaumer, estados, motor, manual: bt ? bt.jornadas : null, bot, cab: cabActual }
     })
     return fuentes
   }
@@ -216,7 +219,53 @@ const Calendarios = (() => {
     return dias
   }
 
-  // Los días de las cuatro fuentes para el mes. `null` = esa fuente no cargó.
+  // El bot (bot_operaciones, D-038): lo que operó DE VERDAD, no lo que marcó el motor (eso es Claude).
+  // P&L real (`pnl_neto`, el que anota el bot) y sus contratos. Una fila por día y cuenta: si un día
+  // operaran dos cuentas, son dos operaciones. Horas en hora Colombia, como las escribe el bot.
+  //   TARGET · STOP · CIERRE POR HORA → la operación · NO OPERA → sin operación (morado) ·
+  //   NO ARMADO → gris, con su motivo · EN CURSO → abierta si se llenó, si no, armado y esperando.
+  function diasBot(filas, y, m) {
+    const pre = prefijo(y, m), dias = {}
+    const px = v => v == null ? '—' : Number(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    const porDia = {}
+    ;(filas || []).filter(r => r.fecha?.startsWith(pre)).forEach(r => (porDia[r.fecha] ||= []).push(r))
+    Object.entries(porDia).forEach(([f, rs]) => {
+      const varias = new Set(rs.map(r => r.cuenta)).size > 1
+      const setupDe = r => [r.setup, r.direccion > 0 ? 'alcista' : r.direccion < 0 ? 'bajista' : ''].filter(Boolean).join(' ')
+      const ops = rs.filter(r => ['TARGET', 'STOP', 'CIERRE POR HORA'].includes(r.resultado)).map(r => ({
+        puntos: parseFloat(r.puntos) || 0,
+        pnl: parseFloat(r.pnl_neto) || 0,
+        res: r.resultado === 'CIERRE POR HORA' ? 'cierre' : r.resultado.toLowerCase(),
+        setup: setupDe(r),
+        hora: horaCorta(r.hora_llenado || r.hora_orden),
+        contratos: Number(r.contratos) || null,
+        obs: [varias ? `Cuenta ${r.cuenta}` : '',
+              `Entrada ${px(r.entrada)} · stop ${px(r.stop)} · objetivo ${px(r.objetivo)} · riesgo ${px(r.riesgo)} pts`,
+              `Llenada a las ${horaCorta(r.hora_llenado)} en ${px(r.precio_llenado)}` +
+                (parseFloat(r.deslizamiento_ticks) ? ` (${String(r.deslizamiento_ticks).replace('.', ',')} ticks de deslizamiento)` : '') +
+                ` · salida a las ${horaCorta(r.hora_salida)} en ${px(r.precio_salida)}`].filter(Boolean).join('\n'),
+      }))
+      const r = rs.at(-1)
+      // Sin operación, el motivo ya va en la nota del día: aquí solo cuando además operó.
+      const textos = rs.flatMap(x => [
+        x.motivo && ops.length ? [`Motivo${varias ? ` · ${x.cuenta}` : ''}`, x.motivo] : null,
+        x.eventos?.length ? [`Lo que vio el bot${varias ? ` · ${x.cuenta}` : ''}`, x.eventos.join('\n')] : null,
+      ]).filter(Boolean)
+      let d
+      if (ops.length) d = { fecha: f, ops, estado: estadoPorOps(ops) }
+      else if (rs.some(x => x.resultado === 'EN CURSO' && x.precio_llenado != null)) {
+        const x = rs.find(x => x.resultado === 'EN CURSO' && x.precio_llenado != null)
+        d = { fecha: f, ops: [], estado: 'abierta',
+              nota: `${setupDe(x)} · ${horaCorta(x.hora_llenado)}: llenada en ${px(x.precio_llenado)} con ${x.contratos} contrato${x.contratos !== 1 ? 's' : ''}, sin stop ni objetivo todavía.` }
+      } else if (rs.every(x => x.resultado === 'NO ARMADO')) d = { fecha: f, ops: [], estado: 'no-armado', nota: r.motivo || 'El bot no se armó' }
+      else if (rs.some(x => x.resultado === 'EN CURSO')) d = { fecha: f, ops: [], estado: 'sin-op', nota: 'El bot está armado y aún no ha entrado' }
+      else d = { fecha: f, ops: [], estado: 'sin-op', nota: rs.find(x => x.motivo)?.motivo || 'El motor no dio operación' }
+      dias[f] = { ...d, url: null, textos }
+    })
+    return dias
+  }
+
+  // Los días de las cinco fuentes para el mes. `null` = esa fuente no cargó.
   async function diasDelMes(y, m) {
     const [d, mio] = await Promise.all([
       fuentes || cargarFuentes(),
@@ -227,6 +276,7 @@ const Calendarios = (() => {
       chaumer: d.chaumer && diasChaumer(d.chaumer, y, m, d.cab),
       claude:  d.estados && diasClaude(d.estados, d.motor, y, m, d.cab),
       manual:  d.manual && diasManual(d.manual, y, m, d.cab),
+      bot:     d.bot && diasBot(d.bot, y, m),
     }
   }
 
@@ -235,7 +285,8 @@ const Calendarios = (() => {
     const d = await (fuentes || cargarFuentes())
     const fechas = id === 'chaumer' ? (d.chaumer || []).map(c => c.fecha)
       : id === 'claude' ? (d.estados || []).map(e => e.fecha)
-      : id === 'manual' ? (d.manual || []).map(j => j.fecha) : []
+      : id === 'manual' ? (d.manual || []).map(j => j.fecha)
+      : id === 'bot' ? (d.bot || []).map(r => r.fecha) : []
     const f = fechas.sort().at(-1)
     return f ? { y: +f.slice(0, 4), m: +f.slice(5, 7) } : null
   }
@@ -443,6 +494,7 @@ const Calendarios = (() => {
     const COLOR = {
       mio: tok('--accent-txt', '#3FE0A6'), chaumer: tok('--blue-txt', '#8FBDE8'),
       claude: tok('--violet-txt', '#AFA9EC'), manual: tok('--text2', '#A8A89B'),
+      bot: tok('--warning-txt', '#E0A33B'),
     }
     const TINTA = tok('--text', '#F4F3EF'), TINTA3 = tok('--text3', '#6B6B60')
     const FONDO = tok('--bg', '#1a1a18'), SUPERF = tok('--bg3', '#2e2e2b')
@@ -633,7 +685,7 @@ const Calendarios = (() => {
     target: 'day-target', stop: 'day-stop', mixed: 'day-mixed', be: 'day-be',
     'sin-entradas': 'day-sin-setup', 'no-opero': 'day-sin-setup', 'sin-op': 'day-sin-setup',
     bloqueado: 'day-no-trade', error: 'day-no-trade', festivo: 'day-festivo', fomc: 'day-fomc',
-    abierta: 'day-abierta',
+    abierta: 'day-abierta', 'no-armado': 'day-no-trade',
   }
   const BADGE = {
     'no-opero':  ['badge-sinsetup', 'ti-eye-off',        'No operó'],
@@ -642,6 +694,7 @@ const Calendarios = (() => {
     error:       ['badge-noopero',  'ti-alert-circle',   'Error del motor'],
     be:          ['badge-be',       'ti-scale',          'B.E.'],
     abierta:     ['badge-abierta',  'ti-hourglass',      'Abierta'],
+    'no-armado': ['badge-noopero',  'ti-plug-off',       'No se armó'],
     festivo:     ['badge-festivo',  'ti-building-bank',  'Festivo'],
     fomc:        ['badge-fomc',     'ti-chart-candle',   'FOMC'],
   }
@@ -649,6 +702,7 @@ const Calendarios = (() => {
     chaumer: [['green', 'Target'], ['red', 'Stop'], ['sinsetup', 'No operó'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
     claude:  [['green', 'Target'], ['red', 'Stop'], ['mixed', 'Abierta'], ['sinsetup', 'Sin operación'], ['gray', 'Registra tu día'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
     manual:  [['green', 'Target'], ['red', 'Stop'], ['sinsetup', 'Sin operación'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
+    bot:     [['green', 'Target'], ['red', 'Stop'], ['mixed', 'Abierta'], ['sinsetup', 'Sin operación'], ['gray', 'No se armó'], ['festivo', 'Festivo'], ['fomc', 'FOMC']],
   }
 
   let diasVista = {}   // fecha → día, de la vista abierta (lo lee el recuadro)
@@ -659,6 +713,7 @@ const Calendarios = (() => {
     if (id === 'chaumer') return d.chaumer && diasChaumer(d.chaumer, y, m, d.cab)
     if (id === 'claude')  return d.estados && diasClaude(d.estados, d.motor, y, m, d.cab)
     if (id === 'manual')  return d.manual && diasManual(d.manual, y, m, d.cab)
+    if (id === 'bot')     return d.bot && diasBot(d.bot, y, m)
     return null
   }
 
@@ -842,7 +897,8 @@ const Calendarios = (() => {
   const ETIQ = { target: ['TARGET', 'r-t', 'tone-t'], stop: ['STOP', 'r-s', 'tone-s'], mixed: ['MIXTO', 'r-o', 'tone-o'],
                  be: ['B.E.', 'r-o', 'tone-o'], 'no-opero': ['NO OPERÓ', 'r-o', 'tone-o'],
                  'sin-entradas': ['SIN ENTRADAS', 'r-o', 'tone-o'], 'sin-op': ['SIN OPERACIÓN', 'r-o', 'tone-o'],
-                 error: ['ERROR', 'r-o', 'tone-o'], abierta: ['ABIERTA', 'r-o', 'tone-o'] }
+                 error: ['ERROR', 'r-o', 'tone-o'], abierta: ['ABIERTA', 'r-o', 'tone-o'],
+                 'no-armado': ['NO SE ARMÓ', 'r-o', 'tone-o'] }
   function etiquetaDe(d) {
     const cierre = d.ops.length && d.ops.every(o => o.res === 'cierre')   // plan 3.46: su nombre, con el color del signo
     return cierre
@@ -879,6 +935,7 @@ const Calendarios = (() => {
       const src = await (fuentes || cargarFuentes())
       if (id === 'chaumer') filas = (src.chaumer || []).map(c => [c.fecha, c.imagen_url])
       else if (id === 'manual') filas = (src.manual || []).map(j => [j.fecha, j.imagen])
+      else if (id === 'bot') filas = []   // el bot no guarda gráfico
       else {
         // El candado del motor (D-026): un día sin registrar no se enseña, aunque su gráfico exista.
         const cerrado = new Set((src.estados || []).filter(e => e.estado === 'bloqueada').map(e => e.fecha))
@@ -949,6 +1006,8 @@ const Calendarios = (() => {
     if (d.ops.length) {
       const p = ptsDe(d), usd = pnlDe(d)
       celdas.push(celda('Puntos', `<span class="mh-val ${p < 0 ? 'neg' : 'pos'}">${fmtPts(p)}</span>`))
+      const nc = d.ops.reduce((s, o) => s + (o.contratos || 0), 0)
+      if (nc) celdas.push(celda('Contratos', `<span class="mh-val">${nc}</span>`))
       celdas.push(celda(f.calc ? 'P&amp;L calc.' : 'P&amp;L', `<span class="mh-val ${usd < 0 ? 'neg' : 'pos'}">${fmtDinero(usd)}</span>`))
       const o = d.ops[0]
       const setup = [o.setup, o.dir && !/alcista|bajista/i.test(o.setup) ? o.dir.toLowerCase() : ''].filter(Boolean).join(' ')
@@ -957,6 +1016,7 @@ const Calendarios = (() => {
 
     let cuerpo = ''
     if (!d.ops.length && d.nota) cuerpo += bloque(d.estado === 'no-opero' ? 'Por qué no operó'
+      : d.estado === 'no-armado' ? 'Por qué no se armó'
       : d.estado === 'abierta' ? 'Operación abierta' : 'Sin operación', d.nota, 'gry')
     d.ops.forEach((o, i) => {
       const lineas = [

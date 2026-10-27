@@ -702,6 +702,7 @@ body[data-modo-local]::before {
 .hc-blue   { --c: var(--blue-txt);   --c-base: var(--blue); }
 .hc-violet { --c: var(--violet-txt); --c-base: var(--violet); }
 .hc-neutro { --c: var(--text2);      --c-base: var(--text3); }
+.hc-warning { --c: var(--warning-txt); --c-base: var(--warning); }
 
 .hub-grid {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -792,7 +793,7 @@ body[data-modo-local]::before {
   background: color-mix(in srgb, var(--violet) 18%, transparent);
   border-color: color-mix(in srgb, var(--violet) 45%, transparent);
 }
-.hub-card[data-fuente="mio"] .hub-dia.est-no-opero, .hub-dia.est-error { background: var(--bg3); opacity: 0.6; }
+.hub-card[data-fuente="mio"] .hub-dia.est-no-opero, .hub-dia.est-error, .hub-dia.est-no-armado { background: var(--bg3); opacity: 0.6; }
 .hub-dia.est-bloqueado { background: var(--bg3); border-style: dashed; }
 .hub-dia.est-abierta   { background: var(--warning-dim); border-style: dashed; border-color: color-mix(in srgb, var(--warning) 55%, transparent); }
 .hub-dia.est-abierta .hub-dia-p { color: var(--warning-txt); }
@@ -825,8 +826,12 @@ body[data-modo-local]::before {
 /* Escritorio: los cuatro cuadros en UNA fila y la curva se queda con el alto que
    sobra, así todo entra en una pantalla sin scroll ni hueco al pie. Por debajo de
    1280 px vuelven a 2×2: en una fila las celdas ya no darían para los puntos. */
+/* Con el del Bot (27/10) son cinco: en escritorio, los cinco en una fila; por debajo, el quinto (el
+   manual) ocupa la fila entera, sin dejar un hueco al lado. */
+.hub-grid .hub-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
 @media (min-width: 1280px) {
-  .hub-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .hub-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .hub-grid .hub-card:last-child:nth-child(odd) { grid-column: auto; }
   .hub-card { padding: 14px 12px 12px; gap: 10px; }
   .hub-kpis { gap: 6px; }
   .hub-kpi { padding: 8px 3px 7px; }

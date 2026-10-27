@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-27c | El calendario del Bot: lo que operó de verdad, desde `bot_operaciones` |
 | 2026-10-27b | El calendario de Claude, con los contratos del plan: los que caben en $160 |
 | 2026-10-27 | Lo que no se usaba ya no se registra: ni Telegram ni el Diario piden la corrida, el contexto, las zonas en contra, la emoción ni la confianza (D-048) |
 | 2026-10-26b | La lupa del día: el gráfico ampliado pasa de día y lleva la fecha y la ficha, como el portal |
@@ -58,6 +59,32 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-27c — El calendario del Bot
+
+Kris pidió un calendario con lo que el bot operó de verdad. El de Claude enseña lo que **marcó el motor**, y no
+siempre es lo mismo: el 22/10 el motor marcó una operación con 29,25 pts de stop y el bot entró en otra (53,25), y
+el 21/10 el bot se armó tarde y no operó.
+
+- **Quinto calendario, «Bot»** (`ti-cpu`, ámbar, `hc-warning`), entre Claude y el manual. Lee `bot_operaciones`
+  (`DB.getBotOperaciones`) con `diasBot` (`js/calendarios.js`): TARGET, STOP y CIERRE POR HORA son la operación,
+  con su **P&L real** (`pnl_neto`, no calculado) y sus contratos; NO OPERA, «sin operación» (morado, con el
+  motivo); NO ARMADO, gris («No se armó», estado nuevo `no-armado`); EN CURSO, «abierta» si se llenó. Si un día
+  operaran dos cuentas, son dos operaciones.
+- **La vista del día** enseña entrada, stop, objetivo, riesgo, llenado (con el deslizamiento) y salida, y debajo
+  **«Lo que vio el bot»**: sus `eventos`. Sin gráfico: el bot no guarda imagen.
+- **La cabecera del día** lleva ahora **Contratos** en todos los calendarios.
+- **Cinco cuadros:** en escritorio, los cinco en una fila; por debajo de 1280 px y en el celular, el quinto (el
+  manual) ocupa la fila entera. La curva comparada y la clasificación incluyen al Bot.
+- **Sin candado:** el calendario del Bot no espera a que registres el día, a diferencia del de Claude (D-026). Lo
+  que operó el bot ya se ve en NinjaTrader en directo.
+
+**Verificado** en la copia local con las filas reales de `bot_operaciones` (añadidas al fixture), consola limpia:
+octubre = 10 operaciones, −307 pts, −$499, 3/7 (SQL: −306,625 pts, −$498,90, 3/7); 20/10 con 2 contratos y 12,5
+ticks de deslizamiento; 13/10 «No se armó» con su motivo una sola vez; a 1440 px los cinco en fila y a 375 px el
+manual a lo ancho, sin scroll horizontal.
 
 ---
 
