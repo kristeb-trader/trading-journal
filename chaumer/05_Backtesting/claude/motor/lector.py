@@ -295,6 +295,12 @@ def anadir(Z, lo, hi, tipo, i, origen, extremo, i_org=None, rangos=None, bloque=
         # que el mercado rompa la zona del borde Y consiga la consecucion.
         for (a,b,zb,za) in rangos:
             if hi > a+1e-9 and lo < b-1e-9:
+                # Salvo que ESTIRE la zona del borde de la banda (viva y sin traspasar): eso no marca nada
+                # dentro de la banda, solo lleva esa zona a su extremo nuevo (R-13). Kris, 27/10/2026: la R de
+                # la 8:41 no se estiraba a 29.687,75 porque la de la 8:42 entraba 1,25 en la banda.
+                if any(zz is not None and zz.activa and zz.tipo==tipo and zz.toca(lo,hi)
+                       and not (raiz(zz).arriba or raiz(zz).abajo) for zz in (zb,za)):
+                    continue
                 return None, ('rango_usado', mid)
             # para estar FUERA de la banda no basta la geometria: el mercado tiene que
             # haber roto la zona del borde Y conseguido la consecucion en ese sentido.
@@ -321,6 +327,22 @@ def anadir(Z, lo, hi, tipo, i, origen, extremo, i_org=None, rangos=None, bloque=
     for z in Z:
         if z.activa and z.tipo!=tipo and z.toca(lo,hi):
             return None, ('solapa', None)
+    if bloque:
+        # Si toca varias, primero se recorta contra las ya traspasadas y despues, si toca una viva sin traspasar,
+        # se estira esa: dos zonas nunca se montan. Kris, 27/10/2026: la S de la 9:20 se recortaba contra la de
+        # la 9:12 y nacia aparte encima de la de la 9:18.
+        for z in Z:
+            if z.activa and z.tipo==tipo and z.toca(lo,hi) and (raiz(z).arriba or raiz(z).abajo):
+                blo,bhi=borde(z)
+                if tipo=='R': lo=max(lo,bhi)
+                else:         hi=min(hi,blo)
+                if hi-lo < 1e-9: return None, ('dentro', None)
+        for z in Z:
+            if z.activa and z.tipo==tipo and z.toca(lo,hi) and not (raiz(z).arriba or raiz(z).abajo):
+                if tipo=='R': z.hi=max(z.hi,hi)
+                else:         z.lo=min(z.lo,lo)
+                z.hist.append((i,z.lo,z.hi))
+                return z, ('estirada', None)
     for z in Z:
         if z.activa and z.tipo==tipo and z.toca(lo,hi):
             if bloque and (raiz(z).arriba or raiz(z).abajo):

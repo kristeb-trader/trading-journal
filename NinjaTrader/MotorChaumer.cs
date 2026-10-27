@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:3fcd94fe1067bcad C:13554ee643b9a2d2";
+        public const string SELLO = "L:085f8ece600c5d16 C:e8465e7e85542a21";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -376,7 +376,15 @@ namespace NinjaTrader.NinjaScript
             {
                 foreach (var r in rangos)
                 {
-                    if (hi > r.A + 1e-9 && lo < r.B - 1e-9) { que = "rango_usado"; return null; }
+                    if (hi > r.A + 1e-9 && lo < r.B - 1e-9)
+                    {
+                        // salvo que ESTIRE la zona del borde de la banda, viva y sin traspasar (R-13; Kris, 27/10/2026)
+                        bool estira = false;
+                        foreach (var zz in new[] { r.Zb, r.Za })
+                            if (zz != null && zz.Activa && zz.Tipo == tipo && zz.Toca(lo, hi) && !(Raiz(zz).Arriba || Raiz(zz).Abajo)) estira = true;
+                        if (estira) continue;
+                        que = "rango_usado"; return null;
+                    }
                     if (hi <= r.A + 1e-9 && !r.Zb.Abajo) { que = "salida_sin_consecucion"; return null; }
                     if (lo >= r.B - 1e-9 && !r.Za.Arriba) { que = "salida_sin_consecucion"; return null; }
                 }
@@ -392,6 +400,27 @@ namespace NinjaTrader.NinjaScript
             if (blo) { que = "bloqueada50"; return null; }
             foreach (var z in Z)
                 if (z.Activa && z.Tipo != tipo && z.Toca(lo, hi)) { que = "solapa"; mid = null; return null; }
+            if (bloque)
+            {
+                // si toca varias: primero se recorta contra las traspasadas y después, si toca una viva sin
+                // traspasar, se estira esa; dos zonas nunca se montan (Kris, 27/10/2026)
+                foreach (var z in Z)
+                    if (z.Activa && z.Tipo == tipo && z.Toca(lo, hi) && (Raiz(z).Arriba || Raiz(z).Abajo))
+                    {
+                        var bb = Borde(z);
+                        if (tipo == "R") lo = Math.Max(lo, bb[1]);
+                        else hi = Math.Min(hi, bb[0]);
+                        if (hi - lo < 1e-9) { que = "dentro"; mid = null; return null; }
+                    }
+                foreach (var z in Z)
+                    if (z.Activa && z.Tipo == tipo && z.Toca(lo, hi) && !(Raiz(z).Arriba || Raiz(z).Abajo))
+                    {
+                        if (tipo == "R") z.Hi = Math.Max(z.Hi, hi);
+                        else z.Lo = Math.Min(z.Lo, lo);
+                        z.Historia.Add(new Hist { J = i, Lo = z.Lo, Hi = z.Hi });
+                        que = "estirada"; mid = null; return z;
+                    }
+            }
             foreach (var z in Z)
                 if (z.Activa && z.Tipo == tipo && z.Toca(lo, hi))
                 {
