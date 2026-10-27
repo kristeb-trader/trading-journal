@@ -10,6 +10,32 @@
 
 ---
 
+## D-049 — El Coach parte del veredicto del motor y lee solo las reglas del día
+
+*Cierra la «C» de D-034, antes de lo previsto: D-047 ya hizo del motor el juez oficial de la disciplina.*
+
+**Decisión (Kris, 27/10/2026).** Tres cambios al Coach, en los días del plan con ficha del motor:
+- **Foco por veredicto (A).** El análisis parte del veredicto del día (`veredictoDia`) y se centra en él: «igual» →
+  corto, a la ejecución; «otro» / «fuera» → la diferencia con el plan y por qué; «aviso» → por qué no entró; «bien» →
+  muy corto. El VEREDICTO del diagnóstico empieza por el del motor y solo lo contradice argumentando uno de sus dos
+  agujeros. Lo escriben `focoDelDia` y `veredictoEtapa3`, que usan los dos sitios del formato.
+- **Plan ligero (B).** En vez de los cinco documentos (~150.000 caracteres), el índice de las 34 reglas, el texto
+  completo solo de las que deciden el día (las de siempre —tamaño, rompimiento, vigencia, orden, una operación, stop y
+  objetivo, salidas—, las del setup de Kris y del motor, las que citó el motor y noticia o Fed) y los parámetros: ~50.000
+  (33 %). Sin ficha del motor, el plan entero como antes.
+- **Casillas sin marcar:** llegan como «sin marcar: no cuenta», no como ✗ (desde D-040 a menudo quedan sin marcar).
+
+**Motivo.** Kris no usaba el Coach desde el 06/10. Desde D-047 el veredicto lo da gratis el motor cada día (octubre: 11
+«igual», 7 «otro/fuera», 1 «bien», 1 «aviso»): el Coach aporta donde el motor no llega —por qué te saliste, qué viste,
+el error psicológico—, y no necesita releer las 34 reglas para juzgar lo que ya está medido. Estimado: el análisis de
+~$0,49 a ~$0,26 con Opus (~$0,13 con Sonnet); el día completo, de ~$0,63 a ~$0,34.
+
+**Descartado.** Esperar semanas de «motor y Coach coinciden» antes de B (la condición de D-034): el Coach no se usaba,
+así que nunca se iba a medir, y D-047 ya dio al motor la última palabra. Quitar también los «Por qué» de las reglas del
+día: son lo que le deja explicar la regla en los días en que te sales.
+
+---
+
 ## D-048 — El registro del día se queda en lo que se usa: setup, análisis, errores
 
 **Decisión (Kris, 27/10/2026).** Ni Telegram ni el Diario preguntan ya **la corrida** (número y velas), **el contexto

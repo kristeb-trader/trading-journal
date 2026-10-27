@@ -49,6 +49,7 @@ const Coach = (() => {
   let chatHistory       = []   // conversación del día en memoria
   let systemPromptCache = null // se construye una vez por sesión abierta
   let planBloque        = null // bloque A (el plan de Chaumer); null en días de la etapa 1
+  let contextoDia       = null // lo del día que eligen las reglas de A y el foco del análisis (27/10)
   let diagnosticoActual = {}   // secciones parseadas del último análisis
   let reglasCache       = null // rulebook canónico; se recarga al limpiar caché
   let emocionesCache    = []   // catálogo de emociones
@@ -131,6 +132,40 @@ Detalle:
 Sesgo: <Alcista|Bajista|Mixto> | <razón en pocas palabras>
 Vigilar: <el/los nivel(es) clave que importan hoy y por qué>
 Noticias: <noticia relevante del día, o "Sin noticias">`
+  }
+
+  // El FOCO del análisis según el veredicto del motor (27/10, propuesta A). El veredicto ya lo
+  // da el motor (D-047): el Coach aporta donde el motor no llega —por qué te saliste, qué
+  // viste, el error—, y en un día que siguió el plan se va directo a la ejecución. Lo usan los
+  // dos sitios del formato (system e instrucción), como `formatoContexto`.
+  function focoDelDia(v, ficha) {
+    const op = ficha?.operacion
+    const plan = op ? ` (${op.setup} ${op.sentido} a las ${op.hora})` : ''
+    const foco = {
+      igual: `Hiciste lo que decía el plan${plan}. Análisis CORTO: confirma en una frase por qué era el trade del plan y céntrate en la EJECUCIÓN —entrada, stop y contratos frente a los del plan, con las diferencias medidas—. No repases regla por regla lo que ya coincide.`,
+      otro:  `El plan operaba OTRA cosa${plan}. Céntrate en la DIFERENCIA: qué marcaba el plan, qué hizo el trader, qué regla separa las dos operaciones y por qué se fue a la suya (su lectura). Con números.`,
+      fuera: `El trader operó y el plan NO operaba. Céntrate en qué regla deja fuera su entrada (lo que anotó el motor justo antes de ella) y en por qué entró igual (su lectura). Con números.`,
+      aviso: `El plan operó${plan} y el trader no entró. Céntrate en por qué: qué vio, y si la duda tenía base en el plan o fue miedo o duda.`,
+      bien:  `Ni el plan ni el trader operaron: es lo correcto. Análisis MUY corto; si miró algún setup, explica por qué el plan no lo daba.`,
+    }[v]
+    if (!foco) return ''
+    return `${foco}
+- La línea «En corto» de VALIDACIÓN empieza por ese veredicto, en palabras llanas.
+- El Detalle de VALIDACIÓN lista SOLO las reglas que deciden el día (las que separan su operación de la del plan, o la ejecución si coincidió), no la lista entera.
+- El veredicto lo da el MOTOR y es la medida oficial de la disciplina: no lo contradigas, salvo que el día caiga en uno de sus dos agujeros conocidos; entonces dilo explícitamente, con la vela.`
+  }
+
+  // Cómo empieza el VEREDICTO del diagnóstico según el del motor (los días sin entrada no son
+  // ni válidos ni inválidos: el parser enseña el texto tal cual).
+  function veredictoEtapa3(v) {
+    const inicio = {
+      igual: '«ENTRADA VÁLIDA» (era el trade del plan; la razón dice cómo fue la ejecución)',
+      otro:  '«ENTRADA INVÁLIDA» (no era el trade del plan: el plan operaba otra cosa)',
+      fuera: '«ENTRADA INVÁLIDA» (no era el trade del plan: el plan no operaba)',
+      aviso: '«SIN ENTRADA — el plan operaba»',
+      bien:  '«SIN ENTRADA — correcto: el plan tampoco operaba»',
+    }[v]
+    return inicio ? `\nEste día el motor dio «${v}»: empieza con ${inicio}, salvo que argumentes uno de sus dos agujeros conocidos.` : ''
   }
 
   // ── Construcción del System Prompt ────────────────────────────────────
@@ -282,14 +317,29 @@ Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes.
             if (r === null) return `— [F${it.fase}] ${it.texto} (verificada por datos: sin evidencia hoy)`
             return `${r ? '✓' : '✗'} [F${it.fase}] ${it.texto} ← VERIFICADO POR DATOS, no es autoevaluación`
           }
-          return `${(sesion.checklist?.[it.clave] ?? sesion[it.clave]) ? '✓' : '✗'} [F${it.fase}] ${it.texto}`
+          // Sin fila = sin marcar = N/A (D-013): no cuenta, y no es un incumplimiento. Desde que
+          // se archivó el AddOn (D-040) las casillas manuales a menudo quedan sin marcar, y el
+          // Coach las leía como ✗ («rompiste el punto de referencia»).
+          const marca = sesion.checklist?.[it.clave] ?? sesion[it.clave]
+          if (marca == null) return `— [F${it.fase}] ${it.texto} (sin marcar: no cuenta, no es un incumplimiento)`
+          return `${marca ? '✓' : '✗'} [F${it.fase}] ${it.texto}`
         }).join('\n  ')
       : 'Sin datos de checklist'
+    // El veredicto del día (D-047), calculado en db.js como en el dashboard. Lo usan la
+    // disciplina de abajo, el foco del análisis (A) y la elección de reglas del plan (B).
+    const veredicto = (sesion && _motorDia) ? veredictoDia(sesion, _discCtx) : null
+    contextoDia = {
+      ficha:      fichaMotor?.estado === 'ok' ? fichaMotor.ficha : null,
+      diaFed:     !!fichaMotor?.dia_fed,
+      familia:    familiaDia,
+      hayNoticia: (noticias || []).length > 0,
+      veredicto,
+    }
     // La disciplina del día con la medida del plan: un HECHO calculado por el sistema,
     // igual que en el dashboard (db.js). Va en el bloque B: es del día.
     const disciplinaPlanStr = (() => {
       if (!sesion || !_motorDia) return ''
-      const v = veredictoDia(sesion, _discCtx)
+      const v = veredicto
       if (!v || v === 'pendiente') return ''
       const op = fichaMotor.ficha?.operacion
       const lineas = [`  Veredicto: ${VEREDICTO_TXT[v].largo}${op && (v === 'otro' || v === 'aviso') ? ` (el plan: ${fmtOpPlan(op)})` : ''}.`]
@@ -540,7 +590,10 @@ El análisis se realiza en un flujo guiado de tres etapas. Tú produces dos entr
 
 ### ETAPA 1 — ANÁLISIS TÉCNICO (primer entregable)
 Cuando recibas la instrucción de análisis técnico (o la imagen del gráfico), produce EXACTAMENTE estas 3 secciones.${conPlan ? ' Lee el día SOLO como lo lee el plan de trading: nada de análisis técnico genérico (sesgo por rango overnight, máximo y mínimo de ayer, deriva).' : ' Los datos de referencia (PDO/PDH/PDL/PDC/PDR, deriva overnight, etc.) son para TU análisis: NO los vuelques ni hagas tablas con ellos en el output.'}
-
+${focoDelDia(veredicto, fichaMotor?.ficha) ? `
+**🎯 EL FOCO DE ESTE DÍA** (manda sobre el formato de abajo):
+${focoDelDia(veredicto, fichaMotor?.ficha)}
+` : ''}
 ⚠️ **CADA UNA de las 3 secciones se escribe en DOS capas, con estas dos marcas literales:**
 
 \`\`\`
@@ -594,7 +647,7 @@ IMPORTANTE: durante el chat NO emitas el diagnóstico final estructurado (las 4 
 Cuando recibas la instrucción de diagnóstico final, integra TODO lo conversado en el chat y produce EXACTAMENTE estas 4 secciones:
 
 **🎯 VEREDICTO DE SETUP**
-Empieza SIEMPRE con "ENTRADA VÁLIDA" o "ENTRADA INVÁLIDA" y, en la MISMA línea o la siguiente, la razón en UNA frase llana (sin números crudos: usa distancias en puntos si hacen falta). Es lo primero y a veces lo único que se lee.
+Empieza SIEMPRE con "ENTRADA VÁLIDA" o "ENTRADA INVÁLIDA" y, en la MISMA línea o la siguiente, la razón en UNA frase llana (sin números crudos: usa distancias en puntos si hacen falta). Es lo primero y a veces lo único que se lee.${veredictoEtapa3(veredicto)}
 
 **⚠️ ERRORES DETECTADOS**
 Lista CADA error en UNA línea con este formato EXACTO (NUEVE partes separadas por " | "):
@@ -1072,18 +1125,86 @@ Cómo usarlos:
 - **La CONTEXTUALIZACIÓN son recordatorios de criterio, no reglas:** sirven para leer el contexto, nunca para juzgar un incumplimiento.
 - Las horas del plan dicen su zona (ET u hora Colombia); los trades del día traen las dos.`
 
-  async function construirBloquePlan(date) {
-    if (etapaDeFecha(date) !== 2) return null
-    const docs = await DB.getPlanDocumentos().catch(e => {
-      console.warn('[Coach] no se pudo leer el plan:', e?.message || e)
-      return []
-    })
-    const porNombre = Object.fromEntries(docs.map(d => [d.nombre, d.contenido]))
+  // El plan entero: los 5 documentos (~150.000 caracteres). Solo cuando no hay ficha del motor.
+  function planEntero(porNombre) {
     const partes = PLAN_DOCS.filter(([n]) => porNombre[n])
       .map(([n, titulo]) => `<documento nombre="${n}" titulo="${titulo}">\n${porNombre[n]}\n</documento>`)
     // Sin plan cargado el Coach sigue con el bloque B, que ya trae las reglas de la etapa.
     if (!partes.length) return null
     return `${INSTRUCCIONES_PLAN}\n\n${partes.join('\n\n')}`
+  }
+
+  // ── El plan ligero (27/10, propuesta B) ─────────────────────────────────
+  // Desde D-047 el motor es el juez de la disciplina y la operación de Kris llega medida
+  // (D-034): el Coach ya no necesita releer las 34 reglas para juzgar. Recibe el ÍNDICE
+  // (título y resumen de cada una), el texto COMPLETO solo de las que deciden el día y los
+  // parámetros. Unos 40.000 caracteres en vez de ~150.000: el análisis cuesta un tercio.
+  // Sin ficha del motor (candado cerrado, día sin velas) se vuelve al plan entero.
+  const REGLAS_SIEMPRE = ['R-04', 'R-20', 'R-21', 'R-24', 'R-28', 'R-32', 'R-33']   // tamaño, rompimiento, vigencia, orden, una operación, stop y objetivo, salidas
+  const REGLAS_SETUP = { continuacion: ['R-25', 'R-40'], reingreso: ['R-26', 'R-41'] }
+
+  // El documento de reglas, regla a regla: { código → { titulo, resumen, cuerpo } }. El cuerpo
+  // va sin la tabla de metadatos (aplica a, parámetros, relacionadas, casos), que no aporta.
+  function trocearReglas(texto) {
+    const out = new Map()
+    for (const sec of String(texto || '').split(/^(?=## R-\d+ · )/m)) {
+      const m = sec.match(/^## (R-\d+) · (.+)$/m)
+      if (!m || sec.indexOf(m[0]) !== 0) continue
+      const resumen = (sec.match(/^>\s*(.+)$/m) || [])[1] || ''
+      const cuerpo = sec.split('\n')
+        .filter(l => !/^\|\s*(Aplica a|Parámetros|Relacionadas|Casos)\s*\||^\|\s*\|\s*\|\s*$|^\|---\|---\|\s*$/.test(l))
+        .join('\n').replace(/\n# \d+ · [\s\S]*$/, '').trim()   // el título del grupo siguiente, si se coló
+      out.set(m[1], { titulo: m[2].trim(), resumen: resumen.trim(), cuerpo })
+    }
+    return out
+  }
+
+  const _familia = t => /reingreso/i.test(t || '') ? 'reingreso' : /continu/i.test(t || '') ? 'continuacion' : null
+
+  // Qué reglas van enteras ese día: las de siempre, las del setup (el de Kris y el del motor,
+  // si difieren), las que citó el motor en sus eventos y avisos, y noticia o Fed si las hubo.
+  function reglasDelDia(dia) {
+    const f = dia.ficha || {}
+    const set = new Set(REGLAS_SIEMPRE)
+    const familias = [dia.familia, _familia(f.operacion?.setup),
+      ...((f.tu_operacion?.operaciones) || []).map(o => _familia(o.motor?.setup))]
+    familias.forEach(fa => (REGLAS_SETUP[fa] || []).forEach(c => set.add(c)))
+    const citadas = JSON.stringify([f.eventos, f.avisos, f.tu_operacion]).match(/\bR-\d{2}\b/g) || []
+    citadas.forEach(c => set.add(c))
+    if (dia.hayNoticia) set.add('R-35')
+    if (dia.diaFed) set.add('R-36')
+    return set
+  }
+
+  const INSTRUCCIONES_LIGERO = `
+
+Este día NO recibes el plan entero: el motor ya midió la operación (sección «Lo que marcó el motor» y «Disciplina del día»). Recibes:
+- el ÍNDICE de las 34 reglas, con el título y el resumen de cada una;
+- el texto COMPLETO solo de las reglas que deciden el día (las del setup, las que citó el motor y las de ejecución);
+- los PARÁMETROS (los números del plan).
+Si necesitas una regla que solo está en el índice, razona con su resumen y dilo: el trader te la puede pedir entera.`
+
+  function construirBloquePlan(docs, dia) {
+    const porNombre = Object.fromEntries((docs || []).map(d => [d.nombre, d.contenido]))
+    if (!dia?.ficha || !porNombre.reglas) return planEntero(porNombre)
+    const reglas = trocearReglas(porNombre.reglas)
+    if (reglas.size < 20) return planEntero(porNombre)        // el documento cambió de forma: mejor entero
+    const elegidas = reglasDelDia(dia)
+    const indice = [...reglas].map(([c, r]) => `- ${c} · ${r.titulo}${r.resumen ? ` — ${r.resumen}` : ''}`).join('\n')
+    const completas = [...reglas].filter(([c]) => elegidas.has(c)).map(([, r]) => r.cuerpo).join('\n\n---\n\n')
+    return `${INSTRUCCIONES_PLAN}${INSTRUCCIONES_LIGERO}
+
+<documento nombre="indice" titulo="ÍNDICE DE LAS REGLAS DEL PLAN">
+${indice}
+</documento>
+
+<documento nombre="reglas_del_dia" titulo="LAS REGLAS QUE DECIDEN ESTE DÍA, completas">
+${completas}
+</documento>
+${porNombre.parametros ? `
+<documento nombre="parametros" titulo="PARÁMETROS">
+${porNombre.parametros}
+</documento>` : ''}`
   }
 
   // Vigilante (§3.3): los códigos del plan que el modelo cuele ENTRE PARÉNTESIS se
@@ -1147,9 +1268,16 @@ Cómo usarlos:
 
   // El contexto del día: A (el plan, solo etapa 2) y después B (el día). B se arma
   // sabiendo si A está, porque con el plan delante B no repite sus reglas.
+  // B (el día) se arma primero: de él salen la ficha, el setup y el veredicto con los que se
+  // eligen las reglas de A (el plan). En el system, A sigue yendo delante.
   async function prepararContexto(fecha) {
-    planBloque = await construirBloquePlan(fecha)
-    systemPromptCache = await buildSystemPrompt(fecha, { conPlan: !!planBloque })
+    const docs = etapaDeFecha(fecha) === 2
+      ? await DB.getPlanDocumentos().catch(e => { console.warn('[Coach] no se pudo leer el plan:', e?.message || e); return [] })
+      : []
+    const conPlan = docs.length > 0
+    contextoDia = null
+    systemPromptCache = await buildSystemPrompt(fecha, { conPlan })
+    planBloque = conPlan ? construirBloquePlan(docs, contextoDia) : null
   }
 
   // Si Kris cambia de día mientras llega una respuesta, esa respuesta es del día
@@ -1161,7 +1289,8 @@ Cómo usarlos:
     const fecha = coachDate, miPanel = panel
 
     if (isFirst) {
-      await prepararContexto(fecha)
+      // El análisis técnico ya lo preparó (necesita el veredicto para escribir su instrucción).
+      if (!systemPromptCache) await prepararContexto(fecha)
       chatHistory = []
     } else if (!systemPromptCache) {
       // Sesión guardada que se retoma: la app pintó el análisis en pantalla, pero
@@ -1883,9 +2012,17 @@ Cómo usarlos:
       // prompt. Este mensaje pesa más (va en el turno del usuario). Si se cambia
       // el formato, hay que cambiarlo EN LOS DOS — tenerlo solo en el system
       // prompt no sirvió: el modelo siguió este y no escribió los resúmenes.
+      // El contexto se prepara AQUÍ (y no dentro de llamarClaude) porque la instrucción
+      // necesita el veredicto del motor para escribir el foco del día.
+      await prepararContexto(coachDate)
+      if (miPanel !== panel) return
       const soloPlan = etapaDeFecha(coachDate) === 2
+      const foco = focoDelDia(contextoDia?.veredicto, contextoDia?.ficha)
       const instruccionFormato = `Realiza el ANÁLISIS TÉCNICO (Etapa 1) en exactamente 3 secciones.${soloPlan ? ' Lee el día SOLO como lo lee el plan de trading: nada de sesgo por rango overnight, máximo y mínimo de ayer ni deriva.' : ''}
-
+${foco ? `
+🎯 EL FOCO DE ESTE DÍA (manda sobre el formato de abajo):
+${foco}
+` : ''}
 ⚠️ OBLIGATORIO: cada sección lleva DOS capas, con estas dos marcas escritas TAL CUAL, cada una en su propia línea. Sin ellas la respuesta es inválida. En la línea "En corto", SIN precios crudos: si un número aporta, dilo como DISTANCIA en puntos.
 
 **1. 🌍 CONTEXTO**
@@ -1994,7 +2131,9 @@ NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivine
 **🎯 VEREDICTO DE SETUP**
 **⚠️ ERRORES DETECTADOS**
 **🎓 APRENDIZAJE DEL DÍA**
-**📋 RESUMEN PARA DIARIO**`
+**📋 RESUMEN PARA DIARIO**
+
+Si hay veredicto del motor («Disciplina del día»), el VEREDICTO DE SETUP parte de él, como dice la Etapa 3.`
 
       const respuesta = await llamarClaude(instruccion, false)
       const diag = parsearDiagnostico(respuesta)

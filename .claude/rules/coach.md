@@ -139,6 +139,20 @@ las zonas de premercado del plan son las de las velas sobre el umbral, y las da 
 mercado»** (27 oct: era el sesgo por otra puerta; ya no se registra). El Contexto se escribe
 como **Apertura / Zonas / Noticias** (`formatoContexto`). Los días de la etapa 1, como siempre.
 
+## El foco por veredicto y el plan ligero (D-049, 27 oct)
+
+- **`prepararContexto` arma B primero y después A:** de B salen la ficha, el setup y el veredicto (`contextoDia`) con los
+  que se eligen las reglas de A. En el system, A sigue delante. `analisisTecnico` prepara el contexto **antes** de
+  escribir su instrucción, porque la instrucción lleva el foco; `llamarClaude(…, isFirst)` ya no lo rehace.
+- **Foco:** `focoDelDia(veredicto, ficha)` (system Etapa 1 **e** instrucción del análisis) y `veredictoEtapa3`
+  (system Etapa 3). Sin veredicto (sin ficha, antes del 01/10, etapa 1) no sale nada y todo es como antes.
+- **Plan ligero:** `construirBloquePlan(docs, contextoDia)` → índice de las 34 reglas + `reglasDelDia` enteras (sin la
+  tabla de metadatos) + parámetros. `REGLAS_SIEMPRE` y `REGLAS_SETUP` deciden las fijas; las citadas por el motor
+  (`R-\d\d` en eventos, avisos y `tu_operacion`) se añaden solas. **Sin ficha, o si el documento de reglas cambia de
+  forma (< 20 reglas al trocearlo), el plan entero.** Si cambia el formato de `## R-xx · Título` en `chaumer/01_Plan/reglas`,
+  revisar `trocearReglas`.
+- **Casillas:** sin fila (sin marcar) → «sin marcar: no cuenta», nunca ✗ (D-013, D-040).
+
 ## Modo prueba (`?modelo=sonnet`)
 
 Para comparar modelos con un mismo día: el Coach usa Sonnet 5.5 (`MODELOS`), **no guarda nada** (ni automático

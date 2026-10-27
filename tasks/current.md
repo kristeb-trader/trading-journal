@@ -76,7 +76,10 @@ Coach) y A (`scripts/cadena/medir.py`: la operación de Kris medida con el motor
 - [ ] **La prueba real, al final (Kris, 03/10), con un día sin analizar** (28/09 → 2/10): Opus en la pestaña
   normal (se guarda) y Sonnet 5.5 con `?modelo=sonnet` (no guarda), lado a lado. Mirar: que no pregunte precios,
   que use la medición del motor, el Contexto según el plan; y en `coach_uso`, el coste de cada uno y los `toque`
-- [ ] **C** (que la IA deje de releer el plan entero) solo tras semanas de A con motor y Coach coincidiendo
+- [x] **C**, hecha el 27/10 como D-049 (foco por veredicto + plan ligero): no hizo falta esperar, D-047 ya dio al
+  motor la última palabra
+- [ ] **Primer análisis real con D-049** (y con la puerta nueva del Worker, sin usar desde el 12/10): un día «otro» o
+  «fuera» —el 27/10 es ideal—. Mirar que se centre en la diferencia y, en `coach_uso`, la primera llamada a ~$0,26
 - [ ] **E:** que el puente no escriba dentro del repo (`noticias_rojas.txt`, `dias_fed.txt`) ni publique desde la
   copia de trabajo
 - [ ] Pregunta abierta a Kris: ¿un solo botón para análisis + diagnóstico? (El contexto viejo ya se decidió: fuera, D-035)

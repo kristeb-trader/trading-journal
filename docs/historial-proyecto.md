@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-27d | El Coach parte del veredicto del motor y lee solo las reglas del día (D-049) |
 | 2026-10-27c | El calendario del Bot: lo que operó de verdad, desde `bot_operaciones` |
 | 2026-10-27b | El calendario de Claude, con los contratos del plan: los que caben en $160 |
 | 2026-10-27 | Lo que no se usaba ya no se registra: ni Telegram ni el Diario piden la corrida, el contexto, las zonas en contra, la emoción ni la confianza (D-048) |
@@ -59,6 +60,22 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-27d — El Coach parte del veredicto del motor y lee solo las reglas del día
+
+Revisión del Coach tras tres semanas sin usarlo (último uso: 06/10). Las otras sesiones lo habían ido adaptando (D-047
+en su contexto, D-048 fuera, la puerta nueva del Worker); quedaba un fallo y el cambio de papel. D-049:
+- **Casillas sin marcar** llegaban como ✗: el 20, 23, 26 y 27/10 le decían que habías roto una regla que no marcaste.
+- **Foco por veredicto:** el análisis parte de «igual / otro / fuera / aviso / bien» y se centra en él.
+- **Plan ligero:** índice de las 34 reglas + las del día enteras + parámetros: 149.915 → 50.049 caracteres (33 %).
+  Estimado: el análisis de ~$0,49 a ~$0,26 con Opus.
+
+**Verificado.** Prueba con el `db.js` y el `coach.js` reales y los datos reales del 26/10 («igual») y el 27/10 («otro»,
+el reingreso de las 8:55 que el motor descartó por el punto de referencia): 20/20 —el veredicto sale del cálculo real,
+el foco está en los dos sitios del formato, las reglas del día son las que tocan, sin ficha vuelve al plan entero, la
+etapa 1 no cambia—. La app local carga el Coach sin errores. **Sin probar con Claude de verdad:** el primer análisis.
 
 ---
 
