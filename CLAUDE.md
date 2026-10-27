@@ -111,7 +111,7 @@ sobre la implementación.** Ya pasó que se implementara otra cosa y hubo que re
 | Frontend | HTML + JS vanilla — GitHub Pages, se publica solo al hacer push (`.claude/rules/publicacion.md`) |
 | BD | Supabase (PostgreSQL) |
 | Proxy IA | Cloudflare Worker `broad-hall-c53f.kristerock.workers.dev` — **NO se despliega con push**: se pega a mano en el panel (`workers/proxy-ia/README.md`) |
-| Análisis IA | Claude API `claude-opus-5-5` (`js/coach.js`) — adaptive thinking, effort low, caché de 5 min con toque, guardado automático; consumo en `coach_uso` (D-025, D-033) |
+| Análisis IA | Claude API `claude-sonnet-5-5` (`js/coach.js`) — adaptive thinking, effort medium, plan ligero + foco por veredicto, caché de 5 min con toque, guardado automático; consumo en `coach_uso` (D-033, D-049, D-050) |
 | Imágenes | Cloudinary (`dq4n7bjta` / preset `trading-journal`) |
 | Bot | Telegram → Cloudflare Worker #2 + KV. **Se despliega solo** al hacer push que toque `TelegramBot/**` |
 | NT8 | Indicadores C# en `NinjaTrader/` |

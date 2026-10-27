@@ -50,8 +50,9 @@ paths:
 
 ## El plan de Chaumer (fase 6, 24 sep)
 
-Modelo **`claude-opus-5-5`**, `max_tokens` 16.000, `thinking: adaptive`, `effort: low`, historial de 20 días. En Opus 5.5 el
-razonamiento **no se puede apagar** (`disabled` / `enabled` dan 400) y cuenta dentro de `max_tokens`.
+Modelo **`claude-sonnet-5-5`** desde el 27/10 (D-050; antes `claude-opus-5-5`), `max_tokens` 16.000, `thinking: adaptive`,
+`effort: medium` (el esfuerzo va por modelo en `MODELOS`), historial de 20 días. El razonamiento **no se apaga**
+(`disabled` da 400 en los dos) y cuenta dentro de `max_tokens`. Los precios de `coach_uso` salen de `MODELOS`.
 
 - **El system son DOS bloques, en este orden:** A = el plan (`construirBloquePlan`: instrucciones fijas + los
   5 documentos de `plan_documentos`), **solo en días de la etapa 2**; B = el día (`buildSystemPrompt`). A va
@@ -153,10 +154,11 @@ como **Apertura / Zonas / Noticias** (`formatoContexto`). Los días de la etapa 
   revisar `trocearReglas`.
 - **Casillas:** sin fila (sin marcar) → «sin marcar: no cuenta», nunca ✗ (D-013, D-040).
 
-## Modo prueba (`?modelo=sonnet`)
+## Modo prueba (`?modelo=opus`)
 
-Para comparar modelos con un mismo día: el Coach usa Sonnet 5.5 (`MODELOS`), **no guarda nada** (ni automático
-ni con el botón) y avisa arriba. El consumo sí va a `coach_uso`, con su modelo y su precio.
+Para comparar modelos con un mismo día: con un `?modelo=` distinto de `MODELO_DEFECTO` (hoy, `?modelo=opus`) el Coach
+usa ese modelo con su esfuerzo, **no guarda nada** (ni automático ni con el botón) y avisa arriba. El consumo sí va a
+`coach_uso`, con su modelo y su precio.
 
 ## ⚠️ El formato de salida se define en DOS sitios
 

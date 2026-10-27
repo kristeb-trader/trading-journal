@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-27e | El Coach pasa a Sonnet 5.5, esfuerzo `medium` (D-050) |
 | 2026-10-27d | El Coach parte del veredicto del motor y lee solo las reglas del día (D-049) |
 | 2026-10-27c | El calendario del Bot: lo que operó de verdad, desde `bot_operaciones` |
 | 2026-10-27b | El calendario de Claude, con los contratos del plan: los que caben en $160 |
@@ -60,6 +61,15 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-10-27e — El Coach pasa a Sonnet 5.5, esfuerzo `medium` (D-050)
+
+Kris: no usaba el Coach porque le salía caro. El análisis del 27/10 se hizo con Opus y **el plan entero** (91.624
+tokens, $0,65 el día): empezó a las 11:37 y la versión con D-049 se había publicado a las 11:32, así que el navegador aún
+servía la anterior. Calidad muy buena: encontró el punto de referencia vivo a 12½ pts que Kris vio y anotó. Con D-049 +
+Sonnet `medium`, estimado ~$0,17–0,19 por día. Opus queda en `?modelo=opus` (no guarda). Prueba del Coach: 23/23.
 
 ---
 

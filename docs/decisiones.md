@@ -10,6 +10,27 @@
 
 ---
 
+## D-050 — El Coach pasa a Sonnet 5.5, con esfuerzo `medium`
+
+*Sustituye el modelo de D-025 (Opus 5.5, esfuerzo `low`).*
+
+**Decisión (Kris, 27/10/2026).** «No he usado el Coach porque me sale muy caro.» Modelo `claude-sonnet-5-5`, razonamiento
+adaptativo, esfuerzo `medium`. Opus 5.5 queda como modo prueba (`?modelo=opus`, no guarda nada).
+
+**Motivo.** Desde D-034 y D-049 lo difícil llega medido —el veredicto, la operación de Kris contra el motor, las velas
+exactas—: el Coach explica, no mide, y Sonnet cuesta la mitad ($2 / $10 por millón frente a $4 / $20). `medium` y no
+`low`: los días que importan (los que te sales del plan) piden razonar el porqué, y cuesta ~2 céntimos más. No `high`:
+más caro y lento sin ganancia clara aquí. Estimado con D-049: ~$0,17–0,19 por día (~$0,34 con Opus; $0,63 hasta hoy).
+
+**Sin `fallbacks` de modelo** ante una negativa de los filtros de seguridad: el Worker no reenvía la cabecera
+`anthropic-beta` que exigen, y para un análisis de trading el riesgo es bajo. Una negativa ya se trata (se retira la
+pregunta y se avisa). Si apareciera, se añade la cabecera en el Worker.
+
+**Descartado.** Seguir con Opus: el análisis del 27/10 con Opus fue muy bueno, pero Kris no usa el Coach por el coste, y
+un Coach que no se usa no aporta nada. La comparación con un mismo día queda posible con `?modelo=opus`.
+
+---
+
 ## D-049 — El Coach parte del veredicto del motor y lee solo las reglas del día
 
 *Cierra la «C» de D-034, antes de lo previsto: D-047 ya hizo del motor el juez oficial de la disciplina.*

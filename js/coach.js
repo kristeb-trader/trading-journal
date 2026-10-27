@@ -2,31 +2,36 @@
 const Coach = (() => {
 
   const CLAUDE_URL = 'https://broad-hall-c53f.kristerock.workers.dev/api/claude'
-  // Opus 5.5 desde el 24 sep (fase 6, decisión de Kris): lee el plan de Chaumer entero.
-  // MODO PRUEBA (03/10): con `?modelo=sonnet` en la dirección, el Coach usa Sonnet 5.5 y NO
-  // guarda nada, para comparar los dos modelos con un mismo día sin pisar el análisis bueno.
+  // Sonnet 5.5 desde el 27/10 (D-050, Kris: «me sale muy caro»). Desde D-049 lo difícil
+  // llega medido (el veredicto, tu operación, las velas): el Coach explica, no mide, y
+  // Sonnet cuesta la mitad. Opus 5.5 fue el modelo del 24/09 al 27/10 (D-025).
+  // MODO PRUEBA: con `?modelo=opus` en la dirección se usa el otro y NO se guarda nada,
+  // para comparar con un mismo día sin pisar el análisis bueno.
   // Precios en USD por millón de tokens (la escritura de caché: 2× con 1 h, 1,25× con 5 min).
+  // Esfuerzo: en Sonnet 5.5 los niveles están recalibrados y su defecto es `high`; `medium`
+  // deja razonar el «por qué» de los días en que te sales (~2 céntimos más que `low`).
+  // Opus se quedaba en `low` (su defecto es `medium`).
   const MODELOS = {
-    opus:   { id: 'claude-opus-5-5',   precio: { entrada: 4, salida: 20, cache1h: 8, cache5m: 5,   cacheLeida: 0.20 } },
-    sonnet: { id: 'claude-sonnet-5-5', precio: { entrada: 2, salida: 10, cache1h: 4, cache5m: 2.5, cacheLeida: 0.20 } },
+    sonnet: { id: 'claude-sonnet-5-5', esfuerzo: 'medium', precio: { entrada: 2, salida: 10, cache1h: 4, cache5m: 2.5, cacheLeida: 0.20 } },
+    opus:   { id: 'claude-opus-5-5',   esfuerzo: 'low',    precio: { entrada: 4, salida: 20, cache1h: 8, cache5m: 5,   cacheLeida: 0.20 } },
   }
+  const MODELO_DEFECTO = 'sonnet'
   const PRUEBA = (() => {
-    try { const m = new URLSearchParams(location.search).get('modelo'); return MODELOS[m] && m !== 'opus' ? m : null }
+    try { const m = new URLSearchParams(location.search).get('modelo'); return MODELOS[m] && m !== MODELO_DEFECTO ? m : null }
     catch { return null }
   })()
-  const MODEL      = MODELOS[PRUEBA || 'opus'].id
-  // Opus 5.5 piensa SIEMPRE (no se puede apagar) y el razonamiento sale del mismo
-  // presupuesto que la respuesta: con 8000 el diagnóstico podría cortarse a medias.
+  const MODEL      = MODELOS[PRUEBA || MODELO_DEFECTO].id
+  // El razonamiento sale del mismo presupuesto que la respuesta: con 8000 el diagnóstico
+  // podría cortarse a medias.
   const MAX_TOKENS = 16000
-  // En Opus 5.5 `adaptive` es lo único que se acepta (`disabled` y `enabled` dan 400);
-  // se deja escrito para que nadie crea que el Coach responde sin razonar.
+  // Razonamiento adaptativo: en Sonnet 5.5 y Opus 5.5 `disabled` da 400. Se deja escrito
+  // para que nadie crea que el Coach responde sin razonar.
   const THINKING   = { type: 'adaptive' }
   // El Coach es interactivo y el proxy no hace streaming: la respuesta entera viaja
-  // en una sola petición. `low` acota cuánto piensa y mantiene la latencia parecida
-  // a la de hoy. Si el análisis se queda corto, subir a 'medium' (una línea).
-  const EFFORT     = 'low'
+  // en una sola petición. El esfuerzo es el de cada modelo (arriba).
+  const EFFORT     = MODELOS[PRUEBA || MODELO_DEFECTO].esfuerzo
   // Precio del modelo en uso, para la fila de `coach_uso`.
-  const PRECIO = MODELOS[PRUEBA || 'opus'].precio
+  const PRECIO = MODELOS[PRUEBA || MODELO_DEFECTO].precio
   // Resúmenes de días anteriores que lee el Coach (ver cargarHistorialCompacto).
   const HISTORIAL_DIAS = 20
 
@@ -1353,7 +1358,7 @@ ${porNombre.parametros}
     programarToque(cuerpo, inicio, fecha)
 
     if (data?.stop_reason === 'refusal') {
-      // Opus 5.5 puede negarse a responder. Se retira el turno de Kris para que la
+      // El modelo puede negarse a responder (sus filtros de seguridad). Se retira el turno de Kris para que la
       // conversación no quede con una pregunta sin respuesta, y se dice en claro.
       chatHistory.pop()
       throw new Error('El modelo no ha querido responder a esto; prueba a reformular.')
