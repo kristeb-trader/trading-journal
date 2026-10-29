@@ -10,6 +10,30 @@
 
 ---
 
+## D-051 — Lo que decide el setup es a dónde va el objetivo; el reingreso por cambio de tendencia
+
+**Decisión (Kris, 28–29/10/2026, plan 3.52).** **Continuación** = rompimiento con consecución hacia un **espacio nuevo**:
+más allá del objetivo no hay ninguna zona activa nacida desde la apertura de Nueva York. **Reingreso** = hacia una **zona
+ya cotizada** en el día, con el camino libre; nace de un rompimiento que falla (forma a) o de un **cambio de tendencia**
+(forma b: el mercado frena, deja una zona que no rompe, deja la contraria y la rompe con consecución). La forma b no pide
+la fluidez de `R-40` y se opera en día de Fed. La zona a la que ir tiene que haber nacido desde la apertura: una de
+premercado no cuenta. Y `BLOQUE_DESDE` (D-045) pasa a **todos los días**, contra lo que se decidió el 22/10.
+
+**Motivo.** El 28/10 (Fed) Kris vio un reingreso alcista a las 8:54 que el motor llamaba Continuación y descartaba por el
+día de Fed: *«no es continuación, porque el camino no está libre, es una zona ya cotizada»*. Al revisar el 8/09 apareció
+un soporte que salía inactivo solo porque ese día se leía sin el bloque.
+
+**Medido antes de cambiar nada**, en copias aparte sobre 81 días. La primera versión (cualquier zona más allá, también de
+premercado) cambiaba 8 operaciones y perdía 100 puntos; con la zona nacida desde la apertura y el bloque en todos los
+días cambian 4 (28/10, 8/10, 8/09, 31/07), revisadas una a una: de 65 a 66 operaciones, de −144,50 a −172,00.
+
+**Alternativas descartadas.**
+- **«Espacio nuevo» = pasar del máximo o mínimo del día:** Kris eligió que no haya zona activa más allá del objetivo.
+- **Exigir la fluidez también en la forma b:** *«en un reingreso necesitamos es un cambio de tendencia»*.
+- **Contar las zonas de premercado como destino:** *«en ese caso no sería un reingreso, sino una continuación»*.
+
+---
+
 ## D-050 — El Coach pasa a Sonnet 5.5, con esfuerzo `medium`
 
 *Sustituye el modelo de D-025 (Opus 5.5, esfuerzo `low`).*

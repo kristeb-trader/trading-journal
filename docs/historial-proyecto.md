@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-29 | Lo que decide el setup es a dónde va el objetivo (plan 3.52): el reingreso por cambio de tendencia, la zona a la que ir nacida desde la apertura y el bloque en todos los días; antes, el 27/10, dos arreglos de zonas y tres cambios visuales del bot |
 | 2026-10-27g | El 13/10 el bot sí operó: un reinicio borraba su fila, y ya no |
 | 2026-10-27f | Claude se funde en el Bot: un solo calendario, real desde el 07/10 y simulado antes |
 | 2026-10-27e | El Coach pasa a Sonnet 5.5, esfuerzo `medium` (D-050) |
@@ -65,6 +66,31 @@
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
 
 ---
+
+## Checkpoint 2026-10-29 — Lo que decide el setup es a dónde va el objetivo (plan 3.52)
+
+**Lo que pasó.** El 28/10 (día de Fed) Kris vio un reingreso alcista a las 8:54 que el motor descartaba como Continuación.
+Al explicar la filosofía de cada setup quedó claro que lo que los separa es el destino: la Continuación va hacia un espacio
+nuevo; el Reingreso, hacia una zona ya cotizada, y puede nacer de un cambio de tendencia sin la fluidez de la Continuación.
+El 29/10 precisó que esa zona tiene que haber nacido desde la apertura, no en premercado. Al revisar el 8/09, la zona de la
+8:38 salía inactiva por leerse sin el bloque de la 3.50: se aplicó a todos los días. El 9/07 (27/10) Kris también confirmó
+que un borde compartido no cuenta como «entera más allá»: sin cambio.
+
+**Lo que se cambió** (D-051).
+- **Plan 3.52** (`07bd1ec`): `R-25`, `R-26` (forma b, zona nacida desde la apertura, caso de origen del 28/10), glosario,
+  checklist, `BLOQUE_DESDE` = todos los días. Sincronizado (`catalogo_reglas`: R-25, R-26 y dos líneas nuevas; `plan_documentos`,
+  huellas verificadas).
+- **Los dos motores** (`2aab690`), sello `L:61a11363…`: 81/81 iguales; 47 días cambian zonas o eventos, 4 la operación.
+- **Las fichas** del 1/09 al 29/10, rehechas: cambian el 8/09 (sin operación), el 8/10 (Reingreso −19,75) y el 28/10
+  (Reingreso +33,25).
+- **El portal** (`a941770`): Reingreso «hacia una zona ya cotizada» con sus dos formas, Continuación «hacia un espacio
+  nuevo», y la tabla de diferencias.
+
+**Antes, el 27/10.** Dos arreglos de zonas en los dos motores (`9f52bd7`: la zona que estira la del borde de una banda, y
+recortar antes de estirar) y tres cambios visuales del bot y la vista (`c3f701c`: «Entrada/Stop/Target Bot», zigzag sin
+puntos, franja con más contraste).
+
+**Pendiente.** Kris tiene que copiar `MotorChaumer.cs` a NinjaTrader y recompilar fuera de la ventana.
 
 ## Checkpoint 2026-10-27g — El 13/10 el bot sí operó: un reinicio borraba su fila
 
