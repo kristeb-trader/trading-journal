@@ -11,7 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
-| 2026-10-29 | Lo que decide el setup es a dónde va el objetivo (plan 3.52): el reingreso por cambio de tendencia, la zona a la que ir nacida desde la apertura y el bloque en todos los días; antes, el 27/10, dos arreglos de zonas y tres cambios visuales del bot |
+| 2026-10-29 | Lo que decide el setup es a dónde va el objetivo (plan 3.52): el reingreso por cambio de tendencia, la zona a la que ir nacida desde la apertura y el bloque en todos los días; y la 3.53: un retroceso del movimiento contrario no es un IRI; antes, el 27/10, dos arreglos de zonas y tres cambios visuales del bot |
 | 2026-10-27g | El 13/10 el bot sí operó: un reinicio borraba su fila, y ya no |
 | 2026-10-27f | Claude se funde en el Bot: un solo calendario, real desde el 07/10 y simulado antes |
 | 2026-10-27e | El Coach pasa a Sonnet 5.5, esfuerzo `medium` (D-050) |
@@ -90,6 +90,11 @@ que un borde compartido no cuenta como «entera más allá»: sin cambio.
 recortar antes de estirar) y tres cambios visuales del bot y la vista (`c3f701c`: «Entrada/Stop/Target Bot», zigzag sin
 puntos, franja con más contraste).
 
+**Y la 3.53, el mismo día.** Kris no entró a las 8:47 del 29/10 y el bot sí: para él, la subida de la 8:36 a la 8:37
+era el retroceso de la bajada (la bajada volvió exactamente a su mínimo), así que el primer IRI alcista era el de la 8:46.
+Plan 3.53 (`c975619`, `R-40` forma C) y motores (`1dc8140`, sello `L:019fbcf4…`): solo cambia el 29/10, que queda sin
+operación. Si la bajada pasa del mínimo manda la regla del 30/09 (Kris, sobre el 11/08).
+
 **Pendiente.** Kris tiene que copiar `MotorChaumer.cs` a NinjaTrader y recompilar fuera de la ventana.
 
 ## Checkpoint 2026-10-27g — El 13/10 el bot sí operó: un reinicio borraba su fila
