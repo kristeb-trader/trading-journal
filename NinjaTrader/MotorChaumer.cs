@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:61a1136342b20d28 C:fb70d31ff08018e5";
+        public const string SELLO = "L:019fbcf4d6384056 C:3ffc22d49617e909";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -875,7 +875,15 @@ namespace NinjaTrader.NinjaScript
                         if (d > 0 ? k.H > hi + m.P.Tick / 2 : k.L < lo - m.P.Tick / 2)
                         {
                             rota[z] = new Rota { I = i, Ext = d > 0 ? k.H : k.L, Consec = 0 };
-                            if (estado[d].Que == "espera")
+                            // Plan 3.53 (29/10/2026): si el movimiento contrario volvió a tocar el arranque de esa corrida,
+                            // era su retroceso: romper su zona no es IRI y el primer IRI sigue pendiente
+                            double ini0 = piv[n - 1].Precio; bool tocado = false;
+                            for (int j = z.IOrg + 1; j < i; j++) if (d > 0 ? D[j].L <= ini0 : D[j].H >= ini0) { tocado = true; break; }
+                            if (estado[d].Que == "espera" && tocado)
+                            {
+                                if (!veto.ContainsKey(z)) veto[z] = "era el retroceso del movimiento contrario: no cuenta como IRI";
+                            }
+                            else if (estado[d].Que == "espera")
                             {
                                 if (!veto.ContainsKey(z))
                                     veto[z] = "es el primer IRI en este sentido tras un movimiento contrario: se espera un segundo IRI";

@@ -24,7 +24,7 @@ def parametros_del_plan():
     if '__file__' not in globals():
         return dict(TICK=0.25, STOP_MAX=80.0, RIESGO_MAX=160.0, PLAZO_CONSECUCION=5,
                     UMBRAL_VOL=None, VENTANA_NOTICIA=5, CIERRE_POR_HORA=1650,
-                    VUELTA_EN_VELA_DESDE=20261021, BLOQUE_DESDE=20261022)
+                    VUELTA_EN_VELA_DESDE=20261021, BLOQUE_DESDE=20000101)
     ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '01_Plan', 'reglas.json')
     P = json.load(open(ruta, encoding='utf-8')).get('parametros', {})
     out = {}
@@ -820,7 +820,14 @@ class Fluidez:
             if r is None:
                 if (k['h'] > hi + TICK/2) if d > 0 else (k['l'] < lo - TICK/2):
                     self.rota[id(z)] = [i, k['h'] if d > 0 else k['l'], False]
-                    if self.estado[d][0] == 'espera':
+                    # Plan 3.53 (29/10/2026, Kris): si despues de esa corrida el movimiento contrario volvio a tocar
+                    # su arranque, la corrida era el RETROCESO del movimiento contrario: romper su zona no es IRI y
+                    # el primer IRI sigue pendiente. Si lo PASA, manda A (el retroceso se paso), como siempre.
+                    ini0 = self.piv[n-1][1]
+                    if self.estado[d][0] == 'espera' and any(((self.D[j]['l'] <= ini0) if d > 0 else (self.D[j]['h'] >= ini0))
+                                                            for j in range(z.i_org+1, i)):
+                        self.veto.setdefault(id(z), 'era el retroceso del movimiento contrario: no cuenta como IRI')
+                    elif self.estado[d][0] == 'espera':
                         # cuenta como primer IRI aunque ya estuviese descartado por otra cosa: es el
                         # rompimiento que no se opera (16/07: "se debe esperar que genere otro IRI bajista")
                         self.veto.setdefault(id(z), 'es el primer IRI en este sentido tras un movimiento contrario: se espera un segundo IRI')
