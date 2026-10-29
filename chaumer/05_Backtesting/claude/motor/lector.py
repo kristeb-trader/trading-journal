@@ -722,12 +722,14 @@ def _punto_de_referencia(res, i, e, t, nd):
 def _zona_a_testear(Z, i, t, nd):
     """R-26 paso 6, plan 3.47 (14/10/2026, con el operador) · La zona activa a la que el precio
     puede ir a testear: una zona activa en la direccion del reingreso, ENTERA mas alla del
-    objetivo. Cualquier zona activa (tambien de premercado), a cualquier distancia; el objetivo
-    no tiene que llegar a ella. Devuelve la mas cercana, o None: camino libre, no hay reingreso."""
+    objetivo. Cualquier zona activa nacida DESDE LA APERTURA de Nueva York, a cualquier distancia; el
+    objetivo no tiene que llegar a ella. Devuelve la mas cercana, o None: camino libre, no hay reingreso.
+    Plan 3.52 (29/10/2026, Kris): una zona de premercado no cuenta; ir hacia ella es Continuacion."""
     mejor = None
     for z in Z:
         if z.i > i: continue
         if z.fin is not None and z.fin <= i: continue
+        if z.pm: continue
         lo, hi = z.en(i)
         if (hi <= t) if nd < 0 else (lo >= t):
             if mejor is None or ((hi > mejor.en(i)[1]) if nd < 0 else (lo < mejor.en(i)[0])): mejor = z
@@ -1062,6 +1064,25 @@ def detectar_setups(res, solo_reingresos=False):
             elif nd<0 and k['h']>=zlo and k['l'] < zlo-TICK/2: d,e0='abajo', k['l']
             else: continue
             z.roto=(d,i,e0)
+            # Plan 3.52 (29/10/2026, Kris): el setup lo decide A DONDE VA el objetivo. Si mas alla del objetivo
+            # hay una zona activa nacida desde la apertura (ya cotizada), es un REINGRESO, no una Continuacion:
+            # el cambio de tendencia busca volver a esa zona. Sin fluidez (R-40), tambien en dia de Fed, y con
+            # los filtros del reingreso. Sin esa zona, el objetivo es espacio nuevo: Continuacion, como siempre.
+            # Caso de origen: 28/10/2026 (Fed), la R de la 8:52 rota a las 8:54, consecucion 8:55.
+            seg=list(range(z.r_ini, i+1))
+            st = min(D[j]['l'] for j in seg) if nd>0 else max(D[j]['h'] for j in seg)
+            e=e0+TICK*nd
+            if _zona_a_testear(Z, i, e+abs(e-st)*nd, nd) is not None:
+                o,motivo,t,r=_evaluar(Z,i,'Reingreso',nd,e,st,None)
+                if t is not None: res['reingresos'].append((i,e,t,nd))
+                if o is not None:
+                    pr=_punto_de_referencia(res,i,e,t,nd)
+                    if pr is not None: o, motivo = None, f"el objetivo pasa del punto de referencia {pr:.2f}"
+                tag=(f"{hh(k)}  REINGRESO {'alcista' if nd>0 else 'bajista'} hacia una zona ya cotizada · entrada {e:.2f} · stop {st:.2f}"
+                     + (f" · objetivo {t:.2f} · riesgo {r:.2f}" if t else ""))
+                if o: orden=_colocar(o, tag, ev, dia, k)
+                else: ev.append(tag+f"  ✗ descartado — {motivo}")
+                break
             if solo_reingresos:
                 ev.append(f"{hh(k)}  rompimiento de {z} — día de Fed: no se opera la continuación")
                 break

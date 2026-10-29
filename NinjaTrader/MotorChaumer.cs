@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:085f8ece600c5d16 C:e8465e7e85542a21";
+        public const string SELLO = "L:61a1136342b20d28 C:fb70d31ff08018e5";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -745,6 +745,7 @@ namespace NinjaTrader.NinjaScript
             {
                 if (z.I > i) continue;
                 if (z.Fin != null && z.Fin <= i) continue;
+                if (z.Pm) continue;   // plan 3.52 (29/10/2026): solo zonas nacidas desde la apertura
                 var g = z.En(i);
                 if (nd < 0 ? g[1] <= t : g[0] >= t)
                     if (mejor == null || (nd < 0 ? g[1] > mejor.En(i)[1] : g[0] < mejor.En(i)[0])) mejor = z;
@@ -1131,6 +1132,29 @@ namespace NinjaTrader.NinjaScript
                     else if (nd < 0 && k.H >= zlo && k.L < zlo - P.Tick / 2) { d = "abajo"; e0 = k.L; }
                     else continue;
                     z.Roto = new Roto { Dir = d, I = i, Ex = e0 };
+                    // Plan 3.52 (29/10/2026): hacia una zona activa nacida desde la apertura es un REINGRESO, no una
+                    // Continuación: sin fluidez, también en día de Fed, con los filtros del reingreso.
+                    {
+                        double stb = nd > 0 ? double.MaxValue : double.MinValue;
+                        for (int j = z.RIni.Value; j <= i; j++) stb = nd > 0 ? Math.Min(stb, D[j].L) : Math.Max(stb, D[j].H);
+                        double eb = e0 + P.Tick * nd;
+                        if (ZonaATestear(Z, i, eb + Math.Abs(eb - stb) * nd, nd) != null)
+                        {
+                            string motivoB; double? tb; double rb;
+                            var ob = Evaluar(Z, i, "Reingreso", nd, eb, stb, out motivoB, out tb, out rb);
+                            if (tb != null) res.Reingresos.Add(new Reingreso { I = i, E = eb, T = tb.Value, Nd = nd });
+                            if (ob != null)
+                            {
+                                var prb = PuntoDeReferencia(res, i, eb, tb.Value, nd);
+                                if (prb != null) { ob = null; motivoB = "el objetivo pasa del punto de referencia " + F2(prb.Value); }
+                            }
+                            string tagB = Hh(k) + "  REINGRESO " + (nd > 0 ? "alcista" : "bajista") + " hacia una zona ya cotizada · entrada " + F2(eb) + " · stop " + F2(stb)
+                                          + (tb != null ? " · objetivo " + F2(tb.Value) + " · riesgo " + F2(rb) : "");
+                            if (ob != null) orden = Colocar(ob, tagB, ev, k);
+                            else ev.Add(tagB + "  ✗ descartado — " + motivoB);
+                            break;
+                        }
+                    }
                     if (soloReingresos)
                     {
                         ev.Add(Hh(k) + "  rompimiento de " + z + " — día de Fed: no se opera la continuación");
