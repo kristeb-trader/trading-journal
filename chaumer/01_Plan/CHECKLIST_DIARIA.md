@@ -3,7 +3,7 @@
 > **Se ejecuta de arriba abajo. No se decide nada que no esté aquí.**
 > Cada línea cita su regla. Si una respuesta es **NO** donde dice parar, **se para** — no se evalúa, no se matiza.
 
-**Versión del plan:** 3.51 · 2026-10-22 · **34 reglas**
+**Versión del plan:** 3.52 · 2026-10-29 · **34 reglas**
 
 ---
 
@@ -62,7 +62,7 @@
 |---|---|---|
 | ☐ | **Primer setup válido.** No se compara con posibles setups posteriores ni se espera uno mejor | `R-28` |
 | ☐ | Se buscan entradas en **los dos sentidos**; la vela de apertura no sesga el día | `R-07` |
-| ☐ | ¿Es **Continuación** o **Reingreso**? | `R-25` / `R-26` |
+| ☐ | ¿Es **Continuación** o **Reingreso**? Lo decide **a dónde va el objetivo**: hacia un espacio nuevo (más allá no hay ninguna zona activa nacida desde la apertura) → Continuación; hacia una zona ya cotizada → Reingreso, también si nace de romper con consecución la zona contraria tras un cambio de tendencia (forma b, sin fluidez) | `R-25` / `R-26` |
 | ☐ | *(solo Continuación)* **¿La corrida es FLUIDA?** Tres cosas seguidas: la corrida dejó su zona · **el retroceso no se pasó** (mide menos que su corrida) · y **ésta es la corrida siguiente, que la rompe**. Cada corrida se empareja con el retroceso que viene justo después de ella | `R-40` |
 | ☐ | *(solo Reingreso)* ¿La zona sigue viva? El reingreso **no tiene plazo de velas**: vale aunque el precio ya haya pasado del extremo de la vela de consecución, si tiene espacio de recorrido (los filtros de abajo) | `R-26` |
 
@@ -81,7 +81,7 @@
 | ☐ | Stop ≤ `STOP_MAX` | `R-31` | **NO SE OPERA** |
 | ☐ | Target 1:1 **libre de zonas vigentes** | `R-32`, `R-21` | **NO SE OPERA** |
 | ☐ | *(solo Reingreso)* Target **sin pasar del punto de referencia** vivo más cercano que quede entre la entrada y el objetivo — el nivel de referencia de cualquier retroceso. Muere solo cuando **una vela CIERRA** más allá; la mecha no lo rompe | `R-41`, `R-26` | **NO SE OPERA** |
-| ☐ | *(solo Reingreso)* ¿Hay una **zona activa más allá del objetivo**, en la dirección del reingreso, a la que el precio pueda ir a testear? Cualquier zona activa, también de premercado, a cualquier distancia | `R-26`, `R-32` | **NO SE OPERA.** Camino libre: es terreno de la Continuación |
+| ☐ | *(solo Reingreso)* ¿Hay una **zona activa más allá del objetivo**, en la dirección del reingreso, a la que el precio pueda ir a testear? Cualquier zona activa **nacida desde la apertura** (una de premercado no cuenta), a cualquier distancia | `R-26`, `R-32` | **NO SE OPERA.** Camino libre: es terreno de la Continuación |
 | ☐ | *(solo Continuación)* ¿La corrida es fluida? | `R-40` | **NO SE OPERA ESE ROMPIMIENTO.** La zona sigue viva. Se espera a otro IRI que deje una zona nueva **entera** más allá de ésta — por encima para largo, por debajo para corto |
 | ☐ | ¿Es día de FOMC y el setup es una **Continuación**? | `R-36` | **NO SE OPERA** |
 

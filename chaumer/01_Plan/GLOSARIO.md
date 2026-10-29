@@ -316,7 +316,7 @@ Este par es el mecanismo central de la estrategia. **Sirve para dos cosas a la v
 
 ## CONTINUACIÓN
 
-Uno de los **dos únicos setups** del plan. **Opera el rompimiento que funciona.** Es **autocontenido**: el propio setup crea la zona que después rompe. Es un **IRI fluido** más su consecución:
+Uno de los **dos únicos setups** del plan. **Opera el rompimiento que funciona, hacia un espacio nuevo**: sigue la tendencia hacia donde el mercado no ha cotizado en el día, es decir, **más allá del objetivo no hay ninguna zona activa nacida desde la apertura** (plan 3.52). Es **autocontenido**: el propio setup crea la zona que después rompe. Es un **IRI fluido** más su consecución:
 
 `R-05` corrida → `R-06` retroceso → `R-09` zona → `R-20` rompimiento → **consecución = entrada**
 
@@ -328,11 +328,16 @@ Uno de los **dos únicos setups** del plan. **Opera el rompimiento que funciona.
 
 ## REINGRESO
 
-El otro setup. **Opera el rompimiento que falló:** sobre una zona hay rompimiento + consecución, el precio **no continúa**, **atraviesa la zona entera y sobrepasa el borde contrario** —esa es la **vela de reingreso**, que hace de vela de rompimiento— y la consecución de esa vela es la entrada. **No basta con tocar la zona.** **Y solo si en esa dirección queda otra zona activa, más allá del objetivo, a la que el precio pueda ir a testear**: sin ella, el precio tiene camino libre y no hay reingreso (plan 3.47).
+El otro setup. **Va a buscar una zona ya cotizada en el día**: una zona activa **nacida desde la apertura** de Nueva York, más allá del objetivo, con el camino libre hasta el objetivo (sin zonas ni puntos de referencia en contra). Una zona de premercado no cuenta: ir hacia ella es Continuación (plan 3.52). Nace de dos maneras:
+
+- **(a) El rompimiento que falló:** sobre una zona hay rompimiento + consecución, el precio **no continúa**, **atraviesa la zona entera y sobrepasa el borde contrario** —esa es la **vela de reingreso**, que hace de vela de rompimiento— y la consecución de esa vela es la entrada. **No basta con tocar la zona.**
+- **(b) El cambio de tendencia:** el mercado frena y deja una zona que no rompe, deja la zona contraria, la rompe con consecución, y el objetivo va hacia una zona ya cotizada. No pide la fluidez de la Continuación (plan 3.52).
+
+Sin zona a la que ir, el precio tiene camino libre y no hay reingreso: es terreno de la Continuación (plan 3.47).
 
 > 🔴 **EL REINGRESO NO TIENE PLAZO DE VELAS** *(plan 3.51)*. Mientras la zona esté viva, puede llegar en cualquier vela después de la consecución, **siempre que tenga espacio de recorrido**: riesgo dentro del máximo, ninguna zona activa ni punto de referencia vivo entre la entrada y el objetivo, y una zona a la que ir. Hasta la 3.50 era *«inmediato o no es»*.
 
-**Direcciones:** **Reingreso alcista** · **Reingreso bajista**, contraria al rompimiento fallido.
+**Direcciones:** **Reingreso alcista** · **Reingreso bajista**: en la forma a, contraria al rompimiento fallido; en la forma b, la del rompimiento.
 
 **Regla:** `R-26` · **Diagrama:** `../02_Assets/diagramas/R-26_reingreso.png`
 

@@ -1,6 +1,6 @@
 # FICHA DE MARCADO — generada automáticamente
 
-> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-10-22 con `generar_ficha.py`.
+> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-10-29 con `generar_ficha.py`.
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
@@ -388,7 +388,7 @@ Entra siempre con orden stop en reposo colocada al cierre de la vela de rompimie
 
 #### `R-25` · Setup Continuación
 
-Un IRI —corrida, retroceso, zona y rompimiento de esa zona— y su consecución. La consecución es la entrada.
+Un IRI —corrida, retroceso, zona y rompimiento de esa zona— y su consecución, **hacia un espacio nuevo**: más allá del objetivo no hay ninguna zona activa nacida desde la apertura. La consecución es la entrada.
 
 **Cómo se aplica**
 
@@ -412,7 +412,7 @@ Un IRI —corrida, retroceso, zona y rompimiento de esa zona— y su consecució
 
 #### `R-26` · Setup Reingreso
 
-Tras un rompimiento con consecución que falla, el precio recupera la zona entera y se opera en sentido contrario, **siempre que en ese sentido haya otra zona activa a la que el precio pueda ir a testear.**
+Se opera hacia **una zona ya cotizada en el día**: una zona activa nacida desde la apertura de Nueva York, más allá del objetivo, a la que el precio puede ir a testear, con el camino libre hasta el objetivo. Nace de dos maneras: **(a)** un rompimiento con consecución que falla, y el precio atraviesa la zona entera en sentido contrario; o **(b)** el mercado frena, cambia de tendencia y rompe con consecución la zona contraria hacia esa zona ya cotizada.
 
 **Cómo se aplica**
 
@@ -423,16 +423,17 @@ Tras un rompimiento con consecución que falla, el precio recupera la zona enter
 | 3 | El precio **atraviesa la zona entera y SOBREPASA el borde contrario** → **vela de reingreso**. Alcista: supera el **borde superior** del soporte. Bajista: supera el **borde inferior** de la resistencia. **No basta con tocar la zona.** Esta vela hace de vela de rompimiento |
 | 4 | **Consecución** ≥1 `TICK` más allá de la vela de reingreso ← **ENTRADA** (`R-24`) |
 | 5 | 🔴 El **objetivo debe caber dentro del punto de referencia** (`R-41`) |
-| 6 | 🔴 **Tiene que haber una zona a la que ir a testear:** una zona **activa** (`R-21`) en la dirección del reingreso, **entera más allá del objetivo**. Bajista: por debajo del objetivo. Alcista: por encima. **Cualquier zona activa**, soporte o resistencia, también de premercado (`R-15`), **a cualquier distancia**. El objetivo sigue siendo 1:1 (`R-32`): **no tiene que llegar a esa zona, basta con que exista.** Sin esa zona **no hay reingreso** |
+| 6 | 🔴 **Tiene que haber una zona a la que ir a testear:** una zona **activa** (`R-21`) en la dirección del reingreso, **entera más allá del objetivo**. Bajista: por debajo del objetivo. Alcista: por encima. **Cualquier zona activa nacida desde la apertura** de Nueva York, soporte o resistencia, **a cualquier distancia**; **una zona de premercado no cuenta** (plan 3.52): ir hacia ella es Continuación. El objetivo sigue siendo 1:1 (`R-32`): **no tiene que llegar a esa zona, basta con que exista.** Sin esa zona **no hay reingreso** |
 
 - **🔴 El reingreso no tiene plazo de velas** *(plan 3.51, 22/10/2026)*. **Mientras la zona esté viva**, la vela de reingreso puede llegar en cualquier vela después de la consecución —también después de que el precio haya pasado del extremo de la vela de consecución—, **siempre que tenga espacio de recorrido**: el riesgo dentro de `STOP_MAX` (`R-31`), ninguna zona activa entre la entrada y el objetivo (`R-32`), ningún punto de referencia vivo en contra (`R-41`) y una zona a la que ir más allá del objetivo (paso 6). Hasta la 3.50 decía *«el reingreso es inmediato o no es»*: la ventana se cerraba en cuanto el precio pasaba del extremo de la vela de consecución (27/08/2026).
 - **El `PLAZO_CONSECUCION` de `R-20` no limita cuándo llega la vela de reingreso:** su límite es la vida de la zona. Sí limita la vida de la orden (`R-29`), como en cualquier setup.
+- **🔀 Forma b — el cambio de tendencia** *(plan 3.52, 29/10/2026)*. El mercado frena y deja una zona que no rompe; deja después la zona contraria, la rompe con consecución, y **más allá del objetivo hay una zona activa nacida desde la apertura** (ya cotizada). Ese rompimiento **no es una Continuación sino un Reingreso**: lo que busca es volver a esa zona. Se opera como la Continuación —entrada en la consecución, stop en el extremo que hizo el mercado desde que nació la zona hasta el rompimiento, objetivo 1:1— pero con los filtros del Reingreso: riesgo dentro de `STOP_MAX`, ninguna zona activa ni punto de referencia vivo entre la entrada y el objetivo. **No pide la fluidez de la Continuación** (`R-40`): pide un cambio de tendencia. Y como es Reingreso, **se opera también en día de Fed** (`R-36`).
 - **🔑 La misma vela puede cerrar el rompimiento fallido y abrir el reingreso.** Si la vela que da la **consecución** del rompimiento se da la vuelta dentro del mismo minuto, atraviesa la zona entera y sale por el borde contrario, **esa misma vela es a la vez consecución y vela de reingreso**. No se exige una vela posterior.
 - **🕯️ Pero solo si la consecución llegó primero.** Solo se piensa en reingreso **después** de que llega la consecución. Cuando la consecución y la vuelta a través de la zona caen en la misma vela, el orden lo dice su color —el mismo criterio que para las zonas (`R-09`) y para la orden (`R-29`)—: **vela blanca, primero el máximo; vela azul, primero el mínimo**. Un reingreso **bajista** de una sola vela necesita vela **blanca** (primero la consecución arriba, después la vuelta abajo); uno **alcista**, vela **azul**. Si el color dice lo contrario, el precio atravesó la zona **antes** de la consecución: no es un rompimiento que falla, y **en esa vela no hay reingreso**.
 - **Vela de consecución sin cuerpo** (apertura = cierre): la consecución **cuenta** —el precio pasó del extremo de la vela de rompimiento, sea cual sea el color—, pero sin color no se sabe qué llegó primero, así que **esa vela no es vela de reingreso**: se mira lo que hace el precio después.
 - **🔴 Sin zona a la que ir, no hay reingreso.** Si en la dirección del reingreso no queda ninguna zona activa más allá del objetivo, el precio tiene **camino libre**, y el camino libre es terreno de la Continuación, no del Reingreso: ese rompimiento fallido no se opera. Se suma a los otros dos filtros del objetivo, no los sustituye: entre la entrada y el objetivo sigue sin poder haber ninguna zona activa (`R-32`) ni ningún punto de referencia vivo (`R-41`).
 - **Cuándo se mira:** al poner la orden, con las zonas activas de ese momento, como los demás filtros; y otra vez si la orden se vuelve a poner tras una noticia roja (`R-35`). Con la orden puesta no hace falta vigilarla: la zona está más allá del objetivo y el objetivo más allá de la entrada, así que el precio no puede llegar a ella sin llenar antes la orden.
-- **Dirección:** contraria al rompimiento fallido.
+- **Dirección:** en la forma a, contraria al rompimiento fallido; en la forma b, la del rompimiento, hacia la zona ya cotizada.
 - **Filtro propio — el punto de referencia (`R-41`):** el objetivo tiene que quedar del lado de dentro del nivel de referencia de **cualquier retroceso vivo** que quede entre la entrada y el objetivo; ese nivel muere cuando una vela **cierra** más allá. Si el objetivo lo pasa, **el reingreso es inválido y no se opera**.
 - **La orden:** Stop Market al cierre de la vela de reingreso, en el nivel de consecución. **Se comprueba el punto de referencia antes de enviarla.**
 
@@ -704,7 +705,7 @@ Ejecuta la sesión siguiendo la checklist diaria **en orden**, y registra **toda
 | **`VENTANA_REINGRESO`** | **mientras la zona esté viva** | `R-26`. Sin plazo de velas: el reingreso vale siempre que tenga espacio de recorrido *(plan 3.51, 22/10/2026)*. Hasta la 3.50, hasta que el precio superara el extremo de la vela de consecución (*«inmediato o no es»*, 27/08/2026) |
 | **`UMBRAL_50`** | 50 % | zonas entre zonas (`R-12`) |
 | **`VUELTA_EN_VELA_DESDE`** | **20261021** (21/10/2026) | `R-05` · `R-06`: desde ese día, una vela puede dar dos vueltas. Los días anteriores se leen con una sola, como se leyeron |
-| **`BLOQUE_DESDE`** | **20261022** (22/10/2026) | `R-11` · `R-13` · `R-21`: desde ese día, la apéndice forma bloque con su zona y la zona que nace tras un traspaso no estira la vieja. Los días anteriores, como se leyeron |
+| **`BLOQUE_DESDE`** | **20000101** (todos los días) | `R-11` · `R-13` · `R-21`: la apéndice forma bloque con su zona y la zona que nace tras un traspaso no estira la vieja. Hasta la 3.51 valía solo desde el 22/10/2026; el 29/10/2026 el operador lo extendió a **todos los días** (caso del 8/09) |
 
 ## Volumen y sesión
 

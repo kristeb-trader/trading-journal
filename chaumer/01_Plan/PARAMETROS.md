@@ -32,7 +32,7 @@
 | **`VENTANA_REINGRESO`** | **mientras la zona esté viva** | `R-26`. Sin plazo de velas: el reingreso vale siempre que tenga espacio de recorrido *(plan 3.51, 22/10/2026)*. Hasta la 3.50, hasta que el precio superara el extremo de la vela de consecución (*«inmediato o no es»*, 27/08/2026) |
 | **`UMBRAL_50`** | 50 % | zonas entre zonas (`R-12`) |
 | **`VUELTA_EN_VELA_DESDE`** | **20261021** (21/10/2026) | `R-05` · `R-06`: desde ese día, una vela puede dar dos vueltas. Los días anteriores se leen con una sola, como se leyeron |
-| **`BLOQUE_DESDE`** | **20261022** (22/10/2026) | `R-11` · `R-13` · `R-21`: desde ese día, la apéndice forma bloque con su zona y la zona que nace tras un traspaso no estira la vieja. Los días anteriores, como se leyeron |
+| **`BLOQUE_DESDE`** | **20000101** (todos los días) | `R-11` · `R-13` · `R-21`: la apéndice forma bloque con su zona y la zona que nace tras un traspaso no estira la vieja. Hasta la 3.51 valía solo desde el 22/10/2026; el 29/10/2026 el operador lo extendió a **todos los días** (caso del 8/09) |
 
 ## Volumen y sesión
 
