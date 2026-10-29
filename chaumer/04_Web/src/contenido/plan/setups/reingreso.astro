@@ -10,12 +10,23 @@ import { v } from './_datos.mjs';
 ---
 
 <section class="ap" id="reingreso">
-  <h2>Reingreso · rompimiento fallido <Refs cods="R-26" /></h2>
+  <h2>Reingreso · hacia una zona ya cotizada <Refs cods="R-26" /></h2>
   <p>
-    Es el contrario exacto de la Continuación. Aquí el rompimiento se confirmó pero el
-    precio <strong>no continuó</strong>: se dio la vuelta y se comió la zona
-    entera. Se opera esa vuelta.
+    El Reingreso <strong>va a buscar una zona donde el mercado ya cotizó ese
+    día</strong>: una zona activa nacida después de la apertura de Nueva York,
+    más allá del objetivo, con el camino libre hasta el objetivo. Lo que lo
+    distingue de la Continuación no es la forma, es <strong>a dónde va</strong>:
+    la Continuación va hacia un espacio nuevo; el Reingreso, hacia una zona que
+    ya existe.
   </p>
+  <p>Nace de dos maneras:</p>
+  <dl class="datos">
+    <dt>a) El rompimiento que falló</dt>
+    <dd>El rompimiento se confirmó pero el precio <strong>no continuó</strong>: se dio la vuelta y se comió la zona entera. Se opera esa vuelta.</dd>
+    <dt>b) El cambio de tendencia</dt>
+    <dd>El mercado frena y deja una zona que <strong>no rompe</strong>. Deja después la zona contraria, la rompe y la confirma, y el objetivo va hacia una zona ya cotizada. Se opera como una Continuación, pero <strong>sin pedir la corrida fluida</strong>: lo que pide es el cambio de tendencia.</dd>
+  </dl>
+  <p>La forma a, paso a paso:</p>
 
   <figure class="gr">
     <img src="/conceptos/11-reingreso.png" alt="Un Reingreso: rompimiento con consecución que falla y el precio recupera la zona entera" loading="lazy" />
@@ -31,11 +42,11 @@ import { v } from './_datos.mjs';
 
   <dl class="datos">
     <dt>Dirección</dt>
-    <dd>Contraria a la del rompimiento que falló</dd>
+    <dd>En la forma a, contraria a la del rompimiento que falló. En la forma b, la del rompimiento, hacia la zona ya cotizada</dd>
     <dt>Plazo para que aparezca</dt>
     <dd><strong>Ninguno.</strong> El límite de {v('PLAZO_CONSECUCION')} no aplica aquí</dd>
     <dt>Dónde va el stop</dt>
-    <dd>En el extremo de la <strong>corrida fallida</strong>, la que rompió y no continuó</dd>
+    <dd>En la forma a, en el extremo de la <strong>corrida fallida</strong>, la que rompió y no continuó. En la forma b, como en la Continuación</dd>
     <dt>Filtros propios</dt>
     <dd>El objetivo <strong>no puede pasar del punto de referencia</strong>, y <strong>tiene que haber una zona a la que ir</strong></dd>
   </dl>
@@ -45,8 +56,9 @@ import { v } from './_datos.mjs';
     Con el Reingreso se busca una probabilidad en esa dirección: que el precio
     <strong>tenga adónde ir a testear</strong>. Por eso, en la dirección del
     Reingreso tiene que quedar <strong>otra zona activa, entera más allá del
-    objetivo</strong>. Vale cualquiera, también una de premercado, y a
-    cualquier distancia.
+    objetivo</strong>, nacida <strong>después de la apertura de Nueva
+    York</strong>, a cualquier distancia. Una zona de premercado no cuenta: ir
+    hacia ella es Continuación.
   </p>
   <dl class="datos">
     <dt>El objetivo</dt>
