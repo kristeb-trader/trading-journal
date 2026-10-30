@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-10-27
+**Última actualización:** 2026-10-30
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-10-30 | La Curva de Equity gana el ancho de la derecha: el valor final va dentro y busca sitio |
 | 2026-10-29 | Lo que decide el setup es a dónde va el objetivo (plan 3.52): el reingreso por cambio de tendencia, la zona a la que ir nacida desde la apertura y el bloque en todos los días; y la 3.53: un retroceso del movimiento contrario no es un IRI; antes, el 27/10, dos arreglos de zonas y tres cambios visuales del bot |
 | 2026-10-27g | El 13/10 el bot sí operó: un reinicio borraba su fila, y ya no |
 | 2026-10-27f | Claude se funde en el Bot: un solo calendario, real desde el 07/10 y simulado antes |
@@ -67,6 +68,23 @@
 
 ---
 
+## Checkpoint 2026-10-30 — La Curva de Equity gana el ancho de la derecha
+
+- **El valor final va dentro de la gráfica** (`pintarEquity`, `js/metrics.js`): el margen derecho que le reservaba se
+  queda en 8 px y la curva llega al borde. Vale para todas las que la usan: Mío, Chaumer, Bot, manual, Análisis y
+  Backtesting. Dentro ya se había probado el 23/09 y se montaba sobre la línea, así que ahora **busca sitio**: encima o
+  debajo del último punto y, si la línea pasa por ahí, una esquina libre; lo decide con las posiciones finales, para no
+  saltar durante la animación. La línea punteada hasta la etiqueta sobra y se quita. La curva comparada de la pantalla
+  principal no se toca: sus etiquetas siguen a la derecha.
+- **Fuera la nota «Simulado: lo que marca el motor…»** de la leyenda del Bot (Kris). Se queda el punto «Simulado» en la
+  leyenda, la etiqueta SIM de cada día y la explicación en la vista del día.
+
+**Verificado** en la copia local, consola limpia: Bot de octubre, curva bajista, 663 px de área sobre 714 y etiqueta
+encima del punto; curva subiendo hasta arriba (datos de prueba), etiqueta encima sin pisar la línea; Análisis a 708 y a
+321 px (móvil, sin scroll horizontal), etiqueta debajo del punto; un solo día y sin datos, sin errores.
+
+---
+
 ## Checkpoint 2026-10-29 — Lo que decide el setup es a dónde va el objetivo (plan 3.52)
 
 **Lo que pasó.** El 28/10 (día de Fed) Kris vio un reingreso alcista a las 8:54 que el motor descartaba como Continuación.
@@ -90,11 +108,16 @@ que un borde compartido no cuenta como «entera más allá»: sin cambio.
 recortar antes de estirar) y tres cambios visuales del bot y la vista (`c3f701c`: «Entrada/Stop/Target Bot», zigzag sin
 puntos, franja con más contraste).
 
-**Y la 3.53, el mismo día.** Kris no entró a las 8:47 del 29/10 y el bot sí: para él, la subida de la 8:36 a la 8:37
-era el retroceso de la bajada (la bajada volvió exactamente a su mínimo), así que el primer IRI alcista era el de la 8:46.
-Plan 3.53 (`c975619`, `R-40` forma C) y motores (`1dc8140`, sello `L:019fbcf4…`): solo cambia el 29/10, que queda sin
-operación. Si la bajada pasa del mínimo manda la regla del 30/09 (Kris, sobre el 11/08).
-
+**Y la 3.53, el mismo día.** Kris no entró a las 8:47 del 29/10 y el bot sí: para él, la subida de la 8:36 a la 8:37
+
+era el retroceso de la bajada (la bajada volvió exactamente a su mínimo), así que el primer IRI alcista era el de la 8:46.
+
+Plan 3.53 (`c975619`, `R-40` forma C) y motores (`1dc8140`, sello `L:019fbcf4…`): solo cambia el 29/10, que queda sin
+
+operación. Si la bajada pasa del mínimo manda la regla del 30/09 (Kris, sobre el 11/08).
+
+
+
 **Pendiente.** Kris tiene que copiar `MotorChaumer.cs` a NinjaTrader y recompilar fuera de la ventana.
 
 ## Checkpoint 2026-10-27g — El 13/10 el bot sí operó: un reinicio borraba su fila

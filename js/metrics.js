@@ -698,8 +698,8 @@ const Metrics = (() => {
     pintarEquity('calEquityChart', { porDia: byDate, unidad: '$' })
   }
 
-  // La curva de equity, reutilizable: la pintan "Mío" y la vista de Chaumer,
-  // Claude y el manual (calendarios.js), así que una mejora llega a las dos.
+  // La curva de equity, reutilizable: la pintan "Mío", la vista de Chaumer, el Bot y
+  // el manual (calendarios.js), Análisis y Backtesting, así que una mejora llega a todas.
   //   porDia → { 'YYYY-MM-DD': valor del día }   unidad → '$' | 'pts'
   //   pie(fecha) → línea extra bajo "Del día" en el tooltip (opcional)
   const equityInst = {}
@@ -769,18 +769,33 @@ const Metrics = (() => {
 
     // Etiqueta con el acumulado al final de la curva: es el número que se busca
     // al mirar, y así no hay que pasar el ratón para leerlo.
-    // Va FUERA del área de la curva, en el margen derecho y a la altura del último
-    // punto, como la etiqueta de precio de una plataforma de trading. La primera
-    // versión la ponía encima del punto, dentro del área, y se montaba sobre la
-    // propia línea y el relleno: casi no se leía (23 sep). Fuera del área no puede
-    // pisar nada, y con fondo sólido se lee siempre.
+    // Va DENTRO del área (30 oct, Kris): en el margen derecho le quitaba ancho a la
+    // curva. La primera vez que estuvo dentro se montaba sobre la línea y casi no se
+    // leía (23 sep), así que ahora busca sitio: junto al último punto, encima o
+    // debajo, y si la línea pasa por ahí, una esquina libre. Con fondo sólido se lee
+    // siempre, aunque no quede ningún hueco.
     const FUENTE_TAG = '700 11px "Segoe UI", system-ui, sans-serif'
-    const TAG_H = 22, TAG_PAD = 8, TAG_GAP = 8
+    const TAG_H = 22, TAG_PAD = 8, TAG_GAP = 10, TAG_BORDE = 4, TAG_HOLGURA = 5
+    // ¿Pasa la curva por el rectángulo? Se recorre tramo a tramo cada pocos píxeles.
+    const pisaLinea = (pts, x, y, w) => {
+      const dentro = (px, py) => px >= x - TAG_HOLGURA && px <= x + w + TAG_HOLGURA
+                              && py >= y - TAG_HOLGURA && py <= y + TAG_H + TAG_HOLGURA
+      return pts.some((p, i) => {
+        const q = pts[i + 1]
+        if (!q) return dentro(p.x, p.y)
+        const pasos = Math.max(1, Math.ceil(Math.hypot(q.x - p.x, q.y - p.y) / 3))
+        for (let t = 0; t <= pasos; t++) {
+          if (dentro(p.x + (q.x - p.x) * t / pasos, p.y + (q.y - p.y) * t / pasos)) return true
+        }
+        return false
+      })
+    }
     const etiquetaFinal = {
       id: 'etiquetaFinal',
       afterDatasetsDraw(chart) {
-        const meta = chart.getDatasetMeta(0)
-        const pt = meta.data[meta.data.length - 1]
+        // Las posiciones finales, no las de la animación: la etiqueta no salta mientras entra.
+        const pts = chart.getDatasetMeta(0).data.map(e => e.getProps(['x', 'y'], true))
+        const pt = pts.at(-1)
         if (!pt) return
         const v = chart.data.datasets[0].data.at(-1)
         const col = colorDe(v)
@@ -789,13 +804,13 @@ const Metrics = (() => {
         c.save()
         c.font = FUENTE_TAG
         const w = c.measureText(txt).width + TAG_PAD * 2
-        const x = a.right + TAG_GAP
-        const y = Math.max(a.top, Math.min(pt.y - TAG_H / 2, a.bottom - TAG_H))
-        // Guía punteada del punto a la etiqueta.
-        c.beginPath()
-        c.setLineDash([2, 3]); c.lineWidth = 1; c.strokeStyle = rgba(col, 0.5)
-        c.moveTo(pt.x, pt.y); c.lineTo(x, pt.y); c.stroke()
-        c.setLineDash([])
+        const der = a.right - w, izq = a.left + TAG_BORDE
+        const arriba = a.top + TAG_BORDE, abajo = a.bottom - TAG_H - TAG_BORDE
+        const sitios = [
+          [der, pt.y - TAG_GAP - TAG_H], [der, pt.y + TAG_GAP],   // junto al punto
+          [der, arriba], [der, abajo], [izq, arriba], [izq, abajo],   // las esquinas
+        ].filter(([, sy]) => sy >= a.top && sy + TAG_H <= a.bottom)
+        const [x, y] = sitios.find(([sx, sy]) => !pisaLinea(pts, sx, sy, w)) || sitios[0] || [der, arriba]
         // Pestaña sólida con el texto en el color del fondo: máximo contraste.
         c.beginPath()
         if (c.roundRect) c.roundRect(x, y, w, TAG_H, 5); else c.rect(x, y, w, TAG_H)
@@ -835,15 +850,6 @@ const Metrics = (() => {
       : v => `${v < 0 ? '−' : '+'}$${fmtMiles(v)}`
     const conUnidad = v => (unidad === 'pts' ? `${money(v)} pts` : money(v))
 
-    // Ancho de la etiqueta final, medido antes de crear la gráfica para reservarle
-    // el margen derecho exacto. Sin trades no hay etiqueta ni margen.
-    const anchoTag = (() => {
-      if (!data.length) return 6
-      const m = document.createElement('canvas').getContext('2d')
-      m.font = FUENTE_TAG
-      return Math.ceil(m.measureText(money(data.at(-1))).width) + TAG_PAD * 2 + TAG_GAP + 2
-    })()
-
     equityInst[canvasId] = new Chart(ctx, {
       type: 'line',
       data: { labels: dates.map(etiquetaDia), datasets: [{
@@ -866,9 +872,8 @@ const Metrics = (() => {
       }]},
       options: {
         responsive: true, maintainAspectRatio: false,
-        // El margen derecho es el hueco de la etiqueta del acumulado, medido con su
-        // texto real: ni se corta ni se roba más ancho del necesario en el móvil.
-        layout: { padding: { top: 8, right: anchoTag } },
+        // A la derecha, lo justo para que no se corte el último punto.
+        layout: { padding: { top: 8, right: 8 } },
         interaction: { mode: 'index', intersect: false },
         animation: { duration: 500, easing: 'easeOutQuart' },
         plugins: {

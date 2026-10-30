@@ -89,7 +89,7 @@ const Calendarios = (() => {
   }
 
   // «P&L calc.» cuando TODO lo que se suma es calculado: Chaumer siempre; el Bot, si son solo días
-  // simulados. Un mes con días reales y simulados dice «P&L» y avisa en la leyenda.
+  // simulados. Un mes con días reales y simulados dice «P&L» y «Días operados» cuenta los simulados.
   const opsDe = dias => Object.values(dias || {}).flatMap(d => d.ops)
   const esCalc = (f, ops) => !!f.calc || (ops.length > 0 && ops.every(o => o.calc))
 
@@ -881,9 +881,7 @@ const Calendarios = (() => {
       : tarjetasFuente(f, dias, y, m, esp)
     $('fuenteLeyenda').innerHTML = LEYENDA[id].map(([c, t]) =>
       `<span class="legend-item"><span class="dot ${c}"></span> ${t}</span>`).join('') +
-      (f.calc ? `<span class="legend-item cal-leyenda-nota">P&amp;L calculado a ${cabTexto(id)}</span>`
-        : Object.values(diasVista).some(d => d.simulado)
-          ? `<span class="legend-item cal-leyenda-nota">Simulado: lo que marca el motor antes de que operara el bot · P&amp;L calculado a ${cabTexto(id)}</span>` : '')
+      (f.calc ? `<span class="legend-item cal-leyenda-nota">P&amp;L calculado a ${cabTexto(id)}</span>` : '')
     const grid = $('fuenteGrid')
     grid.innerHTML = cuadricula(f, diasVista, y, m, esp)
     grid.querySelectorAll('[data-date]').forEach(cell => {
