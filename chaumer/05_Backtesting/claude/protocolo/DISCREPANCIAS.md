@@ -933,3 +933,17 @@ zona. Y aunque la dejara, el objetivo cruzaría la resistencia de 9:06 y la vela
 El operador preguntó por la resistencia de la vela 8:36 (31.487,00 – 31.514,00): pisaba 4,25 el soporte de la 8:34 y el
 plan la descartaba entera. Desde el plan 3.55 nace recortada, en 31.491,25 – 31.514,00. La operación no cambia.
 
+# Miércoles 7 de octubre de 2026 — coincidimos: NO OPERA · día de Fed
+
+> 📝 **Marcada el 01/11/2026**, a ciegas, con el motor del plan 3.56.
+
+**Actas del FOMC a las 13:00, fuera de la ventana. Día de Fed: solo reingresos.**
+
+**Veredicto: NO OPERA.** El motor y la lectura a mano coinciden, y coincide con el operador.
+
+| | |
+|---|---|
+| Primer movimiento | **alcista** (8:31, abre 31.234,00 · cierra 31.243,25) |
+| Premercado | **sin zonas** — la vela más fuerte hizo 5.165 contratos |
+| Reingresos | 8:49, el objetivo pasa 2 puntos del de referencia · 9:28, punto de referencia · 9:32 y 9:33, el objetivo choca con la resistencia de 8:32 |
+
