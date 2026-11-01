@@ -684,6 +684,14 @@ De aquí sale además el término **corrida fluida**, que es el que gobierna aho
 
 > 🔵 **Estos días sí cuentan distinto.** Los once de julio se marcaron con el operador delante, corrigiendo vela a vela. Éstos se marcaron **a ciegas** y se contrastaron después. Siguen sin tener valor estadístico —son dieciséis— pero son los primeros que prueban el plan en vez de construirlo.
 
+## Sesiones de octubre — día por día
+
+| Día | Setup | Resultado | Puntos |
+|---|---|---|---|
+| **1 oct** | la orden corta de las 8:50 no se llena por 3 ticks y los reingresos se descartan *(backtesting hacia atrás, 01/11)* | NO OPERA | — |
+| **2 oct** | **Continuación alcista 9:25** *(backtesting hacia atrás, 01/11)* | STOP 9:31 | **−26,50** |
+| **5 oct** | **Continuación alcista 8:39** *(backtesting hacia atrás, 01/11)* | **TARGET 8:42** | **+27,50** |
+
 ### Lo que decía esta tabla antes del 14/09/2026
 
 | Día | Setup | Resultado | Puntos |
