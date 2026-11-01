@@ -309,6 +309,21 @@ def anadir(Z, lo, hi, tipo, i, origen, extremo, i_org=None, rangos=None, bloque=
             if lo >= b-1e-9 and not za.arriba:
                 return None, ('salida_sin_consecucion', mid)
         if banda is not None: rangos.append(banda)
+        else:
+            # El movimiento que cruza la banda y acaba estirando la zona del borde tambien gasta el turno, aunque
+            # su zona no quede dentro. Kris, 01/11/2026: el 8/10, la bajada de la 8:35 a la 8:44 es el primer retroceso.
+            act=[z for z in Z if z.activa]
+            mismas=[z for z in act if z.tipo==tipo and z.toca(lo,hi)]
+            if tipo=='S':
+                arr=[z for z in act if z.lo > hi]
+                if mismas and arr:
+                    zb=max(mismas, key=lambda z:z.hi); za=min(arr, key=lambda z:z.lo)
+                    if zb.hi < za.lo: rangos.append((zb.hi,za.lo,zb,za))
+            else:
+                aba=[z for z in act if z.hi < lo]
+                if mismas and aba:
+                    za=min(mismas, key=lambda z:z.lo); zb=max(aba, key=lambda z:z.hi)
+                    if zb.hi < za.lo: rangos.append((zb.hi,za.lo,zb,za))
         # La comprobacion va AQUI, despues de anotar la banda: si fuese antes,
         # la banda no quedaria registrada y una candidata posterior que el
         # registro habria bloqueado se colaria. (18/09/2026)

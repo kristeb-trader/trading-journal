@@ -345,7 +345,7 @@ Tras una corrida **alcista**:
 | # | Paso |
 |---|---|
 | 1 | La **banda** va del borde interno de la zona de abajo al borde interno de la de arriba |
-| 2 | El **primer retroceso** que aparezca dentro de esa banda la resuelve |
+| 2 | El **primer retroceso** que aparezca dentro de esa banda la resuelve. El primer retroceso es el movimiento entero. Si cruza la banda y acaba estirando la zona del borde, **ese retroceso gasta el turno**: la banda queda cerrada igual, aunque la zona que deja no quede dentro de ella |
 | 3 | Si respeta el 50 % (`R-12`) **se marca**; si no lo respeta **no se marca** |
 | 4 | **En los dos casos la banda queda cerrada** para el resto de la jornada operativa |
 | 5 | La banda **no se vuelve a abrir** aunque se mueran las zonas que la formaron: ni la resistencia de arriba, ni el soporte de abajo, ni la propia zona de dentro devuelven el turno al quedar traspasadas por los dos lados |

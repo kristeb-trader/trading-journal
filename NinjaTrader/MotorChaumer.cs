@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:f4738682e2f35aa9 C:11356dcead3f983a";
+        public const string SELLO = "L:74264b8b739b2fd1 C:2786440eaaf43b3b";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -389,6 +389,28 @@ namespace NinjaTrader.NinjaScript
                     if (lo >= r.B - 1e-9 && !r.Za.Arriba) { que = "salida_sin_consecucion"; return null; }
                 }
                 if (banda != null) rangos.Add(banda);
+                else
+                {
+                    // el movimiento que cruza la banda y acaba estirando la zona del borde también gasta el turno,
+                    // aunque su zona no quede dentro (Kris, 01/11/2026: el 8/10, la bajada de la 8:35 a la 8:44)
+                    Zona mZb = null, mZa = null;
+                    foreach (var z in Z)
+                    {
+                        if (!z.Activa) continue;
+                        if (tipo == "S")
+                        {
+                            if (z.Tipo == tipo && z.Toca(lo, hi) && (mZb == null || z.Hi > mZb.Hi)) mZb = z;
+                            if (z.Lo > hi && (mZa == null || z.Lo < mZa.Lo)) mZa = z;
+                        }
+                        else
+                        {
+                            if (z.Tipo == tipo && z.Toca(lo, hi) && (mZa == null || z.Lo < mZa.Lo)) mZa = z;
+                            if (z.Hi < lo && (mZb == null || z.Hi > mZb.Hi)) mZb = z;
+                        }
+                    }
+                    if (mZb != null && mZa != null && mZb.Hi < mZa.Lo)
+                        rangos.Add(new Banda { A = mZb.Hi, B = mZa.Lo, Zb = mZb, Za = mZa });
+                }
                 if (BandaOcupada(Z, lo, hi)) { que = "banda_gastada"; return null; }
             }
             foreach (var z in Z)
