@@ -32,6 +32,7 @@ docs/archivo/chaumer/materia-prima/
 
 # datos de mercado exportados de NinjaTrader
 chaumer/05_Backtesting/claude/motor/datos/
+chaumer/03_Bot/Velas bot/
 
 # graficos del backtesting manual (el de Kris): se quedan en disco (decision del
 # 22/09/2026; crecen cada dia y en git quedarian para siempre en el historial).

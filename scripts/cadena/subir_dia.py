@@ -15,7 +15,7 @@ scripts/cadena/prueba_motor.py (D-026, D-028).
 Lo lanza el AddOn CadenaDiaria de NinjaTrader; a mano, el acceso directo "Subir el dia.bat".
 Clave: la service_role de los indicadores (Documentos\\NinjaTrader 8\\supabase-service-key.txt).
 Umbral: el de chaumer/01_Plan/PARAMETROS.md. Días de Fed: Fechas Especiales (tipo fomc).
-El gráfico del día se queda en chaumer/05_Backtesting/claude/ (las Sesiones, 28/09/2026), con su .json. Al
+El gráfico del día se queda en chaumer/03_Bot/Graficas bot AAAA/ con su .json (hasta septiembre de 2026, en chaumer/05_Backtesting/claude/). Al
 terminar, cada pasada los sube a GitHub —y así al portal— SOLO si el día ya está registrado (el candado del
 motor, D-026): commit de esos archivos y push a main. Registro: %LOCALAPPDATA%\\TradingJournal\\cadena\\registro.txt
 (ojo: desde la app de escritorio de Claude esa ruta se ve virtualizada y no enseña lo que escribe NinjaTrader; lo de
@@ -29,10 +29,12 @@ except Exception: pass
 RAIZ = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SESIONES = os.path.join(RAIZ, 'chaumer', '05_Backtesting', 'claude')   # un gráfico por día: AAAA-MM-DD.png
 BT = os.path.join(SESIONES, 'motor')
+BOT = os.path.join(RAIZ, 'chaumer', '03_Bot')         # todo lo del bot (Kris, 01/11/2026)
+BOT_DESDE = '2026-10-01'                              # desde aquí, los gráficos van a 03_Bot; julio–septiembre siguen en claude/
 PARAMETROS = os.path.join(RAIZ, 'chaumer', '01_Plan', 'PARAMETROS.md')
 DIA_MANUAL = os.path.join(BT, 'datos', 'dia')         # la exportación de Kris (y del AddOn tras la 7e)
 DIA_AUTO = os.path.join(BT, 'datos', 'dia_auto')      # la del AddOn mientras dura la verificación (7e)
-DIA_BOT = os.path.join(BT, 'datos', 'dia_bot')        # la ventana como la vio el bot en vivo: manda (19/10/2026)
+DIA_BOT = os.path.join(BOT, 'Velas bot')              # la ventana como la vio el bot en vivo: manda (19/10/2026)
 SALIDA = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), 'TradingJournal', 'cadena')   # el registro
 CLAVE = os.path.join(os.path.expanduser('~'), 'Documents', 'NinjaTrader 8', 'supabase-service-key.txt')
 SUPABASE = 'https://jothoslozctflfrnysrx.supabase.co'
@@ -264,12 +266,20 @@ def veredicto(estado, ficha):
     return {'setup': f"{op['setup']} {op['sentido']} {op['hora']}", 'resultado': op['resultado'], 'puntos': pts}
 
 
+def carpeta_dia(fecha):
+    """Dónde quedan el gráfico y el .json de un día: una carpeta por año en 03_Bot desde BOT_DESDE."""
+    if fecha < BOT_DESDE: return SESIONES
+    carpeta = os.path.join(BOT, f'Graficas bot {fecha[:4]}')
+    os.makedirs(carpeta, exist_ok=True)
+    return carpeta
+
+
 def guardar_sesion(fecha, estado, ficha):
-    """AAAA-MM-DD.json junto al gráfico, en claude/: el veredicto del motor para el portal (28/09/2026).
+    """AAAA-MM-DD.json junto al gráfico: el veredicto del motor para el portal (28/09/2026).
     Si el plan tiene el día en su tabla, en el portal manda el plan."""
     v = veredicto(estado, ficha)
     if not v: return
-    with open(os.path.join(SESIONES, f'{fecha}.json'), 'w', encoding='utf-8', newline='\n') as fh:
+    with open(os.path.join(carpeta_dia(fecha), f'{fecha}.json'), 'w', encoding='utf-8', newline='\n') as fh:
         json.dump({'fecha': fecha, **v, 'fuente': 'motor'}, fh, ensure_ascii=False, indent=2)
         fh.write('\n')
 
@@ -366,7 +376,7 @@ def procesar(fecha, umbral, desde, fed_set, huella_motor):
         else: log(f'{fecha}  exportación del AddOn = manual, línea a línea')
     grafico = None
     if estado == 'ok':
-        png = os.path.join(SESIONES, f'{fecha}.png')
+        png = os.path.join(carpeta_dia(fecha), f'{fecha}.png')
         ev2, t2 = dia.dibujar(d, png, path)
         if (t2 and {k: t2[k] for k in ('e', 's', 't', 'res')}) != (t and {k: t[k] for k in ('e', 's', 't', 'res')}):
             raise RuntimeError('el gráfico y la ficha no dan la misma operación')
@@ -471,21 +481,25 @@ def git(*args, timeout=120):
 
 
 def publicar_sesiones(ensayo=False):
-    """Sube a GitHub (y así al portal) los gráficos y veredictos de claude/ que sean nuevos o hayan
+    """Sube a GitHub (y así al portal) los gráficos y veredictos de claude/ y 03_Bot/ que sean nuevos o hayan
     cambiado, SOLO de los días ya registrados (sesiones.registrada_at). Es el candado del motor (D-026):
     lo que marcó el motor no se ve antes de que Kris registre su lectura, tampoco en el portal.
     Commit solo de esos archivos; si la rama no es main o GitHub va por delante, no sube y lo apunta:
     se reintenta en la siguiente pasada. Nunca tumba la cadena."""
     try:
         rel = os.path.relpath(SESIONES, RAIZ).replace('\\', '/')
+        rel_bot = os.path.relpath(BOT, RAIZ).replace('\\', '/')
         ok, rama = git('rev-parse', '--abbrev-ref', 'HEAD')
         if ok != 0: log(f'publicar: git no responde ({rama[:120]})'); return
         if rama != 'main': log(f'publicar: la rama es {rama}, no main: no se sube nada'); return
-        _, st = git('status', '--porcelain', '--untracked-files=all', '--', rel)
+        _, st = git('status', '--porcelain', '--untracked-files=all', '--', rel, rel_bot)
         cambios = {}
         for ln in st.splitlines():
-            m = re.search(r'(\d{4}-\d{2}-\d{2})\.(png|json)$', ln)
-            if m and '/' not in ln[3:].replace(rel + '/', '', 1): cambios.setdefault(m[1], []).append(ln[3:].strip().strip('"'))
+            ruta = ln[3:].strip().strip('"')          # git entrecomilla las rutas con espacios
+            m = re.search(r'(\d{4}-\d{2}-\d{2})\.(png|json)$', ruta)
+            carpeta = ruta.rsplit('/', 1)[0]
+            if m and (carpeta == rel or re.fullmatch(re.escape(rel_bot) + r'/Graficas bot \d{4}', carpeta)):
+                cambios.setdefault(m[1], []).append(ruta)
         if not cambios: return
         filas = sb('GET', 'sesiones?select=sesion_date,registrada_at&registrada_at=not.is.null'
                           f"&sesion_date=in.({','.join(sorted(cambios))})")

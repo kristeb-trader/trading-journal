@@ -15,7 +15,7 @@
 # RESTAURAR EN UN DISCO NUEVO
 #   1. Instalar Git y clonar:  git clone https://github.com/kristeb-trader/trading-journal "E:\Proyectos\Trading Journal"
 #      (o copiar «Trading Journal» del respaldo, que ya trae .git).
-#   2. Del respaldo al proyecto, lo que git no tiene: chaumer\05_Backtesting\kris\, claude\motor\datos\ y
+#   2. Del respaldo al proyecto, lo que git no tiene: chaumer\05_Backtesting\kris\, claude\motor\datos\, chaumer\03_Bot\Velas bot\ y
 #      _Historia\, docs\archivo\chaumer\materia-prima\, docs\archivo\inicio-journal\ y js\dev.local.js.
 #   3. «NinjaTrader 8» del respaldo a Documentos\NinjaTrader 8\ (con NT8 cerrado), recompilar en NT8 y
 #      volver a crear supabase-service-key.txt con la service_role.

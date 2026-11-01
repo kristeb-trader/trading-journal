@@ -85,7 +85,7 @@ scripts\            sync, diagramas, y los verificadores
 6. **Un ítem del menú se oculta con `oculto: true`** en `Marco.astro` (D-042): solo lo ve el navegador marcado con `?todo`. Ocultar no es cerrar: la página sigue abierta para quien tenga la dirección.
 7. **Nunca uses códigos de regla al hablarle al operador.** En la página sí; en el chat no.
 8. **Cero claves en el paquete, nada de escritura directa desde el navegador.** Lo que lee datos lo hace una función de `functions\api\` con un secreto de Cloudflare (`DESPLIEGUE.md`).
-9. **Una imagen se asocia solo por el nombre del archivo.** Un caso de una sesión lleva el gráfico de su fecha (`05_Backtesting\claude\AAAA-MM-DD.png`); una regla o un ejemplo, su prefijo (`R-xx_…`, `G-xx_…`) en `02_Assets\`. El campo `**Archivo:**` del plan no se usa. Sin imagen, el caso sale igual: nada de suplentes.
+9. **Una imagen se asocia solo por el nombre del archivo.** Un caso de una sesión lleva el gráfico de su fecha (`05_Backtesting\claude\AAAA-MM-DD.png`; desde octubre de 2026, `03_Bot\Graficas bot AAAA\`); una regla o un ejemplo, su prefijo (`R-xx_…`, `G-xx_…`) en `02_Assets\`. El campo `**Archivo:**` del plan no se usa. Sin imagen, el caso sale igual: nada de suplentes.
 10. **Los códigos del texto se enlazan solos** al renderizar (`markdownRico`, `src\lib\parsers.mjs`): no se escriben enlaces a mano.
 
 ---

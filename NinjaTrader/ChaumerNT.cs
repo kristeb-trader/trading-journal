@@ -255,7 +255,7 @@ namespace NinjaTrader.NinjaScript
 
         public static string RutaVelasBot(string repo, string fecha)
         {
-            return Path.Combine(repo, @"chaumer\05_Backtesting\claude\motor\datos\dia_bot", fecha + ".txt");
+            return Path.Combine(repo, @"chaumer\03_Bot\Velas bot", fecha + ".txt");
         }
 
         public static string LineaVela(MotorChaumer.Vela k)

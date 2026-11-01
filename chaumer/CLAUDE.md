@@ -51,8 +51,8 @@ Journal:
 | una imagen de trabajo (una duda, una previa, una comparación) | el scratchpad de la sesión, **nunca** el repositorio |
 | algo que ya no vale | `docs/archivo/chaumer/`, con su línea en el `LEEME` |
 
-Lo único que vive en `chaumer/`: el plan (`01_Plan\`), las imágenes que publica el portal (`02_Assets\`), el portal
-(`04_Web\`, con `CLAUDE.md` y `DESPLIEGUE.md`), las Sesiones (`05_Backtesting\`, con los tres documentos de su
+Lo único que vive en `chaumer/`: el plan (`01_Plan\`), las imágenes que publica el portal (`02_Assets\`), **lo del bot
+(`03_Bot\`)**, el portal (`04_Web\`, con `CLAUDE.md` y `DESPLIEGUE.md`), las Sesiones (`05_Backtesting\`, con los tres documentos de su
 protocolo) y este archivo.
 
 ---
@@ -120,6 +120,7 @@ Definiciones medibles en `01_Plan\GLOSARIO.md`.
 ## Datos y motor
 
 - **`05_Backtesting\` tiene dos carpetas y nada más** (28/09/2026): `kris\` (el backtesting a mano del operador; las imágenes, fuera de git) y `claude\` (las Sesiones: un `AAAA-MM-DD.png` por día y su `.json`, más `protocolo\` y `motor\`).
+- **`03_Bot\` es todo lo del bot** (Kris, 01/11/2026): `Graficas bot AAAA\` (un `AAAA-MM-DD.png` por día y su `.json`, desde octubre de 2026; **va a git**, el portal se publica desde ahí) y `Velas bot\` (las velas que el bot guardó en vivo; **fuera de git**). Julio–septiembre siguen en `05_Backtesting\claude\`. El motor (`lector.py`, `dia.py`) y sus datos del servidor no se mueven.
 - `05_Backtesting\claude\motor\datos\NQ 09-26.Last.txt` (julio y agosto) y `…\datos\dia\AAAA-MM-DD.txt` (un día, desde el 10/09) — `yyyyMMdd HHmmss;o;h;l;c;v`, **en UTC**.
 - **Horario:** el gráfico es hora Colombia (UTC−5). Ventana **08:31–10:30 Col = 13:31–15:30 UTC** en el horario de verano de EE. UU.; **09:31–11:30 Col = 14:31–16:30 UTC** en invierno (desde el 2/11/2026). `lector.py` la calcula sola con `apertura_utc()` desde el 24/09/2026.
 - **Días de Fed:** desde el 24/09/2026 el motor anota los rompimientos también en día de Fed (antes no veía ningún reingreso). La lista la pone la cadena diaria del Journal desde Fechas Especiales.

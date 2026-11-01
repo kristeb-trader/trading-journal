@@ -7,7 +7,7 @@ contraseña. Todo vive en Cloudflare: la web en Pages y las observaciones en D1.
 
 **Solo, al hacer push a `main`.** El workflow `.github/workflows/publicar-portal.yml` (en la raíz del repositorio)
 compila y sube `dist/` con `wrangler pages deploy` cuando el push toca `chaumer/01_Plan/`, `chaumer/02_Assets/`,
-`chaumer/04_Web/` o las Sesiones (`chaumer/05_Backtesting/claude/*`). Usa sus propios secretos de GitHub,
+`chaumer/04_Web/` o las Sesiones (`chaumer/05_Backtesting/claude/*` y `chaumer/03_Bot/**`). Usa sus propios secretos de GitHub,
 `PORTAL_CLOUDFLARE_API_TOKEN` y `PORTAL_CLOUDFLARE_ACCOUNT_ID` — no los del bot. Tarda unos dos minutos.
 
 ⚠️ **El repositorio es público** (D-022): lo que se sube, cualquiera lo puede leer. Nunca claves en el código.

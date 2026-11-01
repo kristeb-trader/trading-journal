@@ -23,8 +23,10 @@ const ASSETS = path.join(RAIZ, '02_Assets');
 const DEST_CONTENIDO = path.join(WEB, 'src', 'content');
 const DEST_ASSETS = path.join(WEB, 'public', 'assets');
 // Las Sesiones: un grafico por jornada, AAAA-MM-DD.png, y a su lado el veredicto del
-// motor, AAAA-MM-DD.json (05_Backtesting/claude/protocolo/LEEME.md).
+// motor, AAAA-MM-DD.json (05_Backtesting/claude/protocolo/LEEME.md). Hasta septiembre de
+// 2026 estan en 05_Backtesting/claude; desde octubre, en 03_Bot/Graficas bot AAAA.
 const SESIONES = path.join(RAIZ, '05_Backtesting', 'claude');
+const BOT = path.join(RAIZ, '03_Bot');
 
 // Los documentos que el portal espera encontrar. Si falta uno, se avisa.
 // TRADING_PLAN_CHAUMER.md salió el 26/09/2026: las reglas viven en 01_Plan/reglas/ y llegan en reglas.json.
@@ -196,23 +198,29 @@ fs.writeFileSync(
 // esta AAAA-MM-DD.json, es el veredicto del motor: el portal lo usa solo si el
 // plan todavia no tiene ese dia en su tabla. Lo demas (protocolo/, motor/) no viaja.
 const jornadas = [];
-if (fs.existsSync(SESIONES)) {
-  for (const f of fs.readdirSync(SESIONES).sort()) {
+const carpetasBot = fs.existsSync(BOT)
+  ? fs.readdirSync(BOT).filter((d) => /^Graficas bot \d{4}$/.test(d)).map((d) => path.join(BOT, d))
+  : [];
+const carpetas = [SESIONES, ...carpetasBot].filter((d) => fs.existsSync(d));
+if (carpetas.length) {
+  const graficos = carpetas.flatMap((dir) => fs.readdirSync(dir).map((f) => ({ dir, f })));
+  graficos.sort((a, b) => a.f.localeCompare(b.f));
+  for (const { dir, f } of graficos) {
     const m = f.match(/^(\d{4}-\d{2}-\d{2})\.png$/i);
     if (!m) continue;
-    copiar(path.join(SESIONES, f), path.join(DEST_ASSETS, 'sesiones', f));
+    copiar(path.join(dir, f), path.join(DEST_ASSETS, 'sesiones', f));
     let motor = null;
-    const vj = path.join(SESIONES, m[1] + '.json');
+    const vj = path.join(dir, m[1] + '.json');
     if (fs.existsSync(vj)) {
       try {
         const v = JSON.parse(fs.readFileSync(vj, 'utf8'));
         motor = { setup: v.setup, resultado: v.resultado, puntos: v.puntos };
-      } catch { aviso('veredicto ilegible: 05_Backtesting/claude/' + m[1] + '.json'); }
+      } catch { aviso('veredicto ilegible: ' + m[1] + '.json'); }
     }
     jornadas.push({ fecha: m[1], url: '/assets/sesiones/' + f, motor });
   }
 } else {
-  aviso('no existe 05_Backtesting/claude: la pestana de Sesiones saldra vacia');
+  aviso('no hay carpetas de graficos: la pestana de Sesiones saldra vacia');
 }
 fs.writeFileSync(
   path.join(DEST_CONTENIDO, 'sesiones.json'),

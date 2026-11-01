@@ -32,6 +32,7 @@ on:
       - 'chaumer/02_Assets/**'
       - 'chaumer/04_Web/**'
       - 'chaumer/05_Backtesting/claude/*'
+      - 'chaumer/03_Bot/**'
       - '.github/workflows/publicar-portal.yml'
   workflow_dispatch:        # tambien a mano, desde la pestaña Actions
 

@@ -133,7 +133,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         private int decisionPendiente = -1;         // la vela cerrada que espera al premercado para decidirse
 
         // ── las velas del bot (19/10/2026): la ventana tal como la vio en vivo; la ficha del motor se hace con ellas ──
-        private string archivoVelas;                // datos/dia_bot/AAAA-MM-DD.txt del repositorio (null: no se guardan)
+        private string archivoVelas;                // chaumer/03_Bot/Velas bot/AAAA-MM-DD.txt del repositorio (null: no se guardan)
         private Dictionary<string, MotorChaumer.Vela> apuntadas;   // las ya escritas, por fecha+hora: mandan sobre el gráfico
         private const int PM_ESPERA_S = 60, PM_INTENTOS = 3;
 
