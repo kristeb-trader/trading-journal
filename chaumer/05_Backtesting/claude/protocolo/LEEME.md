@@ -31,7 +31,9 @@ Aquí nadie te tapa los ojos: la ceguera depende de ti. **Hasta haber entregado 
 
 Si algo de eso se te cruza por accidente, **dilo en la entrega**: ese día ya no es ciego.
 
-**Lo que sí puedes ver:** lo que marcó el motor. Si el día ya pasó por la cadena diaria (10:32), en `..\AAAA-MM-DD.png` y `.json` está su marcado; es el mismo motor que vas a correr tú, así que no te sesga más que correrlo.
+**Lo que sí puedes ver:** lo que marcó el motor. Si el día ya pasó por la cadena diaria (10:32), en `..\AAAA-MM-DD.png` y `.json` está su marcado (desde octubre de 2026, en `03_Bot\Graficas bot AAAA\`); es el mismo motor que vas a correr tú, así que no te sesga más que correrlo.
+
+🚫 **El backtesting no escribe en `03_Bot\`** (Kris, 01/11/2026): el gráfico y el `.json` de una Sesión van siempre a `claude\`, también desde octubre. Las de `03_Bot\` son del bot y de la cadena, y en esos días no se pasa `subir_dia.py <fecha>`, que las rehace.
 
 ---
 

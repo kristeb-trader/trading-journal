@@ -205,9 +205,13 @@ const carpetas = [SESIONES, ...carpetasBot].filter((d) => fs.existsSync(d));
 if (carpetas.length) {
   const graficos = carpetas.flatMap((dir) => fs.readdirSync(dir).map((f) => ({ dir, f })));
   graficos.sort((a, b) => a.f.localeCompare(b.f));
+  // Un dia de octubre en adelante puede estar en las dos carpetas: el del bot y
+  // el del backtesting, revisado a mano. Gana el del backtesting (va primero).
+  const vistos = new Set();
   for (const { dir, f } of graficos) {
     const m = f.match(/^(\d{4}-\d{2}-\d{2})\.png$/i);
-    if (!m) continue;
+    if (!m || vistos.has(m[1])) continue;
+    vistos.add(m[1]);
     copiar(path.join(dir, f), path.join(DEST_ASSETS, 'sesiones', f));
     let motor = null;
     const vj = path.join(dir, m[1] + '.json');
