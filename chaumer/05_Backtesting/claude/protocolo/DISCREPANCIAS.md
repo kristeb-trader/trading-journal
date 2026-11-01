@@ -861,3 +861,55 @@ motor no ve que el retroceso se pasa de la apertura.
 La corrida (55,50) no la cortan las velas de 8:32 y 8:33; el retroceso es la de 8:34 (40,50). El stop es el mínimo
 desde que nace la zona, 29.432,00: el de la vela de 8:32 (29.422,50) es anterior y no cuenta.
 
+# Jueves 1 de octubre de 2026 — coincidimos · la orden que no se llena por 3 ticks
+
+> 📝 **Marcada el 01/11/2026**, a ciegas, con el motor del plan 3.53.
+
+**Sin noticias rojas. No es día de Fed.**
+
+**Veredicto: NO OPERA.** El motor y la lectura a mano coinciden, y coincide con el operador.
+
+| | |
+|---|---|
+| Primer movimiento | **bajista** (8:31, abre 30.797,00 · cierra 30.767,75) |
+| Premercado | **sin zonas** — la vela más fuerte hizo 5.173 contratos |
+| La orden | corto en **30.703,25** a las 8:50, stop 30.756,00 · **no se llena por 3 ticks** (mínimo 30.703,50) y a las 8:53 se cancela |
+| Reingresos | 8:50 y 9:25, por el punto de referencia · 8:53, el objetivo choca · 9:40 y 9:41, riesgo de más de 160 |
+
+# Viernes 2 de octubre de 2026 — coincidimos
+
+> 📝 **Marcada el 01/11/2026, no del todo a ciegas:** el reingreso de las 9:11 ya se había hablado con el operador.
+
+**Noticias: Non-Farm, desempleo y salarios a las 7:30, fuera de la ventana. No es día de Fed.**
+
+**Veredicto: Continuación alcista, −26,50 pts = −53,00 USD.** El motor y la lectura a mano coinciden, y coincide con el operador.
+
+| | |
+|---|---|
+| Primer movimiento | **bajista** (8:31, abre 31.148,50 · cierra 31.095,50) |
+| Premercado | soporte **31.047,75 – 31.110,00** (vela de 11.327 contratos, 7:31) |
+| Zona | resistencia **31.259,50 – 31.268,75** (vela 9:21), entera por encima de la de 9:06 |
+| Entrada | largo · la vela de **9:24** rompe la zona · se llena en la de **9:25** en **31.270,25** |
+| Stop | **31.243,75** · Objetivo **31.296,75** · riesgo **26,50 pts** |
+| Resultado | **STOP a las 9:31** · el máximo se queda en 31.282,75 |
+
+El reingreso de las 9:11 no existe: la bajada de 9:09 (31.210,00) pasa de la mitad de la banda (31.225,625) y no deja
+zona. Y aunque la dejara, el objetivo cruzaría la resistencia de 9:06 y la vela de 9:12 cae sin llenar la orden.
+
+# Lunes 5 de octubre de 2026 — coincidimos
+
+> 📝 **Marcada el 01/11/2026**, a ciegas, con el motor del plan 3.53.
+
+**Sin noticias rojas. No es día de Fed.**
+
+**Veredicto: Continuación alcista, +27,50 pts = +55,00 USD.** El motor y la lectura a mano coinciden, y coincide con el operador.
+
+| | |
+|---|---|
+| Primer movimiento | **alcista** (8:31, abre 31.055,00 · cierra 31.056,00) |
+| Premercado | **sin zonas** — la vela más fuerte hizo 7.645 contratos |
+| Zona | resistencia **31.162,75 – 31.163,75** (vela 8:37), de 1 punto |
+| Entrada | largo · la vela de **8:38** rompe la zona · se llena en la de **8:39** en **31.169,25** |
+| Stop | **31.141,75** · Objetivo **31.196,75** · riesgo **27,50 pts** |
+| Resultado | **TARGET a las 8:42** · el mínimo tras entrar es 31.155,75 |
+
