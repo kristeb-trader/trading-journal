@@ -8,7 +8,7 @@ chaumer/05_Backtesting/claude/motor/lector.py y dia.py son de auditoría: un cam
 scripts/cadena/prueba_motor.py (D-026, D-028).
 
     python scripts/cadena/subir_dia.py 2026-09-23 [2026-09-22 ...]    unos días
-    python scripts/cadena/subir_dia.py --pendientes [--dias 10]        lo que falte o haya cambiado
+    python scripts/cadena/subir_dia.py --pendientes [--dias 10]        lo que falte o tenga velas nuevas
     python scripts/cadena/subir_dia.py --comparar                      fase 7e: AddOn contra exportación manual
     python scripts/cadena/subir_dia.py --publicar [--ensayo]           solo subir al portal lo de claude/ ya registrado
 
@@ -420,17 +420,19 @@ def comparar_todo():
     return 1 if distintas else 0
 
 
-def pendientes(n_dias, huella_motor):
+def pendientes(n_dias):
+    """Los días sin ficha o con velas nuevas. Un motor nuevo NO rehace los días pasados: las gráficas del bot
+    se quedan como salieron (Kris, 01/11/2026); las revisadas a mano, en 05_Backtesting/claude/."""
     hoy = datetime.date.today()
     fechas = sorted({os.path.basename(p)[:10] for c in (DIA_MANUAL, DIA_AUTO)
                      for p in glob.glob(os.path.join(c, '????-??-??.txt'))
                      if (hoy - datetime.date.fromisoformat(os.path.basename(p)[:10])).days <= n_dias})
     if not fechas: return []
-    hay = {f['fecha']: f for f in sb('GET', f"motor_fichas?fecha=gte.{fechas[0]}&select=fecha,huella_motor,huella_datos")}
+    hay = {f['fecha']: f for f in sb('GET', f"motor_fichas?fecha=gte.{fechas[0]}&select=fecha,huella_datos")}
     fuera = []
     for f in fechas:
         h = huella(todas_del_dia(fuente(f)[0], f.replace('-', '')))
-        if f not in hay or hay[f]['huella_motor'] != huella_motor or hay[f]['huella_datos'] != h:
+        if f not in hay or hay[f]['huella_datos'] != h:
             fuera.append(f)
     return fuera
 
@@ -545,7 +547,7 @@ def main(argv):
     noticias_rojas()
     if '--pendientes' in argv:
         n = int(argv[argv.index('--dias') + 1]) if '--dias' in argv else 10
-        fechas = pendientes(n, huella_motor)
+        fechas = pendientes(n)
         if not fechas:
             log('pendientes: nada que subir')
             medir_pendientes(n, huella_motor, fed_set)
