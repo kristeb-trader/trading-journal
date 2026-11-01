@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:019fbcf4d6384056 C:3ffc22d49617e909";
+        public const string SELLO = "L:f4738682e2f35aa9 C:11356dcead3f983a";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -398,8 +398,15 @@ namespace NinjaTrader.NinjaScript
                 if (z.Pend.Dir == "arriba" && extremo > z.Hi + 1e-9) { que = "sin_consecucion"; mid = null; return null; }
             }
             if (blo) { que = "bloqueada50"; return null; }
+            // una zona viva ocupa su franja: la candidata nace recortada en su borde; si queda entera dentro,
+            // no se marca (Kris, 01/11/2026)
             foreach (var z in Z)
-                if (z.Activa && z.Tipo != tipo && z.Toca(lo, hi)) { que = "solapa"; mid = null; return null; }
+                if (z.Activa && z.Tipo != tipo && z.Toca(lo, hi))
+                {
+                    if (tipo == "R") lo = Math.Max(lo, z.Hi);
+                    else hi = Math.Min(hi, z.Lo);
+                    if (hi - lo < 1e-9) { que = "solapa"; mid = null; return null; }
+                }
             if (bloque)
             {
                 // si toca varias: primero se recorta contra las traspasadas y después, si toca una viva sin

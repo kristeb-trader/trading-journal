@@ -323,10 +323,13 @@ def anadir(Z, lo, hi, tipo, i, origen, extremo, i_org=None, rangos=None, bloque=
         if z.pend[0]=='abajo'  and extremo < z.lo-1e-9: return None, ('sin_consecucion', None)
         if z.pend[0]=='arriba' and extremo > z.hi+1e-9: return None, ('sin_consecucion', None)
     if blo: return None, ('bloqueada50', mid)
-    # una zona viva OCUPA su franja de precio. No se dibuja nada encima.
+    # una zona viva OCUPA su franja de precio. La candidata nace recortada en su borde; si queda entera
+    # dentro, no se marca. Kris, 01/11/2026: la R de la 8:36 del 6/10 pisaba 4,25 el soporte de la 8:34.
     for z in Z:
         if z.activa and z.tipo!=tipo and z.toca(lo,hi):
-            return None, ('solapa', None)
+            if tipo=='R': lo=max(lo,z.hi)
+            else:         hi=min(hi,z.lo)
+            if hi-lo < 1e-9: return None, ('solapa', None)
     if bloque:
         # Si toca varias, primero se recorta contra las ya traspasadas y despues, si toca una viva sin traspasar,
         # se estira esa: dos zonas nunca se montan. Kris, 27/10/2026: la S de la 9:20 se recortaba contra la de
