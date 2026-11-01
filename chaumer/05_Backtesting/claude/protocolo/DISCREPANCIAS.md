@@ -947,3 +947,24 @@ plan la descartaba entera. Desde el plan 3.55 nace recortada, en 31.491,25 – 3
 | Premercado | **sin zonas** — la vela más fuerte hizo 5.165 contratos |
 | Reingresos | 8:49, el objetivo pasa 2 puntos del de referencia · 9:28, punto de referencia · 9:32 y 9:33, el objetivo choca con la resistencia de 8:32 |
 
+# Jueves 8 de octubre de 2026 — marcamos distinto: el motor no veía el primer retroceso
+
+> 📝 **Marcada el 01/11/2026**, a ciegas. El motor del plan 3.57 daba Reingreso alcista 8:47, STOP, −19,75.
+
+**Sin noticias rojas. No es día de Fed.**
+
+**Veredicto: Continuación alcista, +30,25 pts = +60,50 USD**, con la lectura del operador y el motor corregido (plan 3.58).
+
+| | |
+|---|---|
+| Primer movimiento | **bajista** (8:31, abre 31.234,25 · cierra 31.213,00) |
+| Premercado | **sin zonas** — la vela más fuerte hizo 5.301 contratos |
+| Banda | soporte de la apertura (techo 31.213,00) · resistencia de 8:35 (piso 31.269,00) · mitad 31.241,00 |
+| Entrada | largo, se llena en la vela de **9:24** en **31.316,50** |
+| Stop | **31.286,25** · Objetivo **31.346,75** · riesgo **30,25 pts** |
+| Resultado | **TARGET a las 9:29** |
+
+**La diferencia:** la bajada de la 8:35 a la 8:44 cruza la banda y estira el soporte de la apertura. Ese es el primer
+retroceso y gasta el turno, pero el motor solo anotaba la banda si la zona quedaba dentro. Por eso marcaba la resistencia
+de la 8:45 (31.214,75 – 31.223,75), que no debe existir, y el reingreso de las 8:46 salía de ella.
+
