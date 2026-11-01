@@ -913,3 +913,23 @@ zona. Y aunque la dejara, el objetivo cruzaría la resistencia de 9:06 y la vela
 | Stop | **31.141,75** · Objetivo **31.196,75** · riesgo **27,50 pts** |
 | Resultado | **TARGET a las 8:42** · el mínimo tras entrar es 31.155,75 |
 
+# Martes 6 de octubre de 2026 — coincidimos · la zona que pisa a otra nace recortada
+
+> 📝 **Marcada el 01/11/2026, no a ciegas:** el resultado ya se conocía por el error del motor con la operación abierta.
+
+**Sin noticias rojas. No es día de Fed.**
+
+**Veredicto: Continuación alcista, −20,75 pts = −41,50 USD.** El motor y la lectura a mano coinciden, y coincide con el operador.
+
+| | |
+|---|---|
+| Primer movimiento | **alcista** (8:31, abre 31.513,50 · cierra 31.553,50) |
+| Premercado | **sin zonas** — la vela más fuerte hizo 7.908 contratos |
+| Zona | resistencia **31.595,75 – 31.597,25** (vela 10:01), entera por encima de la de 9:57 |
+| Entrada | largo · la vela de **10:06** rompe la zona · se llena en la de **10:07** en **31.601,00** |
+| Stop | **31.580,25** · Objetivo **31.621,75** · riesgo **20,75 pts** |
+| Resultado | **STOP a las 10:31**, ya fuera de la ventana · el máximo se queda en 31.616,50 |
+
+El operador preguntó por la resistencia de la vela 8:36 (31.487,00 – 31.514,00): pisaba 4,25 el soporte de la 8:34 y el
+plan la descartaba entera. Desde el plan 3.55 nace recortada, en 31.491,25 – 31.514,00. La operación no cambia.
+
