@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-10-30
+**Última actualización:** 2026-11-02
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-02 | La lupa: la fecha y la ficha, pegadas al gráfico |
 | 2026-10-30 | La Curva de Equity gana el ancho de la derecha: el valor final va dentro y busca sitio |
 | 2026-10-29 | Lo que decide el setup es a dónde va el objetivo (plan 3.52): el reingreso por cambio de tendencia, la zona a la que ir nacida desde la apertura y el bloque en todos los días; y la 3.53: un retroceso del movimiento contrario no es un IRI; antes, el 27/10, dos arreglos de zonas y tres cambios visuales del bot |
 | 2026-10-27g | El 13/10 el bot sí operó: un reinicio borraba su fila, y ya no |
@@ -65,6 +66,19 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-02 — La lupa: la fecha y la ficha, pegadas al gráfico
+
+Kris: en una pantalla alta, la placa de la fecha quedaba arriba del todo y la ficha abajo del todo, con el gráfico
+flotando en medio y huecos grandes entre las tres. Ahora van **juntas y centradas**: `.ld` centra en vertical, el marco
+ya no se estira, y el gráfico tiene de alto máximo el que dejan las dos placas (`--ld-alto`, lo mide `LupaDia._medir`
+con un `ResizeObserver` sobre la pantalla y las dos placas: una ficha de dos operaciones lo recalcula). 10 px entre
+pieza y pieza.
+
+**Verificado** en la copia local, consola limpia: a 1024×768 el gráfico llena el ancho; a 1128×1352 (la pantalla de
+Kris) las tres piezas quedan juntas en medio, con 10 px entre ellas; a 375 px, igual y sin scroll horizontal.
 
 ---
 

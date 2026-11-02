@@ -1088,6 +1088,9 @@ const LupaDia = {
       </div>
       <footer class="ld-placa ld-abajo"></footer>`
     document.body.appendChild(el)
+    // La pantalla o una placa cambian de alto (la ficha de un día con dos operaciones): se vuelve a medir.
+    const ro = new ResizeObserver(() => this._medir())
+    ;[el, el.querySelector('.ld-arriba'), el.querySelector('.ld-abajo')].forEach(n => ro.observe(n))
 
     el.addEventListener('click', e => {
       if (e.target === el || e.target.closest('.ld-cerrar')) this.close()
@@ -1113,6 +1116,18 @@ const LupaDia = {
       tecla()
     }, true)
     this._el = el
+  },
+
+  // El gráfico se queda con el alto que dejan libre las dos placas: así las tres van pegadas y
+  // centradas, en vez de las placas en los bordes de la pantalla y el gráfico flotando en medio.
+  _medir() {
+    const el = this._el
+    if (!el || el.classList.contains('hidden')) return
+    const cs = getComputedStyle(el)
+    const libre = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)
+      - el.querySelector('.ld-arriba').offsetHeight - el.querySelector('.ld-abajo').offsetHeight
+      - 2 * (parseFloat(cs.rowGap) || 0)
+    el.style.setProperty('--ld-alto', `${Math.max(120, Math.floor(libre))}px`)
   },
 
   _mover(d) {

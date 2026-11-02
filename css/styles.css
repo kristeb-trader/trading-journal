@@ -5817,10 +5817,13 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
    El gráfico ampliado con los días de al lado, como la lupa de la bitácora del portal: placa con la
    fecha arriba, el gráfico en medio y la ficha abajo. Las placas tienen relieve: filo claro arriba,
    canto oscuro abajo que hace de grosor y una sombra larga. Los rgba son luz y sombra, no colores.
-   Mismo z que el Lightbox: los dos van encima de la vista del día y nunca a la vez. */
+   Mismo z que el Lightbox: los dos van encima de la vista del día y nunca a la vez.
+   Las tres piezas van JUNTAS y centradas en la pantalla (Kris, 02/11): el gráfico no se estira, su alto
+   máximo es el que dejan las placas (--ld-alto, lo mide LupaDia._medir). */
 .ld {
   position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,0.92);
-  display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 14px 16px 18px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 14px 16px 18px;
 }
 .ld > * { width: min(100%, 1500px); }
 .ld-placa {
@@ -5852,9 +5855,9 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
   transition: var(--transition);
 }
 .ld-cerrar:hover { background: rgba(255,255,255,0.1); color: var(--text); }
-.ld-marco { flex: 1 1 auto; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center; }
+.ld-marco { flex: 0 0 auto; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center; }
 .ld-img {
-  display: block; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--radius);
+  display: block; max-width: 100%; max-height: var(--ld-alto, 70vh); object-fit: contain; border-radius: var(--radius);
   box-shadow: 0 24px 60px -24px rgba(0,0,0,0.9), 0 0 0 1px var(--border);
 }
 /* Las flechas, sobre el gráfico y a media altura. En el primer y el último día, ocultas. */
