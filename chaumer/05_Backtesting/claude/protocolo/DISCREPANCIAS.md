@@ -968,3 +968,23 @@ plan la descartaba entera. Desde el plan 3.55 nace recortada, en 31.491,25 – 3
 retroceso y gasta el turno, pero el motor solo anotaba la banda si la zona quedaba dentro. Por eso marcaba la resistencia
 de la 8:45 (31.214,75 – 31.223,75), que no debe existir, y el reingreso de las 8:46 salía de ella.
 
+# Viernes 9 de octubre de 2026 — coincidimos
+
+> 📝 **Marcada el 02/11/2026**, a ciegas, con el motor del plan 3.58.
+
+**Sin noticias rojas. No es día de Fed.**
+
+**Veredicto: Continuación bajista, −76,00 pts = −152,00 USD.** El motor y la lectura a mano coinciden, y coincide con el operador.
+
+| | |
+|---|---|
+| Primer movimiento | **bajista** (8:31, abre 31.167,25 · cierra 31.139,50) |
+| Premercado | **sin zonas** — la vela más fuerte hizo 4.162 contratos |
+| Zona | soporte **31.069,00 – 31.094,75** (vela 8:39), entero por debajo del de 8:33 |
+| Entrada | corto · la vela de **8:44** rompe la zona · se llena en la de **8:45** en **31.053,00** |
+| Stop | **31.129,00** · Objetivo **30.977,00** · riesgo **76,00 pts** |
+| Resultado | **STOP a las 13:25** · el mínimo se queda en 30.982,75 a las 9:12, a 5,75 del objetivo |
+
+El retroceso de la 8:41 llega a 31.129,00 y pasa la mitad de la banda (31.126,50) por 2,50: no deja resistencia, y su
+máximo es el stop.
+

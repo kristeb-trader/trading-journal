@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-02b | Backtesting de octubre (1–9/10) en la galería; dos reglas de zonas (plan 3.55 y 3.58) y las gráficas del bot, intocables |
 | 2026-11-02 | La lupa: la fecha y la ficha, pegadas al gráfico |
 | 2026-10-30 | La Curva de Equity gana el ancho de la derecha: el valor final va dentro y busca sitio |
 | 2026-10-29 | Lo que decide el setup es a dónde va el objetivo (plan 3.52): el reingreso por cambio de tendencia, la zona a la que ir nacida desde la apertura y el bloque en todos los días; y la 3.53: un retroceso del movimiento contrario no es un IRI; antes, el 27/10, dos arreglos de zonas y tres cambios visuales del bot |
@@ -66,6 +67,29 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-02b — Backtesting de octubre, dos reglas de zonas y las gráficas del bot, intocables
+
+Sesiones del 01 y el 02/11 con Kris, día a día y a ciegas (`chaumer/05_Backtesting/claude/protocolo/DISCREPANCIAS.md`).
+
+- **Del 1 al 9 de octubre, en la galería** (`GALERIA.md`, tabla nueva «Sesiones de octubre», plan 3.54–3.59): 1/10 NO
+  OPERA · 2/10 −26,50 · 5/10 +27,50 · 6/10 −20,75 · 7/10 NO OPERA (Fed) · 8/10 +30,25 · 9/10 −76,00.
+- **Plan 3.55 — la zona que pisa a otra de tipo contrario nace recortada** en su borde; antes se descartaba. Caso: 6/10,
+  la resistencia de la 8:36. Ninguna operación cambia en 84 días.
+- **Plan 3.58 — el retroceso que cruza la banda y estira la zona del borde gasta el turno** de «una sola zona entre
+  zonas». El motor solo anotaba la banda si la zona quedaba dentro. Cambia una operación: el 8/10, de Reingreso
+  alcista −19,75 a Continuación alcista +30,25.
+- Las dos, en `lector.py` y `MotorChaumer.cs` a la vez, selladas a 0 diferencias (82 días). Kris tiene que copiar
+  `MotorChaumer.cs` a NinjaTrader y F5.
+- **Las gráficas del bot (`chaumer/03_Bot/Graficas bot AAAA/`) no se corrigen**, ni desde el backtesting ni tras un
+  cambio de regla (Kris). Las del backtesting van siempre a `05_Backtesting/claude/`, y el portal enseña esa si el día
+  está en las dos (`04_Web/scripts/sync.mjs`). `subir_dia.py --pendientes` ya no rehace los días pasados por un motor
+  nuevo: solo los que no tienen ficha o traen velas nuevas.
+
+**Verificado:** `sincronia.py --sellar` a 0 diferencias en cada regla; `npm run verificar` del portal sin fallos y sin
+días duplicados; huellas de `plan_documentos` cuadradas con `sha256`; la carpeta del bot sin cambios en git.
 
 ---
 
