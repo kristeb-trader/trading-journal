@@ -988,3 +988,25 @@ de la 8:45 (31.214,75 – 31.223,75), que no debe existir, y el reingreso de las
 El retroceso de la 8:41 llega a 31.129,00 y pasa la mitad de la banda (31.126,50) por 2,50: no deja resistencia, y su
 máximo es el stop.
 
+# Lunes 12 de octubre de 2026 — coincidimos: NO OPERA · el motor marcaba un soporte que no existe
+
+> 📝 **Marcada el 02/11/2026**, a ciegas, con el motor del plan 3.59.
+
+**Sin noticias rojas. No es día de Fed.**
+
+**Veredicto: NO OPERA.** Coincide con el operador.
+
+| | |
+|---|---|
+| Primer movimiento | **bajista** (8:31, abre 31.045,25 · cierra 31.020,00) |
+| Premercado | **sin zonas** — la vela más fuerte hizo 3.858 contratos |
+| Fluidez bajista | se pierde a las 8:46: la bajada de 8:44 se queda en 30.953,75 y no rompe el soporte de 8:35 (30.936,25 – 30.952,25) |
+| Fluidez alcista | se pierde a las 8:48: la resistencia de 8:40 tampoco se rompe |
+| El otro IRI | el soporte de 9:11 (30.868,75 – 30.880,50), entero por debajo · falla a las 9:15 |
+| Reingresos | 9:16 y 9:22, el objetivo choca · 9:28, punto de referencia |
+
+**La diferencia:** el motor marcaba un soporte sobre la vela 9:06 (30.931,00 – 30.936,25), pegado al de 8:35, y con él
+salía una duda de borde. El operador: *«a las 9:06 no hay ningún soporte, eso simplemente fue un rompimiento, y la
+siguiente vela fue consecución»*. La vela 9:07 es blanca: primero sube y después da la consecución, y el motor leía la
+consecución primero. Arreglado en los dos motores; el día sigue en NO OPERA.
+
