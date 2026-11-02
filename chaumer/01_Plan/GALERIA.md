@@ -694,6 +694,7 @@ De aquí sale además el término **corrida fluida**, que es el que gobierna aho
 | **6 oct** | **Continuación alcista 10:07** *(backtesting hacia atrás, 01/11)* | STOP 10:31 | **−20,75** |
 | **7 oct** | día de Fed: cuatro reingresos, los cuatro descartados *(backtesting hacia atrás, 01/11)* | NO OPERA | — |
 | **8 oct** | **Continuación alcista 9:24** *(backtesting hacia atrás, 01/11)* | **TARGET 9:29** | **+30,25** |
+| **9 oct** | Continuación bajista 8:45 *(backtesting hacia atrás, 02/11)* | STOP 13:25 | **−76,00** |
 
 ### Lo que decía esta tabla antes del 14/09/2026
 
