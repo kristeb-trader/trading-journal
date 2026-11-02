@@ -1010,3 +1010,21 @@ salía una duda de borde. El operador: *«a las 9:06 no hay ningún soporte, eso
 siguiente vela fue consecución»*. La vela 9:07 es blanca: primero sube y después da la consecución, y el motor leía la
 consecución primero. Arreglado en los dos motores; el día sigue en NO OPERA.
 
+# Martes 13 de octubre de 2026 — coincidimos
+
+> 📝 **Marcada el 02/11/2026**, a ciegas, con el motor del plan 3.60.
+
+**Sin noticias rojas. No es día de Fed.**
+
+**Veredicto: Continuación alcista, −47,50 pts = −95,00 USD.** El motor y la lectura a mano coinciden, y coincide con el operador.
+
+| | |
+|---|---|
+| Primer movimiento | **alcista** (8:31, abre 30.619,75 · cierra 30.649,00) |
+| Premercado | resistencia **30.748,75 – 30.750,00** (vela de 9.415 contratos, 19:07 de la noche anterior): sin Continuación, solo Reingreso |
+| Reingresos | 8:41 y 8:44, bajistas, cancelados: el precio vuelve al stop antes de llenar |
+| Zona | resistencia **30.787,75 – 30.791,50** (vela 8:43), al final de la subida de 30.591,25 |
+| Entrada | largo · la vela de **8:49** rompe la zona · se llena en la de **8:50** en **30.795,25** |
+| Stop | **30.747,75** · Objetivo **30.842,75** · riesgo **47,50 pts** |
+| Resultado | **STOP a las 8:53**, por un tick (mínimo 30.747,50) · el máximo se queda en 30.801,25 |
+

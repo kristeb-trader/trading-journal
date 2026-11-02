@@ -11,7 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
-| 2026-11-02c | El 12/10 en la galería; el motor ya no marca zona antes de una consecución que llega en la misma vela |
+| 2026-11-02c | El 12 y el 13/10 en la galería; el motor ya no marca zona antes de una consecución que llega en la misma vela |
 | 2026-11-02b | Backtesting de octubre (1–9/10) en la galería; dos reglas de zonas (plan 3.55 y 3.58) y las gráficas del bot, intocables |
 | 2026-11-02 | La lupa: la fecha y la ficha, pegadas al gráfico |
 | 2026-10-30 | La Curva de Equity gana el ancho de la derecha: el valor final va dentro y busca sitio |
@@ -73,7 +73,7 @@
 
 ## Checkpoint 2026-11-02c — El 12/10, y la consecución en la misma vela
 
-- **El 12/10, NO OPERA, en la galería** (plan 3.60). Kris: a las 9:06 no hay soporte; es un rompimiento, y la vela
+- **El 12/10, NO OPERA, y el 13/10, −47,50, en la galería** (plan 3.60 y 3.61). Kris: a las 9:06 no hay soporte; es un rompimiento, y la vela
   siguiente su consecución.
 - **El motor marcaba ese soporte** porque resolvía la consecución de la vela 9:07 antes de leer su vuelta. La vela es
   blanca: primero sube (la vuelta que confirma la zona) y luego baja (la consecución). Ahora la zona `Zona.consec_en`
