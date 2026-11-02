@@ -151,6 +151,7 @@ class Zona:
         self.i_org=i if i_org is None else i_org  # indice de esa vela: el dibujo arranca AHI
         self.arriba=False; self.abajo=False       # traspasos CONFIRMADOS (rompimiento + consecucion)
         self.pend=None                            # rompimiento esperando consecucion: (dir,i,extremo,plazo_resuelto)
+        self.consec_en=None                       # (vela, sentido) en que llego la consecucion de ese rompimiento
         self.fin=None                             # indice en que queda inactiva
         self.roto=None                            # ('arriba'/'abajo', i, extremo_vela)
         self.consec=False                         # el rompimiento consiguio continuacion
@@ -286,7 +287,7 @@ def banda_ocupada(Z, lo, hi):
     zb = max(aba, key=lambda z: z.hi)
     return any(z.hi > zb.hi + 1e-9 and z.lo < za.lo - 1e-9 for z in Z)
 
-def anadir(Z, lo, hi, tipo, i, origen, extremo, i_org=None, rangos=None, bloque=False):
+def anadir(Z, lo, hi, tipo, i, origen, extremo, i_org=None, rangos=None, bloque=False, vela=None):
     blo, mid, banda = bloqueada(Z, lo, hi, extremo, tipo)
     if rangos is not None:
         # UNA SOLA zona entre zonas por banda y por jornada (Alfredo, 27/08/2026).
@@ -337,6 +338,14 @@ def anadir(Z, lo, hi, tipo, i, origen, extremo, i_org=None, rangos=None, bloque=
         # lo que cuenta es el EXTREMO del movimiento, no el rectangulo de la zona nueva
         if z.pend[0]=='abajo'  and extremo < z.lo-1e-9: return None, ('sin_consecucion', None)
         if z.pend[0]=='arriba' and extremo > z.hi+1e-9: return None, ('sin_consecucion', None)
+    # La consecucion que llega en ESTA vela, pero despues de la vuelta que confirma la zona nueva, todavia no ha
+    # llegado: vela blanca = primero el maximo, azul = primero el minimo. Kris, 02/11/2026: el 12/10, la 9:06 rompe,
+    # la 9:07 (blanca) sube y luego da la consecucion: no hay soporte en la 9:06.
+    if vela is not None:
+        for z in Z:
+            if z.consec_en is None or z.consec_en[0] != i: continue
+            if z.consec_en[1]=='abajo'  and tipo=='S' and vela['c'] <  vela['o'] and extremo < z.lo-1e-9: return None, ('sin_consecucion', None)
+            if z.consec_en[1]=='arriba' and tipo=='R' and vela['c'] >= vela['o'] and extremo > z.hi+1e-9: return None, ('sin_consecucion', None)
     if blo: return None, ('bloqueada50', mid)
     # una zona viva OCUPA su franja de precio. La candidata nace recortada en su borde; si queda entera
     # dentro, no se marca. Kris, 01/11/2026: la R de la 8:36 del 6/10 pisaba 4,25 el soporte de la 8:34.
@@ -454,7 +463,7 @@ def leer_sesion(V, dia, minimo=30):
                     # puede llegar muchas velas despues (operador 27/08/2026, 13 de julio).
                     if d=='arriba': z.arriba=True
                     else:           z.abajo=True
-                    z.pend=None; resuelto=True
+                    z.pend=None; resuelto=True; z.consec_en=(i,d)
                     if z.tipo=='P':
                         # R-15 (28/09/2026): la zona de premercado dentro de la que abrio la
                         # ventana toma su papel al salir: por arriba soporte, por abajo
@@ -601,7 +610,7 @@ def leer_sesion(V, dia, minimo=30):
                   lo,hi=z_res(kx); tipo='R'; extremo=kx['h']
               else:
                   lo,hi=z_sop(kx); tipo='S'; extremo=kx['l']
-              z,(que,mid)=anadir(Z,lo,hi,tipo,i,f"{col(kx)//100}:{kx['t'][2:4]}",extremo,ext if estado=='corrida' else r_ext,rangos,bloque)
+              z,(que,mid)=anadir(Z,lo,hi,tipo,i,f"{col(kx)//100}:{kx['t'][2:4]}",extremo,ext if estado=='corrida' else r_ext,rangos,bloque,k)
               log.append(f"{col(k)//100}:{k['t'][2:4]} muere corrida → zona {tipo} "
                          f"{lo:.2f}-{hi:.2f} sobre {col(kx)//100}:{kx['t'][2:4]} [{que}"
                          + (f" mitad {mid:.3f}" if mid else "") + "]")
@@ -633,7 +642,7 @@ def leer_sesion(V, dia, minimo=30):
                   lo,hi=z_sop(kx); tipo='S'; extremo=kx['l']
               else:
                   lo,hi=z_res(kx); tipo='R'; extremo=kx['h']
-              z,(que,mid)=anadir(Z,lo,hi,tipo,i,f"{col(kx)//100}:{kx['t'][2:4]}",extremo,ext if estado=='corrida' else r_ext,rangos,bloque)
+              z,(que,mid)=anadir(Z,lo,hi,tipo,i,f"{col(kx)//100}:{kx['t'][2:4]}",extremo,ext if estado=='corrida' else r_ext,rangos,bloque,k)
               log.append(f"{col(k)//100}:{k['t'][2:4]} confirma retroceso → zona {tipo} "
                          f"{lo:.2f}-{hi:.2f} sobre {col(kx)//100}:{kx['t'][2:4]} [{que}"
                          + (f" mitad {mid:.3f}" if mid else "") + "]")

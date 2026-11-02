@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:74264b8b739b2fd1 C:2786440eaaf43b3b";
+        public const string SELLO = "L:bf75f739f917807d C:a772c8db78322840";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -94,6 +94,7 @@ namespace NinjaTrader.NinjaScript
             public int IOrg;                               // índice de esa vela
             public bool Arriba, Abajo;                     // traspasos CONFIRMADOS
             public Pend Pend;                              // rompimiento esperando consecución
+            public int? ConsecEnI; public string ConsecEnDir;  // vela y sentido en que llegó esa consecución
             public int? Fin;                               // vela en que queda inactiva
             public Roto Roto;
             public bool Consec; public int? IConsec; public double? ConsecExt;
@@ -368,7 +369,7 @@ namespace NinjaTrader.NinjaScript
         }
 
         private static Zona Anadir(List<Zona> Z, double lo, double hi, string tipo, int i, string origen, double extremo,
-                                   int? iOrg, List<Banda> rangos, out string que, out double? mid, bool bloque)
+                                   int? iOrg, List<Banda> rangos, out string que, out double? mid, bool bloque, Vela vela)
         {
             Banda banda;
             bool blo = Bloqueada(Z, lo, hi, extremo, tipo, out mid, out banda);
@@ -419,6 +420,15 @@ namespace NinjaTrader.NinjaScript
                 if (z.Pend.Dir == "abajo" && extremo < z.Lo - 1e-9) { que = "sin_consecucion"; mid = null; return null; }
                 if (z.Pend.Dir == "arriba" && extremo > z.Hi + 1e-9) { que = "sin_consecucion"; mid = null; return null; }
             }
+            // la consecución que llega en ESTA vela pero después de la vuelta todavía no ha llegado: blanca = primero
+            // el máximo, azul = primero el mínimo (Kris, 02/11/2026: el 12/10, no hay soporte en la 9:06)
+            if (vela != null)
+                foreach (var z in Z)
+                {
+                    if (z.ConsecEnI == null || z.ConsecEnI.Value != i) continue;
+                    if (z.ConsecEnDir == "abajo" && tipo == "S" && vela.C < vela.O && extremo < z.Lo - 1e-9) { que = "sin_consecucion"; mid = null; return null; }
+                    if (z.ConsecEnDir == "arriba" && tipo == "R" && vela.C >= vela.O && extremo > z.Hi + 1e-9) { que = "sin_consecucion"; mid = null; return null; }
+                }
             if (blo) { que = "bloqueada50"; return null; }
             // una zona viva ocupa su franja: la candidata nace recortada en su borde; si queda entera dentro,
             // no se marca (Kris, 01/11/2026)
@@ -538,7 +548,7 @@ namespace NinjaTrader.NinjaScript
                         if (d == "arriba" ? k.H > ex : k.L < ex)
                         {
                             if (d == "arriba") z.Arriba = true; else z.Abajo = true;
-                            z.Pend = null; resuelto = true;
+                            z.Pend = null; resuelto = true; z.ConsecEnI = i; z.ConsecEnDir = d;
                             if (z.Tipo == "P")
                             {
                                 z.Tipo = d == "arriba" ? "S" : "R";
@@ -665,7 +675,7 @@ namespace NinjaTrader.NinjaScript
                         if (alc) { lh = ZRes(kx); tipo = "R"; extremo = kx.H; }
                         else     { lh = ZSop(kx); tipo = "S"; extremo = kx.L; }
                         string que; double? mid;
-                        var z = Anadir(Z, lh[0], lh[1], tipo, i, Hh(kx), extremo, ext, rangos, out que, out mid, bloque);
+                        var z = Anadir(Z, lh[0], lh[1], tipo, i, Hh(kx), extremo, ext, rangos, out que, out mid, bloque, k);
                         log.Add(Hh(k) + " muere corrida → zona " + tipo + " " + F2(lh[0]) + "-" + F2(lh[1]) + " sobre " + Hh(kx) + " [" + que
                                 + (mid.HasValue ? " mitad " + F3(mid.Value) : "") + "]");
                         if (z != null && (que == "nueva" || que == "aparte") && z.Tipo == tipo)
@@ -698,7 +708,7 @@ namespace NinjaTrader.NinjaScript
                         if (alc) { lh = ZSop(kx); tipo = "S"; extremo = kx.L; }
                         else     { lh = ZRes(kx); tipo = "R"; extremo = kx.H; }
                         string que; double? mid;
-                        var z = Anadir(Z, lh[0], lh[1], tipo, i, Hh(kx), extremo, rExt, rangos, out que, out mid, bloque);
+                        var z = Anadir(Z, lh[0], lh[1], tipo, i, Hh(kx), extremo, rExt, rangos, out que, out mid, bloque, k);
                         log.Add(Hh(k) + " confirma retroceso → zona " + tipo + " " + F2(lh[0]) + "-" + F2(lh[1]) + " sobre " + Hh(kx) + " [" + que
                                 + (mid.HasValue ? " mitad " + F3(mid.Value) : "") + "]");
                         double refActual = alc ? kx.L : kx.H;
