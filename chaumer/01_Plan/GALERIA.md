@@ -696,6 +696,7 @@ De aquí sale además el término **corrida fluida**, que es el que gobierna aho
 | **8 oct** | **Continuación alcista 9:24** *(backtesting hacia atrás, 01/11)* | **TARGET 9:29** | **+30,25** |
 | **9 oct** | Continuación bajista 8:45 *(backtesting hacia atrás, 02/11)* | STOP 13:25 | **−76,00** |
 | **12 oct** | la apertura baja y la bajada siguiente no rompe su soporte; el otro IRI por debajo, el de las 9:11, también falla *(backtesting hacia atrás, 02/11)* | NO OPERA | — |
+| **13 oct** | Continuación alcista 8:50 *(backtesting hacia atrás, 02/11)* | STOP 8:53 | **−47,50** |
 
 ### Lo que decía esta tabla antes del 14/09/2026
 
