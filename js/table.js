@@ -1,10 +1,10 @@
-// Otros › Trades: los míos, los de Alfredo y los del bot en una sola lista, con
-// filtros de varias opciones a la vez y por fechas.
+// Otros › Trades: los míos, los de Alfredo, los del bot y los del backtesting en
+// una sola lista, con filtros de varias opciones a la vez y por fechas.
 // Diseño: docs/disenos/2026-11-03-trades-tres-fuentes.md
 //
 // Reglas que no se rompen aquí:
-//   · Es una VISTA. `trades`, `chaumer_operativas` y `bot_operaciones` solo se
-//     leen y no se mezclan en ningún cálculo (D-019, D-038).
+//   · Es una VISTA. `trades`, `chaumer_operativas`, `bot_operaciones` y `bt_*`
+//     solo se leen y no se mezclan en ningún cálculo (D-019, D-038).
 //   · Un trade mío NO guarda su setup: es el de la SESIÓN de su fecha
 //     (`sesiones.setup_codigo`). Dos trades del mismo día comparten setup.
 //   · El filtro de cuentas de la barra superior solo aplica a los míos.
@@ -12,7 +12,7 @@ const TradesTable = (() => {
   let allTrades      = []
   let allSesiones    = []
   let allCasuisticas = []
-  let allRows        = []  // fila común de las tres fuentes
+  let allRows        = []  // fila común de las cuatro fuentes
   let casByDate      = {}  // { 'YYYY-MM-DD': ['Error A', 'Error B'] }
   let setupPorFecha  = {}  // { 'YYYY-MM-DD': 'continuacion_alcista' }
   let variantes      = []  // catalogo_setup_variantes, solo para los nombres
@@ -30,7 +30,7 @@ const TradesTable = (() => {
   // ── Filtros ───────────────────────────────────────────────────────────────
   // Un grupo sin nada marcado = sin filtrar. Se recuerdan en este navegador.
   const GRUPOS = [
-    { id: 'quien', nombre: 'Quién', opciones: [['mio', 'Mío'], ['alfredo', 'Alfredo'], ['bot', 'Bot']] },
+    { id: 'quien', nombre: 'Quién', opciones: [['mio', 'Mío'], ['alfredo', 'Alfredo'], ['bot', 'Bot'], ['bt', 'Backtesting']] },
     { id: 'setup', nombre: 'Setup', opciones: [
       ['continuacion_alcista', 'Cont. alcista'], ['continuacion_bajista', 'Cont. bajista'],
       ['reingreso_alcista', 'Reing. alcista'], ['reingreso_bajista', 'Reing. bajista'], ['__sin', 'Sin setup']] },
@@ -79,7 +79,7 @@ const TradesTable = (() => {
     return corto && dir ? `${corto} ${dir}` : (variantes.find(v => v.codigo === c)?.nombre || c)
   }
 
-  const QUIEN = { mio: 'Mío', alfredo: 'Alfredo', bot: 'Bot' }
+  const QUIEN = { mio: 'Mío', alfredo: 'Alfredo', bot: 'Bot', bt: 'Backtesting' }
 
   function resultBadge(row) {
     if (row.res === 'no') {
@@ -181,13 +181,34 @@ const TradesTable = (() => {
     }
   }
 
-  function buildRows(chaumer, bot) {
-    const orden = { mio: 0, alfredo: 1, bot: 2 }
+  // El backtesting (bt_*): una fila por operación; la jornada sin operación, No operó. Los puntos
+  // se guardan en positivo (el signo lo pone el resultado); el setup, «continuacion» + «largo»/«corto».
+  function filasBt(j) {
+    const ops = j.operaciones || []
+    if (!ops.length) {
+      return [{ quien: 'bt', date: j.fecha, hora: '—', setup: null, dir: null, res: 'no',
+                pts: null, pnl: null, motivo: j.notas, data: j }]
+    }
+    return ops.map(o => {
+      const dir = o.direccion === 'largo' ? 'long' : o.direccion === 'corto' ? 'short' : null
+      return {
+        quien: 'bt', date: j.fecha, hora: fmtHora(o.hora), dir,
+        setup: o.setup && dir ? `${o.setup}_${dir === 'long' ? 'alcista' : 'bajista'}` : null,
+        res: o.resultado || null,
+        pts: o.puntos != null ? (o.resultado === 'stop' ? -1 : 1) * Number(o.puntos) : null,
+        pnl: o.pnl != null ? Number(o.pnl) : null, motivo: o.observaciones, data: j,
+      }
+    })
+  }
+
+  function buildRows(chaumer, bot, bt) {
+    const orden = { mio: 0, alfredo: 1, bot: 2, bt: 3 }
     allRows = [
       ...allTrades.map(filaMia),
       ...allSesiones.filter(s => s.no_opero).map(filaMiaSinOperar),
       ...chaumer.map(filaAlfredo),
       ...bot.map(filaBot),
+      ...bt.flatMap(filasBt),
     ]
     allRows.forEach(r => { r.sortKey = `${r.date} ${r.hora === '—' ? '99:99' : r.hora} ${orden[r.quien]}` })
     allRows.sort((a, b) => b.sortKey.localeCompare(a.sortKey))
@@ -372,7 +393,7 @@ const TradesTable = (() => {
 
   // El visor del día con lo filtrado: un día por fecha y por quién, del más viejo al más nuevo. Si filtras
   // Reingreso, las flechas pasan solo por los reingresos. Alfredo es el calendario de Chaumer.
-  const FUENTE_DE = { mio: 'mio', alfredo: 'chaumer', bot: 'bot' }
+  const FUENTE_DE = { mio: 'mio', alfredo: 'chaumer', bot: 'bot', bt: 'manual' }
   function verDia(fecha, quien) {
     const vistos = new Set(), items = []
     filtered.forEach(r => {
@@ -384,28 +405,29 @@ const TradesTable = (() => {
     items.sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0))
     const OPC = Object.fromEntries(GRUPOS.flatMap(g => g.opciones || []))
     const partes = [
-      ...(filtros.quien.length && filtros.quien.length < 3 ? filtros.quien.map(q => QUIEN[q]) : []),
+      ...(filtros.quien.length && filtros.quien.length < GRUPOS[0].opciones.length ? filtros.quien.map(q => QUIEN[q]) : []),
       ...filtros.setup.map(nombreSetup),
       ...filtros.res.map(r => OPC[r] || r),
     ]
     Visor.abrir({ items, actual: { fecha, fuente: FUENTE_DE[quien] }, titulo: ['Trades', ...partes].join(' · ') })
   }
 
-  // Alfredo y el bot no tumban la pantalla si fallan: se avisa y se sigue.
+  // Alfredo, el bot y el backtesting no tumban la pantalla si fallan: se avisa y se sigue.
   const opcional = (p, nombre) => p.catch(e => { console.warn(`[Trades] ${nombre}:`, e); avisos.push(nombre); return [] })
 
   async function init() {
     avisos = []
-    let chaumer, bot
-    ;[allTrades, allSesiones, allCasuisticas, variantes, chaumer, bot] = await Promise.all([
+    let chaumer, bot, bt
+    ;[allTrades, allSesiones, allCasuisticas, variantes, chaumer, bot, bt] = await Promise.all([
       DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(),
       DB.getSetupVariantes({ soloActivos: false }).catch(() => []),
       opcional(DB.getChaumerOperativas(), 'Alfredo'),
       opcional(DB.getBotOperaciones(), 'el bot'),
+      opcional(DB.getBacktesting().then(r => r.jornadas || []), 'el backtesting'),
     ])
     buildCasByDate()
     buildSetupPorFecha()
-    buildRows(chaumer, bot)
+    buildRows(chaumer, bot, bt)
 
     AccountFilter.create('trades', {
       mountId: 'accountFilterTrades',

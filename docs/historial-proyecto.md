@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-03c | Trades: el backtesting, cuarta opción de Quién |
 | 2026-11-03 | El visor del día: una sola pantalla, imágenes 8 veces más ligeras, y recorre lo filtrado en Trades |
 | 2026-11-03 | Trades: los míos, los de Alfredo y los del bot en una lista, con filtros de varias opciones y por fechas |
 | 2026-11-02c | El 12 y el 13/10 en la galería; el motor ya no marca zona antes de una consecución que llega en la misma vela |
@@ -70,6 +71,20 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-03c — Trades: el backtesting, cuarta opción de Quién
+
+- **En Otros › Trades, Quién gana «Backtesting»** (etiqueta ámbar), con la bitácora `bt_*`: una fila por operación y
+  la jornada sin operación como No operó. Los puntos de `bt_operaciones` se guardan en positivo: el signo lo pone el
+  resultado. El setup sale de `setup` + `direccion` (largo/corto). P&L, el `pnl` congelado. Sin Error. El ojo abre
+  el visor como «Backtesting manual» y recorre solo lo filtrado. Diseño v1.2.
+- No viene marcado por defecto (los filtros guardados siguen como estaban); «Limpiar» sí lo incluye.
+
+**Verificado** con la bitácora de Supabase del 03/11 inyectada en el preview: solo Backtesting, 259 filas (211
+operaciones + 48 jornadas sin operación), 120 T · 91 S; reingresos alcistas + bajistas, 42 operaciones y 25 T,
+igual que el `SELECT`. El visor se abre en «Backtesting manual», 42 de 42. Sin errores en consola.
 
 ---
 

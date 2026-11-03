@@ -1039,6 +1039,7 @@ body[data-modo-local]::before {
 .tf-q-mio     { --c: var(--accent); --c-txt: var(--accent-txt); --c-dim: var(--accent-dim); }
 .tf-q-alfredo { --c: var(--blue);   --c-txt: var(--blue-txt);   --c-dim: var(--blue-dim); }
 .tf-q-bot     { --c: var(--violet); --c-txt: var(--violet-txt); --c-dim: var(--violet-dim); }
+.tf-q-bt      { --c: var(--warning); --c-txt: var(--warning-txt); --c-dim: var(--warning-dim); }
 /* .tf-barra input.tf-fecha: la regla general de input[type=date] (width 100%,
    display block) pesa más que una clase sola. */
 .tf-barra input.tf-fecha {

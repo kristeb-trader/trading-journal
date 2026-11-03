@@ -4,6 +4,7 @@
 |---|---|---|
 | v1.0 | 03/11/2026 | Kris eligió la OPCIÓN A del boceto (lista mezclada) |
 | v1.1 | 03/11/2026 | **Aprobado e implementado** · checkpoint 2026-11-03 del historial |
+| v1.2 | 03/11/2026 | **Implementado** · cuarta fuente: el **Backtesting** (`bt_*`), pedido de Kris · checkpoint 2026-11-03c |
 
 ## La pregunta
 
@@ -28,6 +29,7 @@ fila dice **de quién es**.
 | **Mío** | `trades` (+ `sesiones` con `no_opero`) | un trade | el de la sesión de su fecha (`setup_codigo`) | `market_pos` | salida − entrada, con el signo de la dirección | `profit` (neto) |
 | **Alfredo** | `chaumer_operativas` | un día | `setup_codigo` | la del setup (alcista / bajista) | `puntos` | — (no hay) |
 | **Bot** | `bot_operaciones` | un día y cuenta | `setup` + `direccion` → `continuacion_alcista`… | `direccion` (1 / −1) | `puntos` | `pnl_neto` |
+| **Backtesting** (v1.2) | `bt_jornadas` + `bt_operaciones` | una operación (la jornada sin operación, No operó) | `setup` + `direccion` (largo / corto) → `reingreso_bajista`… | `direccion` | `puntos` con el signo del resultado (se guardan en positivo) | `pnl` (neto, congelado) |
 
 Los días sin operación entran como **No operó**: los de Kris (`no_opero`, con su motivo), los
 de Alfredo (`opero = false`) y los `NO OPERA` / `NO ARMADO` del bot (con su motivo).
@@ -49,7 +51,7 @@ nada marcado = sin filtrar.
 
 | Grupo | Opciones |
 |---|---|
-| Quién | Mío · Alfredo · Bot |
+| Quién | Mío · Alfredo · Bot · Backtesting (v1.2; no viene marcado por defecto) |
 | Setup | Cont. alcista · Cont. bajista · Reing. alcista · Reing. bajista · Sin setup |
 | Resultado | Target · Stop · B.E. · No operó |
 | Fechas | Desde · Hasta, y atajos: Esta semana · Este mes · Mes pasado · Todo |
