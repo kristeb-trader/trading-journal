@@ -8,6 +8,8 @@
 // { fecha, fuente, url? }: la fuente (mio · chaumer · bot · manual) dice de dónde salen el banner y el
 // análisis (Calendarios.diaVisor). ← / → , las flechas o deslizar pasan de día; A abre el análisis; Esc
 // cierra la hoja y, otro Esc, el visor. El día de antes y el de después se piden por adelantado.
+// Un clic en el gráfico (o Z) lo acerca al punto clicado y se recorre moviendo el ratón o el dedo; otro clic
+// lo devuelve. El botón «atrás» del celular cierra el visor en vez de salir de la app.
 const Visor = {
   _el: null,
   _items: [],       // [{ fecha, fuente, url? }], del más viejo al más nuevo
@@ -16,6 +18,8 @@ const Visor = {
   _cache: null,     // `${fuente}|${fecha}` → Promise<día>
   _token: 0,
   _hoja: false,     // la hoja del análisis, abierta (se queda abierta al pasar de día)
+  _zoom: false,     // el gráfico, acercado
+  _url: null,       // la URL original del gráfico que se ve (para pedirlo en grande al acercar)
 
   // items: la lista o una promesa de ella. actual: { fecha, fuente } con el que se abre, aunque la lista
   // aún no haya llegado. titulo: de dónde viene el recorrido («Mío», «Trades · Reingreso»).
@@ -27,6 +31,8 @@ const Visor = {
     this._cargada = false
     this._hoja = false
     this._el.querySelector('.vs-ctx').textContent = titulo
+    // Una entrada en el historial: el «atrás» del celular (o del navegador) cierra el visor.
+    if (!this.abierto() && history.state?.visor !== 1) history.pushState({ visor: 1 }, '')
     this._el.classList.remove('hidden')
     document.body.classList.add('modal-open')
     this._pintarHoja()
@@ -49,7 +55,15 @@ const Visor = {
   },
 
   cerrar() {
-    if (!this._el || this._el.classList.contains('hidden')) return
+    if (!this.abierto()) return
+    // Si el visor dejó su entrada en el historial, se gasta: al volver, popstate lo cierra (_quitar).
+    if (history.state?.visor === 1) history.back()
+    else this._quitar()
+  },
+
+  _quitar() {
+    if (!this.abierto()) return
+    this._quitarZoom()
     this._el.classList.add('hidden')
     this._token++
     if (document.getElementById('dayModal')?.classList.contains('hidden') !== false) document.body.classList.remove('modal-open')
@@ -104,12 +118,15 @@ const Visor = {
       else if (e.target.closest('.vs-mas') || e.target.closest('.vs-hoja-x')) this._alternarHoja()
       else if (e.target.closest('.vs-tres')) TresGraficas.open(this._items[this._i].fecha)
     })
-    // En el celular, deslizar sobre el gráfico: a la izquierda, el día siguiente.
+    // En el celular, deslizar sobre el gráfico: a la izquierda, el día siguiente. Acercado, el dedo lo recorre.
     const marco = el.querySelector('.ld-marco')
+    el.querySelector('.ld-img').addEventListener('click', e => this._alternarZoom(e))
+    marco.addEventListener('mousemove', e => { if (this._zoom) this._origen(e) })
     let x0 = null, y0 = null
     marco.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY }, { passive: true })
+    marco.addEventListener('touchmove', e => { if (this._zoom) this._origen(e.touches[0]) }, { passive: true })
     marco.addEventListener('touchend', e => {
-      if (x0 == null) return
+      if (x0 == null || this._zoom) { x0 = null; return }
       const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0
       x0 = null
       if (Math.abs(dx) > 60 && Math.abs(dx) > 1.5 * Math.abs(dy)) this._mover(dx < 0 ? 1 : -1)
@@ -120,10 +137,11 @@ const Visor = {
       if (!this.abierto() || TresGraficas.abierta()) return
       if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName)) return
       const tecla = {
-        Escape: () => (this._hoja ? this._alternarHoja() : this.cerrar()),
+        Escape: () => (this._zoom ? this._quitarZoom() : this._hoja ? this._alternarHoja() : this.cerrar()),
         ArrowLeft: () => this._mover(-1),
         ArrowRight: () => this._mover(1),
         a: () => this._alternarHoja(), A: () => this._alternarHoja(),
+        z: () => this._alternarZoom(), Z: () => this._alternarZoom(),
       }[e.key]
       if (!tecla) return
       e.stopImmediatePropagation()
@@ -132,6 +150,12 @@ const Visor = {
     }, true)
     // El gráfico se queda con el alto que dejan la placa y el banner: las tres piezas van juntas y
     // centradas. Si cambia la pantalla o el banner (un día con dos operaciones), se vuelve a medir.
+    // El «atrás»: con las 3 gráficas encima, cierra solo esas y el visor sigue (vuelve a dejar su entrada).
+    window.addEventListener('popstate', () => {
+      if (!this.abierto()) return
+      if (TresGraficas.abierta()) { TresGraficas.close(); history.pushState({ visor: 1 }, ''); return }
+      this._quitar()
+    })
     const ro = new ResizeObserver(() => this._medir())
     ;[el, el.querySelector('.ld-arriba'), el.querySelector('.vs-abajo')].forEach(n => ro.observe(n))
     this._el = el
@@ -150,6 +174,7 @@ const Visor = {
   _mover(d) {
     const n = this._i + d
     if (n < 0 || n >= this._items.length) return
+    this._quitarZoom()
     this._i = n
     this._pintar()
   },
@@ -194,6 +219,7 @@ const Visor = {
     const img = this._el.querySelector('.ld-img'), sin = this._el.querySelector('.vs-sin-img')
     img.classList.toggle('hidden', !url)
     sin.classList.toggle('hidden', !!url)
+    this._url = url || null
     if (url) {
       const src = imgOpt(url)
       if (img.getAttribute('src') !== src) { img.src = src; this._entra(img) }
@@ -229,6 +255,41 @@ const Visor = {
     this._entra(banner)
     el.querySelector('.vs-mas').classList.toggle('hidden', !d.analisis)
     if (this._hoja) this._cargarAnalisis(d, token)
+  },
+
+  // ── El zoom ──
+  // Acercado, el gráfico se agranda alrededor del punto que hay bajo el ratón o el dedo (transform-origin),
+  // así que moverlos lo recorre sin arrastrar. Al acercar se pide en grande (2560 px) para que no se vea borroso.
+  _alternarZoom(e) {
+    const img = this._el.querySelector('.ld-img')
+    if (!this._url || img.classList.contains('hidden')) return
+    if (this._zoom) { this._quitarZoom(); return }
+    this._zoom = true
+    img.classList.remove('entra')   // la animación de entrada deja su transform y taparía el del zoom
+    this._el.querySelector('.ld-marco').classList.add('zoom')
+    if (e && 'clientX' in e) this._origen(e)
+    const grande = imgOpt(this._url, 2560), url = this._url
+    if (img.getAttribute('src') !== grande) {
+      const pre = new Image()
+      pre.onload = () => { if (this._zoom && this._url === url) img.src = grande }
+      pre.src = grande
+    }
+  },
+
+  _quitarZoom() {
+    if (!this._zoom) return
+    this._zoom = false
+    this._el.querySelector('.ld-marco').classList.remove('zoom')
+    this._el.querySelector('.ld-img').style.transformOrigin = ''
+  },
+
+  // El punto bajo el puntero, en % de la imagen SIN escalar (centrada en el marco).
+  _origen(p) {
+    const img = this._el.querySelector('.ld-img'), m = img.parentElement.getBoundingClientRect()
+    const x = (p.clientX - m.left - img.offsetLeft) / img.offsetWidth
+    const y = (p.clientY - m.top - img.offsetTop) / img.offsetHeight
+    const pc = v => `${Math.round(Math.min(1, Math.max(0, v)) * 1000) / 10}%`
+    img.style.transformOrigin = `${pc(x)} ${pc(y)}`
   },
 
   // ── La hoja del análisis ──

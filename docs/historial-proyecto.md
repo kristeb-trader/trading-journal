@@ -98,10 +98,16 @@ enseñar nada.
   los días de la pantalla. En Trades, el ojo «Ver el día» está ahora en todas las filas, también las de Alfredo y el Bot.
 - **Teclado y gestos:** ← → , las flechas o deslizar; A abre el análisis; Esc lo cierra y, otro Esc, el visor. Las 3
   gráficas se abren desde la placa (⊞) por encima del visor y, al cerrarlas, se vuelve a él.
+- **Zoom** (segunda entrega del día): un clic en el gráfico (o Z) lo acerca 2,4 veces alrededor del punto clicado y se
+  recorre moviendo el ratón o el dedo, sin arrastrar; al acercar se pide en 2560 px para que no se vea borroso. Otro clic
+  o Esc lo devuelve. Las flechas se apartan mientras tanto y pasar de día lo quita.
+- **El «atrás» del celular cierra el visor** en vez de salir de la app: el visor deja una entrada en el historial al
+  abrirse; con las 3 gráficas encima, el atrás cierra solo esas. La tira de miniaturas queda para cuando Kris la pida.
 
 **Verificado** en la copia local, consola limpia: Mío 18/08 (TARGET +20 · 2 contratos · +$78, imagen `w_1200`), flechas y
 hoja del análisis; Bot de octubre (12/10 sin gráfico, con su banner y su motivo); Trades con «Reing. bajista» → 2 días,
-solo esos; Disciplina → 17 días; las 3 gráficas desde el visor; móvil a 375 px sin scroll horizontal.
+solo esos; Disciplina → 17 días; las 3 gráficas desde el visor; móvil a 375 px sin scroll horizontal; zoom en el
+18/08 (`scale(2.4)`, origen 84 % · 75 %, imagen `w_2560`); `history.back()` cierra el visor y deja el calendario.
 
 ---
 
