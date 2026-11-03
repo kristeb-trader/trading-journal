@@ -957,12 +957,10 @@ const Metrics = (() => {
       const dayEl = e.target.closest('.disc-fail-day[data-date]')
       if (!dayEl) return
       const date = dayEl.dataset.date
+      // El visor recorre los días de esta lista.
+      const fechas = [...new Set([...e.currentTarget.querySelectorAll('.disc-fail-day[data-date]')].map(el => el.dataset.date))].sort()
       document.getElementById('disciplineModal').classList.add('hidden')
-      const [trades, sesion] = await Promise.all([
-        DB.getTradesByDate(date),
-        DB.getSesionByDate(date),
-      ])
-      await Modal.openDay(date, trades, sesion)
+      Visor.abrir({ items: fechas.map(f => ({ fecha: f, fuente: 'mio' })), actual: { fecha: date, fuente: 'mio' }, titulo: 'Disciplina' })
     })
   }
 

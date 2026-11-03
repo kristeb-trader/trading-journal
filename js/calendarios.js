@@ -971,101 +971,75 @@ const Calendarios = (() => {
     return { res, tono: rb.slice(2), setup: esc(setup) }   // setup ya escapado: va a innerHTML
   }
 
-  // ── La lupa ──────────────────────────────────────────────────────────────
-  // El gráfico ampliado de la vista del día (LupaDia, app.js), como la lupa de la bitácora del
-  // portal: recorre los días CON gráfico de ese calendario, del más viejo al más nuevo y sin
-  // mirar el mes, y debajo pone una fila por operación (Kris, 26/10).
-  async function conGrafico(id) {
+  // ── El visor del día (Visor, visor.js) ──────────────────────────────────
+  // Lo que el visor necesita de cada calendario: la LISTA de días que recorre, y de cada día el gráfico,
+  // el banner (resultado · puntos · contratos · P&L · setup, con el tono del resultado) y el análisis,
+  // que solo se pide al abrir la hoja. Los días sin gráfico entran en el recorrido con su banner (03/11).
+  const porFecha = (a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0)
+
+  async function recorrido(id) {
     let filas
     if (id === 'mio') {
-      filas = (await DB.getSesiones() || []).filter(s => esDiaHabil(s.sesion_date)).map(s => [s.sesion_date, s.imagen_url])
+      // Los días con trades (de las cuentas del filtro del calendario) o con algo registrado: gráfico o «no operé».
+      const [trades, sesiones] = await Promise.all([DB.getTrades(), DB.getSesiones()])
+      const ses = Object.fromEntries((sesiones || []).map(x => [x.sesion_date, x]))
+      const fechas = new Set(AccountFilter.filter('calendar', trades || []).map(t => t.trade_date).filter(Boolean))
+      ;(sesiones || []).forEach(x => { if (x.imagen_url || x.no_opero) fechas.add(x.sesion_date) })
+      filas = [...fechas].filter(esDiaHabil).map(f => [f, ses[f]?.imagen_url])
     } else {
       const src = await (fuentes || cargarFuentes())
       if (id === 'chaumer') filas = (src.chaumer || []).map(c => [c.fecha, c.imagen_url])
       else if (id === 'manual') filas = (src.manual || []).map(j => [j.fecha, j.imagen])
       else {
-        // El Bot enseña el gráfico del motor (el bot no guarda el suyo).
-        // El candado del motor (D-026): un día sin registrar no se enseña, aunque su gráfico exista.
+        // El Bot: sus días y, antes de su primera fila, los del motor (simulados). El gráfico es el del
+        // motor; un día bajo el candado (D-026) no lo enseña.
+        const graf = Object.fromEntries((src.motor || []).map(r => [r.fecha, r.grafico_url]))
         const cerrado = new Set((src.estados || []).filter(e => e.estado === 'bloqueada').map(e => e.fecha))
-        filas = (src.motor || []).filter(r => !cerrado.has(r.fecha)).map(r => [r.fecha, r.grafico_url])
+        const desde = (src.bot || []).map(r => r.fecha).sort()[0] || '9999'
+        const fechas = new Set((src.bot || []).map(r => r.fecha))
+        ;(src.estados || []).forEach(e => { if (e.fecha < desde) fechas.add(e.fecha) })
+        filas = [...fechas].map(f => [f, cerrado.has(f) ? null : graf[f]])
       }
     }
-    return filas.filter(([f, u]) => f && u).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-      .map(([fecha, url]) => ({ fecha, url }))
+    return filas.filter(([f]) => f).map(([fecha, url]) => ({ fecha, fuente: id, url: url || null })).sort(porFecha)
   }
 
-  const RES_TXT = { target: 'Target', stop: 'Stop', be: 'B.E.', cierre: 'Cierre por hora' }
-  // Aquí sí, los puntos exactos: en el calendario van redondeados, pero esto es el detalle.
-  const ptsExactos = v => `${v < 0 ? '−' : v > 0 ? '+' : ''}${Math.abs(v).toLocaleString('es-ES', { maximumFractionDigits: 2 })}`
-
-  // Setup · resultado · puntos · contratos · P&L, una fila por operación (Bitacora.astro, ficha()).
-  // Debajo, si el gráfico no enseña lo que operó el bot (el motor de hoy marca otra cosa), el aviso.
-  function fichaHtml(d, calc) {
-    const grafico = (d?.textos || []).find(t => t[0] === 'El gráfico')
-    const aviso = grafico ? `<div class="ld-aviso"><i class="ti ti-info-circle"></i>${esc(grafico[1])}</div>` : ''
-    if (!d || !d.ops.length) {
-      const [txt] = d ? etiquetaDe(d) : ['SIN OPERACIÓN']
-      return `<div class="ld-vacia"><span class="ld-pil">${txt}</span>${d?.nota ? `<span>${esc(d.nota)}</span>` : ''}</div>${aviso}`
-    }
-    if (d.simulado) calc = true
-    const dato = (lab, val, cls = '') => `<div class="ld-dato ${cls}"><span class="ld-etiq">${lab}</span>${val}</div>`
-    return d.ops.map((o, i) => {
-      const setup = [o.setup, o.dir && !/alcista|bajista/i.test(o.setup || '') ? o.dir.toLowerCase() : ''].filter(Boolean).join(' ')
-      const signo = o.res === 'cierre' ? Math.sign(o.puntos) : 0
-      const tono = o.res === 'target' || signo > 0 ? 't' : o.res === 'stop' || signo < 0 ? 's' : 'o'
-      return '<div class="ld-op">' +
-        (d.ops.length > 1 ? dato(`Operación ${i + 1}`, `<b>${esc(o.hora || '—')}</b>`) : '') +
-        dato('Setup', `<span class="ld-setup">${esc(setup || '—')}</span>`) +
-        dato('Resultado', `<span class="ld-pil ld-${tono}">${RES_TXT[o.res] || '—'}</span>`) +
-        dato('Puntos', `<b class="${clsSigno(o.puntos)}">${ptsExactos(o.puntos)}</b>`) +
-        dato('Contratos', `<b>${o.contratos || '—'}</b>`) +
-        dato(calc ? 'P&amp;L calc.' : 'P&amp;L', `<b class="${clsSigno(o.pnl)}">${fmtDinero(o.pnl)}</b>`, 'ld-pnl') +
-        '</div>'
-    }).join('') + aviso
+  // Abre el visor en un día de un calendario, con todos los días de ese calendario para recorrer.
+  function abrirVisor(id, fe) {
+    Visor.abrir({ items: recorrido(id), actual: { fecha: fe, fuente: id }, titulo: '' })
   }
 
-  // url: la del gráfico que se clicó, por si ese día no saliera en la lista.
-  async function lupa(id, fe, url) {
-    const f = FUENTE[id]
-    const dias = await conGrafico(id).catch(err => { console.warn('[lupa]', err); return [] })
-    if (!dias.some(d => d.fecha === fe)) dias.push({ fecha: fe, url })
-    dias.sort((a, b) => (a.fecha < b.fecha ? -1 : 1))
-    LupaDia.open({
-      dias, idx: dias.findIndex(d => d.fecha === fe), quien: f.nombre, color: f.color,
-      ficha: fe => diaDe(id, fe).then(d => fichaHtml(d, f.calc)),
-    })
-  }
+  const bloque = (lbl, txt, tono = '') =>
+    `<div class="dv-block ${tono}"><div class="dv-lbl">${lbl}</div><div class="dv-txt"><p>${esc(txt).replace(/\n/g, '<br>')}</p></div></div>`
 
-  // La misma pantalla completa que abre "Mío" (Modal, app.js): cabecera con el
-  // resultado, el gráfico fijo —se amplía al clicar— y debajo lo escrito del día.
-  // El día 🔒 (simulado del Bot sin registrar) no enseña ni gráfico ni operación.
-  function abrirDia(fe) {
-    const d = diasVista[fe]
-    if (!d) return
-    const f = fuenteVista, fecha = new Date(`${fe}T12:00:00`)
-    const titulo = `${DIAS[fecha.getDay()]} ${fecha.getDate()} ${cap(MES_CORTO[fecha.getMonth()])} ${fecha.getFullYear()} · ${f.nombre}`
-    const bloque = (lbl, txt, tono = '') =>
-      `<div class="dv-block ${tono}"><div class="dv-lbl">${lbl}</div><div class="dv-txt"><p>${esc(txt).replace(/\n/g, '<br>')}</p></div></div>`
-    const celda = (lab, val) => `<div class="mh-stat"><label>${lab}</label>${val}</div>`
-
+  // El banner de un día de Chaumer, el Bot o el manual. Varias operaciones: el total del día.
+  function bannerFuente(f, d) {
+    const celda = Visor.celda.bind(Visor)
+    if (!d) return { tono: 'o', celdas: celda('Resultado', '<span class="cz-rb r-o">SIN DATOS</span>') }
     if (d.estado === 'bloqueado') {
-      Modal.openFuente({ fecha: fe, titulo, cuerpo: bloque('Día sin registrar', 'Registra tu día para ver lo que marcó el motor.', 'gry') })
-      return
+      return { tono: 'o', celdas: celda('Resultado', '<span class="cz-rb r-o"><i class="ti ti-lock"></i> SIN REGISTRAR</span>') +
+        '<div class="mh-stat vs-nota"><span>Registra tu día para ver lo que marcó el motor</span></div>' }
     }
-
     const [txt, rb, tono] = etiquetaDe(d)
     const celdas = [celda('Resultado', `<span class="cz-rb ${rb}">${txt}</span>`)]
     if (d.ops.length) {
       const p = ptsDe(d), usd = pnlDe(d)
-      celdas.push(celda('Puntos', `<span class="mh-val ${p < 0 ? 'neg' : 'pos'}">${fmtPts(p)}</span>`))
+      celdas.push(celda('Puntos', `<span class="mh-val ${clsSigno(p)}">${Visor.pts(p)}</span>`))
       const nc = d.ops.reduce((s, o) => s + (o.contratos || 0), 0)
-      if (nc) celdas.push(celda('Contratos', `<span class="mh-val">${nc}</span>`))
-      celdas.push(celda(f.calc || d.simulado ? 'P&amp;L calc.' : 'P&amp;L', `<span class="mh-val ${usd < 0 ? 'neg' : 'pos'}">${fmtDinero(usd)}</span>`))
-      const o = d.ops[0]
-      const setup = [o.setup, o.dir && !/alcista|bajista/i.test(o.setup) ? o.dir.toLowerCase() : ''].filter(Boolean).join(' ')
-      if (setup) celdas.push(`<div class="mh-stat mh-stat-setup"><label>Setup</label><span class="mh-setup">${esc(setup)}${o.hora ? ` · ${esc(o.hora)}` : ''}</span></div>`)
+      celdas.push(celda('Contratos', `<span class="mh-val">${nc || '—'}</span>`))
+      celdas.push(celda(f.calc || d.simulado ? 'P&amp;L calc.' : 'P&amp;L', `<span class="mh-val ${clsSigno(usd)}">${fmtDinero(usd)}</span>`))
+      const setups = [...new Set(d.ops.map(o => [o.setup, o.dir && !/alcista|bajista/i.test(o.setup || '') ? o.dir.toLowerCase() : '']
+        .filter(Boolean).join(' ')).filter(Boolean))].join(' / ')
+      const hora = d.ops.length === 1 && d.ops[0].hora ? ` · ${d.ops[0].hora}` : ''
+      if (setups) celdas.push(celda('Setup', `<span class="mh-setup">${esc(setups)}${esc(hora)}</span>`, 'mh-stat-setup'))
+    } else if (d.nota) {
+      celdas.push(`<div class="mh-stat vs-nota"><span>${esc(d.nota)}</span></div>`)
     }
+    return { tono: tono.slice(5), celdas: celdas.join('') }
+  }
 
+  // El análisis de un día de Chaumer, el Bot o el manual: lo escrito, las observaciones y lo que vio el bot.
+  function cuerpoFuente(f, d) {
     let cuerpo = ''
     if (d.simulado) cuerpo += bloque('Simulado', `El bot aún no operaba: esto es lo que marca el motor, con el P&L calculado a ${cabTexto(f.id)}.`, 'gry')
     if (!d.ops.length && d.nota) cuerpo += bloque(d.estado === 'no-opero' ? 'Por qué no operó'
@@ -1080,8 +1054,30 @@ const Calendarios = (() => {
     })
     ;(d.textos || []).forEach(([lbl, t]) => { cuerpo += bloque(lbl, t, 'blu') })
     if (d.ops.length && d.nota) cuerpo += bloque('Notas', d.nota, 'blu')
+    return cuerpo
+  }
 
-    Modal.openFuente({ fecha: fe, fuente: f.id, titulo, stats: `<div class="mh-box ${tono}">${celdas.join('')}</div>`, imagen: d.url, cuerpo })
+  // Un día para el visor: { url, tono, celdas, analisis: () => Promise<{ html, wire? }> | null }.
+  async function diaVisor(id, fe) {
+    if (id === 'mio') {
+      const [trades, sesion] = await Promise.all([DB.getTradesByDate(fe), DB.getSesionByDate(fe)])
+      const trs = AccountFilter.filter('calendar', trades || [])
+      return { url: sesion?.imagen_url || null, ...Modal.bannerDia(trs, sesion), analisis: () => Modal.analisisDia(fe, trs, sesion) }
+    }
+    const f = FUENTE[id]
+    const d = await diaDe(id, fe)
+    const cuerpo = d && d.estado !== 'bloqueado' ? cuerpoFuente(f, d) : ''
+    // El aviso de que el gráfico es el motor de hoy (otra operación que la del bot) va también bajo el banner.
+    const grafico = (d?.textos || []).find(t => t[0] === 'El gráfico')
+    const b = bannerFuente(f, d)
+    if (grafico) b.celdas += `<div class="mh-stat vs-nota vs-aviso" title="${esc(grafico[1])}"><span><i class="ti ti-info-circle"></i> El gráfico es el motor de hoy</span></div>`
+    return { url: d?.estado === 'bloqueado' ? null : d?.url || null, ...b,
+             analisis: cuerpo ? () => Promise.resolve({ html: cuerpo }) : null }
+  }
+
+  // El clic en un día de la vista completa de Chaumer, el Bot o el manual.
+  function abrirDia(fe) {
+    if (diasVista[fe]) abrirVisor(fuenteVista.id, fe)
   }
 
   function tipEl() {
@@ -1136,5 +1132,5 @@ const Calendarios = (() => {
     else if (vista !== 'mio') renderFuente(vista)
   }
 
-  return { init, alEntrar, alCambiarMes, resumenDia, lupa, vista: () => vista }
+  return { init, alEntrar, alCambiarMes, resumenDia, diaVisor, recorrido, abrirVisor, FUENTE, vista: () => vista }
 })()

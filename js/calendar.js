@@ -481,34 +481,15 @@ const Calendar = (() => {
     document.body.classList.add('modal-open')
   }
 
+  // El clic en un día: el visor (visor.js), con todos los días del calendario Mío para recorrer. Solo una
+  // fecha especial (FOMC, festivo, vacaciones…) pide antes sus trades: sin operar, sale su aviso.
   async function openDayModal(dateStr) {
-    const [trades, sesion] = await Promise.all([
-      DB.getTradesByDate(dateStr),
-      DB.getSesionByDate(dateStr),
-    ])
-
-    // Fecha especial (FOMC / festivo / vacaciones / otra) sin operar → modal informativo.
-    // Si ese día se operó, cae al modal normal para ver los trades.
-    if (!trades.length) {
-      // FOMC solo si tampoco hay sesión registrada: si la hay, el modal normal
-      // muestra el motivo y las notas de ese día.
-      if (!sesion && fomcDates[dateStr]) {
-        const f = fomcDates[dateStr]
-        openHolidayModal(dateStr, f.name, f.emoji)
-        return
-      }
-      const esp = cmeHolidays[dateStr] || vacacionesDates[dateStr] || otrasDates[dateStr]
-      if (esp) { openHolidayModal(dateStr, esp.name, esp.emoji); return }
+    const esp = fomcDates[dateStr] || cmeHolidays[dateStr] || vacacionesDates[dateStr] || otrasDates[dateStr]
+    if (esp) {
+      const [trades, sesion] = await Promise.all([DB.getTradesByDate(dateStr), DB.getSesionByDate(dateStr)])
+      if (!trades.length && !(fomcDates[dateStr] && sesion)) { openHolidayModal(dateStr, esp.name, esp.emoji); return }
     }
-
-    // Festivo registrado manualmente → también modal especial
-    if (sesion?.no_opero && sesion?.motivo_no_opero === 'Festivo') {
-      openHolidayModal(dateStr, 'Día Festivo', '🏛')
-      return
-    }
-
-    // Filtrar por la(s) cuenta(s) seleccionada(s) (igual que el calendario)
-    Modal.openDay(dateStr, AccountFilter.filter('calendar', trades), sesion)
+    Calendarios.abrirVisor('mio', dateStr)
   }
 
   // El mes vive aquí y es UNO para los cuatro calendarios: la pantalla principal

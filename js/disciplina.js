@@ -611,10 +611,10 @@ const Disciplina = (() => {
     cont.querySelectorAll('[data-dia]').forEach(el => el.addEventListener('click', () => abrirDia(el.dataset.dia)))
   }
 
-  // La vista del día, igual que desde los modales (metrics.js) y el calendario.
-  async function abrirDia(fecha) {
-    const [trs, ses] = await Promise.all([DB.getTradesByDate(fecha), DB.getSesionByDate(fecha)])
-    await Modal.openDay(fecha, trs, ses)
+  // El visor del día, recorriendo los días que enseña esta pantalla.
+  function abrirDia(fecha) {
+    const fechas = [...new Set([...document.querySelectorAll('#section-disciplina [data-dia]')].map(el => el.dataset.dia))].sort()
+    Visor.abrir({ items: fechas.map(f => ({ fecha: f, fuente: 'mio' })), actual: { fecha, fuente: 'mio' }, titulo: 'Disciplina' })
   }
 
   // Agrupa los ítems de una fase por familia de setup. Devuelve un solo grupo sin

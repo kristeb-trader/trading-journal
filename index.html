@@ -1538,38 +1538,6 @@
     </div>
   </main>
 
-  <!-- ── Modal: Detalle del día ──────────────────────────────────────── -->
-  <!-- Vista del día: pantalla completa, de lectura. Sustituye al modal de 3
-       pestañas (Gráfica/Resumen/Operativa) por un solo scroll con lo relevante
-       del día. Se cierra con Esc o con "Volver al calendario". -->
-  <div class="modal-overlay hidden" id="dayModal">
-    <div class="modal modal-full">
-      <!-- Cabecera: solo el botón de volver (sin leyenda), la fecha como título y el
-           recuadro de datos centrado. El pie desapareció: repetía el "volver" y el
-           "Ver sesión", y la leyenda "Esc para salir" era ruido. -->
-      <div class="modal-header dv-header">
-        <div class="dv-izq">
-          <button class="btn-icon dv-back" id="closeModal" title="Volver al calendario" aria-label="Volver al calendario">
-            <i class="ti ti-chevron-left"></i>
-          </button>
-          <h3 id="modalDateTitle" class="dv-fecha">Detalle del día</h3>
-          <!-- Las 3 gráficas del día, una debajo de otra: la mía, la del Bot y la de Chaumer
-               (TresGraficas, app.js). -->
-          <button class="btn btn-secondary btn-sm dv-tres" id="modalTresGraficas" type="button"
-                  title="Ver las 3 gráficas del día: la mía, la del Bot y la de Chaumer">
-            <i class="ti ti-layout-rows"></i> 3 gráficas
-          </button>
-        </div>
-        <div class="mh-stats" id="modalHeadStats"></div>
-      </div>
-      <!-- La imagen queda FIJA bajo la cabecera y solo scrollea el texto. -->
-      <div class="dv-img-fixed" id="modalDiaImg"></div>
-      <div class="modal-content dv-scroll">
-        <div id="modalDia" class="dv-body"></div>
-      </div>
-    </div>
-  </div>
-
   <!-- ── Modal: Festivo CME ───────────────────────────────────────── -->
   <div class="modal-overlay hidden" id="holidayModal">
     <div class="modal holiday-modal">
@@ -1704,6 +1672,7 @@
   <!-- ── Scripts (orden importante) ────────────────────────────────── -->
   <script src="js/config.js"></script>
   <script src="js/db.js"></script>
+  <script src="js/visor.js"></script>
   <script src="js/account-filter.js"></script>
   <script src="js/calendar.js"></script>
   <script src="js/metrics.js"></script>

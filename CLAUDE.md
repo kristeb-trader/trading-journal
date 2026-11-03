@@ -125,10 +125,12 @@ sobre la implementación.** Ya pasó que se implementara otra cosa y hubo que re
 
 ```
 js/app.js         Boot, navegación SPA, SesionOperativa (pestañas + cabecera),
-                  Modal.openDay = vista del día a pantalla completa,
+                  Modal.bannerDia / analisisDia = un día del journal para el visor,
                   Nav.HERRAMIENTAS = controles de sección en la barra superior
 js/db.js          Toda query a Supabase + cálculo canónico de disciplina +
-                  fmtMiles/fmtDinero (formato de importes)
+                  fmtMiles/fmtDinero (formato de importes) + imgOpt (imágenes de Cloudinary, optimizadas)
+js/visor.js       El visor del día: placa con la fecha, gráfico maximizado, banner del resultado y la hoja del
+                  análisis; recorre la lista desde la que se entró (un calendario, lo filtrado en Trades, Disciplina)
 js/form.js        Pestaña "Diario" de Sesión Operativa
 js/coach.js       Pestaña "Coach IA" (3 etapas) + renderHistorial = "Días anteriores"
 js/calendar.js    Calendario mensual (Mío, en P&L) · js/metrics.js  KPIs + curva (pintarEquity)

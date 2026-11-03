@@ -242,6 +242,21 @@ function puntosTrade(t) {
   return Math.round(d * 100) / 100
 }
 
+// ── Imágenes de Cloudinary, optimizadas ─────────────────────────────────────
+// La original pesa 150–500 KB (3440×1392 px el gráfico del 03/11/2026). Cloudinary la entrega en WebP/AVIF y al
+// ancho con el que se va a ver: 464 KB → 56 KB, unas 8 veces menos. El ancho va por escalones para que la caché
+// de Cloudinary y la del navegador sirvan a todas las pantallas. Una URL que no es de Cloudinary, o que ya lleva
+// su transformación (la miniatura de la Galería), se devuelve tal cual. `ancho` en píxeles reales; sin él, el de
+// la pantalla.
+const IMG_ESCALONES = [800, 1200, 1600, 2000, 2560]
+function imgOpt(url, ancho = null) {
+  if (!url || !/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(url)) return url
+  if (/\/upload\/(?!v\d+\/)[a-z]{1,3}_[^/]*\//.test(url)) return url
+  const px = ancho || (window.innerWidth || 1600) * (window.devicePixelRatio || 1)
+  const w = IMG_ESCALONES.find(e => e >= px) || IMG_ESCALONES.at(-1)
+  return url.replace('/image/upload/', `/image/upload/f_auto,q_auto,w_${w},c_limit/`)
+}
+
 // ── Subida a Cloudinary ─────────────────────────────────────────────────────
 // Solo la parte de red: quien llama se ocupa de su propio DOM y sus avisos.
 // Vive aquí para que el Diario, el comparador de Chaumer y el Backtesting suban

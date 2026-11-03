@@ -52,8 +52,11 @@ primer guardado abre el candado de la ficha del motor y un trigger lo congela; l
 
 ## Vista del día
 
-El clic en el calendario abre la **vista del día a pantalla completa** (`Modal.openDay` en
-`app.js`), no un modal pequeño.
+El clic en un día abre el **visor del día** (`Visor`, `js/visor.js`, 03/11/2026): placa con la fecha, el
+gráfico maximizado, el banner del resultado y el análisis (disciplina, Coach, errores) en una hoja que solo
+se pide al abrirla. Sustituyó a la vista del día con gráfico fijo (`Modal.openDay`) y a la lupa: enseñaban
+la imagen dos veces. Recorre la lista desde la que se entró: el calendario, **lo filtrado en Trades**,
+Disciplina. Los días de cada fuente salen de `Calendarios.diaVisor` / `recorrido`.
 
 **Pendiente:** un ítem del checklist tumbado por un error se ve igual que uno nunca marcado.
 `_checklistDia` ya expone `roto` para distinguirlos ("marcado, pero el diagnóstico lo

@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-03 | El visor del día: una sola pantalla, imágenes 8 veces más ligeras, y recorre lo filtrado en Trades |
 | 2026-11-03 | Trades: los míos, los de Alfredo y los del bot en una lista, con filtros de varias opciones y por fechas |
 | 2026-11-02c | El 12 y el 13/10 en la galería; el motor ya no marca zona antes de una consecución que llega en la misma vela |
 | 2026-11-02b | Backtesting de octubre (1–9/10) en la galería; dos reglas de zonas (plan 3.55 y 3.58) y las gráficas del bot, intocables |
@@ -69,6 +70,38 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-03 — El visor del día: una sola pantalla, más rápida, y recorre lo filtrado
+
+Kris: el gráfico de un día salía dos veces —la vista del día con su recuadro arriba y, al clicarlo, la lupa con
+otra placa y otra ficha— y tardaba en verse. Medido: el gráfico del 03/11 es un PNG de 3440×1392 y **464 KB**, y
+la vista del día esperaba dos viajes seguidos a Supabase (trades + sesión, y después siete lecturas más) antes de
+enseñar nada.
+
+- **Imágenes optimizadas** (`imgOpt`, `db.js`): Cloudinary las entrega en WebP/AVIF y al ancho de la pantalla, por
+  escalones (800 · 1200 · 1600 · 2000 · 2560): **464 KB → 56 KB**, 0,09 s ya en su caché. Se aplica en el visor, las 3
+  gráficas y el Lightbox (Galería, Backtesting, Chaumer). La miniatura de la Galería, que ya traía la suya, no se toca.
+- **Un solo visor** (`js/visor.js`), que sustituye a la vista del día (`dayModal`, `Modal.openDay`, `openFuente`) y a
+  la lupa (`LupaDia`): arriba la placa con la fecha, quién y «12 de 47»; el gráfico maximizado; debajo el **banner**
+  —resultado · puntos · contratos · P&L · setup— en el recuadro con relieve del color del resultado, a todo el ancho.
+  Los días sin gráfico entran en el recorrido con su banner.
+- **El análisis del día** (disciplina, Coach, reflexión, errores; en Chaumer, el Bot y el manual, las observaciones y lo
+  que vio el bot) queda **oculto** tras un enlace pequeño, «Análisis del día», y sube en una hoja por encima del gráfico.
+  Solo se pide a Supabase al abrirla; abierta, sigue abierta al pasar de día.
+- **Rápido:** el gráfico sale ya con la URL de la lista; el banner llega con una lectura; el día de antes y el de después
+  se piden por adelantado (datos e imagen), así que pasar de día no espera.
+- **Recorre lo que se ve:** desde un calendario, sus días (Mío: con trades del filtro de cuentas, con gráfico o con «no
+  operé»; Bot: los suyos y los simulados de antes del 07/10); desde **Trades, solo lo filtrado** —con «Reing. bajista»
+  las flechas pasan solo por los reingresos bajistas— y la placa lo dice («Trades · Reing. bajista»); desde Disciplina,
+  los días de la pantalla. En Trades, el ojo «Ver el día» está ahora en todas las filas, también las de Alfredo y el Bot.
+- **Teclado y gestos:** ← → , las flechas o deslizar; A abre el análisis; Esc lo cierra y, otro Esc, el visor. Las 3
+  gráficas se abren desde la placa (⊞) por encima del visor y, al cerrarlas, se vuelve a él.
+
+**Verificado** en la copia local, consola limpia: Mío 18/08 (TARGET +20 · 2 contratos · +$78, imagen `w_1200`), flechas y
+hoja del análisis; Bot de octubre (12/10 sin gráfico, con su banner y su motivo); Trades con «Reing. bajista» → 2 días,
+solo esos; Disciplina → 17 días; las 3 gráficas desde el visor; móvil a 375 px sin scroll horizontal.
 
 ---
 

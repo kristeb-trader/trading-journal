@@ -5874,15 +5874,16 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .analysis-footer { margin-top: 18px; padding-top: 14px; }
 .an-dist { gap: 14px; }
 
-/* ── La lupa del día (LupaDia, app.js) ─────────────────────────────────────
-   El gráfico ampliado con los días de al lado, como la lupa de la bitácora del portal: placa con la
-   fecha arriba, el gráfico en medio y la ficha abajo. Las placas tienen relieve: filo claro arriba,
-   canto oscuro abajo que hace de grosor y una sombra larga. Los rgba son luz y sombra, no colores.
-   Mismo z que el Lightbox: los dos van encima de la vista del día y nunca a la vez.
-   Las tres piezas van JUNTAS y centradas en la pantalla (Kris, 02/11): el gráfico no se estira, su alto
-   máximo es el que dejan las placas (--ld-alto, lo mide LupaDia._medir). */
+/* ── El visor del día (Visor, visor.js) ─────────────────────────────────────
+   Una sola pantalla por día (03/11/2026): placa con la fecha arriba, el gráfico maximizado y el banner
+   del resultado abajo; el análisis, en una hoja que sube al pedirla. Las placas tienen relieve: filo
+   claro arriba, canto oscuro abajo que hace de grosor y una sombra larga. Los rgba son luz y sombra,
+   no colores. Las tres piezas van JUNTAS y centradas (Kris, 02/11): el gráfico no se estira, su alto
+   máximo es el que dejan la placa y el banner (--ld-alto, lo mide Visor._medir).
+   z 250: encima de los modales (200), debajo de las 3 gráficas (300), que se abren desde aquí, y del
+   Lightbox (400). */
 .ld {
-  position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,0.92);
+  position: fixed; inset: 0; z-index: 250; background: rgba(8,8,7,0.97); backdrop-filter: blur(6px);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 10px; padding: 14px 16px 18px;
 }
@@ -5932,68 +5933,96 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .ld-paso:disabled { opacity: 0; pointer-events: none; }
 .ld-ant { left: 12px; }
 .ld-sig { right: 12px; }
-/* La ficha: una fila por operación, cada dato con su rótulo encima y un filete entre datos. */
-.ld-abajo { flex: 0 0 auto; padding: 4px 16px; transition: opacity var(--transition); }
-.ld-abajo.cargando { opacity: 0.45; }
-.ld-op { display: flex; flex-wrap: wrap; align-items: stretch; padding: 6px 0; }
-.ld-op + .ld-op { border-top: 1px solid var(--border); }
-.ld-dato {
-  flex: 1 1 0; min-width: 104px; padding: 4px 16px;
-  display: grid; grid-template-rows: auto 1fr; align-items: center; justify-items: start; gap: 5px;
+/* El contexto del recorrido («Trades · Reingreso»), a la izquierda de la placa. */
+.vs-izq { grid-column: 1; min-width: 0; }
+.vs-ctx {
+  display: block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.ld-dato + .ld-dato { border-left: 1px solid var(--border); }
-.ld-etiq { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); }
-.ld-dato b {
-  font-size: 1.15rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums;
-  text-shadow: 0 2px 0 rgba(0,0,0,0.5);
+.vs-sin-img {
+  width: min(100%, 900px); height: min(46vh, var(--ld-alto, 46vh)); border-radius: var(--radius);
+  border: 1px dashed var(--border2, #403F38); color: var(--text3); font-size: 0.95rem;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
 }
-.ld-dato b.pos { color: var(--accent-txt); }
-.ld-dato b.neg { color: var(--red-txt); }
-.ld-pnl b { font-size: 1.4rem; }
-.ld-setup { font-weight: 600; color: var(--warning-txt); }
-/* El resultado, en relieve y del color del resultado (el mismo de .tg-chip, más grande). */
-.ld-pil {
-  --pc: var(--text2);
-  display: inline-flex; align-items: center; padding: 4px 14px; border-radius: 999px; white-space: nowrap;
-  font-size: 0.82rem; font-weight: 800; letter-spacing: 0.02em; color: var(--pc);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--pc) 34%, var(--bg3)), color-mix(in srgb, var(--pc) 12%, var(--bg2)));
-  border: 1px solid color-mix(in srgb, var(--pc) 60%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -2px 0 rgba(0,0,0,0.3),
-              0 3px 0 rgba(0,0,0,0.55), 0 10px 20px -8px color-mix(in srgb, var(--pc) 50%, transparent);
-  text-shadow: 0 1px 0 rgba(0,0,0,0.45);
+.vs-sin-img i { font-size: 2rem; }
+/* El banner: el recuadro del resultado (.mh-box), a todo el ancho, con el relieve del color del resultado. */
+.vs-abajo { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.vs-banner {
+  width: 100%; justify-content: space-around; gap: 0; padding: 12px 8px; border-radius: 14px;
+  border-width: 1.5px; transition: opacity var(--transition);
 }
-.ld-t { --pc: var(--accent-txt); }
-.ld-s { --pc: var(--red-txt); }
-/* Bot: el gráfico es el motor de hoy y a veces marca otra operación que la del bot */
-.ld-aviso { display: flex; gap: 8px; align-items: flex-start; padding: 8px 6px 0; color: var(--text3); font-size: 0.8rem; line-height: 1.4; }
-.ld-aviso i { color: var(--warning-txt); font-size: 0.95rem; margin-top: 1px; }
-.ld-vacia { display: flex; align-items: center; gap: 12px; padding: 12px 6px; color: var(--text2); font-size: 0.9rem; }
+.vs-banner .mh-stat { flex: 1 1 0; min-width: 0; padding: 0 12px; margin: 0; }
+.vs-banner .mh-stat + .mh-stat { padding-left: 12px; margin-left: 0; }
+.vs-banner .mh-stat label { font-size: 0.64rem; }
+.vs-banner .mh-val { font-size: 1.3rem; text-shadow: 0 2px 0 rgba(0,0,0,0.5); }
+.vs-banner .cz-rb { font-size: 0.82rem; padding: 4px 12px; }
+.vs-banner .mh-setup { max-width: 100%; font-size: 1rem; }
+.vs-banner.tone-t {
+  border-color: rgba(29,158,117,0.6);
+  box-shadow: inset 0 1px 0 rgba(120,255,209,0.24), inset 0 -2px 0 rgba(0,0,0,0.4), 0 4px 0 -1px rgba(0,0,0,0.85),
+              0 0 0 1px rgba(29,158,117,0.18), 0 16px 34px -18px rgba(29,158,117,0.55);
+}
+.vs-banner.tone-s {
+  border-color: rgba(226,75,74,0.6);
+  box-shadow: inset 0 1px 0 rgba(255,163,162,0.22), inset 0 -2px 0 rgba(0,0,0,0.4), 0 4px 0 -1px rgba(0,0,0,0.85),
+              0 0 0 1px rgba(226,75,74,0.18), 0 16px 34px -18px rgba(226,75,74,0.55);
+}
+.vs-nota { flex: 3 1 0 !important; color: var(--text2); font-size: 0.86rem; line-height: 1.35; text-align: center; }
+.vs-aviso { flex: 2 1 0 !important; color: var(--warning-txt); font-size: 0.74rem; cursor: help; }
+.vs-abajo.cargando .vs-banner { opacity: 0.45; }
+/* El enlace al análisis: pequeño y discreto, bajo el banner. */
+.vs-mas {
+  background: none; border: 0; padding: 2px 10px; cursor: pointer; color: var(--text3);
+  font-size: 0.72rem; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 4px;
+  transition: color var(--transition);
+}
+.vs-mas:hover { color: var(--text2); }
+.vs-mas i { transition: transform var(--transition); }
+.vs-mas.abierta i { transform: rotate(180deg); }
+/* La hoja del análisis: sube desde abajo, por encima del gráfico, con su propio scroll. */
+.vs-hoja {
+  position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 2;
+  width: min(100%, 980px) !important; max-height: 78vh; display: flex; flex-direction: column;
+  background: var(--bg2); border: 1px solid var(--border); border-bottom: 0; border-radius: 16px 16px 0 0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 -24px 60px -10px rgba(0,0,0,0.8);
+}
+.vs-hoja-cab {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 14px 10px 20px; border-bottom: 1px solid var(--border);
+}
+.vs-hoja-tit { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); }
+.vs-hoja-cuerpo { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 22px 26px; }
+.vs-cargando { color: var(--text3); font-size: 0.85rem; padding: 18px 0; }
+.vs-cargando i { display: inline-block; animation: spin 1s linear infinite; }
 @media (prefers-reduced-motion: no-preference) {
   .ld-arriba.entra { animation: ld-cae 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-  .ld-abajo.entra  { animation: ld-sube 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .vs-banner.entra { animation: ld-sube 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
   .ld-img.entra    { animation: ld-img 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .vs-hoja.entra   { animation: vs-hoja 300ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 }
 @keyframes ld-cae  { from { opacity: 0; transform: perspective(900px) rotateX(-22deg) translateY(-10px); } to { opacity: 1; transform: none; } }
 @keyframes ld-sube { from { opacity: 0; transform: perspective(900px) rotateX(22deg) translateY(12px); } to { opacity: 1; transform: none; } }
 @keyframes ld-img  { from { opacity: 0.35; transform: scale(0.985); } to { opacity: 1; transform: none; } }
-/* En el celular: el contador y el botón suben a su fila y la fecha queda debajo, en dos líneas si hace
-   falta; los datos, en dos columnas con el P&L a lo ancho (en fila no caben cinco). */
+@keyframes vs-hoja { from { opacity: 0; transform: translate(-50%, 40px); } to { opacity: 1; transform: translateX(-50%); } }
+/* En el celular: el contador y los botones suben a su fila y la fecha queda debajo, en dos líneas si
+   hace falta; el banner, en dos columnas con el setup a lo ancho (en fila no caben cinco). */
 @media (max-width: 768px) {
   .ld { padding: 8px 8px 12px; gap: 8px; }
-  .ld-arriba { grid-template-columns: 1fr; gap: 4px; padding: 8px 10px; }
-  .ld-der { grid-column: 1; grid-row: 1; }
-  .ld-titulo { grid-column: 1; grid-row: 2; }
+  .ld-arriba { grid-template-columns: 1fr auto; gap: 4px 8px; padding: 8px 10px; }
+  .vs-izq { grid-column: 1; grid-row: 1; align-self: center; }
+  .ld-der { grid-column: 2; grid-row: 1; gap: 6px; }
+  .ld-titulo { grid-column: 1 / -1; grid-row: 2; }
   .ld-fecha { font-size: 1.05rem; white-space: normal; }
+  .ld-cerrar { width: 32px; height: 32px; font-size: 1rem; }
   .ld-paso { width: 34px; height: 34px; font-size: 1.1rem; }
   .ld-ant { left: 4px; }
   .ld-sig { right: 4px; }
-  .ld-abajo { padding: 2px 6px; }
-  .ld-op { display: grid; grid-template-columns: 1fr 1fr; }
-  .ld-dato { min-width: 0; padding: 6px 10px; }
-  .ld-dato + .ld-dato { border-left: 0; }
-  .ld-pnl { grid-column: 1 / -1; border-top: 1px solid var(--border); }
-  .ld-dato b { font-size: 1rem; }
-  .ld-pnl b { font-size: 1.2rem; }
+  .vs-banner { display: grid; grid-template-columns: 1fr 1fr; row-gap: 10px; padding: 10px 4px; }
+  .vs-banner .mh-stat + .mh-stat { border-left: 0; }
+  .vs-banner .mh-stat-setup, .vs-banner .vs-nota, .vs-banner .vs-aviso { grid-column: 1 / -1; }
+  .vs-banner .mh-val { font-size: 1.1rem; }
+  .vs-hoja { max-height: 85vh; }
+  .vs-hoja-cuerpo { padding: 0 14px 22px; }
 }
 
 /* ── Las 3 gráficas del día (TresGraficas, app.js) ─────────────────────────

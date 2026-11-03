@@ -18,32 +18,44 @@ const Toast = {
   }
 }
 
-// ── Day / Trade modal ─────────────────────────────────────────────────────
-
+// ── Un día del journal: su banner y su análisis ──────────────────────────
+// La vista del día a pantalla completa (dayModal) y la lupa que se abría encima se fundieron en el visor
+// (visor.js, 03/11/2026). De aquí salen, para los días del journal, el banner de debajo del gráfico y el
+// análisis de la hoja; el recuadro de la cabecera de Sesión (_headStats) sigue igual.
 const Modal = {
-  currentSesion: null,
-  currentDate: null,
-
-  async openDay(dateStr, trades, sesion) {
-    this.currentSesion = sesion
-    this.currentDate = dateStr
-    const modal = document.getElementById('dayModal')
-
-    const fmtDate = d => {
-      if (!d) return 'Detalle'
-      const [y, m, day] = d.split('-')
-      const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
-      const dows = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
-      const dow = dows[new Date(d + 'T12:00:00').getDay()]
-      return `${dow} ${parseInt(day)} ${months[parseInt(m)-1]} ${y}`
+  // Resultado · puntos · contratos · P&L · setup, con el tono del resultado del día.
+  bannerDia(trades, sesion) {
+    trades = trades || []
+    const st = this._dayState(trades, sesion)
+    const tono = st.cls === 'mst-green' ? 't' : st.cls === 'mst-red' ? 's' : 'o'
+    const CORTO = {
+      'Setup válido — no entré': 'NO ENTRÉ',
+      'Sin entradas válidas': 'SIN ENTRADAS',
+      'No operé': 'NO OPERÉ',
+      'Sin trades': 'SIN TRADES',
+      'Break Even': 'B.E.',
     }
-    document.getElementById('modalDateTitle').textContent = fmtDate(dateStr)
-    const headStats = document.getElementById('modalHeadStats')
-    if (headStats) headStats.innerHTML = this._headStats(trades, sesion)
+    const esc = x => String(x ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+    const celdas = [Visor.celda('Resultado', `<span class="cz-rb r-${tono}" title="${esc(st.label)}">${CORTO[st.label] || st.label}</span>`)]
+    if (trades.length) {
+      const pts = this._puntosDia(trades)
+      if (pts != null) celdas.push(Visor.celda('Puntos', `<span class="mh-val ${pts < 0 ? 'neg' : 'pos'}">${Visor.pts(Math.round(pts * 100) / 100)}</span>`))
+      const qty = trades.reduce((n, t) => n + (Number(t.qty) || 0), 0)
+      celdas.push(Visor.celda('Contratos', `<span class="mh-val">${qty || '—'}</span>`))
+      const pnl = trades.reduce((n, t) => n + (parseFloat(t.profit) || 0), 0)
+      celdas.push(Visor.celda('P&amp;L', `<span class="mh-val ${pnl < 0 ? 'neg' : 'pos'}">${fmtDinero(pnl)}</span>`))
+    } else if (sesion?.motivo_no_opero) {
+      celdas.push(`<div class="mh-stat vs-nota"><span>${esc(sesion.motivo_no_opero)}</span></div>`)
+    }
+    const setup = (sesion?.setup || '').trim()
+    if (setup) celdas.push(Visor.celda('Setup', `<span class="mh-setup" title="${esc(setup)}">${esc(setup)}</span>`, 'mh-stat-setup'))
+    return { tono, celdas: celdas.join('') }
+  },
 
+  // Lo que se lee del día en la hoja del visor: disciplina, Coach, reflexión, errores. Se pide al abrirla.
+  async analisisDia(dateStr, trades, sesion) {
     // Datos extra: diagnóstico del Coach + errores + emociones + checklist dinámico
-    // (catalogo_reglas) + total de trades del día SIN filtro de cuenta (para avisar
-    // cuando el filtro está ocultando trades).
+    // (catalogo_reglas) + total de trades del día SIN filtro de cuenta.
     const [diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp, fichaMotor] = await Promise.all([
       dateStr ? DB.getDiagnosticoByDate(dateStr) : null,
       dateStr ? DB.getCasuisticasByDate(dateStr) : [],
@@ -56,63 +68,16 @@ const Modal = {
       dateStr && medidaDeFecha(dateStr) === 'plan' ? DB.getFichaMotor(dateStr).catch(() => null) : null,
     ])
     const ctx = { dateStr, trades, sesion, diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp, fichaMotor }
-
-    // La imagen va fuera del contenedor con scroll (queda fija); el texto dentro.
-    document.getElementById('modalDiaImg').innerHTML = this._renderImagenDia(ctx)
-    document.getElementById('modalDia').innerHTML = this._renderVistaDia(ctx)
-    // Cada día arranca arriba: si no, hereda el scroll del día anterior.
-    document.querySelector('#dayModal .dv-scroll')?.scrollTo({ top: 0 })
-
-    // Eventos: lightbox, toggles de errores, ver completo
-    setTimeout(() => {
-      const img = modal.querySelector('#modalDiaImg img')
-      if (img) img.addEventListener('click', () => this._ampliar('mio', dateStr, img.src))
-      modal.querySelectorAll('.modal-cas-row.has-detail').forEach(row => {
+    return {
+      html: this._renderVistaDia(ctx),
+      // Los errores con descripción se despliegan al clicar.
+      wire: el => el.querySelectorAll('.modal-cas-row.has-detail').forEach(row => {
         row.addEventListener('click', () => {
-          const det = document.getElementById(`modal-cas-det-${row.dataset.det}`)
-          if (det) det.classList.toggle('hidden')
+          el.querySelector(`#modal-cas-det-${row.dataset.det}`)?.classList.toggle('hidden')
           row.classList.toggle('open')
         })
-      })
-      const verBtn = document.getElementById('modalVerCompleto')
-      if (verBtn) verBtn.addEventListener('click', () => {
-        this.close()
-        if (typeof Coach !== 'undefined' && Coach.abrirFecha) Coach.abrirFecha(dateStr)
-      })
-    }, 50)
-
-    modal.querySelector('.modal-content').scrollTop = 0   // abrir siempre arriba
-    modal.classList.remove('hidden')
-    document.body.classList.add('modal-open')
-  },
-
-  // La misma vista del día, para un día que NO es del journal: Chaumer, el Bot o
-  // el backtesting manual (calendarios.js). Misma cabecera, misma imagen fija con
-  // ampliación y mismo cuerpo con bloques; el contenido lo trae quien llama, ya
-  // escapado. No toca currentSesion: aquí no hay diario que abrir.
-  openFuente({ fecha = null, fuente = null, titulo, stats = '', imagen = null, cuerpo = '' }) {
-    this.currentSesion = null
-    this.currentDate = fecha   // para el botón "3 gráficas"
-    const modal = document.getElementById('dayModal')
-    document.getElementById('modalDateTitle').textContent = titulo
-    document.getElementById('modalHeadStats').innerHTML = stats
-    const img = document.getElementById('modalDiaImg')
-    img.innerHTML = imagen
-      ? '<img alt="Gráfico del día" loading="lazy" style="cursor:zoom-in" title="Clic para ampliar">'
-      : '<div class="dv-sin-img"><i class="ti ti-photo-off"></i> Sin gráfico para este día</div>'
-    const el = img.querySelector('img')
-    if (el) { el.src = imagen; el.addEventListener('click', () => this._ampliar(fuente, fecha, el.src)) }
-    document.getElementById('modalDia').innerHTML = cuerpo
-    modal.querySelector('.dv-scroll')?.scrollTo({ top: 0 })
-    modal.classList.remove('hidden')
-    document.body.classList.add('modal-open')
-  },
-
-  // El gráfico ampliado: la lupa, que pasa de un día a otro de ese calendario (Calendarios.lupa).
-  // Sin calendario o sin fecha, la imagen sola, como antes.
-  _ampliar(fuente, fecha, src) {
-    if (fuente && fecha && typeof Calendarios !== 'undefined') Calendarios.lupa(fuente, fecha, src)
-    else Lightbox.open(src)
+      }),
+    }
   },
 
   // ── Helpers de render del modal ─────────────────────────────────────────
@@ -235,14 +200,6 @@ const Modal = {
     </div>`
   },
 
-  // El gráfico va aparte: se monta en un contenedor FIJO fuera del scroll, para que
-  // al bajar solo se mueva el texto y la imagen siga a la vista.
-  _renderImagenDia({ sesion }) {
-    return sesion?.imagen_url
-      ? `<img src="${sesion.imagen_url}" alt="Gráfico del día" loading="lazy" style="cursor:zoom-in" title="Clic para ampliar">`
-      : '<div class="dv-sin-img"><i class="ti ti-photo-off"></i> Sin gráfico para este día</div>'
-  },
-
   // Un bloque con resumen visible y detalle plegado, igual que las secciones del
   // Coach (`czSeccion`): arriba lo legible, el desarrollo tras "Ver detalle".
   _bloquePlegable(lbl, resumen, detalle, tono = '', verDetalle = 'Ver detalle') {
@@ -341,10 +298,6 @@ const Modal = {
     return erroresHtml
   },
 
-  close() {
-    document.getElementById('dayModal').classList.add('hidden')
-    document.body.classList.remove('modal-open')
-  },
 
   initTabs() {
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -939,22 +892,8 @@ async function boot() {
     }
   })
 
-  // Modal events
-  // La vista del día ya no tiene pestañas (es un solo scroll); initTabs se
-  // conserva por si otra sección usa `.tab-btn`, pero aquí no aplica.
+  // initTabs se conserva por si otra sección usa `.tab-btn`.
   Modal.initTabs()
-  document.getElementById('closeModal').addEventListener('click', () => Modal.close())
-  // El pie de la vista del día se eliminó (ago 2026): repetía el "volver" de la
-  // cabecera y el botón "Ver sesión". A la sesión se llega desde el menú Sesión.
-  document.getElementById('dayModal').addEventListener('click', e => {
-    if (e.target === document.getElementById('dayModal')) Modal.close()
-  })
-  // Esc sigue cerrando aunque ya no se anuncie con una leyenda en la cabecera.
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') Modal.close() })
-  // Las 3 gráficas del día que se está viendo (la mía, la del Bot y la de Chaumer).
-  document.getElementById('modalTresGraficas')?.addEventListener('click', () => {
-    if (Modal.currentDate) TresGraficas.open(Modal.currentDate)
-  })
   // Y desde la pantalla de los 4 calendarios: el último día hábil (hoy, si lo es).
   document.getElementById('hubTresGraficas')?.addEventListener('click', () => {
     const d = new Date(`${hoyISO()}T12:00:00`)
@@ -1003,7 +942,7 @@ const Lightbox = {
       <div class="lb-overlay">
         <button class="lb-close" title="Cerrar (Esc)"><i class="ti ti-x"></i></button>
         ${hasPrev ? `<button class="lb-arrow lb-prev" title="Anterior (←)"><i class="ti ti-chevron-left"></i></button>` : ''}
-        <img src="${src}" alt="Imagen completa">
+        <img src="${imgOpt(src)}" alt="Imagen completa">
         ${hasNext ? `<button class="lb-arrow lb-next" title="Siguiente (→)"><i class="ti ti-chevron-right"></i></button>` : ''}
         ${total > 1 ? `<div class="lb-counter">${this._idx + 1} / ${total}</div>` : ''}
       </div>`
@@ -1036,140 +975,6 @@ const Lightbox = {
   }
 }
 
-// ── La lupa del día ────────────────────────────────────────────────────────
-// El gráfico de un día a pantalla completa, como la lupa de la bitácora del portal (Bitacora.astro),
-// pedido por Kris el 26/10: arriba la placa con la fecha, en medio el gráfico con una flecha a cada
-// lado para pasar de día (también ← / → y deslizar), y abajo la ficha: una fila por operación con
-// setup, resultado, puntos, contratos y P&L. Los días —los que tienen gráfico en ese calendario— y la
-// ficha los pone Calendarios.lupa. Esc la cierra y deja la vista del día debajo, como estaba.
-const LupaDia = {
-  _el: null,
-  _dias: [],      // [{ fecha, url }], del más viejo al más nuevo
-  _i: 0,
-  _ficha: null,   // fecha → Promise<html>
-  _token: 0,
-
-  open({ dias, idx, quien, color, ficha }) {
-    this._dias = dias
-    this._i = Math.max(0, idx)
-    this._ficha = ficha
-    if (!this._el) this._montar()
-    this._el.style.setProperty('--c', color === 'neutro' ? 'var(--text2)' : `var(--${color}-txt)`)
-    this._el.querySelector('.ld-quien').textContent = quien
-    this._el.classList.remove('hidden')
-    document.body.classList.add('modal-open')
-    this._pintar()
-  },
-
-  close() {
-    this._el?.classList.add('hidden')
-    // La vista del día sigue abierta debajo: solo se suelta el scroll si no queda nada encima.
-    if (document.getElementById('dayModal')?.classList.contains('hidden')) document.body.classList.remove('modal-open')
-  },
-
-  _montar() {
-    const el = document.createElement('div')
-    el.className = 'ld hidden'
-    el.setAttribute('role', 'dialog')
-    el.setAttribute('aria-modal', 'true')
-    el.setAttribute('aria-label', 'Gráfico del día')
-    el.innerHTML = `
-      <header class="ld-placa ld-arriba">
-        <div class="ld-titulo"><span class="ld-quien"></span><h2 class="ld-fecha"></h2></div>
-        <div class="ld-der">
-          <span class="ld-cuenta"></span>
-          <button class="ld-cerrar" type="button" title="Cerrar (Esc)" aria-label="Cerrar"><i class="ti ti-x"></i></button>
-        </div>
-      </header>
-      <div class="ld-marco">
-        <button class="ld-paso ld-ant" type="button" title="Día anterior (←)" aria-label="Día anterior"><i class="ti ti-chevron-left"></i></button>
-        <img class="ld-img" alt="">
-        <button class="ld-paso ld-sig" type="button" title="Día siguiente (→)" aria-label="Día siguiente"><i class="ti ti-chevron-right"></i></button>
-      </div>
-      <footer class="ld-placa ld-abajo"></footer>`
-    document.body.appendChild(el)
-    // La pantalla o una placa cambian de alto (la ficha de un día con dos operaciones): se vuelve a medir.
-    const ro = new ResizeObserver(() => this._medir())
-    ;[el, el.querySelector('.ld-arriba'), el.querySelector('.ld-abajo')].forEach(n => ro.observe(n))
-
-    el.addEventListener('click', e => {
-      if (e.target === el || e.target.closest('.ld-cerrar')) this.close()
-      else if (e.target.closest('.ld-ant')) this._mover(-1)
-      else if (e.target.closest('.ld-sig')) this._mover(1)
-    })
-    // En el celular, deslizar: a la izquierda, el día siguiente.
-    let x0 = null, y0 = null
-    el.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY }, { passive: true })
-    el.addEventListener('touchend', e => {
-      if (x0 == null) return
-      const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0
-      x0 = null
-      if (Math.abs(dx) > 60 && Math.abs(dx) > 1.5 * Math.abs(dy)) this._mover(dx < 0 ? 1 : -1)
-    })
-    // En captura y cortando: si no, el Esc de la vista del día la cerraría también.
-    window.addEventListener('keydown', e => {
-      if (el.classList.contains('hidden')) return
-      const tecla = { Escape: () => this.close(), ArrowLeft: () => this._mover(-1), ArrowRight: () => this._mover(1) }[e.key]
-      if (!tecla) return
-      e.stopImmediatePropagation()
-      e.preventDefault()
-      tecla()
-    }, true)
-    this._el = el
-  },
-
-  // El gráfico se queda con el alto que dejan libre las dos placas: así las tres van pegadas y
-  // centradas, en vez de las placas en los bordes de la pantalla y el gráfico flotando en medio.
-  _medir() {
-    const el = this._el
-    if (!el || el.classList.contains('hidden')) return
-    const cs = getComputedStyle(el)
-    const libre = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)
-      - el.querySelector('.ld-arriba').offsetHeight - el.querySelector('.ld-abajo').offsetHeight
-      - 2 * (parseFloat(cs.rowGap) || 0)
-    el.style.setProperty('--ld-alto', `${Math.max(120, Math.floor(libre))}px`)
-  },
-
-  _mover(d) {
-    const n = this._i + d
-    if (n < 0 || n >= this._dias.length) return
-    this._i = n
-    this._pintar()
-  },
-
-  // Las placas entran con un giro corto, como en el portal, y lo repiten al pasar de día.
-  _entra(nodo) {
-    nodo.classList.remove('entra')
-    void nodo.offsetWidth
-    nodo.classList.add('entra')
-  },
-
-  async _pintar() {
-    const el = this._el, dia = this._dias[this._i], token = ++this._token
-    const largo = new Date(`${dia.fecha}T12:00:00`).toLocaleDateString('es-CO',
-      { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-    el.querySelector('.ld-fecha').textContent = largo.charAt(0).toUpperCase() + largo.slice(1)
-    el.querySelector('.ld-cuenta').textContent = `${this._i + 1} de ${this._dias.length}`
-    el.querySelector('.ld-ant').disabled = this._i === 0
-    el.querySelector('.ld-sig').disabled = this._i === this._dias.length - 1
-    const img = el.querySelector('.ld-img')
-    img.src = dia.url
-    img.alt = `Gráfico del ${largo}`
-    this._entra(el.querySelector('.ld-arriba'))
-    this._entra(img)
-
-    const pie = el.querySelector('.ld-abajo')
-    pie.classList.add('cargando')
-    let html
-    try { html = await this._ficha(dia.fecha) }
-    catch (err) { console.warn('[lupa]', err); html = '<div class="ld-vacia">No se pudo leer la operación de este día</div>' }
-    if (token !== this._token) return   // ya se pasó a otro día
-    pie.innerHTML = html
-    pie.classList.remove('cargando')
-    this._entra(pie)
-  },
-}
-
 // ── Las 3 gráficas del día ─────────────────────────────────────────────────
 // Pantalla completa con las tres gráficas de un día, en este orden (Kris, 12 oct):
 // la mía, la del Bot (el gráfico del motor) y la de Chaumer.
@@ -1198,8 +1003,8 @@ const TresGraficas = {
 
   close() {
     this._el?.classList.add('hidden')
-    // La vista del día sigue abierta debajo: ella decide el scroll del body.
-    if (document.getElementById('dayModal')?.classList.contains('hidden')) document.body.classList.remove('modal-open')
+    // El visor sigue abierto debajo: él decide el scroll del body.
+    if (!Visor.abierto()) document.body.classList.remove('modal-open')
   },
 
   abierta() { return !!this._el && !this._el.classList.contains('hidden') },
@@ -1346,7 +1151,7 @@ const TresGraficas = {
     // La URL por propiedad, no en el HTML: viene de la BD.
     cuerpo.querySelectorAll('.tg-panel').forEach(s => {
       const img = s.querySelector('.tg-img')
-      if (img) img.src = P[s.dataset.i].url
+      if (img) img.src = imgOpt(P[s.dataset.i].url)
     })
   },
 }

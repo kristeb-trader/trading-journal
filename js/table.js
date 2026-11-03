@@ -319,12 +319,11 @@ const TradesTable = (() => {
         </tr>`
       }
 
-      let accion = ''
-      if (row.quien === 'mio' && row.tipo === 'trade') {
-        accion = `<button class="btn-row" data-action="detail" data-id="${row.data.trade_number}" title="Ver detalle">
-            <i class="ti ti-eye"></i></button>`
-      } else if (row.quien === 'mio') {
-        accion = `<button class="btn-row" data-action="edit-session" data-date="${row.date}" title="Editar sesión">
+      // Ver el día: el visor, recorriendo solo lo filtrado (03/11/2026).
+      let accion = row.date ? `<button class="btn-row" data-action="ver" data-date="${row.date}" data-quien="${row.quien}" title="Ver el día">
+            <i class="ti ti-eye"></i></button>` : ''
+      if (row.quien === 'mio' && row.tipo !== 'trade') {
+        accion += `<button class="btn-row" data-action="edit-session" data-date="${row.date}" title="Editar sesión">
             <i class="ti ti-pencil"></i></button>`
       }
 
@@ -346,11 +345,8 @@ const TradesTable = (() => {
 
     tbody.innerHTML = html
 
-    tbody.querySelectorAll('[data-action="detail"]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const trade = allTrades.find(t => t.trade_number === parseInt(btn.dataset.id))
-        if (trade) openTradeModal(trade)
-      })
+    tbody.querySelectorAll('[data-action="ver"]').forEach(btn => {
+      btn.addEventListener('click', () => verDia(btn.dataset.date, btn.dataset.quien))
     })
 
     tbody.querySelectorAll('[data-action="edit-session"]').forEach(btn => {
@@ -374,10 +370,25 @@ const TradesTable = (() => {
     pg.querySelector('#pgNext')?.addEventListener('click', () => { page++; renderTable(); renderPagination() })
   }
 
-  async function openTradeModal(trade) {
-    const date   = trade.trade_date
-    const sesion = date ? await DB.getSesionByDate(date) : null
-    Modal.openDay(date, [trade], sesion)
+  // El visor del día con lo filtrado: un día por fecha y por quién, del más viejo al más nuevo. Si filtras
+  // Reingreso, las flechas pasan solo por los reingresos. Alfredo es el calendario de Chaumer.
+  const FUENTE_DE = { mio: 'mio', alfredo: 'chaumer', bot: 'bot' }
+  function verDia(fecha, quien) {
+    const vistos = new Set(), items = []
+    filtered.forEach(r => {
+      const k = `${r.quien}|${r.date}`
+      if (!r.date || vistos.has(k)) return
+      vistos.add(k)
+      items.push({ fecha: r.date, fuente: FUENTE_DE[r.quien] })
+    })
+    items.sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0))
+    const OPC = Object.fromEntries(GRUPOS.flatMap(g => g.opciones || []))
+    const partes = [
+      ...(filtros.quien.length && filtros.quien.length < 3 ? filtros.quien.map(q => QUIEN[q]) : []),
+      ...filtros.setup.map(nombreSetup),
+      ...filtros.res.map(r => OPC[r] || r),
+    ]
+    Visor.abrir({ items, actual: { fecha, fuente: FUENTE_DE[quien] }, titulo: ['Trades', ...partes].join(' · ') })
   }
 
   // Alfredo y el bot no tumban la pantalla si fallan: se avisa y se sigue.
