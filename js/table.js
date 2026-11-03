@@ -1,51 +1,107 @@
-// Trades table with pagination, search, filter
+// Otros › Trades: los míos, los de Alfredo y los del bot en una sola lista, con
+// filtros de varias opciones a la vez y por fechas.
+// Diseño: docs/disenos/2026-11-03-trades-tres-fuentes.md
+//
+// Reglas que no se rompen aquí:
+//   · Es una VISTA. `trades`, `chaumer_operativas` y `bot_operaciones` solo se
+//     leen y no se mezclan en ningún cálculo (D-019, D-038).
+//   · Un trade mío NO guarda su setup: es el de la SESIÓN de su fecha
+//     (`sesiones.setup_codigo`). Dos trades del mismo día comparten setup.
+//   · El filtro de cuentas de la barra superior solo aplica a los míos.
 const TradesTable = (() => {
   let allTrades      = []
   let allSesiones    = []
   let allCasuisticas = []
-  let allRows        = []  // unified: trades + no-opero sessions
+  let allRows        = []  // fila común de las tres fuentes
   let casByDate      = {}  // { 'YYYY-MM-DD': ['Error A', 'Error B'] }
   let setupPorFecha  = {}  // { 'YYYY-MM-DD': 'continuacion_alcista' }
   let variantes      = []  // catalogo_setup_variantes, solo para los nombres
+  let avisos         = []  // fuentes que no se pudieron leer
   let filtered    = []
   let page = 0
+  let wired = false
   const PAGE_SIZE = 20
+  const COLS = 11
 
   const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
   const DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
 
+  // ── Filtros ───────────────────────────────────────────────────────────────
+  // Un grupo sin nada marcado = sin filtrar. Se recuerdan en este navegador.
+  const GRUPOS = [
+    { id: 'quien', nombre: 'Quién', opciones: [['mio', 'Mío'], ['alfredo', 'Alfredo'], ['bot', 'Bot']] },
+    { id: 'setup', nombre: 'Setup', opciones: [
+      ['continuacion_alcista', 'Cont. alcista'], ['continuacion_bajista', 'Cont. bajista'],
+      ['reingreso_alcista', 'Reing. alcista'], ['reingreso_bajista', 'Reing. bajista'], ['__sin', 'Sin setup']] },
+    { id: 'res', nombre: 'Resultado', opciones: [['target', 'Target'], ['stop', 'Stop'], ['be', 'B.E.'], ['no', 'No operó']] },
+  ]
+  const CLAVE = 'tradesFiltros'
+  const vacio = () => ({ quien: ['mio', 'alfredo', 'bot'], setup: [], res: [], desde: '', hasta: '' })
+  let filtros = vacio()
+
+  function leerFiltros() {
+    try {
+      const f = JSON.parse(localStorage.getItem(CLAVE) || 'null')
+      if (f && typeof f === 'object') filtros = { ...vacio(), ...f }
+    } catch { /* sin almacenamiento: los de por defecto */ }
+  }
+  function guardarFiltros() {
+    try { localStorage.setItem(CLAVE, JSON.stringify(filtros)) } catch { /* no pasa nada */ }
+  }
+
+  // ── Formato ───────────────────────────────────────────────────────────────
   function dayOfWeek(dateStr) {
     if (!dateStr) return '—'
     return DAYS[new Date(dateStr + 'T12:00:00').getDay()]
   }
 
-  function fmt(val, decimals = 2) {
-    return val != null ? parseFloat(val).toFixed(decimals) : '—'
+  // '8:47' y '08:47:00' → '08:47'
+  function fmtHora(h) {
+    if (!h) return '—'
+    const [hh, mm] = String(h).split(':')
+    return mm == null ? '—' : `${hh.padStart(2, '0')}:${mm.slice(0, 2)}`
   }
 
-  function fmtTime(ts) {
-    if (!ts) return '—'
-    return ts.slice(0, 5)
+  const fmtPts = n => (n == null ? '—'
+    : (n > 0 ? '+' : n < 0 ? '−' : '') + String(Math.round(Math.abs(n) * 100) / 100).replace('.', ','))
+
+  const fmtPnl = n => (n == null ? '—' : fmtDinero(n))
+
+  const tono = n => (n > 0 ? 'text-green' : n < 0 ? 'text-red' : '')
+
+  const isBreakEven = profit => Math.abs(parseFloat(profit) || 0) <= 6
+
+  function nombreSetup(c) {
+    if (!c) return '—'
+    const [base, dir] = c.split('_')
+    const corto = { continuacion: 'Cont.', reingreso: 'Reing.' }[base]
+    return corto && dir ? `${corto} ${dir}` : (variantes.find(v => v.codigo === c)?.nombre || c)
   }
 
-  function isBreakEven(profit) {
-    return Math.abs(parseFloat(profit) || 0) <= 6
+  const QUIEN = { mio: 'Mío', alfredo: 'Alfredo', bot: 'Bot' }
+
+  function resultBadge(row) {
+    if (row.res === 'no') {
+      const sinSetup = row.motivo === 'Sin setup'
+      const label = sinSetup ? 'Sin entradas válidas' : (row.quien === 'mio' ? (row.motivo || 'No operé') : 'No operó')
+      const cls = sinSetup ? 'badge-sinsetup' : 'badge-noopero'
+      const icon = sinSetup ? 'ti-eye-off' : 'ti-user-off'
+      return `<span class="badge ${cls}" title="${esc(row.motivo || '')}"><i class="ti ${icon}"></i> ${esc(label)}</span>`
+    }
+    if (row.res === 'be') return '<span class="badge badge-be">B.E.</span>'
+    if (row.res === 'target') return '<span class="badge badge-target">target</span>'
+    if (row.res === 'stop') return '<span class="badge badge-stop">stop</span>'
+    return '<span class="badge badge-other">—</span>'
   }
 
-  function resultBadge(resultado, profit) {
-    if (isBreakEven(profit)) return '<span class="badge badge-be">B.E.</span>'
-    if (!resultado) return '<span class="badge badge-other">—</span>'
-    const map = { target: 'badge-target', stop: 'badge-stop' }
-    return `<span class="badge ${map[resultado] || 'badge-other'}">${resultado}</span>`
+  function dirBadge(dir) {
+    if (dir === 'long') return '<span class="badge badge-long">▲ Long</span>'
+    if (dir === 'short') return '<span class="badge badge-short">▼ Short</span>'
+    return '—'
   }
 
-  function dirBadge(pos) {
-    if (!pos) return '—'
-    return pos.toLowerCase() === 'long'
-      ? '<span class="badge badge-long">▲ Long</span>'
-      : '<span class="badge badge-short">▼ Short</span>'
-  }
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 
   function buildCasByDate() {
     casByDate = {}
@@ -56,43 +112,14 @@ const TradesTable = (() => {
     })
   }
 
-  function errorCell(date) {
-    const errors = casByDate[date] || []
+  function errorCell(row) {
+    if (row.quien !== 'mio') return '<span class="tf-nada">—</span>'
+    const errors = casByDate[row.date] || []
     if (errors.length === 0)
       return '<span style="color:var(--accent);font-size:0.78rem">Sin Errores</span>'
     return `<span style="color:rgba(226,75,74,0.85);font-size:0.78rem">${errors.join(' · ')}</span>`
   }
 
-  function buildRows() {
-    allRows = []
-    allTrades.forEach(t => {
-      allRows.push({
-        type: 'trade',
-        date: t.trade_date || '',
-        sortKey: `${t.trade_date || ''} ${t.entry_time || '99:99'}`,
-        data: t,
-      })
-    })
-    allSesiones.filter(s => s.no_opero).forEach(s => {
-      allRows.push({
-        type: 'session',
-        date: s.sesion_date,
-        sortKey: `${s.sesion_date} 00:00`,
-        data: s,
-      })
-    })
-    allRows.sort((a, b) => b.sortKey.localeCompare(a.sortKey))
-  }
-
-  function buildAccountFilter() {
-    return AccountFilter.setAccounts('trades', allTrades.map(t => t.account))
-  }
-
-  // ── Setup de cada fila ────────────────────────────────────────────────────
-  // Un trade NO guarda su setup: el setup es del DÍA y vive en la sesión
-  // (`sesiones.setup_codigo`). Así que se indexa por fecha y se resuelve al
-  // filtrar. Consecuencia: dos trades del mismo día comparten setup, y un día
-  // sin setup en la sesión deja sus trades como "sin asignar".
   function buildSetupPorFecha() {
     setupPorFecha = {}
     allSesiones.forEach(s => {
@@ -100,63 +127,174 @@ const TradesTable = (() => {
     })
   }
 
-  const setupDe = fecha => setupPorFecha[fecha] || null
+  // ── La fila común de las tres fuentes ────────────────────────────────────
+  // { quien, date, hora, setup, dir ('long'|'short'|null), res ('target'|'stop'|'be'|'no'),
+  //   pts, pnl, motivo, cuenta, data, sortKey }
+  function filaMia(t) {
+    const long = (t.market_pos || '').toLowerCase() === 'long'
+    const pts = t.entry_price != null && t.exit_price != null
+      ? (long ? 1 : -1) * (Number(t.exit_price) - Number(t.entry_price)) : null
+    return {
+      quien: 'mio', tipo: 'trade', date: t.trade_date || '', hora: fmtHora(t.entry_time),
+      setup: setupPorFecha[t.trade_date] || null,
+      dir: t.market_pos ? (long ? 'long' : 'short') : null,
+      res: isBreakEven(t.profit) ? 'be' : (t.resultado || null),
+      pts, pnl: parseFloat(t.profit) || 0, cuenta: t.account, data: t,
+    }
+  }
 
-  // El desplegable se construye desde los DATOS, no desde el catálogo entero:
-  // un setup que nunca se ha operado solo sería una opción que no filtra nada.
-  // El nombre sí sale del catálogo; si faltara, se cae al código.
-  function buildSetupFilter() {
-    const sel = document.getElementById('tradeSetupFilter')
-    if (!sel) return
-    const previo = sel.value
-    const usados = new Set(allRows.map(r => setupDe(r.date)).filter(Boolean))
-    const orden = new Map(variantes.map((v, i) => [v.codigo, i]))
-    const opciones = [...usados].sort((a, b) => (orden.get(a) ?? 999) - (orden.get(b) ?? 999))
-    const nombre = c => variantes.find(v => v.codigo === c)?.nombre || c
-    const haySin = allRows.some(r => !setupDe(r.date))
+  function filaMiaSinOperar(s) {
+    return {
+      quien: 'mio', tipo: 'session', date: s.sesion_date, hora: '—',
+      setup: setupPorFecha[s.sesion_date] || null, dir: null, res: 'no',
+      pts: null, pnl: null, motivo: s.motivo_no_opero, data: s,
+    }
+  }
 
-    sel.innerHTML =
-      '<option value="all">Todos los setups</option>' +
-      opciones.map(c => `<option value="${c}">${nombre(c)}</option>`).join('') +
-      (haySin ? '<option value="__sin">Sin setup asignado</option>' : '')
-    if (previo) sel.value = previo
-    if (!sel.value) sel.value = 'all'
+  function filaAlfredo(c) {
+    if (!c.opero) {
+      return { quien: 'alfredo', date: c.fecha, hora: '—', setup: null, dir: null, res: 'no',
+               pts: null, pnl: null, motivo: c.motivo_no_opero, data: c }
+    }
+    const dirTxt = (c.setup_codigo || '').split('_')[1]
+    return {
+      quien: 'alfredo', date: c.fecha, hora: fmtHora(c.hora_entrada), setup: c.setup_codigo || null,
+      dir: dirTxt === 'alcista' ? 'long' : dirTxt === 'bajista' ? 'short' : null,
+      res: c.resultado || null, pts: c.puntos != null ? Number(c.puntos) : null, pnl: null, data: c,
+    }
+  }
+
+  // El bot guarda el setup como «Continuación» / «Reingreso» y la dirección como 1 / −1.
+  function filaBot(b) {
+    const res = (b.resultado || '').toUpperCase()
+    if (res !== 'TARGET' && res !== 'STOP') {
+      return { quien: 'bot', date: b.fecha, hora: '—', setup: null, dir: null, res: 'no',
+               pts: null, pnl: null, motivo: b.motivo || res, cuenta: b.cuenta, data: b }
+    }
+    const base = (b.setup || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    const dir = Number(b.direccion) === 1 ? 'long' : Number(b.direccion) === -1 ? 'short' : null
+    const setup = base && dir ? `${base}_${dir === 'long' ? 'alcista' : 'bajista'}` : null
+    return {
+      quien: 'bot', date: b.fecha, hora: fmtHora(b.hora_llenado || b.hora_orden), setup, dir,
+      res: res.toLowerCase(), pts: b.puntos != null ? Number(b.puntos) : null,
+      pnl: b.pnl_neto != null ? Number(b.pnl_neto) : null, cuenta: b.cuenta, data: b,
+    }
+  }
+
+  function buildRows(chaumer, bot) {
+    const orden = { mio: 0, alfredo: 1, bot: 2 }
+    allRows = [
+      ...allTrades.map(filaMia),
+      ...allSesiones.filter(s => s.no_opero).map(filaMiaSinOperar),
+      ...chaumer.map(filaAlfredo),
+      ...bot.map(filaBot),
+    ]
+    allRows.forEach(r => { r.sortKey = `${r.date} ${r.hora === '—' ? '99:99' : r.hora} ${orden[r.quien]}` })
+    allRows.sort((a, b) => b.sortKey.localeCompare(a.sortKey))
+  }
+
+  function buildAccountFilter() {
+    return AccountFilter.setAccounts('trades', allTrades.map(t => t.account))
+  }
+
+  // ── Barra de filtros ──────────────────────────────────────────────────────
+  function pintarFiltros() {
+    const el = document.getElementById('tradeFiltros')
+    if (!el) return
+    el.innerHTML = GRUPOS.map(g => `
+      <div class="tf-grupo">
+        <span class="tf-nombre">${g.nombre}</span>
+        ${g.opciones.map(([v, txt]) => `
+          <button type="button" class="tf-chip${filtros[g.id].includes(v) ? ' on' : ''}${g.id === 'quien' ? ` tf-q-${v}` : ''}"
+            data-grupo="${g.id}" data-valor="${v}" aria-pressed="${filtros[g.id].includes(v)}">${txt}</button>`).join('')}
+      </div>`).join('') + `
+      <div class="tf-grupo">
+        <span class="tf-nombre">Fechas</span>
+        <input type="date" class="tf-fecha" id="tfDesde" value="${filtros.desde}" aria-label="Desde">
+        <span class="tf-flecha">→</span>
+        <input type="date" class="tf-fecha" id="tfHasta" value="${filtros.hasta}" aria-label="Hasta">
+        <button type="button" class="tf-chip tf-atajo" data-atajo="semana">Esta semana</button>
+        <button type="button" class="tf-chip tf-atajo" data-atajo="mes">Este mes</button>
+        <button type="button" class="tf-chip tf-atajo" data-atajo="pasado">Mes pasado</button>
+        <button type="button" class="tf-chip tf-atajo" data-atajo="todo">Todo</button>
+        <button type="button" class="tf-limpiar" id="tfLimpiar"><i class="ti ti-filter-off"></i> Limpiar</button>
+      </div>`
+  }
+
+  // Los atajos, en fechas locales (hoyISO / isoLocal, nunca toISOString).
+  function atajo(tipo) {
+    const hoy = new Date(hoyISO() + 'T12:00:00')
+    if (tipo === 'todo') return ['', '']
+    if (tipo === 'semana') {
+      const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7))
+      return [isoLocal(lunes), hoyISO()]
+    }
+    if (tipo === 'mes') return [isoLocal(new Date(hoy.getFullYear(), hoy.getMonth(), 1, 12)), hoyISO()]
+    const ini = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1, 12)
+    const fin = new Date(hoy.getFullYear(), hoy.getMonth(), 0, 12)
+    return [isoLocal(ini), isoLocal(fin)]
+  }
+
+  function wireFiltros() {
+    const el = document.getElementById('tradeFiltros')
+    el?.addEventListener('click', e => {
+      const chip = e.target.closest('[data-grupo]')
+      if (chip) {
+        const lista = filtros[chip.dataset.grupo]
+        const i = lista.indexOf(chip.dataset.valor)
+        i >= 0 ? lista.splice(i, 1) : lista.push(chip.dataset.valor)
+      } else if (e.target.closest('[data-atajo]')) {
+        ;[filtros.desde, filtros.hasta] = atajo(e.target.closest('[data-atajo]').dataset.atajo)
+      } else if (e.target.closest('#tfLimpiar')) {
+        filtros = { ...vacio(), quien: [] }
+      } else return
+      guardarFiltros(); pintarFiltros(); applyFilter()
+    })
+    el?.addEventListener('change', e => {
+      if (e.target.id === 'tfDesde') filtros.desde = e.target.value
+      else if (e.target.id === 'tfHasta') filtros.hasta = e.target.value
+      else return
+      guardarFiltros(); applyFilter()
+    })
   }
 
   function applyFilter() {
-    const search    = document.getElementById('tradeSearch').value.toLowerCase()
-    const filterVal = document.getElementById('tradeFilter').value
-    const setupVal  = document.getElementById('tradeSetupFilter')?.value || 'all'
+    const search = (document.getElementById('tradeSearch')?.value || '').toLowerCase()
+    const { quien, setup, res, desde, hasta } = filtros
 
-    // El setup se mira ANTES que nada: aplica igual a los trades y a los días
-    // sin operar, que también tienen (o no) setup en su sesión.
-    const pasaSetup = row => {
-      if (setupVal === 'all') return true
-      const s = setupDe(row.date)
-      return setupVal === '__sin' ? !s : s === setupVal
-    }
-
-    filtered = allRows.filter(row => {
-      if (!pasaSetup(row)) return false
-      if (row.type === 'session') {
-        const isSinSetup = row.data.motivo_no_opero === 'Sin setup'
-        if (filterVal === 'sin_setup') return isSinSetup
-        if (filterVal !== 'all') return false
-        if (!search) return true
-        return row.date.includes(search) ||
-          (row.data.motivo_no_opero || '').toLowerCase().includes(search)
-      }
-      if (filterVal === 'sin_setup') return false
-      const t = row.data
-      const matchAccount = AccountFilter.matches('trades', t.account)
-      const matchFilter = filterVal === 'all' || t.resultado === filterVal
-      const matchSearch = !search || [t.instrument, t.market_pos, t.exit_name, t.trade_date]
-        .some(v => v?.toLowerCase().includes(search))
-      return matchAccount && matchFilter && matchSearch
+    filtered = allRows.filter(r => {
+      if (quien.length && !quien.includes(r.quien)) return false
+      if (setup.length && !setup.includes(r.setup || '__sin')) return false
+      if (res.length && !res.includes(r.res)) return false
+      if (desde && r.date < desde) return false
+      if (hasta && r.date > hasta) return false
+      if (r.quien === 'mio' && r.tipo === 'trade' && !AccountFilter.matches('trades', r.cuenta)) return false
+      if (!search) return true
+      return [QUIEN[r.quien], r.date, nombreSetup(r.setup), r.motivo, r.data.instrument, r.data.exit_name, r.cuenta]
+        .some(v => v && String(v).toLowerCase().includes(search))
     })
     page = 0
+    renderResumen()
     renderTable()
     renderPagination()
+  }
+
+  // Lo filtrado, de un vistazo. Los No operó no cuentan como operación.
+  function renderResumen() {
+    const el = document.getElementById('tradeResumen')
+    if (!el) return
+    const ops = filtered.filter(r => r.res && r.res !== 'no')
+    const t = ops.filter(r => r.res === 'target').length
+    const s = ops.filter(r => r.res === 'stop').length
+    const be = ops.filter(r => r.res === 'be').length
+    const efec = ops.length ? `${Math.round(t / ops.length * 100)}%` : '—'
+    el.innerHTML = `
+      <span><b>${ops.length}</b> ${ops.length === 1 ? 'operación' : 'operaciones'}</span>
+      <span class="text-green"><b>${t}</b> T</span>
+      <span class="text-red"><b>${s}</b> S</span>
+      ${be ? `<span><b>${be}</b> B.E.</span>` : ''}
+      <span>efectividad <b>${efec}</b></span>
+      ${avisos.length ? `<span class="tf-aviso"><i class="ti ti-alert-triangle"></i> No se pudieron leer: ${avisos.join(', ')}</span>` : ''}`
   }
 
   function renderTable() {
@@ -164,7 +302,7 @@ const TradesTable = (() => {
     const tbody = document.getElementById('tradesTableBody')
 
     if (slice.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="10" class="empty-row">Sin resultados</td></tr>`
+      tbody.innerHTML = `<tr><td colspan="${COLS}" class="empty-row">Sin resultados con estos filtros</td></tr>`
       return
     }
 
@@ -176,56 +314,34 @@ const TradesTable = (() => {
       if (month && month !== currentMonth) {
         currentMonth = month
         const [year, mon] = month.split('-')
-        const monthName = MONTHS[parseInt(mon) - 1]
         html += `<tr class="month-separator">
-          <td colspan="10"><i class="ti ti-calendar-month"></i> ${monthName} ${year}</td>
+          <td colspan="${COLS}"><i class="ti ti-calendar-month"></i> ${MONTHS[parseInt(mon) - 1]} ${year}</td>
         </tr>`
       }
 
-      if (row.type === 'trade') {
-        const t   = row.data
-        const pnl = parseFloat(t.profit) || 0
-        html += `
-          <tr>
-            <td class="col-dow">${dayOfWeek(t.trade_date)}</td>
-            <td>${t.trade_date || '—'}</td>
-            <td>${fmtTime(t.entry_time)}</td>
-            <td>${t.instrument?.split(' ')[0] || '—'}</td>
-            <td>${dirBadge(t.market_pos)}</td>
-            <td class="text-center">${t.qty ?? '—'}</td>
-            <td>${resultBadge(t.resultado, t.profit)}</td>
-            <td class="${pnl >= 0 ? 'text-green' : 'text-red'} fw-bold">${pnl >= 0 ? '+' : ''}$${fmt(pnl)}</td>
-            <td>${errorCell(t.trade_date)}</td>
-            <td>
-              <button class="btn-row" data-action="detail" data-id="${t.trade_number}" title="Ver detalle">
-                <i class="ti ti-eye"></i>
-              </button>
-            </td>
-          </tr>`
-      } else {
-        const s          = row.data
-        const isSinSetup = s.motivo_no_opero === 'Sin setup'
-        const label      = isSinSetup ? 'Sin entradas válidas' : (s.motivo_no_opero || 'No operé')
-        const icon       = isSinSetup ? 'ti-eye-off' : 'ti-user-off'
-        const badgeCls   = isSinSetup ? 'badge-sinsetup' : 'badge-noopero'
-        html += `
-          <tr class="row-noopero">
-            <td class="col-dow">${dayOfWeek(s.sesion_date)}</td>
-            <td>${s.sesion_date}</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td><span class="badge ${badgeCls}"><i class="ti ${icon}"></i> ${label}</span></td>
-            <td>—</td>
-            <td>${errorCell(s.sesion_date)}</td>
-            <td>
-              <button class="btn-row" data-action="edit-session" data-date="${s.sesion_date}" title="Editar sesión">
-                <i class="ti ti-pencil"></i>
-              </button>
-            </td>
-          </tr>`
+      let accion = ''
+      if (row.quien === 'mio' && row.tipo === 'trade') {
+        accion = `<button class="btn-row" data-action="detail" data-id="${row.data.trade_number}" title="Ver detalle">
+            <i class="ti ti-eye"></i></button>`
+      } else if (row.quien === 'mio') {
+        accion = `<button class="btn-row" data-action="edit-session" data-date="${row.date}" title="Editar sesión">
+            <i class="ti ti-pencil"></i></button>`
       }
+
+      html += `
+        <tr class="${row.res === 'no' ? 'row-noopero' : ''}">
+          <td><span class="tf-quien tf-q-${row.quien}" title="${esc(row.cuenta || '')}">${QUIEN[row.quien]}</span></td>
+          <td class="col-dow">${dayOfWeek(row.date)}</td>
+          <td>${row.date || '—'}</td>
+          <td>${row.hora}</td>
+          <td class="tf-setup">${nombreSetup(row.setup)}</td>
+          <td>${dirBadge(row.dir)}</td>
+          <td>${resultBadge(row)}</td>
+          <td class="num ${tono(row.pts)}">${fmtPts(row.pts)}</td>
+          <td class="num fw-bold ${tono(row.pnl)}">${fmtPnl(row.pnl)}</td>
+          <td>${errorCell(row)}</td>
+          <td>${accion}</td>
+        </tr>`
     })
 
     tbody.innerHTML = html
@@ -264,15 +380,21 @@ const TradesTable = (() => {
     Modal.openDay(date, [trade], sesion)
   }
 
+  // Alfredo y el bot no tumban la pantalla si fallan: se avisa y se sigue.
+  const opcional = (p, nombre) => p.catch(e => { console.warn(`[Trades] ${nombre}:`, e); avisos.push(nombre); return [] })
+
   async function init() {
-    ;[allTrades, allSesiones, allCasuisticas, variantes] = await Promise.all([
+    avisos = []
+    let chaumer, bot
+    ;[allTrades, allSesiones, allCasuisticas, variantes, chaumer, bot] = await Promise.all([
       DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(),
       DB.getSetupVariantes({ soloActivos: false }).catch(() => []),
+      opcional(DB.getChaumerOperativas(), 'Alfredo'),
+      opcional(DB.getBotOperaciones(), 'el bot'),
     ])
-    buildRows()
     buildCasByDate()
     buildSetupPorFecha()
-    buildSetupFilter()
+    buildRows(chaumer, bot)
 
     AccountFilter.create('trades', {
       mountId: 'accountFilterTrades',
@@ -280,11 +402,15 @@ const TradesTable = (() => {
       onChange: applyFilter,
     })
     await buildAccountFilter()
-    applyFilter()
 
-    document.getElementById('tradeSearch').addEventListener('input', applyFilter)
-    document.getElementById('tradeFilter').addEventListener('change', applyFilter)
-    document.getElementById('tradeSetupFilter')?.addEventListener('change', applyFilter)
+    if (!wired) {
+      leerFiltros()
+      pintarFiltros()
+      wireFiltros()
+      document.getElementById('tradeSearch')?.addEventListener('input', applyFilter)
+      wired = true
+    }
+    applyFilter()
   }
 
   return { init, reload: init }

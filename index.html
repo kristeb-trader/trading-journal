@@ -255,43 +255,37 @@
 
       <!-- ═══ 3. TRADES ════════════════════════════════════════════════════ -->
       <section class="section" id="section-trades">
+        <!-- Los míos, los de Alfredo y los del bot en una lista (docs/disenos/
+             2026-11-03-trades-tres-fuentes.md). Las etiquetas de filtro las pinta
+             table.js; el filtro de cuentas está en la barra superior y solo
+             aplica a los míos. -->
         <div class="section-header">
           <div class="table-controls">
             <input type="text" class="search-input" id="tradeSearch" placeholder="Buscar...">
-            <!-- El filtro de cuentas se movió a la barra superior (ago 2026) -->
-            <select class="filter-select" id="tradeFilter">
-              <option value="all">Todos</option>
-              <option value="target">Target</option>
-              <option value="stop">Stop</option>
-              <option value="sin_setup">Sin entradas válidas</option>
-            </select>
-            <!-- Filtro por setup. El trade NO tiene setup propio: es el de la
-                 SESIÓN de su fecha (`sesiones.setup_codigo`), así que las opciones
-                 se construyen desde los datos en table.js, no aquí. -->
-            <select class="filter-select" id="tradeSetupFilter">
-              <option value="all">Todos los setups</option>
-            </select>
           </div>
         </div>
+        <div class="tf-barra" id="tradeFiltros"></div>
+        <div class="tf-resumen" id="tradeResumen"></div>
 
         <div class="table-wrapper">
           <table class="trades-table" id="tradesTable">
             <thead>
               <tr>
+                <th>Quién</th>
                 <th>Día</th>
                 <th>Fecha</th>
                 <th>Hora</th>
-                <th>Instrumento</th>
+                <th>Setup</th>
                 <th>Dirección</th>
-                <th>Contratos</th>
                 <th>Resultado</th>
-                <th>P&amp;L</th>
+                <th class="num">Puntos</th>
+                <th class="num">P&amp;L</th>
                 <th>Error</th>
                 <th></th>
               </tr>
             </thead>
             <tbody id="tradesTableBody">
-              <tr><td colspan="10" class="empty-row"><i class="ti ti-loader-2 spin"></i> Cargando...</td></tr>
+              <tr><td colspan="11" class="empty-row"><i class="ti ti-loader-2 spin"></i> Cargando...</td></tr>
             </tbody>
           </table>
         </div>

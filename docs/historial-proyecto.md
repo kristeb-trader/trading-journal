@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-11-02
+**Última actualización:** 2026-11-03
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-03 | Trades: los míos, los de Alfredo y los del bot en una lista, con filtros de varias opciones y por fechas |
 | 2026-11-02c | El 12 y el 13/10 en la galería; el motor ya no marca zona antes de una consecución que llega en la misma vela |
 | 2026-11-02b | Backtesting de octubre (1–9/10) en la galería; dos reglas de zonas (plan 3.55 y 3.58) y las gráficas del bot, intocables |
 | 2026-11-02 | La lupa: la fecha y la ficha, pegadas al gráfico |
@@ -68,6 +69,27 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-03 — Trades: los tres en una lista, filtros múltiples y fechas
+
+Diseño: `docs/disenos/2026-11-03-trades-tres-fuentes.md` (Kris eligió la OPCIÓN A del boceto: lista mezclada).
+
+- **Otros › Trades enseña también a Alfredo (`chaumer_operativas`) y al bot (`bot_operaciones`)**, mezclados con los
+  míos y con una etiqueta de **Quién** (Mío verde · Alfredo azul · Bot violeta). Es una vista: las tres tablas solo se
+  leen y no se mezclan en ningún cálculo. Los días sin operación de los tres entran como **No operó**.
+- Columnas nuevas **Setup** y **Puntos**; salen Instrumento y Contratos (siguen en el detalle del trade). El bot
+  guarda el setup como «Continuación»/«Reingreso» + dirección 1/−1: se traduce a `continuacion_alcista`…
+- **Filtros de varias opciones a la vez** (Quién · Setup · Resultado), **fechas** desde/hasta con atajos (Esta
+  semana · Este mes · Mes pasado · Todo), Limpiar, y una línea de resumen (operaciones, T · S, efectividad). Se
+  recuerdan en el navegador (`tradesFiltros`). El filtro de cuentas de la barra solo aplica a los míos.
+- De paso: los escuchadores de la búsqueda se añadían de nuevo en cada `reload`; ahora una sola vez.
+
+**Verificado** con los datos de Supabase del 03/11 inyectados en el preview: Mío 193 filas (135 trades + 58 días sin
+operar), Alfredo 55, bot 20; reingresos alcistas + bajistas de octubre, los tres: 17 operaciones, 8 T · 9 S (Mío 9,
+Alfredo 6, bot 2), igual que el `SELECT`. Ordenador (1400 px) y móvil (390 px) sin desbordar ni errores en consola.
+Ojo: con la cuenta principal elegida arriba, los trades de cuentas viejas no salen (como antes): «Todas» los trae.
 
 ---
 
