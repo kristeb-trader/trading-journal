@@ -19,10 +19,10 @@ MES={'01':'ENERO','02':'FEBRERO','03':'MARZO','04':'ABRIL','05':'MAYO','06':'JUN
      '07':'JULIO','08':'AGOSTO','09':'SEPTIEMBRE','10':'OCTUBRE','11':'NOVIEMBRE','12':'DICIEMBRE'}
 DIAS=['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO','DOMINGO']
 
-def dibujar(dia, salida, datos):
+def dibujar(dia, salida, datos, minimo=30):
     V=lector.cargar(datos)
     fomc = dia in lector.FOMC
-    r=lector.leer_sesion(V,dia)
+    r=lector.leer_sesion(V,dia,minimo)   # minimo=1: el día parcial, tras la salida del bot (subir_dia.minimo_del_dia)
     ev,t=lector.detectar_setups(r, solo_reingresos=fomc)
     D,Z,b,fin=r['D'],r['Z'],r['b'],r['fin']
 

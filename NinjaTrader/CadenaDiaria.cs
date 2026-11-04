@@ -56,6 +56,9 @@ namespace NinjaTrader.NinjaScript.AddOns
         private const int VELAS_VENTANA = 120;
         private const int MARGEN_MIN = 2;          // se exporta 2 min después del fin de ventana
         private const int ESPERA_HOY_MIN = 60;     // hoy incompleto: se reintenta hasta 1 h después
+        // Si el bot ya salió de su operación, el día se exporta 10 minutos después, sin esperar al fin de la ventana
+        // (Kris, 04/11/2026): la ficha y la imagen salen antes; al acabar la ventana se exporta otra vez, entero.
+        private const int TRAS_SALIDA_MIN = 10;
         // Operación abierta: hasta dónde se amplía la exportación, en minutos tras el fin de ventana
         // Cada 30 minutos (09/10/2026): el 09/10 el stop saltó a las 14:24 ET, entre las ampliaciones de las 13:30 y
         // las 16:00, y la ficha dijo ABIERTA durante horas. Así el resultado llega como mucho 30 min después.
@@ -121,6 +124,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             public string Carpeta = @"E:\Proyectos\Trading Journal\chaumer\05_Backtesting\claude\motor\datos\dia";   // dia_auto durante la verificación (7e)
             public string Python = "python";
             public string Puente = @"E:\Proyectos\Trading Journal\scripts\cadena\subir_dia.py";
+            public string CarpetaBot = @"E:\Proyectos\Trading Journal\chaumer\03_Bot\Velas bot";   // donde el bot deja AAAA-MM-DD.salida
             public bool LanzarPuente = true;
             public string Instrumento = "MNQ";
             public int DiasAtras = 5;
@@ -139,6 +143,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                     d["carpeta_salida"] = c.Carpeta;
                     d["python"] = c.Python;
                     d["puente"] = c.Puente;
+                    d["carpeta_bot"] = c.CarpetaBot;
                     d["lanzar_puente"] = c.LanzarPuente;
                     d["instrumento"] = c.Instrumento;
                     d["dias_atras"] = c.DiasAtras;
@@ -151,6 +156,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                 if (j["carpeta_salida"] != null) c.Carpeta = (string)j["carpeta_salida"];
                 if (j["python"] != null)         c.Python = (string)j["python"];
                 if (j["puente"] != null)         c.Puente = (string)j["puente"];
+                if (j["carpeta_bot"] != null)    c.CarpetaBot = (string)j["carpeta_bot"];
                 if (j["lanzar_puente"] != null)  c.LanzarPuente = (bool)j["lanzar_puente"];
                 if (j["instrumento"] != null)    c.Instrumento = (string)j["instrumento"];
                 if (j["dias_atras"] != null)     c.DiasAtras = (int)j["dias_atras"];
@@ -167,6 +173,8 @@ namespace NinjaTrader.NinjaScript.AddOns
             public DateTime CierreUtc;    // cierre de la última vela de la ventana
             public DateTime HastaUtc;     // última vela que se escribe (= CierreUtc, o más si se amplía)
             public bool Ampliar;          // reemplaza el archivo: la operación del motor seguía abierta
+            public bool Parcial;          // hasta 10 min después de la salida del bot, antes de acabar la ventana
+            public bool Completar;        // reemplaza el archivo parcial por el día entero
         }
 
         private static void Tic(object _)
@@ -241,14 +249,47 @@ namespace NinjaTrader.NinjaScript.AddOns
                 bool esHoy = dia == hoy;
                 if (File.Exists(Archivo(cfg, dia)))
                 {
+                    if (File.Exists(MarcaParcial(cfg, dia)))
+                    {
+                        if (ahoraUtc >= cierre.AddMinutes(MARGEN_MIN))
+                            cola.Add(new Pendiente { Dia = dia, EsHoy = esHoy, CierreUtc = cierre, HastaUtc = cierre, Completar = true });
+                        continue;
+                    }
                     Pendiente amp = Ampliacion(cfg, dia, esHoy, cierre, ahoraUtc);
                     if (amp != null) cola.Add(amp);
                     continue;
                 }
-                if (esHoy && ahoraUtc < cierre.AddMinutes(MARGEN_MIN)) continue;   // aún no acabó la ventana
+                if (esHoy && ahoraUtc < cierre.AddMinutes(MARGEN_MIN))                // aún no acabó la ventana
+                {
+                    DateTime salida = SalidaBot(cfg, dia);
+                    DateTime hasta = salida.AddMinutes(TRAS_SALIDA_MIN);
+                    hasta = new DateTime(hasta.Year, hasta.Month, hasta.Day, hasta.Hour, hasta.Minute, 0, DateTimeKind.Utc);
+                    if (salida != DateTime.MinValue && hasta < cierre && ahoraUtc >= hasta.AddMinutes(1))
+                        cola.Add(new Pendiente { Dia = dia, EsHoy = true, CierreUtc = cierre, HastaUtc = hasta, Parcial = true });
+                    continue;
+                }
                 cola.Add(new Pendiente { Dia = dia, EsHoy = esHoy, CierreUtc = cierre, HastaUtc = cierre });
             }
             return cola;
+        }
+
+        private static string MarcaParcial(Config cfg, DateTime dia)
+        {
+            return Path.Combine(cfg.Carpeta, dia.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + ".parcial");
+        }
+
+        // La hora (UTC) a la que el bot salió de su operación ese día (BotChaumer deja AAAA-MM-DD.salida junto a sus
+        // velas). MinValue si no salió o no se puede leer.
+        private static DateTime SalidaBot(Config cfg, DateTime dia)
+        {
+            try
+            {
+                string path = Path.Combine(cfg.CarpetaBot, dia.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + ".salida");
+                if (!File.Exists(path)) return DateTime.MinValue;
+                return DateTime.ParseExact(File.ReadAllText(path).Trim(), "yyyyMMdd HHmmss", CultureInfo.InvariantCulture,
+                                           DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            }
+            catch { return DateTime.MinValue; }
         }
 
         private static string MarcaAbierta(Config cfg, DateTime dia)
@@ -390,7 +431,16 @@ namespace NinjaTrader.NinjaScript.AddOns
                 if (utc >= baseUtc && utc <= p.CierreUtc) enVentana++;
             }
 
-            if (enVentana < VELAS_VENTANA)
+            if (p.Parcial)
+            {
+                // La ventana aún no acabó: basta con tener hasta 10 min después de la salida del bot.
+                if (ultima < p.HastaUtc)                             // al acabar la ventana lo exporta el pase normal
+                {
+                    Log(Dia(p) + "  tras la salida del bot: faltan velas (hasta " + ultima.ToString("HH:mm", inv) + " UTC), reintento el minuto siguiente");
+                    return false;
+                }
+            }
+            else if (enVentana < VELAS_VENTANA)
             {
                 // Hoy puede faltar aún la última vela: se reintenta el minuto siguiente,
                 // hasta 1 h después. Un día pasado (festivo, medio día) se escribe tal cual:
@@ -418,14 +468,17 @@ namespace NinjaTrader.NinjaScript.AddOns
             string destino = Archivo(cfg, p.Dia);
             string tmp = destino + ".tmp";
             File.WriteAllText(tmp, sb.ToString(), new UTF8Encoding(false));
-            if (p.Ampliar)
+            if (p.Ampliar || p.Completar)
             {
                 File.Copy(tmp, destino, true);                    // reemplaza el archivo con más tiempo
                 File.Delete(tmp);
                 try { File.Delete(MarcaAbierta(cfg, p.Dia)); } catch { }   // el puente la vuelve a dejar si sigue abierta
+                try { File.Delete(MarcaParcial(cfg, p.Dia)); } catch { }   // ya es el día entero
             }
             else if (File.Exists(destino)) File.Delete(tmp);     // otro pase lo escribió antes
             else File.Move(tmp, destino);
+            if (p.Parcial)                                       // el puente lee la marca y no exige la ventana entera
+                File.WriteAllText(MarcaParcial(cfg, p.Dia), "hasta " + p.HastaUtc.ToString("yyyyMMdd HHmmss", inv) + " UTC, 10 min después de la salida del bot\r\n", new UTF8Encoding(false));
 
             JObject meta = new JObject();
             meta["instrumento"] = ins.FullName;
@@ -438,9 +491,10 @@ namespace NinjaTrader.NinjaScript.AddOns
             meta["escrito"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", inv);
 
             if (p.Ampliar) meta["ampliado_hasta_utc"] = p.HastaUtc.ToString("yyyyMMdd HHmmss", inv);
+            if (p.Parcial) meta["parcial_hasta_utc"] = p.HastaUtc.ToString("yyyyMMdd HHmmss", inv);
             File.WriteAllText(Path.Combine(cfg.Carpeta, p.Dia.ToString("yyyy-MM-dd", inv) + ".meta.json"), meta.ToString(), new UTF8Encoding(false));
 
-            Log(Dia(p) + (p.Ampliar ? "  operación abierta: ampliado · " : "  ") + ins.FullName + " · " + n + " velas (" + delDia + " del día, " + enVentana + "/" + VELAS_VENTANA +
+            Log(Dia(p) + (p.Ampliar ? "  operación abierta: ampliado · " : p.Parcial ? "  10 min después de la salida del bot · " : p.Completar ? "  el día entero, tras el parcial · " : "  ") + ins.FullName + " · " + n + " velas (" + delDia + " del día, " + enVentana + "/" + VELAS_VENTANA +
                 " en la ventana) · " + primera.ToString("dd/MM HH:mm", inv) + " → " + ultima.ToString("dd/MM HH:mm", inv) + " UTC");
             return true;
         }

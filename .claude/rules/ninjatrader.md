@@ -85,6 +85,13 @@ día **sin archivo** en `datos\dia\` lo pide con `BarsRequest` y lo escribe como
 (`yyyyMMdd HHmmss;o;h;l;c;v`, UTC, hora de cierre, punto decimal); luego lanza
 `python scripts/cadena/subir_dia.py --pendientes` sin consola.
 
+- **Tras la salida del bot** (04/11/2026, Kris): `BotChaumer` deja `chaumer\03_Bot\Velas bot\AAAA-MM-DD.salida` (la hora UTC
+  a la que salió de su operación). Si es antes del fin de la ventana, la cadena exporta el día **10 minutos después**,
+  hasta esa hora, deja `AAAA-MM-DD.parcial` junto a las velas y lanza el puente: la ficha y la imagen salen ya.
+  `subir_dia.minimo_del_dia()` ve la marca y deja leer el día con menos de 30 velas de ventana. Al acabar la ventana
+  (11:32 de Nueva York) la cadena lo reemplaza por el día entero y quita la marca. Config: `carpeta_bot` en
+  `cadena-diaria.json` (por defecto, la de arriba).
+
 - **Horas:** `Bars.GetTime` viene en la zona de NinjaTrader (`Globals.GeneralOptions.TimeZoneInfo`,
   hoy `SA Pacific Standard Time`) y se pasa a UTC con ella; la ventana se calcula con la zona de Nueva
   York de Windows. Nada de horas fijas.

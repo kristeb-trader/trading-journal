@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-04 | La imagen del bot, 10 minutos después de que salga de su operación: no espera al fin de la ventana |
 | 2026-11-03c | Trades: el backtesting, cuarta opción de Quién |
 | 2026-11-03 | El visor del día: una sola pantalla, imágenes 8 veces más ligeras, y recorre lo filtrado en Trades |
 | 2026-11-03 | Trades: los míos, los de Alfredo y los del bot en una lista, con filtros de varias opciones y por fechas |
@@ -71,6 +72,29 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-04 — La imagen del bot, 10 minutos después de su salida
+
+**Lo que pasó.** Kris pidió que, cuando el bot opere, la imagen se suba 10 minutos después de que salga de la operación,
+sin esperar a las 11:32 de Nueva York; solo los días sin operación esperan al fin de la ventana. Eligió contar desde la
+salida, no desde la entrada, para que la imagen lleve ya el resultado.
+
+**Lo que se cambió.**
+- **BotChaumer** deja `chaumer/03_Bot/Velas bot/AAAA-MM-DD.salida` con la hora UTC de la salida (stop, target o cierre por hora).
+- **CadenaDiaria**: si esa salida es antes del fin de la ventana, exporta el día hasta 10 min después (premercado incluido),
+  deja `AAAA-MM-DD.parcial` y lanza el puente; al acabar la ventana reemplaza el archivo por el día entero y quita la marca.
+  `carpeta_bot` nuevo en `cadena-diaria.json`.
+- **subir_dia.py / dia.py**: con la marca `.parcial` el motor lee el día con menos de 30 velas de ventana (`minimo_del_dia`).
+- El candado no cambia: la imagen se ve en el Journal y el portal cuando el día está registrado.
+
+**Comprobado.** Los dos `.cs` compilan fuera de NinjaTrader. Con el 26/10 cortado 10 min después de la salida (9:49), la
+ficha y la imagen dan la misma operación que el día entero (Reingreso bajista 9:28, STOP −59,75), y un día con menos de 30
+velas de ventana se lee con la marca.
+
+**Pendiente.** Kris tiene que copiar `BotChaumer.cs` y `CadenaDiaria.cs` a NinjaTrader y recompilar fuera de la ventana; el
+primer día con operación se comprueba que la imagen sale a su hora.
 
 ---
 

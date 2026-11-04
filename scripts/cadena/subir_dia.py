@@ -176,10 +176,17 @@ def tu_operacion(r, ev, t, trades, d):
     return {'huella': medir.huella_trades(trades), 'operaciones': medir.medir(r, ev, t, trades, d)}
 
 
+def minimo_del_dia(fecha):
+    """Velas de ventana que exige el motor para leer el día. 30, salvo si la exportación es PARCIAL: la cadena la
+    hizo 10 min después de la salida del bot, antes de acabar la ventana (`AAAA-MM-DD.parcial`, 04/11/2026), y con
+    la que haya basta. Al acabar la ventana la cadena exporta el día entero y quita la marca."""
+    return 1 if os.path.exists(os.path.join(DIA_MANUAL, f'{fecha}.parcial')) else 30
+
+
 def ficha_del_dia(V, d, umbral, fed, trades=None):
     """Corre el motor y arma la ficha. Devuelve (estado, ficha, operacion). Con `trades`, la ficha
     lleva además `tu_operacion`: la de Kris medida con el mismo motor (02/10/2026)."""
-    r = lector.leer_sesion(V, d)
+    r = lector.leer_sesion(V, d, minimo_del_dia(f'{d[:4]}-{d[4:6]}-{d[6:]}'))
     if r is None:
         return 'sin_jornada', {'motivo': 'sin ventana completa (festivo o datos incompletos)'}, None
     if 'error' in r:
@@ -377,7 +384,7 @@ def procesar(fecha, umbral, desde, fed_set, huella_motor):
     grafico = None
     if estado == 'ok':
         png = os.path.join(carpeta_dia(fecha), f'{fecha}.png')
-        ev2, t2 = dia.dibujar(d, png, path)
+        ev2, t2 = dia.dibujar(d, png, path, minimo_del_dia(fecha))
         if (t2 and {k: t2[k] for k in ('e', 's', 't', 'res')}) != (t and {k: t[k] for k in ('e', 's', 't', 'res')}):
             raise RuntimeError('el gráfico y la ficha no dan la misma operación')
         grafico = subir_grafico(png, fecha)
@@ -461,7 +468,7 @@ def medir_pendientes(n_dias, huella_motor, fed_set):
             d = f.replace('-', '')
             lector.UMBRAL_VOL = fila.get('umbral_vol') or lector.UMBRAL_VOL
             lector.FOMC = set(fed_set)
-            r = lector.leer_sesion(lector.cargar(path), d)
+            r = lector.leer_sesion(lector.cargar(path), d, minimo_del_dia(f))
             if not r or 'error' in r: continue
             ev, t = lector.detectar_setups(r, solo_reingresos=bool(fila.get('dia_fed')))
             ficha['tu_operacion'] = tu_operacion(r, ev, t, del_dia, d)

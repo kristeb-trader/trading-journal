@@ -544,7 +544,22 @@ namespace NinjaTrader.NinjaScript.Strategies
                 if (filaOp == fila) { fila.Eventos = new List<string>(eventos); finalizado = true; }
                 Guardar(filaOp);
                 Log(filaOp.Resultado + " · " + MotorChaumer.F2(filaOp.Puntos.Value) + " pts · neto $" + filaOp.PnlNeto.Value.ToString("0.00", INV));
+                MarcarSalida(time);
             }
+        }
+
+        // La hora (UTC) a la que el bot salió de la operación, junto a sus velas: AAAA-MM-DD.salida. La cadena la ve y
+        // 10 minutos después hace la ficha y la imagen del día, sin esperar al fin de la ventana (Kris, 04/11/2026).
+        private void MarcarSalida(DateTime time)
+        {
+            if (archivoVelas == null) return;
+            try
+            {
+                DateTime utc = TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(time, DateTimeKind.Unspecified), tzNt);
+                File.WriteAllText(archivoVelas.Substring(0, archivoVelas.Length - 4) + ".salida",
+                                  utc.ToString("yyyyMMdd HHmmss", INV) + "\r\n", new UTF8Encoding(false));
+            }
+            catch (Exception e) { Log("no pude dejar la marca de salida: " + e.Message); }
         }
 
         private void Finalizar(string resultado)
