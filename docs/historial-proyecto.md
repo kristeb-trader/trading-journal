@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-05 | La gráfica del día empieza 2 velas antes de la apertura, no en el origen de las zonas de premercado |
 | 2026-11-04 | La imagen del bot, 10 minutos después de que salga de su operación: no espera al fin de la ventana |
 | 2026-11-03c | Trades: el backtesting, cuarta opción de Quién |
 | 2026-11-03 | El visor del día: una sola pantalla, imágenes 8 veces más ligeras, y recorre lo filtrado en Trades |
@@ -72,6 +73,22 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-05 — La gráfica empieza 2 velas antes de la apertura
+
+**Lo que pasó.** Desde el 14/10 la gráfica empezaba en la vela donde nacía la primera zona de premercado, de madrugada:
+en la del 04/11 la ventana quedaba aplastada a la derecha y no se veía la entrada. Kris pidió que empiece, como mucho,
+2 minutos antes de la operativa.
+
+**Lo que se cambió.** `dia.py`: el gráfico empieza 2 velas antes de la vela base; las zonas de premercado entran desde el
+borde izquierdo, y las que caen fuera del rango de precios no se ven ni llevan etiqueta (el encabezado las sigue contando).
+La Vista de NinjaTrader no cambia. Se rehízo el 04/11 (la misma operación); las de octubre no se rehacen: saldrían con el
+motor de hoy.
+
+**Comprobado.** El 05/11 fue además la primera imagen temprana real: el bot salió a las 10:25 (Continuación bajista,
+TARGET +50,25), la cadena exportó el día a las 10:36 y lo subió al portal a las 10:37, ya con el corte nuevo.
 
 ---
 

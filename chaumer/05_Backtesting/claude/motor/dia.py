@@ -31,9 +31,10 @@ def dibujar(dia, salida, datos, minimo=30):
     # Al LLENARSE la orden termina el analisis del dia: no se marcan mas zonas.
     # (R-34, confirmado por el operador el 01/09/2026 sobre el 17 de julio)
     corte_z = t['i_fill'] if (t and t.get('i_fill') is not None) else corte
-    # Las zonas de premercado se dibujan desde la vela donde nacen (Kris, 14/10/2026): el gráfico empieza en la
-    # primera de ellas que llegue a dibujarse; si no hay, en la vela base, como siempre.
-    ini = min([b] + [z.i_org for z in Z if getattr(z, 'pm', False) and z.i <= corte_z])
+    # El gráfico empieza 2 velas antes de la vela base, nunca antes (Kris, 05/11/2026): desde el origen de las zonas
+    # de premercado, de madrugada, la ventana quedaba aplastada y no se veía la entrada (el 04/11). Las zonas de
+    # premercado entran desde el borde izquierdo, y las que caen fuera del rango de precios de la gráfica no se ven.
+    ini = max(b - 2, 0)
     S=list(range(ini,corte+1)); off=ini; N=len(S); W=N+9.0
 
     fig,ax=plt.subplots(figsize=(20,10.6),facecolor=BG)
@@ -75,13 +76,13 @@ def dibujar(dia, salida, datos, minimo=30):
         n+=1
         # Las vigentes acaban en la ultima vela de la ventana (10:30 Col; 11:30 en invierno), no en el borde
         # del grafico (operador, 07/10/2026). La ventana la da el motor con la hora de Nueva York (fin).
-        x0 = (z.i_org-off) if getattr(z, 'pm', False) else max(z.i_org-off, b-off-1); x1=(z.fin-off) if (z.fin is not None and z.fin<=corte_z) else min(fin-off+.45, W)
+        x0 = max(z.i_org-off, 0) if getattr(z, 'pm', False) else max(z.i_org-off, b-off-1); x1=(z.fin-off) if (z.fin is not None and z.fin<=corte_z) else min(fin-off+.45, W)
         zl,zh=z.en(corte_z)
         vig = (z.fin is None or z.fin>corte_z)
         if vig: viva+=1
         ax.add_patch(Rectangle((x0-.45,zl),x1-x0+.45,zh-zl,facecolor=GREY,
                      alpha=.28 if vig else .10,edgecolor=GREY,lw=1.5 if vig else .7,zorder=2))
-        if vig:
+        if vig and zh > ylo-pad and zl < yhi+pad:          # solo la etiqueta de las que se ven
             et='resistencia' if z.tipo=='R' else 'soporte'
             etiquetas.append([(zl+zh)/2, f"{et}   {zl:,.2f} – {zh:,.2f}".replace(',','.')])
     etiquetas.sort(key=lambda e:e[0]); sep=(yhi-ylo)*.042
