@@ -20,6 +20,34 @@ import lector
 
 COINCIDE_VELAS = 2      # la operación del motor «es la misma» si llena a ±2 velas y en el mismo sentido
 EVENTOS_ANTES = 15      # minutos de eventos del motor antes de la entrada de Kris
+# Sube cuando cambia lo que se mide: entra en la huella y obliga a medir de nuevo las fichas ya hechas.
+# 2 (10/11/2026): el juicio de cada operación («¿cumplía las reglas?») y los contratos.
+MEDIR_VERSION = 2
+
+# ── El juicio: ¿tu trade cumplía las reglas? (10/11/2026, docs/disenos/2026-11-10-disciplina-reglas.md) ──
+# No es «¿hiciste lo mismo que el bot?»: el bot opera UN trade, y otro puede cumplir las mismas reglas.
+# Tampoco añade reglas: lee lo que ya mide esta medición y lo que el motor decidió en la vela de la
+# entrada. Los motivos del motor se reconocen por su frase (lector.py); uno que no case va a 'otra'
+# con su texto, no se pierde. Si lector.py cambia sus frases, se revisa esta tabla.
+MOTIVOS = [
+    (r'riesgo ([\d.]+) pts', 'stop_max'),
+    (r'pasa del punto de referencia', 'punto_referencia'),
+    (r'choca con', 'objetivo_zona'),
+    (r'primer IRI', 'primer_iri'),
+    (r'sin consecución', 'consecucion'),
+    (r'retroceso se pasó|no la rompió|no es fluida|rompimiento directo', 'fluidez'),
+    (r'día de Fed', 'fed'),
+    (r'zona de premercado', 'premercado'),
+]
+TEXTO = {
+    'punto_referencia': 'el objetivo pasaba del punto de referencia',
+    'objetivo_zona': 'el objetivo chocaba con una zona',
+    'primer_iri': 'primer IRI tras un movimiento contrario: el plan espera el segundo',
+    'consecucion': 'sin consecución',
+    'fluidez': 'la corrida no era fluida',
+    'fed': 'continuación en día de Fed',
+    'premercado': 'rompimiento de una zona de premercado: sin continuación',
+}
 
 
 def _minutos_hhmm(h):
@@ -32,9 +60,60 @@ def _r(x): return None if x is None else round(x, 2)
 
 def huella_trades(trades):
     """Cambia si cambia algo de los trades del día que entre en la medición."""
-    claves = ('market_pos', 'entry_time', 'exit_time', 'entry_price', 'exit_price', 'resultado')
+    claves = ('market_pos', 'entry_time', 'exit_time', 'entry_price', 'exit_price', 'resultado', 'qty')
     filas = sorted(json.dumps({k: str(t.get(k)) for k in claves}, sort_keys=True) for t in trades)
+    filas.append(f'medir v{MEDIR_VERSION}')
     return hashlib.sha256('\n'.join(filas).encode('utf-8')).hexdigest()[:16]
+
+
+def _usd_punto(tr): return 2 if re.match(r'\s*MNQ', str(tr.get('instrument') or 'MNQ'), re.I) else 20
+
+
+def juicio(op, i, tr):
+    """¿La operación cumplía las reglas? → {cumple, regla, texto}. i = su orden en el día (0 = la primera).
+    La primera comprobación que salta manda: lo medido por esta medición, y después lo que decidió el motor
+    en la vela de la entrada (entre 2 minutos antes y la del llenado, en el mismo sentido)."""
+    def mal(regla, texto): return {'cumple': False, 'regla': regla, 'texto': texto}
+    riesgo = op.get('riesgo')
+    if i > 0: return mal('una_operacion', 'segunda operación del día')
+    if riesgo is not None and riesgo > lector.STOP_MAX:
+        return mal('stop_max', f'stop de {riesgo:.0f} pts (el máximo son {lector.STOP_MAX:.0f})')
+    if op.get('en_ventana') is False: return mal('ventana', 'fuera de la ventana 09:30–11:30 ET')
+    if op.get('noticia_cerca'): return mal('noticia', f"en la ventana de la noticia de las {op['noticia_cerca']}")
+    if op.get('objetivo_libre') is False: return mal('objetivo_zona', TEXTO['objetivo_zona'])
+    # Los contratos que caben en el riesgo máximo: con el stop del plan si es el trade del plan (el
+    # deslizamiento no cuela falsos fallos); si no, con el suyo.
+    r_c = (op.get('motor') or {}).get('riesgo') if op.get('coincide') else riesgo
+    qty = int(tr.get('qty') or 0) if tr else 0
+    if r_c and qty:
+        caben = int(float(lector.RIESGO_MAX) // (r_c * _usd_punto(tr)))
+        if qty > caben: return mal('contratos', f'{qty} contratos (cabían {caben})')
+    if op.get('coincide'): return {'cumple': True, 'regla': None, 'texto': 'el trade del plan'}
+
+    m = _minutos_hhmm(op['hora'])
+    hallado = None
+    for l in op.get('eventos_motor') or []:
+        mm = re.match(r'\s*(\d{1,2}):(\d{2})\s+(.*)', l)
+        if not mm or not (m - 2 <= int(mm[1]) * 60 + int(mm[2]) <= m + 1): continue
+        txt = mm[3]
+        sentido = ('alcista' if re.search(r'alcista|rompimiento de R ', txt) else
+                   'bajista' if re.search(r'bajista|rompimiento de S ', txt) else None)
+        if sentido != op['sentido']: continue
+        if '✓ orden enviada' in txt:
+            hallado = {'cumple': True, 'regla': None, 'texto': 'setup válido del plan'}
+        elif '✗' in txt:
+            motivo = txt.split('✗', 1)[1].strip(' —')
+            for patron, regla in MOTIVOS:
+                g = re.search(patron, motivo)
+                if not g: continue
+                if regla == 'stop_max':   # el stop del plan, no el suyo (el suyo ya pasó la regla 2)
+                    hallado = mal(regla, f'con el stop del plan ({float(g[1]):.0f} pts) pasaba de {lector.STOP_MAX:.0f}')
+                else:
+                    hallado = mal(regla, TEXTO[regla])
+                break
+            else:
+                hallado = mal('otra', motivo[:120])
+    return hallado or mal('sin_setup', 'el motor no veía ningún setup a esa hora')
 
 
 def _eventos_cerca(ev, desde, hasta):
@@ -114,5 +193,7 @@ def medir(r, ev, t, trades, dia):
         # Lo que anotó el motor justo antes de la entrada: ahí está el stop que el plan le daba a ese
         # rompimiento aunque lo descartara («CONTINUACIÓN alcista · entrada … · stop … ✗ descartado — …»).
         op['eventos_motor'] = _eventos_cerca(ev, m_ent + 1 - EVENTOS_ANTES, m_ent + 1)
+        op['contratos'] = int(tr['qty']) if tr.get('qty') is not None else None
+        op['juicio'] = juicio(op, len(ops), tr)
         ops.append(op)
     return ops

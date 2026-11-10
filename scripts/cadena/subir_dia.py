@@ -166,7 +166,7 @@ def avisos_del_motor(r, corte_z):
 
 def trades_del_dia(fecha):
     """Las operaciones de Kris ese día (la tabla `trades` = el journal de la cuenta principal)."""
-    return sb('GET', f'trades?trade_date=eq.{fecha}&select=market_pos,entry_time,exit_time,'
+    return sb('GET', f'trades?trade_date=eq.{fecha}&select=market_pos,entry_time,exit_time,qty,instrument,'
                      'entry_price,exit_price,resultado&order=entry_time')
 
 
@@ -455,7 +455,7 @@ def medir_pendientes(n_dias, huella_motor, fed_set):
         fichas = sb('GET', f'motor_fichas?fecha=gte.{desde}&estado=eq.ok&huella_motor=eq.{huella_motor}'
                            '&select=fecha,umbral_vol,dia_fed,ficha')
         if not fichas: return
-        trades = sb('GET', f'trades?trade_date=gte.{desde}&select=trade_date,market_pos,entry_time,'
+        trades = sb('GET', f'trades?trade_date=gte.{desde}&select=trade_date,market_pos,entry_time,qty,instrument,'
                            'exit_time,entry_price,exit_price,resultado&order=entry_time')
         por_dia = {}
         for tr in trades: por_dia.setdefault(tr['trade_date'], []).append(tr)
