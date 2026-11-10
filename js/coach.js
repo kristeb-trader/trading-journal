@@ -139,38 +139,45 @@ Vigilar: <el/los nivel(es) clave que importan hoy y por qué>
 Noticias: <noticia relevante del día, o "Sin noticias">`
   }
 
-  // El FOCO del análisis según el veredicto del motor (27/10, propuesta A). El veredicto ya lo
-  // da el motor (D-047): el Coach aporta donde el motor no llega —por qué te saliste, qué
-  // viste, el error—, y en un día que siguió el plan se va directo a la ejecución. Lo usan los
-  // dos sitios del formato (system e instrucción), como `formatoContexto`.
-  function focoDelDia(v, ficha) {
+  // El FOCO del análisis según el juicio del motor (D-049, y desde el 10/11 D-052): la pregunta
+  // ya no es «¿hiciste lo mismo que el bot?» sino «¿tu trade cumplía las reglas?». El juicio lo
+  // da el motor (medir.py); el Coach aporta donde el motor no llega —por qué entró, qué vio, el
+  // error—. Lo usan los dos sitios del formato (system e instrucción), como `formatoContexto`.
+  function focoDelDia(j, ficha) {
+    if (!j || j.estado === 'pendiente') return ''
     const op = ficha?.operacion
-    const plan = op ? ` (${op.setup} ${op.sentido} a las ${op.hora})` : ''
-    const foco = {
-      igual: `Hiciste lo que decía el plan${plan}. Análisis CORTO: confirma en una frase por qué era el trade del plan y céntrate en la EJECUCIÓN —entrada, stop y contratos frente a los del plan, con las diferencias medidas—. No repases regla por regla lo que ya coincide.`,
-      otro:  `El plan operaba OTRA cosa${plan}. Céntrate en la DIFERENCIA: qué marcaba el plan, qué hizo el trader, qué regla separa las dos operaciones y por qué se fue a la suya (su lectura). Con números.`,
-      fuera: `El trader operó y el plan NO operaba. Céntrate en qué regla deja fuera su entrada (lo que anotó el motor justo antes de ella) y en por qué entró igual (su lectura). Con números.`,
-      aviso: `El plan operó${plan} y el trader no entró. Céntrate en por qué: qué vio, y si la duda tenía base en el plan o fue miedo o duda.`,
-      bien:  `Ni el plan ni el trader operaron: es lo correcto. Análisis MUY corto; si miró algún setup, explica por qué el plan no lo daba.`,
-    }[v]
-    if (!foco) return ''
+    const plan = op ? `${op.setup} ${op.sentido} a las ${op.hora}` : null
+    const rota = j.ops.find(o => !o.juicio.cumple)
+    let foco
+    if (j.estado === 'sin_trade') {
+      foco = plan
+        ? `El trader no operó; el plan sí (${plan}). NO OPERAR NUNCA ES UN FALLO de disciplina. Análisis MUY corto: qué vio y si había algo que le frenara.`
+        : `Ni el plan ni el trader operaron: es lo correcto. Análisis MUY corto; si miró algún setup, explica por qué el plan no lo daba.`
+    } else if (j.estado === 'discusion') {
+      foco = `El trader NO está de acuerdo con el motor${rota ? ` («${rota.juicio.texto}»)` : ''}: «${j.discusion?.nota || 'sin nota'}». Examina con las velas si el motor cae en uno de sus dos agujeros conocidos y di quién tiene razón, con la vela exacta.`
+    } else if (rota) {
+      foco = `El trade ROMPIÓ una regla: ${rota.juicio.texto}. Céntrate en ESA regla: qué pide el plan, qué vio el trader y por qué entró igual (su lectura). Con números.${plan ? ` El bot operó ${plan}.` : ' El bot no operó.'}`
+    } else if (j.ops.every(o => o.coincide)) {
+      foco = `El trade cumplía las reglas y fue el del plan${plan ? ` (${plan})` : ''}. Análisis CORTO: confirma en una frase por qué era válido y céntrate en la EJECUCIÓN —entrada, stop y contratos, con las diferencias medidas—.`
+    } else {
+      foco = `El trade cumplía las reglas, aunque NO fue el del bot${plan ? ` (${plan})` : ''}. Dilo claramente: operar otro setup válido NO es indisciplina. Análisis CORTO: qué setup válido era y cómo fue la ejecución.`
+    }
     return `${foco}
-- La línea «En corto» de VALIDACIÓN empieza por ese veredicto, en palabras llanas.
-- El Detalle de VALIDACIÓN lista SOLO las reglas que deciden el día (las que separan su operación de la del plan, o la ejecución si coincidió), no la lista entera.
-- El veredicto lo da el MOTOR y es la medida oficial de la disciplina: no lo contradigas, salvo que el día caiga en uno de sus dos agujeros conocidos; entonces dilo explícitamente, con la vela.`
+- La línea «En corto» de VALIDACIÓN empieza por ese juicio, en palabras llanas.
+- El Detalle de VALIDACIÓN lista SOLO las reglas que deciden el día, no la lista entera.
+- El juicio lo da el MOTOR y es la medida oficial de la disciplina: no lo contradigas, salvo que el día caiga en uno de sus dos agujeros conocidos; entonces dilo explícitamente, con la vela.`
   }
 
-  // Cómo empieza el VEREDICTO del diagnóstico según el del motor (los días sin entrada no son
-  // ni válidos ni inválidos: el parser enseña el texto tal cual).
-  function veredictoEtapa3(v) {
-    const inicio = {
-      igual: '«ENTRADA VÁLIDA» (era el trade del plan; la razón dice cómo fue la ejecución)',
-      otro:  '«ENTRADA INVÁLIDA» (no era el trade del plan: el plan operaba otra cosa)',
-      fuera: '«ENTRADA INVÁLIDA» (no era el trade del plan: el plan no operaba)',
-      aviso: '«SIN ENTRADA — el plan operaba»',
-      bien:  '«SIN ENTRADA — correcto: el plan tampoco operaba»',
-    }[v]
-    return inicio ? `\nEste día el motor dio «${v}»: empieza con ${inicio}, salvo que argumentes uno de sus dos agujeros conocidos.` : ''
+  // Cómo empieza el VEREDICTO del diagnóstico según el juicio del motor (los días sin entrada no
+  // son ni válidos ni inválidos: el parser enseña el texto tal cual).
+  function veredictoEtapa3(j) {
+    if (!j || j.estado === 'pendiente') return ''
+    const rota = j.ops.find(o => !o.juicio.cumple)
+    const inicio = j.estado === 'sin_trade'
+      ? (j.plan ? '«SIN ENTRADA — el plan operaba; no operar no es un fallo»' : '«SIN ENTRADA — correcto: el plan tampoco operaba»')
+      : rota ? `«ENTRADA INVÁLIDA» (rompió una regla: ${rota.juicio.texto})`
+      : '«ENTRADA VÁLIDA» (cumplía las reglas; la razón dice cómo fue la ejecución)'
+    return `\nEste día el motor dio su juicio: empieza con ${inicio}, salvo que argumentes uno de sus dos agujeros conocidos.`
   }
 
   // ── Construcción del System Prompt ────────────────────────────────────
@@ -301,13 +308,15 @@ Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes.
     // no de una cuenta (el análisis sí se restringe a la principal, pero las
     // reglas de riesgo aplican a lo que se ejecutó ese día, venga de donde venga).
     // Desde el 01/10 (medida del plan): la ficha del motor entra en el contexto, así el
-    // stop y el riesgo se miden con el stop de medir.py y sale el veredicto del día.
+    // stop y el riesgo se miden con el stop de medir.py y sale el juicio del día (D-052),
+    // con la discusión del día si Kris no está de acuerdo con el motor.
     const _motorDia = fichaMotor && medidaDeFecha(date) === 'plan'
       ? new Map([[date, { estado: fichaMotor.estado, operacion: fichaMotor.ficha?.operacion || null,
                           tu: fichaMotor.ficha?.tu_operacion || null }]]) : undefined
+    const _discusiones = _motorDia ? (await DB.getDiscusiones().catch(() => [])).filter(d => d.fecha === date) : []
     const _discCtx = discContexto({
       trades, errores: casuisticas, fechasEsp,
-      stopMaxPuntos: objetivos?.stop_max_puntos, motor: _motorDia,
+      stopMaxPuntos: objetivos?.stop_max_puntos, motor: _motorDia, discusiones: _discusiones,
     })
     // Filtrado por setup Y por contexto del día: una regla condicional (día FOMC,
     // hay noticia) no debe ni aparecer si su contexto no se dio ese día, o el Coach
@@ -330,37 +339,32 @@ Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes.
           return `${marca ? '✓' : '✗'} [F${it.fase}] ${it.texto}`
         }).join('\n  ')
       : 'Sin datos de checklist'
-    // El veredicto del día (D-047), calculado en db.js como en el dashboard. Lo usan la
+    // El juicio del día (D-052), calculado en db.js como en el dashboard. Lo usan la
     // disciplina de abajo, el foco del análisis (A) y la elección de reglas del plan (B).
-    const veredicto = (sesion && _motorDia) ? veredictoDia(sesion, _discCtx) : null
+    const juicio = (sesion && _motorDia) ? juicioDia(sesion, _discCtx) : null
     contextoDia = {
       ficha:      fichaMotor?.estado === 'ok' ? fichaMotor.ficha : null,
       diaFed:     !!fichaMotor?.dia_fed,
       familia:    familiaDia,
       hayNoticia: (noticias || []).length > 0,
-      veredicto,
+      juicio,
     }
-    // La disciplina del día con la medida del plan: un HECHO calculado por el sistema,
-    // igual que en el dashboard (db.js). Va en el bloque B: es del día.
+    // La disciplina del día: un HECHO calculado por el sistema, igual que en el dashboard
+    // (db.js). Va en el bloque B: es del día.
     const disciplinaPlanStr = (() => {
-      if (!sesion || !_motorDia) return ''
-      const v = veredicto
-      if (!v || v === 'pendiente') return ''
+      if (!juicio || juicio.estado === 'pendiente') return ''
       const op = fichaMotor.ficha?.operacion
-      const lineas = [`  Veredicto: ${VEREDICTO_TXT[v].largo}${op && (v === 'otro' || v === 'aviso') ? ` (el plan: ${fmtOpPlan(op)})` : ''}.`]
-      const ej = ejecucionDia(sesion, _discCtx)
-      if (ej) lineas.push(`  Ejecución: ${ej.ok ? 'igual al plan (entrada a ±5 pts, contratos dentro de los $160 con el stop del plan)' : ej.fallos.map(textoFalloEjecucion).join(' · ')}.`)
-      const al = alarmasDia(sesion, DB.checklistTodos(), _discCtx)
-      if (al.length) lineas.push(`  Alarmas: ${al.map(textoAlarma).join(' · ')}.`)
-      const lec = lecturaDia(sesion, DB.checklistTodos(), _discCtx)
-      if (lec) lineas.push(`  Lectura: el trader marcó «${lec.texto}» como ${lec.marco ? '✓' : '✗'} y el motor ${lec.coincide ? 'coincide' : 'NO coincide'}.`)
+      const lineas = juicio.ops.map(o => `  ${o.juicio.cumple ? '✓' : '✗'} Trade de las ${o.hora}: ${o.juicio.cumple ? 'dentro de las reglas' : 'regla rota'} — ${o.juicio.texto}${o.juicio.cumple && !o.coincide && op ? ' (no fue el trade del bot)' : ''}.`)
+      if (juicio.estado === 'sin_trade') lineas.push('  No operó: no operar nunca es un fallo.')
+      lineas.push(op ? `  El bot: ${fmtOpPlan(op)}.` : '  El bot no operó.')
+      if (juicio.discusion && juicio.discusion.estado !== 'motor') lineas.push(`  EN DISCUSIÓN — el trader no está de acuerdo con el motor: «${juicio.discusion.nota || 'sin nota'}».`)
       return `
 
 Disciplina del día (VERIFICADO POR DATOS con el motor; desde el 01/10 es la medida de la disciplina):
 ${lineas.join('\n')}
-  (Un día cuenta a favor si hizo lo que decía el plan —o no operó cuando el plan no operaba—, sin
-   mirar el resultado: un trade fuera del plan que gana sigue siendo indisciplina. Si el plan operó
-   y el trader no, es un aviso, no un fallo. La casilla del setup ya no puntúa: se compara con el motor.)`
+  (La pregunta es si el trade cumplía las reglas, NO si fue el mismo que el del bot: otro setup
+   válido es disciplina. No mira el resultado: un trade que rompe una regla y gana sigue siendo
+   indisciplina. No operar nunca es fallo.)`
     })()
     // Códigos de las reglas aplicables al día: el Coach los usa para vincular cada
     // error con la regla que contradice (9ª parte del formato de errores). Se
@@ -595,9 +599,9 @@ El análisis se realiza en un flujo guiado de tres etapas. Tú produces dos entr
 
 ### ETAPA 1 — ANÁLISIS TÉCNICO (primer entregable)
 Cuando recibas la instrucción de análisis técnico (o la imagen del gráfico), produce EXACTAMENTE estas 3 secciones.${conPlan ? ' Lee el día SOLO como lo lee el plan de trading: nada de análisis técnico genérico (sesgo por rango overnight, máximo y mínimo de ayer, deriva).' : ' Los datos de referencia (PDO/PDH/PDL/PDC/PDR, deriva overnight, etc.) son para TU análisis: NO los vuelques ni hagas tablas con ellos en el output.'}
-${focoDelDia(veredicto, fichaMotor?.ficha) ? `
+${focoDelDia(juicio, fichaMotor?.ficha) ? `
 **🎯 EL FOCO DE ESTE DÍA** (manda sobre el formato de abajo):
-${focoDelDia(veredicto, fichaMotor?.ficha)}
+${focoDelDia(juicio, fichaMotor?.ficha)}
 ` : ''}
 ⚠️ **CADA UNA de las 3 secciones se escribe en DOS capas, con estas dos marcas literales:**
 
@@ -652,7 +656,7 @@ IMPORTANTE: durante el chat NO emitas el diagnóstico final estructurado (las 4 
 Cuando recibas la instrucción de diagnóstico final, integra TODO lo conversado en el chat y produce EXACTAMENTE estas 4 secciones:
 
 **🎯 VEREDICTO DE SETUP**
-Empieza SIEMPRE con "ENTRADA VÁLIDA" o "ENTRADA INVÁLIDA" y, en la MISMA línea o la siguiente, la razón en UNA frase llana (sin números crudos: usa distancias en puntos si hacen falta). Es lo primero y a veces lo único que se lee.${veredictoEtapa3(veredicto)}
+Empieza SIEMPRE con "ENTRADA VÁLIDA" o "ENTRADA INVÁLIDA" y, en la MISMA línea o la siguiente, la razón en UNA frase llana (sin números crudos: usa distancias en puntos si hacen falta). Es lo primero y a veces lo único que se lee.${veredictoEtapa3(juicio)}
 
 **⚠️ ERRORES DETECTADOS**
 Lista CADA error en UNA línea con este formato EXACTO (NUEVE partes separadas por " | "):
@@ -2022,7 +2026,7 @@ ${porNombre.parametros}
       await prepararContexto(coachDate)
       if (miPanel !== panel) return
       const soloPlan = etapaDeFecha(coachDate) === 2
-      const foco = focoDelDia(contextoDia?.veredicto, contextoDia?.ficha)
+      const foco = focoDelDia(contextoDia?.juicio, contextoDia?.ficha)
       const instruccionFormato = `Realiza el ANÁLISIS TÉCNICO (Etapa 1) en exactamente 3 secciones.${soloPlan ? ' Lee el día SOLO como lo lee el plan de trading: nada de sesgo por rango overnight, máximo y mínimo de ayer ni deriva.' : ''}
 ${foco ? `
 🎯 EL FOCO DE ESTE DÍA (manda sobre el formato de abajo):

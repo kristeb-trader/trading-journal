@@ -10,6 +10,39 @@
 
 ---
 
+## D-052 — La disciplina pregunta «¿tu trade cumplía las reglas?», no «¿hiciste lo mismo que el bot?»
+
+*Sustituye la medida de D-047.*
+
+**Decisión (Kris, 10/11/2026).** *«No lo estoy mirando, no me aporta nada… no operar lo mismo del bot no significa que no
+cumpla la disciplina.»* Desde el 01/10, la disciplina cuenta **trades dentro de las reglas ÷ trades juzgados**. El juicio
+de cada trade lo da el motor en la vela de la entrada (`medir.py` → `tu_operacion[i].juicio = {cumple, regla, texto}`):
+lo que ya mide (stop > 80, ventana, noticia, objetivo con zona, contratos) y lo que decidió el motor (✓ orden enviada, o el
+motivo del ✗). **No operar nunca es fallo.** Cuatro piezas, aprobadas juntas («todo»):
+1. **La pregunta nueva**: otro setup válido cuenta (el 06/10, a las 8:41, sin ser el trade del bot de las 10:07).
+2. **«No estoy de acuerdo»** (`disciplina_discusiones`): el día no cuenta hasta cerrarlo; `motor` vuelve a contar, `plan`
+   no (y se corrige el plan, con su sí).
+3. **El aviso en Telegram** al registrar el día (o cuando el motor mide, si registró antes): una vez, solo días
+   registrados (el candado, D-026).
+4. **La pantalla mínima**: la fuga (la regla más rota, con sus notas de esos días) arriba; dentro de las reglas · racha ·
+   en discusión; un cuadrito por día.
+
+**Motivo.** D-047 ponía «otro» o «fuera» a todo trade distinto del del bot y no decía qué regla rompía: Kris no abría la
+pantalla. Medido sobre los 23 trades del 01/10 al 09/11: octubre 10 de 18; noviembre 0 de 5, con una fuga clara —stop de
+más de 80 en 04, 05 y 06/11— que sus propias notas explican («sobreextendido», «posible movimiento extendido»).
+
+**Alternativas descartadas.**
+- **Seguir midiendo contra el trade del bot:** el bot elige el primero válido; el plan no obliga a ese y no a otro.
+- **Contar los días sin operar:** no operar no es ni acierto ni fallo de disciplina; inflaba el % en los días laterales.
+- **Ejecución, alarmas y lectura de D-047:** se quitan. Los contratos pasan a ser una regla del juicio; la entrada a ±5
+  pts no es una regla del plan.
+- **Leer los motivos del motor en `db.js`:** van en `medir.py`, junto a la medición y en el idioma del motor; `db.js` solo
+  suma. Si `lector.py` cambia sus frases, un motivo nuevo cae en `otra` con su texto.
+
+Diseño: `docs/disenos/2026-11-10-disciplina-reglas.md`.
+
+---
+
 ## D-051 — Lo que decide el setup es a dónde va el objetivo; el reingreso por cambio de tendencia
 
 **Decisión (Kris, 28–29/10/2026, plan 3.52).** **Continuación** = rompimiento con consecución hacia un **espacio nuevo**:
@@ -107,6 +140,8 @@ etapa 1 las siguen viendo), y el comparador Chaumer deja de enseñar la confianz
 ---
 
 ## D-047 — Desde el 01/10 la disciplina pregunta «¿era ese el trade del plan?» y responde el motor
+
+*Sustituida su medida por D-052 (10/11/2026): la pregunta pasa a ser «¿tu trade cumplía las reglas?».*
 
 **Decisión (Kris, 23/10/2026).** En la etapa 2, desde el **01/10/2026**, la disciplina cuenta **días** por su veredicto, no
 ítems: `igual` (operó lo que marcaba el motor) y `bien` (ninguno operó) a favor; `fuera` (el motor no operaba) y `otro`

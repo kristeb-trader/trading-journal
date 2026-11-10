@@ -371,19 +371,15 @@ const RIESGO_MAX_DESDE = '2026-09-28'
 
 // ── La medida del plan (desde el 01/10/2026) ─────────────────────────────────
 // En la etapa 2 las reglas automáticas son el perímetro (MNQ, ventana, una operación…)
-// y se cumplían aunque Kris operara fuera del plan: octubre daba 98 % con 10 de 16 días
-// siguiendo el plan. Desde el 01/10 la disciplina pregunta «¿era ese el trade del plan?»
-// y responde el motor: su ficha (`motor_fichas`) y `ficha.tu_operacion`, que escribe
-// scripts/cadena/medir.py. No es una etapa 3: es una fecha dentro de la 2, como
-// RIESGO_MAX_DESDE. Diseño: docs/disenos/2026-10-23-disciplina-plan.md.
+// y se cumplían aunque Kris operara fuera del plan. Desde el 01/10 responde el motor: su
+// ficha (`motor_fichas`) y `ficha.tu_operacion`, que escribe scripts/cadena/medir.py.
+// D-047 preguntaba «¿era ese el trade del plan?»; desde el 10/11 (D-052), «¿tu trade
+// cumplía las reglas?» (juicioDia, más abajo). No es una etapa 3: es una fecha dentro de
+// la 2, como RIESGO_MAX_DESDE. Diseño: docs/disenos/2026-11-10-disciplina-reglas.md.
 //
 // Sin `motor` en el contexto (quien llama no lo cargó) todo sigue con la medida de las
 // reglas, igual que sin etapas cargadas: un fallo de lectura no cambia ninguna cifra.
 const PLAN_MOTOR_DESDE = '2026-10-01'
-// La entrada de Kris cuenta como la del plan a ±5 puntos (lo normal es ±3: el llenado
-// frente al cierre de la vela). Más lejos, entró a otro precio.
-const TOL_ENTRADA_PTS = 5
-
 function medidaDeFecha(fecha) {
   const f = String(fecha || '').slice(0, 10)
   return (etapaDeFecha(f) === 2 && f >= PLAN_MOTOR_DESDE) ? 'plan' : 'reglas'
@@ -402,103 +398,12 @@ function _cabenContratos(riesgoPts, t) {
   return Math.floor(RIESGO_MAX_USD / (r * _usdPorPunto(t || { instrument: 'MNQ' })))
 }
 
-// El veredicto del día. Cuentan `igual` y `bien` (a favor) y `fuera` y `otro` (en
-// contra). `aviso` (el plan operó y Kris no) se enseña pero no cuenta, decisión de Kris
-// del 23/10. `pendiente` = sin ficha que mirar (día sin registrar: el candado de la BD).
-// null = el día no entra (fin de semana o sin conexión, invariantes 1 y 3).
-// No mira el resultado: un trade fuera del plan que gana sigue siendo `fuera`.
-function veredictoDia(s, opts) {
-  const o = opts || {}
-  if (!s || !esDiaHabil(s.sesion_date) || !_discSeConecto(s)) return null
-  const m = _fichaDia(s, o)
-  if (!m || m.estado !== 'ok') return 'pendiente'
-  const trades = (o.tradesPorDia && o.tradesPorDia.get(s.sesion_date)) || []
-  const opera = !!m.operacion
-  if (!trades.length) return opera ? 'aviso' : 'bien'
-  const ops = _opsDia(m)
-  if (ops.length < trades.length) return 'pendiente'   // medir.py aún no midió esos trades
-  if (!opera) return 'fuera'
-  return ops.every(op => op.coincide) ? 'igual' : 'otro'
-}
-const VEREDICTO_A_FAVOR = { igual: true, bien: true, fuera: false, otro: false }
-// Cómo se dice cada veredicto en pantalla (Disciplina y la vista del día). tono: g · r · a · n.
-const VEREDICTO_TXT = {
-  igual:     { corto: 'igual',     largo: 'Hiciste lo que decía el plan',     tono: 'g' },
-  bien:      { corto: 'ninguno',   largo: 'El plan no operaba y no operaste', tono: 'g' },
-  fuera:     { corto: 'sin plan',  largo: 'Operaste y el plan no operaba',    tono: 'r' },
-  otro:      { corto: 'otro',      largo: 'El plan operaba otra cosa',        tono: 'r' },
-  aviso:     { corto: 'no operé',  largo: 'El plan operó y tú no',            tono: 'a' },
-  pendiente: { corto: 'pendiente', largo: 'Aún sin la ficha del motor',       tono: 'n' },
-}
 // «Continuación ↑ 9:25»: una operación del motor o de `tu_operacion`, en corto.
 function fmtOpPlan(op) {
   if (!op) return ''
   const flecha = op.sentido === 'alcista' ? '↑' : op.sentido === 'bajista' ? '↓' : ''
   return [op.setup, flecha, op.hora].filter(Boolean).join(' ')
 }
-// Las alarmas, en corto: los títulos del plan son frases enteras.
-const ALARMA_CORTA = {
-  p2_instrumento:       'no fue MNQ',
-  p2_ventana_horaria:   'fuera de la ventana 09:30–11:30 ET',
-  p2_noticia:           'entrada en la ventana de una noticia',
-  p2_fomc_continuacion: 'Continuación en día FOMC',
-  p2_stop_max:          'stop de más de 80 pts',
-  p2_un_contrato:       'más contratos de los que caben en $160',
-}
-const textoAlarma = i => ALARMA_CORTA[i.clave] || i.texto
-function textoFalloEjecucion(f) {
-  if (f.tipo === 'entrada') return `entrada a ${String(Math.round(f.dif * 100) / 100).replace('.', ',')} pts del plan`
-  if (f.tipo === 'contratos') return `${f.qty} contratos (cabían ${f.caben})`
-  return ''
-}
-
-// La ejecución de un día `igual`: la entrada al precio del plan y no más contratos de
-// los que caben con el stop DEL PLAN. El stop y el objetivo de Kris no se comparan:
-// medir.py los deduce de la salida (1:1), no son los que puso.
-// → { ok, fallos: [{ tipo: 'entrada', dif, hora } | { tipo: 'contratos', qty, caben, hora }] } o null.
-function ejecucionDia(s, opts) {
-  const o = opts || {}
-  if (veredictoDia(s, o) !== 'igual') return null
-  const trades = (o.tradesPorDia && o.tradesPorDia.get(s.sesion_date)) || []
-  const fallos = []
-  _opsDia(_fichaDia(s, o)).forEach((op, i) => {
-    const t = _tradeDeOp(trades, op, i)
-    const mot = op.motor || {}
-    if (op.entrada != null && mot.entrada != null) {
-      const dif = Math.abs(op.entrada - mot.entrada)
-      if (dif > TOL_ENTRADA_PTS) fallos.push({ tipo: 'entrada', dif, hora: op.hora })
-    }
-    const caben = _cabenContratos(mot.riesgo, t)
-    const qty = t ? Number(t.qty) || 0 : 0
-    if (caben != null && qty > caben) fallos.push({ tipo: 'contratos', qty, caben, hora: op.hora })
-  })
-  return { ok: fallos.length === 0, fallos }
-}
-
-// La lectura: ¿la casilla del setup dijo lo mismo que el motor? Informativa, no puntúa.
-// Coincide si marcó ✓ y era el trade del plan, o ✗ y no lo era. Solo días operados.
-function lecturaDia(s, items, opts) {
-  const v = veredictoDia(s, opts)
-  if (v !== 'igual' && v !== 'fuera' && v !== 'otro') return null
-  const fam = _discSetupFamily(s)
-  const it = (items || []).find(i => (i.evidencia || 'declarada') === 'declarada' &&
-    i.setup && i.setup === fam && i.etapa === 2)
-  if (!it || s[it.clave] === undefined) return null
-  const marco = !!s[it.clave]
-  return { clave: it.clave, texto: it.texto, marco, coincide: marco === (v === 'igual'), veredicto: v }
-}
-
-// Las alarmas de un día de la medida del plan: las automáticas de la etapa 2 que el dato
-// resolvió en contra. No forman el porcentaje. «Una operación» no va: ya la cubre el
-// veredicto (un segundo trade que el plan no tenía hace el día `otro`).
-function alarmasDia(s, items, opts) {
-  const o = opts || {}
-  if (!_usaPlan(s, o) || !sesionOpero(s, o.conTrades)) return []
-  return (items || []).filter(i => i.etapa === 2 && i.evidencia === 'auto' && i.clave !== 'p2_una_operacion' &&
-    discFactorAplica({ fase: i.fase || 1, setup: i.setup || null, aplica_si: i.aplica_si || 'siempre' }, s, o) &&
-    reglaAutoResultado(i.clave, s, o) === false)
-}
-
 // ── El juicio: ¿tu trade cumplía las reglas? (10/11/2026, D-052) ─────────────
 // Sustituye la medida de D-047 («¿hiciste lo mismo que el bot?»): el bot opera UN trade, y otro
 // puede cumplir las mismas reglas (06/10). El juicio de cada trade lo da medir.py con el motor
@@ -596,7 +501,7 @@ function reglaAutoResultado(codigo, s, opts) {
     if (s.sesion_date < RIESGO_MAX_DESDE) return trades.every(t => Number(t.qty) === 1)
     // Desde el 01/10, con la medida del plan: los contratos que caben con el stop que
     // dedujo medir.py, y solo en los trades que NO son del plan (los del plan los mira
-    // ejecucionDia, con el stop del plan). El MAE no es el riesgo: el 08/10 con 4
+    // juicio de medir.py, con el stop del plan). El MAE no es el riesgo: el 08/10 con 4
     // contratos donde cabían 2 lo daba por bueno.
     const ops = _usaPlan(s, o) ? _opsDia(_fichaDia(s, o)) : []
     if (ops.length) {

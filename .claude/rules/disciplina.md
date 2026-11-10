@@ -37,18 +37,22 @@ contiene su fecha (`disciplina_etapas`). **Un día cuenta las reglas de su etapa
   `soloActivos: true`: eso borraba del pasado las reglas desactivadas.
 - Sin etapas cargadas, `etapaDeFecha` da `undefined` y todo vuelve al criterio viejo (activas).
 
-## La medida del plan (23 oct, D-047)
+## La medida del plan (10 nov, D-052; antes D-047)
 
-Desde `PLAN_MOTOR_DESDE` (01/10/2026) los días de la etapa 2 se miden **por veredicto** (`veredictoDia`: igual · bien ·
-fuera · otro · aviso · pendiente), con la ficha del motor y `ficha.tu_operacion`. Funciones: `medidaDeFecha` ·
-`medidaDelPeriodo` · `veredictoDia` · `ejecucionDia` · `alarmasDia` · `lecturaDia` · `DB.getMotorDisciplina`.
-- **Sin `motor` en `discContexto`, todo sigue con la medida de las reglas** (como sin etapas): cada pantalla que quiera la
-  medida nueva tiene que cargar `DB.getMotorDisciplina()` y pasarlo. Hoy lo hacen calendario, Análisis, Disciplina, la
-  vista del día y el Coach.
-- `aviso` y `pendiente` **no cuentan**. El veredicto no mira el resultado.
-- Ejecución, alarmas y lectura se enseñan, pero **no forman el porcentaje**.
-- El stop máximo y el riesgo usan el stop de `medir.py` cuando hay `tu_operacion`; sin ella, el MAE.
-- Un período no suma ítems con días: se mide con la medida de su día más reciente.
+Desde `PLAN_MOTOR_DESDE` (01/10/2026) los días de la etapa 2 se miden **por el juicio de cada trade**: ¿cumplía las
+reglas? El juicio lo escribe **`medir.py`** (`tu_operacion[i].juicio = {cumple, regla, texto}`); `db.js` solo suma:
+`juicioDia` (sin_trade · pendiente · discusion · cuenta) · `resumenDisciplina` (%, racha, fuga) · `REGLA_TXT` ·
+`DB.getMotorDisciplina` · `DB.getDiscusiones` / `abrirDiscusion` / `cerrarDiscusion`.
+- **Sin `motor` en `discContexto`, todo sigue con la medida de las reglas** (como sin etapas). Cada pantalla que quiera la
+  medida nueva carga `DB.getMotorDisciplina()` **y** `DB.getDiscusiones()` y los pasa. Hoy: calendario, Análisis,
+  Disciplina, el visor del día y el Coach.
+- **Cuentan trades, no días.** No operar nunca es fallo. Un día en discusión (abierta o cerrada `plan`) no cuenta.
+- **No es «¿hiciste lo mismo que el bot?»**: un trade distinto del del bot que cumple las reglas cuenta a favor.
+- Los motivos del motor se reconocen por su frase (`MOTIVOS` de `medir.py`): **si `lector.py` cambia sus frases, se
+  revisa esa tabla**; lo que no case cae en `otra` con su texto.
+- `MEDIR_VERSION` entra en la huella de `tu_operacion`: al cambiar el juicio, se sube y `medir_pendientes` vuelve a medir.
+- El aviso de Telegram (`avisarDisciplina`, en el bot) solo para días **registrados** (el candado) y **una vez**
+  (`sesiones.disciplina_avisada_at`).
 
 ## Las siete invariantes
 

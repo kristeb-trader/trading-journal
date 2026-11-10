@@ -1,6 +1,6 @@
 # La disciplina pregunta «¿tu trade cumplía las reglas?», no «¿hiciste lo mismo que el bot?»
 
-**Versión:** v1 · **Estado:** ✅ APROBADO por Kris (10/11/2026) · en implementación · Sustituye la medida de D-047
+**Versión:** v2 · **Estado:** ✅ APROBADO por Kris (10/11/2026) · ✅ IMPLEMENTADO (10/11/2026) · D-052 · Sustituye la medida de D-047
 (`docs/disenos/2026-10-23-disciplina-plan.md`) · Relacionado: D-034 (`medir.py`), D-026 (el candado), D-049 (el Coach).
 Boceto: `boceto-disciplina-v2.png` (enviado el 10/11/2026).
 
@@ -123,5 +123,12 @@ motivo que no case cae en `otra` con su texto, no se pierde.
   conviene mover el secreto a un archivo local, como la `service_role`.
 
 ## Registro
+
+- **v2 (10/11/2026):** implementado en 5 fases. Desvíos: las fichas de octubre, hechas con un motor anterior, recibieron
+  el juicio sobre su medición ya guardada (sin correr el motor de hoy, para no mezclar motores); Telegram solo avisa desde
+  el 10/11 (`AVISO_DISCIPLINA_DESDE`), para no mandar de golpe los días pasados; `/disciplina` reconoce cualquier clave
+  de servicio preguntándole a Supabase (la del PC y la del bot eran distintas) y la cadena lleva `User-Agent` propio
+  (Cloudflare cortaba el de Python, error 1010). Si un día se registra **desde la web** después de que el motor midiera,
+  no hay aviso de Telegram ese día (ninguno de los dos caminos lo ve): el juicio sí sale en el Journal.
 
 - **v1 (10/11/2026):** primera versión, con el «todo» de Kris y el prototipo sobre los 23 trades desde el 01/10.

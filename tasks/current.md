@@ -143,6 +143,15 @@ Rescatados de `chaumer/04_Web/ESTADO_FASE_2.md` al archivarlo (28/09, D-030). Es
   operación abierta: al recompilar, el indicador se reinicia). Desde entonces el MAE/MFE se mide con cada precio y los
   trades de un minuto dejan de guardarse en 0. Comprobar en el primer trade que `mae` no sale 0
 
+## Disciplina: ¿tu trade cumplía las reglas? (10/11, D-052)
+
+- [ ] **Kris:** pulsar «🤔 No estoy de acuerdo» en el aviso de Telegram de un día (p. ej. el del 10/11), escribir la frase y
+  mirar que en Otros → Disciplina el día sale azul («en discusión») y se puede cerrar
+- [ ] Un día registrado **desde la web** después de que el motor midiera no recibe el aviso de Telegram (ninguno de los
+  dos caminos lo ve). Si molesta, que el guardado del Diario llame a `/disciplina`
+- [ ] `NOTIFY_SECRET` está escrito en `SupabaseAutoExport.cs` (repositorio público): moverlo a un archivo local, como la
+  `service_role` (pide recompilar en NinjaTrader)
+
 ## Con fecha (las hace Claude)
 
 - **21/10**: primer día de la Operativa diaria en el portal: que el trade salga en `/operativa/` y en la portada, con su setup, su nota y su gráfico

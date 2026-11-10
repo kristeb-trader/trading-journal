@@ -140,13 +140,15 @@ las zonas de premercado del plan son las de las velas sobre el umbral, y las da 
 mercado»** (27 oct: era el sesgo por otra puerta; ya no se registra). El Contexto se escribe
 como **Apertura / Zonas / Noticias** (`formatoContexto`). Los días de la etapa 1, como siempre.
 
-## El foco por veredicto y el plan ligero (D-049, 27 oct)
+## El foco por juicio y el plan ligero (D-049, 27 oct; D-052, 10 nov)
 
-- **`prepararContexto` arma B primero y después A:** de B salen la ficha, el setup y el veredicto (`contextoDia`) con los
+- **`prepararContexto` arma B primero y después A:** de B salen la ficha, el setup y el juicio (`contextoDia`) con los
   que se eligen las reglas de A. En el system, A sigue delante. `analisisTecnico` prepara el contexto **antes** de
   escribir su instrucción, porque la instrucción lleva el foco; `llamarClaude(…, isFirst)` ya no lo rehace.
-- **Foco:** `focoDelDia(veredicto, ficha)` (system Etapa 1 **e** instrucción del análisis) y `veredictoEtapa3`
-  (system Etapa 3). Sin veredicto (sin ficha, antes del 01/10, etapa 1) no sale nada y todo es como antes.
+- **Foco:** `focoDelDia(juicio, ficha)` (system Etapa 1 **e** instrucción del análisis) y `veredictoEtapa3(juicio)`
+  (system Etapa 3), con el juicio de `juicioDia` (D-052): regla rota → esa regla y por qué; dentro de las reglas sin ser
+  el trade del bot → decirlo («no es indisciplina»); sin trade → muy corto, no es fallo; en discusión → examinar la nota
+  de Kris con las velas. Sin juicio (sin ficha, antes del 01/10, etapa 1) no sale nada y todo es como antes.
 - **Plan ligero:** `construirBloquePlan(docs, contextoDia)` → índice de las 34 reglas + `reglasDelDia` enteras (sin la
   tabla de metadatos) + parámetros. `REGLAS_SIEMPRE` y `REGLAS_SETUP` deciden las fijas; las citadas por el motor
   (`R-\d\d` en eventos, avisos y `tu_operacion`) se añaden solas. **Sin ficha, o si el documento de reglas cambia de
