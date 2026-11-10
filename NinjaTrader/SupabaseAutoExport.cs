@@ -113,7 +113,13 @@ namespace NinjaTrader.NinjaScript.Indicators
         private const string NOTIFY_ENDPOINT =
             "https://trading-journal-bot.kristerock.workers.dev/notify";
 
-        private const string NOTIFY_SECRET = "tj-notify-2026";
+        // El secreto de /notify (cabecera X-Notify-Token) vive en un archivo local, fuera
+        // del repo (que es público), igual que la service_role:
+        //   Documentos\NinjaTrader 8\telegram-notify-secret.txt
+        // El mismo valor va en el Worker trading-journal-bot como secreto NOTIFY_SECRET.
+        // Hasta el 10/11/2026 estaba escrito aquí: aquel valor está quemado.
+        private const string NOTIFY_SECRET_FILE = "telegram-notify-secret.txt";
+        private string notifySecret = string.Empty;
 
         // La service_role key vive en un archivo local (fuera del repo):
         //   Documentos\NinjaTrader 8\supabase-service-key.txt
@@ -131,11 +137,17 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         private static string ReadServiceKey()
         {
+            return ReadLocalSecret("supabase-service-key.txt");
+        }
+
+        // Lee un secreto de Documentos\NinjaTrader 8\<archivo>. Vacío si no está.
+        private static string ReadLocalSecret(string fileName)
+        {
             try
             {
                 string path = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "NinjaTrader 8", "supabase-service-key.txt");
+                    "NinjaTrader 8", fileName);
                 if (File.Exists(path))
                     return File.ReadAllText(path).Trim().TrimStart('﻿').Trim();
             }
@@ -353,6 +365,16 @@ namespace NinjaTrader.NinjaScript.Indicators
                     Print("[SupabaseAutoExport] service_role cargada (" + supabaseKey.Length +
                           " chars, termina en ..." +
                           supabaseKey.Substring(Math.Max(0, supabaseKey.Length - 4)) + ").");
+
+                notifySecret = ReadLocalSecret(NOTIFY_SECRET_FILE);
+                if (string.IsNullOrEmpty(notifySecret))
+                    Print("[SupabaseAutoExport] ⚠️ Falta el secreto del aviso de Telegram. Crea el archivo " +
+                          "Documentos\\NinjaTrader 8\\" + NOTIFY_SECRET_FILE + " con el mismo valor que el " +
+                          "secreto NOTIFY_SECRET del Worker trading-journal-bot (Cloudflare). Los trades SÍ " +
+                          "se exportan a Supabase; solo no llegará a Telegram el aviso «Trade cerrado».");
+                else
+                    Print("[SupabaseAutoExport] Secreto del aviso de Telegram cargado (" +
+                          notifySecret.Length + " chars).");
 
                 httpClient = new HttpClient();
                 httpClient.DefaultRequestHeaders.Add("apikey",        supabaseKey);
@@ -761,6 +783,8 @@ namespace NinjaTrader.NinjaScript.Indicators
             {
                 HttpClient client = httpClient;
                 if (client == null) return;
+                // Sin secreto, el Worker respondería 403: el aviso del Output ya lo dijo al arrancar.
+                if (string.IsNullOrEmpty(notifySecret)) return;
 
                 string json = string.Format(
                     System.Globalization.CultureInfo.InvariantCulture,
@@ -783,7 +807,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 );
 
                 var req = new HttpRequestMessage(HttpMethod.Post, NOTIFY_ENDPOINT);
-                req.Headers.Add("X-Notify-Token", NOTIFY_SECRET);
+                req.Headers.Add("X-Notify-Token", notifySecret);
                 req.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 await client.SendAsync(req);
             }

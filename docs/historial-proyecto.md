@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-10c | El secreto del aviso de trade sale del repositorio público: a un archivo del PC y a un secreto del Worker, con un valor nuevo |
 | 2026-11-10b | La disciplina pregunta «¿tu trade cumplía las reglas?», no «¿hiciste lo mismo que el bot?» |
 | 2026-11-05 | La gráfica del día empieza 2 velas antes de la apertura, no en el origen de las zonas de premercado |
 | 2026-11-04 | La imagen del bot, 10 minutos después de que salga de su operación: no espera al fin de la ventana |
@@ -74,6 +75,27 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-10c — El secreto del aviso de trade sale del repositorio
+
+**Lo que pasó.** Al hacer `/disciplina` (D-052) se vio que el secreto de `/notify` —la cabecera `X-Notify-Token` con la
+que `SupabaseAutoExport` manda «Trade cerrado» a Telegram— estaba escrito en el `.cs` y en `TelegramBot/wrangler.toml`,
+en un repositorio público: cualquiera podía mandar avisos de trade falsos al Telegram de Kris. Aquel valor queda en el
+historial de git, así que está quemado: se cambia por uno nuevo, no solo se mueve.
+
+**Lo que se cambió.**
+- `SupabaseAutoExport.cs` lee el secreto de `Documentos\NinjaTrader 8\telegram-notify-secret.txt`, como la
+  `service_role` (`ReadLocalSecret`, que ahora usan las dos). Si falta, lo dice en el Output al arrancar y no manda el
+  aviso; **los trades se exportan igual**. Verificado con el `csc` del sistema contra la versión anterior: los mismos 14
+  errores de sintaxis de C# 5, ninguno nuevo (no usa ningún tipo de NinjaTrader nuevo).
+- `wrangler.toml`: `NOTIFY_SECRET` sale de `[vars]` y pasa a la lista de secretos del Worker, que se pone en el panel de
+  Cloudflare como **Secret** (un «Text» del panel lo borra el siguiente deploy). Hasta que esté, `/notify` responde 403:
+  falla cerrado.
+- El secreto nuevo se generó al azar directamente en el archivo del PC; no está en el repositorio ni en el chat.
+
+**Pendiente.** Kris: el mismo valor en Cloudflare y recompilar `SupabaseAutoExport` (F5) sin operación abierta.
 
 ---
 

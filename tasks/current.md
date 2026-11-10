@@ -149,8 +149,9 @@ Rescatados de `chaumer/04_Web/ESTADO_FASE_2.md` al archivarlo (28/09, D-030). Es
   mirar que en Otros → Disciplina el día sale azul («en discusión») y se puede cerrar
 - [ ] Un día registrado **desde la web** después de que el motor midiera no recibe el aviso de Telegram (ninguno de los
   dos caminos lo ve). Si molesta, que el guardado del Diario llame a `/disciplina`
-- [ ] `NOTIFY_SECRET` está escrito en `SupabaseAutoExport.cs` (repositorio público): moverlo a un archivo local, como la
-  `service_role` (pide recompilar en NinjaTrader)
+- [ ] **Kris:** el secreto nuevo del aviso de trade (checkpoint 10/11c): pegar el valor de
+  `Documentos\NinjaTrader 8\telegram-notify-secret.txt` en Cloudflare (Worker `trading-journal-bot`, `NOTIFY_SECRET`,
+  tipo **Secret**) y recompilar `SupabaseAutoExport` (F5) sin operación abierta. Hasta entonces no llega «Trade cerrado»
 
 ## Con fecha (las hace Claude)
 

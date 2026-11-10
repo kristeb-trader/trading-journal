@@ -16,8 +16,14 @@ id = "3dd631773a6041c1a97a8e9a8f861067"
 #   - SUPABASE_SERVICE_ROLE  → service_role key de Supabase (ignora RLS). NUNCA
 #                              ponerla aquí en [vars]: este .toml está en git.
 #                              Copiar de Supabase → Settings → API → service_role.
+#   - NOTIFY_SECRET          → cabecera X-Notify-Token de /notify (el aviso «Trade
+#                              cerrado» de SupabaseAutoExport). El mismo valor va en
+#                              el PC de NinjaTrader, en
+#                              Documentos\NinjaTrader 8\telegram-notify-secret.txt.
+#                              Hasta el 10/11/2026 estaba aquí en [vars]: aquel valor
+#                              está quemado (el repo es público). En el panel, tipo
+#                              "Secret", no "Text": un "Text" lo borra el próximo deploy.
 [vars]
 SUPABASE_URL    = "https://jothoslozctflfrnysrx.supabase.co"
 ALLOWED_CHAT_ID = "372127764"
-NOTIFY_SECRET   = "tj-notify-2026"
 TIMEZONE        = "America/Bogota"

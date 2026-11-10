@@ -52,6 +52,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 | Archivo | Qué | ¿Se crea solo? |
 |---|---|---|
 | `supabase-service-key.txt` | La clave secreta de Supabase (service_role). Sin ella nada escribe en el Journal | **No.** Está en el gestor de contraseñas. **Nunca en el repositorio** (es público) |
+| `telegram-notify-secret.txt` | El secreto del aviso «Trade cerrado» de `SupabaseAutoExport` a Telegram. Es el mismo valor que el secreto `NOTIFY_SECRET` del Worker `trading-journal-bot` en Cloudflare. Sin él los trades se exportan igual, pero no llega el aviso (el Output lo dice) | **No.** Se guarda en el gestor de contraseñas. **Nunca en el repositorio** |
 | `cadena-diaria.json` | Configuración de la cadena: carpeta de las velas, Python, el puente | Sí |
 | `bot-chaumer.json` | Configuración del bot y la vista: ruta del repositorio, cuentas permitidas, si exige el GO. **`exigir_go` en `false`**: el GO lo sellaba el AddOn archivado y ya no lo escribe nadie; en `true`, el bot no se armaría nunca | Sí |
 | `cadena-diaria\registro.txt` · `bot-chaumer\registro.txt` | Lo que hicieron la cadena y el bot. En `bot-chaumer\` quedan también los CSV del Strategy Analyzer | Sí |
@@ -69,7 +70,8 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
       (NinjaTrader lo apunta en `Custom\NinjaTrader.Custom.csproj`; no crea `AdditionalReferences.txt`.)
 3. **Copiar todos los `.cs` de esta carpeta a la vez**, cada uno en su carpeta de la tabla, y **un solo F5** en el editor
    de NinjaScript. El bot y la vista no compilan sin `MotorChaumer` y `ChaumerNT`.
-4. **La clave:** `Documentos\NinjaTrader 8\supabase-service-key.txt`.
+4. **Las claves:** `Documentos\NinjaTrader 8\supabase-service-key.txt` y `telegram-notify-secret.txt` (este, con el
+   mismo valor que el secreto `NOTIFY_SECRET` del Worker de Telegram).
 5. **La cuenta de simulación `SimBot`**, creada a mano.
 6. **El repositorio** en `E:\Proyectos\Trading Journal` (o la ruta que diga `bot-chaumer.json`): el bot y la vista
    comprueban ahí el sello del motor.

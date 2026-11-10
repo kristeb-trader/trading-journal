@@ -69,6 +69,7 @@ En `Documentos\NinjaTrader 8\` (fuera del repo):
 | Archivo | Qué | ¿Se crea solo? |
 |---|---|---|
 | `supabase-service-key.txt` | La service_role key. **Secreta: no está en git.** Sin ella no escriben a Supabase ni los indicadores, ni el bot, ni la cadena | **No**: copiarla del gestor de contraseñas |
+| `telegram-notify-secret.txt` | El `X-Notify-Token` de `/notify` (aviso «Trade cerrado» de `SupabaseAutoExport`); el mismo valor, secreto `NOTIFY_SECRET` del Worker. **Secreto: no está en git** (hasta el 10/11/2026 estaba en el `.cs`; aquel valor está quemado) | **No**: del gestor de contraseñas |
 | `cadena-diaria.json` | Carpeta de las velas, Python y el puente | Sí |
 | `bot-chaumer.json` | Ruta del repositorio, lista blanca de cuentas, exigir GO (**en `false`**: sin el AddOn nadie sella el GO) | Sí |
 
