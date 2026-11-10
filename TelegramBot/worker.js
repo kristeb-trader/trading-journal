@@ -162,9 +162,22 @@ async function avisarDisciplina(fecha, env) {
 }
 
 // La cadena (subir_dia.py) avisa tras medir: { fechas: [...] }. Se autentica con la service_role,
-// que ya tienen los dos: así no hace falta otro secreto en el repositorio público.
+// que ya tienen los dos: así no hace falta otro secreto en el repositorio público. No se compara
+// con la del bot letra a letra: la del PC y la del bot pueden ser dos claves de servicio distintas
+// (la nueva `sb_secret_…` y la antigua), y las dos valen. Se le pregunta a Supabase: una clave que
+// lee `sesiones` sin usuario es de servicio (la pública, `anon`, no ve nada: RLS sin políticas).
+async function esClaveDeServicio(clave, env) {
+  if (!clave) return false;
+  if (clave === env.SUPABASE_SERVICE_ROLE) return true;
+  try {
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/sesiones?select=sesion_date&limit=1`, { headers: { apikey: clave } });
+    return r.ok && (await r.json()).length > 0;
+  } catch { return false; }
+}
+
 async function handleDisciplina(request, env) {
-  if (request.headers.get('Authorization') !== `Bearer ${env.SUPABASE_SERVICE_ROLE}`) {
+  const clave = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!(await esClaveDeServicio(clave, env))) {
     return new Response('Unauthorized', { status: 403 });
   }
   const { fechas = [] } = await request.json().catch(() => ({}));
