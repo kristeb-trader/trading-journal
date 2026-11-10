@@ -496,7 +496,9 @@ def avisar_disciplina(n_dias=5):
         fechas = sorted(f['sesion_date'] for f in filas or [])
         if not fechas: return
         req = urllib.request.Request(BOT_TELEGRAM, data=json.dumps({'fechas': fechas}).encode('utf-8'),
-                                     headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {_clave()}'},
+                                     # Con el User-Agent de Python, Cloudflare la corta antes de llegar al bot (error 1010).
+                                     headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {_clave()}',
+                                              'User-Agent': 'TradingJournal-cadena/1.0'},
                                      method='POST')
         with urllib.request.urlopen(req, timeout=60) as r:
             res = json.loads(r.read().decode('utf-8') or '{}')
