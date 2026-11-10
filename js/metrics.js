@@ -12,6 +12,7 @@ const Metrics = (() => {
   let fechasEspByDate  = {}
   let allFechasEsp     = []   // crudas, para el contexto de disciplina (regla FOMC)
   let allMotor                // la medida del plan (desde el 01/10); undefined = no cargó
+  let allDiscusiones   = []   // «no estoy de acuerdo» (D-052): esos días no cuentan
 
   // Taxonomía de errores (debe coincidir con el catálogo)
   // Colores semánticos por tipo: color = punto/barra (sólido), text = etiqueta (claro)
@@ -446,7 +447,7 @@ const Metrics = (() => {
     // `motor` el cálculo elige la medida del período (docs/disenos/2026-10-23-disciplina-plan.md).
     const discCtx = discContexto({
       trades: allTrades, errores: allCasuisticas, fechasEsp: allFechasEsp,
-      stopMaxPuntos: allObjetivos?.stop_max_puntos, motor: allMotor,
+      stopMaxPuntos: allObjetivos?.stop_max_puntos, motor: allMotor, discusiones: allDiscusiones,
     })
     const disc = calcDisciplina(activeSesiones, discCtx)
     const chkItemsTotal = disc.total
@@ -924,11 +925,12 @@ const Metrics = (() => {
 
   async function init() {
     let checklistItems, fechasEsp
-    ;[allTrades, allSesiones, allCasuisticas, allCatalogo, allObjetivos, allExpCatalogo, allExpRegistros, checklistItems, fechasEsp, allMotor] = await Promise.all([
+    ;[allTrades, allSesiones, allCasuisticas, allCatalogo, allObjetivos, allExpCatalogo, allExpRegistros, checklistItems, fechasEsp, allMotor, allDiscusiones] = await Promise.all([
       DB.getTrades(), DB.getSesiones(), DB.getAllCasuisticas(), DB.getCatalogoCasuisticas(), DB.getObjetivos(), DB.getCatalogoExperimentos(), DB.getAllExperimentoRegistros(),
       DB.getChecklistItems().catch(() => null),   // todas: cada día usa las de su etapa
       DB.getFechasEspeciales().catch(() => []),
       DB.getMotorDisciplina().catch(() => undefined),   // sin él, la medida de las reglas
+      DB.getDiscusiones().catch(() => []),
     ])
     // Índice por tipo → Set de fechas (festivos y FOMC del desglose de días)
     allFechasEsp = fechasEsp || []

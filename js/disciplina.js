@@ -5,6 +5,7 @@ const Disciplina = (() => {
   let trades = [], sesiones = [], casuisticas = [], catalogo = [], setupsCat = []
   let fechasEsp = [], stopMax = 80   // contexto de disciplina (regla FOMC, stop máx)
   let motor                          // la medida del plan (desde el 01/10); undefined = no cargó
+  let discusiones = []               // «no estoy de acuerdo» (D-052)
   let DISC_FACTORS = []
   let period = 'month'
   let loaded = false, wired = false
@@ -174,7 +175,7 @@ const Disciplina = (() => {
 
     // Índices por día: se construyen con TODO el histórico (no con el rango ni con
     // el filtro de cuenta) — son "qué pasó ese día", no métricas del período.
-    ctx = discContexto({ trades, errores: casuisticas, fechasEsp, stopMaxPuntos: stopMax, motor })
+    ctx = discContexto({ trades, errores: casuisticas, fechasEsp, stopMaxPuntos: stopMax, motor, discusiones })
     const conectadas = ses.filter(seConecto)
     // "Operadas" = con operativa real (trades o setup declarado). `no_opero=false` no
     // basta: es el default de la columna y una sesión creada al abrir NT8 nace así.
@@ -293,48 +294,12 @@ const Disciplina = (() => {
     }
   }
 
-  // ── La medida del plan (desde el 01/10/2026) ──────────────────────────────
-  // El criterio vive en db.js (veredictoDia, ejecucionDia, alarmasDia, lecturaDia);
-  // aquí solo se ordena para pintarlo. Diseño: docs/disenos/2026-10-23-disciplina-plan.md (OPCIÓN A).
+  // ── La medida del plan: ¿tu trade cumplía las reglas? (D-052, 10/11/2026) ──
+  // El juicio de cada trade lo da medir.py; db.js lo suma (resumenDisciplina). Aquí solo se pinta.
+  // Es el mismo número que dan el calendario y Análisis: sale de calcDisciplinaStats.
+  // Diseño: docs/disenos/2026-11-10-disciplina-reglas.md.
   function computePlan(ses) {
-    const todos = DB.checklistTodos()
-    const dias = ses.filter(s => medidaDeFecha(s.sesion_date) === 'plan')
-      .sort((a, b) => a.sesion_date.localeCompare(b.sesion_date))
-      .map(s => {
-        const v = veredictoDia(s, ctx)
-        if (!v) return null
-        return { fecha: s.sesion_date, v, ej: ejecucionDia(s, ctx), al: alarmasDia(s, todos, ctx),
-                 lec: lecturaDia(s, todos, ctx), plan: ctx.motor.get(s.sesion_date)?.operacion || null }
-      }).filter(Boolean)
-    // El número es el mismo que dan el calendario y Análisis: sale de calcDisciplinaStats.
-    const st = calcDisciplinaStats(ses, todos, ctx)
-    const ejecutados = dias.filter(d => d.ej)
-    // Racha: días seguidos del plan (igual/bien) desde el más reciente. Los avisos y los
-    // pendientes ni suman ni cortan; un día fuera del plan la corta.
-    let racha = 0
-    for (const d of [...dias].reverse()) {
-      if (d.v === 'aviso' || d.v === 'pendiente') continue
-      if (VEREDICTO_A_FAVOR[d.v]) racha++; else break
-    }
-    // Alarmas: las que fallaron, por regla, y las que se cumplieron siempre.
-    const autos = todos.filter(i => i.etapa === 2 && i.evidencia === 'auto' && i.clave !== 'p2_una_operacion')
-    const alarmas = dias.flatMap(d => d.al.map(i => ({ fecha: d.fecha, clave: i.clave, texto: textoAlarma(i) })))
-    // «Sin fallos» solo para las que se comprobaron algún día: la del FOMC no se evalúa en
-    // un mes sin FOMC, y decir que se cumplió sería mentir.
-    const operadas = ses.filter(s => medidaDeFecha(s.sesion_date) === 'plan' && sesionOpero(s, ctx.conTrades))
-    const evaluada = i => operadas.some(s => discFactorAplica({ fase: i.fase || 1, setup: i.setup || null,
-      aplica_si: i.aplica_si || 'siempre' }, s, ctx) && reglaAutoResultado(i.clave, s, ctx) !== null)
-    const sinFallo = autos.filter(i => !alarmas.some(a => a.clave === i.clave) && evaluada(i)).map(textoAlarma)
-    const lecturas = dias.filter(d => d.lec)
-    return {
-      dias, pct: st.pct, ok: st.ok, total: st.total, racha,
-      ejOk: ejecutados.filter(d => d.ej.ok).length, ejTotal: ejecutados.length,
-      ejFallos: ejecutados.flatMap(d => d.ej.fallos.map(f => ({ fecha: d.fecha, texto: textoFalloEjecucion(f) }))),
-      alarmas, sinFallo, avisos: dias.filter(d => d.v === 'aviso'),
-      lecOk: lecturas.filter(d => d.lec.coincide).length, lecTotal: lecturas.length,
-      lecSiNo: lecturas.filter(d => d.lec.marco && !d.lec.coincide).map(d => d.fecha),
-      lecNoSi: lecturas.filter(d => !d.lec.marco && !d.lec.coincide).map(d => d.fecha),
-    }
+    return calcDisciplinaStats(ses, DB.checklistTodos(), ctx).resumen
   }
 
   function dayTag(dateTrades, sesion) {
@@ -536,19 +501,59 @@ const Disciplina = (() => {
       el.addEventListener('click', () => openErrorsModal({ causa: el.dataset.errCausa })))
   }
 
-  // ── La pantalla de la medida del plan (OPCIÓN A, 23/10/2026) ──────────────
-  // Cifras grandes arriba, un cuadrito por día y, debajo, lo que falló de cada capa.
-  // Kris entiende mirando: colores y números antes que frases.
+  // ── La pantalla: tu fuga, tres cifras y un cuadrito por día (D-052, boceto del 10/11) ──
+  // Kris no abría la de D-047: decía *que* se salió del plan, no *qué regla* rompió. Lo primero
+  // que se ve ahora es la regla que más rompe, con sus días y sus propias notas.
   const diaCorto = f => f.slice(8, 10)
-  const tonoPct = p => p == null ? '' : p >= 80 ? 'pos' : p < 55 ? 'neg' : 'ama'
+  const fechaCorta = f => `${diaCorto(f)}/${f.slice(5, 7)}`
+  const listaFechas = fs => {
+    const d = fs.map(diaCorto)
+    return d.length > 1 ? `${d.slice(0, -1).join(', ')} y ${d[d.length - 1]}/${fs[0].slice(5, 7)}` : fechaCorta(fs[0])
+  }
+  // El cuadrito de un día: tono y etiqueta corta.
+  function cuadro(x) {
+    const j = x.j
+    if (j.estado === 'sin_trade') return { tono: 'n', corto: 'no operaste',
+      tit: 'No operaste: nunca es fallo' + (j.plan ? ` (el plan: ${fmtOpPlan(j.plan)})` : '') }
+    if (j.estado === 'pendiente') return { tono: 'n', corto: 'pendiente', tit: 'Aún sin el juicio del motor' }
+    if (j.estado === 'discusion') return { tono: 'b', corto: 'en discusión', tit: j.discusion?.nota || 'En discusión' }
+    const rota = j.ops.find(op => !op.juicio.cumple)
+    if (!rota) return { tono: 'g', corto: j.ops.every(op => op.coincide) ? 'el del plan' : 'válido',
+      tit: j.ops.map(op => op.juicio.texto).join(' · ') }
+    const pts = /(\d+) pts/.exec(rota.juicio.texto)
+    const delPlan = /stop del plan/.test(rota.juicio.texto)   // el suyo cabía; el del plan, no (05/11)
+    return { tono: 'r', corto: rota.juicio.regla === 'stop_max' && pts ? (delPlan ? `stop del plan ${pts[1]}` : `stop ${pts[1]} pts`) : reglaTxt(rota.juicio.regla).corto,
+      tit: rota.juicio.texto }
+  }
   function renderPlan(cont, d) {
     const p = d.plan
+    const mes = periodoInfo().k === 'month' ? MESES[parseInt(d.r.from.slice(5, 7)) - 1].toLowerCase() : 'el período'
+
+    let fuga
+    if (p.fuga) {
+      const t = reglaTxt(p.fuga.regla)
+      fuga = `
+        <div class="dd-fuga">
+          <div class="dd-fuga-l">Tu fuga ${periodoInfo().k === 'month' ? 'de ' + mes : 'del período'}</div>
+          <div class="dd-fuga-t">${esc(t.titulo)}</div>
+          <div class="dd-fuga-c">${p.fuga.n} de tus ${p.total} trade${p.total !== 1 ? 's' : ''} · ${listaFechas(p.fuga.fechas)}</div>
+          ${t.plan ? `<div class="dd-fuga-p">${esc(t.plan)}</div>` : ''}
+          ${p.fuga.notas.length ? `<div class="dd-fuga-n">Tus notas esos días: ${p.fuga.notas.map(n => `«${esc(n.length > 90 ? n.slice(0, 90).trim() + '…' : n)}»`).join(' · ')}</div>` : ''}
+        </div>`
+    } else {
+      fuga = `
+        <div class="dd-fuga ${p.total ? 'ok' : 'nada'}">
+          <div class="dd-fuga-l">${p.total ? 'Sin fugas' : 'Sin trades juzgados'}</div>
+          <div class="dd-fuga-t">${p.total ? 'Todos tus trades, dentro de las reglas' : 'No operaste en el período'}</div>
+        </div>`
+    }
+
+    const tonoPct = v => v == null ? '' : v >= 80 ? 'pos' : v < 55 ? 'neg' : 'ama'
     const stats = [
-      { label: 'Disciplina · seguiste el plan', value: p.pct == null ? '—' : `${p.pct}%`, cls: `big ${tonoPct(p.pct)}`, sub: `${p.ok} de ${p.total} días` },
-      { label: 'Racha', value: `${p.racha}<span class="dd-unit">d</span>`, cls: p.racha ? 'pos' : '', sub: 'días seguidos con el plan' },
-      { label: 'Ejecución', value: p.ejTotal ? `${p.ejOk}/${p.ejTotal}` : '—', cls: p.ejTotal && p.ejOk < p.ejTotal ? 'ama' : 'pos', sub: 'trades del plan hechos igual' },
-      { label: 'Alarmas', value: `${p.alarmas.length}`, cls: p.alarmas.length ? 'neg' : 'pos', sub: 'reglas básicas rotas' },
-      { label: 'Avisos', value: `${p.avisos.length}`, cls: p.avisos.length ? 'ama' : '', sub: 'el plan operó y tú no' },
+      { label: 'Dentro de las reglas', value: p.total ? `${p.ok} de ${p.total}` : '—', cls: tonoPct(p.pct),
+        sub: p.total ? `${p.pct}% de tus trades` : 'sin trades juzgados' },
+      { label: 'Racha', value: `${p.racha}`, cls: p.racha ? 'pos' : '', sub: 'trades seguidos dentro de las reglas' },
+      { label: 'En discusión', value: `${p.enDiscusion.length}`, cls: p.enDiscusion.length ? 'blu' : '', sub: 'días en que crees que el motor se equivoca' },
     ]
     const strip = stats.map(s => `
       <div class="dd-stat">
@@ -558,57 +563,54 @@ const Disciplina = (() => {
       </div>`).join('')
 
     const cuadros = p.dias.map(x => {
-      const info = VEREDICTO_TXT[x.v]
-      const tit = info.largo + (x.plan && (x.v === 'otro' || x.v === 'aviso') ? ` — el plan: ${fmtOpPlan(x.plan)}` : '')
-      return `<div class="dd-dia ${info.tono}" data-dia="${x.fecha}" title="${esc(x.fecha)} · ${esc(tit)}">${diaCorto(x.fecha)}<small>${info.corto}</small></div>`
+      const c = cuadro(x)
+      return `<div class="dd-dia ${c.tono}" data-dia="${x.fecha}" title="${esc(fechaCorta(x.fecha))} · ${esc(c.tit)}">${diaCorto(x.fecha)}<small>${esc(c.corto)}</small></div>`
     }).join('')
     const leyenda = `
       <div class="dd-ley">
-        <span><i class="dd-sw g"></i>Seguiste el plan</span>
-        <span><i class="dd-sw r"></i>Operaste fuera del plan</span>
-        <span><i class="dd-sw a"></i>Aviso: el plan operó y tú no</span>
-        ${p.dias.some(x => x.v === 'pendiente') ? '<span><i class="dd-sw n"></i>Pendiente: sin la ficha del motor</span>' : ''}
+        <span><i class="dd-sw g"></i>Dentro de las reglas (aunque no sea el trade del bot)</span>
+        <span><i class="dd-sw r"></i>Regla rota</span>
+        <span><i class="dd-sw n"></i>No operaste: nunca es fallo</span>
+        ${p.enDiscusion.length ? '<span><i class="dd-sw b"></i>En discusión</span>' : ''}
       </div>`
 
-    const fila = (tono, fecha, x, y) => `
-      <div class="dd-fila"${fecha ? ` data-dia="${fecha}" title="Ver el día"` : ''}>
-        <span class="dd-pt ${tono}"></span><span class="x">${x}</span><span class="y">${y}</span>
-      </div>`
-    const fecha = f => `${diaCorto(f)}/${f.slice(5, 7)}`
-    const ejHtml = p.ejFallos.length
-      ? p.ejFallos.map(f => fila('fail', f.fecha, fecha(f.fecha), esc(f.texto))).join('')
-      : fila('ok', null, p.ejTotal ? 'Todos los trades del plan, igual al plan' : 'Ningún trade del plan en el período', '')
-    const alHtml = p.alarmas.map(a => fila('fail', a.fecha, fecha(a.fecha), esc(a.texto))).join('')
-      + (p.sinFallo.length ? fila('ok', null, esc(p.sinFallo.join(' · ')), 'sin fallos') : '')
-
-    const lista = fs => fs.length ? fs.map(diaCorto).join(', ') : '—'
-    const lecHtml = p.lecTotal ? `
-      ${fila(p.lecOk === p.lecTotal ? 'ok' : 'fail', null, 'Tu casilla coincidió con el motor', `<b>${p.lecOk} de ${p.lecTotal}</b> días`)}
-      ${fila('fail', null, 'Marcaste ✓ y no era del plan', lista(p.lecSiNo))}
-      ${fila('fail', null, 'Marcaste ✗ y sí era del plan', lista(p.lecNoSi))}`
-      : '<p class="dd-soft">Sin casillas que comparar en el período.</p>'
+    const discusion = p.enDiscusion.length ? `
+      <div class="dd-sec-head"><span class="dd-sec-num">02</span><span class="dd-sec-title">En discusión</span><div class="dd-sec-line"></div></div>
+      <div class="dd-panel">${p.enDiscusion.map(x => {
+        const rota = x.j.ops.find(op => !op.juicio.cumple)
+        const cerrada = x.j.discusion.estado === 'plan'
+        return `
+          <div class="dd-disc">
+            <div class="dd-disc-txt" data-dia="${x.fecha}" title="Ver el día">
+              <b>${fechaCorta(x.fecha)}</b> · el motor: ${esc(rota ? rota.juicio.texto : 'dentro de las reglas')}
+              <div class="dd-disc-nota">${x.j.discusion.nota ? `Tú: «${esc(x.j.discusion.nota)}»` : 'Sin nota'}</div>
+            </div>
+            ${cerrada ? '<span class="dd-disc-cerrada">Tenías razón: no cuenta</span>' : `
+            <div class="dd-disc-bts">
+              <button type="button" class="dd-btn" data-cerrar="${x.fecha}" data-estado="motor">El motor tenía razón</button>
+              <button type="button" class="dd-btn" data-cerrar="${x.fecha}" data-estado="plan">Tenía yo razón</button>
+            </div>`}
+          </div>`
+      }).join('')}</div>` : ''
 
     cont.innerHTML = `
-      <div class="dd-strip dd-strip-plan">${strip}</div>
+      ${fuga}
+      <div class="dd-strip dd-strip-reglas">${strip}</div>
 
-      <div class="dd-sec-head"><span class="dd-sec-num">01</span><span class="dd-sec-title">¿Hiciste lo que decía el plan?</span><div class="dd-sec-line"></div></div>
+      <div class="dd-sec-head"><span class="dd-sec-num">01</span><span class="dd-sec-title">Cada día</span><div class="dd-sec-line"></div></div>
       <div class="dd-dias">${cuadros}</div>
       ${leyenda}
-
-      <div class="dd-sec-head"><span class="dd-sec-num">02</span><span class="dd-sec-title">Ejecución y alarmas</span><div class="dd-sec-line"></div></div>
-      <div class="dd-plan-grid">
-        <div class="dd-panel"><div class="dd-panel-title">Ejecución · entrada y contratos</div>${ejHtml}</div>
-        <div class="dd-panel"><div class="dd-panel-title">Alarmas · no bajan el porcentaje</div>${alHtml}</div>
-      </div>
-
-      <div class="dd-sec-head"><span class="dd-sec-num">03</span><span class="dd-sec-title">Tu lectura frente al motor</span><div class="dd-sec-line"></div></div>
-      <div class="dd-panel">${lecHtml}</div>
-
-      ${erroresHtml(d, '04')}`
+      ${discusion}
+      ${erroresHtml(d, p.enDiscusion.length ? '03' : '02')}`
 
     lastData = d
     wireErrores(cont)
     cont.querySelectorAll('[data-dia]').forEach(el => el.addEventListener('click', () => abrirDia(el.dataset.dia)))
+    cont.querySelectorAll('[data-cerrar]').forEach(b => b.addEventListener('click', async () => {
+      b.disabled = true
+      try { await DB.cerrarDiscusion(b.dataset.cerrar, b.dataset.estado); await load() }
+      catch (e) { b.disabled = false; Toast.show('No se pudo cerrar la discusión: ' + e.message, 'error') }
+    }))
   }
 
   // El visor del día, recorriendo los días que enseña esta pantalla.
@@ -789,7 +791,7 @@ const Disciplina = (() => {
   async function load() {
     const cont = document.getElementById('disciplinaContent')
     try {
-      const [t, s, c, cat, items, fe, obj, sup, mo] = await Promise.all([
+      const [t, s, c, cat, items, fe, obj, sup, mo, disc] = await Promise.all([
         DB.getTrades(),
         DB.getSesiones(),
         DB.getAllCasuisticas(),
@@ -800,8 +802,9 @@ const Disciplina = (() => {
         DB.getObjetivos().catch(() => null),
         DB.getSetups ? DB.getSetups().catch(() => []) : [],
         DB.getMotorDisciplina().catch(() => undefined),   // sin él, la medida de las reglas
+        DB.getDiscusiones().catch(() => []),
       ])
-      motor = mo
+      motor = mo; discusiones = disc
       trades = t || []; sesiones = s || []; casuisticas = c || []; catalogo = cat || []
       fechasEsp = fe || []; stopMax = obj?.stop_max_puntos || 80; setupsCat = sup || []
       await DB.getEtapas().catch(() => [])

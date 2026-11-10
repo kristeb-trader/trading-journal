@@ -56,7 +56,7 @@ const Modal = {
   async analisisDia(dateStr, trades, sesion) {
     // Datos extra: diagnóstico del Coach + errores + emociones + checklist dinámico
     // (catalogo_reglas) + total de trades del día SIN filtro de cuenta.
-    const [diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp, fichaMotor] = await Promise.all([
+    const [diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp, fichaMotor, discusiones] = await Promise.all([
       dateStr ? DB.getDiagnosticoByDate(dateStr) : null,
       dateStr ? DB.getCasuisticasByDate(dateStr) : [],
       DB.getCatalogoEmociones().catch(() => []),
@@ -66,17 +66,22 @@ const Modal = {
       DB.getFechasEspeciales().catch(() => []),   // la regla FOMC necesita saber si lo era
       // La medida del plan (desde el 01/10): la ficha del motor, tras su candado.
       dateStr && medidaDeFecha(dateStr) === 'plan' ? DB.getFichaMotor(dateStr).catch(() => null) : null,
+      dateStr && medidaDeFecha(dateStr) === 'plan' ? DB.getDiscusiones().catch(() => []) : [],
     ])
-    const ctx = { dateStr, trades, sesion, diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp, fichaMotor }
+    const discusion = (discusiones || []).find(d => d.fecha === dateStr) || null
+    const ctx = { dateStr, trades, sesion, diag, casuisticas, emociones, chkItems, allDayTrades, fechasEsp, fichaMotor, discusion }
     return {
       html: this._renderVistaDia(ctx),
-      // Los errores con descripción se despliegan al clicar.
-      wire: el => el.querySelectorAll('.modal-cas-row.has-detail').forEach(row => {
-        row.addEventListener('click', () => {
-          el.querySelector(`#modal-cas-det-${row.dataset.det}`)?.classList.toggle('hidden')
-          row.classList.toggle('open')
+      wire: el => {
+        // Los errores con descripción se despliegan al clicar.
+        el.querySelectorAll('.modal-cas-row.has-detail').forEach(row => {
+          row.addEventListener('click', () => {
+            el.querySelector(`#modal-cas-det-${row.dataset.det}`)?.classList.toggle('hidden')
+            row.classList.toggle('open')
+          })
         })
-      }),
+        this._wireDiscusion(el)
+      },
     }
   },
 
@@ -214,26 +219,70 @@ const Modal = {
     </div>`
   },
 
-  // La disciplina del día con la medida del plan (desde el 01/10): el veredicto, la
-  // ejecución y las alarmas. Mismo cálculo que el dashboard (db.js). Los trades, sin
-  // filtro de cuenta: la disciplina es del proceso, no de una cuenta.
-  // Diseño: docs/disenos/2026-10-23-disciplina-plan.md.
-  _bloquePlan({ dateStr, sesion, allDayTrades, fechasEsp, chkItems, fichaMotor }) {
+  // La disciplina del día: ¿tu trade cumplía las reglas? (D-052). El juicio lo da medir.py y lo
+  // suma db.js (juicioDia), como en Disciplina. Los trades, sin filtro de cuenta: la disciplina es
+  // del proceso, no de una cuenta. «No estoy de acuerdo» abre la discusión (no cuenta hasta cerrarla).
+  // Diseño: docs/disenos/2026-11-10-disciplina-reglas.md.
+  _bloquePlan({ dateStr, sesion, allDayTrades, fechasEsp, fichaMotor, discusion }) {
     if (!sesion || !dateStr || medidaDeFecha(dateStr) !== 'plan') return ''
     const motor = new Map(fichaMotor ? [[dateStr, { estado: fichaMotor.estado,
       operacion: fichaMotor.ficha?.operacion || null, tu: fichaMotor.ficha?.tu_operacion || null }]] : [])
-    const dctx = discContexto({ trades: allDayTrades, fechasEsp, motor })
-    const v = veredictoDia(sesion, dctx)
-    if (!v || v === 'pendiente') return ''
-    const info = VEREDICTO_TXT[v]
-    const opPlan = fichaMotor?.ficha?.operacion
-    const lineas = [`**${info.largo}**` + (opPlan && (v === 'otro' || v === 'aviso') ? ` — el plan: ${fmtOpPlan(opPlan)}` : '')]
-    const ej = ejecucionDia(sesion, dctx)
-    if (ej) lineas.push(ej.ok ? 'Ejecución igual al plan.' : `Ejecución: ${ej.fallos.map(textoFalloEjecucion).join(' · ')}.`)
-    const al = alarmasDia(sesion, DB.checklistTodos(), dctx)
-    if (al.length) lineas.push(`Alarmas: ${al.map(textoAlarma).join(' · ')}.`)
-    const tono = info.tono === 'r' ? 'red' : info.tono === 'a' ? 'amb' : ''
-    return this._bloque('Disciplina · el plan y tú', lineas.join('\n'), tono)
+    const j = juicioDia(sesion, discContexto({ trades: allDayTrades, fechasEsp, motor, discusiones: discusion ? [discusion] : [] }))
+    if (!j || j.estado === 'pendiente') return ''
+    const esc = x => String(x ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+    const bot = j.plan ? `${fmtOpPlan(j.plan)}` : null
+    if (j.estado === 'sin_trade') {
+      if (!bot) return ''
+      return this._bloque('Disciplina · no operaste', `No operar nunca es fallo. El plan operó: ${bot}.`, 'gry')
+    }
+    const rota = j.ops.find(op => !op.juicio.cumple)
+    let lbl, tono, txt
+    if (j.estado === 'discusion') {
+      lbl = 'Disciplina · en discusión'; tono = 'blu'
+      txt = `El motor: ${esc(rota ? rota.juicio.texto : 'dentro de las reglas')}.<br>Tú: «${esc(j.discusion.nota || 'sin nota')}»`
+        + (j.discusion.estado === 'plan' ? '<br>Cerrada: tenías razón, no cuenta.' : '<br>No cuenta hasta cerrarla en Disciplina.')
+    } else if (rota) {
+      lbl = 'Disciplina · regla rota'; tono = 'red'
+      txt = `<strong>${esc(rota.juicio.texto[0].toUpperCase() + rota.juicio.texto.slice(1))}</strong> — ${esc([sesion.setup, rota.hora].filter(Boolean).join(' '))}.`
+    } else {
+      lbl = 'Disciplina · dentro de las reglas'; tono = ''
+      const otro = j.ops.some(op => !op.coincide)
+      txt = `<strong>Dentro de las reglas</strong>${otro && bot ? `, aunque no fue el trade del bot (${esc(bot)})` : ''}.`
+    }
+    const boton = j.estado === 'discusion' ? '' : `
+      <button type="button" class="dv-disc-btn" data-discutir="${dateStr}">🤔 No estoy de acuerdo</button>
+      <div class="dv-disc-form hidden">
+        <textarea rows="2" placeholder="Una frase: qué vio mal el motor (p. ej. «no vio la zona de las 9:32»)"></textarea>
+        <div class="dv-disc-bts"><button type="button" class="dd-btn" data-guardar="${dateStr}">Abrir la discusión</button>
+        <button type="button" class="dd-btn" data-cancelar>Cancelar</button></div>
+      </div>`
+    return `<div class="dv-block ${tono}"><div class="dv-lbl">${lbl}</div><div class="dv-txt"><p>${txt}</p></div>${boton}</div>`
+  },
+
+  // El botón «No estoy de acuerdo» del bloque de disciplina: pide la frase y abre la discusión.
+  _wireDiscusion(el) {
+    el.querySelector('[data-discutir]')?.addEventListener('click', e => {
+      e.currentTarget.classList.add('hidden')
+      el.querySelector('.dv-disc-form')?.classList.remove('hidden')
+      el.querySelector('.dv-disc-form textarea')?.focus()
+    })
+    el.querySelector('[data-cancelar]')?.addEventListener('click', () => {
+      el.querySelector('.dv-disc-form')?.classList.add('hidden')
+      el.querySelector('[data-discutir]')?.classList.remove('hidden')
+    })
+    el.querySelector('[data-guardar]')?.addEventListener('click', async e => {
+      const b = e.currentTarget, fecha = b.dataset.guardar
+      const nota = el.querySelector('.dv-disc-form textarea')?.value || ''
+      b.disabled = true
+      try {
+        await DB.abrirDiscusion(fecha, nota)
+        const form = el.querySelector('.dv-disc-form')
+        if (form) form.outerHTML = `<p class="dv-disc-ok">En discusión: este día no cuenta hasta cerrarlo en Disciplina.</p>`
+      } catch (err) {
+        b.disabled = false
+        Toast.show('No se pudo abrir la discusión: ' + err.message, 'error')
+      }
+    })
   },
 
   _renderVistaDia(ctx) {
