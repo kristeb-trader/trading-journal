@@ -29,7 +29,8 @@ Lo que no se toca sin aprobación explícita. Una línea cada una; el porqué, e
   etapa 2 el plan de Chaumer va **primero** en el system. `.claude/rules/coach.md`.
 - **Sesión Operativa** — nada interactivo dentro de `#sessionFieldset` en modo lectura; los trades
   del día no se filtran por cuenta principal. `.claude/rules/sesion.md`.
-- **Navegación: 6 botones, ni uno más** (el 7º recorta las etiquetas en móvil). Una sección nueva va
+- **Navegación: 4 botones** (Calendario, Análisis, Sesión, Otros; máximo 6: el 7º recorta las etiquetas en móvil).
+  Disciplina y Apex viven en Otros desde el 10/11/2026. Una sección nueva va
   a `Otros.ITEMS` **y** a `Nav.PADRE` (sin la segunda, la barra se queda apagada).
 - **Un solo título por pantalla**, el de la barra: las secciones no llevan `<h2>`; el dato variable va
   a `Nav.setContexto()` y los controles de sección a `Nav.HERRAMIENTAS`.

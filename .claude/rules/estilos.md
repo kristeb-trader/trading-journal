@@ -25,6 +25,7 @@ del mismo grupo se distingan entre sí, no la asociación histórica. Reparto vi
 
 | Grupo | Tarjetas |
 |---|---|
+| Seguimiento | Disciplina `accent` · Apex `warning` (10 nov 2026: salieron de la barra inferior) |
 | Consultar | Trades `accent` · Imágenes `violet` · Experimentos `warning` · Chaumer `blue` · Backtesting neutra (24 sep: el único libre era el rojo, y el rojo es stop) |
 | Configurar | Estrategia `warning` · Datos neutro · Fechas `red` |
 

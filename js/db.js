@@ -1689,6 +1689,7 @@ const DB = {
       trades, ultimo, imagenes, experimentos, reglas,
       errores, emociones, recomendaciones, setups, variantes,
       fechas, proxima, chaumerDias, btJornadas, btUltima,
+      diasMes, apexActivas, apexQuemadas,
     ] = await Promise.all([
       cuenta('trades'),
       primero('trades', 'trade_date', q => q.order('trade_date', { ascending: false })),
@@ -1705,6 +1706,9 @@ const DB = {
       cuenta('chaumer_operativas'),
       cuenta('bt_jornadas'),
       primero('bt_jornadas', 'fecha', q => q.order('fecha', { ascending: false })),
+      cuenta('sesiones', q => q.gte('sesion_date', hoyISO().slice(0, 8) + '01').lte('sesion_date', hoyISO())),
+      cuenta('apex_cuentas', q => q.eq('activa', true)),
+      cuenta('apex_cuentas', q => q.eq('estado', 'quemada')),
     ])
 
     // La tarjeta de Datos cuenta los ítems de los cinco catálogos que se editan
@@ -1722,6 +1726,8 @@ const DB = {
       fechas:       { n: fechas, proxima },
       chaumer:      { n: chaumerDias },
       backtesting:  { n: btJornadas, ultimo: btUltima },
+      disciplina:   { n: diasMes },
+      apex:         { n: apexActivas, quemadas: apexQuemadas },
     }
     _resumenOtros = { t: Date.now(), datos }
     return datos

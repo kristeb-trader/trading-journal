@@ -76,6 +76,17 @@
 
 ---
 
+## Checkpoint 2026-11-10 — Disciplina y Apex pasan a Otros
+
+La barra queda en 4 botones: Calendario, Análisis, Sesión y Otros. Disciplina y Apex van a un grupo nuevo de Otros,
+**Seguimiento**, el primero de la pantalla (Kris, tras el análisis del 9/11: Apex no tiene ninguna cuenta activa).
+
+- `index.html`: fuera sus dos `nav-item`. `js/app.js`: entran en `Otros.ITEMS` y en `Nav.PADRE` (iluminan Otros y
+  muestran «Volver»). `js/db.js` (`getResumenOtros`): días registrados este mes y cuentas Apex activas, con las
+  quemadas en la línea de abajo. `sw.js` → `nqjournal-v11`.
+- Verificado a 390 px y 1280 px en la copia local: 4 botones de 96 px, Seguimiento arriba, el clic abre cada sección,
+  0 errores. Los dos contadores salen «—» en la copia local (es de agosto); en vivo, `SELECT`: 6 días y 0 activas (7 quemadas).
+
 ## Checkpoint 2026-11-05 — La gráfica empieza 2 velas antes de la apertura
 
 **Lo que pasó.** Desde el 14/10 la gráfica empezaba en la vela donde nacía la primera zona de premercado, de madrugada:

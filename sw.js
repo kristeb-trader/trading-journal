@@ -4,7 +4,7 @@
 //   - CDN (tabler, supabase, chart.js): cache-first → no cambian, carga instantánea
 //   - APIs externas (supabase, cloudinary, workers.dev...): network-only
 
-const CACHE = 'nqjournal-v10'
+const CACHE = 'nqjournal-v11'
 
 // Recursos CDN que no cambian → cache-first
 const CDN_SHELL = [

@@ -380,6 +380,10 @@ const SesionOperativa = {
 // sin él, la tarjeta es neutra. `unidad` es el rótulo bajo el contador.
 const Otros = {
   ITEMS: [
+    // Seguimiento (10 nov 2026): Disciplina y Apex dejan la barra inferior para que quepan
+    // las cuatro que se usan a diario. Grupo propio para no repetir color dentro de Consultar.
+    { id: 'disciplina',   grupo: 'Seguimiento', color: 'accent', icon: 'ti-checkup-list',  name: 'Disciplina',        desc: 'Cuánto seguiste el plan',           unidad: 'días este mes' },
+    { id: 'apex',         grupo: 'Seguimiento', color: 'warning', icon: 'ti-trophy',       name: 'Apex',              desc: 'Tus cuentas de fondeo',             unidad: 'cuentas activas' },
     { id: 'trades',       grupo: 'Consultar',  color: 'accent',  icon: 'ti-list-details',  name: 'Trades',            desc: 'Todas tus operaciones, una a una',  unidad: 'operaciones' },
     { id: 'gallery',      grupo: 'Consultar',  color: 'violet',  icon: 'ti-photo',         name: 'Imágenes',          desc: 'Los gráficos de cada día',          unidad: 'gráficos' },
     // Experimentos era azul; cedió el azul a Chaumer el 19 ago, porque dos
@@ -397,6 +401,7 @@ const Otros = {
   // Línea inferior de la tarjeta. Solo la tienen cuatro; en las demás el bloque
   // ni se pinta, para no dejar un separador colgando de nada.
   META: {
+    apex:   d => (d.quemadas ? `${d.quemadas} quemadas` : ''),
     trades: d => (d.ultimo  ? `última · ${Otros._fecha(d.ultimo)}` : ''),
     data:   d => (d.cuenta  ? `principal · ${AccountFilter.corto(d.cuenta)}` : ''),
     fechas: d => (d.proxima ? `próxima · ${Otros._fecha(d.proxima)}` : ''),
@@ -496,6 +501,7 @@ const Nav = {
     experimentos: 'otros', trades: 'otros', gallery: 'otros',
     estrategia: 'otros', data: 'otros', fechas: 'otros',
     chaumer: 'otros', backtesting: 'otros',
+    disciplina: 'otros', apex: 'otros',
   },
   initialized: new Set(),
 
