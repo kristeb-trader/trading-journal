@@ -166,20 +166,22 @@ async function avisarDisciplina(fecha, env) {
 // con la del bot letra a letra: la del PC y la del bot pueden ser dos claves de servicio distintas
 // (la nueva `sb_secret_…` y la antigua), y las dos valen. Se le pregunta a Supabase: una clave que
 // lee `sesiones` sin usuario es de servicio (la pública, `anon`, no ve nada: RLS sin políticas).
+// → '' si vale, o el motivo (sin nada secreto) para el 403.
 async function esClaveDeServicio(clave, env) {
-  if (!clave) return false;
-  if (clave === env.SUPABASE_SERVICE_ROLE) return true;
+  if (!clave) return 'sin clave';
+  if (clave === env.SUPABASE_SERVICE_ROLE) return '';
   try {
-    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/sesiones?select=sesion_date&limit=1`, { headers: { apikey: clave } });
-    return r.ok && (await r.json()).length > 0;
-  } catch { return false; }
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/sesiones?select=sesion_date&limit=1`,
+      { headers: { apikey: clave, Authorization: `Bearer ${clave}` } });
+    if (!r.ok) return `supabase ${r.status}`;
+    return (await r.json()).length > 0 ? '' : 'no es de servicio';
+  } catch (e) { return 'sin respuesta de supabase'; }
 }
 
 async function handleDisciplina(request, env) {
   const clave = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
-  if (!(await esClaveDeServicio(clave, env))) {
-    return new Response('Unauthorized', { status: 403 });
-  }
+  const motivo = await esClaveDeServicio(clave, env);
+  if (motivo) return new Response(`Unauthorized (${motivo})`, { status: 403 });
   const { fechas = [] } = await request.json().catch(() => ({}));
   const res = {};
   for (const f of fechas.slice(0, 10)) res[f] = await avisarDisciplina(f, env);
