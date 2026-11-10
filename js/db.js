@@ -499,6 +499,79 @@ function alarmasDia(s, items, opts) {
     reglaAutoResultado(i.clave, s, o) === false)
 }
 
+// ── El juicio: ¿tu trade cumplía las reglas? (10/11/2026, D-052) ─────────────
+// Sustituye la medida de D-047 («¿hiciste lo mismo que el bot?»): el bot opera UN trade, y otro
+// puede cumplir las mismas reglas (06/10). El juicio de cada trade lo da medir.py con el motor
+// (`ficha.tu_operacion.operaciones[i].juicio = { cumple, regla, texto }`); aquí solo se suma.
+// Cuentan TRADES, no días. No operar nunca es fallo. Un día en discusión (abierta, o cerrada
+// dándole la razón a Kris: `plan`) no cuenta. Diseño: docs/disenos/2026-11-10-disciplina-reglas.md.
+const REGLA_TXT = {
+  stop_max:         { titulo: 'Stop de más de 80 puntos',            corto: 'stop > 80',       plan: 'El plan no opera si el stop pasa de 80, por bueno que sea el setup.' },
+  contratos:        { titulo: 'Más contratos de los que caben',      corto: 'contratos',       plan: 'Los contratos los decide el stop: los que quepan en $160, redondeando hacia abajo.' },
+  punto_referencia: { titulo: 'Objetivo más allá del punto de referencia', corto: 'punto de ref.', plan: 'El objetivo no puede pasar del punto de referencia vivo más cercano: si lo pasa, no se opera.' },
+  objetivo_zona:    { titulo: 'Objetivo contra una zona',            corto: 'zona en contra',  plan: 'Entre la entrada y el objetivo no puede haber una zona viva.' },
+  primer_iri:       { titulo: 'Entrar en el primer IRI',             corto: 'primer IRI',      plan: 'Tras un movimiento contrario, el primer IRI no se opera: se espera el segundo.' },
+  consecucion:      { titulo: 'Entrar sin consecución',              corto: 'sin consecución', plan: 'Sin consecución no hay setup.' },
+  fluidez:          { titulo: 'Continuación sin corrida fluida',     corto: 'no fluida',       plan: 'La continuación solo se opera con la corrida fluida.' },
+  fed:              { titulo: 'Continuación en día de Fed',          corto: 'día de Fed',      plan: 'En día de Fed no se opera la continuación.' },
+  premercado:       { titulo: 'Continuación en una zona de premercado', corto: 'premercado',   plan: 'El rompimiento de una zona de premercado no da continuación: queda para el reingreso.' },
+  sin_setup:        { titulo: 'Trades sin setup del plan',           corto: 'sin setup',       plan: 'Solo se operan los setups del plan.' },
+  una_operacion:    { titulo: 'Más de una operación',                corto: '2.º trade',       plan: 'Una operación por día.' },
+  ventana:          { titulo: 'Fuera de la ventana',                 corto: 'fuera de hora',   plan: 'Solo se opera en los 120 minutos tras la apertura (09:30–11:30 ET).' },
+  noticia:          { titulo: 'En la ventana de una noticia',        corto: 'noticia',         plan: 'No se entra en la ventana de una noticia roja (±5 min).' },
+  otra:             { titulo: 'Otras reglas',                        corto: 'otra',            plan: '' },
+}
+const reglaTxt = r => REGLA_TXT[r] || REGLA_TXT.otra
+
+// El juicio de un día → null (no entra: finde o sin conexión) o
+// { estado: 'sin_trade' | 'pendiente' | 'discusion' | 'cuenta', ops: [{ hora, sentido, juicio }],
+//   plan: la operación del motor o null, discusion: { estado, nota } o null }.
+// `pendiente`: hay trade pero aún no hay juicio (sin ficha, o el candado: día sin registrar).
+function juicioDia(s, opts) {
+  const o = opts || {}
+  if (!s || !esDiaHabil(s.sesion_date) || !_discSeConecto(s)) return null
+  const m = _fichaDia(s, o)
+  const trades = (o.tradesPorDia && o.tradesPorDia.get(s.sesion_date)) || []
+  const discusion = (o.discusiones && o.discusiones.get(s.sesion_date)) || null
+  const plan = (m && m.operacion) || null
+  if (!trades.length) return { estado: 'sin_trade', ops: [], plan, discusion }
+  const ops = _opsDia(m).filter(op => op.juicio)
+  if (!m || m.estado !== 'ok' || ops.length < trades.length) return { estado: 'pendiente', ops, plan, discusion }
+  const discute = discusion && discusion.estado !== 'motor'   // abierta, o Kris tenía razón
+  return { estado: discute ? 'discusion' : 'cuenta', ops, plan, discusion }
+}
+
+// Todo lo de un período con la medida del plan: los días, el %, la racha y la fuga.
+// `sesiones`: las del período (cualquier medida: aquí se quedan las del plan).
+function resumenDisciplina(sesiones, opts) {
+  const o = opts || {}
+  const dias = (sesiones || []).filter(s => medidaDeFecha(s.sesion_date) === 'plan')
+    .map(s => ({ fecha: s.sesion_date, s, j: juicioDia(s, o) })).filter(d => d.j)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+  const juzgados = dias.filter(d => d.j.estado === 'cuenta')
+    .flatMap(d => d.j.ops.map(op => ({ fecha: d.fecha, s: d.s, op })))
+  const ok = juzgados.filter(x => x.op.juicio.cumple).length
+  let racha = 0
+  for (let i = juzgados.length - 1; i >= 0 && juzgados[i].op.juicio.cumple; i--) racha++
+  // La fuga: la regla más rota del período; empate → la que se rompió más recientemente.
+  const porRegla = new Map()
+  juzgados.filter(x => !x.op.juicio.cumple).forEach(x => {
+    const r = x.op.juicio.regla || 'otra'
+    if (!porRegla.has(r)) porRegla.set(r, [])
+    porRegla.get(r).push(x)
+  })
+  let fuga = null
+  porRegla.forEach((xs, regla) => {
+    const ultima = xs[xs.length - 1].fecha
+    if (!fuga || xs.length > fuga.n || (xs.length === fuga.n && ultima > fuga.ultima)) {
+      fuga = { regla, n: xs.length, ultima, fechas: [...new Set(xs.map(x => x.fecha))],
+               notas: [...new Set(xs.map(x => (x.s.analisis_trader || '').trim()).filter(Boolean))] }
+    }
+  })
+  return { dias, total: juzgados.length, ok, pct: juzgados.length ? Math.round(ok / juzgados.length * 100) : null,
+           racha, fuga, enDiscusion: dias.filter(d => d.j.estado === 'discusion') }
+}
+
 function reglaAutoResultado(codigo, s, opts) {
   const o = opts || {}
   const trades = (o.tradesPorDia && o.tradesPorDia.get(s.sesion_date)) || []
@@ -637,7 +710,8 @@ function etapaDelPeriodo(sesiones, pedida) {
 
 // `motor`: lo de DB.getMotorDisciplina() (Map fecha → { estado, operacion, tu }) o sus
 // filas. Sin él, la medida del plan no se usa (ver PLAN_MOTOR_DESDE).
-function discContexto({ trades, fechasEsp, errores, stopMaxPuntos, etapa, motor } = {}) {
+// `discusiones`: las filas de `disciplina_discusiones` (D-052); sin ellas, ninguna.
+function discContexto({ trades, fechasEsp, errores, stopMaxPuntos, etapa, motor, discusiones } = {}) {
   const tradesPorDia = new Map()
   ;(trades || []).forEach(t => {
     const d = t.trade_date || t.entry_time?.slice(0, 10)
@@ -654,6 +728,8 @@ function discContexto({ trades, fechasEsp, errores, stopMaxPuntos, etapa, motor 
     etapa,      // número, 'auto' o undefined (= 'auto'). Ver etapaDelPeriodo()
     motor: motor instanceof Map ? motor
       : Array.isArray(motor) ? new Map(motor.map(f => [f.fecha, f])) : undefined,
+    discusiones: discusiones instanceof Map ? discusiones
+      : new Map((discusiones || []).map(d => [d.fecha, d])),
   }
 }
 
@@ -688,17 +764,10 @@ function calcDisciplinaStats(sesiones, items, opts) {
   const etapa = etapaDelPeriodo(sesiones, o.etapa)
   const medida = medidaDelPeriodo(sesiones, etapa, o)
 
-  // Medida del plan: se cuentan DÍAS por su veredicto, no ítems.
+  // Medida del plan: se cuentan TRADES dentro de las reglas, no ítems (D-052).
   if (medida === 'plan') {
-    const veredictos = { igual: 0, bien: 0, fuera: 0, otro: 0, aviso: 0, pendiente: 0 }
-    ;(sesiones || []).forEach(s => {
-      if (medidaDeFecha(s.sesion_date) !== 'plan') return
-      const v = veredictoDia(s, o)
-      if (v) veredictos[v]++
-    })
-    const ok = veredictos.igual + veredictos.bien
-    const total = ok + veredictos.fuera + veredictos.otro
-    return { total, ok, pct: total > 0 ? Math.round(ok / total * 100) : null, medida, veredictos }
+    const r = resumenDisciplina(sesiones, o)
+    return { total: r.total, ok: r.ok, pct: r.pct, medida, resumen: r }
   }
 
   let total = 0, ok = 0
@@ -1338,6 +1407,25 @@ const DB = {
   async getMotorDisciplina() {
     const filas = await this._compartido('motorDisciplina', () => this.getMotorRango(PLAN_MOTOR_DESDE, hoyISO()))
     return new Map(filas.map(f => [f.fecha, f]))
+  },
+
+  // «No estoy de acuerdo» con el juicio del motor (D-052): un día por fila. `abierta` no cuenta;
+  // se cierra con `motor` (vuelve a contar) o `plan` (Kris tenía razón: no cuenta).
+  async getDiscusiones() {
+    const { data, error } = await supa.from('disciplina_discusiones')
+      .select('fecha, nota, estado, creada_at, cerrada_at').order('fecha')
+    if (error) throw error
+    return data || []
+  },
+  async abrirDiscusion(fecha, nota) {
+    const { error } = await supa.from('disciplina_discusiones')
+      .upsert({ fecha, nota: (nota || '').trim() || null, estado: 'abierta', cerrada_at: null }, { onConflict: 'fecha' })
+    if (error) throw error
+  },
+  async cerrarDiscusion(fecha, estado) {
+    const { error } = await supa.from('disciplina_discusiones')
+      .update({ estado, cerrada_at: new Date().toISOString() }).eq('fecha', fecha)
+    if (error) throw error
   },
 
   // Sin `velas` (~48 KB/día): son para el agente de backtesting, el Journal no las lee.

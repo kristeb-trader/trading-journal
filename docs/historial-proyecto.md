@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-11-03
+**Última actualización:** 2026-11-10
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-10b | La disciplina pregunta «¿tu trade cumplía las reglas?», no «¿hiciste lo mismo que el bot?» |
 | 2026-11-05 | La gráfica del día empieza 2 velas antes de la apertura, no en el origen de las zonas de premercado |
 | 2026-11-04 | La imagen del bot, 10 minutos después de que salga de su operación: no espera al fin de la ventana |
 | 2026-11-03c | Trades: el backtesting, cuarta opción de Quién |
@@ -73,6 +74,23 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-10b — La disciplina pregunta «¿tu trade cumplía las reglas?»
+
+**Lo que pasó.** Kris: *«no lo estoy mirando, no me aporta nada… no operar lo mismo del bot no significa que no cumpla
+la disciplina»*. Tenía razón: la medida de D-047 llamaba «otro» o «fuera» a todo trade distinto del del bot, y no decía
+qué regla se rompía. Pero el motor sabe, en la vela de cada entrada, si el setup era válido y por qué no. Probado sobre
+los 23 trades desde el 01/10: octubre 10 de 18 dentro de las reglas (el 06/10 sin ser el trade del bot); noviembre 0 de
+5, con una fuga clara —stop de más de 80 en 3 (04, 05, 06/11)— que sus notas explican («sobreextendido»). Aprobó las
+cuatro piezas: la pregunta nueva, «no estoy de acuerdo», el aviso en Telegram y la pantalla mínima con la fuga (D-052,
+diseño `docs/disenos/2026-11-10-disciplina-reglas.md`).
+
+**Lo que se cambió.**
+- **El juicio** (`362aa56`): `medir.py` guarda en cada trade `juicio = {cumple, regla, texto}` —lo que ya mide y lo que decidió el motor en la vela de la entrada—, con `MEDIR_VERSION` en la huella. Medido de nuevo desde el 01/10 (las fichas de un motor anterior, con la medición ya guardada, sin correr el motor de hoy). `SELECT`: octubre 10/18, noviembre 0/6 (el 10/11, 2 contratos donde cabía 1).
+- **El cálculo y los datos** (fase 2): `db.js` — `juicioDia`, `resumenDisciplina` (el %, la racha, la fuga), las discusiones; `calcDisciplinaStats` cuenta trades dentro de las reglas. Tablas `disciplina_discusiones` (RLS) y `sesiones.disciplina_avisada_at`. Con `db.js` sobre la BD: octubre 10/18 (fuga: punto de referencia ×3), noviembre 0/6 (fuga: stop > 80 ×3).
+<!-- fases 2026-11-10b -->
 
 ---
 
