@@ -479,6 +479,33 @@ def medir_pendientes(n_dias, huella_motor, fed_set):
         log(f'medir: ❌ {e}')
 
 
+# ── El aviso de disciplina por Telegram (10/11/2026, D-052) ────────────────────
+BOT_TELEGRAM = 'https://trading-journal-bot.kristerock.workers.dev/disciplina'
+
+
+def avisar_disciplina(n_dias=5):
+    """Pide al bot de Telegram «🎯 Disciplina» de los días registrados que aún no se avisaron. Es el
+    camino de cuando Kris registró antes de que el motor midiera (el otro, al cerrar el registro, lo
+    hace el bot solo). El bot decide: solo días registrados (el candado), con juicio y una vez. Se
+    autentica con la service_role, que el bot ya tiene: ningún secreto más en el repositorio.
+    Nunca tumba la cadena."""
+    try:
+        desde = (datetime.date.today() - datetime.timedelta(days=n_dias)).isoformat()
+        filas = sb('GET', f'sesiones?select=sesion_date&sesion_date=gte.{desde}'
+                          '&registrada_at=not.is.null&disciplina_avisada_at=is.null')
+        fechas = sorted(f['sesion_date'] for f in filas or [])
+        if not fechas: return
+        req = urllib.request.Request(BOT_TELEGRAM, data=json.dumps({'fechas': fechas}).encode('utf-8'),
+                                     headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {_clave()}'},
+                                     method='POST')
+        with urllib.request.urlopen(req, timeout=60) as r:
+            res = json.loads(r.read().decode('utf-8') or '{}')
+        enviados = [f for f, v in res.items() if v == 'enviado']
+        if enviados: log(f"disciplina: aviso por Telegram de {', '.join(enviados)}")
+    except Exception as e:
+        log(f'disciplina: ❌ {e}')
+
+
 # ── Publicar las Sesiones (29/09/2026) ─────────────────────────────────────────
 def git(*args, timeout=120):
     """git en la raíz del repositorio, sin preguntar nada nunca (corre sin consola, lanzado por NT8)."""
@@ -558,6 +585,7 @@ def main(argv):
         if not fechas:
             log('pendientes: nada que subir')
             medir_pendientes(n, huella_motor, fed_set)
+            avisar_disciplina()
             publicar_sesiones(); return 0
     else:
         fechas = [a for a in argv if re.fullmatch(r'\d{4}-\d{2}-\d{2}', a)]
@@ -577,6 +605,7 @@ def main(argv):
             except Exception: pass
     if '--pendientes' in argv:
         medir_pendientes(n, huella_motor, fed_set)
+    avisar_disciplina()
     publicar_sesiones()
     return 1 if fallos else 0
 

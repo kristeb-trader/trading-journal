@@ -108,6 +108,80 @@ const delState  = (kv, id) => kv.delete(`s:${id}`);
 
 const PREGUNTA_SETUP = '📐 <b>Setup</b>\n\n¿Qué setup operaste?';
 
+// ── Disciplina: ¿tu trade cumplía las reglas? (10/11/2026, D-052) ──────────────
+// El juicio de cada trade lo calcula la cadena (medir.py) dentro de `motor_fichas`. El bot lo
+// manda UNA vez por día (`sesiones.disciplina_avisada_at`) y SOLO si el día está registrado: es
+// el candado del motor (D-026), lo que marcó no se ve antes de que Kris escriba su lectura.
+// Dos caminos: al cerrar el registro, si la ficha ya está; o cuando la cadena mide y llama a
+// `/disciplina`, si el registro llegó antes. Diseño: docs/disenos/2026-11-10-disciplina-reglas.md.
+const AVISO_DISCIPLINA_DESDE = '2026-11-10';   // los días anteriores no se avisan de golpe
+const sbFetch = (env, ruta, init = {}) => fetch(`${env.SUPABASE_URL}/rest/v1/${ruta}`, {
+  ...init,
+  headers: {
+    apikey: env.SUPABASE_SERVICE_ROLE, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE}`,
+    'Content-Type': 'application/json', ...(init.headers || {}),
+  },
+});
+const diaMes = f => `${f.slice(8, 10)}/${f.slice(5, 7)}`;
+const flecha = s => s === 'alcista' ? '↑' : s === 'bajista' ? '↓' : '';
+
+// Manda «🎯 Disciplina» del día si toca. Devuelve por qué no, o 'enviado'.
+async function avisarDisciplina(fecha, env) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha || '') || fecha < AVISO_DISCIPLINA_DESDE) return 'fuera de fecha';
+  const leer = async ruta => { const r = await sbFetch(env, ruta); return r.ok ? r.json() : []; };
+  const [ses, fichas, trades] = await Promise.all([
+    leer(`sesiones?sesion_date=eq.${fecha}&select=registrada_at,disciplina_avisada_at,setup`),
+    leer(`motor_fichas?fecha=eq.${fecha}&select=estado,operacion:ficha->operacion,tu:ficha->tu_operacion`),
+    leer(`trades?trade_date=eq.${fecha}&select=entry_time`),
+  ]);
+  const s = ses[0], m = fichas[0];
+  if (!s || !s.registrada_at) return 'sin registrar';
+  if (s.disciplina_avisada_at) return 'ya avisado';
+  if (!trades.length) return 'sin trades';
+  const ops = ((m && m.tu && m.tu.operaciones) || []).filter(op => op.juicio);
+  if (!m || m.estado !== 'ok' || ops.length < trades.length) return 'sin juicio';
+
+  const plan = m.operacion;
+  const quien = op => [s.setup, op.hora].filter(Boolean).join(' ');
+  const lineas = ops.map(op => op.juicio.cumple
+    ? `✅ ${escHtml(quien(op))} — <b>dentro de las reglas</b>` +
+      (!op.coincide && plan ? `, aunque no fue el trade del bot (${escHtml(plan.hora)})` : '') + '.'
+    : `❌ ${escHtml(quien(op))} — <b>${escHtml(op.juicio.texto)}</b>.`);
+  const rota = ops.some(op => !op.juicio.cumple);
+  if (rota && plan) lineas.push(`<i>El bot: ${escHtml(plan.setup)} ${flecha(plan.sentido)} ${escHtml(plan.hora)}.</i>`);
+  if (rota && !plan) lineas.push('<i>El bot no operó ese día.</i>');
+
+  await sendMessage(env.BOT_TOKEN, env.ALLOWED_CHAT_ID,
+    `🎯 <b>Disciplina · ${diaMes(fecha)}</b>\n${lineas.join('\n')}`,
+    rota ? { inline_keyboard: [[{ text: '🤔 No estoy de acuerdo', callback_data: `discno_${fecha}` }]] } : undefined);
+  await sbFetch(env, `sesiones?sesion_date=eq.${fecha}`, {
+    method: 'PATCH', headers: { Prefer: 'return=minimal' },
+    body: JSON.stringify({ disciplina_avisada_at: new Date().toISOString() }),
+  });
+  return 'enviado';
+}
+
+// La cadena (subir_dia.py) avisa tras medir: { fechas: [...] }. Se autentica con la service_role,
+// que ya tienen los dos: así no hace falta otro secreto en el repositorio público.
+async function handleDisciplina(request, env) {
+  if (request.headers.get('Authorization') !== `Bearer ${env.SUPABASE_SERVICE_ROLE}`) {
+    return new Response('Unauthorized', { status: 403 });
+  }
+  const { fechas = [] } = await request.json().catch(() => ({}));
+  const res = {};
+  for (const f of fechas.slice(0, 10)) res[f] = await avisarDisciplina(f, env);
+  return new Response(JSON.stringify(res), { headers: { 'Content-Type': 'application/json' } });
+}
+
+// «No estoy de acuerdo»: abre (o reabre) la discusión del día con la frase de Kris.
+async function abrirDiscusion(fecha, nota, env) {
+  const r = await sbFetch(env, 'disciplina_discusiones?on_conflict=fecha', {
+    method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ fecha, nota: nota || null, estado: 'abierta', cerrada_at: null }),
+  });
+  return r.ok;
+}
+
 // ── Setup keyboard ──────────────────────────────────────────────────────────
 // Las variantes se leen de BD (activas, en orden). El callback lleva el CÓDIGO,
 // no el índice: si la lista cambia entre que se muestra el teclado y se pulsa,
@@ -325,6 +399,8 @@ async function cerrarSesion(state, chatId, msgId, env) {
   }
   await delState(env.KV, chatId);
   await decir(buildResumen(state.data));
+  // Con el día registrado, el juicio del motor (si la ficha ya está; si no, avisa la cadena).
+  try { await avisarDisciplina(state.data.sesion_date, env); } catch (e) { console.error('[disciplina]', e); }
 }
 
 // ── Handlers principales ────────────────────────────────────────────────────
@@ -378,6 +454,16 @@ async function handleCallback(cbq, env) {
   // Los avisos nuevos ya no lo llevan; se conserva para los que quedan en el chat.
   if (action === 'iniciar_sesion') {
     await startSesionFlow(chatId, token, env.KV, env);
+    return;
+  }
+
+  // «🤔 No estoy de acuerdo» del aviso de disciplina: pide la frase. Va en su propia clave del
+  // KV (d:) para no pisar un registro a medias.
+  if (action.startsWith('discno_')) {
+    const fecha = action.slice(7);
+    await env.KV.put(`d:${chatId}`, fecha, { expirationTtl: 12 * 3600 });
+    await sendMessage(token, chatId,
+      `🤔 <b>No estás de acuerdo con el ${diaMes(fecha)}</b>\n\nEscribe en una frase qué vio mal el motor (o /skip para abrirla sin nota):`);
     return;
   }
 
@@ -472,6 +558,17 @@ async function handleText(msg, env) {
 
   // Permitir /skip dentro del flujo; ignorar el resto de comandos
   if (text.startsWith('/') && text.toLowerCase() !== '/skip') return;
+
+  // La frase de «No estoy de acuerdo» (la pidió el botón del aviso de disciplina).
+  const discFecha = await env.KV.get(`d:${chatId}`);
+  if (discFecha) {
+    await env.KV.delete(`d:${chatId}`);
+    const ok = await abrirDiscusion(discFecha, text.toLowerCase() === '/skip' ? null : text, env);
+    await sendMessage(token, chatId, ok
+      ? `🔵 <b>Discusión abierta · ${diaMes(discFecha)}</b>\nEse día no cuenta en la disciplina hasta que la cierres en el Journal (Otros → Disciplina).`
+      : '⚠️ No se pudo guardar la discusión. Ábrela desde el visor del día en el Journal.');
+    return;
+  }
 
   const state = await getState(env.KV, chatId);
   if (!state) return;
@@ -582,6 +679,7 @@ export default {
 
     const url = new URL(request.url);
     if (url.pathname === '/notify') return handleNotify(request, env);
+    if (url.pathname === '/disciplina') return handleDisciplina(request, env);
 
     try {
       const update = await request.json();
