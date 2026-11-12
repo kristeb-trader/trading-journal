@@ -230,11 +230,8 @@ const Modal = {
     const j = juicioDia(sesion, discContexto({ trades: allDayTrades, fechasEsp, motor, discusiones: discusion ? [discusion] : [] }))
     if (!j || j.estado === 'pendiente') return ''
     const esc = x => String(x ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
-    const bot = j.plan ? `${fmtOpPlan(j.plan)}` : null
-    if (j.estado === 'sin_trade') {
-      if (!bot) return ''
-      return this._bloque('Disciplina · no operaste', `No operar nunca es fallo. El plan operó: ${bot}.`, 'gry')
-    }
+    // Solo las reglas de TU entrada (D-053): ni el trade del bot ni si el plan operó.
+    if (j.estado === 'sin_trade') return ''
     const rota = j.ops.find(op => !op.juicio.cumple)
     let lbl, tono, txt
     if (j.estado === 'discusion') {
@@ -246,8 +243,7 @@ const Modal = {
       txt = `<strong>${esc(rota.juicio.texto[0].toUpperCase() + rota.juicio.texto.slice(1))}</strong> — ${esc([sesion.setup, rota.hora].filter(Boolean).join(' '))}.`
     } else {
       lbl = 'Disciplina · dentro de las reglas'; tono = ''
-      const otro = j.ops.some(op => !op.coincide)
-      txt = `<strong>Dentro de las reglas</strong>${otro && bot ? `, aunque no fue el trade del bot (${esc(bot)})` : ''}.`
+      txt = `<strong>Dentro de las reglas</strong> — ${esc([sesion.setup, j.ops[0]?.hora].filter(Boolean).join(' '))}.`
     }
     const boton = j.estado === 'discusion' ? '' : `
       <button type="button" class="dv-disc-btn" data-discutir="${dateStr}">🤔 No estoy de acuerdo</button>

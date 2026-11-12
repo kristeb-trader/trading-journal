@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-11-10
+**Última actualización:** 2026-11-12
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-12 | La disciplina, solo con las reglas de tu entrada (nada contra el bot); el Diario sin casillas en los días del plan |
 | 2026-11-10c | El secreto del aviso de trade sale del repositorio público: a un archivo del PC y a un secreto del Worker, con un valor nuevo |
 | 2026-11-10b | La disciplina pregunta «¿tu trade cumplía las reglas?», no «¿hiciste lo mismo que el bot?» |
 | 2026-11-05 | La gráfica del día empieza 2 velas antes de la apertura, no en el origen de las zonas de premercado |
@@ -75,6 +76,25 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-12 — La disciplina, solo con las reglas de tu entrada; el Diario sin casillas
+
+**Lo que pasó.** Kris: *«medir las reglas únicamente de mi entrada, no vamos a comparar la entrada con el bot… quiero
+quitar el check de sesión, el de fase 2… dejar todo lo máximo de manera automatizada»* (D-053). De paso se vio que el
+botón de Telegram funciona: el 11/11 está en discusión con su frase.
+
+**Lo que se cambió.**
+- **El juicio** (`medir.py`, `MEDIR_VERSION` 3): fuera el atajo «es el trade del plan»; los contratos, con el stop que el
+  plan da a su setup en la vela de la entrada. Vuelto a juzgar desde el 01/10 sobre la medición guardada: octubre sigue
+  10 de 18; 08/10, 14/10 y 10/11 pasan de «contratos» a «sin setup» (el motor de hoy no ve setup en esas entradas).
+- **Sin el bot en la disciplina:** pantalla (leyenda y cuadritos), visor del día (y los días sin trade, sin bloque),
+  Telegram y la sección del Coach con su foco.
+- **El Diario sin casillas** en los días del plan (`form.js`); la etapa 1 conserva las suyas.
+
+Verificado: preview (el 10/11 sin casillas, el 13/08 con sus 10; Disciplina y visor sin el bot; consola limpia); el Coach,
+con la petición cortada en la página (06/10: «el trade cumplía las reglas»).
 
 ---
 

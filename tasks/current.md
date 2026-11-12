@@ -145,8 +145,6 @@ Rescatados de `chaumer/04_Web/ESTADO_FASE_2.md` al archivarlo (28/09, D-030). Es
 
 ## Disciplina: ¿tu trade cumplía las reglas? (10/11, D-052)
 
-- [ ] **Kris:** pulsar «🤔 No estoy de acuerdo» en el aviso de Telegram de un día (p. ej. el del 10/11), escribir la frase y
-  mirar que en Otros → Disciplina el día sale azul («en discusión») y se puede cerrar
 - [ ] Un día registrado **desde la web** después de que el motor midiera no recibe el aviso de Telegram (ninguno de los
   dos caminos lo ve). Si molesta, que el guardado del Diario llame a `/disciplina`
 - [ ] **Kris:** el secreto nuevo del aviso de trade (checkpoint 10/11c): pegar el valor de

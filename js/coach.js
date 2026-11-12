@@ -145,22 +145,17 @@ Noticias: <noticia relevante del día, o "Sin noticias">`
   // error—. Lo usan los dos sitios del formato (system e instrucción), como `formatoContexto`.
   function focoDelDia(j, ficha) {
     if (!j || j.estado === 'pendiente') return ''
-    const op = ficha?.operacion
-    const plan = op ? `${op.setup} ${op.sentido} a las ${op.hora}` : null
+    // Solo las reglas de SU entrada (12/11, D-053): la disciplina no se compara con el bot.
     const rota = j.ops.find(o => !o.juicio.cumple)
     let foco
     if (j.estado === 'sin_trade') {
-      foco = plan
-        ? `El trader no operó; el plan sí (${plan}). NO OPERAR NUNCA ES UN FALLO de disciplina. Análisis MUY corto: qué vio y si había algo que le frenara.`
-        : `Ni el plan ni el trader operaron: es lo correcto. Análisis MUY corto; si miró algún setup, explica por qué el plan no lo daba.`
+      foco = `El trader no operó: NO OPERAR NUNCA ES UN FALLO de disciplina. Análisis MUY corto; si miró algún setup, qué vio.`
     } else if (j.estado === 'discusion') {
       foco = `El trader NO está de acuerdo con el motor${rota ? ` («${rota.juicio.texto}»)` : ''}: «${j.discusion?.nota || 'sin nota'}». Examina con las velas si el motor cae en uno de sus dos agujeros conocidos y di quién tiene razón, con la vela exacta.`
     } else if (rota) {
-      foco = `El trade ROMPIÓ una regla: ${rota.juicio.texto}. Céntrate en ESA regla: qué pide el plan, qué vio el trader y por qué entró igual (su lectura). Con números.${plan ? ` El bot operó ${plan}.` : ' El bot no operó.'}`
-    } else if (j.ops.every(o => o.coincide)) {
-      foco = `El trade cumplía las reglas y fue el del plan${plan ? ` (${plan})` : ''}. Análisis CORTO: confirma en una frase por qué era válido y céntrate en la EJECUCIÓN —entrada, stop y contratos, con las diferencias medidas—.`
+      foco = `El trade ROMPIÓ una regla: ${rota.juicio.texto}. Céntrate en ESA regla: qué pide el plan, qué vio el trader y por qué entró igual (su lectura). Con números.`
     } else {
-      foco = `El trade cumplía las reglas, aunque NO fue el del bot${plan ? ` (${plan})` : ''}. Dilo claramente: operar otro setup válido NO es indisciplina. Análisis CORTO: qué setup válido era y cómo fue la ejecución.`
+      foco = `El trade cumplía las reglas. Análisis CORTO: confirma en una frase qué setup válido era y céntrate en la EJECUCIÓN —entrada, stop y contratos—.`
     }
     return `${foco}
 - La línea «En corto» de VALIDACIÓN empieza por ese juicio, en palabras llanas.
@@ -174,7 +169,7 @@ Noticias: <noticia relevante del día, o "Sin noticias">`
     if (!j || j.estado === 'pendiente') return ''
     const rota = j.ops.find(o => !o.juicio.cumple)
     const inicio = j.estado === 'sin_trade'
-      ? (j.plan ? '«SIN ENTRADA — el plan operaba; no operar no es un fallo»' : '«SIN ENTRADA — correcto: el plan tampoco operaba»')
+      ? '«SIN ENTRADA — no operar no es un fallo»'
       : rota ? `«ENTRADA INVÁLIDA» (rompió una regla: ${rota.juicio.texto})`
       : '«ENTRADA VÁLIDA» (cumplía las reglas; la razón dice cómo fue la ejecución)'
     return `\nEste día el motor dio su juicio: empieza con ${inicio}, salvo que argumentes uno de sus dos agujeros conocidos.`
@@ -353,18 +348,16 @@ Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes.
     // (db.js). Va en el bloque B: es del día.
     const disciplinaPlanStr = (() => {
       if (!juicio || juicio.estado === 'pendiente') return ''
-      const op = fichaMotor.ficha?.operacion
-      const lineas = juicio.ops.map(o => `  ${o.juicio.cumple ? '✓' : '✗'} Trade de las ${o.hora}: ${o.juicio.cumple ? 'dentro de las reglas' : 'regla rota'} — ${o.juicio.texto}${o.juicio.cumple && !o.coincide && op ? ' (no fue el trade del bot)' : ''}.`)
+      const lineas = juicio.ops.map(o => `  ${o.juicio.cumple ? '✓' : '✗'} Trade de las ${o.hora}: ${o.juicio.cumple ? 'dentro de las reglas' : 'regla rota'} — ${o.juicio.texto}.`)
       if (juicio.estado === 'sin_trade') lineas.push('  No operó: no operar nunca es un fallo.')
-      lineas.push(op ? `  El bot: ${fmtOpPlan(op)}.` : '  El bot no operó.')
       if (juicio.discusion && juicio.discusion.estado !== 'motor') lineas.push(`  EN DISCUSIÓN — el trader no está de acuerdo con el motor: «${juicio.discusion.nota || 'sin nota'}».`)
       return `
 
 Disciplina del día (VERIFICADO POR DATOS con el motor; desde el 01/10 es la medida de la disciplina):
 ${lineas.join('\n')}
-  (La pregunta es si el trade cumplía las reglas, NO si fue el mismo que el del bot: otro setup
-   válido es disciplina. No mira el resultado: un trade que rompe una regla y gana sigue siendo
-   indisciplina. No operar nunca es fallo.)`
+  (Mide solo las reglas de la entrada del trader: NO se compara con la operación del bot. No
+   mira el resultado: un trade que rompe una regla y gana sigue siendo indisciplina. No operar
+   nunca es fallo.)`
     })()
     // Códigos de las reglas aplicables al día: el Coach los usa para vincular cada
     // error con la regla que contradice (9ª parte del formato de errores). Se

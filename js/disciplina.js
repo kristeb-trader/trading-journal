@@ -514,11 +514,11 @@ const Disciplina = (() => {
   function cuadro(x) {
     const j = x.j
     if (j.estado === 'sin_trade') return { tono: 'n', corto: 'no operaste',
-      tit: 'No operaste: nunca es fallo' + (j.plan ? ` (el plan: ${fmtOpPlan(j.plan)})` : '') }
+      tit: 'No operaste: nunca es fallo' }
     if (j.estado === 'pendiente') return { tono: 'n', corto: 'pendiente', tit: 'Aún sin el juicio del motor' }
     if (j.estado === 'discusion') return { tono: 'b', corto: 'en discusión', tit: j.discusion?.nota || 'En discusión' }
     const rota = j.ops.find(op => !op.juicio.cumple)
-    if (!rota) return { tono: 'g', corto: j.ops.every(op => op.coincide) ? 'el del plan' : 'válido',
+    if (!rota) return { tono: 'g', corto: 'dentro',
       tit: j.ops.map(op => op.juicio.texto).join(' · ') }
     const pts = /(\d+) pts/.exec(rota.juicio.texto)
     const delPlan = /stop del plan/.test(rota.juicio.texto)   // el suyo cabía; el del plan, no (05/11)
@@ -568,7 +568,7 @@ const Disciplina = (() => {
     }).join('')
     const leyenda = `
       <div class="dd-ley">
-        <span><i class="dd-sw g"></i>Dentro de las reglas (aunque no sea el trade del bot)</span>
+        <span><i class="dd-sw g"></i>Dentro de las reglas</span>
         <span><i class="dd-sw r"></i>Regla rota</span>
         <span><i class="dd-sw n"></i>No operaste: nunca es fallo</span>
         ${p.enDiscusion.length ? '<span><i class="dd-sw b"></i>En discusión</span>' : ''}

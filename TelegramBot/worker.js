@@ -123,7 +123,6 @@ const sbFetch = (env, ruta, init = {}) => fetch(`${env.SUPABASE_URL}/rest/v1/${r
   },
 });
 const diaMes = f => `${f.slice(8, 10)}/${f.slice(5, 7)}`;
-const flecha = s => s === 'alcista' ? '↑' : s === 'bajista' ? '↓' : '';
 
 // Manda «🎯 Disciplina» del día si toca. Devuelve por qué no, o 'enviado'.
 async function avisarDisciplina(fecha, env) {
@@ -141,15 +140,12 @@ async function avisarDisciplina(fecha, env) {
   const ops = ((m && m.tu && m.tu.operaciones) || []).filter(op => op.juicio);
   if (!m || m.estado !== 'ok' || ops.length < trades.length) return 'sin juicio';
 
-  const plan = m.operacion;
+  // Solo las reglas de SU entrada (12/11/2026, D-053): nada de lo que hizo el bot.
   const quien = op => [s.setup, op.hora].filter(Boolean).join(' ');
   const lineas = ops.map(op => op.juicio.cumple
-    ? `✅ ${escHtml(quien(op))} — <b>dentro de las reglas</b>` +
-      (!op.coincide && plan ? `, aunque no fue el trade del bot (${escHtml(plan.hora)})` : '') + '.'
+    ? `✅ ${escHtml(quien(op))} — <b>dentro de las reglas</b>.`
     : `❌ ${escHtml(quien(op))} — <b>${escHtml(op.juicio.texto)}</b>.`);
   const rota = ops.some(op => !op.juicio.cumple);
-  if (rota && plan) lineas.push(`<i>El bot: ${escHtml(plan.setup)} ${flecha(plan.sentido)} ${escHtml(plan.hora)}.</i>`);
-  if (rota && !plan) lineas.push('<i>El bot no operó ese día.</i>');
 
   await sendMessage(env.BOT_TOKEN, env.ALLOWED_CHAT_ID,
     `🎯 <b>Disciplina · ${diaMes(fecha)}</b>\n${lineas.join('\n')}`,

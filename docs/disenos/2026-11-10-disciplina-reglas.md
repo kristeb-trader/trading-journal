@@ -1,6 +1,6 @@
 # La disciplina pregunta «¿tu trade cumplía las reglas?», no «¿hiciste lo mismo que el bot?»
 
-**Versión:** v2 · **Estado:** ✅ APROBADO por Kris (10/11/2026) · ✅ IMPLEMENTADO (10/11/2026) · D-052 · Sustituye la medida de D-047
+**Versión:** v3 · **Estado:** ✅ APROBADO por Kris (10/11/2026) · ✅ IMPLEMENTADO (10/11/2026) · D-052, D-053 · Sustituye la medida de D-047
 (`docs/disenos/2026-10-23-disciplina-plan.md`) · Relacionado: D-034 (`medir.py`), D-026 (el candado), D-049 (el Coach).
 Boceto: `boceto-disciplina-v2.png` (enviado el 10/11/2026).
 
@@ -123,6 +123,11 @@ motivo que no case cae en `otra` con su texto, no se pierde.
   conviene mover el secreto a un archivo local, como la `service_role`.
 
 ## Registro
+
+- **v3 (12/11/2026, D-053, Kris):** el juicio mide **solo las reglas de su entrada**: fuera el atajo «es el trade del
+  plan» (§3, regla 7) y toda mención al bot en la disciplina (§6); los contratos, con el stop que el plan da a su setup en
+  la vela de la entrada. El Diario, sin casillas en los días del plan. Comparar con el bot queda para una métrica mensual
+  aparte (backlog).
 
 - **v2 (10/11/2026):** implementado en 5 fases. Desvíos: las fichas de octubre, hechas con un motor anterior, recibieron
   el juicio sobre su medición ya guardada (sin correr el motor de hoy, para no mezclar motores); Telegram solo avisa desde

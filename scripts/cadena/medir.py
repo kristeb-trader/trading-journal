@@ -22,13 +22,15 @@ COINCIDE_VELAS = 2      # la operación del motor «es la misma» si llena a ±2
 EVENTOS_ANTES = 15      # minutos de eventos del motor antes de la entrada de Kris
 # Sube cuando cambia lo que se mide: entra en la huella y obliga a medir de nuevo las fichas ya hechas.
 # 2 (10/11/2026): el juicio de cada operación («¿cumplía las reglas?») y los contratos.
-MEDIR_VERSION = 2
+# 3 (12/11/2026): el juicio solo mira las reglas de SU entrada; nada se compara con la operación del bot.
+MEDIR_VERSION = 3
 
 # ── El juicio: ¿tu trade cumplía las reglas? (10/11/2026, docs/disenos/2026-11-10-disciplina-reglas.md) ──
-# No es «¿hiciste lo mismo que el bot?»: el bot opera UN trade, y otro puede cumplir las mismas reglas.
-# Tampoco añade reglas: lee lo que ya mide esta medición y lo que el motor decidió en la vela de la
-# entrada. Los motivos del motor se reconocen por su frase (lector.py); uno que no case va a 'otra'
-# con su texto, no se pierde. Si lector.py cambia sus frases, se revisa esta tabla.
+# Solo las reglas de la entrada de Kris (12/11, D-053): NO se compara con la operación del bot —ni
+# para dar por bueno un trade que coincide con ella—. Tampoco añade reglas: lee lo que ya mide esta
+# medición y lo que el motor decidió en la vela de la entrada para ESE setup. Los motivos del motor se
+# reconocen por su frase (lector.py); uno que no case va a 'otra' con su texto, no se pierde. Si
+# lector.py cambia sus frases, se revisa esta tabla.
 MOTIVOS = [
     (r'riesgo ([\d.]+) pts', 'stop_max'),
     (r'pasa del punto de referencia', 'punto_referencia'),
@@ -72,7 +74,7 @@ def _usd_punto(tr): return 2 if re.match(r'\s*MNQ', str(tr.get('instrument') or 
 def juicio(op, i, tr):
     """¿La operación cumplía las reglas? → {cumple, regla, texto}. i = su orden en el día (0 = la primera).
     La primera comprobación que salta manda: lo medido por esta medición, y después lo que decidió el motor
-    en la vela de la entrada (entre 2 minutos antes y la del llenado, en el mismo sentido)."""
+    para su setup en la vela de la entrada (entre 2 minutos antes y la del llenado, en el mismo sentido)."""
     def mal(regla, texto): return {'cumple': False, 'regla': regla, 'texto': texto}
     riesgo = op.get('riesgo')
     if i > 0: return mal('una_operacion', 'segunda operación del día')
@@ -81,14 +83,6 @@ def juicio(op, i, tr):
     if op.get('en_ventana') is False: return mal('ventana', 'fuera de la ventana 09:30–11:30 ET')
     if op.get('noticia_cerca'): return mal('noticia', f"en la ventana de la noticia de las {op['noticia_cerca']}")
     if op.get('objetivo_libre') is False: return mal('objetivo_zona', TEXTO['objetivo_zona'])
-    # Los contratos que caben en el riesgo máximo: con el stop del plan si es el trade del plan (el
-    # deslizamiento no cuela falsos fallos); si no, con el suyo.
-    r_c = (op.get('motor') or {}).get('riesgo') if op.get('coincide') else riesgo
-    qty = int(tr.get('qty') or 0) if tr else 0
-    if r_c and qty:
-        caben = int(float(lector.RIESGO_MAX) // (r_c * _usd_punto(tr)))
-        if qty > caben: return mal('contratos', f'{qty} contratos (cabían {caben})')
-    if op.get('coincide'): return {'cumple': True, 'regla': None, 'texto': 'el trade del plan'}
 
     m = _minutos_hhmm(op['hora'])
     hallado = None
@@ -100,7 +94,14 @@ def juicio(op, i, tr):
                    'bajista' if re.search(r'bajista|rompimiento de S ', txt) else None)
         if sentido != op['sentido']: continue
         if '✓ orden enviada' in txt:
-            hallado = {'cumple': True, 'regla': None, 'texto': 'setup válido del plan'}
+            # Los contratos que caben en el riesgo máximo, con el stop que el plan da a SU setup (el
+            # deslizamiento de la salida no cuela falsos fallos); sin él, con el suyo.
+            g = re.search(r'riesgo ([\d.]+)', txt)
+            r_c = float(g[1]) if g else riesgo
+            qty = int(tr.get('qty') or 0) if tr else 0
+            caben = int(float(lector.RIESGO_MAX) // (r_c * _usd_punto(tr))) if r_c and qty else None
+            hallado = (mal('contratos', f'{qty} contratos (cabían {caben})') if caben is not None and qty > caben
+                       else {'cumple': True, 'regla': None, 'texto': 'setup válido del plan'})
         elif '✗' in txt:
             motivo = txt.split('✗', 1)[1].strip(' —')
             for patron, regla in MOTIVOS:

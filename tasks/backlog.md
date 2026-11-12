@@ -12,6 +12,12 @@ Cosas hechas que no se pudieron probar del todo. Ninguna bloquea.
 - **A ojo, la UI del 16 ago:** los controles en la barra superior en móvil, y el alto de la imagen en la
   vista del día (`46vh` escritorio, `34vh` móvil)
 
+## Disciplina
+
+- **Comparar con el bot, como métrica mensual de validación** (Kris, 12/11/2026, D-053): cuántos días mi trade y el del
+  bot coinciden, y en qué se separan. **No** en la disciplina, que solo mide las reglas de mi entrada. Los datos ya
+  están: `tu_operacion[i].coincide` y `diferencias` (`medir.py`).
+
 ## Cuatro calendarios
 
 - **Julio y agosto en el calendario de Claude.** Hoy empieza el 10-sep: los 11 días de julio

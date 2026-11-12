@@ -41,17 +41,17 @@ explica el cálculo de las reglas con la etapa 1 (julio de 2026); del 24 al 30/0
 ## La medida del plan (desde el 01/10/2026)
 
 Desde el 01/10 la etapa 2 no cuenta casillas: **cuenta trades**, y cada trade lo juzga el motor. La pregunta es una sola:
-**¿tu trade cumplía las reglas?** —no «¿hiciste lo mismo que el bot?»: otro setup válido cuenta igual— (D-052, diseño
-`docs/disenos/2026-11-10-disciplina-reglas.md`; sustituye la medida de D-047).
+**¿tu trade cumplía las reglas?** Solo las reglas de tu entrada: nada se compara con la operación del bot (D-052, D-053;
+diseño `docs/disenos/2026-11-10-disciplina-reglas.md`; sustituye la medida de D-047). El Diario no tiene casillas en
+estos días: las reglas las mide el motor.
 
 > **Disciplina % = trades dentro de las reglas ÷ trades juzgados.** No operar nunca es fallo y no entra. No cuentan los
 > días **en discusión** (Kris no está de acuerdo con el motor) ni los **pendientes** (sin ficha: el candado).
 
 **El juicio de cada trade** lo calcula `scripts/cadena/medir.py` y lo guarda en `ficha.tu_operacion[i].juicio`. Manda la
 primera que salte: segunda operación del día · tu stop > 80 · fuera de la ventana · en la ventana de una noticia · tu
-objetivo choca con una zona · más contratos de los que caben en $160 (con el stop del plan si es el trade del plan) · es el
-trade del plan → cumple · el motor, en la vela de tu entrada y en tu sentido, envió la orden → cumple, o la descartó → su
-motivo (punto de referencia, primer IRI, fluidez, consecución, día de Fed…) · el motor no veía ningún setup → `sin_setup`.
+objetivo choca con una zona · el motor, en la vela de tu entrada y en tu sentido, envió la orden → cumple (si no metiste
+más contratos de los que caben en $160 con el stop que el plan da a tu setup), o la descartó → su motivo (punto de referencia, primer IRI, fluidez, consecución, día de Fed…) · el motor no veía ningún setup → `sin_setup`.
 
 | | Octubre 2026 | Noviembre (al 10/11) |
 |---|---|---|

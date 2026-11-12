@@ -10,6 +10,30 @@
 
 ---
 
+## D-053 — La disciplina mide solo las reglas de tu entrada; el Diario ya no tiene casillas
+
+*Afina D-052.*
+
+**Decisión (Kris, 12/11/2026).** *«Medir las reglas únicamente de mi entrada, no vamos a comparar la entrada con el bot…
+quiero quitar el check de sesión, el de fase 2… dejar todo lo máximo de manera automatizada.»*
+- **El juicio no se compara con la operación del bot**, ni para dar por bueno un trade que coincide con ella (`medir.py`,
+  `MEDIR_VERSION` 3). Los contratos se miden con el stop que el plan da a **su** setup en la vela de la entrada.
+  Fuera de la disciplina toda mención al bot: pantalla, visor, Telegram y la sección del Coach.
+- **El Diario no tiene casillas en los días del plan** (desde el 01/10): las reglas las mide el motor. Los días de la
+  etapa 1 conservan las suyas.
+
+**Motivo.** La disciplina es del proceso de Kris: comparar con el bot mezcla dos preguntas. Las dos casillas que
+quedaban (corrida fluida, punto de referencia) ya las juzga el motor en la vela de la entrada.
+
+**Lo que cambia en los números.** Nada en los totales (octubre 10 de 18). Tres trades pasan de «contratos» a «sin setup»
+(08/10, 14/10 y 10/11): con el motor de hoy, en esas entradas no había setup, que es la regla de fondo; antes «contratos»
+saltaba primero.
+
+**Pendiente, no ahora:** comparar con el bot, como métrica mensual de validación de diferencias, aparte de la disciplina
+(`tasks/backlog.md`).
+
+---
+
 ## D-052 — La disciplina pregunta «¿tu trade cumplía las reglas?», no «¿hiciste lo mismo que el bot?»
 
 *Sustituye la medida de D-047.*

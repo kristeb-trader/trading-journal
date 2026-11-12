@@ -118,6 +118,17 @@ const SessionForm = (() => {
   function renderChecklist() {
     const cont = document.getElementById('checklistContainer')
     if (!cont) return
+    // Días del plan (desde el 01/10): sin casillas. Las reglas de tu entrada las mide el motor
+    // (el juicio de medir.py, D-052) y ya no hay nada que marcar a mano (Kris, 12/11, D-053). Los
+    // días de la etapa 1 conservan sus casillas, por si hay que corregir el pasado.
+    const prog = document.querySelector('#section-register .chk-prog')
+    if (medidaDeFecha(document.getElementById('sesionDate')?.value) === 'plan') {
+      cont.innerHTML = `<div class="phase-hint"><i class="ti ti-settings-automation"></i>
+        Las reglas de tu entrada las mide el motor: no hay casillas que marcar. Lo ves en Otros → Disciplina.</div>`
+      prog?.classList.add('hidden')
+      return
+    }
+    prog?.classList.remove('hidden')
     // Preservar marcas actuales (al re-renderizar tras cambiar el setup)
     const prev = {}
     cont.querySelectorAll('input[type="checkbox"]').forEach(c => { prev[c.dataset.clave] = c.checked })

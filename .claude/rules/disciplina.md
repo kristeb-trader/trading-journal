@@ -47,7 +47,9 @@ reglas? El juicio lo escribe **`medir.py`** (`tu_operacion[i].juicio = {cumple, 
   medida nueva carga `DB.getMotorDisciplina()` **y** `DB.getDiscusiones()` y los pasa. Hoy: calendario, Análisis,
   Disciplina, el visor del día y el Coach.
 - **Cuentan trades, no días.** No operar nunca es fallo. Un día en discusión (abierta o cerrada `plan`) no cuenta.
-- **No es «¿hiciste lo mismo que el bot?»**: un trade distinto del del bot que cumple las reglas cuenta a favor.
+- **Solo las reglas de su entrada** (D-053): nada se compara con la operación del bot, ni para dar por bueno un trade
+  que coincide con ella. No vuelvas a meter al bot en la disciplina (ni en la pantalla, el visor, Telegram o el Coach).
+- **El Diario no tiene casillas en los días del plan** (`renderChecklist` de `form.js`): las reglas las mide el motor.
 - Los motivos del motor se reconocen por su frase (`MOTIVOS` de `medir.py`): **si `lector.py` cambia sus frases, se
   revisa esa tabla**; lo que no case cae en `otra` con su texto.
 - `MEDIR_VERSION` entra en la huella de `tu_operacion`: al cambiar el juicio, se sube y `medir_pendientes` vuelve a medir.

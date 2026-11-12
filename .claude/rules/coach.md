@@ -146,8 +146,8 @@ como **Apertura / Zonas / Noticias** (`formatoContexto`). Los días de la etapa 
   que se eligen las reglas de A. En el system, A sigue delante. `analisisTecnico` prepara el contexto **antes** de
   escribir su instrucción, porque la instrucción lleva el foco; `llamarClaude(…, isFirst)` ya no lo rehace.
 - **Foco:** `focoDelDia(juicio, ficha)` (system Etapa 1 **e** instrucción del análisis) y `veredictoEtapa3(juicio)`
-  (system Etapa 3), con el juicio de `juicioDia` (D-052): regla rota → esa regla y por qué; dentro de las reglas sin ser
-  el trade del bot → decirlo («no es indisciplina»); sin trade → muy corto, no es fallo; en discusión → examinar la nota
+  (system Etapa 3), con el juicio de `juicioDia` (D-052): regla rota → esa regla y por qué; dentro de las reglas → corto,
+  a la ejecución (sin compararlo con el bot, D-053); sin trade → muy corto, no es fallo; en discusión → examinar la nota
   de Kris con las velas. Sin juicio (sin ficha, antes del 01/10, etapa 1) no sale nada y todo es como antes.
 - **Plan ligero:** `construirBloquePlan(docs, contextoDia)` → índice de las 34 reglas + `reglasDelDia` enteras (sin la
   tabla de metadatos) + parámetros. `REGLAS_SIEMPRE` y `REGLAS_SETUP` deciden las fijas; las citadas por el motor
