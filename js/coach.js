@@ -402,7 +402,9 @@ Motivo de no entrada: ${sesion.motivo_no_entrada || 'No especificado'}`
     // Análisis del trader
     const analisisTrader = sesion?.analisis_trader || 'No registrado'
 
-    const motorStr = fmtFichaMotor(fichaMotor, sesion, date) + fmtVelas(velasMotor, date)
+    // Un día cerrado a favor de Kris («no estoy de acuerdo» → `plan`, `anulado`): nada de lo que
+    // marcó el motor (Kris, 12/11). Las velas son precios, no el juicio del motor: se quedan.
+    const motorStr = (juicio?.estado === 'anulado' ? '' : fmtFichaMotor(fichaMotor, sesion, date)) + fmtVelas(velasMotor, date)
 
     // Premercado / contexto técnico (futuro continuo: ver sección de interpretación)
     const cAyer = sesion?.precio_cierre_ayer
@@ -831,6 +833,9 @@ ${filas.join('\n')}
     el.classList.add('hidden')
     el.innerHTML = ''
     if (!date || date < CADENA_DESDE || !esDiaHabil(date)) return
+    // Un día cerrado a favor de Kris (`plan`): la tarjeta del motor no sale (12/11).
+    const disc = (await DB.getDiscusiones().catch(() => [])).find(d => d.fecha === date)
+    if (disc?.estado === 'plan' || date !== coachDate) return
 
     let estado
     try { estado = await DB.motorEstado(date) }

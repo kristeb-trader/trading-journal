@@ -99,6 +99,8 @@ con la petición cortada en la página (06/10: «el trade cumplía las reglas»)
 **Después, el mismo día:** Kris cerró a su favor la discusión del 11/11 (`estado = 'plan'`) y pidió que no saliera nada
 del motor. Un día así es ahora `anulado`: gris, «no cuenta», fuera de «En discusión», y sin bloque de disciplina en el
 visor ni línea en el Coach. Comprobado en el preview y con `db.js` sobre la BD (noviembre sigue 0/6, en discusión 0).
+Y tampoco en el Coach: ni la tarjeta «Lo que marcó el motor» ni su sección en el prompt (las velas, que son precios,
+sí). Comprobado con la petición cortada en la página: 11/11 sin ellas, 10/11 con ellas.
 
 ---
 

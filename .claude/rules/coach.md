@@ -155,6 +155,9 @@ como **Apertura / Zonas / Noticias** (`formatoContexto`). Los días de la etapa 
   forma (< 20 reglas al trocearlo), el plan entero.** Si cambia el formato de `## R-xx · Título` en `chaumer/01_Plan/reglas`,
   revisar `trocearReglas`.
 - **Casillas:** sin fila (sin marcar) → «sin marcar: no cuenta», nunca ✗ (D-013, D-040).
+- **Día cerrado a favor de Kris** (`disciplina_discusiones.estado = 'plan'`, juicio `anulado`, 12/11): ni la tarjeta del
+  motor (`renderTarjetaMotor`), ni la sección «LO QUE MARCÓ EL MOTOR», ni la disciplina, ni el foco. Las velas sí: son
+  precios, no el juicio del motor. La ficha sigue eligiendo las reglas del plan ligero (no se ve).
 
 ## Modo prueba (`?modelo=opus`)
 
