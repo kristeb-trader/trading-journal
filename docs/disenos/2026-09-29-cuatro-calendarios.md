@@ -9,6 +9,7 @@
 | v1.1 | 29/09/2026 | **Implementado.** §10 con lo que cambió al construirlo |
 | v1.2 | 30/09/2026 | Dentro de cada calendario, la tarjeta y el total del mes: P&L en grande, puntos debajo (§11) |
 | v1.7 | 27/10/2026 | **Claude se funde en el Bot** (Kris): el cuadro de Claude desaparece y el del Bot enseña lo que operó el bot (`bot_operaciones`, P&L real) y, antes de su primera fila (07/10), lo que marca el motor como **simulado** (borde discontinuo, «SIM», P&L calculado con los contratos que caben en $160). El gráfico es el del motor. Vuelven a ser cuatro cuadros. Historial, checkpoint 2026-10-27f |
+| v1.8 | 12/11/2026 | **Sale del Calendario** (Kris: «volver a simplificar»): el botón Calendario abre directamente el mío y la pantalla de los cuatro pasa a **Otros → Comparador**, con el mismo mes y el mismo filtro de cuentas. «Mío» lleva al Calendario. Historial, checkpoint 2026-11-12b |
 
 ---
 

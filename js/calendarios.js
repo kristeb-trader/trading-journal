@@ -1,5 +1,6 @@
-// Calendarios — la pantalla de los calendarios (Mío · Chaumer · Bot · Backtesting
-// manual) y la vista completa de los que no son el mío.
+// Calendarios — el Comparador (Otros): los cuatro calendarios (Mío · Chaumer · Bot ·
+// Backtesting manual) y la vista completa de los que no son el mío. Hasta el 12/11/2026
+// era la portada del Calendario; ahora el Calendario es solo el mío.
 // Diseño: docs/disenos/2026-09-29-cuatro-calendarios.md. El 27/10 el de Claude (lo que
 // marcó el motor) se fundió en el del Bot: el bot ES el motor, operando.
 //
@@ -12,8 +13,8 @@
 //     motor (D-026): un día sin registrar se pinta 🔒, y su operación ni se pide
 //     ni se enseña. Lo que operó el bot de verdad no espera al registro.
 //   · El mes es UNO para todos y vive en Calendar (getYear / getMonth).
-//   · "Mío" es la pantalla de siempre (#calMio, calendar.js + metrics.js): aquí
-//     solo se resume para su cuadro y para la curva comparada.
+//   · "Mío" es el Calendario (#calMio, calendar.js + metrics.js): aquí solo se
+//     resume para su cuadro y para la curva comparada; abrirlo lleva allí.
 const Calendarios = (() => {
 
   const FUENTES = [
@@ -694,7 +695,7 @@ const Calendarios = (() => {
     const estrecho = window.matchMedia('(max-width: 768px)').matches
     const mes = cap(estrecho ? MES_CORTO[m - 1] : MESES[m - 1])
     const nombre = vista === 'hub' ? '' : `${FUENTE[vista].nombre} · `
-    Nav.setContexto('calendar', `${estrecho && vista !== 'hub' ? '' : nombre}${mes} ${y}`)
+    Nav.setContexto('comparar', `${estrecho && vista !== 'hub' ? '' : nombre}${mes} ${y}`)
   }
 
   function mostrar(v) {
@@ -702,10 +703,9 @@ const Calendarios = (() => {
     ocultarTip()
     cerrarZoom(false)
     $('calHub').classList.toggle('hidden', v !== 'hub')
-    $('calMio').classList.toggle('hidden', v !== 'mio')
-    $('calFuente').classList.toggle('hidden', !(v in FUENTE) || v === 'hub' || v === 'mio')
-    // El filtro de cuentas solo afecta a "Mío": fuera de él y de la principal sobra.
-    $('accountFilterCalendar')?.classList.toggle('hidden', !(v === 'hub' || v === 'mio'))
+    $('calFuente').classList.toggle('hidden', v === 'hub')
+    // El filtro de cuentas solo afecta a "Mío": fuera de la principal sobra.
+    $('accountFilterCalendar')?.classList.toggle('hidden', v !== 'hub')
     Nav.setVolver(v === 'hub' ? null : () => abrir('hub'))
     contexto()
     document.querySelector('.content-area')?.scrollTo?.(0, 0)
@@ -713,16 +713,11 @@ const Calendarios = (() => {
   }
 
   function abrir(v) {
+    // "Mío" es el Calendario: se va allí, con el mismo mes.
+    if (v === 'mio') { cerrarZoom(false); Nav.go('calendar'); return }
     mostrar(v)
     if (v === 'hub') renderHub()
-    else if (v !== 'mio') renderFuente(v)
-    else {
-      // Su curva se dibujó con #calMio oculto (alto 0) y Chart.js no se
-      // recoloca solo al aparecer: se vuelve a pintar ya visible. Metrics pisa
-      // el contexto con el mes a secas, así que se repone después.
-      Metrics.rerender()
-      contexto()
-    }
+    else renderFuente(v)
   }
 
   // ── Vista completa de Chaumer, el Bot y el manual (diseño §5.2) ─────────
@@ -1125,11 +1120,14 @@ const Calendarios = (() => {
     abrir('hub')
   }
 
+  // Calendar avisa de cada cambio de mes o de filtro. Fuera del Comparador no se
+  // pinta (Chart.js, oculto, dibuja a alto 0): al entrar, alEntrar lo repinta.
   function alCambiarMes() {
+    if (typeof Nav !== 'undefined' && Nav.actual() !== 'comparar') return
     cerrarZoom(false)   // la miniatura de origen se va a redibujar
     contexto()
     if (vista === 'hub') renderHub()
-    else if (vista !== 'mio') renderFuente(vista)
+    else renderFuente(vista)
   }
 
   return { init, alEntrar, alCambiarMes, resumenDia, diaVisor, recorrido, abrirVisor, FUENTE, vista: () => vista }

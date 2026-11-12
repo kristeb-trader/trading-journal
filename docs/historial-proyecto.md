@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-12b | El Calendario, solo el mío; los 4 calendarios pasan a Otros → Comparador |
 | 2026-11-12 | El bot entra a mercado si el precio ya está en la entrada al mandar la orden: NinjaTrader rechazaba el stop |
 | 2026-11-12 | La disciplina, solo con las reglas de tu entrada (nada contra el bot); el Diario sin casillas en los días del plan |
 | 2026-11-10c | El secreto del aviso de trade sale del repositorio público: a un archivo del PC y a un secreto del Worker, con un valor nuevo |
@@ -77,6 +78,25 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-12b — El Calendario, solo el mío; los 4 calendarios, al Comparador
+
+Kris: «vamos a volver a simplificar». El botón Calendario abría la pantalla de los cuatro calendarios (Mío · Chaumer ·
+Bot · manual) y había que entrar en «Mío» para ver el de siempre.
+
+- **Calendario** abre directamente el mío (métricas, calendario, curva de equity y desglose), sin pantalla intermedia.
+- **Otros → Comparador** (grupo Seguimiento, violeta): la pantalla de los cuatro tal cual era —cuadros, curva comparada,
+  «Gráficas del día» y la vista completa de Chaumer, el Bot y el manual—. Comparte con el Calendario **el mes** (las
+  flechas de la barra lo mueven en los dos) y el filtro de cuentas, que solo toca a «Mío». Abrir «Mío» desde el
+  Comparador lleva al Calendario, en el mismo mes.
+- El Comparador no se pinta mientras no se ve (cambiar de mes en el Calendario ya no redibuja los cuatro por detrás), y
+  al volver al Calendario su curva se repinta ya visible. Caché del service worker → `v12`.
+
+**Verificado** en la copia local, consola limpia: Calendario abre el mío; Otros → Comparador con sus 4 cuadros, mes en la
+barra y el chevron de volver; ‹ a octubre; Bot → «Bot · Octubre 2026» y volver; «Mío» → Calendario en octubre, curva a
+240 px.
 
 ---
 

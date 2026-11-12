@@ -30,7 +30,8 @@ Lo que no se toca sin aprobación explícita. Una línea cada una; el porqué, e
 - **Sesión Operativa** — nada interactivo dentro de `#sessionFieldset` en modo lectura; los trades
   del día no se filtran por cuenta principal. `.claude/rules/sesion.md`.
 - **Navegación: 4 botones** (Calendario, Análisis, Sesión, Otros; máximo 6: el 7º recorta las etiquetas en móvil).
-  Disciplina y Apex viven en Otros desde el 10/11/2026. Una sección nueva va
+  Disciplina y Apex viven en Otros desde el 10/11/2026, y el Comparador (los 4 calendarios) desde el 12/11: el
+  Calendario es solo el mío. Una sección nueva va
   a `Otros.ITEMS` **y** a `Nav.PADRE` (sin la segunda, la barra se queda apagada).
 - **Un solo título por pantalla**, el de la barra: las secciones no llevan `<h2>`; el dato variable va
   a `Nav.setContexto()` y los controles de sección a `Nav.HERRAMIENTAS`.
@@ -136,7 +137,8 @@ js/visor.js       El visor del día: placa con la fecha, gráfico maximizado, ba
 js/form.js        Pestaña "Diario" de Sesión Operativa
 js/coach.js       Pestaña "Coach IA" (3 etapas) + renderHistorial = "Días anteriores"
 js/calendar.js    Calendario mensual (Mío, en P&L) · js/metrics.js  KPIs + curva (pintarEquity)
-js/calendarios.js La pantalla de los 4 calendarios (Mío · Chaumer · Bot · manual) y la vista de los 3 últimos
+js/calendarios.js El Comparador (Otros): los 4 calendarios (Mío · Chaumer · Bot · manual) y la vista de los 3 últimos;
+                  comparte con calendar.js el mes y el filtro de cuentas
                   · TresGraficas (app.js): las 3 gráficas del día a pantalla completa
 js/charts.js      Sección Análisis · js/disciplina.js  Dashboard de Disciplina
 js/apex.js        Apex Tracker · js/experimentos.js  Laboratorio

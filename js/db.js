@@ -1722,6 +1722,7 @@ const DB = {
       backtesting:  { n: btJornadas, ultimo: btUltima },
       disciplina:   { n: diasMes },
       apex:         { n: apexActivas, quemadas: apexQuemadas },
+      comparar:     { n: 4 },   // Mío · Chaumer · Bot · manual
     }
     _resumenOtros = { t: Date.now(), datos }
     return datos

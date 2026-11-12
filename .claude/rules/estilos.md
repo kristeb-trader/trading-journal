@@ -25,7 +25,7 @@ del mismo grupo se distingan entre sí, no la asociación histórica. Reparto vi
 
 | Grupo | Tarjetas |
 |---|---|
-| Seguimiento | Disciplina `accent` · Apex `warning` (10 nov 2026: salieron de la barra inferior) |
+| Seguimiento | Disciplina `accent` · Apex `warning` (10 nov 2026: salieron de la barra inferior) · Comparador `violet` (12 nov 2026: los 4 calendarios salieron del Calendario) |
 | Consultar | Trades `accent` · Imágenes `violet` · Experimentos `warning` · Chaumer `blue` · Backtesting neutra (24 sep: el único libre era el rojo, y el rojo es stop) |
 | Configurar | Estrategia `warning` · Datos neutro · Fechas `red` |
 

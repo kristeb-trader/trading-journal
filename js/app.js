@@ -430,6 +430,8 @@ const Otros = {
     // las cuatro que se usan a diario. Grupo propio para no repetir color dentro de Consultar.
     { id: 'disciplina',   grupo: 'Seguimiento', color: 'accent', icon: 'ti-checkup-list',  name: 'Disciplina',        desc: 'Cuánto seguiste el plan',           unidad: 'días este mes' },
     { id: 'apex',         grupo: 'Seguimiento', color: 'warning', icon: 'ti-trophy',       name: 'Apex',              desc: 'Tus cuentas de fondeo',             unidad: 'cuentas activas' },
+    // 12 nov 2026: los cuatro calendarios salen del Calendario, que se queda solo con el mío.
+    { id: 'comparar',     grupo: 'Seguimiento', color: 'violet', icon: 'ti-layout-grid',   name: 'Comparador',        desc: 'Tú, Chaumer, el Bot y el manual, mes a mes', unidad: 'calendarios' },
     { id: 'trades',       grupo: 'Consultar',  color: 'accent',  icon: 'ti-list-details',  name: 'Trades',            desc: 'Todas tus operaciones, una a una',  unidad: 'operaciones' },
     { id: 'gallery',      grupo: 'Consultar',  color: 'violet',  icon: 'ti-photo',         name: 'Imágenes',          desc: 'Los gráficos de cada día',          unidad: 'gráficos' },
     // Experimentos era azul; cedió el azul a Chaumer el 19 ago, porque dos
@@ -534,6 +536,7 @@ const Nav = {
     fechas: 'Fechas Especiales',
     chaumer: 'Chaumer',
     backtesting: 'Backtesting',
+    comparar: 'Comparador',
     otros: 'Otros',
   },
   // `coach` e `historial` ya no son secciones: son pestañas de Sesión Operativa.
@@ -547,7 +550,7 @@ const Nav = {
     experimentos: 'otros', trades: 'otros', gallery: 'otros',
     estrategia: 'otros', data: 'otros', fechas: 'otros',
     chaumer: 'otros', backtesting: 'otros',
-    disciplina: 'otros', apex: 'otros',
+    disciplina: 'otros', apex: 'otros', comparar: 'otros',
   },
   initialized: new Set(),
 
@@ -567,6 +570,8 @@ const Nav = {
   // array — el orden aquí no manda, manda el orden del DOM en .header-actions.
   HERRAMIENTAS: {
     calendar:   { filtro: 'accountFilterCalendar', navMes: true },
+    // El Comparador comparte con el Calendario el mes y el filtro de cuentas (este solo toca a «Mío»).
+    comparar:   { filtro: 'accountFilterCalendar', navMes: true },
     analysis:   { filtro: ['analysisPeriod', 'accountFilterAnalysis'], navMes: true },
     trades:     { filtro: 'accountFilterTrades' },
     disciplina: { filtro: 'disciplinaPeriod', navMes: true },
@@ -644,15 +649,16 @@ const Nav = {
       this.initialized.add(sectionId)
       try {
         if (sectionId === 'calendar') {
-          // En paralelo, no en cadena: lo primero que se ve es la pantalla de los
-          // cuatro calendarios, y antes esperaba a que terminaran "Mío" y sus
-          // métricas, que están ocultos. Calendar.init crea el filtro de cuentas en
-          // su parte síncrona, así que ya existe cuando los otros dos lo leen.
-          await Promise.all([Calendar.init(), Metrics.init(), Calendarios.init()])
+          // En paralelo, no en cadena. Calendar.init crea el filtro de cuentas en su
+          // parte síncrona, así que ya existe cuando Metrics lo lee.
+          await Promise.all([Calendar.init(), Metrics.init()])
           // El filtro nace en "todas" y fija su selección guardada al final de
           // Calendar.init: si no es "todas", lo pintado antes se repinta con ella.
-          if (!AccountFilter.isAll('calendar')) { Metrics.rerender(); Calendarios.alCambiarMes() }
+          if (!AccountFilter.isAll('calendar')) Metrics.rerender()
         }
+        // El Comparador usa el mes y el filtro del Calendario, que el arranque ya
+        // inicializó (siempre empieza en el Calendario).
+        if (sectionId === 'comparar') await Calendarios.init()
         if (sectionId === 'trades') await TradesTable.init()
         if (sectionId === 'register') { SessionForm.init(); SessionForm.onShow() }
         if (sectionId === 'gallery') await Gallery.init()
@@ -670,7 +676,11 @@ const Nav = {
         Toast.show('Error cargando sección: ' + err.message, 'error')
       }
     } else if (sectionId === 'calendar') {
-      // El botón Calendario abre siempre la pantalla de los cuatro (diseño §6).
+      // Si el mes cambió desde el Comparador, la curva se dibujó oculta (alto 0) y
+      // Chart.js no se recoloca solo al aparecer: se repinta ya visible.
+      Metrics.rerender()
+    } else if (sectionId === 'comparar') {
+      // Al entrar, siempre la pantalla de los cuatro, con datos frescos.
       Calendarios.alEntrar()
     } else if (sectionId === 'experimentos') {
       Experimentos.reload()
@@ -946,7 +956,7 @@ async function boot() {
 
   // initTabs se conserva por si otra sección usa `.tab-btn`.
   Modal.initTabs()
-  // Y desde la pantalla de los 4 calendarios: el último día hábil (hoy, si lo es).
+  // Y desde el Comparador (los 4 calendarios): el último día hábil (hoy, si lo es).
   document.getElementById('hubTresGraficas')?.addEventListener('click', () => {
     const d = new Date(`${hoyISO()}T12:00:00`)
     while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1)
