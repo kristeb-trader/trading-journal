@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-12 | El bot entra a mercado si el precio ya está en la entrada al mandar la orden: NinjaTrader rechazaba el stop |
 | 2026-11-12 | La disciplina, solo con las reglas de tu entrada (nada contra el bot); el Diario sin casillas en los días del plan |
 | 2026-11-10c | El secreto del aviso de trade sale del repositorio público: a un archivo del PC y a un secreto del Worker, con un valor nuevo |
 | 2026-11-10b | La disciplina pregunta «¿tu trade cumplía las reglas?», no «¿hiciste lo mismo que el bot?» |
@@ -76,6 +77,23 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-12 — El bot entra a mercado si el precio ya está en la entrada
+
+**Lo que pasó.** La vela de las 10:57 (hora Colombia) cerró en su máximo, 28.463,00, y la Continuación alcista tenía la entrada 1 tick
+arriba. Al mandar el stop de compra el precio ya estaba ahí: NinjaTrader lo rechazó («Buy stop … can't be placed below
+the market») y el bot se quedó fuera. El motor la da como TARGET a las 10:58, +27,75 pts. En el histórico, la vela de la
+señal cerró a 1 tick de la entrada en 2 de 38 operaciones (21/10 y hoy).
+
+**Lo que se cambió.** `BotChaumer`, por decisión de Kris: antes de mandar el stop mira el precio; si ya está en la entrada,
+entra **a mercado** con el stop y el objetivo del motor, salvo que el precio haya tocado ya uno de los dos (entonces no entra).
+Si el stop se rechaza igualmente (el precio se movió entre mirar y mandar), hace lo mismo. Una sola vez por orden; el
+deslizamiento y el motivo quedan en la fila de `bot_operaciones` (`diferencia`).
+
+**Comprobado.** `BotChaumer.cs` compila fuera de NinjaTrader, igual que la versión anterior. **Pendiente:** Kris lo copia a
+NinjaTrader y recompila fuera de la ventana; el primer día que pase se mira el registro del bot («A MERCADO»).
 
 ---
 

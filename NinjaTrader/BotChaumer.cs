@@ -143,6 +143,7 @@ namespace NinjaTrader.NinjaScript.Strategies
         private string registroBacktest;            // en el Analyzer, el registro va a un archivo de la pasada
         private Order entrada, stopO, objetivoO, cierreO;
         private bool cierrePedido, cierreEnviado;   // CIERRE_POR_HORA: pedido (stop y objetivo cancelándose) · orden a mercado ya enviada
+        private bool entradaAMercado;               // la entrada ya salió a mercado (el precio estaba en la entrada): una sola vez
         private Fila filaOp;
         private int llenados, salidos;
         private double comision, sumaSalida;
@@ -417,7 +418,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             int qty = (int)Math.Floor(P.RiesgoMax / (o.R * pv) + 1e-9);     // R-04: los contratos que caben, hacia abajo
             fila.Setup = o.Tipo; fila.Direccion = o.Dir; fila.HoraOrden = horaOrden;
             fila.Entrada = o.E; fila.Stop = o.S; fila.Objetivo = o.T; fila.Riesgo = o.R; fila.Contratos = qty;
-            ordenMotor = o;
+            ordenMotor = o; entradaAMercado = false;
             if (qty < 1) { fila.Motivo = "no cabe ni un contrato en RIESGO_MAX"; Guardar(fila); return; }
             if (Modo == ModoBotChaumer.Alerta)
             {
@@ -427,12 +428,42 @@ namespace NinjaTrader.NinjaScript.Strategies
                 Guardar(fila);
                 return;
             }
+            filaOp = fila;
+            if (EntrarAMercadoSiToca(o, qty, "al mandar la orden")) { Guardar(fila); return; }
             SubmitOrderUnmanaged(0, o.Dir > 0 ? OrderAction.Buy : OrderAction.SellShort, OrderType.StopMarket, qty,
                                  0, Instrument.MasterInstrument.RoundToTickSize(o.E), "", N_ENTRADA);
-            filaOp = fila;
             Guardar(fila);
             Log("orden " + o.Tipo + " " + (o.Dir > 0 ? "alcista" : "bajista") + " · " + qty + " × entrada " + MotorChaumer.F2(o.E)
                 + " · stop " + MotorChaumer.F2(o.S) + " · objetivo " + MotorChaumer.F2(o.T));
+        }
+
+        // El precio ya está en la entrada al mandar la orden: un stop ahí lo rechaza NinjaTrader («can't be placed below
+        // the market»). Pasa cuando la vela de la señal cierra a 1 tick de la entrada (12/11/2026, 10:57: el bot se quedó
+        // fuera de un TARGET; también el 21/10). Lo que habría hecho el stop: entrar a mercado, con el stop y el objetivo del
+        // motor, si el precio no ha tocado aún ni el uno ni el otro (Kris, 12/11/2026). El deslizamiento queda en la fila.
+        private bool EntrarAMercadoSiToca(MotorChaumer.Orden o, int qty, string cuando)
+        {
+            if (entradaAMercado || State != State.Realtime || qty < 1) return false;
+            double ask = GetCurrentAsk(0), bid = GetCurrentBid(0);
+            if (ask <= 0 || bid <= 0) return false;
+            Fila f = filaOp ?? fila;
+            double px = o.Dir > 0 ? ask : bid;                          // el precio al que entraría
+            bool llego = o.Dir > 0 ? px >= o.E : px <= o.E;
+            if (!llego) return false;
+            bool dentro = o.Dir > 0 ? (bid > o.S && px < o.T) : (ask < o.S && px > o.T);
+            if (!dentro)
+            {
+                Log("el precio (" + MotorChaumer.F2(px) + ") ya pasó la entrada y llegó al " + (o.Dir > 0 ? (px >= o.T ? "objetivo" : "stop") : (px <= o.T ? "objetivo" : "stop")) + " " + cuando + ": no entro");
+                f.Diferencia = (f.Diferencia == null ? "" : f.Diferencia + " · ") + "el precio ya había pasado la entrada hasta el stop o el objetivo: no entró";
+                return true;                                              // ni stop ni mercado: ese trade ya no se puede tomar
+            }
+            entradaAMercado = true;
+            SubmitOrderUnmanaged(0, o.Dir > 0 ? OrderAction.Buy : OrderAction.SellShort, OrderType.Market, qty, 0, 0, "", N_ENTRADA);
+            f.Diferencia = (f.Diferencia == null ? "" : f.Diferencia + " · ") + "a mercado: el precio ya estaba en la entrada " + cuando;
+            Log("orden " + o.Tipo + " " + (o.Dir > 0 ? "alcista" : "bajista") + " · " + qty + " × A MERCADO (" + MotorChaumer.F2(px)
+                + ", el precio ya estaba en la entrada " + MotorChaumer.F2(o.E) + " " + cuando + ") · stop " + MotorChaumer.F2(o.S)
+                + " · objetivo " + MotorChaumer.F2(o.T));
+            return true;
         }
 
         private bool EntradaViva() { return entrada != null && !Order.IsTerminalState(entrada.OrderState); }
@@ -471,6 +502,11 @@ namespace NinjaTrader.NinjaScript.Strategies
                 Fila f = filaOp ?? fila;
                 if (f != null) { f.Diferencia = (f.Diferencia == null ? "" : f.Diferencia + " · ") + msg; Guardar(f); }
                 if (order.Name != N_ENTRADA) Avisar("¡BotChaumer: " + msg + "! La posición puede estar sin protección.");
+                // El stop de entrada rechazado porque el precio ya llegó (entre mirar el precio y mandarla, se movió)
+                else if (order.OrderType == OrderType.StopMarket && llenados == 0 && ordenMotor != null && !terminado)
+                {
+                    if (EntrarAMercadoSiToca(ordenMotor, order.Quantity, "tras el rechazo") && f != null) Guardar(f);
+                }
             }
             if (order.Name == N_ENTRADA && orderState == OrderState.Cancelled && pendienteTrasCancelar != null && llenados == 0 && !terminado)
             {
