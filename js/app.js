@@ -228,7 +228,8 @@ const Modal = {
     const motor = new Map(fichaMotor ? [[dateStr, { estado: fichaMotor.estado,
       operacion: fichaMotor.ficha?.operacion || null, tu: fichaMotor.ficha?.tu_operacion || null }]] : [])
     const j = juicioDia(sesion, discContexto({ trades: allDayTrades, fechasEsp, motor, discusiones: discusion ? [discusion] : [] }))
-    if (!j || j.estado === 'pendiente') return ''
+    // `anulado`: cerraste la discusión a tu favor (12/11): nada del motor.
+    if (!j || j.estado === 'pendiente' || j.estado === 'anulado') return ''
     const esc = x => String(x ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
     // Solo las reglas de TU entrada (D-053): ni el trade del bot ni si el plan operó.
     if (j.estado === 'sin_trade') return ''
@@ -237,7 +238,7 @@ const Modal = {
     if (j.estado === 'discusion') {
       lbl = 'Disciplina · en discusión'; tono = 'blu'
       txt = `El motor: ${esc(rota ? rota.juicio.texto : 'dentro de las reglas')}.<br>Tú: «${esc(j.discusion.nota || 'sin nota')}»`
-        + (j.discusion.estado === 'plan' ? '<br>Cerrada: tenías razón, no cuenta.' : '<br>No cuenta hasta cerrarla en Disciplina.')
+        + '<br>No cuenta hasta cerrarla en Disciplina.'
     } else if (rota) {
       lbl = 'Disciplina · regla rota'; tono = 'red'
       txt = `<strong>${esc(rota.juicio.texto[0].toUpperCase() + rota.juicio.texto.slice(1))}</strong> — ${esc([sesion.setup, rota.hora].filter(Boolean).join(' '))}.`

@@ -61,7 +61,7 @@ más contratos de los que caben en $160 con el stop que el plan da a tu setup), 
 - **La fuga** = la regla más rota del período (empate: la más reciente), con sus días y las notas de Kris de esos días.
 - **La racha** = trades seguidos dentro de las reglas, desde el más reciente.
 - **«No estoy de acuerdo»** (visor del día o Telegram): `disciplina_discusiones`. Abierta, no cuenta; se cierra con
-  `motor` (vuelve a contar) o `plan` (Kris tenía razón: no cuenta).
+  `motor` (vuelve a contar) o `plan` (Kris tenía razón: el día sale gris, «no cuenta», sin nada del motor).
 - **Un período, una medida**, como con las etapas: la de su día más reciente. Septiembre se mide con las reglas (24–30/09).
 - Si se corrige el motor, las fichas se rehacen y el juicio cambia solo: se calcula, no se guarda aparte.
 

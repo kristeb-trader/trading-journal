@@ -429,7 +429,8 @@ const REGLA_TXT = {
 const reglaTxt = r => REGLA_TXT[r] || REGLA_TXT.otra
 
 // El juicio de un día → null (no entra: finde o sin conexión) o
-// { estado: 'sin_trade' | 'pendiente' | 'discusion' | 'cuenta', ops: [{ hora, sentido, juicio }],
+// { estado: 'sin_trade' | 'pendiente' | 'discusion' | 'anulado' | 'cuenta', ops: [{ hora, sentido, juicio }],
+// `anulado`: la discusión se cerró dándole la razón a Kris (`plan`): no cuenta y no se enseña nada del motor.
 //   plan: la operación del motor o null, discusion: { estado, nota } o null }.
 // `pendiente`: hay trade pero aún no hay juicio (sin ficha, o el candado: día sin registrar).
 function juicioDia(s, opts) {
@@ -442,8 +443,8 @@ function juicioDia(s, opts) {
   if (!trades.length) return { estado: 'sin_trade', ops: [], plan, discusion }
   const ops = _opsDia(m).filter(op => op.juicio)
   if (!m || m.estado !== 'ok' || ops.length < trades.length) return { estado: 'pendiente', ops, plan, discusion }
-  const discute = discusion && discusion.estado !== 'motor'   // abierta, o Kris tenía razón
-  return { estado: discute ? 'discusion' : 'cuenta', ops, plan, discusion }
+  if (discusion && discusion.estado === 'plan') return { estado: 'anulado', ops: [], plan: null, discusion }
+  return { estado: discusion && discusion.estado === 'abierta' ? 'discusion' : 'cuenta', ops, plan, discusion }
 }
 
 // Todo lo de un período con la medida del plan: los días, el %, la racha y la fuga.

@@ -144,7 +144,7 @@ Noticias: <noticia relevante del día, o "Sin noticias">`
   // da el motor (medir.py); el Coach aporta donde el motor no llega —por qué entró, qué vio, el
   // error—. Lo usan los dos sitios del formato (system e instrucción), como `formatoContexto`.
   function focoDelDia(j, ficha) {
-    if (!j || j.estado === 'pendiente') return ''
+    if (!j || j.estado === 'pendiente' || j.estado === 'anulado') return ''
     // Solo las reglas de SU entrada (12/11, D-053): la disciplina no se compara con el bot.
     const rota = j.ops.find(o => !o.juicio.cumple)
     let foco
@@ -166,7 +166,7 @@ Noticias: <noticia relevante del día, o "Sin noticias">`
   // Cómo empieza el VEREDICTO del diagnóstico según el juicio del motor (los días sin entrada no
   // son ni válidos ni inválidos: el parser enseña el texto tal cual).
   function veredictoEtapa3(j) {
-    if (!j || j.estado === 'pendiente') return ''
+    if (!j || j.estado === 'pendiente' || j.estado === 'anulado') return ''
     const rota = j.ops.find(o => !o.juicio.cumple)
     const inicio = j.estado === 'sin_trade'
       ? '«SIN ENTRADA — no operar no es un fallo»'
@@ -347,10 +347,10 @@ Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes.
     // La disciplina del día: un HECHO calculado por el sistema, igual que en el dashboard
     // (db.js). Va en el bloque B: es del día.
     const disciplinaPlanStr = (() => {
-      if (!juicio || juicio.estado === 'pendiente') return ''
+      if (!juicio || juicio.estado === 'pendiente' || juicio.estado === 'anulado') return ''
       const lineas = juicio.ops.map(o => `  ${o.juicio.cumple ? '✓' : '✗'} Trade de las ${o.hora}: ${o.juicio.cumple ? 'dentro de las reglas' : 'regla rota'} — ${o.juicio.texto}.`)
       if (juicio.estado === 'sin_trade') lineas.push('  No operó: no operar nunca es un fallo.')
-      if (juicio.discusion && juicio.discusion.estado !== 'motor') lineas.push(`  EN DISCUSIÓN — el trader no está de acuerdo con el motor: «${juicio.discusion.nota || 'sin nota'}».`)
+      if (juicio.estado === 'discusion') lineas.push(`  EN DISCUSIÓN — el trader no está de acuerdo con el motor: «${juicio.discusion.nota || 'sin nota'}».`)
       return `
 
 Disciplina del día (VERIFICADO POR DATOS con el motor; desde el 01/10 es la medida de la disciplina):

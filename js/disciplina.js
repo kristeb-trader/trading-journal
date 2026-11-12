@@ -517,6 +517,7 @@ const Disciplina = (() => {
       tit: 'No operaste: nunca es fallo' }
     if (j.estado === 'pendiente') return { tono: 'n', corto: 'pendiente', tit: 'Aún sin el juicio del motor' }
     if (j.estado === 'discusion') return { tono: 'b', corto: 'en discusión', tit: j.discusion?.nota || 'En discusión' }
+    if (j.estado === 'anulado') return { tono: 'n', corto: 'no cuenta', tit: 'Cerraste la discusión a tu favor: no cuenta' }
     const rota = j.ops.find(op => !op.juicio.cumple)
     if (!rota) return { tono: 'g', corto: 'dentro',
       tit: j.ops.map(op => op.juicio.texto).join(' · ') }
@@ -578,18 +579,16 @@ const Disciplina = (() => {
       <div class="dd-sec-head"><span class="dd-sec-num">02</span><span class="dd-sec-title">En discusión</span><div class="dd-sec-line"></div></div>
       <div class="dd-panel">${p.enDiscusion.map(x => {
         const rota = x.j.ops.find(op => !op.juicio.cumple)
-        const cerrada = x.j.discusion.estado === 'plan'
         return `
           <div class="dd-disc">
             <div class="dd-disc-txt" data-dia="${x.fecha}" title="Ver el día">
               <b>${fechaCorta(x.fecha)}</b> · el motor: ${esc(rota ? rota.juicio.texto : 'dentro de las reglas')}
               <div class="dd-disc-nota">${x.j.discusion.nota ? `Tú: «${esc(x.j.discusion.nota)}»` : 'Sin nota'}</div>
             </div>
-            ${cerrada ? '<span class="dd-disc-cerrada">Tenías razón: no cuenta</span>' : `
             <div class="dd-disc-bts">
               <button type="button" class="dd-btn" data-cerrar="${x.fecha}" data-estado="motor">El motor tenía razón</button>
               <button type="button" class="dd-btn" data-cerrar="${x.fecha}" data-estado="plan">Tenía yo razón</button>
-            </div>`}
+            </div>
           </div>`
       }).join('')}</div>` : ''
 
