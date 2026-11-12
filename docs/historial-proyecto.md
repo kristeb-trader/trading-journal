@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-12c | El visor del día: la tira de días, oculta tras «Días» (o D), para saltar a cualquier día |
 | 2026-11-12b | El Calendario, solo el mío; los 4 calendarios pasan a Otros → Comparador |
 | 2026-11-12 | El bot entra a mercado si el precio ya está en la entrada al mandar la orden: NinjaTrader rechazaba el stop |
 | 2026-11-12 | La disciplina, solo con las reglas de tu entrada (nada contra el bot); el Diario sin casillas en los días del plan |
@@ -78,6 +79,25 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-12c — El visor del día: la tira de días
+
+Kris eligió la **opción B** del boceto (A: la tira siempre a la vista, a costa de ~50 px de gráfico; B: oculta hasta
+pedirla).
+
+- Junto a «Análisis del día», un enlace igual de discreto, **«Días»** (o la tecla **D**), abre bajo el banner una fila con
+  una miniatura por día del recorrido: el gráfico en 240 px (`imgOpt(url, 240)`, nuevo escalón; perezosa, solo baja la
+  que se ve), la fecha, y el **borde del resultado** (verde target, rojo stop, gris el resto). El día abierto va
+  resaltado y centrado; **un clic salta a ese día**.
+- **Recuerda** si se dejó abierta (`localStorage`, `visorTira`); cerrada, el gráfico conserva todo su alto.
+- Los bordes salen de `Calendarios.tonosMes(fuente, año, mes)`: una lectura por mes, no una por miniatura. Desde Trades
+  la lista no trae las URLs: la miniatura enseña su gráfico en cuanto ese día se ha visto.
+
+**Verificado** en la copia local, consola limpia: 18/08 con 45 días, 41 miniaturas a 240 px; clic en la 3.ª → 14/08,
+«3 de 45»; cerrar y reabrir el visor la mantiene abierta; «Días» la cierra y guarda `0`; móvil a 375 px sin scroll
+horizontal.
 
 ---
 

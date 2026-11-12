@@ -966,6 +966,15 @@ const Calendarios = (() => {
     return { res, tono: rb.slice(2), setup: esc(setup) }   // setup ya escapado: va a innerHTML
   }
 
+  // El tono de cada día de un mes ('t' · 's' · 'o'…), para los bordes de la tira de días del visor.
+  // Un mes de una vez: pedir día a día repetiría la lectura del mes por cada miniatura. 🔒 = sin tono.
+  async function tonosMes(id, y, m) {
+    const dias = id === 'mio' ? await diasMio(y, m) : await diasFuente(id, y, m)
+    const out = {}
+    Object.values(dias || {}).forEach(d => { if (d.estado !== 'bloqueado') out[d.fecha] = etiquetaDe(d)[1].slice(2) })
+    return out
+  }
+
   // ── El visor del día (Visor, visor.js) ──────────────────────────────────
   // Lo que el visor necesita de cada calendario: la LISTA de días que recorre, y de cada día el gráfico,
   // el banner (resultado · puntos · contratos · P&L · setup, con el tono del resultado) y el análisis,
@@ -1130,5 +1139,5 @@ const Calendarios = (() => {
     else renderFuente(vista)
   }
 
-  return { init, alEntrar, alCambiarMes, resumenDia, diaVisor, recorrido, abrirVisor, FUENTE, vista: () => vista }
+  return { init, alEntrar, alCambiarMes, resumenDia, diaVisor, tonosMes, recorrido, abrirVisor, FUENTE, vista: () => vista }
 })()

@@ -6011,6 +6011,32 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .vs-mas:hover { color: var(--text2); }
 .vs-mas i { transition: transform var(--transition); }
 .vs-mas.abierta i { transform: rotate(180deg); }
+.vs-enlaces { display: flex; justify-content: center; gap: 6px; }
+/* «Días» no gira su icono: abierta, se enciende como un interruptor. */
+.vs-dias.abierta { color: var(--text); }
+.vs-dias.abierta i { transform: none; }
+/* La tira de días (opción B, 12/11/2026): una fila con scroll horizontal; el borde, el resultado del día. */
+.vs-tira {
+  width: 100%; display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px 4px;
+  scroll-snap-type: x proximity; scrollbar-width: thin;
+}
+.vs-mini {
+  flex: 0 0 auto; width: 92px; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: none; border: 0; padding: 0; cursor: pointer; color: var(--text3); font-size: 0.68rem;
+  scroll-snap-align: center; transition: color var(--transition);
+}
+.vs-mini-img {
+  width: 100%; height: 44px; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  background: var(--bg3); border: 2px solid var(--text3); transition: transform var(--transition), border-color var(--transition);
+}
+.vs-mini-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vs-mini-img i { font-size: 1rem; color: var(--text3); }
+.vs-mini.tone-t .vs-mini-img { border-color: var(--accent); }
+.vs-mini.tone-s .vs-mini-img { border-color: var(--red); }
+.vs-mini:hover { color: var(--text2); }
+.vs-mini:hover .vs-mini-img { transform: translateY(-2px); }
+.vs-mini.actual { color: var(--text); font-weight: 700; }
+.vs-mini.actual .vs-mini-img { outline: 2px solid var(--text); outline-offset: 2px; }
 /* La hoja del análisis: sube desde abajo, por encima del gráfico, con su propio scroll. */
 .vs-hoja {
   position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 2;
@@ -6055,6 +6081,8 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
   .vs-banner .mh-val { font-size: 1.1rem; }
   .vs-hoja { max-height: 85vh; }
   .vs-hoja-cuerpo { padding: 0 14px 22px; }
+  .vs-mini { width: 70px; }
+  .vs-mini-img { height: 36px; }
 }
 
 /* ── Las 3 gráficas del día (TresGraficas, app.js) ─────────────────────────

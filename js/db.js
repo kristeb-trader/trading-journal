@@ -248,7 +248,8 @@ function puntosTrade(t) {
 // de Cloudinary y la del navegador sirvan a todas las pantallas. Una URL que no es de Cloudinary, o que ya lleva
 // su transformación (la miniatura de la Galería), se devuelve tal cual. `ancho` en píxeles reales; sin él, el de
 // la pantalla.
-const IMG_ESCALONES = [800, 1200, 1600, 2000, 2560]
+// 240: las miniaturas de la tira de días del visor. Solo se pide a propósito (imgOpt(url, 240)).
+const IMG_ESCALONES = [240, 800, 1200, 1600, 2000, 2560]
 function imgOpt(url, ancho = null) {
   if (!url || !/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(url)) return url
   if (/\/upload\/(?!v\d+\/)[a-z]{1,3}_[^/]*\//.test(url)) return url

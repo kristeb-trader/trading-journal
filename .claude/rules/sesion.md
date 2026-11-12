@@ -57,6 +57,8 @@ gráfico maximizado, el banner del resultado y el análisis (disciplina, Coach, 
 se pide al abrirla. Sustituyó a la vista del día con gráfico fijo (`Modal.openDay`) y a la lupa: enseñaban
 la imagen dos veces. Recorre la lista desde la que se entró: el calendario, **lo filtrado en Trades**,
 Disciplina. Los días de cada fuente salen de `Calendarios.diaVisor` / `recorrido`.
+La **tira de días** (12/11/2026) se abre con «Días» o D y recuerda su estado; sus bordes, de
+`Calendarios.tonosMes`.
 
 **Pendiente:** un ítem del checklist tumbado por un error se ve igual que uno nunca marcado.
 `_checklistDia` ya expone `roto` para distinguirlos ("marcado, pero el diagnóstico lo

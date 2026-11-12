@@ -10,6 +10,8 @@
 // cierra la hoja y, otro Esc, el visor. El día de antes y el de después se piden por adelantado.
 // Un clic en el gráfico (o Z) lo acerca al punto clicado y se recorre moviendo el ratón o el dedo; otro clic
 // lo devuelve. El botón «atrás» del celular cierra el visor en vez de salir de la app.
+// La tira de días (12/11/2026, opción B): oculta tras el enlace «Días» (o D), una miniatura por día con el
+// borde de su resultado; un clic salta a ese día. Recuerda si se dejó abierta.
 const Visor = {
   _el: null,
   _items: [],       // [{ fecha, fuente, url? }], del más viejo al más nuevo
@@ -20,12 +22,16 @@ const Visor = {
   _hoja: false,     // la hoja del análisis, abierta (se queda abierta al pasar de día)
   _zoom: false,     // el gráfico, acercado
   _url: null,       // la URL original del gráfico que se ve (para pedirlo en grande al acercar)
+  _tira: false,     // la tira de días, abierta (se recuerda entre aperturas: localStorage)
+  _tonos: null,     // `${fuente}|AAAA-MM` → Promise<{ fecha: tono }>, por apertura
+  TIRA_KEY: 'visorTira',
 
   // items: la lista o una promesa de ella. actual: { fecha, fuente } con el que se abre, aunque la lista
   // aún no haya llegado. titulo: de dónde viene el recorrido («Mío», «Trades · Reingreso»).
   abrir({ items, actual, titulo = '' }) {
     if (!this._el) this._montar()
     this._cache = new Map()
+    this._tonos = new Map()
     this._items = [actual]
     this._i = 0
     this._cargada = false
@@ -35,7 +41,9 @@ const Visor = {
     if (!this.abierto() && history.state?.visor !== 1) history.pushState({ visor: 1 }, '')
     this._el.classList.remove('hidden')
     document.body.classList.add('modal-open')
+    try { this._tira = localStorage.getItem(this.TIRA_KEY) === '1' } catch { this._tira = false }
     this._pintarHoja()
+    this._pintarTira()
     this._pintar()
     Promise.resolve(items).then(lista => {
       if (this._el.classList.contains('hidden') || this._items[0] !== actual) return
@@ -51,6 +59,7 @@ const Visor = {
       this._cargada = true
       this._cabecera()
       this._precargar()
+      this._pintarTira()
     }).catch(err => console.warn('[visor] lista:', err))
   },
 
@@ -100,7 +109,11 @@ const Visor = {
       </div>
       <footer class="vs-abajo">
         <div class="mh-box vs-banner tone-o"></div>
-        <button class="vs-mas" type="button" title="Análisis del día (A)"><i class="ti ti-chevron-up"></i> <span>Análisis del día</span></button>
+        <div class="vs-tira hidden" role="list" aria-label="Días"></div>
+        <div class="vs-enlaces">
+          <button class="vs-mas" type="button" title="Análisis del día (A)"><i class="ti ti-chevron-up"></i> <span>Análisis del día</span></button>
+          <button class="vs-mas vs-dias" type="button" title="Todos los días, en miniatura (D)" aria-pressed="false"><i class="ti ti-layout-columns"></i> <span>Días</span></button>
+        </div>
       </footer>
       <aside class="vs-hoja hidden" aria-label="Análisis del día">
         <div class="vs-hoja-cab">
@@ -115,6 +128,8 @@ const Visor = {
       if (e.target === el || e.target.closest('.vs-x')) this.cerrar()
       else if (e.target.closest('.ld-ant')) this._mover(-1)
       else if (e.target.closest('.ld-sig')) this._mover(1)
+      else if (e.target.closest('.vs-dias')) this._alternarTira()
+      else if (e.target.closest('.vs-mini')) this._ir(+e.target.closest('.vs-mini').dataset.i)
       else if (e.target.closest('.vs-mas') || e.target.closest('.vs-hoja-x')) this._alternarHoja()
       else if (e.target.closest('.vs-tres')) TresGraficas.open(this._items[this._i].fecha)
     })
@@ -142,6 +157,7 @@ const Visor = {
         ArrowRight: () => this._mover(1),
         a: () => this._alternarHoja(), A: () => this._alternarHoja(),
         z: () => this._alternarZoom(), Z: () => this._alternarZoom(),
+        d: () => this._alternarTira(), D: () => this._alternarTira(),
       }[e.key]
       if (!tecla) return
       e.stopImmediatePropagation()
@@ -171,9 +187,10 @@ const Visor = {
     el.style.setProperty('--ld-alto', `${Math.max(120, Math.floor(libre))}px`)
   },
 
-  _mover(d) {
-    const n = this._i + d
-    if (n < 0 || n >= this._items.length) return
+  _mover(d) { this._ir(this._i + d) },
+
+  _ir(n) {
+    if (!(n >= 0 && n < this._items.length) || n === this._i) return
     this._quitarZoom()
     this._i = n
     this._pintar()
@@ -237,6 +254,7 @@ const Visor = {
   async _pintar() {
     const el = this._el, it = this._items[this._i], token = ++this._token
     const largo = this._cabecera()
+    this._marcarTira()
     this._entra(el.querySelector('.ld-arriba'))
     // El gráfico sale ya si la lista trae su URL; si no (Trades), en cuanto llega el día.
     if (it.url) this._ponerImagen(it.url, largo)
@@ -247,7 +265,11 @@ const Visor = {
 
     const d = await this._dia(it)
     if (token !== this._token) return   // ya se pasó a otro día
-    if (!it.url) this._ponerImagen(d.url, largo)
+    if (!it.url) {
+      this._ponerImagen(d.url, largo)
+      // Trades no trae las URLs: el día ya visto pone su gráfico en su miniatura.
+      if (d.url) { it.url = d.url; this._miniImagen(this._i) }
+    }
     const banner = el.querySelector('.vs-banner')
     banner.className = `mh-box vs-banner tone-${d.tono || 'o'}`
     banner.innerHTML = d.celdas || ''
@@ -290,6 +312,73 @@ const Visor = {
     const y = (p.clientY - m.top - img.offsetTop) / img.offsetHeight
     const pc = v => `${Math.round(Math.min(1, Math.max(0, v)) * 1000) / 10}%`
     img.style.transformOrigin = `${pc(x)} ${pc(y)}`
+  },
+
+  // ── La tira de días ──
+  // Una miniatura por día del recorrido (imagen de 240 px, perezosa: solo baja la que se ve), con la fecha y
+  // el borde del resultado. El día abierto, resaltado y centrado. Abierta, le quita alto al gráfico (_medir).
+  _alternarTira() {
+    this._tira = !this._tira
+    try { localStorage.setItem(this.TIRA_KEY, this._tira ? '1' : '0') } catch {}
+    this._pintarTira()
+  },
+
+  _pintarTira() {
+    const el = this._el, tira = el.querySelector('.vs-tira'), btn = el.querySelector('.vs-dias')
+    tira.classList.toggle('hidden', !this._tira)
+    btn.classList.toggle('abierta', this._tira)
+    btn.setAttribute('aria-pressed', String(this._tira))
+    if (!this._tira) { tira.innerHTML = ''; return }
+    const dm = f => `${f.slice(8)}/${f.slice(5, 7)}`
+    tira.innerHTML = this._items.map((it, i) => `
+      <button type="button" class="vs-mini" role="listitem" data-i="${i}" title="${dm(it.fecha)}/${it.fecha.slice(0, 4)}">
+        <span class="vs-mini-img">${it.url ? `<img loading="lazy" alt="" src="${imgOpt(it.url, 240)}">` : '<i class="ti ti-photo-off"></i>'}</span>
+        <span class="vs-mini-f">${dm(it.fecha)}</span>
+      </button>`).join('')
+    this._marcarTira()
+    this._tonosTira()
+  },
+
+  _miniImagen(i) {
+    const caja = this._el.querySelector(`.vs-mini[data-i="${i}"] .vs-mini-img`), it = this._items[i]
+    if (caja && it?.url) caja.innerHTML = `<img loading="lazy" alt="" src="${imgOpt(it.url, 240)}">`
+  },
+
+  // El día abierto, resaltado y centrado en la tira.
+  _marcarTira() {
+    if (!this._tira) return
+    const tira = this._el.querySelector('.vs-tira')
+    tira.querySelectorAll('.vs-mini.actual').forEach(b => { b.classList.remove('actual'); b.removeAttribute('aria-current') })
+    const b = tira.querySelector(`.vs-mini[data-i="${this._i}"]`)
+    if (!b) return
+    b.classList.add('actual')
+    b.setAttribute('aria-current', 'true')
+    tira.scrollTo({ left: b.offsetLeft - (tira.clientWidth - b.offsetWidth) / 2,
+                    behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+  },
+
+  // Los bordes: el tono de cada día, pedido por mes y fuente (una lectura por mes, no por día).
+  _tonosTira() {
+    const grupos = new Map()
+    this._items.forEach((it, i) => {
+      const k = `${it.fuente}|${it.fecha.slice(0, 7)}`
+      if (!grupos.has(k)) grupos.set(k, [])
+      grupos.get(k).push(i)
+    })
+    const items = this._items
+    grupos.forEach((idx, k) => {
+      if (!this._tonos.has(k)) {
+        const [fuente, ym] = k.split('|'), [y, m] = ym.split('-').map(Number)
+        this._tonos.set(k, Calendarios.tonosMes(fuente, y, m).catch(err => { console.warn('[visor] tonos', k, err); return {} }))
+      }
+      this._tonos.get(k).then(tonos => {
+        if (this._items !== items || !this._tira) return
+        idx.forEach(i => {
+          const t = tonos[items[i].fecha]
+          if (t) this._el.querySelector(`.vs-mini[data-i="${i}"]`)?.classList.add(`tone-${t}`)
+        })
+      })
+    })
   },
 
   // ── La hoja del análisis ──
