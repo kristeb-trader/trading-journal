@@ -24,13 +24,13 @@ El análisis del chat «Navegación principal» (10/11) ya había diagnosticado 
 
 | # | Decisión | Cuándo |
 |---|---|---|
-| 1 | **Cristal claro y cristal oscuro, los dos**, con un botón para cambiar. Se recuerda en el dispositivo | 13/11 | |
-| 2 | **Escritorio: barra lateral con todas las pantallas a la vista**, por grupos, y plegable a iconos | 13/11 | |
-| 3 | **Celular: barra de abajo con muesca central y botón flotante «+»** (registrar la sesión), solo iconos, el activo en verde con una raya que se desliza | 13/11 | |
-| 4 | **La meta del mes no es dinero: es cumplir las reglas al máximo.** El medidor enseña la disciplina del mes; la meta es el 100 % | 13/11 | |
-| 5 | **El buscador encuentra un día, un setup, un error o una observación** | 13/11 | |
-| 6 | **Primero todo lo visual; después, en otra fase, la revisión del «back»** | 13/11 | |
-| 7 | **De los dos temas, el que más le gusta es el oscuro**: es el que se abre por defecto | 15/11 | |
+| 1 | **Cristal claro y cristal oscuro, los dos**, con un botón para cambiar. Se recuerda en el dispositivo | 13/11 |
+| 2 | **Escritorio: barra lateral con todas las pantallas a la vista**, por grupos, y plegable a iconos | 13/11 |
+| 3 | **Celular: barra de abajo con muesca central y botón flotante «+»** (registrar la sesión), solo iconos, el activo en verde con una raya que se desliza | 13/11 |
+| 4 | **La meta del mes no es dinero: es cumplir las reglas al máximo.** El medidor enseña la disciplina del mes; la meta es el 100 % | 13/11 |
+| 5 | **El buscador encuentra un día, un setup, un error o una observación** | 13/11 |
+| 6 | **Primero todo lo visual; después, en otra fase, la revisión del «back»** | 13/11 |
+| 7 | **De los dos temas, el que más le gusta es el oscuro**: es el que se abre por defecto | 15/11 |
 | 8 | **La barra del celular: translúcida, con efectos e iconos propios** (§4) | 15/11 |
 | 9 | **Antes de tocar nada, copia de seguridad del diseño anterior** (hecha: la etiqueta de arriba) | 15/11 |
 
