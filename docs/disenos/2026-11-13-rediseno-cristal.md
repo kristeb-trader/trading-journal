@@ -1,6 +1,6 @@
 # Rediseño visual «Cristal» y navegación nueva
 
-**Versión:** v1.2 · **Estado:** ✅ APROBADO por Kris (15/11/2026) · Sin implementar.
+**Versión:** v1.3 · **Estado:** ✅ APROBADO por Kris (15/11/2026; la maqueta 8 y la isla, el 16/11) · En marcha: fase 0.
 **Copia de seguridad del diseño anterior:** etiqueta de git `diseno-anterior-2026-11-13` (commit `a5feff0`), subida a GitHub.
 **Maqueta de referencia:** `design-mockups/mockup-8.html` (en lo visual manda la maqueta sobre este texto).
 **Alcance:** solo aspecto y navegación. No cambia datos, cálculos ni base de datos. Lo que no es visual queda para
@@ -149,7 +149,7 @@ celular (en el celular, una debajo de otra). La variación de cada indicador sig
 | **«Esta semana»** | Una columna por día con su resultado | Pequeño |
 | **El día por pasos** (en Sesión) | Niveles → Noticias → Operación → Diario → Coach, con el pendiente resaltado | Mediano: hay que leer el estado de cada paso |
 | **Variación de cada indicador** («+6 pts») | Contra el mes anterior | Pequeño, si se aprueba contra qué se compara |
-| **La isla con el estado en vivo** (nueva en la maqueta 8, sin aprobar aún) | Bot armado o no, qué marcó el motor, pasos del día | Mediano: lee `bot_operaciones` y `motor_estado` de hoy |
+| **La isla con el estado en vivo** (maqueta 8; **aprobada por Kris el 16/11**) | Bot armado o no, qué marcó el motor, pasos del día | Mediano: lee `bot_operaciones` y `motor_estado` de hoy |
 
 ## 7 · Riesgos
 

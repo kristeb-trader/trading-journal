@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-11-15
+**Última actualización:** 2026-11-16
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-16 | Rediseño «Cristal», fase 0 (1): la rama se publica en `/nuevo/` para probarla; `visor.js`, al modo sin conexión |
 | 2026-11-15 | Rediseño «Cristal»: diseño aprobado por fases, maqueta de referencia y copia de seguridad del diseño anterior |
 | 2026-11-12c | El visor del día: la tira de días, oculta tras «Días» (o D), para saltar a cualquier día |
 | 2026-11-12b | El Calendario, solo el mío; los 4 calendarios pasan a Otros → Comparador |
@@ -80,6 +81,18 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-16 — Rediseño «Cristal», fase 0 (1): la dirección de prueba `/nuevo/` y el visor sin conexión
+
+Kris aprobó la maqueta 8 y la isla. El rediseño se hace en la rama `rediseno-cristal`; producción no cambia.
+
+- **`/nuevo/`:** el workflow de publicación copia además la rama `rediseno-cristal` a la subcarpeta `nuevo/` del
+  sitio, así Kris prueba el rediseño en su celular con sus datos (misma sesión: es el mismo origen). En la rama, un
+  workflow pequeño (`avisar-nuevo.yml`) relanza la publicación en cada push. Los dos se quitan al fundir la rama.
+- **`sw.js`:** faltaba `js/visor.js` en `APP_SHELL` desde el 03/11 (el visor no estaba en la primera visita sin
+  conexión). Añadido; caché → `v14`.
 
 ---
 
