@@ -4,27 +4,60 @@
     {
       "name": "journal",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["-y", "serve", "-l", "3210"],
+      "runtimeArgs": [
+        "-y",
+        "serve",
+        "-l",
+        "3210"
+      ],
       "port": 3210
     },
     {
       "name": "journal-verif",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["-y", "serve", "-l", "3211"],
+      "runtimeArgs": [
+        "-y",
+        "serve",
+        "-l",
+        "3211"
+      ],
       "port": 3211
     },
     {
       "name": "journal-auto",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["-y", "serve"],
+      "runtimeArgs": [
+        "-y",
+        "serve"
+      ],
       "autoPort": true,
       "port": 3212
     },
     {
       "name": "portal",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "chaumer/04_Web", "--", "--port", "4321"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "chaumer/04_Web",
+        "--",
+        "--port",
+        "4321"
+      ],
       "port": 4321
+    },
+    {
+      "name": "cristal",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "-y",
+        "serve",
+        "-l",
+        "3214",
+        "E:/Proyectos/Trading Journal cristal"
+      ],
+      "port": 3214
     }
   ]
 }
