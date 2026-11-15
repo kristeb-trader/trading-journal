@@ -15,6 +15,13 @@
   <meta name="apple-mobile-web-app-title" content="Trading Journal">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
+  <!-- Manrope: la fuente del rediseño «Cristal» -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+  <!-- La versión de prueba del rediseño se publica en …/nuevo/: lleva una banda que lo dice -->
+  <script>if (location.pathname.includes('/nuevo/')) document.documentElement.dataset.nuevo = '1'</script>
+
   <!-- Tabler Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 
@@ -30,6 +37,9 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+
+  <!-- El fondo vivo del rediseño «Cristal»: tres luces y un grano (css/styles.css, «El fondo vivo») -->
+  <div class="fondo" id="fondo" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i><i class="grano"></i></div>
 
   <!-- ── Login gate ───────────────────────────────────────────────────── -->
   <div class="login-gate hidden" id="loginGate">

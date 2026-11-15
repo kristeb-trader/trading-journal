@@ -1,0 +1,32 @@
+name: Publicar el diseño nuevo
+
+# Vive SOLO en la rama rediseno-cristal. La publicación la hace siempre main
+# (publicar-journal.yml copia esta rama a /nuevo/); aquí solo se le avisa de que hay cambios.
+# Se borra al fundir la rama en main. Diseño: docs/disenos/2026-11-13-rediseno-cristal.md.
+
+on:
+  push:
+    branches: [rediseno-cristal]
+    paths:
+      - 'index.html'
+      - 'js/**'
+      - 'css/**'
+      - 'icons/**'
+      - 'favicon.svg'
+      - 'manifest.json'
+      - 'sw.js'
+
+permissions:
+  actions: write
+
+jobs:
+  avisar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Relanzar la publicación desde main
+        run: |
+          curl -sS -f -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/publicar-journal.yml/dispatches" \
+            -d '{"ref":"main"}'

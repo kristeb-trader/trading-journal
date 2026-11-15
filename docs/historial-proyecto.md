@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-16b | Rediseño «Cristal», fase 0 (2), en la rama: tokens del tema oscuro, Manrope y el fondo vivo |
 | 2026-11-16 | Rediseño «Cristal», fase 0 (1): la rama se publica en `/nuevo/` para probarla; `visor.js`, al modo sin conexión |
 | 2026-11-15 | Rediseño «Cristal»: diseño aprobado por fases, maqueta de referencia y copia de seguridad del diseño anterior |
 | 2026-11-12c | El visor del día: la tira de días, oculta tras «Días» (o D), para saltar a cualquier día |
@@ -81,6 +82,26 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-16b — Rediseño «Cristal», fase 0 (2): colores, fuente y fondo vivo, en la rama
+
+Solo en la rama `rediseno-cristal` (se ve en `…/trading-journal/nuevo/`); producción no cambia.
+
+- **Tokens** (`:root` de `styles.css`): el tema oscuro del rediseño. `--card` y `--bg3` pasan a ser translúcidos
+  (cristal ahumado sobre el fondo); `--bg2` sigue opaco para barras, menús y ventanas; nuevo `--capa` para lo que
+  flota sobre contenido y no puede transparentar (el globo del calendario y tres cabeceras fijas). Nuevos `--edge`,
+  `--hi`, `--font`, `--r-card`. Los `-txt` de verde, rojo y ámbar, un punto más claros.
+- **Fuente:** Manrope (Google Fonts), en `--font`.
+- **Fondo vivo** (`.fondo`): tres luces que derivan despacio y un grano fino, fijo y por debajo de todo; solo se
+  mueve su posición, así que no cuesta al bajar por la pantalla.
+- **Versión de prueba:** banda «DISEÑO NUEVO · EN PRUEBAS», caché y manifiesto propios (comparte origen con
+  producción). Lo que hay que deshacer al fundir la rama está en §8 del diseño.
+
+Con solo los tokens, todas las pantallas cambian ya de aspecto sin tocar su estructura. **Verificado** en la copia
+local, escritorio y celular, consola limpia y sin scroll horizontal: Calendario, Análisis, Sesión, Otros, Trades y
+Disciplina; Manrope cargada.
 
 ---
 

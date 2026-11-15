@@ -1,6 +1,6 @@
 # Rediseño visual «Cristal» y navegación nueva
 
-**Versión:** v1.3 · **Estado:** ✅ APROBADO por Kris (15/11/2026; la maqueta 8 y la isla, el 16/11) · En marcha: fase 0.
+**Versión:** v1.3 · **Estado:** ✅ APROBADO por Kris (15/11/2026; la maqueta 8 y la isla, el 16/11) · Fase 0 hecha (16/11); sigue la fase 1.
 **Copia de seguridad del diseño anterior:** etiqueta de git `diseno-anterior-2026-11-13` (commit `a5feff0`), subida a GitHub.
 **Maqueta de referencia:** `design-mockups/mockup-8.html` (en lo visual manda la maqueta sobre este texto).
 **Alcance:** solo aspecto y navegación. No cambia datos, cálculos ni base de datos. Lo que no es visual queda para
@@ -24,13 +24,13 @@ El análisis del chat «Navegación principal» (10/11) ya había diagnosticado 
 
 | # | Decisión | Cuándo |
 |---|---|---|
-| 1 | **Cristal claro y cristal oscuro, los dos**, con un botón para cambiar. Se recuerda en el dispositivo | 13/11 |
-| 2 | **Escritorio: barra lateral con todas las pantallas a la vista**, por grupos, y plegable a iconos | 13/11 |
-| 3 | **Celular: barra de abajo con muesca central y botón flotante «+»** (registrar la sesión), solo iconos, el activo en verde con una raya que se desliza | 13/11 |
-| 4 | **La meta del mes no es dinero: es cumplir las reglas al máximo.** El medidor enseña la disciplina del mes; la meta es el 100 % | 13/11 |
-| 5 | **El buscador encuentra un día, un setup, un error o una observación** | 13/11 |
-| 6 | **Primero todo lo visual; después, en otra fase, la revisión del «back»** | 13/11 |
-| 7 | **De los dos temas, el que más le gusta es el oscuro**: es el que se abre por defecto | 15/11 |
+| 1 | **Cristal claro y cristal oscuro, los dos**, con un botón para cambiar. Se recuerda en el dispositivo | 13/11 | |
+| 2 | **Escritorio: barra lateral con todas las pantallas a la vista**, por grupos, y plegable a iconos | 13/11 | |
+| 3 | **Celular: barra de abajo con muesca central y botón flotante «+»** (registrar la sesión), solo iconos, el activo en verde con una raya que se desliza | 13/11 | |
+| 4 | **La meta del mes no es dinero: es cumplir las reglas al máximo.** El medidor enseña la disciplina del mes; la meta es el 100 % | 13/11 | |
+| 5 | **El buscador encuentra un día, un setup, un error o una observación** | 13/11 | |
+| 6 | **Primero todo lo visual; después, en otra fase, la revisión del «back»** | 13/11 | |
+| 7 | **De los dos temas, el que más le gusta es el oscuro**: es el que se abre por defecto | 15/11 | |
 | 8 | **La barra del celular: translúcida, con efectos e iconos propios** (§4) | 15/11 |
 | 9 | **Antes de tocar nada, copia de seguridad del diseño anterior** (hecha: la etiqueta de arriba) | 15/11 |
 
@@ -173,16 +173,21 @@ checkpoint en el historial, commit y push, **y con la revisión de §2b**.
 Kris dé por bueno el marco y el Calendario. Para que pueda probarlo en su celular con sus datos, la rama se publica
 en una dirección aparte del mismo sitio (`…/trading-journal/nuevo/`); se monta en la fase 0.
 
-| Fase | Qué | Notas |
-|---|---|---|
-| 0 | **Preparación:** la rama y su dirección de prueba (`/nuevo/`), tokens nuevos (claro y oscuro), Manrope, fondo. Añadir `js/visor.js` a `APP_SHELL` de `sw.js` (falta desde el 03/11) | Sin cambio visible salvo el fondo |
-| 1 | **El marco:** barra lateral plegable, barra de arriba, botón de tema, barra del celular con muesca, «Otros» en hoja, transición entre pantallas, y las piezas compartidas (tarjeta, botón, campo, etiqueta) | Aquí se mide el rendimiento en el celular |
-| 2 | **Calendario** completo según la maqueta, con el medidor de la meta | Lo abierto de §6 que Kris apruebe |
-| 3 | **Análisis y Disciplina** | Etiquetas de filtro con contador |
-| 4 | **Sesión** (Diario, Coach, Días anteriores) | Usa el ancho en escritorio (hoy deja el 40 % vacío) |
-| 5 | **El resto:** Trades, Imágenes, Apex (las cuentas quemadas, agrupadas), Comparador, Chaumer, Backtesting, Experimentos, Estrategia, Datos, Fechas, el visor del día, el login, y los 11 avisos nativos del navegador («¿Eliminar?») como diálogos de cristal | En el calendario del celular, el número del día en cada casilla |
-| 6 | **Buscador** (días, setups, errores, observaciones) | Función nueva: lee lo que ya se carga |
-| 7 | **Cierre:** borrar el CSS que ya no se usa, actualizar `.claude/rules/estilos.md` y `CLAUDE.md`, decidir si la maqueta 7 se queda en el repositorio | |
+**Al fundir la rama en `main`** (cuando Kris dé por bueno el rediseño) hay que deshacer lo que solo sirve a la
+versión de prueba: en `publicar-journal.yml`, los dos pasos de `/nuevo/`; borrar `.github/workflows/avisar-nuevo.yml`;
+en `sw.js`, el nombre de la caché (`nqjournal-vN`) y el filtro de `activate`; en `manifest.json`, el nombre y el
+`scope`; y la banda «DISEÑO NUEVO · EN PRUEBAS» (`html[data-nuevo]` en `styles.css` y su línea en `index.html`).
+
+| Fase | Qué | Notas | Estado |
+|---|---|---|---|
+| 0 | **Preparación:** la rama y su dirección de prueba (`/nuevo/`), tokens nuevos (claro y oscuro), Manrope, fondo. Añadir `js/visor.js` a `APP_SHELL` de `sw.js` (falta desde el 03/11) | Sin cambio visible salvo el fondo | ✅ 16/11 |
+| 1 | **El marco:** barra lateral plegable, barra de arriba, botón de tema, barra del celular con muesca, «Otros» en hoja, transición entre pantallas, y las piezas compartidas (tarjeta, botón, campo, etiqueta) | Aquí se mide el rendimiento en el celular | |
+| 2 | **Calendario** completo según la maqueta, con el medidor de la meta | Lo abierto de §6 que Kris apruebe | |
+| 3 | **Análisis y Disciplina** | Etiquetas de filtro con contador | |
+| 4 | **Sesión** (Diario, Coach, Días anteriores) | Usa el ancho en escritorio (hoy deja el 40 % vacío) | |
+| 5 | **El resto:** Trades, Imágenes, Apex (las cuentas quemadas, agrupadas), Comparador, Chaumer, Backtesting, Experimentos, Estrategia, Datos, Fechas, el visor del día, el login, y los 11 avisos nativos del navegador («¿Eliminar?») como diálogos de cristal | En el calendario del celular, el número del día en cada casilla | |
+| 6 | **Buscador** (días, setups, errores, observaciones) | Función nueva: lee lo que ya se carga | |
+| 7 | **Cierre:** borrar el CSS que ya no se usa, actualizar `.claude/rules/estilos.md` y `CLAUDE.md`, decidir si la maqueta 7 se queda en el repositorio | | |
 
 ## 9 · Fuera de este diseño: la fase «back»
 

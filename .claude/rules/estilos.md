@@ -6,6 +6,10 @@ paths:
 
 # Tokens y lenguaje visual
 
+> ⚠️ **Rama `rediseno-cristal` (desde el 16/11/2026):** los tokens de `:root` ya son los del rediseño «Cristal»
+> (`docs/disenos/2026-11-13-rediseno-cristal.md`): `--card` y `--bg3` son **translúcidos**, `--bg2` opaco, y lo que
+> flota sobre contenido usa `--capa`. Las tablas de abajo describen el diseño anterior y se reescriben en la fase 7.
+
 **Todos los tokens viven en `css/styles.css`, bloque `:root`** (29). Cards `radius 10px`,
 transiciones 150ms. Iconos: Tabler Icons (CDN). Gráficas: Chart.js (CDN).
 

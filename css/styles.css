@@ -1,10 +1,15 @@
 /* ── Variables ───────────────────────────────────────────────────────── */
 :root {
-  --bg: #1a1a18;
-  --bg2: #242422;
-  --bg3: #2e2e2b;
-  --card: #252523;
-  --border: rgba(255,255,255,0.07);
+  /* Rediseño «Cristal» (docs/disenos/2026-11-13-rediseno-cristal.md), fase 0: el tema OSCURO, que es el de
+     por defecto. El claro llega con su botón en la fase 1. Debajo de todo va el fondo vivo (.fondo). */
+  --bg: #06130d;                      /* base, bajo el fondo vivo */
+  --bg2: #0c2019;                     /* superficies opacas: barras, menús, ventanas */
+  --bg3: rgba(255,255,255,0.07);      /* piezas dentro de una tarjeta: translúcidas */
+  --card: rgba(7,20,17,0.52);         /* tarjetas: cristal ahumado sobre el fondo */
+  --capa: #0f251e;                    /* lo que flota sobre contenido y no puede transparentar (globos, cabeceras fijas) */
+  --border: rgba(255,255,255,0.11);
+  --edge: rgba(255,255,255,0.2);      /* filo del cristal */
+  --hi: rgba(255,255,255,0.1);        /* brillo interior del borde de arriba */
 
   /* Colores semánticos. Cada familia tiene DOS valores y no son intercambiables:
      - base  → bordes, fondos, rellenos. Legible como superficie.
@@ -12,13 +17,13 @@
      Al escribir UI: usar el token, nunca el hex. */
   --accent: #1D9E75;
   --accent-dim: rgba(29,158,117,0.15);
-  --accent-txt: #3FE0A6;
+  --accent-txt: #5FE0AA;
   --red: #E24B4A;
   --red-dim: rgba(226,75,74,0.15);
-  --red-txt: #F2706F;
+  --red-txt: #FF907B;
   --warning: #BA7517;
   --warning-dim: rgba(186,117,23,0.15);
-  --warning-txt: #E0A33B;
+  --warning-txt: #F0B85A;
   --blue: #5B94C9;
   --blue-dim: rgba(91,148,201,0.15);
   --blue-txt: #8FBDE8;
@@ -26,16 +31,18 @@
   --violet-dim: rgba(124,108,243,0.15);
   --violet-txt: #AFA9EC;
 
-  --text: #F4F3EF;
-  --text2: #A8A89B;
-  --text3: #6B6B60;
+  --text: #EEF6F2;
+  --text2: #A9BAB3;
+  --text3: #71847D;
+  --font: 'Manrope', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --sidebar-w: 220px;
   --topbar-h: 56px;
   /* Ancho máximo de una pantalla de configuración/índice. Sustituye a los
      `max-width: 860px` sueltos que había repetidos sin nombre. */
   --content-max: 1180px;
-  --radius: 10px;
-  --shadow: 0 2px 12px rgba(0,0,0,0.35);
+  --radius: 14px;
+  --r-card: 24px;                     /* tarjetas (fase 1 en adelante) */
+  --shadow: 0 22px 44px -28px rgba(3,18,13,0.6);
   --transition: 150ms ease;
 }
 
@@ -43,7 +50,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 14px; }
 body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: var(--font);
   background: var(--bg);
   color: var(--text);
   display: flex;
@@ -54,6 +61,29 @@ a { color: var(--accent); text-decoration: none; }
 button { cursor: pointer; border: none; background: none; font-family: inherit; font-size: inherit; }
 input, select, textarea { font-family: inherit; font-size: inherit; }
 small { font-size: 0.82em; }
+
+/* ── El fondo vivo ───────────────────────────────────────────────────── */
+/* Tres luces grandes que derivan muy despacio, con un grano fino encima. Solo se mueve su posición
+   (transform): el desenfoque se pinta una vez y la tarjeta gráfica lo desplaza. Va fijo y por debajo de todo. */
+.fondo { position: fixed; inset: -9%; z-index: -1; overflow: hidden; background: var(--bg); pointer-events: none; }
+.fondo i { position: absolute; border-radius: 50%; filter: blur(90px); will-change: transform; transition: opacity 1.6s; }
+.fondo .a { width: 64vmax; height: 64vmax; left: -18vmax; top: -22vmax; background: #1f8a66; opacity: 0.62; animation: fondo-vaga 34s ease-in-out infinite alternate; }
+.fondo .b { width: 58vmax; height: 58vmax; right: -18vmax; top: 4vmax; background: #c48a34; opacity: 0.6; animation: fondo-vaga 43s ease-in-out infinite alternate-reverse; }
+.fondo .c { width: 54vmax; height: 54vmax; left: 24vmax; bottom: -28vmax; background: #2f6f7d; opacity: 0.6; animation: fondo-vaga 51s ease-in-out infinite alternate; }
+.fondo .grano { inset: 0; width: auto; height: auto; border-radius: 0; filter: none; animation: none; opacity: 0.07; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E"); }
+@keyframes fondo-vaga {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(7vmax, -4vmax) scale(1.14); }
+  100% { transform: translate(-5vmax, 6vmax) scale(0.93); }
+}
+@media (prefers-reduced-motion: reduce) { .fondo i { animation: none; } }
+
+/* La versión de prueba (…/nuevo/) lleva su banda, para no confundirla con el Journal de siempre. */
+html[data-nuevo] body::after {
+  content: 'DISEÑO NUEVO · EN PRUEBAS'; position: fixed; top: 0; left: 0; right: 0; z-index: 9997;
+  background: var(--accent); color: var(--bg); font-size: 0.6rem; font-weight: 800; letter-spacing: 0.16em;
+  text-align: center; padding: 2px 0; pointer-events: none;
+}
 
 /* ── Scrollbar (más gruesa y visible para ubicarla con facilidad) ──────── */
 ::-webkit-scrollbar { width: 13px; height: 13px; }
@@ -604,7 +634,7 @@ body[data-modo-local]::before {
 .cal-tip {
   position: fixed; z-index: 90; pointer-events: none;
   min-width: 200px; max-width: 270px;
-  background: var(--bg3); border: 1px solid rgba(255,255,255,0.1);
+  background: var(--capa); border: 1px solid rgba(255,255,255,0.1);
   border-radius: 12px; padding: 11px 13px 12px;
   box-shadow: 0 14px 34px rgba(0,0,0,0.5);
   font-size: 0.8rem; color: var(--text); line-height: 1.35;
@@ -2979,12 +3009,12 @@ button.ajustes-row:focus-visible { outline: 2px solid var(--accent-txt); outline
 .expd-matrix thead th { border-top: none; color: var(--text3); font-weight: 500; font-size: 0.74rem; }
 .expd-matrix .expd-dow { font-size: 0.68rem; color: var(--text3); }
 .expd-matrix .expd-sticky {
-  position: sticky; left: 0; background: var(--card); z-index: 1;
+  position: sticky; left: 0; background: var(--capa); z-index: 1;
   text-align: left; width: 140px; min-width: 140px; max-width: 140px;
   overflow: hidden; text-overflow: ellipsis;
 }
 .expd-matrix .expd-tot {
-  font-weight: 700; position: sticky; background: var(--card); z-index: 1;
+  font-weight: 700; position: sticky; background: var(--capa); z-index: 1;
   width: 34px; min-width: 34px;
 }
 .expd-matrix .expd-tot-t { left: 140px; }
@@ -5114,7 +5144,7 @@ tr.trade-en-ventana td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 .ch-dd .ch-dd-fecha {
   position: sticky; left: 0; z-index: 1;
   text-align: left; white-space: nowrap; font-weight: 700;
-  padding-left: 20px; background: var(--card);
+  padding-left: 20px; background: var(--capa);
 }
 .ch-dd th.ch-dd-fecha { background: var(--bg3); z-index: 2; }
 .ch-dd-fila.fr-mismo    .ch-dd-fecha { box-shadow: inset 5px 0 0 var(--accent); }
