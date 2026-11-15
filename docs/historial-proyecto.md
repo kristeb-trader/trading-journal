@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-11-12
+**Última actualización:** 2026-11-15
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-15 | Rediseño «Cristal»: diseño aprobado por fases, maqueta de referencia y copia de seguridad del diseño anterior |
 | 2026-11-12c | El visor del día: la tira de días, oculta tras «Días» (o D), para saltar a cualquier día |
 | 2026-11-12b | El Calendario, solo el mío; los 4 calendarios pasan a Otros → Comparador |
 | 2026-11-12 | El bot entra a mercado si el precio ya está en la entrada al mandar la orden: NinjaTrader rechazaba el stop |
@@ -79,6 +80,25 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-15 — Rediseño «Cristal»: diseño aprobado, maqueta y copia de seguridad
+
+Kris pidió rediseñar el Journal. De siete maquetas (cinco direcciones propias, descartadas, y dos a partir del
+perfil de Instagram code.xr que él trajo) quedó la 7: cristal esmerilado sobre verde bosque y ámbar, en claro y en
+oscuro, con barra lateral plegable en escritorio y, en el celular, una barra translúcida con muesca y botón central.
+
+- **Diseño aprobado:** `docs/disenos/2026-11-13-rediseno-cristal.md` — decisiones de Kris, lenguaje visual,
+  navegación, Calendario y Análisis, las tres piezas nuevas («Lo que destaca», «Esta semana», el día por pasos), el
+  buscador, la meta del mes (cumplir las reglas, no dinero), riesgos y ocho fases.
+- **La vara de cada fase** (§2b): interactiva, envolvente, fluida y vanguardista; si traba, se quita.
+- **Maqueta de referencia:** `design-mockups/mockup-7.html` (no se publica: el workflow no la copia).
+- **Copia de seguridad del diseño anterior:** etiqueta `diseno-anterior-2026-11-13` (`a5feff0`), en GitHub.
+- **Lo que no es visual** (bot, velocidad, código repetido, base de datos; del análisis del 10/11) queda apuntado
+  en §9 para una fase posterior.
+
+Aún no se ha tocado la app: la implementación va en la rama `rediseno-cristal`, por fases.
 
 ---
 
