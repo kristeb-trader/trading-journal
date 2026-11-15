@@ -173,6 +173,10 @@ checkpoint en el historial, commit y push, **y con la revisión de §2b**.
 Kris dé por bueno el marco y el Calendario. Para que pueda probarlo en su celular con sus datos, la rama se publica
 en una dirección aparte del mismo sitio (`…/trading-journal/nuevo/`); se monta en la fase 0.
 
+**Carpeta de trabajo:** la rama vive en `E:\Proyectos\Trading Journal cristal` (un *worktree* de git), con su copia de
+`js/dev.local.js` y el servidor de vista previa `cristal` (puerto 3214, `.claude/launch.json`). La carpeta de siempre
+se queda en `main`: la cadena diaria y los demás chats trabajan ahí.
+
 **Al fundir la rama en `main`** (cuando Kris dé por bueno el rediseño) hay que deshacer lo que solo sirve a la
 versión de prueba: en `publicar-journal.yml`, los dos pasos de `/nuevo/`; borrar `.github/workflows/avisar-nuevo.yml`;
 en `sw.js`, el nombre de la caché (`nqjournal-vN`) y el filtro de `activate`; en `manifest.json`, el nombre y el
