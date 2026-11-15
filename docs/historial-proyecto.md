@@ -93,7 +93,10 @@ oscuro, con barra lateral plegable en escritorio y, en el celular, una barra tra
   navegación, Calendario y Análisis, las tres piezas nuevas («Lo que destaca», «Esta semana», el día por pasos), el
   buscador, la meta del mes (cumplir las reglas, no dinero), riesgos y ocho fases.
 - **La vara de cada fase** (§2b): interactiva, envolvente, fluida y vanguardista; si traba, se quita.
-- **Maqueta de referencia:** `design-mockups/mockup-7.html` (no se publica: el workflow no la copia).
+- **Maqueta de referencia:** `design-mockups/mockup-8.html` (no se publica: el workflow no la copia). Sustituye a la
+  7 tras la revisión que pidió Kris: la 7 no era fluida (15 imágenes por segundo al cambiar de pantalla, simulando un
+  celular lento) ni envolvente; la 8 va a 62, con fondo vivo, luz que sigue al cursor, el día que sale de su casilla
+  y una «isla» con el estado en vivo (§2b del diseño).
 - **Copia de seguridad del diseño anterior:** etiqueta `diseno-anterior-2026-11-13` (`a5feff0`), en GitHub.
 - **Lo que no es visual** (bot, velocidad, código repetido, base de datos; del análisis del 10/11) queda apuntado
   en §9 para una fase posterior.

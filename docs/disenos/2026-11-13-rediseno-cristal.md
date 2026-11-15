@@ -1,8 +1,8 @@
 # Rediseño visual «Cristal» y navegación nueva
 
-**Versión:** v1.1 · **Estado:** ✅ APROBADO por Kris (15/11/2026) · Sin implementar.
+**Versión:** v1.2 · **Estado:** ✅ APROBADO por Kris (15/11/2026) · Sin implementar.
 **Copia de seguridad del diseño anterior:** etiqueta de git `diseno-anterior-2026-11-13` (commit `a5feff0`), subida a GitHub.
-**Maqueta de referencia:** `design-mockups/mockup-7.html` (en lo visual manda la maqueta sobre este texto).
+**Maqueta de referencia:** `design-mockups/mockup-8.html` (en lo visual manda la maqueta sobre este texto).
 **Alcance:** solo aspecto y navegación. No cambia datos, cálculos ni base de datos. Lo que no es visual queda para
 la fase «back» (§9).
 
@@ -50,12 +50,30 @@ colores de la maqueta le gustan; lo que quiere **ver en la app** es esto, y no v
 si una pantalla se queda en «bonita pero quieta», se rehace. Él mismo lo pidió: *«si hay que hacer otra revisión,
 lo volvemos a hacer»*.
 
+### Revisión del 15/11: ¿la maqueta 7 cumplía los cuatro puntos?
+
+Kris pidió revisarlo antes de empezar. No los cumplía, y se reestructuró en la **maqueta 8**:
+
+| Punto | Maqueta 7 | Qué se cambió en la 8 |
+|---|---|---|
+| **Vanguardista** (el pilar) | A medias: cristal y una pantalla bien compuesta, pero quieta. Nada que no hiciera un panel de 2022 | Fondo vivo · luz que sigue al cursor · tarjetas que se inclinan · el día sale de su casilla y vuelve a ella (transición del navegador, View Transitions) · «isla» con el estado en vivo · esqueletos con brillo |
+| **Interactiva y dinámica** | A medias: contadores, filtros y buscador; las gráficas se redibujaban enteras | Recorrer la curva cambia la cifra grande · USD/Puntos se anima en vez de redibujar · el día se pasa al anterior y al siguiente · la hoja del celular se cierra arrastrándola |
+| **Envolvente** | No: fondo fijo, sin profundidad real | Tres luces que derivan despacio y se desplazan con el cursor, con grano fino · **el fondo acompaña el resultado**: ámbar si el tramo va a favor, rojo si va en contra · cada pieza entra al llegar a la pantalla, no todas a la vez |
+| **Fluida** | **No.** Medido con celular lento simulado (CPU ×4): **15 imágenes por segundo al cambiar de pantalla**, con un tirón de 333 ms, y 14 capas de desenfoque a la vista | **62 imágenes por segundo** al cambiar de pantalla y 113 al bajar, con **1 capa de desenfoque**. Cómo: el desenfoque queda solo en lo que flota sobre contenido (la barra del celular, hojas); barras y medidor se mueven, no cambian de tamaño; las gráficas pesadas esperan a que la pantalla haya entrado |
+
+La medición es en un navegador sin pantalla: sirve para comparar las dos maquetas, no como cifra del celular de
+Kris. La medida de verdad se toma en su celular al final de la fase 1.
+
 ## 3 · Lenguaje visual
 
 - **Fondo:** fijo, verde bosque casi negro con tres luces (verde arriba a la izquierda, azul verdoso al centro, ámbar a
   la derecha). Es el mismo en los dos temas.
-- **Cristal:** todo lo que flota (barra lateral, barra de arriba, barra del celular, hojas, buscador) es translúcido
-  con desenfoque del fondo y un filo claro arriba.
+- **Fondo vivo:** tres luces grandes (verde, ámbar, azul verdoso) que derivan muy despacio y se desplazan un poco con
+  el cursor, con un grano fino encima. La luz ámbar pasa a roja cuando lo que se mira va en contra.
+- **Cristal:** translúcido con un filo claro arriba. **El desenfoque de verdad solo va en lo que flota sobre
+  contenido que se mueve** (la barra del celular y las hojas): el fondo ya es difuso, así que el resto no lo necesita
+  y la app va fluida.
+- **Luz:** en cada tarjeta, un foco suave sigue al cursor; los indicadores se inclinan hacia él.
 - **Tarjetas:** en claro, cristal lechoso con tinta oscura; en oscuro, cristal ahumado con tinta clara. Radio 24;
   las piezas de dentro («tiles»), radio 14; botones y etiquetas, píldora.
 - **Color con significado:** verde = a favor, rojo = en contra, ámbar = pendiente o aviso, azul = informativo. Cada
@@ -79,7 +97,9 @@ migrar cada pantalla: este rediseño **es** esa migración.
 | **Escritorio** | Barra lateral flotante con cuatro grupos: Operativa (Calendario, Análisis, Sesión), Seguimiento (Disciplina, Apex, Comparador), Consultar (Trades, Imágenes, Experimentos, Chaumer, Backtesting), Configurar (Estrategia, Datos, Fechas). Se pliega a una tira de iconos con el nombre al pasar el cursor; recuerda cómo se dejó. Ya no hace falta la flecha de volver |
 | **Celular** | Barra de cristal **translúcido** con muesca: Calendario · Análisis · **+** · Sesión · Otros. Iconos propios (trazo fino; el activo se rellena, brilla y da un salto). Una luz y una raya se deslizan hasta el activo, un barrido de brillo cruza la barra al cambiar, cada toque deja una onda y vibra, el «+» late con un halo, y al bajar por la pantalla la barra se recoge un poco. «Otros» no es una pantalla: sube una hoja con sus accesos. La cabecera lleva el avatar y tres botones redondos (buscar, tema, avisos) |
 | **Buscador** | Ctrl K o la lupa. Va a cualquier pantalla y busca en días, setups, errores y observaciones |
-| **Entre pantallas** | La que sale se desenfoca y la que entra se asienta |
+| **Entre pantallas** | El menú cambia al instante; la pantalla que sale se desvanece y la que entra llega pieza a pieza |
+| **Un día** | Sale de su casilla del calendario y se agranda hasta ser su ficha; desde ahí se pasa al anterior o al siguiente, y al cerrar vuelve a su casilla. Es la puerta al visor del día de hoy |
+| **La isla** | Al bajar por una pantalla aparece arriba una píldora con lo esencial (mes, P&L, disciplina). Al tocarla se abre con el estado en vivo: el bot, el motor y los pasos del día |
 
 La lista de pantallas sigue saliendo de **`Otros.ITEMS`** y `Nav.PADRE`: la barra lateral y la hoja del celular se
 generan de ahí, así que una sección nueva se sigue dando de alta en un solo sitio. El invariante de `CLAUDE.md`
@@ -129,12 +149,13 @@ celular (en el celular, una debajo de otra). La variación de cada indicador sig
 | **«Esta semana»** | Una columna por día con su resultado | Pequeño |
 | **El día por pasos** (en Sesión) | Niveles → Noticias → Operación → Diario → Coach, con el pendiente resaltado | Mediano: hay que leer el estado de cada paso |
 | **Variación de cada indicador** («+6 pts») | Contra el mes anterior | Pequeño, si se aprueba contra qué se compara |
+| **La isla con el estado en vivo** (nueva en la maqueta 8, sin aprobar aún) | Bot armado o no, qué marcó el motor, pasos del día | Mediano: lee `bot_operaciones` y `motor_estado` de hoy |
 
 ## 7 · Riesgos
 
-1. **El cristal pesa en el celular.** El desenfoque es lo más caro de pintar. Se mide en la fase 1 en el celular de
-   Kris. Plan B ya previsto: en el celular las tarjetas llevan solo color translúcido (sin desenfoque) y el cristal de
-   verdad queda en lo que flota (barra, hoja y buscador). El aspecto apenas cambia porque el fondo es fijo.
+1. **El cristal pesa en el celular.** Resuelto en el diseño desde la maqueta 8 (§2b): tarjetas con color translúcido
+   y desenfoque solo en lo que flota. Aun así se mide en la fase 1 en el celular de Kris; si el fondo vivo trabara,
+   se deja quieto en el celular.
 2. **Legibilidad.** Texto sobre cristal: se comprueba el contraste en los dos temas, sobre todo los grises secundarios.
 3. **Estado intermedio.** Mientras dure la migración conviven pantallas nuevas y viejas. Por eso la fase 1 restila
    también las piezas compartidas (tarjeta, botón, campo, etiqueta): con eso el interior de casi todas las pantallas
