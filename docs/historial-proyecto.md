@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-16c | La zona superada cambia de papel y el stop de todo reingreso va en el último retroceso (plan 3.62) |
 | 2026-11-16b | NinjaTrader escribe la fecha y hace la foto del día: `FechaChaumer` y `FotoChaumer`, que la sube sola al Journal |
 | 2026-11-16 | Rediseño «Cristal», fase 0 (1): la rama se publica en `/nuevo/` para probarla; `visor.js`, al modo sin conexión |
 | 2026-11-15 | Rediseño «Cristal»: diseño aprobado por fases, maqueta de referencia y copia de seguridad del diseño anterior |
@@ -82,6 +83,34 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-16c — La zona superada cambia de papel; el stop del reingreso, en el último retroceso (plan 3.62)
+
+**Lo que pasó.** Kris vio un reingreso alcista a las 10:53 del 16/11 que el motor no veía. Paso a paso: el soporte de la
+9:32 se rompió a las 10:01 con consecución a las 10:05, así que pasó a ser resistencia; la 10:51 la rompió hacia arriba y
+la 10:53 dio la consecución, con la resistencia de la 9:45 ya cotizada más arriba. El motor no lo veía por tres cosas:
+pedía que una sola vela atravesara la zona entera, no daba entrada en una zona ya rota, y medía el stop desde el
+rompimiento fallido (~200 puntos). Kris: el stop de **todo** reingreso va en el extremo del último retroceso; con el
+camino libre sería Continuación y no lo opera (espera una zona nueva). Se le enseñaron 5 casos sintéticos y los aprobó;
+después, los 5 días que cambian en los 93 con datos, también aprobados (D-054).
+
+**Lo que se cambió.**
+- **Plan 3.62** (`2300618`, junto con los dos motores): `R-21` (cambia de papel), `R-26` (forma c, el stop, el 13/07
+  reescrito, caso de origen del 16/11), `R-31`, `R-32`, checklist y `ORIGEN_DEL_STOP`. Sincronizado: `catalogo_reglas`
+  (R-26 y la línea del stop, la vieja desactivada) y `plan_documentos` (reglas, parámetros y checklist, huellas verificadas).
+- **Los dos motores**, sello `L:d5c169fc…`: 93/93 días iguales, vela a vela. `_ultimo_retroceso` (el último giro del
+  zigzag confirmado y el extremo desde él) para las formas a, b y c; la forma c, una vez por zona (`roto2`).
+- **El portal** (`ef0f50d`): la tercera forma y el stop en el último retroceso.
+- **Las fichas de septiembre** que cambian de eventos, rehechas: solo cambia de operación el 8/09 (Reingreso alcista
+  10:12, TARGET +33,00). Las gráficas de `03_Bot\` no se tocan.
+
+**Lo que cambia.** 5 operaciones de 93 días: 16/11 (Reingreso −68,50), 30/10 (Reingreso +47,50), 8/09 (+33,00), 29/07
+(stop más cerca: −54,50 → −46,75) y 13/07 (+28,50 → −49,25). Total, de −203,00 a −261,00. En otros 26 días cambian solo
+reingresos descartados.
+
+**Pendiente.** Kris: copiar `MotorChaumer.cs` a `Custom\AddOns\` y F5 fuera de la ventana. Sin eso el bot no opera.
 
 ---
 

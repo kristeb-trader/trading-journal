@@ -10,6 +10,28 @@
 
 ---
 
+## D-054 — La zona superada cambia de papel, y el stop de todo reingreso va en el último retroceso
+
+**Decisión (Kris, 16/11/2026, plan 3.62).** Una zona superada en un sentido (rompimiento + consecución) **cambia de
+papel**: el soporte roto pasa a ser resistencia, y al revés. Si luego se rompe en sentido contrario con consecución, es
+una entrada; con una zona ya cotizada más allá del objetivo, **Reingreso** (forma c). Con el camino libre no se opera.
+**El stop de todo reingreso —formas a, b y c— va en el extremo del último retroceso** antes del rompimiento; riesgo y
+objetivo, como en la Continuación (`STOP_MAX`, 1:1).
+
+**Motivo.** El 16/11 a las 10:53: *«esa zona fue rota como soporte y no me generó entrada, no pasa nada, pero después
+generó un setup claro de reingreso alcista»*. Las zonas siempre se ven para algo: entrar, filtrar objetivos, cruzarse con
+otra zona y saber cuándo mueren. El stop desde el rompimiento fallido daba ~200 puntos; el del último retroceso, 68,50.
+
+**Medido antes de cambiar nada**, en una copia del motor sobre 93 días: cambian 5 operaciones, revisadas por Kris (16/11,
+30/10, 8/09, 29/07, 13/07); de −203,00 a −261,00. El 13/07 de la 9:41, el ejemplo del plan de lo que no es reingreso,
+pasa a serlo.
+
+**Alternativas descartadas.**
+- **Límites de stop propios para el reingreso:** *«el reingreso y la continuación manejan los mismos límites de stop y targets»*.
+- **Operar la forma c como Continuación con el camino libre:** para una Continuación Kris espera a que se forme una zona nueva.
+
+---
+
 ## D-053 — La disciplina mide solo las reglas de tu entrada; el Diario ya no tiene casillas
 
 *Afina D-052.*
