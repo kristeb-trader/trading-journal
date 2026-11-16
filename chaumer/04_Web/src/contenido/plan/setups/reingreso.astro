@@ -19,12 +19,14 @@ import { v } from './_datos.mjs';
     la Continuación va hacia un espacio nuevo; el Reingreso, hacia una zona que
     ya existe.
   </p>
-  <p>Nace de dos maneras:</p>
+  <p>Nace de tres maneras:</p>
   <dl class="datos">
     <dt>a) El rompimiento que falló</dt>
     <dd>El rompimiento se confirmó pero el precio <strong>no continuó</strong>: se dio la vuelta y se comió la zona entera. Se opera esa vuelta.</dd>
     <dt>b) El cambio de tendencia</dt>
     <dd>El mercado frena y deja una zona que <strong>no rompe</strong>. Deja después la zona contraria, la rompe y la confirma, y el objetivo va hacia una zona ya cotizada. Se opera como una Continuación, pero <strong>sin pedir la corrida fluida</strong>: lo que pide es el cambio de tendencia.</dd>
+    <dt>c) La zona que cambia de papel</dt>
+    <dd>Una zona que el precio ya superó en un sentido <strong>cambia de papel</strong>: el soporte roto pasa a ser resistencia, y la resistencia rota, soporte. Si después el precio la rompe al revés y lo confirma, esa es la entrada. No hace falta que una sola vela atraviese la zona entera. Si el camino hacia el objetivo está libre, no se opera: para una Continuación se espera a que se forme una zona nueva.</dd>
   </dl>
   <p>La forma a, paso a paso:</p>
 
@@ -42,11 +44,11 @@ import { v } from './_datos.mjs';
 
   <dl class="datos">
     <dt>Dirección</dt>
-    <dd>En la forma a, contraria a la del rompimiento que falló. En la forma b, la del rompimiento, hacia la zona ya cotizada</dd>
+    <dd>En la forma a, contraria a la del rompimiento que falló. En la forma b, la del rompimiento, hacia la zona ya cotizada. En la forma c, contraria al primer traspaso de la zona</dd>
     <dt>Plazo para que aparezca</dt>
     <dd><strong>Ninguno.</strong> El límite de {v('PLAZO_CONSECUCION')} no aplica aquí</dd>
     <dt>Dónde va el stop</dt>
-    <dd>En la forma a, en el extremo de la <strong>corrida fallida</strong>, la que rompió y no continuó. En la forma b, como en la Continuación</dd>
+    <dd>En las tres formas, en el extremo del <strong>último retroceso</strong> antes del rompimiento: el mínimo si es alcista, el máximo si es bajista. El tope de riesgo y el objetivo 1:1, como en la Continuación</dd>
     <dt>Filtros propios</dt>
     <dd>El objetivo <strong>no puede pasar del punto de referencia</strong>, y <strong>tiene que haber una zona a la que ir</strong></dd>
   </dl>
