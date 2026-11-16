@@ -508,7 +508,9 @@ const Apex = (() => {
       <div class="ax-zona-block">
         <div class="ax-zona-title"><i class="ti ${icon}"></i> ${titulo}
           <span class="ax-zona-count">${accts.filter(activa).length} activas</span></div>
-        <div class="axm-grid">${accts.map(cardHtml).join('')}</div>
+        <div class="axm-grid">${accts.filter(c => c.estado !== 'quemada').map(cardHtml).join('')}</div>
+        ${accts.some(c => c.estado === 'quemada') ? `<details class="ax-historial"><summary><i class="ti ti-archive"></i> Historial · ${accts.filter(c => c.estado === 'quemada').length} quemada${accts.filter(c => c.estado === 'quemada').length > 1 ? 's' : ''}<i class="ti ti-chevron-down"></i></summary>
+          <div class="axm-grid">${accts.filter(c => c.estado === 'quemada').map(cardHtml).join('')}</div></details>` : ''}
       </div>` : ''
     wrap.innerHTML =
       zona('Cuentas PA (fondeadas)', 'ti-trophy', paAccts) +
@@ -523,7 +525,7 @@ const Apex = (() => {
     })
     wrap.querySelectorAll('.ax-del-reg').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('¿Eliminar este registro diario?')) return
+        if (!(await Dialogo.confirmar('¿Eliminar este registro diario?'))) return
         try {
           await DB.deleteApexRegistro(parseInt(btn.dataset.id))
           await reload()

@@ -339,4 +339,29 @@ const Marco = (() => {
   return { init, marcar, abrirPal, irARegistrar }
 })()
 
+// ── Los avisos: ventanas de cristal en vez de las del navegador («¿Eliminar…?») ──
+// Dialogo.confirmar(texto) devuelve una promesa con true / false. Esc o tocar fuera = no.
+const Dialogo = {
+  confirmar(texto, { si = 'Sí', no = 'Cancelar' } = {}) {
+    return new Promise(ok => {
+      const peligro = /eliminar|borrar|reemplaza/i.test(texto)
+      const v = document.createElement('div')
+      v.className = 'dlg-velo'
+      const lineas = String(texto).split(/\n/).filter(Boolean)
+      const tit = lineas.pop(), cuerpo = lineas.join(' ')
+      v.innerHTML = `<div class="dlg" role="alertdialog" aria-modal="true"><span class="dlg-ic ${peligro ? 'pel' : ''}"><i class="ti ti-${peligro ? 'trash' : 'help-circle'}"></i></span>
+        <h3></h3>${cuerpo ? '<p></p>' : ''}<div class="dlg-bt"><button type="button" class="dlg-no">${no}</button><button type="button" class="dlg-si ${peligro ? 'pel' : ''}">${peligro && si === 'Sí' ? 'Sí, eliminar' : si}</button></div></div>`
+      v.querySelector('h3').textContent = tit
+      if (cuerpo) v.querySelector('p').textContent = cuerpo
+      document.body.appendChild(v)
+      requestAnimationFrame(() => v.classList.add('ab'))
+      const fin = r => { removeEventListener('keydown', tecla, true); v.classList.remove('ab'); setTimeout(() => v.remove(), 250); ok(r) }
+      const tecla = e => { if (e.key === 'Escape') { e.stopImmediatePropagation(); fin(false) } else if (e.key === 'Enter') { e.preventDefault(); fin(true) } }
+      addEventListener('keydown', tecla, true)
+      v.addEventListener('click', e => { if (e.target === v || e.target.closest('.dlg-no')) fin(false); else if (e.target.closest('.dlg-si')) fin(true) })
+      v.querySelector('.dlg-si').focus()
+    })
+  },
+}
+
 document.addEventListener('DOMContentLoaded', () => Marco.init())

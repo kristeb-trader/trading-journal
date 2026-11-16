@@ -463,7 +463,7 @@ const Backtesting = (() => {
   async function borrar(id) {
     const j = jornadas.find(x => String(x.id) === String(id))
     if (!j) return
-    if (!confirm(`¿Borrar la jornada del ${fechaLarga(j.fecha)}? No se puede deshacer.`)) return
+    if (!(await Dialogo.confirmar(`¿Borrar la jornada del ${fechaLarga(j.fecha)}? No se puede deshacer.`))) return
     try {
       await DB.borrarBtJornada(j.id)
       cerrar('btModal')

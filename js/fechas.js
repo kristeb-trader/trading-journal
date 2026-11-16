@@ -111,7 +111,7 @@ const Fechas = (() => {
   }
 
   async function del(id) {
-    if (!confirm('¿Eliminar esta fecha del calendario?')) return
+    if (!(await Dialogo.confirmar('¿Eliminar esta fecha del calendario?'))) return
     try { await DB.deleteFechaEspecial(id); await load(); refrescarCalendario() }
     catch (e) { Toast.show('Error al eliminar: ' + e.message, 'error') }
   }

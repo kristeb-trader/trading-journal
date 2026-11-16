@@ -189,7 +189,7 @@ en `sw.js`, el nombre de la caché (`nqjournal-vN`) y el filtro de `activate`; e
 | 2 | **Calendario** completo según la maqueta, con el medidor de la meta | Lo abierto de §6 que Kris apruebe | ✅ 16/11 (rama) |
 | 3 | **Análisis y Disciplina** | Etiquetas de filtro con contador | ✅ 16/11 (rama) |
 | 4 | **Sesión** (Diario, Coach, Días anteriores) | Usa el ancho en escritorio (hoy deja el 40 % vacío) | ✅ 16/11 (rama) |
-| 5 | **El resto:** Trades, Imágenes, Apex (las cuentas quemadas, agrupadas), Comparador, Chaumer, Backtesting, Experimentos, Estrategia, Datos, Fechas, el visor del día, el login, y los 11 avisos nativos del navegador («¿Eliminar?») como diálogos de cristal | En el calendario del celular, el número del día en cada casilla | ◐ 16/11: lo común; faltan Apex agrupado y los avisos nativos |
+| 5 | **El resto:** Trades, Imágenes, Apex (las cuentas quemadas, agrupadas), Comparador, Chaumer, Backtesting, Experimentos, Estrategia, Datos, Fechas, el visor del día, el login, y los 11 avisos nativos del navegador («¿Eliminar?») como diálogos de cristal | En el calendario del celular, el número del día en cada casilla | ✅ 16/11 (rama) |
 | 6 | **Buscador** (días, setups, errores, observaciones) | Función nueva: lee lo que ya se carga | ✅ 16/11 (rama) |
 | 7 | **Cierre:** borrar el CSS que ya no se usa, actualizar `.claude/rules/estilos.md` y `CLAUDE.md`, decidir si la maqueta 7 se queda en el repositorio | | |
 

@@ -117,7 +117,7 @@ const DataManager = (() => {
     // ── Eliminar ───────────────────────────────────────────────────────────
     el.querySelectorAll('.btn-del-catalog').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('¿Eliminar este error? Los registros históricos conservarán el nombre anterior.')) return
+        if (!(await Dialogo.confirmar('¿Eliminar este error? Los registros históricos conservarán el nombre anterior.'))) return
         const id = parseInt(btn.dataset.id)
         try {
           await DB.deleteCatalogoCasuistica(id)
@@ -271,7 +271,7 @@ const DataManager = (() => {
     // Eliminar
     el.querySelectorAll('.btn-del-catalog').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('¿Eliminar esta emoción?')) return
+        if (!(await Dialogo.confirmar('¿Eliminar esta emoción?'))) return
         const id = parseInt(btn.dataset.id)
         try {
           await DB.deleteCatalogoEmocion(id)

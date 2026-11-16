@@ -362,7 +362,7 @@ const Chaumer = (() => {
   }
 
   async function borrar() {
-    if (!confirm('¿Borrar la operativa de Chaumer de este día?')) return
+    if (!(await Dialogo.confirmar('¿Borrar la operativa de Chaumer de este día?'))) return
     try {
       await DB.deleteChaumerOperativa(fecha)
       document.getElementById('chOpModal').classList.add('hidden')

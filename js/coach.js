@@ -1987,7 +1987,7 @@ ${porNombre.parametros}
   async function analisisTecnico() {
     // Rehacer el análisis es lo caro del Coach (relee el plan entero) y, con el
     // guardado automático, REEMPLAZA lo guardado del día. Que no pase por un clic suelto.
-    if (analisisHecho && !PRUEBA && !confirm('Este día ya tiene análisis. Rehacerlo vuelve a leer el plan entero (unos $0,50) y reemplaza el análisis y el diagnóstico guardados.\n\n¿Rehacerlo?')) return
+    if (analisisHecho && !PRUEBA && !(await Dialogo.confirmar('Este día ya tiene análisis. Rehacerlo vuelve a leer el plan entero (unos $0,50) y reemplaza el análisis y el diagnóstico guardados.\n\n¿Rehacerlo?'))) return
 
     const btn = document.getElementById('coachAnalyzeBtn')
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Analizando...' }

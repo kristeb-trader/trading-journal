@@ -123,8 +123,14 @@ Calendario (agosto), Análisis, Sesión y Otros; el buscador («stop» → obser
 **Fluidez** (celular lento simulado, CPU ×4): al bajar, 104 fps; al cambiar de pantalla, 68 fps (la app de hoy: 97).
 Para llegar ahí, el movimiento mira lo que se pinta en lote y en el siguiente fotograma (empezó en 38).
 
-**Queda para después de la revisión de Kris:** Apex con las cuentas quemadas agrupadas, los 11 avisos nativos del
-navegador («¿Eliminar?») como ventanas de cristal, y la limpieza del CSS viejo (fase 7).
+- **Apex:** las cuentas quemadas, en un «Historial» plegado bajo las activas.
+- **Avisos:** los 7 `confirm()` del navegador («¿Eliminar…?», «¿Rehacer el análisis?») son ahora ventanas de cristal
+  (`Dialogo.confirmar`, en `marco.js`): Enter = sí, Esc o tocar fuera = no; los de borrar, en rojo.
+- **Corregido de paso:** un script mío duplicaba los saltos de línea al editar (`
+`) en 10 archivos de la rama,
+  dos de ellos ya subidos (`charts.js`, `metrics.js`). El código funcionaba igual; quedan normalizados.
+
+**Queda para después de la revisión de Kris:** la limpieza del CSS viejo (fase 7).
 
 ---
 
