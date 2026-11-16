@@ -434,6 +434,7 @@ Caso real 13/07/2026: la consecución que traspasa la zona llega **25 velas** de
 
 - **Dos estados, sin grises.** **Activa** = cuenta para la operativa. **Inactiva** = superada en las dos direcciones.
 - **Superada en una dirección** = rompimiento **y** consecución en ese sentido. Solo rompimiento, sin consecución → la zona sigue vigente.
+- **🔄 Superada en una dirección, cambia de papel** *(plan 3.62, 16/11/2026)*: el soporte roto pasa a ser **resistencia**, y la resistencia rota pasa a ser **soporte**. Sigue activa y sirve para todo lo que sirve una zona: para entrar, para tapar o filtrar un objetivo, para ver si se cruza con otra zona y para saber cuándo queda inactiva. Su rompimiento en sentido contrario, con consecución, puede ser una entrada (`R-26`, forma c).
 - **Una zona inválida no cuenta para nada como zona:** ni bloquea el objetivo, ni sirve para entrar, ni cuenta para medir el 50 % entre zonas. Se retira del cálculo de los filtros.
 - **Pero sigue ocupando su sitio:** la banda que ya gastó su zona no se reabre porque la zona muera (`R-17`, punto 8). **Deja de valer como zona; no deja de ocupar el sitio.**
 - **Se conserva dibujada** en tono muy tenue, solo como recuerdo visual.

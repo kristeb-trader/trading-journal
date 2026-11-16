@@ -74,7 +74,7 @@ Palabras del operador (26/08/2026): *"ya no marco más zonas, no hago más anál
 ### Cómo se aplica
 
 - **La ATM:** **`K1`** · los contratos de `R-04` · Auto Breakeven **OFF** · Auto Trail **OFF** · stop y objetivo provisionales en `ATM_DEFECTO`, que depende de los contratos: **cantidad y stop provisional se ponen antes de enviar la orden**.
-- **Filtro antes de enviar:** el stop estructural debe ser **≤ `STOP_MAX`**. La distancia se mide entre la **entrada** y el stop estructural de `R-32`: en la Continuación, el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento; en el Reingreso, el extremo de la **corrida fallida**. Si lo supera **aunque sea por 1 tick, no se opera**.
+- **Filtro antes de enviar:** el stop estructural debe ser **≤ `STOP_MAX`**. La distancia se mide entre la **entrada** y el stop estructural de `R-32`: en la Continuación, el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento; en el Reingreso, el extremo del **último retroceso** antes del rompimiento (plan 3.62). Si lo supera **aunque sea por 1 tick, no se opera**.
 - **Tras el llenado:** 1º el stop a su referencia estructural · 2º el objetivo a 1:1 (`R-32`).
 - **Una vez ajustados, stop y objetivo no se vuelven a mover** (`R-33`).
 
@@ -113,7 +113,9 @@ Riesgo residual aceptado: la ventana de exposición manual tras el llenado, hast
 | Setup | Alcista (compra) | Bajista (venta) |
 |---|---|---|
 | **Continuación** | punto **más bajo alcanzado desde que nació la zona hasta el rompimiento** | punto **más alto alcanzado desde que nació la zona hasta el rompimiento** |
-| **Reingreso** | punto **más bajo de la corrida fallida** (la que rompió la zona y no continuó) | punto **más alto de la corrida fallida** |
+| **Reingreso** (formas a, b y c) | **mínimo del último retroceso** antes del rompimiento | **máximo del último retroceso** antes del rompimiento |
+
+> 🔄 **Reingreso, desde la 3.62 (16/11/2026):** *"el extremo del último retroceso, para todos los reingresos"*. Hasta la 3.61 iba en el extremo de la corrida fallida (forma a) o en el de la Continuación (forma b). Si el precio fue más allá después de ese retroceso, el stop va con él.
 
 > 🔴 **No es solo el extremo del retroceso que originó la zona.** Cuenta **todo** lo que el precio haya hecho mientras la zona estuvo viva, hasta la vela de rompimiento. Si la zona aguanta muchas velas y el precio se aleja más que en su retroceso original, el stop se va con él.
 
@@ -134,7 +136,7 @@ Riesgo residual aceptado: la ventana de exposición manual tras el llenado, hast
 
 **Caso real 7/07/2026:** el soporte de la vela 9:27 se rompe con la vela 9:36. El retroceso que lo originó (9:28–9:30) tenía su techo en 29.313,00, pero la vela 9:32 subió hasta **29.327,75**. Midiendo solo el retroceso, el riesgo habría sido de 71,50 pts; con todo lo que hizo el precio mientras la zona estuvo viva, es de **86,25 pts**, y **la entrada queda descartada por `STOP_MAX`**.
 
-**Geometría:** el stop del Reingreso mide contra la corrida que rompió la zona y falló — al **otro lado** de la zona. Incluye el ancho de la zona entera, así que **tiende a ser mayor** que el de una Continuación: el filtro de `STOP_MAX` muerde más en Reingreso.
+**Geometría:** hasta la 3.61, el stop del Reingreso medía contra la corrida que rompió la zona y falló —al **otro lado** de la zona, con el ancho de la zona entera—, y `STOP_MAX` lo descartaba a menudo. Desde la 3.62 va en el último retroceso: el 16/11 el stop desde el rompimiento fallido habría sido de unos 200 puntos, y en el último retroceso fue de 68,50.
 
 Palabras del operador: *"siempre el target debe estar libre de zonas o debe siempre tener espacio de recorrido sin nada en contra"*.
 

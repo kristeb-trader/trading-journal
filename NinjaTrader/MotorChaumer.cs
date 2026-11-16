@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:bf75f739f917807d C:a772c8db78322840";
+        public const string SELLO = "L:d5c169fcd2c51fef C:0f7049e952437f81";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -99,6 +99,7 @@ namespace NinjaTrader.NinjaScript
             public Roto Roto;
             public bool Consec; public int? IConsec; public double? ConsecExt;
             public bool ReinOk;
+            public bool Roto2;                             // plan 3.62: ya dio su reingreso (forma a o c)
             public double? Ref;                            // punto de referencia
             public bool DeCorrida, Pm;
             public int? IPapel;
@@ -792,6 +793,30 @@ namespace NinjaTrader.NinjaScript
             return mejor;
         }
 
+        /// <summary>Plan 3.62 (16/11/2026, Kris, R-32): el stop de TODO reingreso (formas a, b y c) va en el extremo del
+        /// último retroceso antes del rompimiento. nd&gt;0: el último mínimo de giro del zigzag ya confirmado en la vela i;
+        /// nd&lt;0: el último máximo. El extremo desde ese giro hasta la vela i. null sin ningún giro confirmado.
+        /// _ultimo_retroceso de lector.py.</summary>
+        private static double? UltimoRetroceso(Resultado res, int i, int nd)
+        {
+            var D = res.D; var piv = res.Piv; int? jOk = null;
+            for (int n = 0; n < piv.Count; n++)
+            {
+                int c = piv[n].Confirma, j = piv[n].I; double p = piv[n].Precio;
+                if (c < 0 || c > i || j > i) continue;
+                var vec = new List<double>();
+                if (n - 1 >= 0) vec.Add(piv[n - 1].Precio);
+                if (n + 1 < piv.Count) vec.Add(piv[n + 1].Precio);
+                if (vec.Count == 0) continue;
+                bool esMin = vec.All(v => p <= v);
+                if (esMin == (nd > 0)) jOk = j;
+            }
+            if (jOk == null) return null;
+            double st = nd > 0 ? double.MaxValue : double.MinValue;
+            for (int x = jOk.Value; x <= i; x++) st = nd > 0 ? Math.Min(st, D[x].L) : Math.Max(st, D[x].H);
+            return st;
+        }
+
         /// <summary>R-41: el punto de referencia vivo que estorba el objetivo de un reingreso, o null.</summary>
         private static double? PuntoDeReferencia(Resultado res, int i, double e, double t, int nd)
         {
@@ -1149,9 +1174,11 @@ namespace NinjaTrader.NinjaScript
                     else if (d == "abajo" && k.L <= zlo && k.H > zhi) nd = 1;
                     else continue;
                     if (z.IConsec == i && !(nd < 0 ? k.C < k.O : k.C > k.O)) continue;
-                    double st = nd < 0 ? double.MinValue : double.MaxValue;
-                    for (int j = z.Roto.I; j <= i; j++) st = nd < 0 ? Math.Max(st, D[j].H) : Math.Min(st, D[j].L);
+                    double? stA = UltimoRetroceso(res, i, nd);
+                    z.Roto2 = true;
                     double e = nd < 0 ? k.L - P.Tick : k.H + P.Tick;
+                    if (stA == null) continue;
+                    double st = stA.Value;
                     string motivo; double? t; double r;
                     var o = Evaluar(Z, i, "Reingreso", nd, e, st, out motivo, out t, out r);
                     if (t != null) res.Reingresos.Add(new Reingreso { I = i, E = e, T = t.Value, Nd = nd });
@@ -1162,6 +1189,40 @@ namespace NinjaTrader.NinjaScript
                         else if (ZonaATestear(Z, i, t.Value, nd) == null) { o = null; motivo = SIN_ZONA; }
                     }
                     string tag = Hh(k) + "  REINGRESO " + (nd < 0 ? "bajista" : "alcista") + " · entrada " + F2(e) + " · stop " + F2(st)
+                                 + (t != null ? " · objetivo " + F2(t.Value) + " · riesgo " + F2(r) : "");
+                    if (o != null) orden = Colocar(o, tag, ev, k);
+                    else ev.Add(tag + "  ✗ descartado — " + motivo);
+                    break;
+                }
+                if (orden != null) continue;
+
+                // ---------- REINGRESO, FORMA C: LA ZONA QUE CAMBIA DE PAPEL (plan 3.62, 16/11/2026, Kris, R-21 y R-26) ----------
+                // Una zona superada en un sentido cambia de papel; su rompimiento al revés, con consecución, es la entrada.
+                // Una sola vez por zona (Roto2). Caso de origen: 16/11, el soporte de la 9:32, entrada a las 10:53.
+                foreach (var z in vivas)
+                {
+                    if (!(z.Roto != null && z.Consec) || z.IConsec == null || z.IConsec >= i || z.Roto2) continue;
+                    int nd = z.Roto.Dir == "abajo" ? 1 : -1;
+                    var lohi = ConHijas(z, i) ? Borde(z, i) : z.En(i); double zlo = lohi[0], zhi = lohi[1];
+                    double e0;
+                    if (nd > 0 && k.L <= zhi && k.H > zhi + P.Tick / 2) e0 = k.H;
+                    else if (nd < 0 && k.H >= zlo && k.L < zlo - P.Tick / 2) e0 = k.L;
+                    else continue;
+                    z.Roto2 = true;
+                    double e = e0 + P.Tick * nd;
+                    double? stC = UltimoRetroceso(res, i, nd);
+                    if (stC == null) continue;
+                    double st = stC.Value;
+                    string motivo; double? t; double r;
+                    var o = Evaluar(Z, i, "Reingreso", nd, e, st, out motivo, out t, out r);
+                    if (t != null) res.Reingresos.Add(new Reingreso { I = i, E = e, T = t.Value, Nd = nd });
+                    if (o != null)
+                    {
+                        var pr = PuntoDeReferencia(res, i, e, t.Value, nd);
+                        if (pr != null) { o = null; motivo = "el objetivo pasa del punto de referencia " + F2(pr.Value); }
+                        else if (ZonaATestear(Z, i, t.Value, nd) == null) { o = null; motivo = SIN_ZONA; }
+                    }
+                    string tag = Hh(k) + "  REINGRESO " + (nd > 0 ? "alcista" : "bajista") + " (zona rota que cambia de papel: " + z + ") · entrada " + F2(e) + " · stop " + F2(st)
                                  + (t != null ? " · objetivo " + F2(t.Value) + " · riesgo " + F2(r) : "");
                     if (o != null) orden = Colocar(o, tag, ev, k);
                     else ev.Add(tag + "  ✗ descartado — " + motivo);
@@ -1182,10 +1243,10 @@ namespace NinjaTrader.NinjaScript
                     // Plan 3.52 (29/10/2026): hacia una zona activa nacida desde la apertura es un REINGRESO, no una
                     // Continuación: sin fluidez, también en día de Fed, con los filtros del reingreso.
                     {
-                        double stb = nd > 0 ? double.MaxValue : double.MinValue;
-                        for (int j = z.RIni.Value; j <= i; j++) stb = nd > 0 ? Math.Min(stb, D[j].L) : Math.Max(stb, D[j].H);
                         double eb = e0 + P.Tick * nd;
-                        if (ZonaATestear(Z, i, eb + Math.Abs(eb - stb) * nd, nd) != null)
+                        double? stbN = UltimoRetroceso(res, i, nd);   // plan 3.62: el último retroceso
+                        double stb = stbN.HasValue ? stbN.Value : 0;
+                        if (stbN != null && ZonaATestear(Z, i, eb + Math.Abs(eb - stb) * nd, nd) != null)
                         {
                             string motivoB; double? tb; double rb;
                             var ob = Evaluar(Z, i, "Reingreso", nd, eb, stb, out motivoB, out tb, out rb);
