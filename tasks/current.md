@@ -65,7 +65,7 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
 - [x] **Plan 3.46** (09/10): cierre por hora a las 16:50 de Nueva York, en el plan, el portal, los dos motores (caso sintético en la sincronía), el bot, la cadena, `bot_operaciones` y el calendario
 - [x] **Kris, fuera de la ventana** (comprobado el 22/10: todo lo instalado es idéntico al repositorio): copiar `MotorChaumer.cs`, `CadenaDiaria.cs` (a `Custom\AddOns\`), `BotChaumer.cs` (a `Custom\Strategies\`) y `VistaMotorChaumer.cs` (a `Custom\Indicators\`), y un solo F5. Sin el motor nuevo, el bot y la vista dicen «motor desincronizado»
 - [x] **Plan 3.62** (16/11, Kris): la zona superada cambia de papel (Reingreso, forma c) y el stop de todo reingreso va en el último retroceso. Plan y motores (`2300618`, sello `L:d5c169fc…`, 93/93), portal, fichas de septiembre. Cambian 5 operaciones (D-054)
-- [ ] **Kris, fuera de la ventana:** copiar `MotorChaumer.cs` (sello `L:d5c169fc…`) a `Custom\AddOns\` y F5. Sin eso el bot no opera
+- [x] **Kris** (16/11): `MotorChaumer.cs` con el sello `L:d5c169fc…` copiado y compilado
 - [ ] **§12 D2** `VistaMotorChaumer`: código hecho (07/10). **Kris:** copiar a `Custom/Indicators`, F5 y el Market Replay del 23/09 y el 02/10 con el bot y la vista
 - [ ] **Fase 4 · el pasado entero**: velas desde el 12/06/2025, Strategy Analyzer, Market Replay, informe
 - [ ] **Fase 5 · SimBot en vivo**, con la comparación diaria en la cadena

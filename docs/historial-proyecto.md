@@ -110,7 +110,8 @@ después, los 5 días que cambian en los 93 con datos, también aprobados (D-054
 (stop más cerca: −54,50 → −46,75) y 13/07 (+28,50 → −49,25). Total, de −203,00 a −261,00. En otros 26 días cambian solo
 reingresos descartados.
 
-**Pendiente.** Kris: copiar `MotorChaumer.cs` a `Custom\AddOns\` y F5 fuera de la ventana. Sin eso el bot no opera.
+**Después.** Kris copió y compiló `MotorChaumer.cs` (16/11). Plan 3.63: una nota en los dos reingresos de la galería de
+Chaumer, que etiquetan el stop en la corrida fallida: suele coincidir con el último retroceso, y si no, manda este.
 
 ---
 
