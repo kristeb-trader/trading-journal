@@ -155,6 +155,8 @@ NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) �
                   BotChaumer (la estrategia: opera lo que marca el motor, solo en su lista blanca) ·
                   VistaMotorChaumer (el motor del bot dibujado en vivo: zonas, zigzag, operación) ·
                   ChaumerNT (lo común del bot y la vista: config, sello, Supabase, velas UTC) ·
+                  FechaChaumer (el recuadro de fecha y hora, se arrastra) · FotoChaumer (la foto del día, sola tras
+                  cerrar o con su botón, a `sesiones.imagen_url`: la automática no pisa la del Diario) ·
                   archivo/ChecklistChaumer (archivado el 19/10, no se instala: las noticias van por el Diario, D-040)
 scripts/bot/      sincronia.py: los dos motores, vela a vela, y el SELLO · scripts/hooks/pre-commit lo exige ·
                   comparar.py: el CSV del Strategy Analyzer contra el motor

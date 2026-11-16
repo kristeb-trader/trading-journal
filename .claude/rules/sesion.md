@@ -46,6 +46,10 @@ entero (PGRST204). Las claves de tablas relacionales —hoy `checklist` y `notic
 hay que **sacarlas del destructuring** antes de enviarlo. Ya rompió el guardado una vez
 (3 ago).
 
+**`imagen_url` solo va si se tocó en el Diario** (`imagenTocada`: subir o quitar con la ✕; 16/11/2026). La imagen
+del día la sube también NinjaTrader (`FotoChaumer`) mientras el Diario puede estar abierto: mandarla siempre, vacía,
+la borraba al guardar.
+
 `collectFormData` manda además `registrada_at` y `diario_editado_at` (fase 7): son columnas reales. El
 primer guardado abre el candado de la ficha del motor y un trigger lo congela; los siguientes solo mueven
 `diario_editado_at`.

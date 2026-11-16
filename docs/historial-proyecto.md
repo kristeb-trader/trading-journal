@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-16b | NinjaTrader escribe la fecha y hace la foto del día: `FechaChaumer` y `FotoChaumer`, que la sube sola al Journal |
 | 2026-11-16 | Rediseño «Cristal», fase 0 (1): la rama se publica en `/nuevo/` para probarla; `visor.js`, al modo sin conexión |
 | 2026-11-15 | Rediseño «Cristal»: diseño aprobado por fases, maqueta de referencia y copia de seguridad del diseño anterior |
 | 2026-11-12c | El visor del día: la tira de días, oculta tras «Días» (o D), para saltar a cualquier día |
@@ -81,6 +82,37 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-16b — NinjaTrader escribe la fecha y hace la foto del día
+
+**Lo que pasó.** Kris quiere automatizar lo manual de cada día: escribía la fecha en el gráfico con la herramienta de
+texto, al terminar capturaba la pantalla con su reloj de escritorio, la recortaba y la subía en el Diario (22 de los 23
+días del 15/10 al 16/11). Pidió dos indicadores; se le propuso además subir la foto sola al Journal. Con bocetos sobre
+su captura del 16/11 eligió: la hora dentro del recuadro de la fecha (así la foto no depende del reloj externo ni de
+fotografiar la pantalla), en dos líneas del mismo tamaño, un 25 % más grandes que su recuadro; la foto **3 minutos
+después de cerrar** y **subida sola**. Pidió no escribir más documentos de diseño: se aprobó en el chat.
+
+**Lo que se hizo.**
+- **`NinjaTrader/FechaChaumer.cs`:** el recuadro «Lunes, 16 de Noviembre, 2026 / 09:57:15». Fecha de la última vela;
+  hora de NinjaTrader cada segundo en vivo. Se arrastra con el ratón, fijo en la pantalla, y la posición la guarda el
+  espacio de trabajo.
+- **`NinjaTrader/FotoChaumer.cs`:** la ventana del gráfico con `Chart.GetScreenshot(Window)` (lo hace NinjaTrader por
+  dentro: sale aunque otra ventana tape el gráfico), encajada en 2000 × 1190. Sola a los 3 min de que la cuenta
+  principal (Sim101) quede plana, o a las 11:30 de Nueva York si no operó; botón «Foto del día» en la barra. A
+  `fotos-chaumer\`, a Cloudinary y a `sesiones.imagen_url`. La automática no pisa una imagen subida en el Diario.
+- **El Diario** (`js/form.js`) solo manda `imagen_url` si se subió o quitó ahí: abrirlo antes de la foto y guardar
+  después la borraba.
+
+**Verificado.** Los dos `.cs` compilan contra las DLL de NinjaTrader (la barra `MainMenu` y `GetScreenshot` existen
+como se usan). La fecha, cargando el indicador compilado: «Lunes, 16 de Noviembre, 2026», «Miércoles, 18 de
+Noviembre, 2026», «Sábado, 2 de Enero, 2027». El encaje: una ventana de 3440 × 1392 sale en 2000 × 1190 sin deformar.
+El Diario en el navegador, con el guardado interceptado: sin tocar la imagen no la manda; quitada, manda el vacío.
+**Sin probar todavía, porque necesita NinjaTrader abierto:** arrastrar el recuadro, el botón, la foto real, la
+automática tras una operación y la subida al Journal.
+
+**Pendiente.** Kris: copiar los dos a `Custom\Indicators\`, F5 y añadirlos a su gráfico de operar.
 
 ---
 
