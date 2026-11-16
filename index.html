@@ -1,1713 +1,1728 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trading Journal</title>
-  <meta name="description" content="Journal de operativa NQ/MNQ Futures">
-
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1D9E75">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Trading Journal">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-
-  <!-- Manrope: la fuente del rediseño «Cristal» -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
-  <!-- La versión de prueba del rediseño se publica en …/nuevo/: lleva una banda que lo dice -->
-  <script>if (location.pathname.includes('/nuevo/')) document.documentElement.dataset.nuevo = '1'</script>
-
-  <!-- Tabler Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
-
-  <!-- Supabase JS v2 -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="css/styles.css">
-</head>
-<body>
-
-  <!-- El fondo vivo del rediseño «Cristal»: tres luces y un grano (css/styles.css, «El fondo vivo») -->
-  <div class="fondo" id="fondo" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i><i class="grano"></i></div>
-
-  <!-- ── Login gate ───────────────────────────────────────────────────── -->
-  <div class="login-gate hidden" id="loginGate">
-    <form class="login-card" id="loginForm">
-      <div class="login-logo"><i class="ti ti-chart-candle"></i> Trading Journal</div>
-      <p class="login-sub">Inicia sesión para continuar</p>
-      <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" required>
-      <input type="password" id="loginPassword" placeholder="Contraseña" autocomplete="current-password" required>
-      <button type="submit" class="btn-primary" id="loginBtn">Entrar</button>
-      <div class="login-error hidden" id="loginError"></div>
-    </form>
-  </div>
-
-  <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
-  <nav class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <!-- El icono real de la app (el mismo que el del móvil y la pestaña), no un
-           icono de tipografía: es la marca, y así es idéntica en los tres sitios.
-           icon-192 y no icon-512 porque a 24 px sobra resolución y pesa 4× menos. -->
-      <div class="logo">
-        <img src="icons/icon-192.png" alt="Trading Journal" class="logo-img">
-        <span>Trading Journal</span>
-      </div>
-    </div>
-    <ul class="nav-menu">
-      <li class="nav-item active" data-section="calendar" title="Calendario">
-        <i class="ti ti-calendar-month"></i>
-        <span>Calendario</span>
-      </li>
-      <li class="nav-item" data-section="analysis" title="Análisis">
-        <i class="ti ti-chart-line"></i>
-        <span>Análisis</span>
-      </li>
-      <!-- Sesión Operativa absorbe lo que antes eran tres entradas de menú
-           (Sesión, Historial y Coach IA): ahora son pestañas de la misma
-           pantalla. `Nav.go('coach')` y `Nav.go('historial')` siguen valiendo:
-           se traducen a esta sección + su pestaña. -->
-      <li class="nav-item" data-section="register" title="Sesión Operativa">
-        <i class="ti ti-square-rounded-plus"></i>
-        <span>Sesión</span>
-      </li>
-      <!-- Solo 6 botones: 11 no cabían en la barra inferior del móvil (660px de
-           barra contra ~390px de pantalla) y había que deslizar sin ninguna pista
-           de que hubiera más. Las 6 secciones restantes viven en "Otros" y siguen
-           siendo secciones normales: `Nav.PADRE` mantiene este botón encendido
-           mientras se está dentro de cualquiera de ellas. -->
-      <li class="nav-item" data-section="otros" title="Otros">
-        <i class="ti ti-layout-grid"></i>
-        <span>Otros</span>
-      </li>
-    </ul>
-    <!-- El pie se retiró: el badge "Cuenta Fondeo" era texto fijo escrito a mano
-         que ningún JS actualizaba, y el logout estaba oculto en móvil
-         (.sidebar-footer { display:none }), así que desde el teléfono no había
-         forma de cerrar sesión. Ambos viven ahora en Otros › Ajustes. -->
-  </nav>
-
-  <!-- ── Main Content ──────────────────────────────────────────────────── -->
-  <main class="main-content">
-
-    <!-- Top Bar -->
-    <!-- Tres celdas (1fr | auto | 1fr) para que el título quede centrado respecto
-         a la PANTALLA, no al hueco que dejen los botones. Con flex se descentraba
-         en cuanto aparecía el chevron de volver. -->
-    <header class="top-bar">
-      <div class="top-bar-side">
-        <!-- Icono de la app, arriba a la IZQUIERDA. Solo en móvil: en escritorio el
-             mismo icono ya está en el sidebar-header, que ahí es el borde superior
-             izquierdo de la aplicación. -->
-        <img src="icons/icon-192.png" alt="Trading Journal" class="hdr-logo">
-        <button class="btn-icon menu-toggle" id="menuToggle" title="Menú">
-          <i class="ti ti-menu-2"></i>
-        </button>
-        <!-- Vuelta a "Otros" desde sus subsecciones. Solo se muestra cuando la
-             sección actual tiene padre (Nav.PADRE): en el móvil es la única salida,
-             porque esas secciones ya no tienen botón propio. -->
-        <button class="btn-icon nav-back hidden" id="navBack" title="Volver a Otros" aria-label="Volver a Otros">
-          <i class="ti ti-chevron-left"></i>
-        </button>
-      </div>
-      <!-- Título ÚNICO de la sección. Antes vivía aquí Y otra vez dentro de cada
-           sección (.analysis-hero-title), en verde y a 2.1rem: dos títulos para la
-           misma pantalla. El dato variable que llevaban dos de esos títulos —el mes
-           del Calendario, el filtro de Imágenes, el rango de Disciplina— es lo que
-           ahora va en #sectionContext, con el mismo color y tamaño que el título. -->
-      <div class="header-info">
-        <!-- Flechas de mes: navegan el dato que se está mirando, así que van pegadas
-             al contexto. Solo se muestran en las secciones que las usan (Nav.HERRAMIENTAS). -->
-        <button class="btn-icon hdr-nav hidden" id="prevMonth" title="Mes anterior" aria-label="Mes anterior">
-          <i class="ti ti-chevron-left"></i>
-        </button>
-        <div class="header-titles">
-          <span class="header-title" id="currentSectionTitle">Calendario</span>
-          <span class="header-context" id="sectionContext"></span>
-        </div>
-        <button class="btn-icon hdr-nav hidden" id="nextMonth" title="Mes siguiente" aria-label="Mes siguiente">
-          <i class="ti ti-chevron-right"></i>
-        </button>
-      </div>
-      <div class="top-bar-side header-actions">
-        <!-- Los 3 filtros de cuenta viven aquí (cada sección tiene su propia selección
-             persistida). `Nav.go()` muestra el de la sección activa y oculta los demás.
-             Lo que se ve es el NOMBRE de la cuenta, nunca un icono suelto: la cartera se
-             retiró el 17 ago porque en móvil se comía la etiqueta y quedaba un icono que
-             no decía qué hacía, ocultando que el filtro estaba activo. -->
-        <!-- Selector de período de Análisis (Mes/Trimestre/Anual + salto directo a
-             un mes/año concreto). Mismo componente que el de Disciplina. -->
-        <div class="per-filter hdr-tool hidden" id="analysisPeriod"></div>
-        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterCalendar"></div>
-        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterAnalysis"></div>
-        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterTrades"></div>
-        <!-- Selector de período de Disciplina (Mes/Trimestre/Año/Todo). Vive aquí y no
-             en la sección: los controles de sección van en la barra (Nav.HERRAMIENTAS).
-             Desplegable, no píldoras: en móvil las 4 opciones competían por el ancho
-             con el título y las flechas. Lo pinta disciplina.js. -->
-        <div class="per-filter hdr-tool hidden" id="disciplinaPeriod"></div>
-        <div class="per-filter hdr-tool hidden" id="chaumerPeriod"></div>
-        <!-- Estado de la conexión: solo en Otros (Nav.HERRAMIENTAS). En el resto de
-             pantallas era un adorno permanente; si falla la conexión, el toast del
-             arranque ya avisa. -->
-        <button class="status-dot hidden" id="connectionStatus" title="Comprobando conexión…" aria-label="Estado de la conexión">
-          <i class="ti ti-loader-2 spin"></i>
-        </button>
-      </div>
-    </header>
-
-    <!-- Content -->
-    <div class="content-area">
-
-      <!-- ═══ 1. CALENDARIO ═══════════════════════════════════════════════ -->
-      <section class="section active" id="section-calendar">
-        <!-- Sin cabecera propia: el mes va en #sectionContext, y el filtro de cuentas
-             y las flechas de mes viven en la barra superior (ago 2026). Esta sección
-             arranca directamente en las métricas. -->
-
-        <!-- Mi calendario. Desde el 12/11/2026 es lo único del Calendario: los cuatro
-             calendarios comparados viven en Otros → Comparador (#section-comparar). -->
-        <div class="cal-mio" id="calMio">
-
-        <!-- Métricas compactas (arriba del calendario) -->
-        <div class="metrics-grid metrics-grid-compact" id="metricsGrid">
-          <!-- Generated by metrics.js -->
-        </div>
-
-        <div class="calendar-legend">
-          <span class="legend-item"><span class="dot green"></span> Target</span>
-          <span class="legend-item"><span class="dot red"></span> Stop</span>
-          <span class="legend-item"><span class="dot sinsetup"></span> Sin entradas válidas</span>
-          <span class="legend-item"><span class="dot gray"></span> No operé</span>
-          <span class="legend-item"><span class="dot festivo"></span> Festivo</span>
-          <span class="legend-item"><span class="dot fomc"></span> FOMC</span>
-        </div>
-
-        <div class="calendar-grid" id="calendarGrid">
-          <!-- Generated by calendar.js -->
-        </div>
-
-        <!-- Curva de Equity del mes -->
-        <div class="card annual-table-card" style="margin-top:40px">
-          <div class="chart-header">
-            <h3><i class="ti ti-trending-up"></i> Curva de Equity — P&amp;L Acumulado</h3>
-          </div>
-          <div style="height:240px"><canvas id="calEquityChart"></canvas></div>
-        </div>
-
-        <!-- Desglose de días del mes -->
-        <div class="card annual-table-card" style="margin-top:24px">
-          <div class="chart-header">
-            <h3><i class="ti ti-calendar-stats"></i> Desglose de días</h3>
-            <span class="dd-periodo" id="ddPeriodo"></span>
-          </div>
-          <div class="dd-grid" id="diasDesglose">
-            <!-- Generated by metrics.js -->
-          </div>
-        </div>
-        </div><!-- /#calMio -->
-      </section>
-
-      <!-- ═══ COMPARADOR (Otros) ═══════════════════════════════════════════ -->
-      <section class="section" id="section-comparar">
-        <!-- Los cuatro calendarios (calendarios.js): Mío · Chaumer · Bot · manual, con
-             el mismo mes que el Calendario. "Mío" lleva al Calendario; los otros tres
-             comparten la vista genérica (#calFuente). Salió del Calendario el 12/11/2026.
-             Diseño: docs/disenos/2026-09-29-cuatro-calendarios.md -->
-        <div class="cal-hub" id="calHub">
-          <div class="hub-grid" id="hubGrid"><!-- Generated by calendarios.js --></div>
-          <div class="card annual-table-card hub-curva-card">
-            <div class="chart-header">
-              <h3><i class="ti ti-chart-line"></i> Puntos acumulados del mes</h3>
-              <!-- Acceso directo a las 3 gráficas del último día hábil (hoy, si lo es).
-                   Desde ahí, ← / → recorren los días. -->
-              <button class="btn btn-secondary btn-sm hub-tres" id="hubTresGraficas" type="button"
-                      title="Ver las 3 gráficas del día: la mía, la del Bot y la de Chaumer">
-                <i class="ti ti-layout-rows"></i> Gráficas del día
-              </button>
-            </div>
-            <!-- La curva ocupa el alto que sobre en la pantalla; al lado, la
-                 clasificación del mes (en móvil, debajo). -->
-            <div class="hub-curva-cuerpo">
-              <div class="hub-curva-lienzo"><canvas id="hubCurva"></canvas></div>
-              <div class="hub-curva-leyenda" id="hubCurvaLeyenda"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- La vista completa de Chaumer, el Bot o el backtesting manual -->
-        <div class="cal-fuente hidden" id="calFuente">
-          <div class="metrics-grid metrics-grid-compact" id="fuenteMetrics"></div>
-          <div class="calendar-legend" id="fuenteLeyenda"></div>
-          <div class="calendar-grid" id="fuenteGrid"></div>
-          <div class="card annual-table-card" style="margin-top:40px">
-            <div class="chart-header">
-              <h3><i class="ti ti-trending-up"></i> Curva de Equity — Puntos acumulados</h3>
-            </div>
-            <div style="height:240px"><canvas id="fuenteEquity"></canvas></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ═══ 3. TRADES ════════════════════════════════════════════════════ -->
-      <section class="section" id="section-trades">
-        <!-- Los míos, los de Alfredo y los del bot en una lista (docs/disenos/
-             2026-11-03-trades-tres-fuentes.md). Las etiquetas de filtro las pinta
-             table.js; el filtro de cuentas está en la barra superior y solo
-             aplica a los míos. -->
-        <div class="section-header">
-          <div class="table-controls">
-            <input type="text" class="search-input" id="tradeSearch" placeholder="Buscar...">
-          </div>
-        </div>
-        <div class="tf-barra" id="tradeFiltros"></div>
-        <div class="tf-resumen" id="tradeResumen"></div>
-
-        <div class="table-wrapper">
-          <table class="trades-table" id="tradesTable">
-            <thead>
-              <tr>
-                <th>Quién</th>
-                <th>Día</th>
-                <th>Fecha</th>
-                <th>Hora</th>
-                <th>Setup</th>
-                <th>Dirección</th>
-                <th>Resultado</th>
-                <th class="num">Puntos</th>
-                <th class="num">P&amp;L</th>
-                <th>Error</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="tradesTableBody">
-              <tr><td colspan="11" class="empty-row"><i class="ti ti-loader-2 spin"></i> Cargando...</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="pagination" id="tradesPagination"></div>
-      </section>
-
-      <!-- ═══ 4. SESIÓN OPERATIVA ══════════════════════════════════════════ -->
-      <!-- Funde lo que eran tres pantallas: el registro del día, el Coach IA y
-           el historial. Una sola fecha manda sobre las tres pestañas. -->
-      <section class="section" id="section-register">
-
-        <!-- Cabecera común: la fecha del día + el recuadro de resultado.
-             Vive FUERA del formulario para que mande también sobre el Coach. -->
-        <div class="so-head">
-          <div class="date-stepper">
-            <button type="button" class="btn-icon" id="sesionDatePrev" title="Día anterior">
-              <i class="ti ti-chevron-left"></i>
-            </button>
-            <input type="date" id="sesionDate" name="sesion_date" required form="sessionForm">
-            <button type="button" class="btn-icon" id="sesionDateNext" title="Día siguiente">
-              <i class="ti ti-chevron-right"></i>
-            </button>
-          </div>
-          <div class="mh-stats" id="soHeadStats"></div>
-        </div>
-
-        <div class="so-tabs" id="soTabs">
-          <button type="button" class="so-tab active" data-tab="diario">
-            <i class="ti ti-clipboard-text"></i> Diario
-          </button>
-          <button type="button" class="so-tab" data-tab="coach">
-            <i class="ti ti-robot"></i> Coach IA
-          </button>
-          <button type="button" class="so-tab" data-tab="dias">
-            <i class="ti ti-history"></i> Días anteriores
-          </button>
-        </div>
-
-        <!-- ── Pestaña: Diario ── -->
-        <div class="so-panel active" id="so-panel-diario">
-        <div class="form-container">
-          <form id="sessionForm" autocomplete="off">
-
-          <fieldset id="sessionFieldset">
-
-            <!-- No operé -->
-            <div class="form-row">
-              <div class="form-group">
-                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; padding-top:4px;">
-                  <label class="toggle-switch">
-                    <input type="checkbox" id="noOpero" name="no_opero">
-                    <span class="toggle-slider"></span>
-                  </label>
-                  <span style="font-size:0.88rem; color:var(--text2);">No operé hoy</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- ¿Te conectaste a analizar? (solo cuando No operé) -->
-            <div class="form-group hidden" id="seConectoGroup">
-              <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
-                <label class="toggle-switch">
-                  <input type="checkbox" id="seConecto" name="se_conecto" checked>
-                  <span class="toggle-slider"></span>
-                </label>
-                <span style="font-size:0.88rem; color:var(--text2);">Me conecté a analizar (no hubo setup válido) — registrar premercado y análisis</span>
-              </label>
-            </div>
-
-            <!-- ═══ 1. Premercado — contexto técnico ═══ -->
-            <div class="form-group collapsible card-x" data-tono="ambar" id="premercadoSection">
-              <div class="form-section-title"><i class="ti ti-sunrise"></i> Contexto técnico</div>
-
-              <!-- Zona SIEMPRE visible (sobrevive al plegado, ver .collapse-keep):
-                   lo único de esta tarjeta que se consulta a diario. El resto
-                   (precios y líneas naranjas) se registra para el Coach y vive
-                   detrás de la flecha. -->
-              <div class="collapse-keep">
-                <div class="nr-block">
-                  <div class="nr-title">Noticias rojas <span class="lbl-hint">— no se opera ±5 min alrededor de cada una</span></div>
-                  <div id="noticiasRojasList" class="nr-list"></div>
-                  <!-- Se guardan al momento, sin enviar el Diario: el bot de NT8 las lee al
-                       armarse, antes de la apertura (docs/disenos/2026-10-19-noticias-sin-addon.md). -->
-                  <div class="nr-acciones">
-                    <button type="button" class="btn-add-nr" id="addNoticiaRoja">
-                      <i class="ti ti-plus"></i> Añadir noticia roja
-                    </button>
-                    <button type="button" class="btn-add-nr btn-save-nr" id="guardarNoticias" disabled>
-                      <i class="ti ti-device-floppy"></i> Guardar noticias
-                    </button>
-                    <span class="nr-estado" id="nrEstado" aria-live="polite"></span>
-                  </div>
-                </div>
-                <div class="premkt-puntos" id="premktPuntos">
-                  <span class="rg">Rango ayer <b id="rangoPrevDay">— pts</b></span>
-                  <span class="rg">Overnight <b id="rangoOvernight">— pts</b></span>
-                </div>
-              </div>
-
-              <div class="premkt-grid">
-                <div class="premkt-field">
-                  <label>Apertura ayer (PDO)</label>
-                  <input type="number" step="0.25" id="precioAperturaAyer" placeholder="30620">
-                </div>
-                <div class="premkt-field">
-                  <label>Máx ayer (PDH)</label>
-                  <input type="number" step="0.25" id="precioMaxAyer" placeholder="30810">
-                </div>
-                <div class="premkt-field">
-                  <label>Mín ayer (PDL)</label>
-                  <input type="number" step="0.25" id="precioMinAyer" placeholder="30540">
-                </div>
-                <div class="premkt-field">
-                  <label>Cierre ayer (PDC)</label>
-                  <input type="number" step="0.25" id="precioCierreAyer" placeholder="30763">
-                </div>
-                <div class="premkt-field">
-                  <label>Overnight High (ONH)</label>
-                  <input type="number" step="0.25" id="precioMaxPre" placeholder="30800">
-                </div>
-                <div class="premkt-field">
-                  <label>Overnight Low (ONL)</label>
-                  <input type="number" step="0.25" id="precioMinPre" placeholder="30561">
-                </div>
-                <div class="premkt-field">
-                  <label>Apertura hoy</label>
-                  <input type="number" step="0.25" id="precioApertura" placeholder="30743.50">
-                </div>
-              </div>
-              <div class="premkt-lines">
-                <div class="premkt-lines-col">
-                  <label>🟠 Soportes (líneas naranjas)</label>
-                  <div id="soportesNaranjaWrap" class="premkt-lines-wrap"></div>
-                </div>
-                <div class="premkt-lines-col">
-                  <label>🟠 Resistencias (líneas naranjas)</label>
-                  <div id="resistenciasNaranjaWrap" class="premkt-lines-wrap"></div>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- ═══ 2. Checklist Reglas ═══ -->
-            <!-- Esta tarjeta NO se pliega entera: el resumen (barra + las 3
-                 fases con su contador) siempre se ve, y el detalle se despliega
-                 fase por fase. -->
-            <div class="form-card card-x" data-tono="verde">
-            <div class="form-section-title"><i class="ti ti-checklist"></i> Checklist de reglas</div>
-
-            <!-- Barra de cumplimiento: se ve aunque la tarjeta esté plegada,
-                 porque resume el proceso del día de un vistazo. -->
-            <div class="collapse-keep chk-prog">
-              <div class="chk-prog-top">Cumplimiento del proceso</div>
-              <div class="chk-prog-row">
-                <div class="chk-track"><div class="chk-fill" id="chkProgFill"></div></div>
-                <span class="chk-pct" id="chkProgPct">—</span>
-              </div>
-            </div>
-
-            <!-- Checklist por fases — renderizado dinámicamente desde `catalogo_reglas` (es_checklist) en form.js -->
-            <div id="checklistContainer"></div>
-
-            <!-- Motivo no operé (oculto por defecto) -->
-            <div class="form-group hidden" id="motivoGroup">
-              <label for="motivoNoOpero">Motivo de no operación</label>
-              <select id="motivoNoOpero" name="motivo_no_opero">
-                <option value="">Seleccionar...</option>
-                <option value="Setup válido no tomado">⚠️ Setup válido — no entré (duda/miedo)</option>
-                <option value="Sin setup">Sin entradas válidas</option>
-                <option value="Noticia roja">Noticia roja activa</option>
-                <option value="FOMC">FOMC / Fed</option>
-                <option value="Festivo">Festivo (mercado cerrado)</option>
-                <option value="Personal">Motivo personal</option>
-                <option value="Otro">Otro</option>
-              </select>
-
-              <!-- Campos extra cuando hay setup válido no tomado -->
-              <div id="setupNoTomadoGroup" class="hidden" style="margin-top:12px">
-                <label style="margin-bottom:6px;display:block">Setup que identificaste</label>
-<!-- Opciones desde catalogo_setup_variantes (form.js → loadSetups) -->
-                <select id="setupObservado" name="setup_observado">
-                  <option value="">Seleccionar setup...</option>
-                </select>
-                <label style="margin-top:10px;margin-bottom:6px;display:block">Motivo por el que no entraste</label>
-                <div class="btn-group" id="motivoNoEntradaGroup">
-                  <!-- "No lo vi" se adelantó de la Fase 4 el 19 ago: el comparador
-                       de Chaumer ya lo ofrece, y dejar el Diario con un vocabulario
-                       distinto habría partido en dos el mismo campo. -->
-                  <button type="button" class="btn-option" data-value="No lo vi">No lo vi</button>
-                  <button type="button" class="btn-option" data-value="Duda">Duda</button>
-                  <button type="button" class="btn-option" data-value="Miedo">Miedo</button>
-                  <button type="button" class="btn-option" data-value="Zona naranja">Zona naranja</button>
-                  <button type="button" class="btn-option" data-value="Desconfianza">Desconfianza</button>
-                  <button type="button" class="btn-option" data-value="Otro">Otro</button>
-                </div>
-                <input type="hidden" id="motivoNoEntradaVal" name="motivo_no_entrada">
-              </div>
-
-              <!-- Experimentos del día (visible si estuve conectado aunque no operara) -->
-              <div id="expNoOperoWrap" class="hidden" style="margin-top:12px">
-                <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text2)"><i class="ti ti-flask" style="margin-right:4px"></i>Experimentos del día</label>
-                <div class="exp-add-row">
-                  <select id="expSNTSelect"><option value="">Seleccionar experimento...</option></select>
-                  <div class="btn-group" id="expSNTResultGrp">
-                    <button type="button" class="btn-option cas-t" data-value="T">T</button>
-                    <button type="button" class="btn-option cas-s" data-value="S">S</button>
-                  </div>
-                  <input type="number" step="0.01" class="exp-valor-input" id="expSNTValor" placeholder="Valor $" title="Resultado en $ del experimento (target/stop propio)">
-                  <input type="text" class="exp-nota-input" id="expSNTNota" placeholder="Nota (opcional)">
-                  <button type="button" class="btn-secondary" id="expSNTAgregar"><i class="ti ti-plus"></i> Agregar</button>
-                </div>
-                <div id="expSNTList" class="exp-list"></div>
-              </div>
-            </div>
-            </div>
-
-            <!-- ═══ 3. Operativa (visible cuando sí operó) ═══ -->
-            <div id="tradingFields" class="op-only form-card collapsible card-x" data-tono="azul">
-              <div class="form-section-title"><i class="ti ti-chart-candle"></i> La operación
-              </div>
-
-              <!-- Bloque 1 · QUÉ se operó -->
-              <div class="op-bloque">
-                <div class="op-bloque-lbl">El setup</div>
-                <div class="op-grid">
-                  <div class="form-group op-ancho">
-                    <label for="setup">SetUp operado</label>
-<!-- Opciones desde catalogo_setup_variantes (form.js → loadSetups) -->
-                    <select id="setup" name="setup">
-                      <option value="">Seleccionar setup...</option>
-                    </select>
-                  </div>
-                  <!-- «La lectura» era su propio bloque hasta el 27/10/2026: el contexto de
-                       mercado (el sesgo que el plan no usa, D-035), la corrida y las zonas en
-                       contra (las comprueba el motor) ya no se piden. Solo queda el retroceso,
-                       que es dato. Las columnas y lo registrado siguen en `sesiones`. -->
-                  <div class="form-group">
-                    <label>Puntos de retroceso</label>
-                    <div id="puntosRetrocesoDisplay" class="op-dato">— pts</div>
-                    <input type="hidden" id="puntosRetroceso">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Bloque 2 · QUÉ pasó (lo trae NinjaTrader). `op-bloque-datos`
-                   marca que NO es un bloque de campos: se ve también en lectura. -->
-              <div class="op-bloque op-bloque-datos">
-                <div class="op-bloque-lbl">Los trades</div>
-                <div id="opTradesWrap" class="op-trades-wrap"></div>
-              </div>
-
-              <!-- Alerta de riesgo (Bloque 1): visible solo si el retroceso supera el stop máximo -->
-              <div class="form-group hidden" id="riesgoAlertGroup">
-                <div class="riesgo-alert">
-                  <i class="ti ti-alert-triangle"></i>
-                  <span id="riesgoAlertText">El retroceso supera tu límite de riesgo.</span>
-                </div>
-                <label style="margin-top:12px">¿Viste que el retroceso superaba tu límite <b>antes de entrar</b>?</label>
-                <div class="btn-group" id="alertaVista">
-                  <button type="button" class="btn-option" data-value="true">Sí, lo vi y entré igual</button>
-                  <button type="button" class="btn-option" data-value="false">No lo vi a tiempo</button>
-                </div>
-                <input type="hidden" id="alertaVistaVal" name="alerta_riesgo_vista">
-              </div>
-
-            </div>
-
-            <!-- ═══ 4. Post-Operativa ═══ -->
-            <div class="form-card collapsible card-x" data-tono="violeta">
-            <div class="form-section-title"><i class="ti ti-clipboard-check"></i> Cierre del día
-              <span class="card-meta" id="cierreMeta"></span>
-            </div>
-
-            <!-- «¿Cómo llegué?», «¿Cómo terminé?» y la confianza en la entrada ya no se
-                 piden (27/10/2026): casi no variaban o repetían el resultado. Lo
-                 psicológico va en los errores de abajo. Lo registrado sigue en
-                 `sesiones` y `diagnosticos_diarios`. -->
-
-            <!-- Experimentos del día (solo cuando sí operó) -->
-            <div class="form-group op-only">
-              <label><i class="ti ti-flask" style="font-size:0.9rem;margin-right:4px"></i>Experimentos del día</label>
-              <div class="exp-add-row">
-                <select id="expTradeSelect"><option value="">Seleccionar experimento...</option></select>
-                <div class="btn-group" id="expTradeResultGrp">
-                  <button type="button" class="btn-option cas-t" data-value="T">T</button>
-                  <button type="button" class="btn-option cas-s" data-value="S">S</button>
-                </div>
-                <input type="number" step="0.01" class="exp-valor-input" id="expTradeValor" placeholder="Valor $" title="Resultado en $ del experimento (target/stop propio)">
-                <input type="text" class="exp-nota-input" id="expTradeNota" placeholder="Nota (opcional)">
-                <button type="button" class="btn-secondary" id="expTradeAgregar"><i class="ti ti-plus"></i> Agregar</button>
-              </div>
-              <div id="expTradeList" class="exp-list"></div>
-            </div>
-
-            <!-- Errores cometidos -->
-            <div class="form-group" id="casuisticasGroup">
-              <label><i class="ti ti-alert-triangle" style="margin-right:6px;color:var(--warning)"></i>Errores cometidos</label>
-              <div class="cas-input-row">
-                <select id="casCasuistica">
-                  <option value="">Seleccionar situación...</option>
-                  <option>Reingresos</option>
-                  <option>Contra Resistencia</option>
-                  <option>Contra Soporte</option>
-                  <option>Contra Mínimo</option>
-                  <option>Contra Máximo</option>
-                  <option>Volumen Mayor</option>
-                  <option>Target Largo</option>
-                  <option>Rompimiento Extendido</option>
-                  <option>IRIs Poco Claros</option>
-                  <option>3ª Corrida</option>
-                  <option>FOMC</option>
-                  <option>Máximo de la Apertura</option>
-                  <option>Mínimo de la Apertura</option>
-                  <option>Error de Marcación</option>
-                  <option>Duda</option>
-                </select>
-                <div class="btn-group cas-resultado" id="casResultadoGroup">
-                  <button type="button" class="btn-option cas-t" data-value="T">T</button>
-                  <button type="button" class="btn-option cas-s" data-value="S">S</button>
-                </div>
-                <button type="button" class="btn-secondary" id="casAgregar">
-                  <i class="ti ti-plus"></i> Agregar
-                </button>
-              </div>
-              <div id="casList" class="cas-list"></div>
-            </div>
-
-            <!-- Reflexión -->
-            <div class="form-group" data-vacio-auto>
-              <label for="analisisTrader">Reflexión / Análisis del día</label>
-              <textarea id="analisisTrader" name="analisis_trader" rows="5"
-                placeholder="¿Cómo fue la sesión? ¿Qué salió bien? ¿Qué mejorar? ¿Seguiste las reglas?"></textarea>
-            </div>
-
-            <!-- Notas adicionales -->
-            <div class="form-group" data-vacio-auto>
-              <label for="resumenIA">Notas adicionales</label>
-              <textarea id="resumenIA" name="resumen_ia" rows="3"
-                placeholder="Apuntes extra, ideas para mañana, contexto adicional..."></textarea>
-            </div>
-
-            </div>
-
-            <!-- ═══ 5. Imagen ═══ -->
-            <div class="form-card card-x" data-tono="gris">
-            <div class="form-section-title"><i class="ti ti-photo"></i> Gráfico del día</div>
-            <div class="form-group">
-              <label>Imagen / captura del día</label>
-              <div class="upload-area" id="uploadArea">
-                <i class="ti ti-photo-up"></i>
-                <p>Arrastra una imagen o haz clic para seleccionar</p>
-                <p style="font-size:0.75rem; margin-top:4px; color:var(--text3);">PNG, JPG — máx. 10 MB</p>
-                <input type="file" id="imageUpload" accept="image/*" hidden>
-              </div>
-              <div class="image-preview hidden" id="imagePreview">
-                <img id="previewImg" src="" alt="Vista previa">
-                <button type="button" class="btn-remove-img" id="removeImage" title="Quitar imagen">
-                  <i class="ti ti-x"></i>
-                </button>
-              </div>
-              <input type="hidden" id="imagenUrl" name="imagen_url">
-            </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="form-actions">
-              <button type="submit" class="btn-primary" id="saveSession">
-                <i class="ti ti-device-floppy"></i> Guardar sesión
-              </button>
-              <button type="button" class="btn-secondary" id="clearForm">
-                <i class="ti ti-refresh"></i> Limpiar formulario
-              </button>
-            </div>
-          </fieldset>
-
-          </form>
-        </div>
-        </div><!-- /#so-panel-diario -->
-
-        <!-- ── Pestaña: Coach IA ── (el markup se inyecta aquí desde el bloque
-             original; conserva todos los ids para que coach.js siga igual) -->
-        <div class="so-panel" id="so-panel-coach">
-
-          <!-- Selector de fecha -->
-          <!-- El Coach ya no lleva su propio selector de fecha: la manda la
-               cabecera de Sesión Operativa, común a las tres pestañas. Solo
-               queda el hint (hoy / ayer / hace N días). -->
-          <div class="coach-date-row">
-            <span class="coach-date-hint" id="coachDateHint"></span>
-          </div>
-
-          <!-- Lo que marcó el motor ese día (fase 7). La pinta coach.js según
-               motor_estado: candado, pendiente, sin sesión, error o la ficha. -->
-          <div class="coach-motor hidden" id="coachMotorCard"></div>
-
-          <!-- Emoción y confianza se registran en el Diario (pestaña 1): son
-               datos de la sesión, no del análisis. Aquí queda solo la gráfica,
-               que es lo que el Coach necesita MIRAR para analizar. -->
-          <div class="coach-controls-row">
-
-            <div class="coach-control-group coach-img-group">
-              <label class="coach-label">Gráfica del día</label>
-              <div class="coach-upload-area" id="coachUploadArea">
-                <i class="ti ti-photo-up"></i>
-                <span>Arrastra o haz clic para subir</span>
-                <input type="file" id="coachImageInput" accept="image/*" hidden>
-              </div>
-              <div class="coach-img-preview hidden" id="coachImagePreview">
-                <img id="coachPreviewImg" src="" alt="Gráfica">
-                <button type="button" class="coach-remove-img" id="coachRemoveImg" title="Quitar imagen">
-                  <i class="ti ti-x"></i>
-                </button>
-              </div>
-            </div>
-
-          </div><!-- /.coach-controls-row -->
-
-          <!-- Botón de acción principal. "Guardar diagnóstico" ya NO se duplica
-               aquí arriba: vive solo al final, como el resto de formularios. -->
-          <div class="coach-action-row">
-            <button class="btn-primary" id="coachAnalyzeBtn">
-              <i class="ti ti-chart-dots-3"></i> Análisis Técnico
-            </button>
-          </div>
-
-          <!-- ═══ ETAPA 1: Análisis Técnico ═══ -->
-          <div class="coach-stage" id="coachStageTecnico">
-            <div class="coach-stage-label">
-              <span class="coach-stage-num">1</span>
-              <span>Análisis Técnico</span>
-            </div>
-            <div id="coachAnalisisContent" class="coach-analisis-content">
-              <div class="coach-placeholder">
-                <i class="ti ti-chart-dots-3"></i>
-                <p>Haz clic en <strong>Análisis Técnico</strong> para que el Coach lea el contexto, el desarrollo y la validación de setups de la sesión.</p>
-                <p class="coach-placeholder-hint">Sube la gráfica del día para un análisis más preciso. Sin imagen, usará los datos del diario.</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- ═══ ETAPA 2: Sesión de Coaching ═══ -->
-          <div class="coach-stage coach-stage-locked" id="coachStageChat">
-            <div class="coach-stage-label">
-              <span class="coach-stage-num">2</span>
-              <span>Sesión de Coaching</span>
-              <span class="coach-stage-chip">Opcional</span>
-              <button class="btn-sm btn-ghost coach-cerrar-btn hidden" id="coachCerrarSesionBtn" title="Cerrar la sesión de coaching y habilitar el diagnóstico">
-                <i class="ti ti-circle-check"></i> Cerrar sesión
-              </button>
-            </div>
-            <div class="coach-chat-wrap">
-              <div class="coach-chat-messages" id="coachChatMessages"></div>
-              <div class="coach-chat-input-row">
-                <textarea
-                  id="coachChatInput"
-                  class="coach-chat-input"
-                  rows="2"
-                  placeholder="Pregunta sobre un setup, un error, la estrategia... (Enter para enviar, Shift+Enter para nueva línea)"></textarea>
-                <button class="btn-primary coach-send-btn" id="coachSendBtn" title="Enviar">
-                  <i class="ti ti-send"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- ═══ ETAPA 3: Diagnóstico Final ═══ -->
-          <div class="coach-stage coach-stage-locked" id="coachStageDiagnostico">
-            <div class="coach-stage-label">
-              <span class="coach-stage-num">3</span>
-              <span>Diagnóstico Final</span>
-            </div>
-            <div class="coach-action-row">
-              <button class="btn-primary" id="coachDiagnosticoBtn" disabled>
-                <i class="ti ti-clipboard-check"></i> Generar Diagnóstico
-              </button>
-            </div>
-            <div id="coachDiagnosticoContent" class="coach-analisis-content">
-              <div class="coach-placeholder coach-placeholder-sm">
-                <i class="ti ti-lock"></i>
-                <p>Cierra la sesión de coaching para generar el veredicto, los errores y el aprendizaje del día.</p>
-              </div>
-            </div>
-            <div id="coachErroresConfirm" class="coach-errores-confirm"></div>
-            <div class="coach-action-row coach-action-row-bottom">
-              <button class="btn-primary coach-save-btn hidden" id="coachSaveBtnBottom">
-                <i class="ti ti-device-floppy"></i> Guardar diagnóstico
-              </button>
-            </div>
-          </div>
-
-        </div><!-- /#so-panel-coach -->
-
-        <!-- ── Pestaña: Días anteriores ── -->
-        <div class="so-panel" id="so-panel-dias">
-          <div id="coachHistorialList" class="coach-historial-list">
-            <div class="coach-placeholder">
-              <i class="ti ti-history"></i>
-              <p>Los días registrados aparecerán aquí.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ═══ 5. DATOS ════════════════════════════════════════════════════ -->
-      <section class="section" id="section-data">
-
-        <div class="data-hero">
-          <!-- Cuenta principal (la que se lleva en el journal: calendario, análisis, Coach) -->
-          <div class="catalog-card">
-            <div class="catalog-header">
-              <h3><i class="ti ti-star" style="color:var(--accent)"></i> Cuenta principal</h3>
-              <span class="catalog-sub">La que el journal usa para P&amp;L, análisis y Coach IA</span>
-            </div>
-            <div style="margin-top:8px">
-              <select id="dataCuentaPrincipal" class="filter-select" style="width:100%"></select>
-              <p class="catalog-sub" id="cuentaPrincipalHint" style="margin-top:8px"></p>
-            </div>
-          </div>
-
-          <!-- Capital inicial (para la rentabilidad % en Análisis) -->
-          <div class="catalog-card">
-            <div class="catalog-header">
-              <h3><i class="ti ti-coin" style="color:var(--accent)"></i> Capital inicial</h3>
-              <span class="catalog-sub">Base para el cálculo de rentabilidad % en Análisis</span>
-            </div>
-            <div class="annual-capital-input" style="margin-top:6px">
-              <span>$</span>
-              <input type="number" id="dataCapitalInicial" placeholder="5000" min="0" step="100">
-            </div>
-          </div>
-        </div>
-
-        <!-- Pestañas: un catálogo a la vez y a ancho completo. Reutiliza el
-             componente .so-tabs de Sesión Operativa — mismo CSS, mismo scroll
-             horizontal en móvil. El contador de cada pestaña lo rellena data.js. -->
-        <div class="so-tabs" id="dataTabs">
-          <button type="button" class="so-tab active" data-tab="setups">
-            <i class="ti ti-chart-dots-3"></i> Setups <span class="chip-soft" data-count="setups"></span>
-          </button>
-          <button type="button" class="so-tab" data-tab="errores">
-            <i class="ti ti-alert-triangle"></i> Errores <span class="chip-soft" data-count="errores"></span>
-          </button>
-          <button type="button" class="so-tab" data-tab="emociones">
-            <i class="ti ti-mood-smile"></i> Emociones <span class="chip-soft" data-count="emociones"></span>
-          </button>
-          <button type="button" class="so-tab" data-tab="experimentos">
-            <i class="ti ti-flask"></i> Experimentos <span class="chip-soft" data-count="experimentos"></span>
-          </button>
-          <button type="button" class="so-tab" data-tab="recomendaciones">
-            <i class="ti ti-bulb"></i> Recomendaciones <span class="chip-soft" data-count="recomendaciones"></span>
-          </button>
-        </div>
-
-        <div class="so-panel active" id="data-panel-setups">
-
-          <!-- Setups operativos: familias (IRI, Reingreso…) y sus variantes.
-               Lo que se cree aquí aparece solo en Registrar Sesión, en las
-               reglas de Fase 2, en el Coach, en Telegram y en el AddOn NT8. -->
-          <div class="catalog-card">
-            <div class="catalog-header">
-              <h3><i class="ti ti-chart-dots-3" style="color:var(--accent)"></i> Setups operativos</h3>
-              <span class="catalog-sub">Familias y sus variantes. Las reglas de Fase 2 se asignan a una familia desde Estrategia.</span>
-            </div>
-            <div class="catalog-add">
-              <input type="text" id="newSetupFamilia" placeholder="Nueva familia (ej: Ruptura)..." maxlength="40">
-              <button class="btn-primary" id="addSetupFamilia"><i class="ti ti-plus"></i> Agregar familia</button>
-            </div>
-            <div id="setupsList" class="setups-list"></div>
-          </div>
-
-        </div>
-
-        <div class="so-panel" id="data-panel-errores">
-          <!-- Errores -->
-          <div class="catalog-card">
-            <div class="catalog-header">
-              <h3><i class="ti ti-alert-triangle" style="color:var(--warning)"></i> Errores</h3>
-              <span class="catalog-sub">Errores registrados por sesión</span>
-            </div>
-            <div class="catalog-add">
-              <input type="text" id="newCasuistica" placeholder="Nuevo error..." maxlength="60">
-              <select id="newCasuisticaTipo" class="catalog-tipo-select" title="Tipo de error">
-                <option value="">Tipo…</option>
-                <option value="psicologico">🧠 Psicológico</option>
-                <option value="analitico">📐 Analítico</option>
-                <option value="operativo">⚙️ Operativo</option>
-                <option value="marcado">🗺️ Marcado</option>
-              </select>
-              <select id="newCasuisticaFase" class="catalog-tipo-select" title="Fase del proceso">
-                <option value="">Fase…</option>
-                <option value="1">Fase 1 · Pre-sesión</option>
-                <option value="2">Fase 2 · Lectura</option>
-                <option value="3">Fase 3 · Ejecución</option>
-              </select>
-              <button class="btn-primary" id="addCasuistica"><i class="ti ti-plus"></i> Agregar</button>
-            </div>
-            <div id="catalogoCasuisticasList" class="catalog-list"></div>
-          </div>
-
-        </div>
-
-        <div class="so-panel" id="data-panel-emociones">
-          <!-- Emociones -->
-          <div class="catalog-card">
-            <div class="catalog-header">
-              <h3><i class="ti ti-mood-smile"></i> Emociones</h3>
-              <span class="catalog-sub">Estados emocionales del Coach IA</span>
-            </div>
-            <div class="catalog-add">
-              <input type="text" id="newEmocionEmoji" placeholder="😐" maxlength="4" class="catalog-emoji-input">
-              <input type="text" id="newEmocionNombre" placeholder="Nueva emoción..." maxlength="40">
-              <button class="btn-primary" id="addEmocion"><i class="ti ti-plus"></i> Agregar</button>
-            </div>
-            <div id="catalogoEmocionesList" class="catalog-list"></div>
-          </div>
-
-        </div>
-
-        <div class="so-panel" id="data-panel-experimentos">
-          <!-- Experimentos -->
-          <div class="catalog-card">
-            <div class="catalog-header">
-              <h3><i class="ti ti-flask"></i> Experimentos</h3>
-              <span class="catalog-sub">Reglas en prueba — llevan estadística antes de decidir si se adoptan</span>
-            </div>
-            <div class="catalog-add">
-              <input type="text" id="newExperimento" placeholder="Nuevo experimento..." maxlength="60">
-              <button class="btn-primary" id="addExperimento"><i class="ti ti-plus"></i> Agregar</button>
-            </div>
-            <div id="catalogoExperimentosList" class="catalog-list"></div>
-          </div>
-
-        </div>
-
-        <div class="so-panel" id="data-panel-recomendaciones">
-          <!-- Recomendaciones -->
-          <div class="catalog-card">
-            <div class="catalog-header">
-              <h3><i class="ti ti-bulb"></i> Recomendaciones</h3>
-              <span class="catalog-sub">Acciones correctivas tipificadas — la IA y tú las asocian a errores</span>
-            </div>
-            <div class="catalog-add">
-              <input type="text" id="newRecomendacion" placeholder="Nueva recomendación..." maxlength="60">
-              <select id="newRecomendacionTipo" class="catalog-tipo-select" title="Tipo">
-                <option value="">Tipo…</option>
-                <option value="psicologico">🧠 Psicológico</option>
-                <option value="analitico">📐 Analítico</option>
-                <option value="operativo">⚙️ Operativo</option>
-                <option value="marcado">🗺️ Marcado</option>
-              </select>
-              <button class="btn-primary" id="addRecomendacion"><i class="ti ti-plus"></i> Agregar</button>
-            </div>
-            <div id="catalogoRecomendacionesList" class="catalog-list"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ═══ ESTRATEGIA ══════════════════════════════════════════════════════ -->
-      <section class="section" id="section-estrategia">
-
-        <!-- Pestañas: Plan de Chaumer · Etapa anterior. De solo lectura desde el
-             24/09: el plan se edita en chaumer/01_Plan y llega con scripts/plan/sincronizar.mjs. -->
-        <div class="rb-tabs" id="rbCapaPills"></div>
-
-        <!-- Vistas de la pestaña (Tu checklist · Checklist diaria · Reglas) -->
-        <div class="rb-toolbar">
-          <div class="rb-filters" id="rbFilters"></div>
-        </div>
-
-        <!-- Lista de reglas (rulebook unificado) -->
-        <div id="reglasList" class="rb-list">
-          <div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Cargando...</div>
-        </div>
-      </section>
-
-      <!-- ═══ DISCIPLINA ══════════════════════════════════════════════════════ -->
-      <section class="section" id="section-disciplina">
-        <!-- Sin cabecera propia: el rango del período lo escribe disciplina.js en
-             #sectionContext, y sus controles (flechas de navegación y selector de
-             período) viven en la barra superior — ver Nav.HERRAMIENTAS. -->
-        <div id="disciplinaContent">
-          <div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Cargando...</div>
-        </div>
-      </section>
-
-      <!-- ═══ COACH IA ════════════════════════════════════════════════════════ -->
-
-      <!-- ═══ 7. GALERÍA DE IMÁGENES ═══════════════════════════════════════ -->
-      <section class="section" id="section-gallery">
-        <div class="gallery-months-bar" id="galleryMonthsBar"></div>
-        <div class="gallery-grid" id="galleryGrid"></div>
-      </section>
-
-      <!-- ═══ 6. ANÁLISIS ══════════════════════════════════════════════════ -->
-      <section class="section" id="section-analysis">
-
-        <!-- Sin cabecera propia: el período (mes/trimestre/año) lo escribe charts.js
-             en #sectionContext, y sus controles —flechas de navegación y selector de
-             período— viven en la barra superior (Nav.HERRAMIENTAS). Exportar baja al
-             final: se usa DESPUÉS de mirar el informe, no antes. -->
-
-        <!-- Contenido exportable -->
-        <div id="analysisExportArea">
-
-        <!-- 1 · KPIs — los 7 al mismo peso; la jerarquía va DENTRO de cada tarjeta
-             (etiqueta pequeña · número grande · variación), no entre ellas. -->
-        <div id="analysisKpiStrip"></div>
-
-        <!-- 2 · Curva de Equity a ancho completo -->
-        <div class="an-card">
-          <div class="an-card-head">
-            <h3><i class="ti ti-trending-up"></i> Curva de Equity</h3>
-            <button class="help-btn" data-help="equity" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-          </div>
-          <div class="an-chart an-chart-tall"><canvas id="equityChart"></canvas></div>
-          <div class="an-note" id="equityNota"></div>
-        </div>
-
-
-        <!-- 3 · Resumen: es lo que responde "¿cómo fue el período?" fila a fila.
-             Se queda como <table> de verdad: la alineación de columnas está
-             garantizada por construcción, que es justo lo que una tabla falsa de
-             divs con flex no puede prometer. -->
-        <div class="an-card">
-          <div class="an-card-head">
-            <h3><i class="ti ti-table"></i> <span id="analysisTablaTitle">Resumen por semana</span></h3>
-          </div>
-          <div class="an-table-wrap">
-            <table class="an-table">
-              <thead>
-                <tr>
-                  <th id="analysisTablaCol1">Semana</th>
-                  <th class="num">P&amp;L Neto</th>
-                  <th class="num">Acumulado</th>
-                  <th class="num">Rentabilidad</th>
-                  <th class="num">Efectividad</th>
-                  <th class="num">Disciplina</th>
-                  <th class="num">Trades</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody id="analysisTablaBody"></tbody>
-              <tfoot id="analysisTablaFoot"></tfoot>
-            </table>
-          </div>
-        </div>
-
-        <!-- 4 · Las tres tarjetas -->
-        <div class="an-charts-2">
-          <div class="an-card">
-            <div class="an-card-head">
-              <h3><i class="ti ti-chart-bar"></i> <span id="pnlBarsTitle">P&amp;L por semana</span></h3>
-              <button class="help-btn" data-help="pnlBars" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-            </div>
-            <div class="an-chart"><canvas id="pnlBarsChart"></canvas></div>
-          </div>
-          <!-- Distribución: NO es una dona. Un ratio único contra un total se lee
-               como cifra + medidor; un pastel de 2 porciones es un anti-patrón
-               reconocido (y obligaba a meter texto dentro del color, ilegible). -->
-          <div class="an-card">
-            <div class="an-card-head">
-              <h3><i class="ti ti-target-arrow"></i> Distribución de resultados</h3>
-              <button class="help-btn" data-help="results" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
-            </div>
-            <div id="resultsPanel"></div>
-          </div>
-        </div>
-        </div><!-- /analysisExportArea -->
-
-        <!-- Exportar: fuera del área capturada (si no, los botones saldrían en el
-             PDF) y al final, que es cuando se usa. -->
-        <div class="analysis-footer">
-          <button class="btn-secondary btn-sm" id="analysisExportPdf" title="Exportar a PDF"><i class="ti ti-file-type-pdf"></i> PDF</button>
-          <button class="btn-secondary btn-sm" id="analysisExportImg" title="Exportar como imagen"><i class="ti ti-photo-down"></i> Imagen</button>
-        </div>
-      </section>
-
-      <!-- ═══ EXPERIMENTOS ═══════════════════════════════════════════════ -->
-      <section class="section" id="section-experimentos">
-
-        <div class="analysis-controls">
-          <div class="period-selector" id="expdPeriodSelector">
-            <button class="period-btn" data-period="month">Este mes</button>
-            <button class="period-btn" data-period="3m">3 meses</button>
-            <button class="period-btn active" data-period="all">Todo</button>
-          </div>
-          <span class="expd-base-info" id="expdBaseInfo"></span>
-        </div>
-
-        <!-- KPIs del laboratorio -->
-        <div class="expd-kpis" id="expdKpis"></div>
-
-        <!-- Tarjetas de veredicto por experimento -->
-        <div class="expd-cards" id="expdCards"></div>
-
-        <!-- Matriz cronológica (vista Excel) -->
-        <div class="expd-matrix-card">
-          <div class="expd-matrix-title">
-            <i class="ti ti-calendar-week"></i> Matriz cronológica
-            <span class="expd-matrix-hint">desliza para ver el histórico — lo más reciente a la derecha</span>
-          </div>
-          <div class="expd-matrix-scroll" id="expdMatrix"></div>
-        </div>
-      </section>
-
-      <!-- ═══ APEX TRACKER ═══════════════════════════════════════════════ -->
-      <section class="section" id="section-apex">
-        <!-- Vista lista: KPIs globales + cards por cuenta -->
-        <div id="apexLista">
-          <div class="section-actions">
-            <button class="btn-primary btn-sm" id="apexNuevaCuenta"><i class="ti ti-plus"></i> Nueva cuenta</button>
-          </div>
-          <div class="expd-kpis" id="apexKpis"></div>
-          <div id="apexCuentas"></div>
-        </div>
-
-        <!-- Vista detalle de una cuenta (oculta por defecto) -->
-        <div id="apexDetalle" class="hidden"></div>
-      </section>
-
-      <!-- ═══ FECHAS ESPECIALES ═══════════════════════════════════════════ -->
-      <section class="section" id="section-fechas">
-        <div class="section-actions">
-          <div class="fechas-toolbar">
-            <select id="fechasYear" class="filter-select"></select>
-            <button class="btn-secondary btn-sm" id="fechasGenFestivos" title="Generar los festivos CME del año seleccionado"><i class="ti ti-wand"></i> Generar festivos</button>
-            <button class="btn-primary btn-sm" id="fechasNueva"><i class="ti ti-plus"></i> Nueva fecha</button>
-          </div>
-        </div>
-        <div id="fechasContent"></div>
-      </section>
-
-      <!-- ═══ CHAUMER ═════════════════════════════════════════════════════ -->
-      <!-- Comparador: su operativa frente a la mía, día a día. Su lado sale de
-           `chaumer_operativas`; el mío se LEE de `sesiones` + `trades`, nunca se
-           duplica. El veredicto no se guarda: se calcula. Ver js/chaumer.js. -->
-      <section class="section" id="section-chaumer">
-
-        <!-- La fecha va en la MISMA fila que las pestañas: en su propia franja
-             comía ~60 px de alto que hacen falta para las dos columnas. Solo se
-             muestra en la pestaña "Registrar" — Diferencias, la principal, usa el
-             selector de período de la barra superior. Lo alterna Chaumer.showTab.
-             El data-tab "dia" se conserva: es el id interno de Registrar. -->
-        <div class="ch-topbar">
-          <div class="so-tabs" id="chaumerTabs">
-            <button type="button" class="so-tab active" data-tab="dif">
-              <i class="ti ti-chart-bar"></i> Diferencias
-            </button>
-            <button type="button" class="so-tab" data-tab="dia">
-              <i class="ti ti-pencil"></i> Registrar
-            </button>
-          </div>
-          <div class="date-stepper ch-datenav hidden" id="chDateNav">
-            <button type="button" class="btn-icon" id="chDatePrev" title="Día anterior">
-              <i class="ti ti-chevron-left"></i>
-            </button>
-            <input type="date" id="chDate">
-            <button type="button" class="btn-icon" id="chDateNext" title="Día siguiente">
-              <i class="ti ti-chevron-right"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="so-panel active" id="chaumer-panel-dif">
-          <div id="chaumerDif"></div>
-        </div>
-
-        <div class="so-panel" id="chaumer-panel-dia">
-          <div id="chaumerDia"></div>
-        </div>
-      </section>
-
-      <!-- ═══ BACKTESTING ═════════════════════════════════════════════════ -->
-      <!-- La bitácora del backtesting visual de días pasados (bt_*). Resumen = el
-           dashboard del total; Bitácora = registrar y corregir. El portal de
-           Chaumer la enseña en solo lectura. Nunca se mezcla con trades. Ver
-           js/backtesting.js y docs/disenos/2026-10-09-resumen-backtesting.md. -->
-      <section class="section" id="section-backtesting">
-        <div class="section-actions">
-          <a class="btn-secondary btn-sm" href="https://plan-operativo-nq.pages.dev/backtesting"
-             target="_blank" rel="noopener"><i class="ti ti-external-link"></i> Ver en el portal</a>
-          <button class="btn-primary btn-sm" id="btNueva"><i class="ti ti-plus"></i> Registrar jornada</button>
-        </div>
-        <div class="so-tabs" id="btTabs">
-          <button type="button" class="so-tab active" data-tab="resumen"><i class="ti ti-chart-line"></i> Resumen</button>
-          <button type="button" class="so-tab" data-tab="bitacora"><i class="ti ti-list-details"></i> Bitácora</button>
-        </div>
-        <div class="so-panel active" id="bt-panel-resumen"><div id="btResumen"></div></div>
-        <div class="so-panel" id="bt-panel-bitacora"><div id="btContent"></div></div>
-      </section>
-
-      <!-- Modal: las dos gráficas de un día, la mía y la suya. Se abre desde la
-           lista de Diferencias; Esc / X / clic fuera lo cierran y ← → cambian de
-           día. Lo pinta Chaumer.abrirComparacion. -->
-      <div class="modal-overlay hidden" id="chCmpModal">
-        <div class="modal ch-cmp" role="dialog" aria-modal="true" aria-labelledby="chCmpTitulo">
-          <div class="modal-header ch-cmp-head">
-            <div class="ch-cmp-tit">
-              <h3 id="chCmpTitulo"></h3>
-              <span id="chCmpVeredicto"></span>
-            </div>
-            <div class="ch-cmp-acc">
-              <button type="button" class="btn-icon" id="chCmpPrev" title="Día anterior (←)"><i class="ti ti-chevron-left"></i></button>
-              <button type="button" class="btn-icon" id="chCmpNext" title="Día siguiente (→)"><i class="ti ti-chevron-right"></i></button>
-              <button type="button" class="btn-secondary btn-sm" id="chCmpEditar" title="Abrir este día en Registrar"><i class="ti ti-pencil"></i><span> Editar su operativa</span></button>
-              <button type="button" class="btn-icon" id="chCmpCerrar" title="Cerrar (Esc)"><i class="ti ti-x"></i></button>
-            </div>
-          </div>
-          <div class="modal-content ch-cmp-body" id="chCmpCuerpo"></div>
-        </div>
-      </div>
-
-      <!-- Modal: la operativa de Chaumer de un día -->
-      <div class="modal-overlay hidden" id="chOpModal">
-        <div class="modal" style="max-width:480px">
-          <div class="modal-header">
-            <h3 id="chOpModalTitle"><i class="ti ti-arrows-diff"></i> Operativa de Chaumer</h3>
-            <button class="btn-icon" id="closeChOpModal"><i class="ti ti-x"></i></button>
-          </div>
-          <div class="modal-content" style="padding:16px 20px 20px">
-
-            <label class="ch-op-toggle">
-              <input type="checkbox" id="chOpOpero" checked>
-              <span>Operó este día</span>
-            </label>
-
-            <!-- Si operó -->
-            <!-- Todo lo de este formulario es la operativa de CHAUMER. El lado de
-                 Kris no se escribe aquí: se lee de `sesiones` + `trades`. Por eso
-                 los rótulos dicen "su", y por eso el signo de los puntos lo manda
-                 SU resultado. -->
-            <div id="chOpSiOpero">
-              <div class="form-group">
-                <label>Su setup</label>
-                <select id="chOpSetup"></select>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Su hora de entrada <span class="ch-hint">(hora Colombia)</span></label>
-                  <input type="time" id="chOpHora">
-                </div>
-                <div class="form-group">
-                  <label>Su resultado</label>
-                  <select id="chOpResultado">
-                    <option value="">—</option>
-                    <option value="target">Target</option>
-                    <option value="stop">Stop</option>
-                    <option value="be">Break-even</option>
-                    <option value="parcial">Parcial</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Sus puntos <span class="ch-hint">(el signo lo pone su resultado)</span></label>
-                  <input type="number" id="chOpPuntos" step="0.25" placeholder="40">
-                </div>
-                <div class="form-group">
-                  <label>Su contexto</label>
-                  <select id="chOpContexto">
-                    <option value="">—</option>
-                    <option value="Alcista">Alcista</option>
-                    <option value="Bajista">Bajista</option>
-                    <option value="Mixto">Mixto</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- Si no operó -->
-            <div id="chOpNoOpero" class="hidden">
-              <div class="form-group">
-                <label>¿Por qué no operó?</label>
-                <input type="text" id="chOpMotivo" placeholder="Sin estructura clara en la apertura">
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Su operativa <span class="ch-hint">(lo que explicó)</span></label>
-              <textarea id="chOpNotas" rows="3" placeholder="Rompe la zona lateral y genera el IRI por debajo del soporte…"></textarea>
-            </div>
-
-            <div class="form-group">
-              <label>Su gráfico</label>
-              <input type="file" id="chOpImagen" accept="image/*">
-              <input type="hidden" id="chOpImagenUrl">
-            </div>
-
-            <div class="ch-op-acciones">
-              <button class="btn-secondary hidden" id="chOpBorrar"><i class="ti ti-trash"></i> Borrar</button>
-              <button class="btn-primary" id="chOpGuardar"><i class="ti ti-device-floppy"></i> Guardar</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══ OTROS ═══════════════════════════════════════════════════════ -->
-      <!-- Índice de las secciones que salieron del menú. No muestra datos: es
-           una rejilla fija que genera app.js desde OTROS_ITEMS, así que añadir
-           una opción nueva es una entrada más en ese array — ni HTML ni CSS. -->
-      <section class="section" id="section-otros">
-        <!-- Contenedor a secas: app.js pinta dentro un .otros-eyebrow + .otros-grid
-             por cada grupo (Consultar / Configurar) leyendo Otros.ITEMS. -->
-        <div id="otrosGrid"></div>
-
-        <!-- Ajustes. "Claves y objetivos" abre el #settingsModal de siempre, sin
-             tocar su markup ni su lógica: solo cambia quién lo dispara (antes, la
-             tuerca de la barra superior). "Cerrar sesión" vive aquí porque el pie
-             del sidebar está oculto en móvil y dejaba al journal sin logout. -->
-        <div class="ajustes-card">
-          <div class="ajustes-title"><i class="ti ti-settings"></i> Ajustes</div>
-
-          <button type="button" class="ajustes-row" id="ajustesClaves">
-            <i class="ti ti-key"></i>
-            <span class="ajustes-row-txt">
-              <span class="ajustes-row-name">Claves y objetivos</span>
-              <span class="ajustes-row-sub">API de Claude y objetivos del día</span>
-            </span>
-            <i class="ti ti-chevron-right ajustes-row-go"></i>
-          </button>
-
-          <button type="button" class="ajustes-row" id="ajustesSeguridad">
-            <i class="ti ti-lock"></i>
-            <span class="ajustes-row-txt">
-              <span class="ajustes-row-name">Seguridad</span>
-              <span class="ajustes-row-sub">Cambiar la contraseña de acceso</span>
-            </span>
-            <i class="ti ti-chevron-right ajustes-row-go"></i>
-          </button>
-
-          <!-- Inerte a propósito: no es un botón, es un recordatorio. El tema
-               claro no se construye hasta consolidar el color (ver §7 del diseño). -->
-          <div class="ajustes-row ajustes-row-off">
-            <i class="ti ti-contrast"></i>
-            <span class="ajustes-row-txt">
-              <span class="ajustes-row-name">Tema</span>
-              <span class="ajustes-row-sub">Ahora mismo solo hay tema oscuro</span>
-            </span>
-            <span class="ajustes-row-tag">Pendiente</span>
-          </div>
-
-          <div class="ajustes-sep"></div>
-
-          <button type="button" class="ajustes-row ajustes-row-danger" id="logoutBtn">
-            <i class="ti ti-logout"></i>
-            <span class="ajustes-row-txt">
-              <span class="ajustes-row-name">Cerrar sesión</span>
-              <span class="ajustes-row-sub" id="ajustesCuenta"></span>
-            </span>
-          </button>
-        </div>
-      </section>
-
-      <!-- Modal: nueva/editar fecha especial -->
-      <div class="modal-overlay hidden" id="fechaModal">
-        <div class="modal" style="max-width:420px">
-          <div class="modal-header">
-            <h3 id="fechaModalTitle"><i class="ti ti-calendar-star"></i> Nueva fecha</h3>
-            <button class="btn-icon" id="closeFechaModal"><i class="ti ti-x"></i></button>
-          </div>
-          <div class="modal-content" style="padding:16px 20px 20px">
-            <input type="hidden" id="fechaId">
-            <div class="form-row">
-              <div class="form-group"><label>Fecha</label><input type="date" id="fechaInput"></div>
-              <div class="form-group"><label>Tipo</label>
-                <select id="fechaTipo">
-                  <option value="fomc">FOMC</option>
-                  <option value="festivo">Festivo</option>
-                  <option value="vacaciones">Vacaciones</option>
-                  <option value="otro">Otra</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label>Nombre</label><input type="text" id="fechaNombre" placeholder="Ej. Navidad"></div>
-              <div class="form-group"><label>Emoji</label><input type="text" id="fechaEmoji" placeholder="🎄" maxlength="4"></div>
-            </div>
-            <div class="form-group"><label>Notas</label><input type="text" id="fechaNotas" placeholder="Opcional"></div>
-            <button class="btn-primary" id="fechaGuardar" style="width:100%;margin-top:6px"><i class="ti ti-device-floppy"></i> Guardar</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal: registrar / corregir una jornada de backtesting. Lo pinta
-           Backtesting.abrir. Una jornada lleva como mucho una operación en esta
-           pantalla; "Sin operación" la guarda vacía, con la nota del día. -->
-      <div class="modal-overlay hidden" id="btModal">
-        <div class="modal" style="max-width:480px">
-          <div class="modal-header">
-            <h3 id="btModalTitle"><i class="ti ti-history"></i> Registrar jornada</h3>
-            <button class="btn-icon" id="closeBtModal" aria-label="Cerrar"><i class="ti ti-x"></i></button>
-          </div>
-          <div class="modal-content" style="padding:16px 20px 20px">
-            <input type="hidden" id="btId">
-            <div class="form-row">
-              <div class="form-group"><label>Fecha</label><input type="date" id="btFecha"></div>
-              <div class="form-group"><label>Resultado</label>
-                <select id="btResultado">
-                  <option value="target">Target</option>
-                  <option value="stop">Stop</option>
-                  <option value="">Sin operación</option>
-                </select>
-              </div>
-            </div>
-            <div id="btSiOpera">
-              <div class="form-row">
-                <div class="form-group"><label>Hora <span class="ch-hint">(hora Colombia)</span></label><input type="text" id="btHora" inputmode="numeric" maxlength="5" placeholder="09:45" autocomplete="off"></div>
-                <div class="form-group"><label>Dirección</label>
-                  <select id="btDireccion">
-                    <option value="largo">Largo</option>
-                    <option value="corto">Corto</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group"><label>Setup</label>
-                  <select id="btSetup">
-                    <option value="continuacion">Continuación</option>
-                    <option value="reingreso">Reingreso</option>
-                  </select>
-                </div>
-                <div class="form-group"><label>Puntos <span class="ch-hint">(siempre en positivo)</span></label>
-                  <input type="number" id="btPuntos" step="0.25" min="0" inputmode="decimal" placeholder="40">
-                </div>
-              </div>
-              <div class="bt-pnl">
-                <span>P&amp;L neto</span><b id="btPnl">—</b>
-                <small id="btPnlBase"></small>
-              </div>
-            </div>
-            <div class="form-group">
-              <label id="btNotasLabel">Observaciones</label>
-              <textarea id="btNotas" rows="3"></textarea>
-            </div>
-            <div class="form-group">
-              <label>Gráfico del día</label>
-              <input type="file" id="btImagen" accept="image/png,image/jpeg,image/webp">
-              <input type="hidden" id="btImagenUrl">
-              <small class="bt-img-actual" id="btImagenActual"></small>
-            </div>
-            <div class="bt-acciones">
-              <button class="btn-secondary hidden" id="btBorrar"><i class="ti ti-trash"></i> Borrar</button>
-              <button class="btn-primary" id="btGuardar"><i class="ti ti-device-floppy"></i> Guardar jornada</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal: datos de inicio del backtesting (bt_cabecera). Son la PROPUESTA
-           para la próxima jornada: cambiarlos no toca las ya registradas. -->
-      <div class="modal-overlay hidden" id="btInicioModal">
-        <div class="modal" style="max-width:420px">
-          <div class="modal-header">
-            <h3><i class="ti ti-adjustments"></i> Datos de inicio</h3>
-            <button class="btn-icon" id="closeBtInicioModal" aria-label="Cerrar"><i class="ti ti-x"></i></button>
-          </div>
-          <div class="modal-content" style="padding:16px 20px 20px">
-            <div class="form-row">
-              <div class="form-group"><label>Valor inicial</label><input type="number" id="btIniValor" step="0.01" min="0" inputmode="decimal"></div>
-              <div class="form-group"><label>Contratos</label><input type="number" id="btIniContratos" step="1" min="1" inputmode="numeric"></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label>Instrumento</label><input type="text" id="btIniInstrumento" maxlength="20"></div>
-              <div class="form-group"><label>Comisión <span class="ch-hint">(por contrato)</span></label><input type="number" id="btIniComision" step="0.01" min="0" inputmode="decimal"></div>
-            </div>
-            <p class="bt-nota" id="btIniPunto"></p>
-            <button class="btn-primary" id="btIniGuardar" style="width:100%;margin-top:6px"><i class="ti ti-device-floppy"></i> Guardar</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal: crear/editar cuenta Apex -->
-      <div class="modal-overlay hidden" id="apexCuentaModal">
-        <div class="modal" style="max-width:480px">
-          <div class="modal-header">
-            <h3 id="apexCuentaModalTitle"><i class="ti ti-trophy"></i> Nueva cuenta</h3>
-            <button class="btn-icon" id="closeApexCuentaModal"><i class="ti ti-x"></i></button>
-          </div>
-          <div class="modal-content" style="padding:16px 20px 20px">
-            <input type="hidden" id="apexCtaId">
-            <div class="form-row">
-              <div class="form-group"><label>Nombre</label><input type="text" id="apexCtaNombre" placeholder="Apex-13"></div>
-              <div class="form-group"><label>Número de cuenta</label><input type="text" id="apexCtaNumero" placeholder="APEX-232411-13"></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label>Tamaño / balance inicial $</label><input type="number" id="apexCtaTamano" value="50000"></div>
-              <div class="form-group"><label>Drawdown máx $</label><input type="number" id="apexCtaDrawdown" value="2000"></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label>Profit target $</label><input type="number" id="apexCtaTarget" value="3000"></div>
-              <div class="form-group"><label>Safety net (balance) $</label><input type="number" id="apexCtaSafety" value="52100"></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label>Piso congelado $</label><input type="number" id="apexCtaPiso" value="50100"></div>
-              <div class="form-group"><label>Días mínimos</label><input type="number" id="apexCtaMinDias" value="7"></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label>Contratos máx</label><input type="number" id="apexCtaContratos" placeholder="3"></div>
-              <div class="form-group"><label>Estado</label>
-                <select id="apexCtaEstado">
-                  <option value="evaluacion">Evaluación</option>
-                  <option value="recuperacion">En recuperación</option>
-                  <option value="critico">Crítico</option>
-                  <option value="safety_net">Safety net</option>
-                  <option value="aprobada">Aprobada</option>
-                  <option value="pa">PA (fondeada)</option>
-                  <option value="quemada">Quemada</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group"><label>Fecha de inicio</label><input type="date" id="apexCtaFecha"></div>
-            <div class="form-group"><label>Notas</label><input type="text" id="apexCtaNotas" placeholder="Opcional"></div>
-            <div class="form-group" style="margin-top:4px">
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-                <input type="checkbox" id="apexCtaActiva" checked> Cuenta activa
-              </label>
-            </div>
-            <button class="btn-primary" id="apexCtaGuardar" style="width:100%;margin-top:6px"><i class="ti ti-device-floppy"></i> Guardar cuenta</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal: registrar día Apex -->
-      <div class="modal-overlay hidden" id="apexDiaModal">
-        <div class="modal" style="max-width:440px">
-          <div class="modal-header">
-            <h3 id="apexDiaModalTitle"><i class="ti ti-calendar-plus"></i> Registrar día</h3>
-            <button class="btn-icon" id="closeApexDiaModal"><i class="ti ti-x"></i></button>
-          </div>
-          <div class="modal-content" style="padding:16px 20px 20px">
-            <input type="hidden" id="apexDiaCuentaId">
-            <div class="form-row">
-              <div class="form-group"><label>Fecha</label><input type="date" id="apexDiaFecha"></div>
-              <div class="form-group"><label>P&amp;L del día $</label><input type="number" step="0.01" id="apexDiaPnl" placeholder="-150.50"></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label>Balance al cierre $</label><input type="number" step="0.01" id="apexDiaBalance"></div>
-              <div class="form-group"><label>Threshold (Rithmic) $</label><input type="number" step="0.01" id="apexDiaThreshold"></div>
-            </div>
-            <p class="apex-hint" id="apexDiaHint"></p>
-            <div class="form-row">
-              <div class="form-group"><label>Contratos usados</label><input type="number" id="apexDiaContratos" placeholder="3"></div>
-              <div class="form-group"><label>Nota</label><input type="text" id="apexDiaNota" placeholder="Opcional"></div>
-            </div>
-            <button class="btn-primary" id="apexDiaGuardar" style="width:100%;margin-top:6px"><i class="ti ti-device-floppy"></i> Guardar registro</button>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </main>
-
-  <!-- ── Modal: Festivo CME ───────────────────────────────────────── -->
-  <div class="modal-overlay hidden" id="holidayModal">
-    <div class="modal holiday-modal">
-      <div class="modal-header" style="justify-content:flex-end; border-bottom:none; padding-bottom:4px">
-        <button class="btn-icon" id="closeHolidayModal"><i class="ti ti-x"></i></button>
-      </div>
-      <div class="modal-content" style="text-align:center; padding-top:4px; padding-bottom:36px">
-        <div id="holidayEmoji" style="font-size:4.5rem; line-height:1; margin-bottom:16px">🏛</div>
-        <div style="margin-bottom:20px">
-          <span class="badge badge-festivo" style="font-size:0.8rem; padding:5px 14px">
-            <i class="ti ti-building-bank"></i> Mercado Cerrado — CME
-          </span>
-        </div>
-        <div id="holidayName" style="font-size:1.4rem; font-weight:700; color:var(--text); margin-bottom:8px">Festivo</div>
-        <div id="holidayDate" style="font-size:0.92rem; color:var(--text3); letter-spacing:0.03em">—</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Modal: Disciplina ─────────────────────────────────────────── -->
-  <div class="modal-overlay hidden" id="disciplineModal">
-    <div class="modal" style="max-width:500px">
-      <div class="modal-header">
-        <h3 id="disciplineModalTitle"><i class="ti ti-checkup-list"></i> Análisis de Disciplina</h3>
-        <button class="btn-icon" id="closeDisciplineModal"><i class="ti ti-x"></i></button>
-      </div>
-      <div class="modal-content" id="disciplineModalContent"></div>
-    </div>
-  </div>
-
-  <!-- ── Modal: Ajustes ────────────────────────────────────────────── -->
-  <div class="modal-overlay hidden" id="settingsModal">
-    <div class="modal" style="max-width:480px">
-      <div class="modal-header">
-        <h3><i class="ti ti-settings"></i> Ajustes</h3>
-        <button class="btn-icon" id="closeSettings"><i class="ti ti-x"></i></button>
-      </div>
-      <div class="modal-content">
-        <div class="form-group">
-          <label for="inputClaudeKey">API Key de Claude</label>
-          <div style="display:flex; gap:8px;">
-            <input type="password" id="inputClaudeKey" placeholder="sk-ant-api03-..." style="flex:1">
-            <button type="button" class="btn-secondary" id="toggleKeyVisibility" style="padding:8px 10px; flex-shrink:0;">
-              <i class="ti ti-eye"></i>
-            </button>
-          </div>
-          <small style="color:var(--text3); margin-top:4px; display:block;">
-            Se guarda solo en este navegador, nunca en GitHub.
-            Obtén la tuya en <strong>console.anthropic.com</strong>
-          </small>
-        </div>
-
-        <div class="settings-divider"></div>
-        <p class="settings-section-title"><i class="ti ti-target-arrow"></i> Objetivos y reglas</p>
-        <div class="objetivos-grid">
-          <div class="form-group">
-            <label for="objStopMax">Stop máximo por trade ($)</label>
-            <input type="number" id="objStopMax" placeholder="120" min="0" step="1">
-          </div>
-          <div class="form-group">
-            <label for="objMaxTrades">Máx. trades por día</label>
-            <input type="number" id="objMaxTrades" placeholder="2" min="0" step="1">
-          </div>
-          <div class="form-group">
-            <label for="objPnlObjetivo">Objetivo de P&L diario ($)</label>
-            <input type="number" id="objPnlObjetivo" placeholder="200" step="1">
-          </div>
-          <div class="form-group">
-            <label for="objLimitePerdida">Límite de pérdida diario ($)</label>
-            <input type="number" id="objLimitePerdida" placeholder="240" min="0" step="1">
-          </div>
-        </div>
-        <small style="color:var(--text3); display:block;">
-          Se usan para calcular el <strong>Cumplimiento de Reglas</strong> en Métricas.
-        </small>
-      </div>
-      <div class="modal-footer" style="justify-content:flex-end;">
-        <button class="btn-primary" id="saveSettings">
-          <i class="ti ti-device-floppy"></i> Guardar
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Modal: Seguridad — cambiar contraseña ───────────────────────── -->
-  <!-- No pide la contraseña actual: Supabase no la exige para una sesión ya
-       autenticada, y pedirla daría una falsa sensación de comprobación. -->
-  <div class="modal-overlay hidden" id="securityModal">
-    <div class="modal" style="max-width:420px">
-      <div class="modal-header">
-        <h3><i class="ti ti-lock"></i> Cambiar contraseña</h3>
-        <button class="btn-icon" id="closeSecurity"><i class="ti ti-x"></i></button>
-      </div>
-      <div class="modal-content" style="padding:16px 20px 20px">
-        <div class="form-group">
-          <label for="secPass1">Contraseña nueva</label>
-          <div style="display:flex; gap:8px;">
-            <input type="password" id="secPass1" autocomplete="new-password" placeholder="Mínimo 8 caracteres" style="flex:1">
-            <button type="button" class="btn-secondary" id="secToggle" style="padding:8px 10px; flex-shrink:0;" aria-label="Mostrar contraseña">
-              <i class="ti ti-eye"></i>
-            </button>
-          </div>
-        </div>
-        <div class="form-group" style="margin-top:14px">
-          <label for="secPass2">Repite la contraseña</label>
-          <input type="password" id="secPass2" autocomplete="new-password" placeholder="La misma otra vez">
-        </div>
-        <div class="login-error hidden" id="secError" style="margin-top:12px"></div>
-        <button class="btn-primary" id="secGuardar" style="width:100%;margin-top:16px">
-          <i class="ti ti-device-floppy"></i> Cambiar contraseña
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Modal: Ayuda de Análisis ─────────────────────────────────── -->
-  <div class="modal-overlay hidden" id="analysisHelpModal">
-    <div class="modal" style="max-width:420px">
-      <div class="modal-header">
-        <h3 id="analysisHelpTitle"><i class="ti ti-help-circle"></i> Ayuda</h3>
-        <button class="btn-icon" id="closeAnalysisHelp"><i class="ti ti-x"></i></button>
-      </div>
-      <div class="modal-content">
-        <p id="analysisHelpText" style="line-height:1.75; color:var(--text2); font-size:0.92rem;"></p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Toast container ────────────────────────────────────────────── -->
-  <div id="toastContainer"></div>
-
-  <!-- ── Scripts (orden importante) ────────────────────────────────── -->
-  <script src="js/config.js"></script>
-  <script src="js/db.js"></script>
-  <script src="js/visor.js"></script>
-  <script src="js/account-filter.js"></script>
-  <script src="js/calendar.js"></script>
-  <script src="js/metrics.js"></script>
-  <script src="js/calendarios.js"></script>
-  <script src="js/table.js"></script>
-  <script src="js/form.js"></script>
-  <script src="js/charts.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/gallery.js"></script>
-  <script src="js/experimentos.js"></script>
-  <script src="js/apex.js"></script>
-  <script src="js/estrategia.js"></script>
-  <script src="js/disciplina.js"></script>
-  <script src="js/coach.js"></script>
-  <script src="js/fechas.js"></script>
-  <script src="js/chaumer.js"></script>
-  <script src="js/backtesting.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/movimiento.js"></script>
-
-  <!-- Registro del Service Worker (PWA) -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .catch(err => console.warn('SW no registrado:', err))
-      })
-    }
-  </script>
-
-</body>
-</html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trading Journal</title>
+  <meta name="description" content="Journal de operativa NQ/MNQ Futures">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1D9E75">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Trading Journal">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+  <!-- Manrope: la fuente del rediseño «Cristal» -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+  <!-- La versión de prueba del rediseño se publica en …/nuevo/: lleva una banda que lo dice -->
+  <script>if (location.pathname.includes('/nuevo/')) document.documentElement.dataset.nuevo = '1'</script>
+
+  <!-- Tabler Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+
+  <!-- Supabase JS v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/cristal.css">
+  <!-- El tema claro se pone antes de pintar nada, para que no parpadee -->
+  <script>try { if (localStorage.getItem('tema') === 'claro') document.documentElement.dataset.tema = 'claro' } catch {}</script>
+</head>
+<body>
+
+  <!-- El fondo vivo del rediseño «Cristal»: tres luces y un grano (css/styles.css, «El fondo vivo») -->
+  <div class="fondo" id="fondo" aria-hidden="true"><i class="a"></i><i class="b"></i><i class="c"></i><i class="grano"></i></div>
+
+  <!-- ── Login gate ───────────────────────────────────────────────────── -->
+  <div class="login-gate hidden" id="loginGate">
+    <form class="login-card" id="loginForm">
+      <div class="login-logo"><i class="ti ti-chart-candle"></i> Trading Journal</div>
+      <p class="login-sub">Inicia sesión para continuar</p>
+      <input type="email" id="loginEmail" placeholder="Email" autocomplete="username" required>
+      <input type="password" id="loginPassword" placeholder="Contraseña" autocomplete="current-password" required>
+      <button type="submit" class="btn-primary" id="loginBtn">Entrar</button>
+      <div class="login-error hidden" id="loginError"></div>
+    </form>
+  </div>
+
+  <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <!-- El icono real de la app (el mismo que el del móvil y la pestaña), no un
+           icono de tipografía: es la marca, y así es idéntica en los tres sitios.
+           icon-192 y no icon-512 porque a 24 px sobra resolución y pesa 4× menos. -->
+      <div class="logo">
+        <img src="icons/icon-192.png" alt="Trading Journal" class="logo-img">
+        <span>Trading Journal</span>
+      </div>
+    </div>
+    <ul class="nav-menu">
+      <li class="nav-item active" data-section="calendar" title="Calendario">
+        <i class="ti ti-calendar-month"></i>
+        <span>Calendario</span>
+      </li>
+      <li class="nav-item" data-section="analysis" title="Análisis">
+        <i class="ti ti-chart-line"></i>
+        <span>Análisis</span>
+      </li>
+      <!-- Sesión Operativa absorbe lo que antes eran tres entradas de menú
+           (Sesión, Historial y Coach IA): ahora son pestañas de la misma
+           pantalla. `Nav.go('coach')` y `Nav.go('historial')` siguen valiendo:
+           se traducen a esta sección + su pestaña. -->
+      <li class="nav-item" data-section="register" title="Sesión Operativa">
+        <i class="ti ti-square-rounded-plus"></i>
+        <span>Sesión</span>
+      </li>
+      <!-- Solo 6 botones: 11 no cabían en la barra inferior del móvil (660px de
+           barra contra ~390px de pantalla) y había que deslizar sin ninguna pista
+           de que hubiera más. Las 6 secciones restantes viven en "Otros" y siguen
+           siendo secciones normales: `Nav.PADRE` mantiene este botón encendido
+           mientras se está dentro de cualquiera de ellas. -->
+      <li class="nav-item" data-section="otros" title="Otros">
+        <i class="ti ti-layout-grid"></i>
+        <span>Otros</span>
+      </li>
+    </ul>
+    <!-- El pie se retiró: el badge "Cuenta Fondeo" era texto fijo escrito a mano
+         que ningún JS actualizaba, y el logout estaba oculto en móvil
+         (.sidebar-footer { display:none }), así que desde el teléfono no había
+         forma de cerrar sesión. Ambos viven ahora en Otros › Ajustes. -->
+  </nav>
+
+  <!-- ── Main Content ──────────────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Top Bar -->
+    <!-- Tres celdas (1fr | auto | 1fr) para que el título quede centrado respecto
+         a la PANTALLA, no al hueco que dejen los botones. Con flex se descentraba
+         en cuanto aparecía el chevron de volver. -->
+    <header class="top-bar">
+      <div class="top-bar-side">
+        <!-- Icono de la app, arriba a la IZQUIERDA. Solo en móvil: en escritorio el
+             mismo icono ya está en el sidebar-header, que ahí es el borde superior
+             izquierdo de la aplicación. -->
+        <img src="icons/icon-192.png" alt="Trading Journal" class="hdr-logo">
+        <button class="btn-icon menu-toggle" id="menuToggle" title="Menú">
+          <i class="ti ti-menu-2"></i>
+        </button>
+        <!-- Vuelta a "Otros" desde sus subsecciones. Solo se muestra cuando la
+             sección actual tiene padre (Nav.PADRE): en el móvil es la única salida,
+             porque esas secciones ya no tienen botón propio. -->
+        <button class="btn-icon nav-back hidden" id="navBack" title="Volver a Otros" aria-label="Volver a Otros">
+          <i class="ti ti-chevron-left"></i>
+        </button>
+      </div>
+      <!-- Título ÚNICO de la sección. Antes vivía aquí Y otra vez dentro de cada
+           sección (.analysis-hero-title), en verde y a 2.1rem: dos títulos para la
+           misma pantalla. El dato variable que llevaban dos de esos títulos —el mes
+           del Calendario, el filtro de Imágenes, el rango de Disciplina— es lo que
+           ahora va en #sectionContext, con el mismo color y tamaño que el título. -->
+      <div class="header-info">
+        <!-- Flechas de mes: navegan el dato que se está mirando, así que van pegadas
+             al contexto. Solo se muestran en las secciones que las usan (Nav.HERRAMIENTAS). -->
+        <button class="btn-icon hdr-nav hidden" id="prevMonth" title="Mes anterior" aria-label="Mes anterior">
+          <i class="ti ti-chevron-left"></i>
+        </button>
+        <div class="header-titles">
+          <span class="header-title" id="currentSectionTitle">Calendario</span>
+          <span class="header-context" id="sectionContext"></span>
+        </div>
+        <button class="btn-icon hdr-nav hidden" id="nextMonth" title="Mes siguiente" aria-label="Mes siguiente">
+          <i class="ti ti-chevron-right"></i>
+        </button>
+      </div>
+      <div class="top-bar-side header-actions">
+        <!-- Los 3 filtros de cuenta viven aquí (cada sección tiene su propia selección
+             persistida). `Nav.go()` muestra el de la sección activa y oculta los demás.
+             Lo que se ve es el NOMBRE de la cuenta, nunca un icono suelto: la cartera se
+             retiró el 17 ago porque en móvil se comía la etiqueta y quedaba un icono que
+             no decía qué hacía, ocultando que el filtro estaba activo. -->
+        <!-- Selector de período de Análisis (Mes/Trimestre/Anual + salto directo a
+             un mes/año concreto). Mismo componente que el de Disciplina. -->
+        <div class="per-filter hdr-tool hidden" id="analysisPeriod"></div>
+        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterCalendar"></div>
+        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterAnalysis"></div>
+        <div class="acct-filter-sm hdr-tool hidden" id="accountFilterTrades"></div>
+        <!-- Selector de período de Disciplina (Mes/Trimestre/Año/Todo). Vive aquí y no
+             en la sección: los controles de sección van en la barra (Nav.HERRAMIENTAS).
+             Desplegable, no píldoras: en móvil las 4 opciones competían por el ancho
+             con el título y las flechas. Lo pinta disciplina.js. -->
+        <div class="per-filter hdr-tool hidden" id="disciplinaPeriod"></div>
+        <div class="per-filter hdr-tool hidden" id="chaumerPeriod"></div>
+        <!-- Estado de la conexión: solo en Otros (Nav.HERRAMIENTAS). En el resto de
+             pantallas era un adorno permanente; si falla la conexión, el toast del
+             arranque ya avisa. -->
+        <button class="status-dot hidden" id="connectionStatus" title="Comprobando conexión…" aria-label="Estado de la conexión">
+          <i class="ti ti-loader-2 spin"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="content-area">
+
+      <!-- ═══ 1. CALENDARIO ═══════════════════════════════════════════════ -->
+      <section class="section active" id="section-calendar">
+        <!-- Sin cabecera propia: el mes va en #sectionContext, y el filtro de cuentas
+             y las flechas de mes viven en la barra superior (ago 2026). Esta sección
+             arranca directamente en las métricas. -->
+
+        <!-- Mi calendario. Desde el 12/11/2026 es lo único del Calendario: los cuatro
+             calendarios comparados viven en Otros → Comparador (#section-comparar). -->
+        <div class="cal-mio" id="calMio">
+
+        <!-- Métricas compactas (arriba del calendario) -->
+        <div class="metrics-grid metrics-grid-compact" id="metricsGrid">
+          <!-- Generated by metrics.js -->
+        </div>
+
+        <div class="calendar-legend">
+          <span class="legend-item"><span class="dot green"></span> Target</span>
+          <span class="legend-item"><span class="dot red"></span> Stop</span>
+          <span class="legend-item"><span class="dot sinsetup"></span> Sin entradas válidas</span>
+          <span class="legend-item"><span class="dot gray"></span> No operé</span>
+          <span class="legend-item"><span class="dot festivo"></span> Festivo</span>
+          <span class="legend-item"><span class="dot fomc"></span> FOMC</span>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid">
+          <!-- Generated by calendar.js -->
+        </div>
+
+        <!-- Curva de Equity del mes -->
+        <div class="card annual-table-card" style="margin-top:40px">
+          <div class="chart-header">
+            <h3><i class="ti ti-trending-up"></i> Curva de Equity — P&amp;L Acumulado</h3>
+          </div>
+          <div style="height:240px"><canvas id="calEquityChart"></canvas></div>
+        </div>
+
+        <!-- Desglose de días del mes -->
+        <div class="card annual-table-card" style="margin-top:24px">
+          <div class="chart-header">
+            <h3><i class="ti ti-calendar-stats"></i> Desglose de días</h3>
+            <span class="dd-periodo" id="ddPeriodo"></span>
+          </div>
+          <div class="dd-grid" id="diasDesglose">
+            <!-- Generated by metrics.js -->
+          </div>
+        </div>
+        </div><!-- /#calMio -->
+      </section>
+
+      <!-- ═══ COMPARADOR (Otros) ═══════════════════════════════════════════ -->
+      <section class="section" id="section-comparar">
+        <!-- Los cuatro calendarios (calendarios.js): Mío · Chaumer · Bot · manual, con
+             el mismo mes que el Calendario. "Mío" lleva al Calendario; los otros tres
+             comparten la vista genérica (#calFuente). Salió del Calendario el 12/11/2026.
+             Diseño: docs/disenos/2026-09-29-cuatro-calendarios.md -->
+        <div class="cal-hub" id="calHub">
+          <div class="hub-grid" id="hubGrid"><!-- Generated by calendarios.js --></div>
+          <div class="card annual-table-card hub-curva-card">
+            <div class="chart-header">
+              <h3><i class="ti ti-chart-line"></i> Puntos acumulados del mes</h3>
+              <!-- Acceso directo a las 3 gráficas del último día hábil (hoy, si lo es).
+                   Desde ahí, ← / → recorren los días. -->
+              <button class="btn btn-secondary btn-sm hub-tres" id="hubTresGraficas" type="button"
+                      title="Ver las 3 gráficas del día: la mía, la del Bot y la de Chaumer">
+                <i class="ti ti-layout-rows"></i> Gráficas del día
+              </button>
+            </div>
+            <!-- La curva ocupa el alto que sobre en la pantalla; al lado, la
+                 clasificación del mes (en móvil, debajo). -->
+            <div class="hub-curva-cuerpo">
+              <div class="hub-curva-lienzo"><canvas id="hubCurva"></canvas></div>
+              <div class="hub-curva-leyenda" id="hubCurvaLeyenda"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- La vista completa de Chaumer, el Bot o el backtesting manual -->
+        <div class="cal-fuente hidden" id="calFuente">
+          <div class="metrics-grid metrics-grid-compact" id="fuenteMetrics"></div>
+          <div class="calendar-legend" id="fuenteLeyenda"></div>
+          <div class="calendar-grid" id="fuenteGrid"></div>
+          <div class="card annual-table-card" style="margin-top:40px">
+            <div class="chart-header">
+              <h3><i class="ti ti-trending-up"></i> Curva de Equity — Puntos acumulados</h3>
+            </div>
+            <div style="height:240px"><canvas id="fuenteEquity"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ 3. TRADES ════════════════════════════════════════════════════ -->
+      <section class="section" id="section-trades">
+        <!-- Los míos, los de Alfredo y los del bot en una lista (docs/disenos/
+             2026-11-03-trades-tres-fuentes.md). Las etiquetas de filtro las pinta
+             table.js; el filtro de cuentas está en la barra superior y solo
+             aplica a los míos. -->
+        <div class="section-header">
+          <div class="table-controls">
+            <input type="text" class="search-input" id="tradeSearch" placeholder="Buscar...">
+          </div>
+        </div>
+        <div class="tf-barra" id="tradeFiltros"></div>
+        <div class="tf-resumen" id="tradeResumen"></div>
+
+        <div class="table-wrapper">
+          <table class="trades-table" id="tradesTable">
+            <thead>
+              <tr>
+                <th>Quién</th>
+                <th>Día</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Setup</th>
+                <th>Dirección</th>
+                <th>Resultado</th>
+                <th class="num">Puntos</th>
+                <th class="num">P&amp;L</th>
+                <th>Error</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tradesTableBody">
+              <tr><td colspan="11" class="empty-row"><i class="ti ti-loader-2 spin"></i> Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="tradesPagination"></div>
+      </section>
+
+      <!-- ═══ 4. SESIÓN OPERATIVA ══════════════════════════════════════════ -->
+      <!-- Funde lo que eran tres pantallas: el registro del día, el Coach IA y
+           el historial. Una sola fecha manda sobre las tres pestañas. -->
+      <section class="section" id="section-register">
+
+        <!-- Cabecera común: la fecha del día + el recuadro de resultado.
+             Vive FUERA del formulario para que mande también sobre el Coach. -->
+        <div class="so-head">
+          <div class="date-stepper">
+            <button type="button" class="btn-icon" id="sesionDatePrev" title="Día anterior">
+              <i class="ti ti-chevron-left"></i>
+            </button>
+            <input type="date" id="sesionDate" name="sesion_date" required form="sessionForm">
+            <button type="button" class="btn-icon" id="sesionDateNext" title="Día siguiente">
+              <i class="ti ti-chevron-right"></i>
+            </button>
+          </div>
+          <div class="mh-stats" id="soHeadStats"></div>
+        </div>
+
+        <div class="so-tabs" id="soTabs">
+          <button type="button" class="so-tab active" data-tab="diario">
+            <i class="ti ti-clipboard-text"></i> Diario
+          </button>
+          <button type="button" class="so-tab" data-tab="coach">
+            <i class="ti ti-robot"></i> Coach IA
+          </button>
+          <button type="button" class="so-tab" data-tab="dias">
+            <i class="ti ti-history"></i> Días anteriores
+          </button>
+        </div>
+
+        <!-- ── Pestaña: Diario ── -->
+        <div class="so-panel active" id="so-panel-diario">
+        <div class="form-container">
+          <form id="sessionForm" autocomplete="off">
+
+          <fieldset id="sessionFieldset">
+
+            <!-- No operé -->
+            <div class="form-row">
+              <div class="form-group">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; padding-top:4px;">
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="noOpero" name="no_opero">
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span style="font-size:0.88rem; color:var(--text2);">No operé hoy</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- ¿Te conectaste a analizar? (solo cuando No operé) -->
+            <div class="form-group hidden" id="seConectoGroup">
+              <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="seConecto" name="se_conecto" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <span style="font-size:0.88rem; color:var(--text2);">Me conecté a analizar (no hubo setup válido) — registrar premercado y análisis</span>
+              </label>
+            </div>
+
+            <!-- ═══ 1. Premercado — contexto técnico ═══ -->
+            <div class="form-group collapsible card-x" data-tono="ambar" id="premercadoSection">
+              <div class="form-section-title"><i class="ti ti-sunrise"></i> Contexto técnico</div>
+
+              <!-- Zona SIEMPRE visible (sobrevive al plegado, ver .collapse-keep):
+                   lo único de esta tarjeta que se consulta a diario. El resto
+                   (precios y líneas naranjas) se registra para el Coach y vive
+                   detrás de la flecha. -->
+              <div class="collapse-keep">
+                <div class="nr-block">
+                  <div class="nr-title">Noticias rojas <span class="lbl-hint">— no se opera ±5 min alrededor de cada una</span></div>
+                  <div id="noticiasRojasList" class="nr-list"></div>
+                  <!-- Se guardan al momento, sin enviar el Diario: el bot de NT8 las lee al
+                       armarse, antes de la apertura (docs/disenos/2026-10-19-noticias-sin-addon.md). -->
+                  <div class="nr-acciones">
+                    <button type="button" class="btn-add-nr" id="addNoticiaRoja">
+                      <i class="ti ti-plus"></i> Añadir noticia roja
+                    </button>
+                    <button type="button" class="btn-add-nr btn-save-nr" id="guardarNoticias" disabled>
+                      <i class="ti ti-device-floppy"></i> Guardar noticias
+                    </button>
+                    <span class="nr-estado" id="nrEstado" aria-live="polite"></span>
+                  </div>
+                </div>
+                <div class="premkt-puntos" id="premktPuntos">
+                  <span class="rg">Rango ayer <b id="rangoPrevDay">— pts</b></span>
+                  <span class="rg">Overnight <b id="rangoOvernight">— pts</b></span>
+                </div>
+              </div>
+
+              <div class="premkt-grid">
+                <div class="premkt-field">
+                  <label>Apertura ayer (PDO)</label>
+                  <input type="number" step="0.25" id="precioAperturaAyer" placeholder="30620">
+                </div>
+                <div class="premkt-field">
+                  <label>Máx ayer (PDH)</label>
+                  <input type="number" step="0.25" id="precioMaxAyer" placeholder="30810">
+                </div>
+                <div class="premkt-field">
+                  <label>Mín ayer (PDL)</label>
+                  <input type="number" step="0.25" id="precioMinAyer" placeholder="30540">
+                </div>
+                <div class="premkt-field">
+                  <label>Cierre ayer (PDC)</label>
+                  <input type="number" step="0.25" id="precioCierreAyer" placeholder="30763">
+                </div>
+                <div class="premkt-field">
+                  <label>Overnight High (ONH)</label>
+                  <input type="number" step="0.25" id="precioMaxPre" placeholder="30800">
+                </div>
+                <div class="premkt-field">
+                  <label>Overnight Low (ONL)</label>
+                  <input type="number" step="0.25" id="precioMinPre" placeholder="30561">
+                </div>
+                <div class="premkt-field">
+                  <label>Apertura hoy</label>
+                  <input type="number" step="0.25" id="precioApertura" placeholder="30743.50">
+                </div>
+              </div>
+              <div class="premkt-lines">
+                <div class="premkt-lines-col">
+                  <label>🟠 Soportes (líneas naranjas)</label>
+                  <div id="soportesNaranjaWrap" class="premkt-lines-wrap"></div>
+                </div>
+                <div class="premkt-lines-col">
+                  <label>🟠 Resistencias (líneas naranjas)</label>
+                  <div id="resistenciasNaranjaWrap" class="premkt-lines-wrap"></div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- ═══ 2. Checklist Reglas ═══ -->
+            <!-- Esta tarjeta NO se pliega entera: el resumen (barra + las 3
+                 fases con su contador) siempre se ve, y el detalle se despliega
+                 fase por fase. -->
+            <div class="form-card card-x" data-tono="verde">
+            <div class="form-section-title"><i class="ti ti-checklist"></i> Checklist de reglas</div>
+
+            <!-- Barra de cumplimiento: se ve aunque la tarjeta esté plegada,
+                 porque resume el proceso del día de un vistazo. -->
+            <div class="collapse-keep chk-prog">
+              <div class="chk-prog-top">Cumplimiento del proceso</div>
+              <div class="chk-prog-row">
+                <div class="chk-track"><div class="chk-fill" id="chkProgFill"></div></div>
+                <span class="chk-pct" id="chkProgPct">—</span>
+              </div>
+            </div>
+
+            <!-- Checklist por fases — renderizado dinámicamente desde `catalogo_reglas` (es_checklist) en form.js -->
+            <div id="checklistContainer"></div>
+
+            <!-- Motivo no operé (oculto por defecto) -->
+            <div class="form-group hidden" id="motivoGroup">
+              <label for="motivoNoOpero">Motivo de no operación</label>
+              <select id="motivoNoOpero" name="motivo_no_opero">
+                <option value="">Seleccionar...</option>
+                <option value="Setup válido no tomado">⚠️ Setup válido — no entré (duda/miedo)</option>
+                <option value="Sin setup">Sin entradas válidas</option>
+                <option value="Noticia roja">Noticia roja activa</option>
+                <option value="FOMC">FOMC / Fed</option>
+                <option value="Festivo">Festivo (mercado cerrado)</option>
+                <option value="Personal">Motivo personal</option>
+                <option value="Otro">Otro</option>
+              </select>
+
+              <!-- Campos extra cuando hay setup válido no tomado -->
+              <div id="setupNoTomadoGroup" class="hidden" style="margin-top:12px">
+                <label style="margin-bottom:6px;display:block">Setup que identificaste</label>
+<!-- Opciones desde catalogo_setup_variantes (form.js → loadSetups) -->
+                <select id="setupObservado" name="setup_observado">
+                  <option value="">Seleccionar setup...</option>
+                </select>
+                <label style="margin-top:10px;margin-bottom:6px;display:block">Motivo por el que no entraste</label>
+                <div class="btn-group" id="motivoNoEntradaGroup">
+                  <!-- "No lo vi" se adelantó de la Fase 4 el 19 ago: el comparador
+                       de Chaumer ya lo ofrece, y dejar el Diario con un vocabulario
+                       distinto habría partido en dos el mismo campo. -->
+                  <button type="button" class="btn-option" data-value="No lo vi">No lo vi</button>
+                  <button type="button" class="btn-option" data-value="Duda">Duda</button>
+                  <button type="button" class="btn-option" data-value="Miedo">Miedo</button>
+                  <button type="button" class="btn-option" data-value="Zona naranja">Zona naranja</button>
+                  <button type="button" class="btn-option" data-value="Desconfianza">Desconfianza</button>
+                  <button type="button" class="btn-option" data-value="Otro">Otro</button>
+                </div>
+                <input type="hidden" id="motivoNoEntradaVal" name="motivo_no_entrada">
+              </div>
+
+              <!-- Experimentos del día (visible si estuve conectado aunque no operara) -->
+              <div id="expNoOperoWrap" class="hidden" style="margin-top:12px">
+                <label style="display:block;margin-bottom:6px;font-size:0.85rem;color:var(--text2)"><i class="ti ti-flask" style="margin-right:4px"></i>Experimentos del día</label>
+                <div class="exp-add-row">
+                  <select id="expSNTSelect"><option value="">Seleccionar experimento...</option></select>
+                  <div class="btn-group" id="expSNTResultGrp">
+                    <button type="button" class="btn-option cas-t" data-value="T">T</button>
+                    <button type="button" class="btn-option cas-s" data-value="S">S</button>
+                  </div>
+                  <input type="number" step="0.01" class="exp-valor-input" id="expSNTValor" placeholder="Valor $" title="Resultado en $ del experimento (target/stop propio)">
+                  <input type="text" class="exp-nota-input" id="expSNTNota" placeholder="Nota (opcional)">
+                  <button type="button" class="btn-secondary" id="expSNTAgregar"><i class="ti ti-plus"></i> Agregar</button>
+                </div>
+                <div id="expSNTList" class="exp-list"></div>
+              </div>
+            </div>
+            </div>
+
+            <!-- ═══ 3. Operativa (visible cuando sí operó) ═══ -->
+            <div id="tradingFields" class="op-only form-card collapsible card-x" data-tono="azul">
+              <div class="form-section-title"><i class="ti ti-chart-candle"></i> La operación
+              </div>
+
+              <!-- Bloque 1 · QUÉ se operó -->
+              <div class="op-bloque">
+                <div class="op-bloque-lbl">El setup</div>
+                <div class="op-grid">
+                  <div class="form-group op-ancho">
+                    <label for="setup">SetUp operado</label>
+<!-- Opciones desde catalogo_setup_variantes (form.js → loadSetups) -->
+                    <select id="setup" name="setup">
+                      <option value="">Seleccionar setup...</option>
+                    </select>
+                  </div>
+                  <!-- «La lectura» era su propio bloque hasta el 27/10/2026: el contexto de
+                       mercado (el sesgo que el plan no usa, D-035), la corrida y las zonas en
+                       contra (las comprueba el motor) ya no se piden. Solo queda el retroceso,
+                       que es dato. Las columnas y lo registrado siguen en `sesiones`. -->
+                  <div class="form-group">
+                    <label>Puntos de retroceso</label>
+                    <div id="puntosRetrocesoDisplay" class="op-dato">— pts</div>
+                    <input type="hidden" id="puntosRetroceso">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bloque 2 · QUÉ pasó (lo trae NinjaTrader). `op-bloque-datos`
+                   marca que NO es un bloque de campos: se ve también en lectura. -->
+              <div class="op-bloque op-bloque-datos">
+                <div class="op-bloque-lbl">Los trades</div>
+                <div id="opTradesWrap" class="op-trades-wrap"></div>
+              </div>
+
+              <!-- Alerta de riesgo (Bloque 1): visible solo si el retroceso supera el stop máximo -->
+              <div class="form-group hidden" id="riesgoAlertGroup">
+                <div class="riesgo-alert">
+                  <i class="ti ti-alert-triangle"></i>
+                  <span id="riesgoAlertText">El retroceso supera tu límite de riesgo.</span>
+                </div>
+                <label style="margin-top:12px">¿Viste que el retroceso superaba tu límite <b>antes de entrar</b>?</label>
+                <div class="btn-group" id="alertaVista">
+                  <button type="button" class="btn-option" data-value="true">Sí, lo vi y entré igual</button>
+                  <button type="button" class="btn-option" data-value="false">No lo vi a tiempo</button>
+                </div>
+                <input type="hidden" id="alertaVistaVal" name="alerta_riesgo_vista">
+              </div>
+
+            </div>
+
+            <!-- ═══ 4. Post-Operativa ═══ -->
+            <div class="form-card collapsible card-x" data-tono="violeta">
+            <div class="form-section-title"><i class="ti ti-clipboard-check"></i> Cierre del día
+              <span class="card-meta" id="cierreMeta"></span>
+            </div>
+
+            <!-- «¿Cómo llegué?», «¿Cómo terminé?» y la confianza en la entrada ya no se
+                 piden (27/10/2026): casi no variaban o repetían el resultado. Lo
+                 psicológico va en los errores de abajo. Lo registrado sigue en
+                 `sesiones` y `diagnosticos_diarios`. -->
+
+            <!-- Experimentos del día (solo cuando sí operó) -->
+            <div class="form-group op-only">
+              <label><i class="ti ti-flask" style="font-size:0.9rem;margin-right:4px"></i>Experimentos del día</label>
+              <div class="exp-add-row">
+                <select id="expTradeSelect"><option value="">Seleccionar experimento...</option></select>
+                <div class="btn-group" id="expTradeResultGrp">
+                  <button type="button" class="btn-option cas-t" data-value="T">T</button>
+                  <button type="button" class="btn-option cas-s" data-value="S">S</button>
+                </div>
+                <input type="number" step="0.01" class="exp-valor-input" id="expTradeValor" placeholder="Valor $" title="Resultado en $ del experimento (target/stop propio)">
+                <input type="text" class="exp-nota-input" id="expTradeNota" placeholder="Nota (opcional)">
+                <button type="button" class="btn-secondary" id="expTradeAgregar"><i class="ti ti-plus"></i> Agregar</button>
+              </div>
+              <div id="expTradeList" class="exp-list"></div>
+            </div>
+
+            <!-- Errores cometidos -->
+            <div class="form-group" id="casuisticasGroup">
+              <label><i class="ti ti-alert-triangle" style="margin-right:6px;color:var(--warning)"></i>Errores cometidos</label>
+              <div class="cas-input-row">
+                <select id="casCasuistica">
+                  <option value="">Seleccionar situación...</option>
+                  <option>Reingresos</option>
+                  <option>Contra Resistencia</option>
+                  <option>Contra Soporte</option>
+                  <option>Contra Mínimo</option>
+                  <option>Contra Máximo</option>
+                  <option>Volumen Mayor</option>
+                  <option>Target Largo</option>
+                  <option>Rompimiento Extendido</option>
+                  <option>IRIs Poco Claros</option>
+                  <option>3ª Corrida</option>
+                  <option>FOMC</option>
+                  <option>Máximo de la Apertura</option>
+                  <option>Mínimo de la Apertura</option>
+                  <option>Error de Marcación</option>
+                  <option>Duda</option>
+                </select>
+                <div class="btn-group cas-resultado" id="casResultadoGroup">
+                  <button type="button" class="btn-option cas-t" data-value="T">T</button>
+                  <button type="button" class="btn-option cas-s" data-value="S">S</button>
+                </div>
+                <button type="button" class="btn-secondary" id="casAgregar">
+                  <i class="ti ti-plus"></i> Agregar
+                </button>
+              </div>
+              <div id="casList" class="cas-list"></div>
+            </div>
+
+            <!-- Reflexión -->
+            <div class="form-group" data-vacio-auto>
+              <label for="analisisTrader">Reflexión / Análisis del día</label>
+              <textarea id="analisisTrader" name="analisis_trader" rows="5"
+                placeholder="¿Cómo fue la sesión? ¿Qué salió bien? ¿Qué mejorar? ¿Seguiste las reglas?"></textarea>
+            </div>
+
+            <!-- Notas adicionales -->
+            <div class="form-group" data-vacio-auto>
+              <label for="resumenIA">Notas adicionales</label>
+              <textarea id="resumenIA" name="resumen_ia" rows="3"
+                placeholder="Apuntes extra, ideas para mañana, contexto adicional..."></textarea>
+            </div>
+
+            </div>
+
+            <!-- ═══ 5. Imagen ═══ -->
+            <div class="form-card card-x" data-tono="gris">
+            <div class="form-section-title"><i class="ti ti-photo"></i> Gráfico del día</div>
+            <div class="form-group">
+              <label>Imagen / captura del día</label>
+              <div class="upload-area" id="uploadArea">
+                <i class="ti ti-photo-up"></i>
+                <p>Arrastra una imagen o haz clic para seleccionar</p>
+                <p style="font-size:0.75rem; margin-top:4px; color:var(--text3);">PNG, JPG — máx. 10 MB</p>
+                <input type="file" id="imageUpload" accept="image/*" hidden>
+              </div>
+              <div class="image-preview hidden" id="imagePreview">
+                <img id="previewImg" src="" alt="Vista previa">
+                <button type="button" class="btn-remove-img" id="removeImage" title="Quitar imagen">
+                  <i class="ti ti-x"></i>
+                </button>
+              </div>
+              <input type="hidden" id="imagenUrl" name="imagen_url">
+            </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" id="saveSession">
+                <i class="ti ti-device-floppy"></i> Guardar sesión
+              </button>
+              <button type="button" class="btn-secondary" id="clearForm">
+                <i class="ti ti-refresh"></i> Limpiar formulario
+              </button>
+            </div>
+          </fieldset>
+
+          </form>
+        </div>
+        </div><!-- /#so-panel-diario -->
+
+        <!-- ── Pestaña: Coach IA ── (el markup se inyecta aquí desde el bloque
+             original; conserva todos los ids para que coach.js siga igual) -->
+        <div class="so-panel" id="so-panel-coach">
+
+          <!-- Selector de fecha -->
+          <!-- El Coach ya no lleva su propio selector de fecha: la manda la
+               cabecera de Sesión Operativa, común a las tres pestañas. Solo
+               queda el hint (hoy / ayer / hace N días). -->
+          <div class="coach-date-row">
+            <span class="coach-date-hint" id="coachDateHint"></span>
+          </div>
+
+          <!-- Lo que marcó el motor ese día (fase 7). La pinta coach.js según
+               motor_estado: candado, pendiente, sin sesión, error o la ficha. -->
+          <div class="coach-motor hidden" id="coachMotorCard"></div>
+
+          <!-- Emoción y confianza se registran en el Diario (pestaña 1): son
+               datos de la sesión, no del análisis. Aquí queda solo la gráfica,
+               que es lo que el Coach necesita MIRAR para analizar. -->
+          <div class="coach-controls-row">
+
+            <div class="coach-control-group coach-img-group">
+              <label class="coach-label">Gráfica del día</label>
+              <div class="coach-upload-area" id="coachUploadArea">
+                <i class="ti ti-photo-up"></i>
+                <span>Arrastra o haz clic para subir</span>
+                <input type="file" id="coachImageInput" accept="image/*" hidden>
+              </div>
+              <div class="coach-img-preview hidden" id="coachImagePreview">
+                <img id="coachPreviewImg" src="" alt="Gráfica">
+                <button type="button" class="coach-remove-img" id="coachRemoveImg" title="Quitar imagen">
+                  <i class="ti ti-x"></i>
+                </button>
+              </div>
+            </div>
+
+          </div><!-- /.coach-controls-row -->
+
+          <!-- Botón de acción principal. "Guardar diagnóstico" ya NO se duplica
+               aquí arriba: vive solo al final, como el resto de formularios. -->
+          <div class="coach-action-row">
+            <button class="btn-primary" id="coachAnalyzeBtn">
+              <i class="ti ti-chart-dots-3"></i> Análisis Técnico
+            </button>
+          </div>
+
+          <!-- ═══ ETAPA 1: Análisis Técnico ═══ -->
+          <div class="coach-stage" id="coachStageTecnico">
+            <div class="coach-stage-label">
+              <span class="coach-stage-num">1</span>
+              <span>Análisis Técnico</span>
+            </div>
+            <div id="coachAnalisisContent" class="coach-analisis-content">
+              <div class="coach-placeholder">
+                <i class="ti ti-chart-dots-3"></i>
+                <p>Haz clic en <strong>Análisis Técnico</strong> para que el Coach lea el contexto, el desarrollo y la validación de setups de la sesión.</p>
+                <p class="coach-placeholder-hint">Sube la gráfica del día para un análisis más preciso. Sin imagen, usará los datos del diario.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══ ETAPA 2: Sesión de Coaching ═══ -->
+          <div class="coach-stage coach-stage-locked" id="coachStageChat">
+            <div class="coach-stage-label">
+              <span class="coach-stage-num">2</span>
+              <span>Sesión de Coaching</span>
+              <span class="coach-stage-chip">Opcional</span>
+              <button class="btn-sm btn-ghost coach-cerrar-btn hidden" id="coachCerrarSesionBtn" title="Cerrar la sesión de coaching y habilitar el diagnóstico">
+                <i class="ti ti-circle-check"></i> Cerrar sesión
+              </button>
+            </div>
+            <div class="coach-chat-wrap">
+              <div class="coach-chat-messages" id="coachChatMessages"></div>
+              <div class="coach-chat-input-row">
+                <textarea
+                  id="coachChatInput"
+                  class="coach-chat-input"
+                  rows="2"
+                  placeholder="Pregunta sobre un setup, un error, la estrategia... (Enter para enviar, Shift+Enter para nueva línea)"></textarea>
+                <button class="btn-primary coach-send-btn" id="coachSendBtn" title="Enviar">
+                  <i class="ti ti-send"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══ ETAPA 3: Diagnóstico Final ═══ -->
+          <div class="coach-stage coach-stage-locked" id="coachStageDiagnostico">
+            <div class="coach-stage-label">
+              <span class="coach-stage-num">3</span>
+              <span>Diagnóstico Final</span>
+            </div>
+            <div class="coach-action-row">
+              <button class="btn-primary" id="coachDiagnosticoBtn" disabled>
+                <i class="ti ti-clipboard-check"></i> Generar Diagnóstico
+              </button>
+            </div>
+            <div id="coachDiagnosticoContent" class="coach-analisis-content">
+              <div class="coach-placeholder coach-placeholder-sm">
+                <i class="ti ti-lock"></i>
+                <p>Cierra la sesión de coaching para generar el veredicto, los errores y el aprendizaje del día.</p>
+              </div>
+            </div>
+            <div id="coachErroresConfirm" class="coach-errores-confirm"></div>
+            <div class="coach-action-row coach-action-row-bottom">
+              <button class="btn-primary coach-save-btn hidden" id="coachSaveBtnBottom">
+                <i class="ti ti-device-floppy"></i> Guardar diagnóstico
+              </button>
+            </div>
+          </div>
+
+        </div><!-- /#so-panel-coach -->
+
+        <!-- ── Pestaña: Días anteriores ── -->
+        <div class="so-panel" id="so-panel-dias">
+          <div id="coachHistorialList" class="coach-historial-list">
+            <div class="coach-placeholder">
+              <i class="ti ti-history"></i>
+              <p>Los días registrados aparecerán aquí.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ 5. DATOS ════════════════════════════════════════════════════ -->
+      <section class="section" id="section-data">
+
+        <div class="data-hero">
+          <!-- Cuenta principal (la que se lleva en el journal: calendario, análisis, Coach) -->
+          <div class="catalog-card">
+            <div class="catalog-header">
+              <h3><i class="ti ti-star" style="color:var(--accent)"></i> Cuenta principal</h3>
+              <span class="catalog-sub">La que el journal usa para P&amp;L, análisis y Coach IA</span>
+            </div>
+            <div style="margin-top:8px">
+              <select id="dataCuentaPrincipal" class="filter-select" style="width:100%"></select>
+              <p class="catalog-sub" id="cuentaPrincipalHint" style="margin-top:8px"></p>
+            </div>
+          </div>
+
+          <!-- Capital inicial (para la rentabilidad % en Análisis) -->
+          <div class="catalog-card">
+            <div class="catalog-header">
+              <h3><i class="ti ti-coin" style="color:var(--accent)"></i> Capital inicial</h3>
+              <span class="catalog-sub">Base para el cálculo de rentabilidad % en Análisis</span>
+            </div>
+            <div class="annual-capital-input" style="margin-top:6px">
+              <span>$</span>
+              <input type="number" id="dataCapitalInicial" placeholder="5000" min="0" step="100">
+            </div>
+          </div>
+        </div>
+
+        <!-- Pestañas: un catálogo a la vez y a ancho completo. Reutiliza el
+             componente .so-tabs de Sesión Operativa — mismo CSS, mismo scroll
+             horizontal en móvil. El contador de cada pestaña lo rellena data.js. -->
+        <div class="so-tabs" id="dataTabs">
+          <button type="button" class="so-tab active" data-tab="setups">
+            <i class="ti ti-chart-dots-3"></i> Setups <span class="chip-soft" data-count="setups"></span>
+          </button>
+          <button type="button" class="so-tab" data-tab="errores">
+            <i class="ti ti-alert-triangle"></i> Errores <span class="chip-soft" data-count="errores"></span>
+          </button>
+          <button type="button" class="so-tab" data-tab="emociones">
+            <i class="ti ti-mood-smile"></i> Emociones <span class="chip-soft" data-count="emociones"></span>
+          </button>
+          <button type="button" class="so-tab" data-tab="experimentos">
+            <i class="ti ti-flask"></i> Experimentos <span class="chip-soft" data-count="experimentos"></span>
+          </button>
+          <button type="button" class="so-tab" data-tab="recomendaciones">
+            <i class="ti ti-bulb"></i> Recomendaciones <span class="chip-soft" data-count="recomendaciones"></span>
+          </button>
+        </div>
+
+        <div class="so-panel active" id="data-panel-setups">
+
+          <!-- Setups operativos: familias (IRI, Reingreso…) y sus variantes.
+               Lo que se cree aquí aparece solo en Registrar Sesión, en las
+               reglas de Fase 2, en el Coach, en Telegram y en el AddOn NT8. -->
+          <div class="catalog-card">
+            <div class="catalog-header">
+              <h3><i class="ti ti-chart-dots-3" style="color:var(--accent)"></i> Setups operativos</h3>
+              <span class="catalog-sub">Familias y sus variantes. Las reglas de Fase 2 se asignan a una familia desde Estrategia.</span>
+            </div>
+            <div class="catalog-add">
+              <input type="text" id="newSetupFamilia" placeholder="Nueva familia (ej: Ruptura)..." maxlength="40">
+              <button class="btn-primary" id="addSetupFamilia"><i class="ti ti-plus"></i> Agregar familia</button>
+            </div>
+            <div id="setupsList" class="setups-list"></div>
+          </div>
+
+        </div>
+
+        <div class="so-panel" id="data-panel-errores">
+          <!-- Errores -->
+          <div class="catalog-card">
+            <div class="catalog-header">
+              <h3><i class="ti ti-alert-triangle" style="color:var(--warning)"></i> Errores</h3>
+              <span class="catalog-sub">Errores registrados por sesión</span>
+            </div>
+            <div class="catalog-add">
+              <input type="text" id="newCasuistica" placeholder="Nuevo error..." maxlength="60">
+              <select id="newCasuisticaTipo" class="catalog-tipo-select" title="Tipo de error">
+                <option value="">Tipo…</option>
+                <option value="psicologico">🧠 Psicológico</option>
+                <option value="analitico">📐 Analítico</option>
+                <option value="operativo">⚙️ Operativo</option>
+                <option value="marcado">🗺️ Marcado</option>
+              </select>
+              <select id="newCasuisticaFase" class="catalog-tipo-select" title="Fase del proceso">
+                <option value="">Fase…</option>
+                <option value="1">Fase 1 · Pre-sesión</option>
+                <option value="2">Fase 2 · Lectura</option>
+                <option value="3">Fase 3 · Ejecución</option>
+              </select>
+              <button class="btn-primary" id="addCasuistica"><i class="ti ti-plus"></i> Agregar</button>
+            </div>
+            <div id="catalogoCasuisticasList" class="catalog-list"></div>
+          </div>
+
+        </div>
+
+        <div class="so-panel" id="data-panel-emociones">
+          <!-- Emociones -->
+          <div class="catalog-card">
+            <div class="catalog-header">
+              <h3><i class="ti ti-mood-smile"></i> Emociones</h3>
+              <span class="catalog-sub">Estados emocionales del Coach IA</span>
+            </div>
+            <div class="catalog-add">
+              <input type="text" id="newEmocionEmoji" placeholder="😐" maxlength="4" class="catalog-emoji-input">
+              <input type="text" id="newEmocionNombre" placeholder="Nueva emoción..." maxlength="40">
+              <button class="btn-primary" id="addEmocion"><i class="ti ti-plus"></i> Agregar</button>
+            </div>
+            <div id="catalogoEmocionesList" class="catalog-list"></div>
+          </div>
+
+        </div>
+
+        <div class="so-panel" id="data-panel-experimentos">
+          <!-- Experimentos -->
+          <div class="catalog-card">
+            <div class="catalog-header">
+              <h3><i class="ti ti-flask"></i> Experimentos</h3>
+              <span class="catalog-sub">Reglas en prueba — llevan estadística antes de decidir si se adoptan</span>
+            </div>
+            <div class="catalog-add">
+              <input type="text" id="newExperimento" placeholder="Nuevo experimento..." maxlength="60">
+              <button class="btn-primary" id="addExperimento"><i class="ti ti-plus"></i> Agregar</button>
+            </div>
+            <div id="catalogoExperimentosList" class="catalog-list"></div>
+          </div>
+
+        </div>
+
+        <div class="so-panel" id="data-panel-recomendaciones">
+          <!-- Recomendaciones -->
+          <div class="catalog-card">
+            <div class="catalog-header">
+              <h3><i class="ti ti-bulb"></i> Recomendaciones</h3>
+              <span class="catalog-sub">Acciones correctivas tipificadas — la IA y tú las asocian a errores</span>
+            </div>
+            <div class="catalog-add">
+              <input type="text" id="newRecomendacion" placeholder="Nueva recomendación..." maxlength="60">
+              <select id="newRecomendacionTipo" class="catalog-tipo-select" title="Tipo">
+                <option value="">Tipo…</option>
+                <option value="psicologico">🧠 Psicológico</option>
+                <option value="analitico">📐 Analítico</option>
+                <option value="operativo">⚙️ Operativo</option>
+                <option value="marcado">🗺️ Marcado</option>
+              </select>
+              <button class="btn-primary" id="addRecomendacion"><i class="ti ti-plus"></i> Agregar</button>
+            </div>
+            <div id="catalogoRecomendacionesList" class="catalog-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ ESTRATEGIA ══════════════════════════════════════════════════════ -->
+      <section class="section" id="section-estrategia">
+
+        <!-- Pestañas: Plan de Chaumer · Etapa anterior. De solo lectura desde el
+             24/09: el plan se edita en chaumer/01_Plan y llega con scripts/plan/sincronizar.mjs. -->
+        <div class="rb-tabs" id="rbCapaPills"></div>
+
+        <!-- Vistas de la pestaña (Tu checklist · Checklist diaria · Reglas) -->
+        <div class="rb-toolbar">
+          <div class="rb-filters" id="rbFilters"></div>
+        </div>
+
+        <!-- Lista de reglas (rulebook unificado) -->
+        <div id="reglasList" class="rb-list">
+          <div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Cargando...</div>
+        </div>
+      </section>
+
+      <!-- ═══ DISCIPLINA ══════════════════════════════════════════════════════ -->
+      <section class="section" id="section-disciplina">
+        <!-- Sin cabecera propia: el rango del período lo escribe disciplina.js en
+             #sectionContext, y sus controles (flechas de navegación y selector de
+             período) viven en la barra superior — ver Nav.HERRAMIENTAS. -->
+        <div id="disciplinaContent">
+          <div class="coach-loading"><i class="ti ti-loader-2 spin"></i> Cargando...</div>
+        </div>
+      </section>
+
+      <!-- ═══ COACH IA ════════════════════════════════════════════════════════ -->
+
+      <!-- ═══ 7. GALERÍA DE IMÁGENES ═══════════════════════════════════════ -->
+      <section class="section" id="section-gallery">
+        <div class="gallery-months-bar" id="galleryMonthsBar"></div>
+        <div class="gallery-grid" id="galleryGrid"></div>
+      </section>
+
+      <!-- ═══ 6. ANÁLISIS ══════════════════════════════════════════════════ -->
+      <section class="section" id="section-analysis">
+
+        <!-- Sin cabecera propia: el período (mes/trimestre/año) lo escribe charts.js
+             en #sectionContext, y sus controles —flechas de navegación y selector de
+             período— viven en la barra superior (Nav.HERRAMIENTAS). Exportar baja al
+             final: se usa DESPUÉS de mirar el informe, no antes. -->
+
+        <!-- Etiquetas que filtran TODA la pantalla (rediseño «Cristal»): fuera del área exportable -->
+        <div class="an-chips" id="anChips"></div>
+        <!-- Contenido exportable -->
+        <div id="analysisExportArea">
+
+        <!-- 1 · KPIs — los 7 al mismo peso; la jerarquía va DENTRO de cada tarjeta
+             (etiqueta pequeña · número grande · variación), no entre ellas. -->
+        <div id="analysisKpiStrip"></div>
+
+        <!-- 2 · Curva de Equity a ancho completo -->
+        <div class="an-card">
+          <div class="an-card-head">
+            <h3><i class="ti ti-trending-up"></i> Curva de Equity</h3>
+            <button class="help-btn" data-help="equity" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+          </div>
+          <div class="an-chart an-chart-tall"><canvas id="equityChart"></canvas></div>
+          <div class="an-note" id="equityNota"></div>
+        </div>
+
+
+        <!-- 3 · Resumen: es lo que responde "¿cómo fue el período?" fila a fila.
+             Se queda como <table> de verdad: la alineación de columnas está
+             garantizada por construcción, que es justo lo que una tabla falsa de
+             divs con flex no puede prometer. -->
+        <div class="an-card">
+          <div class="an-card-head">
+            <h3><i class="ti ti-table"></i> <span id="analysisTablaTitle">Resumen por semana</span></h3>
+          </div>
+          <div class="an-table-wrap">
+            <table class="an-table">
+              <thead>
+                <tr>
+                  <th id="analysisTablaCol1">Semana</th>
+                  <th class="num">P&amp;L Neto</th>
+                  <th class="num">Acumulado</th>
+                  <th class="num">Rentabilidad</th>
+                  <th class="num">Efectividad</th>
+                  <th class="num">Disciplina</th>
+                  <th class="num">Trades</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="analysisTablaBody"></tbody>
+              <tfoot id="analysisTablaFoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- 4 · Las tres tarjetas -->
+        <div class="an-charts-2">
+          <div class="an-card">
+            <div class="an-card-head">
+              <h3><i class="ti ti-chart-bar"></i> <span id="pnlBarsTitle">P&amp;L por semana</span></h3>
+              <button class="help-btn" data-help="pnlBars" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
+            <div class="an-chart"><canvas id="pnlBarsChart"></canvas></div>
+          </div>
+          <!-- Distribución: NO es una dona. Un ratio único contra un total se lee
+               como cifra + medidor; un pastel de 2 porciones es un anti-patrón
+               reconocido (y obligaba a meter texto dentro del color, ilegible). -->
+          <div class="an-card">
+            <div class="an-card-head">
+              <h3><i class="ti ti-target-arrow"></i> Distribución de resultados</h3>
+              <button class="help-btn" data-help="results" title="¿Qué es esto?"><i class="ti ti-help-circle"></i></button>
+            </div>
+            <div id="resultsPanel"></div>
+          </div>
+        </div>
+        <!-- 5 · Dónde ganas y dónde no (rediseño «Cristal»): por setup, por franja horaria y por día de la semana -->
+        <p class="an-titsec">Dónde ganas y dónde no</p>
+        <div class="an-donde">
+          <div class="an-card"><div class="an-card-head"><h3><i class="ti ti-bolt"></i> Por setup</h3></div><div class="an-barras" id="anPorSetup"></div></div>
+          <div class="an-card"><div class="an-card-head"><h3><i class="ti ti-clock"></i> Por franja horaria</h3></div><div class="an-barras" id="anPorFranja"></div></div>
+          <div class="an-card"><div class="an-card-head"><h3><i class="ti ti-calendar-week"></i> Por día de la semana</h3></div><div class="pt-sem" id="anPorDia"></div></div>
+        </div>
+        </div><!-- /analysisExportArea -->
+
+        <!-- Exportar: fuera del área capturada (si no, los botones saldrían en el
+             PDF) y al final, que es cuando se usa. -->
+        <div class="analysis-footer">
+          <button class="btn-secondary btn-sm" id="analysisExportPdf" title="Exportar a PDF"><i class="ti ti-file-type-pdf"></i> PDF</button>
+          <button class="btn-secondary btn-sm" id="analysisExportImg" title="Exportar como imagen"><i class="ti ti-photo-down"></i> Imagen</button>
+        </div>
+      </section>
+
+      <!-- ═══ EXPERIMENTOS ═══════════════════════════════════════════════ -->
+      <section class="section" id="section-experimentos">
+
+        <div class="analysis-controls">
+          <div class="period-selector" id="expdPeriodSelector">
+            <button class="period-btn" data-period="month">Este mes</button>
+            <button class="period-btn" data-period="3m">3 meses</button>
+            <button class="period-btn active" data-period="all">Todo</button>
+          </div>
+          <span class="expd-base-info" id="expdBaseInfo"></span>
+        </div>
+
+        <!-- KPIs del laboratorio -->
+        <div class="expd-kpis" id="expdKpis"></div>
+
+        <!-- Tarjetas de veredicto por experimento -->
+        <div class="expd-cards" id="expdCards"></div>
+
+        <!-- Matriz cronológica (vista Excel) -->
+        <div class="expd-matrix-card">
+          <div class="expd-matrix-title">
+            <i class="ti ti-calendar-week"></i> Matriz cronológica
+            <span class="expd-matrix-hint">desliza para ver el histórico — lo más reciente a la derecha</span>
+          </div>
+          <div class="expd-matrix-scroll" id="expdMatrix"></div>
+        </div>
+      </section>
+
+      <!-- ═══ APEX TRACKER ═══════════════════════════════════════════════ -->
+      <section class="section" id="section-apex">
+        <!-- Vista lista: KPIs globales + cards por cuenta -->
+        <div id="apexLista">
+          <div class="section-actions">
+            <button class="btn-primary btn-sm" id="apexNuevaCuenta"><i class="ti ti-plus"></i> Nueva cuenta</button>
+          </div>
+          <div class="expd-kpis" id="apexKpis"></div>
+          <div id="apexCuentas"></div>
+        </div>
+
+        <!-- Vista detalle de una cuenta (oculta por defecto) -->
+        <div id="apexDetalle" class="hidden"></div>
+      </section>
+
+      <!-- ═══ FECHAS ESPECIALES ═══════════════════════════════════════════ -->
+      <section class="section" id="section-fechas">
+        <div class="section-actions">
+          <div class="fechas-toolbar">
+            <select id="fechasYear" class="filter-select"></select>
+            <button class="btn-secondary btn-sm" id="fechasGenFestivos" title="Generar los festivos CME del año seleccionado"><i class="ti ti-wand"></i> Generar festivos</button>
+            <button class="btn-primary btn-sm" id="fechasNueva"><i class="ti ti-plus"></i> Nueva fecha</button>
+          </div>
+        </div>
+        <div id="fechasContent"></div>
+      </section>
+
+      <!-- ═══ CHAUMER ═════════════════════════════════════════════════════ -->
+      <!-- Comparador: su operativa frente a la mía, día a día. Su lado sale de
+           `chaumer_operativas`; el mío se LEE de `sesiones` + `trades`, nunca se
+           duplica. El veredicto no se guarda: se calcula. Ver js/chaumer.js. -->
+      <section class="section" id="section-chaumer">
+
+        <!-- La fecha va en la MISMA fila que las pestañas: en su propia franja
+             comía ~60 px de alto que hacen falta para las dos columnas. Solo se
+             muestra en la pestaña "Registrar" — Diferencias, la principal, usa el
+             selector de período de la barra superior. Lo alterna Chaumer.showTab.
+             El data-tab "dia" se conserva: es el id interno de Registrar. -->
+        <div class="ch-topbar">
+          <div class="so-tabs" id="chaumerTabs">
+            <button type="button" class="so-tab active" data-tab="dif">
+              <i class="ti ti-chart-bar"></i> Diferencias
+            </button>
+            <button type="button" class="so-tab" data-tab="dia">
+              <i class="ti ti-pencil"></i> Registrar
+            </button>
+          </div>
+          <div class="date-stepper ch-datenav hidden" id="chDateNav">
+            <button type="button" class="btn-icon" id="chDatePrev" title="Día anterior">
+              <i class="ti ti-chevron-left"></i>
+            </button>
+            <input type="date" id="chDate">
+            <button type="button" class="btn-icon" id="chDateNext" title="Día siguiente">
+              <i class="ti ti-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="so-panel active" id="chaumer-panel-dif">
+          <div id="chaumerDif"></div>
+        </div>
+
+        <div class="so-panel" id="chaumer-panel-dia">
+          <div id="chaumerDia"></div>
+        </div>
+      </section>
+
+      <!-- ═══ BACKTESTING ═════════════════════════════════════════════════ -->
+      <!-- La bitácora del backtesting visual de días pasados (bt_*). Resumen = el
+           dashboard del total; Bitácora = registrar y corregir. El portal de
+           Chaumer la enseña en solo lectura. Nunca se mezcla con trades. Ver
+           js/backtesting.js y docs/disenos/2026-10-09-resumen-backtesting.md. -->
+      <section class="section" id="section-backtesting">
+        <div class="section-actions">
+          <a class="btn-secondary btn-sm" href="https://plan-operativo-nq.pages.dev/backtesting"
+             target="_blank" rel="noopener"><i class="ti ti-external-link"></i> Ver en el portal</a>
+          <button class="btn-primary btn-sm" id="btNueva"><i class="ti ti-plus"></i> Registrar jornada</button>
+        </div>
+        <div class="so-tabs" id="btTabs">
+          <button type="button" class="so-tab active" data-tab="resumen"><i class="ti ti-chart-line"></i> Resumen</button>
+          <button type="button" class="so-tab" data-tab="bitacora"><i class="ti ti-list-details"></i> Bitácora</button>
+        </div>
+        <div class="so-panel active" id="bt-panel-resumen"><div id="btResumen"></div></div>
+        <div class="so-panel" id="bt-panel-bitacora"><div id="btContent"></div></div>
+      </section>
+
+      <!-- Modal: las dos gráficas de un día, la mía y la suya. Se abre desde la
+           lista de Diferencias; Esc / X / clic fuera lo cierran y ← → cambian de
+           día. Lo pinta Chaumer.abrirComparacion. -->
+      <div class="modal-overlay hidden" id="chCmpModal">
+        <div class="modal ch-cmp" role="dialog" aria-modal="true" aria-labelledby="chCmpTitulo">
+          <div class="modal-header ch-cmp-head">
+            <div class="ch-cmp-tit">
+              <h3 id="chCmpTitulo"></h3>
+              <span id="chCmpVeredicto"></span>
+            </div>
+            <div class="ch-cmp-acc">
+              <button type="button" class="btn-icon" id="chCmpPrev" title="Día anterior (←)"><i class="ti ti-chevron-left"></i></button>
+              <button type="button" class="btn-icon" id="chCmpNext" title="Día siguiente (→)"><i class="ti ti-chevron-right"></i></button>
+              <button type="button" class="btn-secondary btn-sm" id="chCmpEditar" title="Abrir este día en Registrar"><i class="ti ti-pencil"></i><span> Editar su operativa</span></button>
+              <button type="button" class="btn-icon" id="chCmpCerrar" title="Cerrar (Esc)"><i class="ti ti-x"></i></button>
+            </div>
+          </div>
+          <div class="modal-content ch-cmp-body" id="chCmpCuerpo"></div>
+        </div>
+      </div>
+
+      <!-- Modal: la operativa de Chaumer de un día -->
+      <div class="modal-overlay hidden" id="chOpModal">
+        <div class="modal" style="max-width:480px">
+          <div class="modal-header">
+            <h3 id="chOpModalTitle"><i class="ti ti-arrows-diff"></i> Operativa de Chaumer</h3>
+            <button class="btn-icon" id="closeChOpModal"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="modal-content" style="padding:16px 20px 20px">
+
+            <label class="ch-op-toggle">
+              <input type="checkbox" id="chOpOpero" checked>
+              <span>Operó este día</span>
+            </label>
+
+            <!-- Si operó -->
+            <!-- Todo lo de este formulario es la operativa de CHAUMER. El lado de
+                 Kris no se escribe aquí: se lee de `sesiones` + `trades`. Por eso
+                 los rótulos dicen "su", y por eso el signo de los puntos lo manda
+                 SU resultado. -->
+            <div id="chOpSiOpero">
+              <div class="form-group">
+                <label>Su setup</label>
+                <select id="chOpSetup"></select>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Su hora de entrada <span class="ch-hint">(hora Colombia)</span></label>
+                  <input type="time" id="chOpHora">
+                </div>
+                <div class="form-group">
+                  <label>Su resultado</label>
+                  <select id="chOpResultado">
+                    <option value="">—</option>
+                    <option value="target">Target</option>
+                    <option value="stop">Stop</option>
+                    <option value="be">Break-even</option>
+                    <option value="parcial">Parcial</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Sus puntos <span class="ch-hint">(el signo lo pone su resultado)</span></label>
+                  <input type="number" id="chOpPuntos" step="0.25" placeholder="40">
+                </div>
+                <div class="form-group">
+                  <label>Su contexto</label>
+                  <select id="chOpContexto">
+                    <option value="">—</option>
+                    <option value="Alcista">Alcista</option>
+                    <option value="Bajista">Bajista</option>
+                    <option value="Mixto">Mixto</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Si no operó -->
+            <div id="chOpNoOpero" class="hidden">
+              <div class="form-group">
+                <label>¿Por qué no operó?</label>
+                <input type="text" id="chOpMotivo" placeholder="Sin estructura clara en la apertura">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Su operativa <span class="ch-hint">(lo que explicó)</span></label>
+              <textarea id="chOpNotas" rows="3" placeholder="Rompe la zona lateral y genera el IRI por debajo del soporte…"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Su gráfico</label>
+              <input type="file" id="chOpImagen" accept="image/*">
+              <input type="hidden" id="chOpImagenUrl">
+            </div>
+
+            <div class="ch-op-acciones">
+              <button class="btn-secondary hidden" id="chOpBorrar"><i class="ti ti-trash"></i> Borrar</button>
+              <button class="btn-primary" id="chOpGuardar"><i class="ti ti-device-floppy"></i> Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ OTROS ═══════════════════════════════════════════════════════ -->
+      <!-- Índice de las secciones que salieron del menú. No muestra datos: es
+           una rejilla fija que genera app.js desde OTROS_ITEMS, así que añadir
+           una opción nueva es una entrada más en ese array — ni HTML ni CSS. -->
+      <section class="section" id="section-otros">
+        <!-- Contenedor a secas: app.js pinta dentro un .otros-eyebrow + .otros-grid
+             por cada grupo (Consultar / Configurar) leyendo Otros.ITEMS. -->
+        <div id="otrosGrid"></div>
+
+        <!-- Ajustes. "Claves y objetivos" abre el #settingsModal de siempre, sin
+             tocar su markup ni su lógica: solo cambia quién lo dispara (antes, la
+             tuerca de la barra superior). "Cerrar sesión" vive aquí porque el pie
+             del sidebar está oculto en móvil y dejaba al journal sin logout. -->
+        <div class="ajustes-card">
+          <div class="ajustes-title"><i class="ti ti-settings"></i> Ajustes</div>
+
+          <button type="button" class="ajustes-row" id="ajustesClaves">
+            <i class="ti ti-key"></i>
+            <span class="ajustes-row-txt">
+              <span class="ajustes-row-name">Claves y objetivos</span>
+              <span class="ajustes-row-sub">API de Claude y objetivos del día</span>
+            </span>
+            <i class="ti ti-chevron-right ajustes-row-go"></i>
+          </button>
+
+          <button type="button" class="ajustes-row" id="ajustesSeguridad">
+            <i class="ti ti-lock"></i>
+            <span class="ajustes-row-txt">
+              <span class="ajustes-row-name">Seguridad</span>
+              <span class="ajustes-row-sub">Cambiar la contraseña de acceso</span>
+            </span>
+            <i class="ti ti-chevron-right ajustes-row-go"></i>
+          </button>
+
+          <!-- Inerte a propósito: no es un botón, es un recordatorio. El tema
+               claro no se construye hasta consolidar el color (ver §7 del diseño). -->
+          <div class="ajustes-row ajustes-row-off">
+            <i class="ti ti-contrast"></i>
+            <span class="ajustes-row-txt">
+              <span class="ajustes-row-name">Tema</span>
+              <span class="ajustes-row-sub">Ahora mismo solo hay tema oscuro</span>
+            </span>
+            <span class="ajustes-row-tag">Pendiente</span>
+          </div>
+
+          <div class="ajustes-sep"></div>
+
+          <button type="button" class="ajustes-row ajustes-row-danger" id="logoutBtn">
+            <i class="ti ti-logout"></i>
+            <span class="ajustes-row-txt">
+              <span class="ajustes-row-name">Cerrar sesión</span>
+              <span class="ajustes-row-sub" id="ajustesCuenta"></span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Modal: nueva/editar fecha especial -->
+      <div class="modal-overlay hidden" id="fechaModal">
+        <div class="modal" style="max-width:420px">
+          <div class="modal-header">
+            <h3 id="fechaModalTitle"><i class="ti ti-calendar-star"></i> Nueva fecha</h3>
+            <button class="btn-icon" id="closeFechaModal"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="modal-content" style="padding:16px 20px 20px">
+            <input type="hidden" id="fechaId">
+            <div class="form-row">
+              <div class="form-group"><label>Fecha</label><input type="date" id="fechaInput"></div>
+              <div class="form-group"><label>Tipo</label>
+                <select id="fechaTipo">
+                  <option value="fomc">FOMC</option>
+                  <option value="festivo">Festivo</option>
+                  <option value="vacaciones">Vacaciones</option>
+                  <option value="otro">Otra</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Nombre</label><input type="text" id="fechaNombre" placeholder="Ej. Navidad"></div>
+              <div class="form-group"><label>Emoji</label><input type="text" id="fechaEmoji" placeholder="🎄" maxlength="4"></div>
+            </div>
+            <div class="form-group"><label>Notas</label><input type="text" id="fechaNotas" placeholder="Opcional"></div>
+            <button class="btn-primary" id="fechaGuardar" style="width:100%;margin-top:6px"><i class="ti ti-device-floppy"></i> Guardar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: registrar / corregir una jornada de backtesting. Lo pinta
+           Backtesting.abrir. Una jornada lleva como mucho una operación en esta
+           pantalla; "Sin operación" la guarda vacía, con la nota del día. -->
+      <div class="modal-overlay hidden" id="btModal">
+        <div class="modal" style="max-width:480px">
+          <div class="modal-header">
+            <h3 id="btModalTitle"><i class="ti ti-history"></i> Registrar jornada</h3>
+            <button class="btn-icon" id="closeBtModal" aria-label="Cerrar"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="modal-content" style="padding:16px 20px 20px">
+            <input type="hidden" id="btId">
+            <div class="form-row">
+              <div class="form-group"><label>Fecha</label><input type="date" id="btFecha"></div>
+              <div class="form-group"><label>Resultado</label>
+                <select id="btResultado">
+                  <option value="target">Target</option>
+                  <option value="stop">Stop</option>
+                  <option value="">Sin operación</option>
+                </select>
+              </div>
+            </div>
+            <div id="btSiOpera">
+              <div class="form-row">
+                <div class="form-group"><label>Hora <span class="ch-hint">(hora Colombia)</span></label><input type="text" id="btHora" inputmode="numeric" maxlength="5" placeholder="09:45" autocomplete="off"></div>
+                <div class="form-group"><label>Dirección</label>
+                  <select id="btDireccion">
+                    <option value="largo">Largo</option>
+                    <option value="corto">Corto</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>Setup</label>
+                  <select id="btSetup">
+                    <option value="continuacion">Continuación</option>
+                    <option value="reingreso">Reingreso</option>
+                  </select>
+                </div>
+                <div class="form-group"><label>Puntos <span class="ch-hint">(siempre en positivo)</span></label>
+                  <input type="number" id="btPuntos" step="0.25" min="0" inputmode="decimal" placeholder="40">
+                </div>
+              </div>
+              <div class="bt-pnl">
+                <span>P&amp;L neto</span><b id="btPnl">—</b>
+                <small id="btPnlBase"></small>
+              </div>
+            </div>
+            <div class="form-group">
+              <label id="btNotasLabel">Observaciones</label>
+              <textarea id="btNotas" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Gráfico del día</label>
+              <input type="file" id="btImagen" accept="image/png,image/jpeg,image/webp">
+              <input type="hidden" id="btImagenUrl">
+              <small class="bt-img-actual" id="btImagenActual"></small>
+            </div>
+            <div class="bt-acciones">
+              <button class="btn-secondary hidden" id="btBorrar"><i class="ti ti-trash"></i> Borrar</button>
+              <button class="btn-primary" id="btGuardar"><i class="ti ti-device-floppy"></i> Guardar jornada</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: datos de inicio del backtesting (bt_cabecera). Son la PROPUESTA
+           para la próxima jornada: cambiarlos no toca las ya registradas. -->
+      <div class="modal-overlay hidden" id="btInicioModal">
+        <div class="modal" style="max-width:420px">
+          <div class="modal-header">
+            <h3><i class="ti ti-adjustments"></i> Datos de inicio</h3>
+            <button class="btn-icon" id="closeBtInicioModal" aria-label="Cerrar"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="modal-content" style="padding:16px 20px 20px">
+            <div class="form-row">
+              <div class="form-group"><label>Valor inicial</label><input type="number" id="btIniValor" step="0.01" min="0" inputmode="decimal"></div>
+              <div class="form-group"><label>Contratos</label><input type="number" id="btIniContratos" step="1" min="1" inputmode="numeric"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Instrumento</label><input type="text" id="btIniInstrumento" maxlength="20"></div>
+              <div class="form-group"><label>Comisión <span class="ch-hint">(por contrato)</span></label><input type="number" id="btIniComision" step="0.01" min="0" inputmode="decimal"></div>
+            </div>
+            <p class="bt-nota" id="btIniPunto"></p>
+            <button class="btn-primary" id="btIniGuardar" style="width:100%;margin-top:6px"><i class="ti ti-device-floppy"></i> Guardar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: crear/editar cuenta Apex -->
+      <div class="modal-overlay hidden" id="apexCuentaModal">
+        <div class="modal" style="max-width:480px">
+          <div class="modal-header">
+            <h3 id="apexCuentaModalTitle"><i class="ti ti-trophy"></i> Nueva cuenta</h3>
+            <button class="btn-icon" id="closeApexCuentaModal"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="modal-content" style="padding:16px 20px 20px">
+            <input type="hidden" id="apexCtaId">
+            <div class="form-row">
+              <div class="form-group"><label>Nombre</label><input type="text" id="apexCtaNombre" placeholder="Apex-13"></div>
+              <div class="form-group"><label>Número de cuenta</label><input type="text" id="apexCtaNumero" placeholder="APEX-232411-13"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Tamaño / balance inicial $</label><input type="number" id="apexCtaTamano" value="50000"></div>
+              <div class="form-group"><label>Drawdown máx $</label><input type="number" id="apexCtaDrawdown" value="2000"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Profit target $</label><input type="number" id="apexCtaTarget" value="3000"></div>
+              <div class="form-group"><label>Safety net (balance) $</label><input type="number" id="apexCtaSafety" value="52100"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Piso congelado $</label><input type="number" id="apexCtaPiso" value="50100"></div>
+              <div class="form-group"><label>Días mínimos</label><input type="number" id="apexCtaMinDias" value="7"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Contratos máx</label><input type="number" id="apexCtaContratos" placeholder="3"></div>
+              <div class="form-group"><label>Estado</label>
+                <select id="apexCtaEstado">
+                  <option value="evaluacion">Evaluación</option>
+                  <option value="recuperacion">En recuperación</option>
+                  <option value="critico">Crítico</option>
+                  <option value="safety_net">Safety net</option>
+                  <option value="aprobada">Aprobada</option>
+                  <option value="pa">PA (fondeada)</option>
+                  <option value="quemada">Quemada</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group"><label>Fecha de inicio</label><input type="date" id="apexCtaFecha"></div>
+            <div class="form-group"><label>Notas</label><input type="text" id="apexCtaNotas" placeholder="Opcional"></div>
+            <div class="form-group" style="margin-top:4px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" id="apexCtaActiva" checked> Cuenta activa
+              </label>
+            </div>
+            <button class="btn-primary" id="apexCtaGuardar" style="width:100%;margin-top:6px"><i class="ti ti-device-floppy"></i> Guardar cuenta</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: registrar día Apex -->
+      <div class="modal-overlay hidden" id="apexDiaModal">
+        <div class="modal" style="max-width:440px">
+          <div class="modal-header">
+            <h3 id="apexDiaModalTitle"><i class="ti ti-calendar-plus"></i> Registrar día</h3>
+            <button class="btn-icon" id="closeApexDiaModal"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="modal-content" style="padding:16px 20px 20px">
+            <input type="hidden" id="apexDiaCuentaId">
+            <div class="form-row">
+              <div class="form-group"><label>Fecha</label><input type="date" id="apexDiaFecha"></div>
+              <div class="form-group"><label>P&amp;L del día $</label><input type="number" step="0.01" id="apexDiaPnl" placeholder="-150.50"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Balance al cierre $</label><input type="number" step="0.01" id="apexDiaBalance"></div>
+              <div class="form-group"><label>Threshold (Rithmic) $</label><input type="number" step="0.01" id="apexDiaThreshold"></div>
+            </div>
+            <p class="apex-hint" id="apexDiaHint"></p>
+            <div class="form-row">
+              <div class="form-group"><label>Contratos usados</label><input type="number" id="apexDiaContratos" placeholder="3"></div>
+              <div class="form-group"><label>Nota</label><input type="text" id="apexDiaNota" placeholder="Opcional"></div>
+            </div>
+            <button class="btn-primary" id="apexDiaGuardar" style="width:100%;margin-top:6px"><i class="ti ti-device-floppy"></i> Guardar registro</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ── Modal: Festivo CME ───────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="holidayModal">
+    <div class="modal holiday-modal">
+      <div class="modal-header" style="justify-content:flex-end; border-bottom:none; padding-bottom:4px">
+        <button class="btn-icon" id="closeHolidayModal"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-content" style="text-align:center; padding-top:4px; padding-bottom:36px">
+        <div id="holidayEmoji" style="font-size:4.5rem; line-height:1; margin-bottom:16px">🏛</div>
+        <div style="margin-bottom:20px">
+          <span class="badge badge-festivo" style="font-size:0.8rem; padding:5px 14px">
+            <i class="ti ti-building-bank"></i> Mercado Cerrado — CME
+          </span>
+        </div>
+        <div id="holidayName" style="font-size:1.4rem; font-weight:700; color:var(--text); margin-bottom:8px">Festivo</div>
+        <div id="holidayDate" style="font-size:0.92rem; color:var(--text3); letter-spacing:0.03em">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Disciplina ─────────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="disciplineModal">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header">
+        <h3 id="disciplineModalTitle"><i class="ti ti-checkup-list"></i> Análisis de Disciplina</h3>
+        <button class="btn-icon" id="closeDisciplineModal"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-content" id="disciplineModalContent"></div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Ajustes ────────────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="settingsModal">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-header">
+        <h3><i class="ti ti-settings"></i> Ajustes</h3>
+        <button class="btn-icon" id="closeSettings"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-content">
+        <div class="form-group">
+          <label for="inputClaudeKey">API Key de Claude</label>
+          <div style="display:flex; gap:8px;">
+            <input type="password" id="inputClaudeKey" placeholder="sk-ant-api03-..." style="flex:1">
+            <button type="button" class="btn-secondary" id="toggleKeyVisibility" style="padding:8px 10px; flex-shrink:0;">
+              <i class="ti ti-eye"></i>
+            </button>
+          </div>
+          <small style="color:var(--text3); margin-top:4px; display:block;">
+            Se guarda solo en este navegador, nunca en GitHub.
+            Obtén la tuya en <strong>console.anthropic.com</strong>
+          </small>
+        </div>
+
+        <div class="settings-divider"></div>
+        <p class="settings-section-title"><i class="ti ti-target-arrow"></i> Objetivos y reglas</p>
+        <div class="objetivos-grid">
+          <div class="form-group">
+            <label for="objStopMax">Stop máximo por trade ($)</label>
+            <input type="number" id="objStopMax" placeholder="120" min="0" step="1">
+          </div>
+          <div class="form-group">
+            <label for="objMaxTrades">Máx. trades por día</label>
+            <input type="number" id="objMaxTrades" placeholder="2" min="0" step="1">
+          </div>
+          <div class="form-group">
+            <label for="objPnlObjetivo">Objetivo de P&L diario ($)</label>
+            <input type="number" id="objPnlObjetivo" placeholder="200" step="1">
+          </div>
+          <div class="form-group">
+            <label for="objLimitePerdida">Límite de pérdida diario ($)</label>
+            <input type="number" id="objLimitePerdida" placeholder="240" min="0" step="1">
+          </div>
+        </div>
+        <small style="color:var(--text3); display:block;">
+          Se usan para calcular el <strong>Cumplimiento de Reglas</strong> en Métricas.
+        </small>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end;">
+        <button class="btn-primary" id="saveSettings">
+          <i class="ti ti-device-floppy"></i> Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Seguridad — cambiar contraseña ───────────────────────── -->
+  <!-- No pide la contraseña actual: Supabase no la exige para una sesión ya
+       autenticada, y pedirla daría una falsa sensación de comprobación. -->
+  <div class="modal-overlay hidden" id="securityModal">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h3><i class="ti ti-lock"></i> Cambiar contraseña</h3>
+        <button class="btn-icon" id="closeSecurity"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-content" style="padding:16px 20px 20px">
+        <div class="form-group">
+          <label for="secPass1">Contraseña nueva</label>
+          <div style="display:flex; gap:8px;">
+            <input type="password" id="secPass1" autocomplete="new-password" placeholder="Mínimo 8 caracteres" style="flex:1">
+            <button type="button" class="btn-secondary" id="secToggle" style="padding:8px 10px; flex-shrink:0;" aria-label="Mostrar contraseña">
+              <i class="ti ti-eye"></i>
+            </button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:14px">
+          <label for="secPass2">Repite la contraseña</label>
+          <input type="password" id="secPass2" autocomplete="new-password" placeholder="La misma otra vez">
+        </div>
+        <div class="login-error hidden" id="secError" style="margin-top:12px"></div>
+        <button class="btn-primary" id="secGuardar" style="width:100%;margin-top:16px">
+          <i class="ti ti-device-floppy"></i> Cambiar contraseña
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Ayuda de Análisis ─────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="analysisHelpModal">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h3 id="analysisHelpTitle"><i class="ti ti-help-circle"></i> Ayuda</h3>
+        <button class="btn-icon" id="closeAnalysisHelp"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-content">
+        <p id="analysisHelpText" style="line-height:1.75; color:var(--text2); font-size:0.92rem;"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toast container ────────────────────────────────────────────── -->
+  <div id="toastContainer"></div>
+
+  <!-- ── Scripts (orden importante) ────────────────────────────────── -->
+  <script src="js/config.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/visor.js"></script>
+  <script src="js/account-filter.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/metrics.js"></script>
+  <script src="js/calendarios.js"></script>
+  <script src="js/table.js"></script>
+  <script src="js/form.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/gallery.js"></script>
+  <script src="js/experimentos.js"></script>
+  <script src="js/apex.js"></script>
+  <script src="js/estrategia.js"></script>
+  <script src="js/disciplina.js"></script>
+  <script src="js/coach.js"></script>
+  <script src="js/fechas.js"></script>
+  <script src="js/chaumer.js"></script>
+  <script src="js/backtesting.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/movimiento.js"></script>
+  <script src="js/marco.js"></script>
+  <script src="js/portada.js"></script>
+  <script src="js/pasos.js"></script>
+
+  <!-- Registro del Service Worker (PWA) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .catch(err => console.warn('SW no registrado:', err))
+      })
+    }
+  </script>
+
+</body>
+</html>

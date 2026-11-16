@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-16d | Rediseño «Cristal», fases 1 a 6 en la rama: marco nuevo, tema claro/oscuro, buscador, isla, portada del Calendario, filtros de Análisis y el día por pasos |
 | 2026-11-16c | Rediseño «Cristal»: fuera el ámbar del fondo; movimiento en toda la app (entradas, cifras que cuentan, luz que sigue al cursor) |
 | 2026-11-16b | Rediseño «Cristal», fase 0 (2), en la rama: tokens del tema oscuro, Manrope y el fondo vivo |
 | 2026-11-16 | Rediseño «Cristal», fase 0 (1): la rama se publica en `/nuevo/` para probarla; `visor.js`, al modo sin conexión |
@@ -83,6 +84,47 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-16d — Rediseño «Cristal», fases 1 a 6 de una vez (en la rama, para la revisión final)
+
+Kris: *«quiero que hagas todos los cambios, de todas las fases, y al final validamos los toques finales»*. Todo en
+la rama `rediseno-cristal` (se ve en `…/trading-journal/nuevo/`); producción no cambia.
+
+- **El marco** (`js/marco.js`, `css/cristal.css`, nuevos): en escritorio, barra lateral flotante con TODAS las
+  pantallas por grupos (salen de `Otros.ITEMS`; una sección nueva aparece sola), plegable a iconos (se recuerda), la
+  opción activa en una píldora que se desliza, y abajo Buscar y el tema. En el celular, la barra de cristal con
+  muesca, iconos propios, luz y raya que siguen a la activa, barrido de brillo, onda y vibración al tocar, y el «+»
+  que abre la sesión de HOY; «Otros» es una hoja que sube y se cierra arrastrándola. `Nav.go` sigue mandando: el
+  marco solo lo envuelve para marcar la opción activa al instante.
+- **Tema claro y oscuro** (el oscuro, por defecto; se recuerda): fondo claro y vivo, cristal lechoso y tinta
+  oscura. El cambio es un círculo que se abre desde el botón (transición del navegador).
+- **El buscador** (Ctrl K, la lupa): pantallas, días (con su P&L), setups, errores y observaciones (`analisis_trader`,
+  `resumen_ia`, motivos); Enter abre el día en el visor.
+- **La isla**: al bajar por una pantalla aparece arriba con lo esencial (en Calendario, el P&L y el % en reglas del
+  mes); al tocarla, el estado de hoy en vivo: bot (`bot_operaciones`), motor (`motor_estado`) y tu día.
+- **El día sale de su casilla** del calendario hacia el visor y vuelve a ella (View Transitions; sin ellas, igual que
+  antes).
+- **Calendario** (`js/portada.js`): saludo con el mes en una frase y «Registrar sesión»; arriba la curva del mes junto
+  a la **meta del mes = cumplir las reglas** (la disciplina del mes en un medidor con aguja, contra el 100 %; con el
+  mes anterior); debajo del calendario, «Lo que destaca» (mejor día, setup, franja y día de la semana; el setup a
+  vigilar) y «Esta semana». Todo con las cifras de Metrics, que ahora las publica (`metrics:pintado`): no se
+  recalcula nada.
+- **Análisis** (`charts.js`): etiquetas que filtran TODA la pantalla (Todas, Continuación, Reingreso, Largos,
+  Cortos; con su número) y «Dónde ganas y dónde no»: por setup, por franja horaria y por día de la semana.
+- **Sesión** (`js/pasos.js`): el día paso a paso — Niveles → Noticias → Operación → Diario → Coach —, el pendiente
+  resaltado; cada casilla lleva a su sitio. En escritorio ancho, el Diario en dos columnas (antes dejaba el 40 % vacío).
+- **Lo común**: tarjetas con radio 24 y filo de cristal, botones en píldora con rebote, pestañas en píldora, campos
+  con anillo de foco, ventanas que entran, casillas del calendario que se levantan.
+
+**Verificado** en la copia local, escritorio y celular, los dos temas, consola limpia y sin scroll horizontal:
+Calendario (agosto), Análisis, Sesión y Otros; el buscador («stop» → observaciones), la isla, el día hacia el visor.
+**Fluidez** (celular lento simulado, CPU ×4): al bajar, 104 fps; al cambiar de pantalla, 68 fps (la app de hoy: 97).
+Para llegar ahí, el movimiento mira lo que se pinta en lote y en el siguiente fotograma (empezó en 38).
+
+**Queda para después de la revisión de Kris:** Apex con las cuentas quemadas agrupadas, los 11 avisos nativos del
+navegador («¿Eliminar?») como ventanas de cristal, y la limpieza del CSS viejo (fase 7).
 
 ---
 

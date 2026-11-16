@@ -98,8 +98,18 @@ const Movimiento = (() => {
     document.documentElement.classList.add('mv')
     preparar(area)
     // Lo que se pinta después (cambio de mes, filtros, pantallas que cargan al entrar) también entra.
+    // En lote y en el siguiente fotograma: una pantalla que se pinta mete cientos de nodos de golpe, y mirarlos
+    // uno a uno al instante era lo que trababa el cambio de pantalla.
+    let pend = new Set(), prog = false
     new MutationObserver(cambios => {
-      cambios.forEach(c => c.addedNodes.forEach(n => { if (n.nodeType === 1) preparar(n) }))
+      cambios.forEach(c => c.addedNodes.forEach(n => { if (n.nodeType === 1 && n.tagName !== 'CANVAS') pend.add(n) }))
+      if (prog || !pend.size) return
+      prog = true
+      requestAnimationFrame(() => {
+        const nodos = [...pend].filter(n => n.isConnected && ![...pend].some(o => o !== n && o.contains(n)))
+        pend = new Set(); prog = false
+        nodos.forEach(preparar)
+      })
     }).observe(area, { childList: true, subtree: true })
     if (fino) {
       document.addEventListener('pointermove', luz, { passive: true })

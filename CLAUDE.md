@@ -135,6 +135,11 @@ js/db.js          Toda query a Supabase + cálculo canónico de disciplina +
 js/visor.js       El visor del día: placa con la fecha, gráfico maximizado, banner del resultado y la hoja del
                   análisis; recorre la lista desde la que se entró (un calendario, lo filtrado en Trades, Disciplina)
 js/form.js        Pestaña "Diario" de Sesión Operativa
+js/marco.js       Rediseño «Cristal» (rama rediseno-cristal): barra lateral por grupos, barra del celular con muesca,
+                  hoja de Otros, tema claro/oscuro, buscador (Ctrl K), la isla, el día que sale de su casilla
+js/portada.js     La portada del Calendario: saludo, meta del mes (disciplina), Lo que destaca, Esta semana
+js/pasos.js       El día paso a paso en Sesión · js/movimiento.js  entradas, cifras que cuentan, luz al cursor
+css/cristal.css   La capa visual del rediseño, después de styles.css
 js/coach.js       Pestaña "Coach IA" (3 etapas) + renderHistorial = "Días anteriores"
 js/calendar.js    Calendario mensual (Mío, en P&L) · js/metrics.js  KPIs + curva (pintarEquity)
 js/calendarios.js El Comparador (Otros): los 4 calendarios (Mío · Chaumer · Bot · manual) y la vista de los 3 últimos;
