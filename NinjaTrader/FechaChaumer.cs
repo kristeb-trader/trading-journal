@@ -91,6 +91,9 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         protected override void OnBarUpdate() { }
 
+        // Sin la etiqueta del indicador arriba a la izquierda del gráfico: el recuadro ya dice lo que es.
+        public override string DisplayName { get { return string.Empty; } }
+
         // ── El ratón y el segundero (en el hilo del gráfico) ─────────────────
         private void Enganchar()
         {

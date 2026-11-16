@@ -97,6 +97,9 @@ namespace NinjaTrader.NinjaScript.Indicators
 
         protected override void OnBarUpdate() { }
 
+        // Sin la etiqueta «Foto Chaumer(MNQ 12-26 (1 Minute))» arriba a la izquierda del gráfico: salía en la foto.
+        public override string DisplayName { get { return string.Empty; } }
+
         // ── El botón y el vigía (en el hilo del gráfico) ─────────────────────
         private void Enganchar()
         {
@@ -104,9 +107,10 @@ namespace NinjaTrader.NinjaScript.Indicators
             ventana = Window.GetWindow(ChartControl.Parent) as Chart;
             if (ventana == null) return;
 
+            // El texto en un TextBlock: como Content suelto, el estilo de la barra se comía los espacios («Fotodeldía»).
             boton = new System.Windows.Controls.Button
             {
-                Content = "Foto del día",
+                Content = new System.Windows.Controls.TextBlock { Text = "Foto del día" },
                 ToolTip = "La foto de la ventana, en tu PC y en el Journal (reemplaza la del día)",
                 Margin  = new Thickness(4, 0, 4, 0),
                 Padding = new Thickness(8, 1, 8, 1),
@@ -267,10 +271,29 @@ namespace NinjaTrader.NinjaScript.Indicators
             using (var ms = new MemoryStream()) { enc.Save(ms); return ms.ToArray(); }
         }
 
-        // En segundo plano: Cloudinary y luego sesiones.imagen_url.
+        // En segundo plano: primero si se puede (la automática no pisa la del Diario), luego Cloudinary y sesiones.imagen_url.
         private void Subir(DateTime dia, byte[] png, bool aMano)
         {
             string fecha = dia.ToString("yyyy-MM-dd");
+            if (!aMano)
+            {
+                try
+                {
+                    using (var http = ChaumerNT.Cliente())
+                    {
+                        if (http == null) { Print("[FotoChaumer] sin la clave de Supabase: la foto se queda en el PC"); return; }
+                        JArray a = ChaumerNT.Get(http, "sesiones?sesion_date=eq." + fecha + "&select=imagen_url");
+                        string actual = a.Count > 0 ? (string)a[0]["imagen_url"] : null;
+                        if (!string.IsNullOrEmpty(actual) && actual != Leer(Ruta(dia, ".url")))
+                        {
+                            Print("[FotoChaumer] el " + fecha + " ya tiene una imagen tuya en el Diario: no se cambia (el botón la reemplaza)");
+                            return;
+                        }
+                    }
+                }
+                catch (Exception ex) { Print("[FotoChaumer] no se pudo mirar la imagen del día (queda en el PC; el botón reintenta): " + Mensaje(ex)); return; }
+            }
+
             string url;
             try
             {
@@ -295,16 +318,6 @@ namespace NinjaTrader.NinjaScript.Indicators
                 using (var http = ChaumerNT.Cliente())
                 {
                     if (http == null) { Print("[FotoChaumer] subida a Cloudinary, pero sin la clave de Supabase no llega al Journal: " + url); return; }
-                    if (!aMano)
-                    {
-                        JArray a = ChaumerNT.Get(http, "sesiones?sesion_date=eq." + fecha + "&select=imagen_url");
-                        string actual = a.Count > 0 ? (string)a[0]["imagen_url"] : null;
-                        if (!string.IsNullOrEmpty(actual) && actual != Leer(Ruta(dia, ".url")))
-                        {
-                            Print("[FotoChaumer] el " + fecha + " ya tiene una imagen tuya en el Diario: no se cambia (el botón la reemplaza)");
-                            return;
-                        }
-                    }
                     var cuerpo = new JObject { { "sesion_date", fecha }, { "imagen_url", url } };
                     var req = new HttpRequestMessage(HttpMethod.Post, ChaumerNT.URL + "sesiones?on_conflict=sesion_date");
                     req.Headers.Add("Prefer", "resolution=merge-duplicates,return=minimal");

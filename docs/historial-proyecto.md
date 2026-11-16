@@ -109,10 +109,15 @@ después de cerrar** y **subida sola**. Pidió no escribir más documentos de di
 como se usan). La fecha, cargando el indicador compilado: «Lunes, 16 de Noviembre, 2026», «Miércoles, 18 de
 Noviembre, 2026», «Sábado, 2 de Enero, 2027». El encaje: una ventana de 3440 × 1392 sale en 2000 × 1190 sin deformar.
 El Diario en el navegador, con el guardado interceptado: sin tocar la imagen no la manda; quitada, manda el vacío.
-**Sin probar todavía, porque necesita NinjaTrader abierto:** arrastrar el recuadro, el botón, la foto real, la
-automática tras una operación y la subida al Journal.
+**En NinjaTrader (11:38, instalados por Kris):** el recuadro sale en su gráfico con la hora corriendo, y al añadir
+FotoChaumer hizo sola la foto de la salida de las 9:55 (`fotos-chaumer\2026-11-16.png`, la ventana entera, con el
+recuadro dentro) y la marcó en `.salida`. No tocó `imagen_url` del día, que era la suya del Diario: lo previsto.
+Corregido tras verla: el botón salía «Fotodeldía» (la barra se comía los espacios: ahora el texto va en un
+`TextBlock`), la etiqueta «Foto Chaumer(MNQ 12-26 (1 Minute))» salía en la foto (`DisplayName` vacío en los dos), y la
+automática subía a Cloudinary antes de mirar si podía escribir: ahora mira primero y no sube fotos que no se usan.
 
-**Pendiente.** Kris: copiar los dos a `Custom\Indicators\`, F5 y añadirlos a su gráfico de operar.
+**Pendiente.** Kris: volver a copiar los dos y F5. Sin probar todavía: arrastrar el recuadro y la subida al Journal
+(el botón, o la próxima operación de un día sin imagen).
 
 ---
 
