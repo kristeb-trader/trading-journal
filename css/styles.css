@@ -67,9 +67,10 @@ small { font-size: 0.82em; }
    (transform): el desenfoque se pinta una vez y la tarjeta gráfica lo desplaza. Va fijo y por debajo de todo. */
 .fondo { position: fixed; inset: -9%; z-index: -1; overflow: hidden; background: var(--bg); pointer-events: none; }
 .fondo i { position: absolute; border-radius: 50%; filter: blur(90px); will-change: transform; transition: opacity 1.6s; }
-.fondo .a { width: 64vmax; height: 64vmax; left: -18vmax; top: -22vmax; background: #1f8a66; opacity: 0.62; animation: fondo-vaga 34s ease-in-out infinite alternate; }
-.fondo .b { width: 58vmax; height: 58vmax; right: -18vmax; top: 4vmax; background: #c48a34; opacity: 0.6; animation: fondo-vaga 43s ease-in-out infinite alternate-reverse; }
-.fondo .c { width: 54vmax; height: 54vmax; left: 24vmax; bottom: -28vmax; background: #2f6f7d; opacity: 0.6; animation: fondo-vaga 51s ease-in-out infinite alternate; }
+/* Kris (16/11): nada de ámbar a la derecha («algo soleado»). Toda la gama, verde y azul petróleo, oscura. */
+.fondo .a { width: 64vmax; height: 64vmax; left: -18vmax; top: -22vmax; background: #1a7d5c; opacity: 0.5; animation: fondo-vaga 34s ease-in-out infinite alternate; }
+.fondo .b { width: 58vmax; height: 58vmax; right: -20vmax; top: 2vmax; background: #155a6b; opacity: 0.5; animation: fondo-vaga 43s ease-in-out infinite alternate-reverse; }
+.fondo .c { width: 54vmax; height: 54vmax; left: 24vmax; bottom: -30vmax; background: #1b3f63; opacity: 0.45; animation: fondo-vaga 51s ease-in-out infinite alternate; }
 .fondo .grano { inset: 0; width: auto; height: auto; border-radius: 0; filter: none; animation: none; opacity: 0.07; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E"); }
 @keyframes fondo-vaga {
   0% { transform: translate(0, 0) scale(1); }
@@ -77,6 +78,30 @@ small { font-size: 0.82em; }
   100% { transform: translate(-5vmax, 6vmax) scale(0.93); }
 }
 @media (prefers-reduced-motion: reduce) { .fondo i { animation: none; } }
+
+/* ── Movimiento (js/movimiento.js) ── */
+/* Cada pantalla entra; cada tarjeta, al llegar a la vista; las casillas del calendario, en cascada.
+   Solo posición, escala y opacidad. Sin js/movimiento.js (o con «reducir movimiento») no se oculta nada. */
+@media (prefers-reduced-motion: no-preference) {
+  .mv .section.active { animation: mv-pantalla 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .mv .mv-in { opacity: 0; }
+  .mv .mv-in.mv-vis { animation: mv-entra 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--mv-d, 0ms); }
+  .mv .cal-cell.mv-in.mv-vis { animation-name: mv-casilla; animation-duration: 0.5s; }
+}
+@keyframes mv-pantalla { from { opacity: 0; translate: 0 14px; } to { opacity: 1; translate: none; } }
+@keyframes mv-entra { from { opacity: 0; translate: 0 24px; scale: 0.97; } to { opacity: 1; translate: none; scale: none; } }
+@keyframes mv-casilla { from { opacity: 0; scale: 0.86; } to { opacity: 1; scale: none; } }
+/* La luz que sigue al cursor, y las tarjetas de cifras que se inclinan hacia él (solo con ratón). */
+@media (hover: hover) and (pointer: fine) {
+  .mv :is(.metric-card, .an-kpi, .an-card, .card, .otros-card, .annual-table-card, .hub-card, .ch-card, .ch-kpi, .bt-card, .bt-kpi, .expd-card, .form-card):hover {
+    background-image: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(120, 240, 195, 0.09), transparent 55%);
+  }
+  .mv :is(.metric-card, .an-kpi, .otros-card, .hub-card, .ch-kpi, .bt-kpi) {
+    transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), border-color var(--transition), box-shadow 0.3s;
+  }
+  .mv :is(.metric-card, .an-kpi, .otros-card, .hub-card, .ch-kpi, .bt-kpi):hover { box-shadow: 0 26px 44px -26px rgba(0, 0, 0, 0.75); }
+}
 
 /* La versión de prueba (…/nuevo/) lleva su banda, para no confundirla con el Journal de siempre. */
 html[data-nuevo] body::after {

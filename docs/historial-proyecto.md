@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-16c | Rediseño «Cristal»: fuera el ámbar del fondo; movimiento en toda la app (entradas, cifras que cuentan, luz que sigue al cursor) |
 | 2026-11-16b | Rediseño «Cristal», fase 0 (2), en la rama: tokens del tema oscuro, Manrope y el fondo vivo |
 | 2026-11-16 | Rediseño «Cristal», fase 0 (1): la rama se publica en `/nuevo/` para probarla; `visor.js`, al modo sin conexión |
 | 2026-11-15 | Rediseño «Cristal»: diseño aprobado por fases, maqueta de referencia y copia de seguridad del diseño anterior |
@@ -82,6 +83,25 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-16c — Rediseño «Cristal»: fuera el ámbar del fondo, y movimiento en toda la app
+
+Kris vio `/nuevo/` y no le gustó: *«ese fondo como naranja al lado derecho… es como algo soleado»*, y *«no veo
+efectos, movimientos, no veo diferencia al diseño anterior»*. Las dos cosas eran ciertas: la fase 0 solo cambiaba
+colores, y la luz ámbar de la maqueta, sobre las tarjetas translúcidas, se veía mucho más.
+
+- **Fondo:** sin ámbar. Esmeralda arriba a la izquierda, azul petróleo a la derecha y azul profundo abajo, más oscuro.
+- **Movimiento** (`js/movimiento.js`, nuevo; una capa para toda la app, sin tocar cada pantalla): cada pantalla
+  entra; cada tarjeta entra al llegar a la vista, escalonada; las casillas del calendario, en cascada; lo que se
+  vuelve a pintar (mes, filtros) entra otra vez; las cifras grandes cuentan hasta su valor; en escritorio, un foco
+  de luz sigue al cursor y las tarjetas de cifras se inclinan hacia él. Solo posición, escala y opacidad; con
+  «reducir movimiento», nada. Al exportar Análisis a PDF o imagen, todo se fuerza visible antes de capturar.
+
+**Verificado** en la copia local: consola limpia, la cifra cuenta (−$381 → −$382), ninguna tarjeta a la vista se queda
+oculta. Lo estructural (barras, tema, transiciones con forma, la isla, el día que sale de su casilla) es la fase 1 y
+la 2.
 
 ---
 

@@ -5,7 +5,7 @@
 //   - APIs externas (supabase, cloudinary, workers.dev...): network-only
 
 // En la rama del rediseño (…/nuevo/) la caché lleva su propio nombre: comparte origen con producción.
-const CACHE = 'nqjournal-nuevo-v1'
+const CACHE = 'nqjournal-nuevo-v2'
 
 // Recursos CDN que no cambian → cache-first
 const CDN_SHELL = [
@@ -45,6 +45,7 @@ const APP_SHELL = [
   './js/chaumer.js',
   './js/backtesting.js',
   './js/app.js',
+  './js/movimiento.js',
   // recursos del manifest, para que la PWA instalada abra sin red
   './favicon.svg',
   './manifest.json',

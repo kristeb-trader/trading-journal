@@ -68,7 +68,7 @@ Kris. La medida de verdad se toma en su celular al final de la fase 1.
 
 - **Fondo:** fijo, verde bosque casi negro con tres luces (verde arriba a la izquierda, azul verdoso al centro, ámbar a
   la derecha). Es el mismo en los dos temas.
-- **Fondo vivo:** tres luces grandes (verde, ámbar, azul verdoso) que derivan muy despacio y se desplazan un poco con
+- **Fondo vivo:** tres luces grandes (esmeralda, azul petróleo y azul profundo; **sin ámbar**, Kris 16/11: «algo soleado») que derivan muy despacio y se desplazan un poco con
   el cursor, con un grano fino encima. La luz ámbar pasa a roja cuando lo que se mira va en contra.
 - **Cristal:** translúcido con un filo claro arriba. **El desenfoque de verdad solo va en lo que flota sobre
   contenido que se mueve** (la barra del celular y las hojas): el fondo ya es difuso, así que el resto no lo necesita
