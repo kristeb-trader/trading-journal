@@ -343,6 +343,28 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { box-shadow: 
   .pt-sem { min-height: 150px; }
   .pt-de { padding: 8px 10px; grid-template-columns: 32px minmax(0, 1fr) auto; }
   .pt-de .ic { width: 32px; height: 32px; }
+  /* El orden en el celular (17/11, Kris): 1 la meta del mes · 2 el calendario · 3 las tarjetas de cifras ·
+     4 la curva, igual que la de Análisis. Lo que no nombró conserva su sitio: el saludo arriba, y «Lo que destaca»,
+     «Esta semana» y el desglose al final. */
+  #calMio { display: flex; flex-direction: column; }
+  #calMio .pt-top { display: contents; }
+  #calMio > * { margin-top: 0 !important; margin-bottom: 0; }
+  #calMio .pt-saludo  { order: 0; margin-bottom: 14px; }
+  #calMio .pt-meta    { order: 1; margin-bottom: 14px; }
+  #calMio .calendar-legend { order: 2; margin-bottom: 10px; }
+  #calMio .calendar-grid   { order: 3; margin-bottom: 14px; }
+  #calMio .metrics-grid    { order: 4; margin-bottom: 14px; }
+  #calMio #calEquityCard   { order: 5; margin: 0 0 14px !important; }
+  #calMio .pt-bajo   { order: 6; margin: 0 0 14px; }
+  #calMio > .annual-table-card:not(#calEquityCard) { order: 7; }
+  /* la curva con la cara de la de Análisis (.an-card + .an-chart-tall) */
+  #calEquityCard { padding: 16px 18px 14px; }
+  #calEquityCard::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent-txt); opacity: 0.55; pointer-events: none; }
+  #calEquityCard .chart-header { margin-bottom: 14px; }
+  #calEquityCard .chart-header h3 { display: flex; align-items: center; gap: 7px; font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+  #calEquityCard .chart-header h3 .ti { color: var(--accent-txt); font-size: 19px; }
+  #calEquityCard .cal-eq-sub { display: none; }
+  #calEquityCard > div:last-child { height: 225px !important; }
 }
 
 /* ══ 6 · ANÁLISIS: filtros y «Dónde ganas y dónde no» (charts.js) ═════════ */

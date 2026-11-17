@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-17 | Rediseño «Cristal», toques del celular (1): el Calendario reordenado y «Sin entradas» en la leyenda |
 | 2026-11-16d | Rediseño «Cristal», fases 1 a 6 en la rama: marco nuevo, tema claro/oscuro, buscador, isla, portada del Calendario, filtros de Análisis y el día por pasos |
 | 2026-11-16c | Rediseño «Cristal»: fuera el ámbar del fondo; movimiento en toda la app (entradas, cifras que cuentan, luz que sigue al cursor) |
 | 2026-11-16b | Rediseño «Cristal», fase 0 (2), en la rama: tokens del tema oscuro, Manrope y el fondo vivo |
@@ -87,6 +88,28 @@
 
 ---
 
+## Checkpoint 2026-11-17 — Rediseño «Cristal», toques del celular (1): el Calendario
+
+Kris lo abrió en el celular y empieza los toques finales por el Calendario, **solo en el celular**:
+*«de primeras la gráfica la meta del mes · de segundas el calendario · 3 las tarjetas · 4 la gráfica igual que la de
+análisis»*.
+
+- **El orden** (`css/cristal.css`, bloque del celular de la portada): `#calMio` pasa a columna flexible y `.pt-top`
+  a `display: contents`, así la meta y la curva se ordenan sueltas. Queda: saludo · **meta del mes** · leyenda y
+  **calendario** · **tarjetas de cifras** · **curva** · «Lo que destaca» y «Esta semana» · desglose. Lo que Kris no
+  nombró conserva su sitio relativo. Sin tocar el HTML ni `portada.js`: en escritorio sigue igual.
+- **La curva como la de Análisis:** la tarjeta lleva `id="calEquityCard"` y, en el celular, la cara de `.an-card` +
+  `.an-chart-tall` (título «Curva de Equity» blanco y más grande, la línea de acento arriba, 225 px de alto). El
+  dibujo ya era el mismo (`Metrics.pintarEquity`). El «— P&L Acumulado» va en un `<span class="cal-eq-sub">` que
+  solo se esconde en el celular.
+- **«Sin entradas válidas» → «Sin entradas»** en la leyenda del calendario, en celular y en escritorio. Las casillas
+  ya decían «Sin entradas»; el formulario y el visor no cambian.
+
+Verificado con puppeteer a 390 px (agosto, con datos): el orden medido es el pedido, sin errores en la consola; en
+escritorio, la misma portada que antes salvo la leyenda.
+
+---
+
 ## Checkpoint 2026-11-16d — Rediseño «Cristal», fases 1 a 6 de una vez (en la rama, para la revisión final)
 
 Kris: *«quiero que hagas todos los cambios, de todas las fases, y al final validamos los toques finales»*. Todo en
@@ -126,7 +149,7 @@ Para llegar ahí, el movimiento mira lo que se pinta en lote y en el siguiente f
 - **Apex:** las cuentas quemadas, en un «Historial» plegado bajo las activas.
 - **Avisos:** los 7 `confirm()` del navegador («¿Eliminar…?», «¿Rehacer el análisis?») son ahora ventanas de cristal
   (`Dialogo.confirmar`, en `marco.js`): Enter = sí, Esc o tocar fuera = no; los de borrar, en rojo.
-- **Corregido de paso:** un script mío duplicaba los saltos de línea al editar (`
+- **Corregido de paso:** un script mío duplicaba los saltos de línea al editar (`
 `) en 10 archivos de la rama,
   dos de ellos ya subidos (`charts.js`, `metrics.js`). El código funcionaba igual; quedan normalizados.
 
