@@ -98,7 +98,9 @@ namespace NinjaTrader.NinjaScript.Indicators
         protected override void OnBarUpdate() { }
 
         // Sin la etiqueta «Foto Chaumer(MNQ 12-26 (1 Minute))» arriba a la izquierda del gráfico: salía en la foto.
-        public override string DisplayName { get { return string.Empty; } }
+        // En la ventana de Indicadores (las copias que edita están en SetDefaults o Configure) sí lleva el nombre: vacío, la
+        // lista «Configured» salía en blanco (17/11/2026).
+        public override string DisplayName { get { return State == State.SetDefaults || State == State.Configure ? Name : string.Empty; } }
 
         // ── El botón y el vigía (en el hilo del gráfico) ─────────────────────
         private void Enganchar()

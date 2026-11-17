@@ -154,7 +154,9 @@ salía**: casi seguro, el estilo copiado era de un tipo de botón propio de Ninj
 `Button`, y la excepción cortaba `Enganchar` **antes de arrancar el vigía** (sin foto automática). Ahora el vigía va
 primero, el botón en un `try` que lo dice en el Output, solo se copia un estilo que sirva para un `Button` (si no, uno
 plano con el color de los textos) y el icono va escrito ``. La foto de las 9:48, con la versión anterior (aún
-«Fotodeldía»), llegó al Journal: la subida funciona de punta a punta.
+«Fotodeldía»), llegó al Journal: la subida funciona de punta a punta. Y el `DisplayName` vacío (para que la
+etiqueta no salga en la foto) dejaba en blanco los dos en la lista «Configured» de la ventana de Indicadores: ahora
+devuelve el nombre en `SetDefaults` y `Configure` (las copias que edita esa ventana) y vacío en el gráfico.
 
 **Pendiente.** Kris: volver a copiar los dos y F5. Sin probar todavía: el icono en la barra, arrastrar el recuadro y
 la subida al Journal (el botón, o la próxima operación de un día sin imagen).
