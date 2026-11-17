@@ -149,7 +149,12 @@ automática subía a Cloudinary antes de mirar si podía escribir: ahora mira pr
 **17/11, el botón con icono.** Kris no sabía que «Fotodeldía» de la barra era el botón (seguía con la versión del
 16/11, sin el arreglo de los espacios) y pidió un icono «que siga el estándar de Ninja». La fuente de iconos de
 NinjaTrader no trae cámara: va la cámara de Windows (Segoe Fluent Icons), de línea y de un color, con el estilo y el
-color de un botón que ya está en la barra, y «Foto del día» al pasar el ratón.
+color de un botón que ya está en la barra, y «Foto del día» al pasar el ratón. Instalado (9:50), el icono **no
+salía**: casi seguro, el estilo copiado era de un tipo de botón propio de NinjaTrader y WPF no deja aplicarlo a un
+`Button`, y la excepción cortaba `Enganchar` **antes de arrancar el vigía** (sin foto automática). Ahora el vigía va
+primero, el botón en un `try` que lo dice en el Output, solo se copia un estilo que sirva para un `Button` (si no, uno
+plano con el color de los textos) y el icono va escrito ``. La foto de las 9:48, con la versión anterior (aún
+«Fotodeldía»), llegó al Journal: la subida funciona de punta a punta.
 
 **Pendiente.** Kris: volver a copiar los dos y F5. Sin probar todavía: el icono en la barra, arrastrar el recuadro y
 la subida al Journal (el botón, o la próxima operación de un día sin imagen).

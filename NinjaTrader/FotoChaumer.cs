@@ -107,22 +107,36 @@ namespace NinjaTrader.NinjaScript.Indicators
             ventana = Window.GetWindow(ChartControl.Parent) as Chart;
             if (ventana == null) return;
 
-            // Un icono de cámara, como los de la barra de NinjaTrader (17/11/2026; antes, el texto «Foto del día»). Su fuente
-            // de iconos (IconsFamily) no trae cámara: va la de Windows (Segoe Fluent Icons; en Windows 10, MDL2), que es del
-            // mismo estilo, de línea y de un color. El estilo (y con él el color), el de un botón que ya esté en la barra.
+            // El vigía primero: si el botón falla, la foto automática sigue funcionando.
+            vigia = new DispatcherTimer(DispatcherPriority.Background, ChartControl.Dispatcher);
+            vigia.Interval = TimeSpan.FromSeconds(5);
+            vigia.Tick += delegate { Vigilar(); };
+            vigia.Start();
+
+            try { PonerBoton(); }
+            catch (Exception ex) { Print("[FotoChaumer] no se pudo poner el botón de la cámara: " + Mensaje(ex)); }
+        }
+
+        // Un icono de cámara, como los de la barra de NinjaTrader (17/11/2026; antes, el texto «Foto del día»). Su fuente de
+        // iconos (IconsFamily) no trae cámara: va la de Windows (Segoe Fluent Icons; en Windows 10, MDL2), que es del mismo
+        // estilo, de línea y de un color. El estilo (y con él el color), el de un botón de la barra, si sirve para un Button:
+        // los de NinjaTrader pueden ser de un tipo propio, y WPF no deja aplicar su estilo a un Button (se tragaba el botón).
+        private void PonerBoton()
+        {
             Style estilo = null;
             double tam = 16;
             foreach (object o in ventana.MainMenu)
             {
                 var b = o as System.Windows.Controls.Button;
                 if (b == null || b.Style == null) continue;
+                if (b.Style.TargetType != null && !b.Style.TargetType.IsAssignableFrom(typeof(System.Windows.Controls.Button))) continue;
                 estilo = b.Style;
                 if (b.FontSize > 0) tam = b.FontSize;
                 break;
             }
             var icono = new System.Windows.Controls.TextBlock
             {
-                Text              = "",       // Camera
+                Text              = "\uE722",       // Camera
                 FontFamily        = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
                 FontSize          = tam,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -133,20 +147,15 @@ namespace NinjaTrader.NinjaScript.Indicators
                 ToolTip = "Foto del día: la ventana, en tu PC y en el Journal (reemplaza la del día)",
                 Margin  = new Thickness(2, 0, 2, 0),
             };
-            if (estilo != null) boton.Style = estilo;       // y el color del icono, el de ese estilo
+            if (estilo != null) boton.Style = estilo;
             else
             {
                 boton.Background = Brushes.Transparent; boton.BorderThickness = new Thickness(0); boton.Padding = new Thickness(4, 0, 4, 0);
                 var color = Application.Current.TryFindResource("FontActionBrush") as Brush;
-                if (color != null) icono.Foreground = color;
+                icono.Foreground = color ?? Brushes.Gainsboro;
             }
             boton.Click += delegate { Foto(true); };
             ventana.MainMenu.Add(boton);
-
-            vigia = new DispatcherTimer(DispatcherPriority.Background, ChartControl.Dispatcher);
-            vigia.Interval = TimeSpan.FromSeconds(5);
-            vigia.Tick += delegate { Vigilar(); };
-            vigia.Start();
         }
 
         private void Soltar()
