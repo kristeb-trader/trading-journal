@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-17d | Rediseño «Cristal», toques del celular (4): el gráfico del visor de borde a borde, y nítido al girar el celular |
 | 2026-11-17c | Rediseño «Cristal», toques del celular (3): el visor compacto, la fecha y el resultado en una fila cada uno, sin flechas |
 | 2026-11-17b | Rediseño «Cristal», toques del celular (2): el visor del día sin zoom, el gráfico sigue al dedo y más aire en la fecha y el banner |
 | 2026-11-17 | Rediseño «Cristal», toques del celular (1): el Calendario reordenado y «Sin entradas» en la leyenda |
@@ -87,6 +88,22 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-17d — Rediseño «Cristal», toques del celular (4): el gráfico, más grande
+
+Kris: *«¿se puede que crezca más el gráfico para aprovechar más espacio?»*. El gráfico de NinjaTrader es ~2,5 veces
+más ancho que alto: con el celular derecho manda el ancho, y crecer en alto obliga a recortar. Se le enseñaron tres
+bocetos (A de borde a borde, ≈7 %; B solo el gráfico de 1 minuto, ≈40 % pero sin el pequeño; C girar el celular) y
+eligió **A + C**.
+
+- **A:** en el celular, el visor sin margen a los lados (`cristal.css`, sección 11): el gráfico y el del vecino
+  (`.ld-fantasma`) a todo el ancho y sin esquinas; la placa y el banner conservan sus 10 px.
+- **C:** girar el celular ya enseñaba el gráfico a toda la pantalla (17b), pero se veía **borroso**: se pedía a
+  Cloudinary al ancho del celular derecho (800–1200 px) y se estiraba. Ahora, con puntero táctil, se pide al lado
+  LARGO de la pantalla (`Visor._src`): nítido al girar. Al deslizar sigue fluido (peor fotograma ~80 ms a CPU ×4,
+  frente a 283 ms antes del 17b), porque el vecino llega ya decodificado.
 
 ---
 

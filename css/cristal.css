@@ -468,7 +468,11 @@ body.modal-open .fondo i { animation-play-state: paused; }
 /* Compacto (Kris, 17/11): arriba, una sola fila (fecha corta · cuenta · botones), sin «MÍO»; abajo, el resultado
    también en una fila. Lo que no es una cifra (una nota, un aviso) baja a su propia fila. */
 @media (max-width: 768px) {
-  .ld { backdrop-filter: none; -webkit-backdrop-filter: none; background: #080807; gap: 10px; padding: 10px 10px 14px; }
+  .ld { backdrop-filter: none; -webkit-backdrop-filter: none; background: #080807; gap: 10px; padding: 10px 0 14px; }
+  /* El gráfico de borde a borde (Kris, 17/11: «A + C»); la placa y el banner conservan su margen. Para verlo
+     entero y en grande, se gira el celular. */
+  .ld > .ld-arriba, .ld > .vs-abajo { width: calc(100% - 20px); }
+  .ld-img, .ld-fantasma { width: 100%; border-radius: 0; box-shadow: none; }
   .ld:not(.hidden) { animation: vs-abre 200ms ease-out; }
   .ld-arriba { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 6px 8px 6px 14px; }
   .vs-izq, .ld-quien { display: none; }

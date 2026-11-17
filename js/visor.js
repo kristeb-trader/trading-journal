@@ -217,6 +217,13 @@ const Visor = {
   // En el celular, también las flechas deslizan; en el escritorio, el cambio es directo.
   _mover(d) { if (this._tactil) this._deslizar(d); else this._ir(this._i + d) },
 
+  // El gráfico al tamaño de su pantalla. En el celular, al del lado LARGO: girarlo es la forma de ver el detalle
+  // (Kris, 17/11/2026, «A + C»), y pedido al ancho del celular derecho se veía borroso al girarlo.
+  _src(url) {
+    if (!this._tactil) return imgOpt(url)
+    return imgOpt(url, Math.max(innerWidth, innerHeight) * (devicePixelRatio || 1))
+  },
+
   // ── Pasar de día deslizando (celular) ──
   // Se mueve lo que se ve del día (el gráfico, o el aviso «Sin gráfico») y, a su lado, el gráfico del vecino
   // en una segunda imagen («fantasma»). Solo transform: fluido aunque el celular vaya justo.
@@ -239,7 +246,7 @@ const Visor = {
     act.style.transform = `translateX(${dx}px)`
     this._lado = d
     if (url) {
-      const src = imgOpt(url)
+      const src = this._src(url)
       if (fan.getAttribute('src') !== src) fan.src = src
       fan.hidden = false
       fan.style.transform = `translateX(${dx + d * ancho}px)`
@@ -306,7 +313,7 @@ const Visor = {
         // Pedido y decodificado ya: al deslizar, el vecino aparece sin que el celular se pare a abrirlo.
         const im = new Image()
         im.decoding = 'async'
-        im.src = imgOpt(u)
+        im.src = this._src(u)
         im.decode?.().catch(() => {})
         this._pre = [...(this._pre || []).slice(-3), im]
       })
@@ -338,7 +345,7 @@ const Visor = {
     sin.classList.toggle('hidden', !!url)
     this._url = url || null
     if (url) {
-      const src = imgOpt(url)
+      const src = this._src(url)
       if (img.getAttribute('src') !== src) { img.src = src; this._entra(img) }
       img.alt = `Gráfico del ${largo}`
     } else img.removeAttribute('src')
