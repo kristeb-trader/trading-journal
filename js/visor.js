@@ -8,8 +8,9 @@
 // { fecha, fuente, url? }: la fuente (mio · chaumer · bot · manual) dice de dónde salen el banner y el
 // análisis (Calendarios.diaVisor). ← / → , las flechas o deslizar pasan de día; A abre el análisis; Esc
 // cierra la hoja y, otro Esc, el visor. El día de antes y el de después se piden por adelantado.
-// Un clic en el gráfico (o Z) lo acerca al punto clicado y se recorre moviendo el ratón o el dedo; otro clic
-// lo devuelve. El botón «atrás» del celular cierra el visor en vez de salir de la app.
+// En el escritorio, un clic en el gráfico (o Z) lo acerca al punto clicado y se recorre moviendo el ratón; otro
+// clic lo devuelve. En el celular no hay zoom (17/11/2026): el gráfico sigue al dedo al deslizar. El botón
+// «atrás» del celular cierra el visor en vez de salir de la app.
 // La tira de días (12/11/2026, opción B): oculta tras el enlace «Días» (o D), una miniatura por día con el
 // borde de su resultado; un clic salta a ese día. Recuerda si se dejó abierta.
 const Visor = {
@@ -24,6 +25,9 @@ const Visor = {
   _url: null,       // la URL original del gráfico que se ve (para pedirlo en grande al acercar)
   _tira: false,     // la tira de días, abierta (se recuerda entre aperturas: localStorage)
   _tonos: null,     // `${fuente}|AAAA-MM` → Promise<{ fecha: tono }>, por apertura
+  _urls: new Map(), // `${fuente}|${fecha}` → URL del gráfico, de los días ya pedidos (para deslizar)
+  _tactil: false,   // pantalla táctil: sin zoom, y el gráfico sigue al dedo
+  _anim: false,     // un deslizamiento en curso
   TIRA_KEY: 'visorTira',
 
   // items: la lista o una promesa de ella. actual: { fecha, fuente } con el que se abre, aunque la lista
@@ -32,6 +36,7 @@ const Visor = {
     if (!this._el) this._montar()
     this._cache = new Map()
     this._tonos = new Map()
+    this._urls = new Map()
     this._items = [actual]
     this._i = 0
     this._cargada = false
@@ -103,7 +108,8 @@ const Visor = {
       </header>
       <div class="ld-marco">
         <button class="ld-paso ld-ant" type="button" title="Día anterior (←)" aria-label="Día anterior"><i class="ti ti-chevron-left"></i></button>
-        <img class="ld-img" alt="">
+        <img class="ld-img" alt="" decoding="async">
+        <img class="ld-fantasma" alt="" aria-hidden="true" decoding="async" hidden>
         <div class="vs-sin-img hidden"><i class="ti ti-photo-off"></i><span>Sin gráfico de este día</span></div>
         <button class="ld-paso ld-sig" type="button" title="Día siguiente (→)" aria-label="Día siguiente"><i class="ti ti-chevron-right"></i></button>
       </div>
@@ -133,19 +139,40 @@ const Visor = {
       else if (e.target.closest('.vs-mas') || e.target.closest('.vs-hoja-x')) this._alternarHoja()
       else if (e.target.closest('.vs-tres')) TresGraficas.open(this._items[this._i].fecha)
     })
-    // En el celular, deslizar sobre el gráfico: a la izquierda, el día siguiente. Acercado, el dedo lo recorre.
+    // En el celular (17/11/2026, Kris): sin zoom, y el gráfico sigue al dedo. A la izquierda, el día siguiente:
+    // al soltar pasado un cuarto del ancho (o con un golpe rápido) se va, y entra el del día de al lado, que ya
+    // estaba pedido y decodificado (_precargar). Si no, vuelve a su sitio. En el escritorio, el zoom sigue.
+    this._tactil = matchMedia('(pointer: coarse)').matches
     const marco = el.querySelector('.ld-marco')
-    el.querySelector('.ld-img').addEventListener('click', e => this._alternarZoom(e))
+    el.querySelector('.ld-img').addEventListener('click', e => { if (!this._tactil) this._alternarZoom(e) })
     marco.addEventListener('mousemove', e => { if (this._zoom) this._origen(e) })
-    let x0 = null, y0 = null
-    marco.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY }, { passive: true })
-    marco.addEventListener('touchmove', e => { if (this._zoom) this._origen(e.touches[0]) }, { passive: true })
-    marco.addEventListener('touchend', e => {
-      if (x0 == null || this._zoom) { x0 = null; return }
-      const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0
-      x0 = null
-      if (Math.abs(dx) > 60 && Math.abs(dx) > 1.5 * Math.abs(dy)) this._mover(dx < 0 ? 1 : -1)
+    let g = null   // el gesto en curso
+    marco.addEventListener('touchstart', e => {
+      g = null
+      if (this._zoom || this._anim || e.touches.length > 1) return
+      const t = e.touches[0]
+      g = { x0: t.clientX, y0: t.clientY, t0: performance.now(), dx: 0, eje: null, raf: 0 }
+    }, { passive: true })
+    marco.addEventListener('touchmove', e => {
+      if (this._zoom) { this._origen(e.touches[0]); return }
+      if (!g) return
+      const t = e.touches[0], dx = t.clientX - g.x0, dy = t.clientY - g.y0
+      if (!g.eje && Math.hypot(dx, dy) > 8) g.eje = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+      if (g.eje !== 'x') return
+      g.dx = dx
+      if (!g.raf) { const gg = g; g.raf = requestAnimationFrame(() => { gg.raf = 0; if (g === gg) this._arrastre(gg.dx) }) }
+    }, { passive: true })
+    marco.addEventListener('touchend', () => {
+      if (!g) return
+      const { dx, eje, t0, raf } = g
+      g = null
+      if (raf) cancelAnimationFrame(raf)
+      if (eje !== 'x') return
+      const v = Math.abs(dx) / Math.max(1, performance.now() - t0), d = dx < 0 ? 1 : -1
+      const pasa = this._items[this._i + d] && (Math.abs(dx) > marco.clientWidth * 0.22 || (v > 0.45 && Math.abs(dx) > 30))
+      if (pasa) this._deslizar(d, dx); else this._volver()
     })
+    marco.addEventListener('touchcancel', () => { if (g) { g = null; this._volver() } })
     // En captura y cortando: debajo puede haber otras pantallas que también escuchan Esc y las flechas.
     // Las 3 gráficas, abiertas encima, mandan sobre el teclado.
     window.addEventListener('keydown', e => {
@@ -187,7 +214,66 @@ const Visor = {
     el.style.setProperty('--ld-alto', `${Math.max(120, Math.floor(libre))}px`)
   },
 
-  _mover(d) { this._ir(this._i + d) },
+  // En el celular, también las flechas deslizan; en el escritorio, el cambio es directo.
+  _mover(d) { if (this._tactil) this._deslizar(d); else this._ir(this._i + d) },
+
+  // ── Pasar de día deslizando (celular) ──
+  // Se mueve lo que se ve del día (el gráfico, o el aviso «Sin gráfico») y, a su lado, el gráfico del vecino
+  // en una segunda imagen («fantasma»). Solo transform: fluido aunque el celular vaya justo.
+  _HUECO: 24,
+  _piezas() {
+    const el = this._el, img = el.querySelector('.ld-img')
+    return { img, fan: el.querySelector('.ld-fantasma'), act: img.classList.contains('hidden') ? el.querySelector('.vs-sin-img') : img,
+             ancho: el.querySelector('.ld-marco').clientWidth + this._HUECO }
+  },
+  // La URL del gráfico del vecino: null si no tiene (o aún no se sabe), undefined si no hay día de ese lado.
+  _vecino(d) {
+    const it = this._items[this._i + d]
+    return it ? (it.url || this._urls.get(`${it.fuente}|${it.fecha}`) || null) : undefined
+  },
+  _arrastre(dx) {
+    const { fan, act, ancho } = this._piezas(), d = dx < 0 ? 1 : -1, url = this._vecino(d)
+    if (url === undefined) dx *= 0.3          // no hay día de ese lado: el gráfico se resiste
+    act.classList.remove('entra')             // la animación de entrada taparía el transform
+    act.style.transition = fan.style.transition = 'none'
+    act.style.transform = `translateX(${dx}px)`
+    this._lado = d
+    if (url) {
+      const src = imgOpt(url)
+      if (fan.getAttribute('src') !== src) fan.src = src
+      fan.hidden = false
+      fan.style.transform = `translateX(${dx + d * ancho}px)`
+    } else fan.hidden = true
+  },
+  _deslizar(d, dx = 0) {
+    const n = this._i + d
+    if (!(n >= 0 && n < this._items.length) || this._anim) return
+    this._quitarZoom()
+    this._arrastre(dx || -d)
+    const { img, fan, act, ancho } = this._piezas()
+    void act.offsetWidth
+    act.style.transition = fan.style.transition = 'transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1)'
+    act.style.transform = `translateX(${-d * ancho}px)`
+    fan.style.transform = 'translateX(0)'
+    this._anim = true
+    setTimeout(async () => {
+      const src = fan.hidden ? null : fan.getAttribute('src')
+      act.style.transition = img.style.transition = 'none'
+      if (src && img.getAttribute('src') !== src) { img.src = src; try { await img.decode() } catch {} }
+      act.style.transform = img.style.transform = ''
+      fan.hidden = true
+      fan.style.transform = ''
+      this._anim = false
+      this._ir(n)
+    }, 270)
+  },
+  _volver() {
+    const { fan, act, ancho } = this._piezas()
+    act.style.transition = fan.style.transition = 'transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1)'
+    act.style.transform = ''
+    if (!fan.hidden) fan.style.transform = `translateX(${(this._lado || 1) * ancho}px)`
+    setTimeout(() => { if (!this._anim) fan.hidden = true }, 230)
+  },
 
   _ir(n) {
     if (!(n >= 0 && n < this._items.length) || n === this._i) return
@@ -213,7 +299,17 @@ const Visor = {
   _precargar() {
     ;[this._items[this._i - 1], this._items[this._i + 1]].forEach(it => {
       if (!it) return
-      this._dia(it).then(d => { const u = it.url || d?.url; if (u) new Image().src = imgOpt(u) })
+      this._dia(it).then(d => {
+        const u = it.url || d?.url
+        if (!u) return
+        this._urls.set(`${it.fuente}|${it.fecha}`, u)
+        // Pedido y decodificado ya: al deslizar, el vecino aparece sin que el celular se pare a abrirlo.
+        const im = new Image()
+        im.decoding = 'async'
+        im.src = imgOpt(u)
+        im.decode?.().catch(() => {})
+        this._pre = [...(this._pre || []).slice(-3), im]
+      })
     })
   },
 
@@ -245,10 +341,13 @@ const Visor = {
   },
 
   // Las placas entran con un giro corto, como en el portal, y lo repiten al pasar de día.
+  // La animación se reinicia con su propia API: con `void offsetWidth` cada entrada obligaba a medir la
+  // pantalla entera a mitad del toque, y eran tres por día (17/11/2026, lo que trababa al abrir).
   _entra(nodo) {
-    nodo.classList.remove('entra')
-    void nodo.offsetWidth
-    nodo.classList.add('entra')
+    if (!nodo.classList.contains('entra')) { nodo.classList.add('entra'); return }
+    const anims = nodo.getAnimations?.() || []
+    if (anims.length) anims.forEach(a => { a.cancel(); a.play() })
+    else { nodo.classList.remove('entra'); requestAnimationFrame(() => requestAnimationFrame(() => nodo.classList.add('entra'))) }
   },
 
   async _pintar() {

@@ -278,8 +278,11 @@ const Marco = (() => {
   }
 
   // ── El día sale de su casilla hacia el visor, y vuelve a ella ──
+  // En el celular, no (17/11/2026): la transición fotografía la pantalla entera y trababa el toque casi 0,3 s.
+  // Allí el visor aparece al instante, con un fundido corto (cristal.css).
   let celda = null
   function montarDia() {
+    if (matchMedia('(pointer: coarse)').matches) return
     document.addEventListener('pointerdown', e => { celda = e.target.closest('.cal-cell') }, true)
     const abrir = Visor.abrir.bind(Visor), quitar = Visor._quitar.bind(Visor)
     Visor.abrir = function (o) {

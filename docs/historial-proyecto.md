@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-17b | Rediseño «Cristal», toques del celular (2): el visor del día sin zoom, el gráfico sigue al dedo y más aire en la fecha y el banner |
 | 2026-11-17 | Rediseño «Cristal», toques del celular (1): el Calendario reordenado y «Sin entradas» en la leyenda |
 | 2026-11-16d | Rediseño «Cristal», fases 1 a 6 en la rama: marco nuevo, tema claro/oscuro, buscador, isla, portada del Calendario, filtros de Análisis y el día por pasos |
 | 2026-11-16c | Rediseño «Cristal»: fuera el ámbar del fondo; movimiento en toda la app (entradas, cifras que cuentan, luz que sigue al cursor) |
@@ -85,6 +86,37 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-17b — Rediseño «Cristal», toques del celular (2): el visor del día
+
+Kris: *«dar más espacio en las letras de la parte de arriba y la parte de abajo… quiero quitar lo del zoom, creo
+que eso lo vuelve lento, quiero que quede fluido tanto al dar click para ver la imagen, al igual que al pasar la
+imagen por días anteriores y posteriores»*. Todo en el celular (`pointer: coarse` / ≤ 768 px); el escritorio
+conserva su zoom y su transición.
+
+**Lo que trababa, medido** (puppeteer, 390 px, CPU ×4): abrir un día paraba la pantalla **275 ms** y pasar de día
+**283 ms**. Causas: la transición del día que sale de su casilla (`startViewTransition` fotografía la pantalla
+entera), un `backdrop-filter: blur` a pantalla completa sobre el fondo vivo (inútil: el fondo del visor ya era
+casi opaco), `_entra` con `void offsetWidth` (tres mediciones forzadas por día) y el gráfico nuevo decodificado
+en el momento.
+
+- **Sin zoom en el celular:** el toque en el gráfico ya no lo acerca (`_tactil`). En el escritorio, igual que antes.
+- **El gráfico sigue al dedo** (`visor.js`, `_arrastre` / `_deslizar` / `_volver`): al lado entra el del vecino en
+  una segunda imagen (`.ld-fantasma`), ya pedida **y decodificada** en `_precargar`. Pasa al soltar más allá del 22 %
+  del ancho o con un golpe rápido; si no, vuelve. En el primer y el último día, el gráfico se resiste. Las flechas
+  también deslizan. Solo se anima `transform`.
+- **Abrir:** sin la transición desde la casilla (`marco.js`, solo con puntero táctil); el visor aparece con un
+  fundido de 200 ms. Fuera el desenfoque de fondo, y el fondo vivo se pausa mientras hay una ventana encima
+  (`body.modal-open`). `_entra` reinicia la animación con `getAnimations()`, sin medir la pantalla.
+- **Más aire:** la placa de la fecha con más relleno y separación entre «MÍO» y la fecha (1,2 rem); el banner con
+  20 px entre filas y etiquetas más espaciadas; «Análisis del día» y «Días», más grandes y fáciles de tocar.
+- **El celular girado:** el gráfico a toda la pantalla, con solo la fecha encima; el banner vuelve al enderezarlo.
+
+**Resultado:** al pasar de día, ningún fotograma pasa de 40 ms en tres deslizamientos seguidos (antes, 283 ms);
+abrir, de 275 a ~145 ms en el peor fotograma (el resto es pintar el visor y su banner). Escritorio: zoom, flechas y
+Esc, sin cambios ni errores.
 
 ---
 
