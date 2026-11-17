@@ -4,28 +4,32 @@
 // Dos líneas del mismo tamaño, centradas:
 //
 //      Lunes, 16 de Noviembre, 2026
-//                09:57:15
+//          Entry = 09:46:55          (o la hora, 09:57:15, si ese día no hubo entrada)
 //
 //   La fecha  es la de la ÚLTIMA VELA del gráfico, no la del PC: en un día pasado o en Market Replay sale ese día.
-//   La hora   en tiempo real, la de NinjaTrader (Colombia; en Market Replay, la de la reproducción), y avanza cada
-//             segundo. Sin datos en vivo, la de la última vela. La foto del día (FotoChaumer) la deja escrita, así
-//             que el reloj de escritorio ya no hace falta.
+//   La hora   si ese día la cuenta vigilada entró, «Entry = » y la hora de la entrada (la de la última operación, si
+//             hubo varias), sacada de sus ejecuciones (17/11/2026, Kris). Si no, en tiempo real la de NinjaTrader
+//             (Colombia; en Market Replay, la de la reproducción), avanzando cada segundo; sin datos en vivo, la de
+//             la última vela. La foto del día (FotoChaumer) la deja escrita.
 //   Dónde     fijo en la pantalla, no pegado a una vela: no se mueve al desplazar el gráfico. Se arrastra con el
 //             ratón (mientras se arrastra, el gráfico no se desplaza) y la posición se guarda con el espacio de
 //             trabajo. Si el panel se achica y el recuadro queda fuera, vuelve al borde.
 //
-// No toca cuentas ni Supabase: solo dibuja.
+// No toca cuentas ni Supabase: solo dibuja (de la cuenta, solo lee sus ejecuciones).
 //
 // En C# 5. Instalar: copiar a Documentos\NinjaTrader 8\bin\Custom\Indicators\, F5, y añadirlo al gráfico.
 
 #region Using declarations
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.ComponentModel.DataAnnotations;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using System.Xml.Serialization;
+using NinjaTrader.Cbi;
 using NinjaTrader.Gui;
 using NinjaTrader.Gui.Chart;
 using NinjaTrader.NinjaScript;
@@ -63,6 +67,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 DrawOnPricePanel         = true;
                 PaintPriceMarkers        = false;
                 IsSuspendedWhileInactive = false;
+                Cuenta                   = "Sim101";
                 Tamano                   = 26;
                 Fuente                   = "Calibri";
                 ColorFondo               = Congelado(Color.FromRgb(52, 52, 50));
@@ -158,6 +163,32 @@ namespace NinjaTrader.NinjaScript.Indicators
             e.Handled = true;
         }
 
+        /// <summary>La hora de la última entrada de la cuenta ese día (la ejecución que la saca de plano), o null.</summary>
+        private DateTime? Entrada(DateTime dia)
+        {
+            if (string.IsNullOrEmpty(Cuenta)) return null;
+            Account acc = null;
+            lock (Account.All)
+                acc = Account.All.FirstOrDefault(a => string.Equals(a.Name, Cuenta, StringComparison.OrdinalIgnoreCase));
+            if (acc == null) return null;
+
+            List<Execution> ejecs;
+            lock (acc.Executions)
+                ejecs = acc.Executions.Where(e => e.Time.Date == dia).OrderBy(e => e.Time).ToList();
+            var pos = new Dictionary<string, int>();
+            DateTime? entrada = null;
+            foreach (var e in ejecs)
+            {
+                string ins = e.Instrument != null ? e.Instrument.FullName : "";
+                bool plana = pos.Values.All(v => v == 0);
+                int p;
+                pos.TryGetValue(ins, out p);
+                pos[ins] = p + (e.MarketPosition == MarketPosition.Long ? e.Quantity : -e.Quantity);
+                if (plana && pos.Values.Any(v => v != 0)) entrada = e.Time;
+            }
+            return entrada;
+        }
+
         // ── El dibujo ────────────────────────────────────────────────────────
         protected override void OnRender(ChartControl chartControl, ChartScale chartScale)
         {
@@ -167,7 +198,8 @@ namespace NinjaTrader.NinjaScript.Indicators
             DateTime ultima = Bars.GetTime(Bars.Count - 1);
             DateTime ahora  = State == State.Realtime ? NinjaTrader.Core.Globals.Now : ultima;
             string l1 = Fecha(ultima);
-            string l2 = ahora.ToString("HH:mm:ss");
+            DateTime? entrada = Entrada(ultima.Date);
+            string l2 = entrada.HasValue ? "Entry = " + entrada.Value.ToString("HH:mm:ss") : ahora.ToString("HH:mm:ss");
 
             var dw = NinjaTrader.Core.Globals.DirectWriteFactory;
             using (var tf = new SharpDX.DirectWrite.TextFormat(dw, Fuente, SharpDX.DirectWrite.FontWeight.Bold,
@@ -198,6 +230,11 @@ namespace NinjaTrader.NinjaScript.Indicators
         }
 
         #region Propiedades
+        [TypeConverter(typeof(AccountNameConverter))]
+        [Display(Name = "Cuenta de la entrada", Order = 0, GroupName = "Recuadro",
+                 Description = "Si ese día entró, la segunda línea dice «Entry = » y la hora de la entrada; si no, la hora.")]
+        public string Cuenta { get; set; }
+
         [Range(8, 72)]
         [Display(Name = "Tamaño de la letra", Order = 1, GroupName = "Recuadro")]
         public int Tamano { get; set; }

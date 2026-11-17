@@ -163,6 +163,11 @@ las 10:12:28 estaba en `sesiones.imagen_url` (la misma URL que `.url`). El icono
 en la barra de la foto: el botón no llegaba a ponerse. Se deja de copiar el estilo de la barra y el botón lleva
 plantilla propia (plana, sombreado al pasar el ratón, el color `FontActionBrush`); al ponerse lo dice en el Output.
 
+**«Entry = HH:MM:SS».** Kris pidió que la segunda línea del recuadro sea la hora de su entrada: `FechaChaumer` lee las
+ejecuciones del día de una cuenta (propiedad «Cuenta de la entrada», Sim101 por defecto, como MarcacionChaumer) y escribe
+«Entry = » y la hora de la ejecución que la sacó de plano (la última operación, si hubo varias). Sin entrada, la hora
+como hasta ahora. Hoy debe decir «Entry = 10:07:58».
+
 **Pendiente.** Kris: volver a copiar los dos y F5. Sin probar todavía: el icono en la barra, arrastrar el recuadro y
 la subida al Journal (el botón, o la próxima operación de un día sin imagen).
 
