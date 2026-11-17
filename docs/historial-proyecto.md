@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-11-16
+**Última actualización:** 2026-11-17
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -146,8 +146,13 @@ Corregido tras verla: el botón salía «Fotodeldía» (la barra se comía los e
 `TextBlock`), la etiqueta «Foto Chaumer(MNQ 12-26 (1 Minute))» salía en la foto (`DisplayName` vacío en los dos), y la
 automática subía a Cloudinary antes de mirar si podía escribir: ahora mira primero y no sube fotos que no se usan.
 
-**Pendiente.** Kris: volver a copiar los dos y F5. Sin probar todavía: arrastrar el recuadro y la subida al Journal
-(el botón, o la próxima operación de un día sin imagen).
+**17/11, el botón con icono.** Kris no sabía que «Fotodeldía» de la barra era el botón (seguía con la versión del
+16/11, sin el arreglo de los espacios) y pidió un icono «que siga el estándar de Ninja». La fuente de iconos de
+NinjaTrader no trae cámara: va la cámara de Windows (Segoe Fluent Icons), de línea y de un color, con el estilo y el
+color de un botón que ya está en la barra, y «Foto del día» al pasar el ratón.
+
+**Pendiente.** Kris: volver a copiar los dos y F5. Sin probar todavía: el icono en la barra, arrastrar el recuadro y
+la subida al Journal (el botón, o la próxima operación de un día sin imagen).
 
 ---
 

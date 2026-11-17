@@ -10,7 +10,7 @@
 //   Cuándo    · sola, «Minutos tras cerrar» (3) después de que la cuenta principal quede plana. Si vuelve a operar
 //               antes, espera a la última salida. Solo en tiempo real y con las operaciones de hoy.
 //             · sola, al final de la ventana (11:30 de Nueva York) si ese día no operó y aún no hay foto.
-//             · con el botón «Foto del día» de la barra del gráfico, cuando quiera.
+//             · con el botón de la cámara de la barra del gráfico («Foto del día»), cuando quiera.
 //   Dónde     1) Documentos\NinjaTrader 8\fotos-chaumer\AAAA-MM-DD.png  2) Cloudinary (el preset del Diario)
 //             3) sesiones.imagen_url de ese día, que leen el Diario, el Coach, el visor y el portal.
 //   Respeta   la automática NO pisa una imagen que Kris haya puesto en el Diario: solo escribe si el día no tiene
@@ -107,14 +107,39 @@ namespace NinjaTrader.NinjaScript.Indicators
             ventana = Window.GetWindow(ChartControl.Parent) as Chart;
             if (ventana == null) return;
 
-            // El texto en un TextBlock: como Content suelto, el estilo de la barra se comía los espacios («Fotodeldía»).
+            // Un icono de cámara, como los de la barra de NinjaTrader (17/11/2026; antes, el texto «Foto del día»). Su fuente
+            // de iconos (IconsFamily) no trae cámara: va la de Windows (Segoe Fluent Icons; en Windows 10, MDL2), que es del
+            // mismo estilo, de línea y de un color. El estilo (y con él el color), el de un botón que ya esté en la barra.
+            Style estilo = null;
+            double tam = 16;
+            foreach (object o in ventana.MainMenu)
+            {
+                var b = o as System.Windows.Controls.Button;
+                if (b == null || b.Style == null) continue;
+                estilo = b.Style;
+                if (b.FontSize > 0) tam = b.FontSize;
+                break;
+            }
+            var icono = new System.Windows.Controls.TextBlock
+            {
+                Text              = "",       // Camera
+                FontFamily        = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
+                FontSize          = tam,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
             boton = new System.Windows.Controls.Button
             {
-                Content = new System.Windows.Controls.TextBlock { Text = "Foto del día" },
-                ToolTip = "La foto de la ventana, en tu PC y en el Journal (reemplaza la del día)",
-                Margin  = new Thickness(4, 0, 4, 0),
-                Padding = new Thickness(8, 1, 8, 1),
+                Content = icono,
+                ToolTip = "Foto del día: la ventana, en tu PC y en el Journal (reemplaza la del día)",
+                Margin  = new Thickness(2, 0, 2, 0),
             };
+            if (estilo != null) boton.Style = estilo;       // y el color del icono, el de ese estilo
+            else
+            {
+                boton.Background = Brushes.Transparent; boton.BorderThickness = new Thickness(0); boton.Padding = new Thickness(4, 0, 4, 0);
+                var color = Application.Current.TryFindResource("FontActionBrush") as Brush;
+                if (color != null) icono.Foreground = color;
+            }
             boton.Click += delegate { Foto(true); };
             ventana.MainMenu.Add(boton);
 
