@@ -450,8 +450,9 @@ function fmtOpPlan(op) {
 // Cuentan TRADES, no días. No operar nunca es fallo. Un día en discusión (abierta, o cerrada
 // dándole la razón a Kris: `plan`) no cuenta. Diseño: docs/disenos/2026-11-10-disciplina-reglas.md.
 const REGLA_TXT = {
-  stop_max:         { titulo: 'Stop de más de 80 puntos',            corto: 'stop > 80',       plan: 'El plan no opera si el stop pasa de 80, por bueno que sea el setup.' },
-  contratos:        { titulo: 'Más contratos de los que caben',      corto: 'contratos',       plan: 'Los contratos los decide el stop: los que quepan en $160, redondeando hacia abajo.' },
+  // Sin números: el máximo es el del perfil de la cuenta en esa fecha (D-055), y el de cada trade va en su juicio.
+  stop_max:         { titulo: 'Stop de más de tu máximo',            corto: 'stop > máx.',     plan: 'Si el stop pasa de tu máximo (Datos → Parámetros), no se opera, por bueno que sea el setup.' },
+  contratos:        { titulo: 'Más contratos de los que caben',      corto: 'contratos',       plan: 'Los contratos los decide el stop: los que quepan en tu riesgo máximo, redondeando hacia abajo.' },
   punto_referencia: { titulo: 'Objetivo más allá del punto de referencia', corto: 'punto de ref.', plan: 'El objetivo no puede pasar del punto de referencia vivo más cercano: si lo pasa, no se opera.' },
   objetivo_zona:    { titulo: 'Objetivo contra una zona',            corto: 'zona en contra',  plan: 'Entre la entrada y el objetivo no puede haber una zona viva.' },
   primer_iri:       { titulo: 'Entrar en el primer IRI',             corto: 'primer IRI',      plan: 'Tras un movimiento contrario, el primer IRI no se opera: se espera el segundo.' },

@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-17c | La disciplina juzga con el perfil de tu cuenta: 100 pts / $200 desde el 01/10. Octubre 11 de 18, noviembre 3 de 8 (fase 3) |
 | 2026-11-17b | Datos → Parámetros: la pestaña con los perfiles, el riesgo con su historial, lo común y las cuentas → perfil (fase 2) |
 | 2026-11-17 | Los parámetros, en Supabase y por perfil (fase 1): «Mi operativa» con 100 pts / $200 desde el 01/10; el bot, en 80 / $160 |
 | 2026-11-16c | La zona superada cambia de papel y el stop de todo reingreso va en el último retroceso (plan 3.62) |
@@ -85,6 +86,37 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-17c — La disciplina juzga con el perfil de tu cuenta (fase 3)
+
+**Lo que se hizo** (D-055). `medir.py` v4: el juicio de cada trade usa el `STOP_MAX` y el `RIESGO_MAX` del perfil de su
+cuenta en su fecha (`subir_dia.limites_de` → `parametros_vigentes`; van en `op.limites` y en la huella). Los eventos salen
+de **una segunda pasada del motor, en memoria, con ese stop máximo** (`eventos_con_stop`): el motor descarta los setups de
+más de su `STOP_MAX` sin mirarles el resto de filtros, y con el de Kris pasan por todos. **`lector.py` no se toca**: ni
+sello nuevo ni recompilar.
+
+**Lo que salió al probarlo.** El 12/11, con stop 100, el motor entra él mismo a las 9:41 y deja de buscar setups: el trade
+de Kris de las 10:06 salía «sin setup». Es el límite conocido del motor (se para tras su propia operación, el del 02/11),
+que con un stop más ancho muerde más. Arreglado dentro de la medición: si esa pasada ya había llenado antes que Kris, se
+usan los eventos de la pasada normal, y un «riesgo X pts» que quepa en su máximo no cuenta como motivo.
+
+**Recalculado octubre–noviembre.** Ensayo primero: con los límites del bot, 25 de 28 trades salen igual que antes (la
+regresión); los 3 que no (06/10, 08/10 y 12/11) cambian por el **motor de hoy**, no por los límites —sus fichas son de
+un motor anterior—, y **no se reescriben**. Se escribieron los 5 que cambian por los límites:
+
+| Día | Antes (80 / $160) | Ahora (100 / $200) |
+|---|---|---|
+| 21/10 | 3 contratos (cabían 2) | ✓ dentro de las reglas |
+| 04/11 | stop de 90 | ✓ |
+| 06/11 | stop de 89 | ✓ |
+| 16/11 | stop de 81 | ✓ |
+| 05/11 | el stop del plan (130) pasaba de 80 | sigue roto: pasaba de tu máximo (100) |
+
+**Verificado con un SELECT:** octubre **11 de 18** (antes 10), noviembre **3 de 8** (antes 0), sin contar los días en
+discusión. `medir_pendientes` real sobre los últimos días: el 17/11 medido de nuevo con `operativa 100/$200`, mismo
+juicio (objetivo contra una zona). `REGLA_TXT` sin «80» ni «$160»: el número de cada trade va en su juicio.
 
 ---
 
