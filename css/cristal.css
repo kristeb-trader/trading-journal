@@ -559,3 +559,21 @@ select option { background: var(--capa); color: var(--text); font-weight: 500; }
 .week-label { color: var(--text2); }
 .hub-dia-n { font-size: 0.66rem; }
 .ax-badge.ax-dead { background: var(--red-dim); color: var(--red-txt); }
+
+/* ══ 14 · LA BARRA DEL CELULAR NO TAPA NADA (17/11/2026, Kris) ══════════════
+   «La barra del medio queda entrometida… casi no le puedo dar al botón de guardar» (la foto de la operativa de
+   Chaumer) y «no pude crear un error desde la app». La barra iba POR ENCIMA de las ventanas (z 210 frente a 200),
+   que en el celular salen pegadas abajo, justo donde está ella; y al escribir, el teclado la subía encima del
+   campo. Ahora se esconde (baja y se apaga) mientras hay una ventana abierta o se está escribiendo, y vuelve al
+   cerrar o al soltar el campo. Las páginas reservan abajo su alto más el de la barra del iPhone. */
+@media (max-width: 768px) {
+  .main-content { padding-bottom: calc(118px + env(safe-area-inset-bottom)); }
+  .dock { transition: translate 0.4s var(--rebote), scale 0.4s var(--rebote), opacity 0.25s; }
+  body.modal-open .dock,
+  body:has(.modal-overlay:not(.hidden), .ld:not(.hidden), .tg:not(.hidden), #lightbox, .dlg-velo, .pal.ab) .dock,
+  body:has(input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):not([type="range"]):focus, textarea:focus, select:focus, [contenteditable="true"]:focus) .dock {
+    translate: -50% calc(100% + 40px); opacity: 0; pointer-events: none;
+  }
+  /* Las ventanas: con su propio scroll hasta el final y el botón de guardar por encima de la barra del iPhone */
+  .modal { max-height: 92dvh; padding-bottom: env(safe-area-inset-bottom); }
+}

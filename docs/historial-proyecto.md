@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-17f | Rediseño «Cristal»: la barra del celular ya no tapa las ventanas ni los formularios (se aparta al abrir una ventana o al escribir) |
 | 2026-11-17e | Rediseño «Cristal»: el selector de cristal (adiós a la lista nativa ilegible) y contraste medido en todas las pantallas, de 740 textos flojos a 141 |
 | 2026-11-17d | Rediseño «Cristal», toques del celular (4): el gráfico del visor de borde a borde, y nítido al girar el celular |
 | 2026-11-17c | Rediseño «Cristal», toques del celular (3): el visor compacto, la fecha y el resultado en una fila cada uno, sin flechas |
@@ -89,6 +90,29 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-17f — Rediseño «Cristal»: la barra del celular no tapa nada
+
+Kris, en el celular: *«el botón de la mitad, el +, y la barra quedan entrometidos a veces con algo del formulario…
+estaba guardando la imagen de la operativa de Chaumer y casi no le puedo dar al botón de guardar… lo mismo para
+crear un nuevo error, me tocó hacerlo desde la web»*.
+
+**Por qué:** la barra iba **por encima** de las ventanas (z-index 210 frente a 200), y en el celular las ventanas
+salen como hojas pegadas abajo, justo donde está ella. Al escribir (Datos → Errores, en la página), el teclado
+subía la barra encima del campo y del botón. Además, el margen de abajo de las páginas (104 px) no contaba la
+barra del iPhone.
+
+- La barra se **aparta** (baja y se apaga, con rebote) mientras hay una ventana abierta (`modal-open`, cualquier
+  `.modal-overlay` visible, el visor, las 3 gráficas, la foto ampliada, los avisos, el buscador) o se está
+  escribiendo en un campo; vuelve al cerrar o al soltar el campo. Solo CSS (`:has`), `cristal.css` §14.
+- Las páginas reservan abajo `118 px + safe-area`; las ventanas, `92dvh` y su `safe-area`.
+- De paso: el campo de hora («Su hora de entrada») salía gris con filo blanco, el control nativo sin estilo; ahora
+  lleva el mismo aspecto que los demás campos.
+
+Verificado a 390 px: escribiendo en «Nuevo error…» la barra se va y «Agregar» se ve; con la ventana de la
+operativa de Chaumer abierta, la barra se va y «Guardar» queda a la vista; al cerrar, vuelve. Sin errores.
 
 ---
 
