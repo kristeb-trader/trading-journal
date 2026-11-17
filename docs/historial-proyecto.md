@@ -166,7 +166,7 @@ plantilla propia (plana, sombreado al pasar el ratón, el color `FontActionBrush
 **«Entry = HH:MM:SS».** Kris pidió que la segunda línea del recuadro sea la hora de su entrada: `FechaChaumer` lee las
 ejecuciones del día de una cuenta (propiedad «Cuenta de la entrada», Sim101 por defecto, como MarcacionChaumer) y escribe
 «Entry = » y la hora de la ejecución que la sacó de plano (la última operación, si hubo varias). Sin entrada, la hora
-como hasta ahora. Hoy debe decir «Entry = 10:07:58».
+como hasta ahora. Instalado a las 10:26: el recuadro dice «Entry = 10:07:58» y la cámara ya está en la barra, al final.
 
 **Pendiente.** Kris: volver a copiar los dos y F5. Sin probar todavía: el icono en la barra, arrastrar el recuadro y
 la subida al Journal (el botón, o la próxima operación de un día sin imagen).
