@@ -150,7 +150,7 @@ Rescatados de `chaumer/04_Web/ESTADO_FASE_2.md` al archivarlo (28/09, D-030). Es
 Aprobado en el chat el 17/11. «Mi operativa» 100 pts / $200 desde el 01/10; «Bot» 80 / $160.
 
 - [x] **Fase 1 · las tablas** (17/11): `parametros_*`, `parametros_vigentes` / `parametros_de_cuenta`. El perfil Bot = `reglas.json`, 0 diferencias
-- [ ] **Fase 2 · la pestaña Parámetros en Datos**: perfiles, riesgo con su historial, lo común, cuentas → perfil, contratos calculados
+- [x] **Fase 2 · la pestaña Parámetros en Datos** (17/11): perfiles, riesgo con su historial, lo común y técnicos (solo lectura hasta la fase 5), cuentas → perfil, Mi cuenta, contratos calculados
 - [ ] **Fase 3 · la disciplina con el perfil de la cuenta**: el juicio de `medir.py` con el `STOP_MAX` / `RIESGO_MAX` de su fecha; recalcular oct–nov (04, 06, 16/11 y 21/10)
 - [ ] **Fase 4 · fuera los números escritos a mano**: la casilla de Estrategia, «Stop máximo» de Claves y objetivos, los 80 / $160 de `db.js`, `form.js`, `disciplina.js`, `coach.js`; `PARAMETROS.md` y `reglas.json`, generados desde Supabase
 - [ ] **Fase 5 · el bot lee su perfil de Supabase** al armarse (`ChaumerNT`). **Kris: recompilar en NinjaTrader**

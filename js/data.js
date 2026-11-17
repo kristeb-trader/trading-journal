@@ -312,7 +312,7 @@ const DataManager = (() => {
     // La cuenta principal actual debe estar en la lista aunque aún no tenga trades
     if (actual && !cuentas.includes(actual)) cuentas.unshift(actual)
     sel.innerHTML = cuentas.map(c => `<option value="${esc(c)}"${c === actual ? ' selected' : ''}>${esc(c)}</option>`).join('')
-    const setHint = c => { if (hint) hint.textContent = `El journal (calendario, análisis, Coach IA) usa "${c}" como cuenta principal.` }
+    const setHint = c => { if (hint) hint.textContent = `La de P&L, Análisis y Coach; la lee NinjaTrader` }
     setHint(actual)
     sel.addEventListener('change', async () => {
       const nueva = sel.value
@@ -430,10 +430,10 @@ const DataManager = (() => {
   // Que cada catálogo tenga el ancho entero es lo que impide de raíz que la fila
   // de Tipo/Fase se vuelva a desbordar.
   const TAB_LABEL = {
-    setups: 'Setups', errores: 'Errores', emociones: 'Emociones',
+    parametros: 'Parámetros', setups: 'Setups', errores: 'Errores', emociones: 'Emociones',
     experimentos: 'Experimentos', recomendaciones: 'Recomendaciones',
   }
-  const TAB_DEFECTO = 'setups'
+  const TAB_DEFECTO = 'parametros'
 
   function showTab(tab) {
     if (!TAB_LABEL[tab]) tab = TAB_DEFECTO
@@ -478,7 +478,7 @@ const DataManager = (() => {
   const activos = items => items.filter(i => i.activa !== false && i.activo !== false).length
 
   async function init() {
-    await Promise.all([loadCasuisticas(), loadEmociones(), loadRecomendaciones(), loadSetups()])
+    await Promise.all([loadCasuisticas(), loadEmociones(), loadRecomendaciones(), loadSetups(), Parametros.init()])
     wireSetups()
     wireTabs()
 

@@ -788,37 +788,14 @@
       <!-- ═══ 5. DATOS ════════════════════════════════════════════════════ -->
       <section class="section" id="section-data">
 
-        <div class="data-hero">
-          <!-- Cuenta principal (la que se lleva en el journal: calendario, análisis, Coach) -->
-          <div class="catalog-card">
-            <div class="catalog-header">
-              <h3><i class="ti ti-star" style="color:var(--accent)"></i> Cuenta principal</h3>
-              <span class="catalog-sub">La que el journal usa para P&amp;L, análisis y Coach IA</span>
-            </div>
-            <div style="margin-top:8px">
-              <select id="dataCuentaPrincipal" class="filter-select" style="width:100%"></select>
-              <p class="catalog-sub" id="cuentaPrincipalHint" style="margin-top:8px"></p>
-            </div>
-          </div>
-
-          <!-- Capital inicial (para la rentabilidad % en Análisis) -->
-          <div class="catalog-card">
-            <div class="catalog-header">
-              <h3><i class="ti ti-coin" style="color:var(--accent)"></i> Capital inicial</h3>
-              <span class="catalog-sub">Base para el cálculo de rentabilidad % en Análisis</span>
-            </div>
-            <div class="annual-capital-input" style="margin-top:6px">
-              <span>$</span>
-              <input type="number" id="dataCapitalInicial" placeholder="5000" min="0" step="100">
-            </div>
-          </div>
-        </div>
-
         <!-- Pestañas: un catálogo a la vez y a ancho completo. Reutiliza el
              componente .so-tabs de Sesión Operativa — mismo CSS, mismo scroll
              horizontal en móvil. El contador de cada pestaña lo rellena data.js. -->
         <div class="so-tabs" id="dataTabs">
-          <button type="button" class="so-tab active" data-tab="setups">
+          <button type="button" class="so-tab" data-tab="parametros">
+            <i class="ti ti-adjustments-horizontal"></i> Parámetros
+          </button>
+          <button type="button" class="so-tab" data-tab="setups">
             <i class="ti ti-chart-dots-3"></i> Setups <span class="chip-soft" data-count="setups"></span>
           </button>
           <button type="button" class="so-tab" data-tab="errores">
@@ -835,7 +812,35 @@
           </button>
         </div>
 
-        <div class="so-panel active" id="data-panel-setups">
+        <!-- Parámetros (D-055): los números que pueden cambiar, por perfil y con su historial.
+             Lo pinta js/parametros.js. «Mi cuenta» (cuenta principal y capital) vivía arriba de
+             todas las pestañas; la maneja data.js, con los mismos ids. -->
+        <div class="so-panel" id="data-panel-parametros">
+          <div class="pm-perfiles" id="pmPerfiles"></div>
+          <div class="pm-cols">
+            <div class="pm-col">
+              <div class="catalog-card pm-card" id="pmRiesgo"></div>
+              <div class="catalog-card pm-card" id="pmMercado"></div>
+              <div class="catalog-card pm-card">
+                <div class="pm-h"><i class="ti ti-wallet"></i> Mi cuenta <span class="pm-tag pm-tag-n">Análisis y P&amp;L</span></div>
+                <div class="pm-row pm-row-cta">
+                  <div class="pm-n">Cuenta principal<small id="cuentaPrincipalHint"></small></div>
+                  <div class="pm-v"><select id="dataCuentaPrincipal" class="filter-select pm-sel"></select></div>
+                </div>
+                <div class="pm-row pm-row-cta">
+                  <div class="pm-n">Capital inicial<small>Base de la rentabilidad % en Análisis</small></div>
+                  <div class="pm-v"><span class="pm-u">$</span><input type="number" id="dataCapitalInicial" class="pm-inp" placeholder="5000" min="0" step="100"></div>
+                </div>
+              </div>
+            </div>
+            <div class="pm-col">
+              <div class="catalog-card pm-card" id="pmHistorial"></div>
+              <div class="catalog-card pm-card" id="pmCuentas"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="so-panel" id="data-panel-setups">
 
           <!-- Setups operativos: familias (IRI, Reingreso…) y sus variantes.
                Lo que se cree aquí aparece solo en Registrar Sesión, en las
@@ -1677,6 +1682,7 @@
   <script src="js/form.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/parametros.js"></script>
   <script src="js/gallery.js"></script>
   <script src="js/experimentos.js"></script>
   <script src="js/apex.js"></script>

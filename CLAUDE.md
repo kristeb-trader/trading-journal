@@ -148,6 +148,7 @@ js/chaumer.js     Comparador Chaumer vs yo (pestañas Diferencias y Registrar)
 js/backtesting.js Bitácora de backtesting: registrar, corregir, borrar (bt_*)
 js/account-filter.js  Filtro de cuentas compartido (nombre COMPLETO)
 js/table.js       Trades · js/data.js  Datos (catálogos) · js/gallery.js  Imágenes
+js/parametros.js  Datos → Parámetros: perfiles por cuenta, riesgo con su historial (D-055)
 css/styles.css    Dark mode + responsive
 NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) ·
                   RR (Risk Reward en PUNTOS) · CadenaDiaria (AddOn: exporta el día y lanza el puente) ·

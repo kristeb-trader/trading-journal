@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-17b | Datos → Parámetros: la pestaña con los perfiles, el riesgo con su historial, lo común y las cuentas → perfil (fase 2) |
 | 2026-11-17 | Los parámetros, en Supabase y por perfil (fase 1): «Mi operativa» con 100 pts / $200 desde el 01/10; el bot, en 80 / $160 |
 | 2026-11-16c | La zona superada cambia de papel y el stop de todo reingreso va en el último retroceso (plan 3.62) |
 | 2026-11-16b | NinjaTrader escribe la fecha y hace la foto del día: `FechaChaumer` y `FotoChaumer`, que la sube sola al Journal |
@@ -84,6 +85,33 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-17b — Datos → Parámetros (fase 2)
+
+**Lo que se hizo.** La pestaña **Parámetros**, la primera de Datos (D-055, boceto aprobado en el chat):
+- **Los perfiles** arriba, con sus cuentas; «+ nuevo perfil» copia el riesgo de hoy del que se está mirando.
+- **Riesgo y gestión** del perfil: cada valor con su cambio («80 → 100 desde 01/10»). Al editar, la fecha
+  **desde** (por defecto el siguiente día hábil; hacia atrás avisa de que cambia cómo se juzgan esos días), los
+  **contratos que caben** con cada stop (calculados, sustituyen a la tabla de $160) y el **aviso de coherencia**:
+  si con el stop máximo no cabe ni un contrato, no deja guardar.
+- **La lectura del mercado** (común) y los técnicos, plegados.
+- **El historial** de la clave elegida, con todos los perfiles para comparar; un valor **programado** se puede quitar,
+  uno que ya juzgó días, no.
+- **Cuentas → perfil** y **Mi cuenta** (cuenta principal y capital inicial, que vivían encima de todas las pestañas).
+
+**Solo lectura, a propósito:** el perfil **Bot** y lo **común**. Los motores y el bot siguen leyendo `reglas.json`
+hasta las fases 4–5; editarlos aquí haría que el perfil Bot dejara de coincidir con lo que opera de verdad.
+
+**Código.** `js/parametros.js` (el módulo nuevo); en `db.js`, `paramVigente` · `textoParametro` ·
+`contratosQueCaben` y `DB.getParametros` / `guardarParametro` / `borrarParametro` / `asignarPerfil` /
+`quitarCuentaPerfil` / `crearPerfil`. Fuera `.data-hero`.
+
+**Verificado** en el preview (copia local con las cuatro tablas): stop 120 con $200 → aviso rojo y «Guardar»
+apagado; con $240, coherente; guardar deja «100 → 120 desde 18/11» y el programado en el historial; quitarlo vuelve a
+«80 → 100»; el perfil Bot sin campos; un perfil nuevo y una cuenta asignada a él. Escritorio y 375 px sin desbordar,
+consola limpia.
 
 ---
 

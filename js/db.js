@@ -370,6 +370,44 @@ const RIESGO_MAX_USD = 160
 // Se aplica desde el 28/09: Kris lo pidió así el 05/10, al cambiar la regla.
 const RIESGO_MAX_DESDE = '2026-09-28'
 
+// ── Parámetros por perfil (D-055, 17/11/2026) ────────────────────────────────
+// Los números viven en Supabase (`parametros_*`), con su historial: un cambio es una fila
+// nueva con su `desde`. Riesgo y gestión, por perfil (`operativa` = Kris, `bot`); la lectura
+// del mercado, común (perfil null). Lo mismo que la función SQL `parametros_vigentes`.
+const USD_PUNTO_MNQ = 2
+// La fila vigente de una clave en una fecha para un perfil (la común si la clave es común).
+function paramVigente(valores, clave, perfil, fecha = hoyISO()) {
+  let mejor = null
+  for (const v of valores || []) {
+    if (v.clave !== clave || v.desde > fecha) continue
+    if (v.perfil && v.perfil !== perfil) continue
+    if (!mejor || v.desde > mejor.desde) mejor = v
+  }
+  return mejor
+}
+// El texto de un valor numérico, con la forma de `reglas.json` («80 puntos», «$160 por
+// operación»): el plan y los motores leen el texto, la web y los cálculos, el número.
+function textoParametro(clave, n) {
+  const x = String(n).replace('.', ',')
+  switch (clave) {
+    case 'STOP_MAX':          return `${x} puntos`
+    case 'RIESGO_MAX':        return `$${fmtMiles(n)} por operación`
+    case 'OPS_POR_SESION':    return n == 1 ? '1 llenada' : `${x} llenadas`
+    case 'RATIO_TARGET':      return `1:${x}`
+    case 'UMBRAL_VOL':        return `> ${fmtMiles(n)} contratos en MNQ`
+    case 'VENTANA_NOTICIA':   return `±${x} minutos`
+    case 'PLAZO_CONSECUCION': return `${x} velas`
+    case 'UMBRAL_50':         return `${x} %`
+    case 'TICK':              return `${x} puntos`
+    default:                  return x
+  }
+}
+// Cuántos contratos de MNQ caben con un stop, sin pasar el riesgo máximo (R-04).
+function contratosQueCaben(stopPts, riesgoUsd, usdPunto = USD_PUNTO_MNQ) {
+  if (!(stopPts > 0) || !(riesgoUsd > 0)) return 0
+  return Math.floor(riesgoUsd / (stopPts * usdPunto) + 1e-9)
+}
+
 // ── La medida del plan (desde el 01/10/2026) ─────────────────────────────────
 // En la etapa 2 las reglas automáticas son el perímetro (MNQ, ventana, una operación…)
 // y se cumplían aunque Kris operara fuera del plan. Desde el 01/10 responde el motor: su
@@ -1769,6 +1807,63 @@ const DB = {
     ;(t.data || []).forEach(r => r.account && set.add(r.account))
     ;(a.data || []).forEach(r => r.numero_cuenta && set.add(r.numero_cuenta))
     return [...set].sort()
+  },
+
+  // ── Parámetros (D-055) ───────────────────────────────────────────────────
+  // Las cuatro tablas de una vez: la pestaña Parámetros de Datos las pinta todas.
+  async getParametros() {
+    const [c, p, k, v] = await Promise.all([
+      supa.from('parametros_claves').select('*').order('orden'),
+      supa.from('parametros_perfiles').select('*').order('creado_at'),
+      supa.from('parametros_cuentas').select('*').order('cuenta'),
+      supa.from('parametros_valores').select('*').order('desde'),
+    ])
+    for (const r of [c, p, k, v]) if (r.error) throw r.error
+    return { claves: c.data || [], perfiles: p.data || [], cuentas: k.data || [], valores: v.data || [] }
+  },
+  // Un valor nunca se pisa: fila nueva con su `desde`. Si ya hay una de esa clave, perfil y
+  // fecha, se corrige esa (el índice único es por clave, perfil y desde).
+  async guardarParametro({ clave, perfil = null, numero = null, texto = null, desde, nota = null }) {
+    let q = supa.from('parametros_valores').select('id').eq('clave', clave).eq('desde', desde)
+    q = perfil ? q.eq('perfil', perfil) : q.is('perfil', null)
+    const { data: ya, error: e1 } = await q.maybeSingle()
+    if (e1) throw e1
+    const fila = { clave, perfil, numero, texto, desde, nota }
+    const { error } = ya
+      ? await supa.from('parametros_valores').update(fila).eq('id', ya.id)
+      : await supa.from('parametros_valores').insert(fila)
+    if (error) throw error
+  },
+  // Solo los programados (desde > hoy): el pasado ya juzgó días.
+  async borrarParametro(id) {
+    const { error } = await supa.from('parametros_valores').delete().eq('id', id).gt('desde', hoyISO())
+    if (error) throw error
+  },
+  async asignarPerfil(cuenta, perfil) {
+    const { error } = await supa.from('parametros_cuentas')
+      .upsert({ cuenta, perfil, actualizada_at: new Date().toISOString() }, { onConflict: 'cuenta' })
+    if (error) throw error
+  },
+  async quitarCuentaPerfil(cuenta) {
+    const { error } = await supa.from('parametros_cuentas').delete().eq('cuenta', cuenta)
+    if (error) throw error
+  },
+  // Un perfil nuevo nace con los valores de hoy de otro (su riesgo y gestión), desde hoy.
+  async crearPerfil(nombre, base) {
+    const codigo = nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'perfil'
+    const { error } = await supa.from('parametros_perfiles').insert({ codigo, nombre })
+    if (error) throw error
+    const { valores, claves } = await this.getParametros()
+    const hoy = hoyISO()
+    const filas = claves.filter(k => k.ambito === 'perfil' && !k.calculado)
+      .map(k => paramVigente(valores, k.clave, base, hoy)).filter(Boolean)
+      .map(v => ({ clave: v.clave, perfil: codigo, numero: v.numero, texto: v.texto, desde: hoy, nota: `copiado de ${base}` }))
+    if (filas.length) {
+      const { error: e2 } = await supa.from('parametros_valores').insert(filas)
+      if (e2) throw e2
+    }
+    return codigo
   },
 
   // ── Apex Tracker ─────────────────────────────────────────────────────────
