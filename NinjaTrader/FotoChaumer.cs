@@ -120,44 +120,46 @@ namespace NinjaTrader.NinjaScript.Indicators
         }
 
         // Un icono de cámara, como los de la barra de NinjaTrader (17/11/2026; antes, el texto «Foto del día»). Su fuente de
-        // iconos (IconsFamily) no trae cámara: va la de Windows (Segoe Fluent Icons; en Windows 10, MDL2), que es del mismo
-        // estilo, de línea y de un color. El estilo (y con él el color), el de un botón de la barra, si sirve para un Button:
-        // los de NinjaTrader pueden ser de un tipo propio, y WPF no deja aplicar su estilo a un Button (se tragaba el botón).
+        // iconos (IconsFamily) no trae cámara: va la de Windows (Segoe Fluent Icons; en Windows 10, MDL2), de línea y de un
+        // color como los suyos. Plantilla propia, plana, con un sombreado al pasar el ratón: copiar el estilo de un botón de
+        // la barra dejaba el botón sin poner (17/11/2026, dos intentos), y lo que hay dentro de NinjaTrader no se ve desde aquí.
         private void PonerBoton()
         {
-            Style estilo = null;
-            double tam = 16;
-            foreach (object o in ventana.MainMenu)
-            {
-                var b = o as System.Windows.Controls.Button;
-                if (b == null || b.Style == null) continue;
-                if (b.Style.TargetType != null && !b.Style.TargetType.IsAssignableFrom(typeof(System.Windows.Controls.Button))) continue;
-                estilo = b.Style;
-                if (b.FontSize > 0) tam = b.FontSize;
-                break;
-            }
-            var icono = new System.Windows.Controls.TextBlock
-            {
-                Text              = "\uE722",       // Camera
-                FontFamily        = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
-                FontSize          = tam,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
+            var fondo = new FrameworkElementFactory(typeof(System.Windows.Controls.Border));
+            fondo.Name = "fondo";
+            fondo.SetValue(System.Windows.Controls.Border.BackgroundProperty, Brushes.Transparent);
+            fondo.SetValue(System.Windows.Controls.Border.CornerRadiusProperty, new CornerRadius(2));
+            fondo.SetValue(System.Windows.Controls.Border.PaddingProperty, new Thickness(5, 1, 5, 1));
+            var contenido = new FrameworkElementFactory(typeof(System.Windows.Controls.ContentPresenter));
+            contenido.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+            fondo.AppendChild(contenido);
+
+            var plantilla = new System.Windows.Controls.ControlTemplate(typeof(System.Windows.Controls.Button)) { VisualTree = fondo };
+            var encima = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            var sombra = new SolidColorBrush(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF));
+            sombra.Freeze();
+            encima.Setters.Add(new Setter(System.Windows.Controls.Border.BackgroundProperty, sombra, "fondo"));
+            plantilla.Triggers.Add(encima);
+
+            var color = Application.Current.TryFindResource("FontActionBrush") as Brush;
             boton = new System.Windows.Controls.Button
             {
-                Content = icono,
-                ToolTip = "Foto del día: la ventana, en tu PC y en el Journal (reemplaza la del día)",
-                Margin  = new Thickness(2, 0, 2, 0),
+                Template          = plantilla,
+                Content           = new System.Windows.Controls.TextBlock
+                {
+                    Text       = "\uE722",       // Camera
+                    FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
+                    FontSize   = 15,
+                    Foreground = color ?? Brushes.Gainsboro,
+                },
+                ToolTip           = "Foto del día: la ventana, en tu PC y en el Journal (reemplaza la del día)",
+                Margin            = new Thickness(4, 0, 4, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Cursor            = System.Windows.Input.Cursors.Hand,
             };
-            if (estilo != null) boton.Style = estilo;
-            else
-            {
-                boton.Background = Brushes.Transparent; boton.BorderThickness = new Thickness(0); boton.Padding = new Thickness(4, 0, 4, 0);
-                var color = Application.Current.TryFindResource("FontActionBrush") as Brush;
-                icono.Foreground = color ?? Brushes.Gainsboro;
-            }
             boton.Click += delegate { Foto(true); };
             ventana.MainMenu.Add(boton);
+            Print("[FotoChaumer] botón de la cámara puesto en la barra");
         }
 
         private void Soltar()

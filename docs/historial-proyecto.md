@@ -158,6 +158,11 @@ plano con el color de los textos) y el icono va escrito ``. La foto de las 9:
 etiqueta no salga en la foto) dejaba en blanco los dos en la lista «Configured» de la ventana de Indicadores: ahora
 devuelve el nombre en `SetDefaults` y `Configure` (las copias que edita esa ventana) y vacío en el gráfico.
 
+**10:12, la automática de punta a punta.** Kris salió a las 10:09:26 (Sim101 plana); la foto se hizo a las 10:12:26 y a
+las 10:12:28 estaba en `sesiones.imagen_url` (la misma URL que `.url`). El icono, en cambio, seguía sin salir, ni un hueco
+en la barra de la foto: el botón no llegaba a ponerse. Se deja de copiar el estilo de la barra y el botón lleva
+plantilla propia (plana, sombreado al pasar el ratón, el color `FontActionBrush`); al ponerse lo dice en el Output.
+
 **Pendiente.** Kris: volver a copiar los dos y F5. Sin probar todavía: el icono en la barra, arrastrar el recuadro y
 la subida al Journal (el botón, o la próxima operación de un día sin imagen).
 
