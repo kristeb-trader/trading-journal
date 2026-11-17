@@ -59,6 +59,9 @@ la imagen dos veces. Recorre la lista desde la que se entró: el calendario, **l
 Disciplina. Los días de cada fuente salen de `Calendarios.diaVisor` / `recorrido`.
 La **tira de días** (12/11/2026) se abre con «Días» o D y recuerda su estado; sus bordes, de
 `Calendarios.tonosMes`.
+**En el celular** (`pointer: coarse`, 17/11/2026) no hay zoom: el gráfico sigue al dedo y el del vecino entra a su
+lado (`.ld-fantasma`), ya decodificado por `_precargar`. Solo se anima `transform`; nada de `void offsetWidth` ni
+`backdrop-filter` a pantalla completa: eran lo que trababa el toque.
 
 **Pendiente:** un ítem del checklist tumbado por un error se ve igual que uno nunca marcado.
 `_checklistDia` ya expone `roto` para distinguirlos ("marcado, pero el diagnóstico lo
