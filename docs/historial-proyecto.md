@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-17c | Rediseño «Cristal», toques del celular (3): el visor compacto, la fecha y el resultado en una fila cada uno, sin flechas |
 | 2026-11-17b | Rediseño «Cristal», toques del celular (2): el visor del día sin zoom, el gráfico sigue al dedo y más aire en la fecha y el banner |
 | 2026-11-17 | Rediseño «Cristal», toques del celular (1): el Calendario reordenado y «Sin entradas» en la leyenda |
 | 2026-11-16d | Rediseño «Cristal», fases 1 a 6 en la rama: marco nuevo, tema claro/oscuro, buscador, isla, portada del Calendario, filtros de Análisis y el día por pasos |
@@ -86,6 +87,23 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-17c — Rediseño «Cristal», toques del celular (3): el visor, compacto
+
+Kris corrige el 17b: *«no te pedí más espacio entre letras, sino más compacto… en la parte de arriba, eso de "Mío",
+quitarlo, y dejar todo en una sola fila. Y abajo, ¿no se puede dejar todo en una sola fila? Y sí podemos quitar
+las flechas, solo que con el dedo se pase»*. Se deshace el «más aire» del 17b (se había entendido al revés).
+
+- **Arriba, una fila:** sin «MÍO» ni el contexto del recorrido; la fecha corta a la izquierda («Vie 14 ago 2026»,
+  `_cabecera`, solo ≤ 768 px), y a la derecha la cuenta y los dos botones. La placa pasa de ~120 a 46 px.
+- **Abajo, una fila:** Resultado · Puntos · Contratos · P&L · Setup en flex, con etiquetas de 0,55 rem; el setup
+  puede partirse en dos líneas. La nota de un día sin operación («Sin setup») va en la misma fila; solo un aviso
+  baja a la suya. El banner pasa de ~150 a 59 px y no desborda.
+- **Sin flechas** con puntero táctil (`.ld-paso`): se pasa de día deslizando.
+
+Verificado a 390 px en tres días (stop, sin entradas, target): sin errores, sin desbordes.
 
 ---
 

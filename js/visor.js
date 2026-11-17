@@ -319,9 +319,13 @@ const Visor = {
     const f = Calendarios.FUENTE[it.fuente] || { nombre: '', color: 'neutro' }
     el.style.setProperty('--c', f.color === 'neutro' ? 'var(--text2)' : `var(--${f.color}-txt)`)
     el.querySelector('.ld-quien').textContent = f.nombre
-    const largo = new Date(`${it.fecha}T12:00:00`).toLocaleDateString('es-CO',
-      { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-    el.querySelector('.ld-fecha').textContent = largo.charAt(0).toUpperCase() + largo.slice(1)
+    const dia = new Date(`${it.fecha}T12:00:00`)
+    const largo = dia.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    // En el celular, corta («Vie 14 ago 2026»): la placa va en una sola fila (Kris, 17/11/2026).
+    const DS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], MS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+    el.querySelector('.ld-fecha').textContent = matchMedia('(max-width: 768px)').matches
+      ? `${DS[dia.getDay()]} ${dia.getDate()} ${MS[dia.getMonth()]} ${dia.getFullYear()}`
+      : largo.charAt(0).toUpperCase() + largo.slice(1)
     el.querySelector('.ld-cuenta').textContent = this._cargada ? `${this._i + 1} de ${this._items.length}` : '…'
     el.querySelector('.ld-ant').disabled = this._i === 0
     el.querySelector('.ld-sig').disabled = this._i === this._items.length - 1
