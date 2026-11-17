@@ -283,9 +283,9 @@ const Metrics = (() => {
 
       let sugerencia = ''
       if (e.conRes >= minMuestras) {
-        if (e.pctT >= 60)       sugerencia = `<span style="color:var(--accent);font-size:0.78rem">✅ Candidato a regla: se presentó a favor ${e.pctT}% de los casos → considera adoptarlo</span>`
-        else if (e.pctT <= 35)  sugerencia = `<span style="color:var(--red);font-size:0.78rem">❌ Descartar: solo ${e.pctT}% target en ${e.conRes} casos → no aporta como filtro</span>`
-        else                    sugerencia = `<span style="color:var(--warning);font-size:0.78rem">⚖️ Neutro (${e.pctT}% target) — sin evidencia suficiente para decidir</span>`
+        if (e.pctT >= 60)       sugerencia = `<span style="color:var(--accent-txt);font-size:0.78rem">✅ Candidato a regla: se presentó a favor ${e.pctT}% de los casos → considera adoptarlo</span>`
+        else if (e.pctT <= 35)  sugerencia = `<span style="color:var(--red-txt);font-size:0.78rem">❌ Descartar: solo ${e.pctT}% target en ${e.conRes} casos → no aporta como filtro</span>`
+        else                    sugerencia = `<span style="color:var(--warning-txt);font-size:0.78rem">⚖️ Neutro (${e.pctT}% target) — sin evidencia suficiente para decidir</span>`
       }
       return `
         <div style="margin-bottom:16px">
@@ -299,7 +299,7 @@ const Metrics = (() => {
               <div class="disc-bar-wrap">
                 <div class="disc-bar-fill" style="width:${barW}%;background:rgba(29,158,117,0.5)"></div>
               </div>
-              <span class="disc-count" style="color:var(--accent)">${e.targets}T · ${e.stops}S</span>
+              <span class="disc-count" style="color:var(--accent-txt)">${e.targets}T · ${e.stops}S</span>
             </div>` : ''}
           ${baseHtml}
           ${pendientes > 0 ? `
@@ -575,7 +575,7 @@ const Metrics = (() => {
       // en la pantalla de los cuatro calendarios, no aquí.
       { label: 'P&L Neto', value: fmtDinero(netPnl), icon: 'ti-currency-dollar', color: netPnl >= 0 ? 'green' : 'red', sub: `Promedio: ${fmtDinero(avgPnl)}/día` },
       { label: 'Disciplina', value: `${disciplinaProceso}%`, icon: 'ti-checkup-list', color: disciplinaProceso >= 80 ? 'green' : disciplinaProceso >= 50 ? 'warning' : 'red', sub: chkItemsTotal > 0 ? `${chkItemsOk}/${chkItemsTotal} ${discUnidad}${trendDisc}` : 'Sin días operados', clickable: true, action: 'disc-detail' },
-      { label: 'Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días${costoErrores > 0 ? ` · ≈ <span style="color:var(--red)">-$${fmtMiles(costoErrores)}</span>` : ''}${trendErr}` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
+      { label: 'Errores', value: `${tasaErrorPct}%`, icon: 'ti-alert-triangle', color: tasaErrorPct <= 20 ? 'green' : tasaErrorPct <= 50 ? 'warning' : 'red', sub: totalDiasReg > 0 ? `${periodCasuisticas.length} errores · ${diasConError}/${totalDiasReg} días${costoErrores > 0 ? ` · ≈ <span style="color:var(--red-txt)">-$${fmtMiles(costoErrores)}</span>` : ''}${trendErr}` : 'Sin sesiones', clickable: true, action: 'disc-errors' },
       // El desglose T/S vive ahora en su propia tarjeta, así que aquí va el tamaño
       // de la muestra: un 60% sobre 5 operaciones no dice lo mismo que sobre 80.
       { label: 'Acierto', value: `${winRate}%`, icon: 'ti-target', color: parseFloat(winRate) >= 50 ? 'green' : 'red', sub: nonBETrades.length > 0 ? `sobre ${nonBETrades.length} operaciones${beTrades > 0 ? ` · ${beTrades} en B.E.` : ''}` : 'Sin operaciones' },

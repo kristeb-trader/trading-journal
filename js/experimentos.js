@@ -133,7 +133,7 @@ const Experimentos = (() => {
           .map(r => `<span class="expd-dot" style="background:${r.resultado === 'T' ? 'var(--accent)' : 'var(--red)'}" title="${r.sesion_date} ${r.resultado}"></span>`).join('')
         footHtml = `
           <div class="expd-foot">
-            <span>${e.targets}T · ${e.stops}S — muestra completa <i class="ti ti-circle-check" style="color:var(--accent)"></i> ${e.conRes}/${MIN_MUESTRAS}</span>
+            <span>${e.targets}T · ${e.stops}S — muestra completa <i class="ti ti-circle-check" style="color:var(--accent-txt)"></i> ${e.conRes}/${MIN_MUESTRAS}</span>
             <span class="expd-dots" title="Últimos 5 resultados">${dots}</span>
           </div>`
       } else {

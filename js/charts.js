@@ -635,7 +635,7 @@ const Charts = (() => {
       if (!btn || !document.getElementById('section-analysis').classList.contains('active')) return
       const info = HELP_TEXTS[btn.dataset.help]
       if (!info) return
-      document.getElementById('analysisHelpTitle').innerHTML = `<i class="ti ti-help-circle" style="color:var(--accent)"></i> ${info.title}`
+      document.getElementById('analysisHelpTitle').innerHTML = `<i class="ti ti-help-circle" style="color:var(--accent-txt)"></i> ${info.title}`
       document.getElementById('analysisHelpText').textContent = info.text
       document.getElementById('analysisHelpModal').classList.remove('hidden')
     })

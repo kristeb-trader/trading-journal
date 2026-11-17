@@ -116,7 +116,7 @@ const TradesTable = (() => {
     if (row.quien !== 'mio') return '<span class="tf-nada">—</span>'
     const errors = casByDate[row.date] || []
     if (errors.length === 0)
-      return '<span style="color:var(--accent);font-size:0.78rem">Sin Errores</span>'
+      return '<span style="color:var(--accent-txt);font-size:0.78rem">Sin Errores</span>'
     return `<span style="color:rgba(226,75,74,0.85);font-size:0.78rem">${errors.join(' · ')}</span>`
   }
 

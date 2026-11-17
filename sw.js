@@ -48,6 +48,7 @@ const APP_SHELL = [
   './js/app.js',
   './js/movimiento.js',
   './js/marco.js',
+  './js/selector.js',
   './js/portada.js',
   './js/pasos.js',
   // recursos del manifest, para que la PWA instalada abra sin red

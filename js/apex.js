@@ -179,16 +179,16 @@ const Apex = (() => {
       <div class="ax-plan-kpis">
         <div class="ax-plan-kpi"><div class="ax-plan-klabel">Opera máx</div><div class="ax-plan-kval">${p.contratos} MNQ</div></div>
         <div class="ax-plan-kpi"><div class="ax-plan-klabel">Riesgo / trade</div><div class="ax-plan-kval">${fmt$(p.riesgoTrade)}</div></div>
-        <div class="ax-plan-kpi"><div class="ax-plan-klabel">Meta del día</div><div class="ax-plan-kval" style="color:var(--accent)">+${fmt$(p.metaDia)}</div></div>
-        <div class="ax-plan-kpi"><div class="ax-plan-klabel">Pérdida máx día</div><div class="ax-plan-kval" style="color:var(--red)">${fmt$(p.perdidaDia)}</div></div>
+        <div class="ax-plan-kpi"><div class="ax-plan-klabel">Meta del día</div><div class="ax-plan-kval" style="color:var(--accent-txt)">+${fmt$(p.metaDia)}</div></div>
+        <div class="ax-plan-kpi"><div class="ax-plan-klabel">Pérdida máx día</div><div class="ax-plan-kval" style="color:var(--red-txt)">${fmt$(p.perdidaDia)}</div></div>
       </div>`
 
     const reglas = noColchon
-      ? `<div class="ax-plan-rule" style="color:var(--red)"><i class="ti ti-alert-octagon"></i> Sin colchón: no operar hasta verificar el estado real de la cuenta.</div>`
+      ? `<div class="ax-plan-rule" style="color:var(--red-txt)"><i class="ti ti-alert-octagon"></i> Sin colchón: no operar hasta verificar el estado real de la cuenta.</div>`
       : `
-        <div class="ax-plan-rule"><i class="ti ti-arrow-up-circle" style="color:var(--accent)"></i> Sube a <b>${p.subirA} MNQ</b> cuando el balance llegue a <b>${fmt$(p.balSubir)}</b></div>
-        ${p.contratos > 1 ? `<div class="ax-plan-rule"><i class="ti ti-arrow-down-circle" style="color:var(--red)"></i> Baja a <b>${p.contratos - 1} MNQ</b> si el balance cae bajo <b>${fmt$(p.balBajar)}</b></div>` : ''}
-        <div class="ax-plan-rule"><i class="ti ti-flag" style="color:var(--warning)"></i> Al ganar <b>+${fmt$(p.metaDia)}</b> hoy → baja tamaño o cierra el día. No devuelvas la meta</div>`
+        <div class="ax-plan-rule"><i class="ti ti-arrow-up-circle" style="color:var(--accent-txt)"></i> Sube a <b>${p.subirA} MNQ</b> cuando el balance llegue a <b>${fmt$(p.balSubir)}</b></div>
+        ${p.contratos > 1 ? `<div class="ax-plan-rule"><i class="ti ti-arrow-down-circle" style="color:var(--red-txt)"></i> Baja a <b>${p.contratos - 1} MNQ</b> si el balance cae bajo <b>${fmt$(p.balBajar)}</b></div>` : ''}
+        <div class="ax-plan-rule"><i class="ti ti-flag" style="color:var(--warning-txt)"></i> Al ganar <b>+${fmt$(p.metaDia)}</b> hoy → baja tamaño o cierra el día. No devuelvas la meta</div>`
 
     const maxN = p.escalones.length
     const escHtml = p.escalones.map((e, i) => {
@@ -200,7 +200,7 @@ const Apex = (() => {
 
     return `
       <div class="ax-plan-head">
-        <div class="ax-plan-title"><i class="ti ti-map-2" style="color:var(--accent)"></i> Plan para pasar — hoy
+        <div class="ax-plan-title"><i class="ti ti-map-2" style="color:var(--accent-txt)"></i> Plan para pasar — hoy
           <span class="ax-badge ${faseCls}">Fase ${p.fase} · ${p.faseLabel}</span></div>
         <div class="ax-plan-selects">
           <select id="planPerfil" title="Perfil de riesgo">${opt(PLAN_PERFILES, cfg.perfil)}</select>
@@ -450,7 +450,7 @@ const Apex = (() => {
     const cardHtml = cta => {
       const s = calc(cta)
       const est = estadoView(cta, s)
-      const espColor = s.espacio <= 0 ? 'var(--red)' : s.riesgo === 'alto' ? 'var(--red)' : s.riesgo === 'medio' ? 'var(--warning)' : 'var(--accent)'
+      const espColor = s.espacio <= 0 ? 'var(--red-txt)' : s.riesgo === 'alto' ? 'var(--red-txt)' : s.riesgo === 'medio' ? 'var(--warning-txt)' : 'var(--accent-txt)'
       const bordeCls = !cta.activa ? '' : s.riesgo === 'critico' ? 'ax-borde-crit' : s.riesgo === 'alto' ? 'ax-borde-crit' : s.riesgo === 'medio' ? 'ax-borde-warn' : 'ax-borde-ok'
 
       const alerta = s.espacio <= 0 && cta.activa && !['aprobada', 'pa', 'quemada'].includes(cta.estado) ? `
@@ -462,7 +462,7 @@ const Apex = (() => {
       const esPACta = ['pa', 'aprobada'].includes(cta.estado)
       const quemada = cta.estado === 'quemada'
       const faltan = s.targetBal - s.balance
-      const pnlColor = s.pnlTotal >= 0 ? 'var(--accent)' : 'var(--red)'
+      const pnlColor = s.pnlTotal >= 0 ? 'var(--accent-txt)' : 'var(--red-txt)'
 
       const progLabel = esPACta ? 'Progreso al retiro' : 'Progreso al target'
       const progRight = quemada ? 'Cuenta quemada'
@@ -563,7 +563,7 @@ const Apex = (() => {
 
     // KPIs
     const consColor = s.consistencia == null ? 'var(--text3)' : s.consistenciaOk ? 'var(--accent)' : 'var(--red)'
-    const espColor = s.espacio <= 0 ? 'var(--red)' : s.riesgo === 'alto' ? 'var(--red)' : s.riesgo === 'medio' ? 'var(--warning)' : 'var(--accent)'
+    const espColor = s.espacio <= 0 ? 'var(--red-txt)' : s.riesgo === 'alto' ? 'var(--red-txt)' : s.riesgo === 'medio' ? 'var(--warning-txt)' : 'var(--accent-txt)'
     const kpis = [
       { l: 'Balance', v: fmt$(s.balance), c: 'var(--text)' },
       { l: 'Piso (threshold)', v: fmt$(s.threshold), c: 'var(--text)' },
@@ -586,10 +586,10 @@ const Apex = (() => {
     const minRestantes = cta.min_dias ? Math.max(0, cta.min_dias - s.diasOperados) : null
 
     const paraPasar = [
-      faltan > 0 ? `Faltan <b>${fmt$(faltan)}</b> para el target` : `<b style="color:var(--accent)">🎯 Target alcanzado</b>`,
+      faltan > 0 ? `Faltan <b>${fmt$(faltan)}</b> para el target` : `<b style="color:var(--accent-txt)">🎯 Target alcanzado</b>`,
       minRestantes != null ? `Días mínimos: <b>${s.diasOperados} de ${cta.min_dias}</b>${minRestantes > 0 ? ` (faltan ${minRestantes})` : ' ✓'}` : null,
       s.avgWin ? `Ritmo de día ganador: <b>${fmt$(s.avgWin)}</b>` : 'Aún sin días ganadores',
-      (s.proyeccion != null && s.proyeccion > 0) ? `Proyección: <b style="color:var(--accent)">~${s.proyeccion} días</b> al target` : null,
+      (s.proyeccion != null && s.proyeccion > 0) ? `Proyección: <b style="color:var(--accent-txt)">~${s.proyeccion} días</b> al target` : null,
     ].filter(Boolean)
 
     const riesgo = [
@@ -711,8 +711,8 @@ const Apex = (() => {
 
       <div class="ax-det-chart-card">
         <div class="ax-det-legend">
-          <span style="color:var(--accent)">● Balance</span>
-          <span style="color:var(--red)">● Piso (threshold)</span>
+          <span style="color:var(--accent-txt)">● Balance</span>
+          <span style="color:var(--red-txt)">● Piso (threshold)</span>
           <span style="color:var(--text3)">— Target</span>
         </div>
         <div style="height:240px"><canvas id="apexDetChart"></canvas></div>
@@ -720,9 +720,9 @@ const Apex = (() => {
 
       <div class="ax-det-bar-card">
         <div class="ax-det-bar-head">
-          <span style="color:var(--red)">${fmt$(piso)} piso</span>
+          <span style="color:var(--red-txt)">${fmt$(piso)} piso</span>
           <span style="color:var(--text3)">${fmt$(ini)} inicio</span>
-          <span style="color:var(--accent)">${fmt$(tgt)} target</span>
+          <span style="color:var(--accent-txt)">${fmt$(tgt)} target</span>
         </div>
         <div class="ax-det-bar">
           <div class="ax-det-bar-fill" style="width:${posBalance}%"></div>
@@ -740,11 +740,11 @@ const Apex = (() => {
 
       <div class="ax-det-panels">
         <div class="ax-det-panel ax-panel-ok">
-          <div class="ax-panel-title" style="color:var(--accent)"><i class="ti ti-target-arrow"></i> Para pasar la prueba</div>
+          <div class="ax-panel-title" style="color:var(--accent-txt)"><i class="ti ti-target-arrow"></i> Para pasar la prueba</div>
           ${paraPasar.map(t => `<div class="ax-panel-row">${t}</div>`).join('')}
         </div>
         <div class="ax-det-panel ax-panel-risk">
-          <div class="ax-panel-title" style="color:var(--red)"><i class="ti ti-alert-triangle"></i> Riesgo de perderla</div>
+          <div class="ax-panel-title" style="color:var(--red-txt)"><i class="ti ti-alert-triangle"></i> Riesgo de perderla</div>
           ${riesgo.map(t => `<div class="ax-panel-row">${t}</div>`).join('')}
         </div>
       </div>

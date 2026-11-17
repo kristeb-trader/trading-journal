@@ -2238,7 +2238,7 @@ Si hay veredicto del motor («Disciplina del día»), el VEREDICTO DE SETUP part
           <span class="coach-error-desc"><strong>${e.nombre}</strong></span>
           ${e.resultado ? `<span class="coach-error-res ${e.resultado === 'T' ? 'res-t' : 'res-s'}" data-i="${i}" title="Clic para cambiar">${e.resultado}</span>` : ''}
           ${e.fase ? `<span class="cas-fase-badge fase-${e.fase}" title="Fase del proceso">F${e.fase}</span>` : ''}
-          ${e.reglaVista === true ? '<span class="coach-error-badge" style="background:rgba(226,75,74,0.18);color:var(--red)" title="Vio la regla y la violó (impulsividad)">regla vista</span>' : e.reglaVista === false ? '<span class="coach-error-badge" style="background:rgba(186,117,23,0.18);color:var(--warning)" title="No la vio a tiempo (falla analítica)">no vista</span>' : ''}
+          ${e.reglaVista === true ? '<span class="coach-error-badge" style="background:rgba(226,75,74,0.18);color:var(--red-txt)" title="Vio la regla y la violó (impulsividad)">regla vista</span>' : e.reglaVista === false ? '<span class="coach-error-badge" style="background:rgba(186,117,23,0.18);color:var(--warning-txt)" title="No la vio a tiempo (falla analítica)">no vista</span>' : ''}
           ${e.nuevo ? '<span class="coach-error-badge badge-nuevo">nuevo</span>' : ''}
           ${e.yaRegistrado ? '<span class="coach-error-badge">ya registrado</span>' : ''}
           ${e.detalle ? `<button type="button" class="coach-error-toggle" data-i="${i}" title="Ver detalle"><i class="ti ti-chevron-down"></i></button>` : ''}

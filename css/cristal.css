@@ -29,11 +29,11 @@
   --card: rgba(255, 255, 255, 0.62);
   --border: rgba(15, 31, 26, 0.1);
   --edge: rgba(255, 255, 255, 0.9); --hi: rgba(255, 255, 255, 0.75);
-  --text: #0f1f1a; --text2: #465a52; --text3: #7b8c85;
-  --accent: #14855f; --accent-dim: rgba(20, 133, 95, 0.12); --accent-txt: #0f7a55;
-  --red: #cc4b36; --red-dim: rgba(204, 75, 54, 0.12); --red-txt: #b8402c;
-  --warning: #b3761a; --warning-dim: rgba(179, 118, 26, 0.14); --warning-txt: #9a6410;
-  --blue: #3b6fb3; --blue-dim: rgba(59, 111, 179, 0.12); --blue-txt: #2f5f9e;
+  --text: #0f1f1a; --text2: #3b4d46; --text3: #56675f;   /* 17/11: el gris de apoyo, legible (≥ 4,5:1 sobre el cristal) */
+  --accent: #14855f; --accent-dim: rgba(20, 133, 95, 0.12); --accent-txt: #0b6a49;
+  --red: #cc4b36; --red-dim: rgba(204, 75, 54, 0.12); --red-txt: #a3321f;
+  --warning: #b3761a; --warning-dim: rgba(179, 118, 26, 0.14); --warning-txt: #82530a;
+  --blue: #3b6fb3; --blue-dim: rgba(59, 111, 179, 0.12); --blue-txt: #285590;
   --violet: #6555d8; --violet-dim: rgba(101, 85, 216, 0.12); --violet-txt: #5547c4;
   --pill: #0e1513; --pill-ink: #ffffff;
   --glass-float: rgba(255, 255, 255, 0.62); --glass-edge: rgba(255, 255, 255, 0.95);
@@ -499,3 +499,63 @@ body.modal-open .fondo i { animation-play-state: paused; }
   .ld-fecha { font-size: 0.95rem; }
   .ld-cerrar { width: 30px; height: 30px; }
 }
+
+/* ══ 12 · EL SELECTOR DE CRISTAL (js/selector.js, 17/11/2026) ═══════════════
+   La lista que sale al abrir un <select> en el escritorio. La nativa no se deja pintar: los grupos salían en
+   blanco con letra clara. Aquí, cristal oscuro (o lechoso en el claro), grupos como etiquetas pequeñas, la opción
+   bajo el cursor con su luz, y la elegida con su marca. Entra desde el campo, crece hacia donde se abre. */
+.sel-lista {
+  position: fixed; z-index: 600; overflow-y: auto; overscroll-behavior: contain; padding: 6px;
+  border-radius: 16px; border: 1px solid var(--edge);
+  background: color-mix(in srgb, var(--capa) 88%, transparent);
+  backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  box-shadow: inset 0 1px 0 var(--hi), 0 24px 50px -18px rgba(0,0,0,0.75), 0 0 0 1px rgba(0,0,0,0.25);
+  scrollbar-width: thin; opacity: 0; transform: translateY(-6px) scale(0.98); transform-origin: top center;
+}
+.sel-lista[data-lado="arriba"] { transform: translateY(6px) scale(0.98); transform-origin: bottom center; }
+.sel-lista.entra { opacity: 1; transform: none; transition: opacity 0.16s ease-out, transform 0.28s var(--rebote); }
+.sel-lista.quieta { transition: none !important; }
+.sel-grupo {
+  padding: 10px 12px 4px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-txt);
+}
+.sel-grupo:not(:first-child) { margin-top: 4px; border-top: 1px solid var(--border); padding-top: 12px; }
+.sel-op {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 38px; padding: 8px 12px;
+  border-radius: 10px; cursor: pointer; color: var(--text); font-size: 0.92rem; font-weight: 600;
+  transition: background 0.14s, color 0.14s, transform 0.2s var(--rebote);
+}
+.sel-op.sangria { padding-left: 20px; }
+.sel-op.vacia { color: var(--text2); font-weight: 500; }
+.sel-op .ti { opacity: 0; color: var(--accent-txt); font-size: 1rem; transform: scale(0.6); transition: opacity 0.18s, transform 0.3s var(--rebote); }
+.sel-op.on { color: var(--accent-txt); background: var(--accent-dim); }
+.sel-op.on .ti { opacity: 1; transform: none; }
+.sel-op.foco { background: var(--bg3); transform: translateX(3px); }
+.sel-op.on.foco { background: color-mix(in srgb, var(--accent) 26%, transparent); }
+.sel-op.off { color: var(--text3); cursor: default; }
+/* El campo, mientras su lista está abierta, y el pulso al elegir */
+select.sel-abierto { border-color: var(--accent) !important; box-shadow: 0 0 0 3px var(--accent-dim) !important; }
+select.sel-pulso { animation: sel-pulso 0.45s var(--curva); }
+@keyframes sel-pulso { 40% { box-shadow: 0 0 0 5px var(--accent-dim); } }
+/* La lista nativa (celular, o si algo falla): grupos y opciones legibles en los dos temas */
+select optgroup { background: var(--capa); color: var(--accent-txt); font-style: normal; font-weight: 800; }
+select option { background: var(--capa); color: var(--text); font-weight: 500; }
+
+/* ══ 13 · CONTRASTE (17/11/2026, Kris: «revisa que todas las ventanas tengan contraste y colores adecuados») ══
+   Medido en todas las pantallas y en los dos temas (texto contra su fondo real, mínimo 4,5:1; 3:1 si es grande).
+   Lo grueso se arregló en los tokens (--text3, los -txt del claro) y cambiando 172 `color: var(--accent|red|…)`
+   por su `-txt`. Aquí, lo que se apagaba a propósito (días vacíos, filas a cero, cuentas quemadas): sigue
+   viéndose apagado, pero su texto se lee. */
+.cal-week-summary.week-empty { opacity: 0.8; }
+.gallery-thumb-empty { opacity: 0.8; }
+.dd-row.is-zero { opacity: 0.72; }
+.row-noopero td { opacity: 0.9; }
+.axm-card.ax-inactiva { opacity: 0.85; }
+.ax-historial .axm-grid { opacity: 1; }
+.rb-tab .n { opacity: 0.85; }
+.dd-dia small { opacity: 1; }
+.hub-dia-n { color: var(--text2); }
+.cal-cell.future { opacity: 0.68; }
+.week-label { color: var(--text2); }
+.hub-dia-n { font-size: 0.66rem; }
+.ax-badge.ax-dead { background: var(--red-dim); color: var(--red-txt); }

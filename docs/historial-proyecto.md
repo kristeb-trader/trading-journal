@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-17e | Rediseño «Cristal»: el selector de cristal (adiós a la lista nativa ilegible) y contraste medido en todas las pantallas, de 740 textos flojos a 141 |
 | 2026-11-17d | Rediseño «Cristal», toques del celular (4): el gráfico del visor de borde a borde, y nítido al girar el celular |
 | 2026-11-17c | Rediseño «Cristal», toques del celular (3): el visor compacto, la fecha y el resultado en una fila cada uno, sin flechas |
 | 2026-11-17b | Rediseño «Cristal», toques del celular (2): el visor del día sin zoom, el gráfico sigue al dedo y más aire en la fecha y el banner |
@@ -88,6 +89,36 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-17e — Rediseño «Cristal»: el selector de cristal y el contraste
+
+Kris (web, Sesión → La operación → Setup operado): *«los colores no contrastan, se ve muy feo, revisa que todas las
+ventanas y diseño tengan un contraste y colores adecuados»*, y vuelve a pegar los pilares (interactiva, envolvente,
+vanguardista, fluida) más cuatro: **microinteracciones, scroll-driven, interfaz pulida, WebGL/3D**.
+
+**El selector.** La lista nativa del navegador no se deja pintar: los grupos (`<optgroup>`) salían en blanco con
+letra clara. `js/selector.js` (nuevo) la sustituye en el escritorio por una de cristal en TODOS los `<select>`:
+entra desde el campo con rebote, grupos como etiquetas verdes, la opción bajo el cursor se desliza, la elegida
+lleva su marca, y el campo hace un pulso al tomar el valor. Teclado completo (↑ ↓ Inicio Fin Enter Esc, letras
+para saltar, Alt+↓/F4 abre). El `<select>` sigue siendo la verdad: se pone su `value` y se lanzan `input` y
+`change`, así que ninguna pantalla cambia. No toca múltiples, deshabilitados (el Diario en lectura) ni el celular
+(su selector nativo es mejor). Como respaldo, `option`/`optgroup` con colores del tema (`cristal.css` §12).
+
+**El contraste, medido** (puppeteer: cada texto visible de 15 pantallas × 2 temas contra su fondo real, compuesto
+con los fondos semitransparentes de sus antepasados; mínimo WCAG 4,5:1, o 3:1 si es grande): **740 → 141**.
+- `--text3` (oscuro `#71847D` → `#8A9C95`; claro `#7b8c85` → `#56675f`) y `--text2` del claro (→ `#3b4d46`).
+- Los `-txt` del claro, más oscuros (verde `#0b6a49`, rojo `#a3321f`, ámbar `#82530a`, azul `#285590`).
+- **172 `color: var(--accent|red|warning|blue|violet)`** en `styles.css` y 25 en JS (estilos en línea) pasan a su
+  `-txt`: es el «error típico» de CLAUDE.md (la base es para bordes y fondos). Más los `espColor`/`pnlColor` de Apex.
+- Insignias con rgba sueltos (Festivo, Sin entradas, Setup no tomado) → tokens.
+- Lo apagado a propósito (días futuros, semanas vacías, filas a cero, cuentas quemadas, miniaturas sin imagen)
+  sigue apagado pero se lee (`cristal.css` §13).
+
+Lo que queda (141, entre 3,6 y 4,4:1) es texto pequeño dentro de algo apagado a propósito; el «1,8» del Comparador
+es un falso positivo de la medición (su fondo viene en `color(srgb …)`, que el script no lee). Sin errores en
+ninguna pantalla.
 
 ---
 
