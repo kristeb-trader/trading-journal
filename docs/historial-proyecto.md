@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-17 | Los parámetros, en Supabase y por perfil (fase 1): «Mi operativa» con 100 pts / $200 desde el 01/10; el bot, en 80 / $160 |
 | 2026-11-16c | La zona superada cambia de papel y el stop de todo reingreso va en el último retroceso (plan 3.62) |
 | 2026-11-16b | NinjaTrader escribe la fecha y hace la foto del día: `FechaChaumer` y `FotoChaumer`, que la sube sola al Journal |
 | 2026-11-16 | Rediseño «Cristal», fase 0 (1): la rama se publica en `/nuevo/` para probarla; `visor.js`, al modo sin conexión |
@@ -83,6 +84,29 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-17 — Los parámetros, en Supabase y por perfil (fase 1)
+
+**Lo que pasó.** Noviembre en 0 de disciplina: tres de las fugas eran stops de 81–90 pts contra un límite de 80 que Kris
+ya había subido a 100 en Estrategia, pero que el juicio no veía (lee el del plan). El stop vivía en seis sitios distintos.
+Kris pidió centralizarlo en la base de datos, con una pestaña en Datos, y separar lo del bot de lo suyo, por cuenta (D-055).
+
+**Lo que se hizo (fase 1).** Cuatro tablas y dos funciones (`2026-11-17-parametros*.sql`):
+- `parametros_claves` (18: 5 de riesgo por perfil —`ATM_DEFECTO`, calculado—, 7 de mercado comunes, 6 técnicas que no se
+  editan), `parametros_perfiles` (`operativa`, predeterminado; `bot`), `parametros_cuentas` (Sim101 y APEX-232411-15 →
+  operativa; SimBot → bot) y `parametros_valores` (24 valores con su `desde`). Un trigger impide un valor de perfil sin
+  perfil, uno común con perfil y guardar uno calculado.
+- `parametros_vigentes(fecha, perfil)` y `parametros_de_cuenta(fecha, cuenta)`: el JSON con la forma de `parametros` de
+  `reglas.json`, más `desde`.
+
+**Verificado.** Sim101: 80 / $160 / ATM 320 el 30/09 y 100 / $200 / ATM 400 el 01/10 y hoy. SimBot hoy: **18 de 18 claves
+iguales a `reglas.json`**, 0 diferencias. Una cuenta sin perfil cae en «Mi operativa». RLS `auth_all`, `anon` sin
+acceso ni a las tablas ni a las funciones; los dos guardas del trigger, probados.
+
+**Todavía no lo lee nadie:** el motor, el bot y el juicio siguen con `reglas.json`, y la disciplina no cambia hasta la
+fase 3.
 
 ---
 

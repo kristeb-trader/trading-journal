@@ -10,6 +10,33 @@
 
 ---
 
+## D-055 — Los parámetros, en Supabase, con un perfil por cuenta: el del bot y el de Kris
+
+**Decisión (Kris, 17/11/2026).** Los números que pueden cambiar viven en **Supabase**, con su historial (`desde`), y
+**no en un documento**: *«eso no debería estar mejor en la base de datos centralizado en una tabla de parámetros, y en
+alguna parte de Datos, una pestaña con todos esos parámetros centralizados?»*. Y en **perfiles por cuenta**: *«unos
+parámetros únicamente para el bot, y otros para la estrategia y medir la disciplina»*. Hoy, «Mi operativa» (Sim101,
+APEX-232411-15) con **100 pts / $200 desde el 01/10/2026**, y «Bot» (SimBot) con los 80 / $160 del plan.
+- **Riesgo y gestión, por perfil** (`STOP_MAX`, `RIESGO_MAX`, `OPS_POR_SESION`, `RATIO_TARGET`). **La lectura del
+  mercado, común** (volumen, noticia, consecución, horarios): el motor lee el día una vez, y el juicio de Kris y el del
+  bot salen de las mismas zonas.
+- **Un valor nunca se pisa**: un cambio es una fila nueva con su fecha, y cada día se juzga con el valor de su perfil ese
+  día. `ATM_DEFECTO` no se guarda: es `STOP_MAX` en ticks.
+
+**Motivo.** El 17/11 el stop vivía en seis sitios que ya no coincidían: Estrategia (100), Claves y objetivos (200 $),
+`PARAMETROS.md` (80), la tabla de contratos de $160, y textos con «80» escritos a mano en el Journal. Kris subió el
+límite en uno y los demás siguieron diciendo otra cosa.
+
+**Alternativas descartadas.**
+- **`PARAMETROS.md` como única fuente** (la primera propuesta): Kris no quiere los números en un documento de texto.
+- **Un solo juego de números para todo:** subir el stop de Kris a 100 cambiaba también lo que opera el bot.
+
+**Fases** (aprobadas en el chat el 17/11): 1 las tablas · 2 la pestaña Parámetros en Datos · 3 la disciplina con el perfil
+de la cuenta · 4 fuera los números escritos a mano (Estrategia, textos, Coach, el plan como copia) · 5 el bot lee su perfil
+de Supabase (una recompilación). Hasta la 4, `PARAMETROS.md` → `reglas.json` sigue siendo lo que leen los motores.
+
+---
+
 ## D-054 — La zona superada cambia de papel, y el stop de todo reingreso va en el último retroceso
 
 **Decisión (Kris, 16/11/2026, plan 3.62).** Una zona superada en un sentido (rompimiento + consecución) **cambia de
