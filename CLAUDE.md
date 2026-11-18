@@ -190,7 +190,8 @@ que se cargan al abrir sus archivos. Desde fuera, lo que no puede fallar:
 
 Todas las secciones funcionando. **El Journal es el diseño «Cristal»** desde el 18/11/2026: se fundió en `main` y es
 el único. Todo cambio se hace **en esta carpeta, en `main`**, encima de él. La rama `rediseno-cristal`, su carpeta
-`Trading Journal cristal` y la dirección de prueba `/nuevo/` ya no existen (la de prueba manda a la de siempre). El
+`E:\Proyectos\Trading Journal cristal` y la dirección de prueba `/nuevo/` **ya no se usan**: no se trabaja ahí aunque
+la carpeta siga en el disco (la dirección de prueba manda a la de siempre). El
 diseño antiguo solo vive en la etiqueta `diseno-anterior-2026-11-13`: no se copia nada de él. **Qué está en marcha y qué falta: `tasks/current.md`.**
 
 ## Dónde está lo demás

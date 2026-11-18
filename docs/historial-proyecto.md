@@ -114,7 +114,7 @@ manifiesto propios (`nqjournal-v15`; el nombre y el `scope` de siempre) y el ser
 de baja (`.github/nuevo-retirado/`), para quien la tenga abierta o instalada en el celular.
 
 **Para los demás chats:** `CLAUDE.md` (Estado) lo dice: todo cambio, en `main`, encima de «Cristal»; la capa visual en
-`css/cristal.css`. La carpeta `Trading Journal cristal` se borró.
+`css/cristal.css`. La carpeta `Trading Journal cristal` y la rama ya no se usan (no se borraron: Kris decide).
 
 ---
 

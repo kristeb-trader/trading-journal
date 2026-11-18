@@ -178,7 +178,7 @@ en una dirección aparte del mismo sitio (`…/trading-journal/nuevo/`); se mont
 se queda en `main`: la cadena diaria y los demás chats trabajan ahí.
 
 **✅ Hecho el 18/11/2026** (Kris: «oficializa el nuevo como el actual»): la rama se fundió en `main`, `/nuevo/` quedó como una
-redirección que retira su service worker (`.github/nuevo-retirado/`), y la carpeta `Trading Journal cristal` se borró.
+redirección que retira su service worker (`.github/nuevo-retirado/`), y la carpeta `Trading Journal cristal` y la rama dejaron de usarse.
 Lo que había que deshacer lo que solo sirve a la
 versión de prueba: en `publicar-journal.yml`, los dos pasos de `/nuevo/`; borrar `.github/workflows/avisar-nuevo.yml`;
 en `sw.js`, el nombre de la caché (`nqjournal-vN`) y el filtro de `activate`; en `manifest.json`, el nombre y el
