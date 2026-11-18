@@ -1,7 +1,7 @@
 {
   "fecha": "2026-07-13",
-  "setup": "Reingreso bajista 10:04",
-  "resultado": "TARGET",
-  "puntos": "+28,50",
+  "setup": "Reingreso bajista 9:42",
+  "resultado": "STOP",
+  "puntos": "−49,25",
   "fuente": "motor"
 }
