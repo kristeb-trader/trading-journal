@@ -165,7 +165,8 @@ Aprobado en el chat el 17/11. «Mi operativa» 100 pts / $200 desde el 01/10; «
 - [x] **Fase 3 · la disciplina con el perfil de la cuenta** (17/11): `medir.py` v4, segunda pasada del motor con su stop; oct 11/18, nov 3/8
 - [ ] **06/10, 08/10 y 12/11**: con el motor de hoy su juicio cambia (06/10 ✓ → corrida no fluida; 08/10 sin setup → 4 contratos;
   12/11 sin consecución → el stop del plan, 126, pasaba de 100). No se reescribieron: preguntar a Kris si se rehacen con el motor de hoy
-- [ ] **Fase 4 · fuera los números escritos a mano**: la casilla de Estrategia, «Stop máximo» de Claves y objetivos, los 80 / $160 de `db.js`, `form.js`, `disciplina.js`, `coach.js`; `PARAMETROS.md` y `reglas.json`, generados desde Supabase
+- [x] **Fase 4 · fuera los números escritos a mano** (18/11): `limiteDe` en todo el Journal; fuera la casilla de Estrategia y el stop de Claves y objetivos
+- [ ] **Fase 4b · `PARAMETROS.md` y `reglas.json` generados desde Supabase**: es `01_Plan` (solo con el sí de Kris, commit `plan:`); va junto a la fase 5
 - [ ] **Fase 5 · el bot lee su perfil de Supabase** al armarse (`ChaumerNT`). **Kris: recompilar en NinjaTrader**
 
 ## Disciplina: ¿tu trade cumplía las reglas? (10/11, D-052)

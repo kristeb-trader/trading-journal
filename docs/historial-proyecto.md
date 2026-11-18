@@ -19,6 +19,7 @@
 | 2026-11-17f | Rediseño «Cristal», toques del celular (3): el visor compacto, la fecha y el resultado en una fila cada uno, sin flechas |
 | 2026-11-17e | Rediseño «Cristal», toques del celular (2): el visor del día sin zoom, el gráfico sigue al dedo y más aire en la fecha y el banner |
 | 2026-11-17d | Rediseño «Cristal», toques del celular (1): el Calendario reordenado y «Sin entradas» en la leyenda |
+| 2026-11-18 | Los límites salen de Parámetros en todo el Journal: fuera la casilla de Estrategia, el «stop máximo» de Claves y objetivos y los 80 / $160 escritos a mano (fase 4) |
 | 2026-11-17c | La disciplina juzga con el perfil de tu cuenta: 100 pts / $200 desde el 01/10. Octubre 11 de 18, noviembre 3 de 8 (fase 3) |
 | 2026-11-17b | Datos → Parámetros: la pestaña con los perfiles, el riesgo con su historial, lo común y las cuentas → perfil (fase 2) |
 | 2026-11-17 | Los parámetros, en Supabase y por perfil (fase 1): «Mi operativa» con 100 pts / $200 desde el 01/10; el bot, en 80 / $160 |
@@ -288,6 +289,35 @@ análisis»*.
 
 Verificado con puppeteer a 390 px (agosto, con datos): el orden medido es el pedido, sin errores en la consola; en
 escritorio, la misma portada que antes salvo la leyenda.
+
+---
+
+## Checkpoint 2026-11-18 — Los límites salen de Parámetros en todo el Journal (fase 4)
+
+**Lo que se hizo** (D-055). Una sola lectura, `limiteDe(clave, { fecha, perfil, cuenta })` en `db.js`, sobre la caché de
+`parametros_*` (`DB.cargarParametros`: la llenan el arranque y `getObjetivos`; se invalida al guardar en Datos). Sin dato
+devuelve `null` y quien llama no inventa un número.
+- **Estrategia:** fuera la casilla del límite. La regla del stop dice «Tu límite: 100 pts · el plan y el bot usan 80» con
+  un acceso a Datos → Parámetros, y la tabla de contratos de R-04 se calcula con tu stop y tu riesgo (antes, 80/40/25/10
+  con $160 fijos).
+- **Claves y objetivos:** fuera «Stop máximo por trade ($)» (era el 200 que Kris tocó), con un aviso que remite a
+  Parámetros. Las columnas `objetivos.stop_max_puntos` y `stop_max_usd` quedan en la BD, **obsoletas** y sin lector.
+- **La disciplina** (`reglaAutoResultado`, el texto de la evidencia, `discContexto`), **el Diario** (la alerta de
+  retroceso) y **el Coach** (que además recibe una línea con los límites del trader ese día: el plan que lleva arriba cita
+  los del bot): todos con `limiteDe` de la fecha del día. `RIESGO_MAX_USD` y todos los `|| 80` desaparecen.
+- **El calendario del Bot** (contratos que caben) usa el perfil **bot**, no el tuyo.
+
+**Efecto que hay que saber.** Los días anteriores al 01/10 ahora se juzgan con el stop que regía entonces (80), no con el
+100 que la casilla tenía ya al juzgarlos. Es lo correcto (cada día, el valor de su fecha) y puede mover algún porcentaje
+de agosto–septiembre.
+
+**Sin hacer, a propósito:** que `PARAMETROS.md` y `reglas.json` se generen desde Supabase. Es el plan de Chaumer
+(`01_Plan`, solo con el sí de Kris) y es lo que el bot lee hoy; va con la fase 5.
+
+**Verificado** en el preview (copia local): `limiteDe` da 80 el 30/09 y 100 desde el 01/10, y el perfil bot 80 / $160; con
+27,25 pts de stop caben 3 contratos en tu perfil y 2 en el del bot; Estrategia sin casilla y con su acceso; Claves y
+objetivos sin el campo; Diario, Disciplina, Análisis, Calendario y Comparador sin errores de consola. **No verificado:** la
+línea de límites del Coach (la copia local no tiene días del plan con juicio).
 
 ---
 

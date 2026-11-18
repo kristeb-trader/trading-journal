@@ -190,9 +190,9 @@ const Calendarios = (() => {
         return
       }
       const p = parseFloat(o.puntos) || 0
-      // Los contratos del plan (R-04): los que caben en $160 con el stop de esa operación, como entra
-      // el bot (27/10: 34,5 pts de stop → 2). Sin riesgo en la ficha, los de los datos de inicio.
-      const contratos = _cabenContratos(o.riesgo) || Number(cab.contratos) || 1
+      // Los contratos del plan (R-04): los que caben en el riesgo del perfil del BOT con el stop de esa operación,
+      // como entra el bot (27/10: 34,5 pts de stop → 2). Sin riesgo en la ficha, los de los datos de inicio.
+      const contratos = _cabenContratos(o.riesgo, null, { perfil: 'bot', fecha: f }) || Number(cab.contratos) || 1
       const op = {
         puntos: p, pnl: pnlCalc(p, { ...cab, contratos }),
         res: res === 'target' || res === 'stop' ? res : res === 'cierre por hora' ? 'cierre' : 'be',
@@ -899,7 +899,7 @@ const Calendarios = (() => {
   function cabTexto(id) {
     const c = cabActual || { valor_punto: 2, contratos: 1, comision: 1.02 }
     const n = Number(c.contratos) || 1
-    const cuantos = id === 'bot' ? `los contratos que caben en ${fmtDinero(RIESGO_MAX_USD, { masEnPositivo: false })} de riesgo`
+    const cuantos = id === 'bot' ? `los contratos que caben en ${fmtDinero(limiteDe('RIESGO_MAX', { perfil: 'bot' }) ?? 0, { masEnPositivo: false })} de riesgo`
       : `${n} contrato${n !== 1 ? 's' : ''}`
     return `${cuantos} · $${String(c.valor_punto).replace('.', ',')}/punto · ` +
            `$${Number(c.comision).toFixed(2).replace('.', ',')} de comisión por contrato`

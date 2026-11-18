@@ -800,6 +800,10 @@ async function boot() {
   const cuentaEl = document.getElementById('ajustesCuenta')
   if (cuentaEl) cuentaEl.textContent = session.user?.email || ''
 
+  // Los límites de riesgo (D-055) se cargan ya, antes de pintar ninguna pantalla que juzgue un día. `getObjetivos`
+  // los carga también; si esto falla, `limiteDe` da null y las pantallas no inventan un número.
+  await DB.cargarParametros().catch(() => {})
+
   // Check Supabase connectivity. La barra solo muestra el punto de color: el
   // texto decía lo mismo que el color y ocupaba sitio. El detalle sale al pulsarlo.
   const dot = document.getElementById('connectionStatus')
@@ -854,7 +858,6 @@ async function boot() {
     // Cargar objetivos desde BD
     try {
       const obj = await DB.getObjetivos()
-      document.getElementById('objStopMax').value       = obj?.stop_max_usd ?? ''
       document.getElementById('objMaxTrades').value     = obj?.max_trades_dia ?? ''
       document.getElementById('objPnlObjetivo').value   = obj?.pnl_objetivo_dia ?? ''
       document.getElementById('objLimitePerdida').value = obj?.limite_perdida_dia ?? ''
@@ -887,7 +890,6 @@ async function boot() {
       return v === '' ? null : parseFloat(v)
     }
     const objetivosPayload = {
-      stop_max_usd:       num('objStopMax'),
       max_trades_dia:     num('objMaxTrades'),
       pnl_objetivo_dia:   num('objPnlObjetivo'),
       limite_perdida_dia: num('objLimitePerdida'),

@@ -447,7 +447,7 @@ const Metrics = (() => {
     // `motor` el cálculo elige la medida del período (docs/disenos/2026-10-23-disciplina-plan.md).
     const discCtx = discContexto({
       trades: allTrades, errores: allCasuisticas, fechasEsp: allFechasEsp,
-      stopMaxPuntos: allObjetivos?.stop_max_puntos, motor: allMotor, discusiones: allDiscusiones,
+      motor: allMotor, discusiones: allDiscusiones,
     })
     const disc = calcDisciplina(activeSesiones, discCtx)
     const chkItemsTotal = disc.total

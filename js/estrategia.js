@@ -7,8 +7,9 @@
 // «Etapa anterior» (hasta el 23/09): el rulebook propio tal como quedó —sus 17
 // casillas y los textos de filosofía—. Tampoco se edita: es la historia.
 //
-// Lo único editable es el límite de stop (`objetivos.stop_max_puntos`): lo usa la
-// automática del stop en las dos etapas.
+// Nada se edita aquí. El límite de stop y el riesgo son de cada perfil y viven en Datos → Parámetros
+// (D-055): aquí solo se ven, con un acceso. Antes había una casilla (`objetivos.stop_max_puntos`) y
+// dos números más escritos a mano que ya no coincidían.
 // Diseño: docs/disenos/2026-09-24-etapa-plan-chaumer.md §3.3 y §7.
 const Estrategia = (() => {
   const TABS = [
@@ -27,19 +28,23 @@ const Estrategia = (() => {
   const FASE_CLS = { 1: 'b-f1', 2: 'b-f2', 3: 'b-f3' }
   const FASE_TITLE = { 1: 'Fase 1 · Pre-sesión', 2: 'Fase 2 · Lectura del setup', 3: 'Fase 3 · Ejecución' }
   const STOP_CODIGOS = ['p2_stop_max', 'stop_max_puntos']
-  // R-04 (plan 3.44): la regla lleva su tabla de ejemplos. Se calcula con el mismo
-  // RIESGO_MAX_USD con el que db.js juzga la automática, para que no digan cosas distintas.
+  // R-04 (plan 3.44): la regla lleva su tabla de ejemplos. Se calcula con el riesgo y el stop de TU perfil
+  // (los mismos con los que db.js juzga), para que la tabla y el juicio no digan cosas distintas: por cada
+  // número de contratos, el stop más grande que cabe.
   const RIESGO_CODIGOS = ['R-04', 'p2_un_contrato']
   function tablaRiesgo() {
-    const filas = [80, 40, 25, 10].map(pts => {
-      const c = Math.floor(RIESGO_MAX_USD / (pts * 2))   // MNQ: $2 por punto
-      return `<tr><td>${pts} pts</td><td>${c}</td><td>${fmtDinero(c * pts * 2, { masEnPositivo: false })}</td></tr>`
+    const riesgo = limiteDe('RIESGO_MAX'), stop = limiteDe('STOP_MAX')
+    if (!(riesgo > 0)) return ''
+    const filas = [1, 2, 3, 4, 8].map(n => {
+      const max = Math.floor(riesgo / (n * USD_PUNTO_MNQ) / 0.25) * 0.25
+      if (max < 1 || (stop > 0 && max > stop)) return ''
+      return `<tr><td>hasta ${String(max).replace('.', ',')} pts</td><td>${n}</td><td>${fmtDinero(n * max * USD_PUNTO_MNQ, { masEnPositivo: false })}</td></tr>`
     }).join('')
-    return `<table class="rb-tabla"><thead><tr><th>Stop</th><th>Contratos</th><th>Riesgo</th></tr></thead><tbody>${filas}</tbody></table>`
+    return `<table class="rb-tabla"><thead><tr><th>Stop</th><th>Contratos</th><th>Riesgo</th></tr></thead><tbody>${filas}</tbody></table>
+      <p class="rb-nota">Con tu riesgo máximo de ${fmtDinero(riesgo, { masEnPositivo: false })} (Datos → Parámetros).</p>`
   }
 
   let reglas = []
-  let objetivos = null
   let tab = 'plan'
   let vista = 'checklist'
   let wired = false
@@ -62,9 +67,9 @@ const Estrategia = (() => {
     const cont = document.getElementById('reglasList')
     try {
       // Todas, activas o no: la etapa anterior tiene sus casillas desactivadas.
-      const [r, o] = await Promise.all([DB.getReglas(), DB.getObjetivos().catch(() => null)])
+      // getObjetivos también carga los parámetros (los límites que se enseñan aquí).
+      const [r] = await Promise.all([DB.getReglas(), DB.getObjetivos().catch(() => null)])
       reglas = r || []
-      objetivos = o
     } catch (e) {
       if (cont) cont.innerHTML = `<p class="coach-error">No se pudieron leer las reglas: ${esc(e.message)}</p>`
       return
@@ -107,7 +112,9 @@ const Estrategia = (() => {
     let foot = ''
     if (r.evidencia === 'auto' && r.campo) foot += `<span class="rb-nota"><i class="ti ti-database"></i> Se comprueba con ${esc(r.campo)}</span>`
     if (STOP_CODIGOS.includes(r.codigo)) {
-      foot += `<span class="rb-param">Límite: <input type="number" class="rb-stopinput" value="${objetivos?.stop_max_puntos ?? 80}" min="1"> pts</span>`
+      const mio = limiteDe('STOP_MAX'), bot = limiteDe('STOP_MAX', { perfil: 'bot' })
+      if (mio != null) foot += `<span class="rb-param">Tu límite: <b>${mio} pts</b>${bot != null && bot !== mio ? ` · el plan y el bot usan ${bot}` : ''}
+        · <button type="button" class="rb-ir" data-ir-parametros>cambiar en Datos → Parámetros</button></span>`
     }
     const b = badges(r)
     return `
@@ -157,18 +164,10 @@ const Estrategia = (() => {
       const v = e.target.closest('[data-vista]'); if (!v) return
       vista = v.dataset.vista; renderFilters(); renderList()
     })
-    document.getElementById('reglasList')?.addEventListener('change', async e => {
-      const stop = e.target.closest('.rb-stopinput')
-      if (!stop) return
-      const val = parseFloat(stop.value)
-      if (isNaN(val) || val <= 0) { Toast.show('Valor de stop inválido', 'warning'); return }
-      try {
-        await DB.saveObjetivos({ stop_max_puntos: val })
-        objetivos = { ...(objetivos || {}), stop_max_puntos: val }
-        if (typeof Coach !== 'undefined' && Coach.clearCache) Coach.clearCache()
-        Toast.show(`Límite de stop: ${val} pts`, 'success')
-        renderList()
-      } catch (err) { Toast.show('Error al guardar el límite: ' + err.message, 'error') }
+    document.getElementById('reglasList')?.addEventListener('click', e => {
+      if (!e.target.closest('[data-ir-parametros]')) return
+      try { localStorage.setItem('datos.tab', 'parametros') } catch (_) {}
+      Nav.go('data')
     })
   }
 

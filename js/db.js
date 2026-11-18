@@ -365,8 +365,8 @@ const AUTO_ALIAS = {
 }
 // Ventana operativa del plan (R-02): 09:30–11:30 ET, los 120 minutos tras la apertura.
 const VENTANA_ET = { desde: '09:30', hasta: '11:30' }
-// Riesgo máximo por operación (R-04, plan 3.44): en dólares, con los contratos que quepan.
-const RIESGO_MAX_USD = 160
+// Riesgo máximo por operación (R-04, plan 3.44): en dólares, con los contratos que quepan. El número NO vive aquí:
+// es de cada perfil, en Supabase (D-055) → limiteDe('RIESGO_MAX', …).
 // Se aplica desde el 28/09: Kris lo pidió así el 05/10, al cambiar la regla.
 const RIESGO_MAX_DESDE = '2026-09-28'
 
@@ -384,6 +384,21 @@ function paramVigente(valores, clave, perfil, fecha = hoyISO()) {
     if (!mejor || v.desde > mejor.desde) mejor = v
   }
   return mejor
+}
+// Los límites de cada cuenta, de la caché de `parametros_*` (DB.cargarParametros la llena: getObjetivos, el arranque).
+// `perfil` explícito (`bot`) o el de `cuenta` (por defecto, la principal); una cuenta sin fila usa el predeterminado.
+// null = sin dato (caché sin cargar o clave sin valor en esa fecha): quien llama NO inventa un número, devuelve «sin
+// evidencia» o no pinta el límite. Nada de `|| 80`.
+let _PARAMS = null
+function perfilDeCuenta(cuenta) {
+  if (!_PARAMS) return null
+  const c = _PARAMS.cuentas.find(x => x.cuenta === cuenta)
+  return c ? c.perfil : ((_PARAMS.perfiles.find(p => p.predeterminado) || {}).codigo || null)
+}
+function limiteDe(clave, { fecha = hoyISO(), perfil, cuenta = _cuentaPrincipalCache } = {}) {
+  if (!_PARAMS) return null
+  const v = paramVigente(_PARAMS.valores, clave, perfil || perfilDeCuenta(cuenta), String(fecha).slice(0, 10))
+  return v && v.numero != null ? +v.numero : null
 }
 // El texto de un valor numérico, con la forma de `reglas.json` («80 puntos», «$160 por
 // operación»): el plan y los motores leen el texto, la web y los cálculos, el número.
@@ -431,10 +446,12 @@ function _tradeDeOp(trades, op, i) {
   return trades.find(t => String(t.entry_time || '').slice(0, 5) === op.hora) || trades[i] || null
 }
 // Contratos que caben en el riesgo máximo con un stop de `riesgoPts` (R-04: hacia abajo).
-function _cabenContratos(riesgoPts, t) {
+// El riesgo máximo es el del perfil de la cuenta en esa fecha (o el `perfil` que se pida: el bot, en su calendario).
+function _cabenContratos(riesgoPts, t, opts) {
   const r = parseFloat(riesgoPts)
-  if (!(r > 0)) return null
-  return Math.floor(RIESGO_MAX_USD / (r * _usdPorPunto(t || { instrument: 'MNQ' })))
+  const max = limiteDe('RIESGO_MAX', opts)
+  if (!(r > 0) || !(max > 0)) return null
+  return Math.floor(max / (r * _usdPorPunto(t || { instrument: 'MNQ' })) + 1e-9)
 }
 
 // «Continuación ↑ 9:25»: una operación del motor o de `tu_operacion`, en corto.
@@ -548,7 +565,7 @@ function reglaAutoResultado(codigo, s, opts) {
     if (ops.length) {
       const res = ops.map((op, i) => ({ op, t: _tradeDeOp(trades, op, i) }))
         .filter(x => !x.op.coincide && x.t)
-        .map(({ op, t }) => { const c = _cabenContratos(op.riesgo, t); return c == null ? null : Number(t.qty) <= c })
+        .map(({ op, t }) => { const c = _cabenContratos(op.riesgo, t, { fecha: s.sesion_date }); return c == null ? null : Number(t.qty) <= c })
         .filter(r => r !== null)
       return res.length ? res.every(Boolean) : null
     }
@@ -556,8 +573,9 @@ function reglaAutoResultado(codigo, s, opts) {
     // stop en `trades`, el riesgo se mide con el MAE en dólares de toda la posición,
     // igual que el stop máximo se mide con el MAE en puntos.
     const usd = trades.filter(t => t.mae != null).map(t => Math.abs(parseFloat(t.mae) || 0))
-    if (!usd.length) return null
-    return usd.every(v => v <= RIESGO_MAX_USD)
+    const rmax = limiteDe('RIESGO_MAX', { fecha: s.sesion_date })
+    if (!usd.length || rmax == null) return null
+    return usd.every(v => v <= rmax)
   }
   if (codigo === 'p2_ventana_horaria') {         // R-02 · entrada entre 09:30 y 11:30 ET
     // entry_time está en hora de COLOMBIA: se convierte a ET antes de comparar.
@@ -567,7 +585,9 @@ function reglaAutoResultado(codigo, s, opts) {
   }
 
   if (codigo === 'stop_max_puntos') {
-    const lim = o.stopMaxPuntos || 80
+    // El stop máximo del perfil de la cuenta en la fecha de ese día (D-055). Sin él, sin evidencia.
+    const lim = limiteDe('STOP_MAX', { fecha: s.sesion_date })
+    if (lim == null) return null
     // Con la medida del plan, el stop que dedujo medir.py (riesgo en puntos); sin él, el MAE.
     const rs = _usaPlan(s, o) ? _opsDia(_fichaDia(s, o)).map(op => op.riesgo).filter(r => r != null) : []
     if (rs.length) return rs.every(r => r <= lim)
@@ -657,7 +677,7 @@ function etapaDelPeriodo(sesiones, pedida) {
 // `motor`: lo de DB.getMotorDisciplina() (Map fecha → { estado, operacion, tu }) o sus
 // filas. Sin él, la medida del plan no se usa (ver PLAN_MOTOR_DESDE).
 // `discusiones`: las filas de `disciplina_discusiones` (D-052); sin ellas, ninguna.
-function discContexto({ trades, fechasEsp, errores, stopMaxPuntos, etapa, motor, discusiones } = {}) {
+function discContexto({ trades, fechasEsp, errores, etapa, motor, discusiones } = {}) {
   const tradesPorDia = new Map()
   ;(trades || []).forEach(t => {
     const d = t.trade_date || t.entry_time?.slice(0, 10)
@@ -670,7 +690,6 @@ function discContexto({ trades, fechasEsp, errores, stopMaxPuntos, etapa, motor,
     tradesPorDia,
     fomcDates: new Set((fechasEsp || []).filter(f => f.tipo === 'fomc').map(f => f.fecha)),
     rotas: reglasRotasPorDia(errores),
-    stopMaxPuntos: stopMaxPuntos || 80,
     etapa,      // número, 'auto' o undefined (= 'auto'). Ver etapaDelPeriodo()
     motor: motor instanceof Map ? motor
       : Array.isArray(motor) ? new Map(motor.map(f => [f.fecha, f])) : undefined,
@@ -1675,11 +1694,12 @@ const DB = {
   // ── Objetivos / reglas ───────────────────────────────────────────────────
 
   async getObjetivos() {
-    const { data, error } = await supa
-      .from('objetivos')
-      .select('*')
-      .eq('id', 1)
-      .maybeSingle()
+    // Los límites de riesgo ya no viven aquí sino en `parametros_*` (D-055): quien pedía los objetivos para juzgar
+    // un día los necesita cargados, así que viajan juntos. Si fallan, `limiteDe` da null y no se inventa nada.
+    const [{ data, error }] = await Promise.all([
+      supa.from('objetivos').select('*').eq('id', 1).maybeSingle(),
+      this.cargarParametros().catch(() => null),
+    ])
     if (error) throw error
     if (data) _cuentaPrincipalCache = data.cuenta_principal || _cuentaPrincipalCache
     return data
@@ -1811,6 +1831,13 @@ const DB = {
   },
 
   // ── Parámetros (D-055) ───────────────────────────────────────────────────
+  // Llena la caché de `limiteDe` (5 min; `force` tras guardar). Las pantallas que juzgan un día pasan por aquí.
+  async cargarParametros({ force = false } = {}) {
+    if (!force && _PARAMS && Date.now() - _PARAMS.t < 300000) return _PARAMS
+    const p = await this._compartido('parametros', () => this.getParametros())
+    _PARAMS = { ...p, t: Date.now() }
+    return _PARAMS
+  },
   // Las cuatro tablas de una vez: la pestaña Parámetros de Datos las pinta todas.
   async getParametros() {
     const [c, p, k, v] = await Promise.all([
@@ -1834,20 +1861,26 @@ const DB = {
       ? await supa.from('parametros_valores').update(fila).eq('id', ya.id)
       : await supa.from('parametros_valores').insert(fila)
     if (error) throw error
+    this._parametrosCambiaron()
   },
+  // Un cambio de parámetros invalida la caché de límites: la siguiente pantalla juzga con lo nuevo.
+  _parametrosCambiaron() { _PARAMS = null; this.cargarParametros({ force: true }).catch(() => {}) },
   // Solo los programados (desde > hoy): el pasado ya juzgó días.
   async borrarParametro(id) {
     const { error } = await supa.from('parametros_valores').delete().eq('id', id).gt('desde', hoyISO())
     if (error) throw error
+    this._parametrosCambiaron()
   },
   async asignarPerfil(cuenta, perfil) {
     const { error } = await supa.from('parametros_cuentas')
       .upsert({ cuenta, perfil, actualizada_at: new Date().toISOString() }, { onConflict: 'cuenta' })
     if (error) throw error
+    this._parametrosCambiaron()
   },
   async quitarCuentaPerfil(cuenta) {
     const { error } = await supa.from('parametros_cuentas').delete().eq('cuenta', cuenta)
     if (error) throw error
+    this._parametrosCambiaron()
   },
   // Un perfil nuevo nace con los valores de hoy de otro (su riesgo y gestión), desde hoy.
   async crearPerfil(nombre, base) {

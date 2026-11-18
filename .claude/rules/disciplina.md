@@ -92,7 +92,7 @@ reglas? El juicio lo escribe **`medir.py`** (`tu_operacion[i].juicio = {cumple, 
 los trades de NQ, y ya llevó a una conclusión falsa.
 
 `objetivos.limite_perdida_dia` ($150) quedó **obsoleto**: es control de capital de Apex, no
-una regla de proceso. En la etapa 1 el límite es `objetivos.stop_max_puntos`; en la medida del plan, el perfil de la cuenta (D-055).
+una regla de proceso. **Ningún límite vive en `objetivos` ni escrito a mano** (D-055): `limiteDe('STOP_MAX' | 'RIESGO_MAX', { fecha })` de `db.js`, con el perfil de la cuenta en esa fecha, en las dos etapas y en la medida del plan. Sin dato, la regla devuelve `null` (sin evidencia), nunca un `|| 80`.
 
 ## Efecto lateral asumido (3 ago)
 

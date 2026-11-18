@@ -220,7 +220,7 @@ Si la entrada rompe una regla cuyo incumplimiento el plan marca como «no se ope
 
 ${fmtReglasDuras(reglas, familiaDia)}
 
-Estas reglas NO admiten excepción. Si la sesión viola cualquiera, el VEREDICTO final es INVÁLIDO por más bueno que se vea el resto del setup, y debes nombrar la regla rota por su **TÍTULO descriptivo** (p. ej. "Stop máximo de 80 puntos", "Día FOMC: solo reingresos"). NUNCA muestres el código interno (\`chk_consecucion\`, \`chk_orden\`…): es solo referencia, el trader no lo entiende. Las demás reglas (blandas) son guías sujetas a criterio.
+Estas reglas NO admiten excepción. Si la sesión viola cualquiera, el VEREDICTO final es INVÁLIDO por más bueno que se vea el resto del setup, y debes nombrar la regla rota por su **TÍTULO descriptivo** (p. ej. "Stop máximo", "Día FOMC: solo reingresos"). NUNCA muestres el código interno (\`chk_consecucion\`, \`chk_orden\`…): es solo referencia, el trader no lo entiende. Las demás reglas (blandas) son guías sujetas a criterio.
 
 ---
 
@@ -311,7 +311,7 @@ Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes.
     const _discusiones = _motorDia ? (await DB.getDiscusiones().catch(() => [])).filter(d => d.fecha === date) : []
     const _discCtx = discContexto({
       trades, errores: casuisticas, fechasEsp,
-      stopMaxPuntos: objetivos?.stop_max_puntos, motor: _motorDia, discusiones: _discusiones,
+      motor: _motorDia, discusiones: _discusiones,
     })
     // Filtrado por setup Y por contexto del día: una regla condicional (día FOMC,
     // hay noticia) no debe ni aparecer si su contexto no se dio ese día, o el Coach
@@ -351,10 +351,16 @@ Valida la(s) entrada(s) del día contra estas reglas y contra las DURAS comunes.
       const lineas = juicio.ops.map(o => `  ${o.juicio.cumple ? '✓' : '✗'} Trade de las ${o.hora}: ${o.juicio.cumple ? 'dentro de las reglas' : 'regla rota'} — ${o.juicio.texto}.`)
       if (juicio.estado === 'sin_trade') lineas.push('  No operó: no operar nunca es un fallo.')
       if (juicio.estado === 'discusion') lineas.push(`  EN DISCUSIÓN — el trader no está de acuerdo con el motor: «${juicio.discusion.nota || 'sin nota'}».`)
+      // Sus límites (perfil de la cuenta en esa fecha, D-055): el plan que va arriba cita los del bot (80 / $160) y,
+      // si no se le dice, el Coach los tomaría por los de Kris.
+      const lSt = limiteDe('STOP_MAX', { fecha: date }), lRi = limiteDe('RIESGO_MAX', { fecha: date })
+      const lBot = limiteDe('STOP_MAX', { fecha: date, perfil: 'bot' })
+      const limitesStr = lSt != null && lRi != null
+        ? `\n  Límites del trader ese día: stop máximo ${lSt} pts y riesgo máximo $${lRi} por operación${lBot != null && lBot !== lSt ? ` (el plan y el bot usan ${lBot} pts: para el trader mandan los suyos)` : ''}.` : ''
       return `
 
 Disciplina del día (VERIFICADO POR DATOS con el motor; desde el 01/10 es la medida de la disciplina):
-${lineas.join('\n')}
+${lineas.join('\n')}${limitesStr}
   (Mide solo las reglas de la entrada del trader: NO se compara con la operación del bot. No
    mira el resultado: un trade que rompe una regla y gana sigue siendo indisciplina. No operar
    nunca es fallo.)`
@@ -666,7 +672,7 @@ NombreError | tipo | resultado | detalleError | NombreRec | textoRec | fase | re
 - reglaVista: SOLO si el error fue violar una regla conocida → "vista" (vio la regla y la violó: impulsividad, disciplina) o "noVista" (no la vio/no la supo a tiempo: falla analítica). Si no aplica, deja vacío.
 - reglaCodigo: el CÓDIGO EXACTO de la regla del checklist que este error contradice, de la lista CÓDIGOS DE REGLA de abajo. Es CRÍTICO: el trader marcó esa casilla como cumplida antes de operar, y este código es lo que permite corregirla. Rellénalo SOLO si el error rompe directamente esa regla concreta. Si el error no contradice ninguna regla del checklist (típico de los psicológicos: miedo, duda, rabia, ansiedad), DÉJALO VACÍO. No inventes códigos ni fuerces una correspondencia dudosa.
 Ejemplo día operado: Error de Marcación | marcado | ninguno | Marqué la zona 10 puntos arriba. | Revisión de zonas | Siempre verificar la zona en 5 min antes de marcarla en 1 min. | 2 | | chk_zonas
-Ejemplo regla violada: Excedió Retroceso | psicologico | ninguno | Retroceso de 95 puntos > stop máximo de 80, lo vio y entró igual. | Respetar stop máx | Si el retroceso supera el límite, NO entrar sin excepción. | 2 | vista | stop_max_puntos
+Ejemplo regla violada: Excedió Retroceso | psicologico | ninguno | Retroceso de 125 puntos por encima del stop máximo, lo vio y entró igual. | Respetar stop máx | Si el retroceso supera el límite, NO entrar sin excepción. | 2 | vista | stop_max_puntos
 Ejemplo sin regla: Miedo | psicologico | T | No tomé la entrada por miedo. | Visualización pre-sesión | Antes de operar visualiza 3 entradas recientes exitosas para anclar confianza. | 3 | |
 
 CÓDIGOS DE REGLA del checklist (para la parte reglaCodigo — usa el código, no el título):

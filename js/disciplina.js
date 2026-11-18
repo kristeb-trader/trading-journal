@@ -3,7 +3,7 @@
 // del rulebook, diagnostico_errores, trades). Estilo coherente con la app.
 const Disciplina = (() => {
   let trades = [], sesiones = [], casuisticas = [], catalogo = [], setupsCat = []
-  let fechasEsp = [], stopMax = 80   // contexto de disciplina (regla FOMC, stop máx)
+  let fechasEsp = []   // contexto de disciplina (regla FOMC)
   let motor                          // la medida del plan (desde el 01/10); undefined = no cargó
   let discusiones = []               // «no estoy de acuerdo» (D-052)
   let DISC_FACTORS = []
@@ -90,7 +90,7 @@ const Disciplina = (() => {
         return `Operado con <b>${q.join(', ')} contratos</b>. Hasta el 27/09 el plan operaba siempre 1.`
       }
       const peor = Math.max(...trs.filter(t => t.mae != null).map(t => Math.abs(parseFloat(t.mae) || 0)))
-      return `El peor movimiento en contra fue de <b>${fmtDinero(peor, { masEnPositivo: false })}</b>, por encima del riesgo máximo de ${fmtDinero(RIESGO_MAX_USD, { masEnPositivo: false })}.`
+      return `El peor movimiento en contra fue de <b>${fmtDinero(peor, { masEnPositivo: false })}</b>, por encima del riesgo máximo de ${fmtDinero(limiteDe('RIESGO_MAX', { fecha: s.sesion_date }) ?? 0, { masEnPositivo: false })}.`
     }
     if (key === 'p2_ventana_horaria') {
       const fuera = trs.map(t => horaEt(t.entry_time, s.sesion_date)).filter(h => h && (h < VENTANA_ET.desde || h >= VENTANA_ET.hasta))
@@ -99,7 +99,7 @@ const Disciplina = (() => {
     if (key === 'stop_max_puntos') {
       const pts = trs.map(maeEnPuntos).filter(p => p != null)
       if (!pts.length) return 'Verificado por dato.'
-      return `El peor movimiento en contra fue de <b>${Math.max(...pts).toFixed(1)} pts</b>, por encima del stop máximo de ${ctx.stopMaxPuntos} pts.`
+      return `El peor movimiento en contra fue de <b>${Math.max(...pts).toFixed(1)} pts</b>, por encima del stop máximo de ${limiteDe('STOP_MAX', { fecha: s.sesion_date })} pts.`
     }
     if (key === 'chk_noticias') {
       const en = tradesEnVentanaNoticia(trs, s)
@@ -175,7 +175,7 @@ const Disciplina = (() => {
 
     // Índices por día: se construyen con TODO el histórico (no con el rango ni con
     // el filtro de cuenta) — son "qué pasó ese día", no métricas del período.
-    ctx = discContexto({ trades, errores: casuisticas, fechasEsp, stopMaxPuntos: stopMax, motor, discusiones })
+    ctx = discContexto({ trades, errores: casuisticas, fechasEsp, motor, discusiones })
     const conectadas = ses.filter(seConecto)
     // "Operadas" = con operativa real (trades o setup declarado). `no_opero=false` no
     // basta: es el default de la columna y una sesión creada al abrir NT8 nace así.
@@ -805,7 +805,7 @@ const Disciplina = (() => {
       ])
       motor = mo; discusiones = disc
       trades = t || []; sesiones = s || []; casuisticas = c || []; catalogo = cat || []
-      fechasEsp = fe || []; stopMax = obj?.stop_max_puntos || 80; setupsCat = sup || []
+      fechasEsp = fe || []; setupsCat = sup || []
       await DB.getEtapas().catch(() => [])
       buildFactors(DB.checklistDeEtapa(etapaDelPeriodo(sesiones, DB.etapaVista())))
       loaded = true

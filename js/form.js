@@ -3,7 +3,7 @@ const SessionForm = (() => {
   let editingDate = null // set when editing an existing session
   let retrocesoCancelId = 0
   let suppressAutoLoad = false // evita que onShow pise la carga de prefill (editar día pasado)
-  let objetivos = null // stop_max_usd etc. para la alerta de riesgo (Bloque 1)
+  let objetivos = null // objetivos del día; los límites de riesgo ya salen de limiteDe() (D-055)
   // La imagen del día la sube también NinjaTrader (FotoChaumer, 16/11/2026): el Diario solo manda `imagen_url`
   // si se subió o quitó aquí. Si no, abrir el Diario antes de la foto y guardar después la borraba.
   let imagenTocada = false
@@ -676,7 +676,8 @@ const SessionForm = (() => {
   function evalRiesgo(pts) {
     const group = document.getElementById('riesgoAlertGroup')
     if (!group) return
-    const stopMaxPts = objetivos && objetivos.stop_max_puntos != null ? parseFloat(objetivos.stop_max_puntos) : 80
+    // El stop máximo del perfil de la cuenta en la fecha de la sesión (D-055); sin dato, sin alerta.
+    const stopMaxPts = limiteDe('STOP_MAX', { fecha: document.getElementById('sesionDate').value || hoyISO() })
     if (pts != null && stopMaxPts != null && pts > stopMaxPts) {
       group.classList.remove('hidden')
       const txt = document.getElementById('riesgoAlertText')
