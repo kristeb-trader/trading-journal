@@ -1,6 +1,6 @@
 # FICHA DE MARCADO — generada automáticamente
 
-> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-11-16 con `generar_ficha.py`.
+> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-11-18 con `generar_ficha.py`.
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
@@ -384,7 +384,7 @@ Entra siempre con orden stop en reposo colocada al cierre de la vela de rompimie
 
 - **Largo → Buy Stop Market** por encima del precio: máximo de la **vela de rompimiento** + 1 `TICK`.
 - **Corto → Sell Stop Market** por debajo: mínimo de la vela de rompimiento − 1 `TICK`.
-- **El nivel se lee en el gráfico de MNQ** y la orden va **al cierre de la vela de rompimiento**, en el Chart Trader de ese gráfico, tipo `Stop Market`.
+- **El nivel se lee en el gráfico de MNQ** y la orden va **al cierre de la vela de rompimiento**, en el Chart Trader de ese gráfico, tipo `Stop Market`. Si su stop no cabía y llega un retroceso nuevo, va al cierre de la vela de ese retroceso, al mismo nivel (`R-32`, plan 3.64).
 - **Colocar y esperar. No se persigue el precio a mano.** Orden a mercado y orden límite: prohibidas.
 
 #### `R-25` · Setup Continuación
@@ -531,9 +531,9 @@ Mantén la orden pendiente hasta que se llene, hasta que se agote el plazo de co
 
 - **Se cancela al ocurrir lo PRIMERO de estas tres causas:**
   1. **Pasa el `PLAZO_CONSECUCION` desde el rompimiento sin que llegue la consecución** — es decir, sin que el precio alcance el nivel de la orden.
-  2. **El precio vuelve al punto del stop**, tal como lo define `R-32`: el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento — no solo el extremo del retroceso que la originó.
+  2. **El precio vuelve al punto del stop**, tal como lo define `R-32`: el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento — no solo el extremo del retroceso que la originó. **Salvo la orden que salió de un retroceso nuevo** (`R-32`, plan 3.64): si el precio pasa su stop, el retroceso sigue y el stop va con él; se cancela solo si con el stop nuevo ya no se cumplen las reglas.
   3. Es la hora de `CANCELACION_FINAL`.
-- **NO cancela:** ⚠️ **la aparición de un retroceso nuevo.** Un retroceso nuevo deja la orden intacta.
+- **NO cancela:** ⚠️ **la aparición de un retroceso nuevo.** Un retroceso nuevo deja la orden intacta. Si el stop del rompimiento ya cabía, el del retroceso nuevo también vale: el operador elige cuál toma (plan 3.64); el bot se queda con la orden que ya puso.
 - **🔑 La caducidad se comprueba ANTES del llenado.** Pasado el plazo la orden ya no existe y no puede llenarse, aunque el precio toque el nivel en esa misma vela.
 - **🕯️ Cuando una misma vela toca el nivel de la orden y el stop,** se aplica el orden de la vela —el mismo que decide qué vela sostiene la zona (`R-09`)—: **vela azul, primero el mínimo; vela blanca, primero el máximo**. **Si llega antes al nivel de la orden, se llena**, y el stop puede saltar en esa misma vela. **Si llega antes al stop, la orden se cancela** sin llenarse.
 - **Al cancelar:** se descarta el setup. **El cupo de `R-28` no se consume**: se puede esperar un setup nuevo dentro de la ventana de `R-02`.
@@ -545,7 +545,7 @@ Ejecuta con la ATM `K1` al valor de `ATM_DEFECTO` y ajusta stop y target a mano 
 **Cómo se aplica**
 
 - **La ATM:** **`K1`** · los contratos de `R-04` · Auto Breakeven **OFF** · Auto Trail **OFF** · stop y objetivo provisionales en `ATM_DEFECTO`, que depende de los contratos: **cantidad y stop provisional se ponen antes de enviar la orden**.
-- **Filtro antes de enviar:** el stop estructural debe ser **≤ `STOP_MAX`**. La distancia se mide entre la **entrada** y el stop estructural de `R-32`: en la Continuación, el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento; en el Reingreso, el extremo del **último retroceso** antes del rompimiento (plan 3.62). Si lo supera **aunque sea por 1 tick, no se opera**.
+- **Filtro antes de enviar:** el stop estructural debe ser **≤ `STOP_MAX`**. La distancia se mide entre la **entrada** y el stop estructural de `R-32`: en la Continuación, el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento; en el Reingreso, el extremo del **último retroceso** antes del rompimiento (plan 3.62). Si lo supera **aunque sea por 1 tick, no se opera** — en esa vela: dentro del plazo de consecución puede llegar un **retroceso nuevo** con un stop que sí quepa (`R-32`, plan 3.64).
 - **Tras el llenado:** 1º el stop a su referencia estructural · 2º el objetivo a 1:1 (`R-32`).
 - **Una vez ajustados, stop y objetivo no se vuelven a mover** (`R-33`).
 
@@ -587,6 +587,21 @@ Ancla la regla en el nivel de entrada, mide el stop hasta su referencia estructu
 | 4 | hay una **zona activa más allá del objetivo**, en la dirección de la operación: una zona a la que ir a testear (`R-26`, plan 3.47) | solo Reingreso |
 
 - Si **cualquiera** de los tres falla, **la entrada queda invalidada y no se opera**.
+
+**🔁 El retroceso nuevo trae un stop nuevo** *(plan 3.64, 18/11/2026)*. Vale para la Continuación y para el Reingreso.
+
+| Paso | |
+|---|---|
+| **1** | Hay rompimiento, pero el stop **pasa de `STOP_MAX`**: en esa vela no se opera |
+| **2** | Dentro del `PLAZO_CONSECUCION`, contado desde la vela de rompimiento, una vela **no hace la consecución y hace un retroceso nuevo** (`R-06`): alcista, su mínimo baja del de la vela anterior; bajista, su máximo sube del de la anterior |
+| **3** | El **extremo de ese retroceso es el stop nuevo**. La **entrada no cambia**: la consecución de la vela de rompimiento |
+| **4** | Si con el stop nuevo se cumplen **todas las reglas del setup** —`STOP_MAX`, objetivo 1:1 libre de zonas y, en el Reingreso, punto de referencia y zona a la que ir—, la orden se pone al cierre de esa vela. Lo que decide el setup sigue siendo a dónde va el objetivo (`R-26`) |
+
+- **El retroceso puede durar varias velas**: el stop va con él, a su extremo, mientras siga dentro del plazo y cumpla las reglas. Si la orden ya está puesta y el precio pasa su stop sin llenarla, el stop se mueve con el retroceso; si con el stop nuevo ya no cumple, se cancela (`R-29`).
+- **Pasado el plazo, la entrada se invalida.** Y si la consecución llega antes de que el stop cumpla, ese rompimiento ya no da entrada.
+- **Si el primer stop ya cabía**, el del retroceso nuevo también vale: el operador elige el que considere menos arriesgado. El bot se queda con la orden que ya puso.
+
+Caso de origen, 18/11/2026: la resistencia de la 9:40 (27.104,75 – 27.129,00); la 9:55 la rompe hacia arriba (máx 27.148,25) y arriba queda la resistencia de la 9:32, ya cotizada: Reingreso alcista. Con el stop en el último retroceso (la 9:51, 26.951,75) el riesgo es de 196,75. La 9:56 hace un retroceso nuevo hasta 27.061,00; la 9:57 da la consecución: entrada 27.148,50, stop 27.061,00, riesgo 87,50, objetivo 27.236,00 → TARGET a las 9:59. Palabras del operador: *"si después de un rompimiento hace un nuevo retroceso que favorece mi riesgo yo puedo usar ese nuevo riesgo para el stop y la entrada sigue siendo la misma"*; sobre varias velas: *"no pasa nada, mientras esté dentro del rango de [`PLAZO_CONSECUCION`], porque de lo contrario la entrada ya se invalida"*; y si el primer stop ya cabía: *"cualquiera de los dos es válido"*. Medido en los 95 días con datos, revisado por el operador: con el tope de 80 cambian dos operaciones —12/11 (Continuación +27,75 → Reingreso bajista 10:07, −57,50) y 29/07 (Reingreso −46,75 → Reingreso 9:06, −39,25)—; con el de 100 de su operativa, además el 18/11 (+87,50), el 5/11 (+50,25 → +88,50) y el 31/07 (+61,25 → −89,75).
 
 > 🔴 **El objetivo NUNCA se acorta para que quepa.** No existe media entrada ni ratio reducido.
 
@@ -728,7 +743,7 @@ Ejecuta la sesión siguiendo la checklist diaria **en orden**, y registra **toda
 | **`VENTANA_OPERATIVA`** | 09:30–11:30 ET | `R-02` |
 | **`CANCELACION_FINAL`** | 11:29 ET | `R-29` |
 | **`CIERRE_POR_HORA`** | 16:50 ET | `R-33` — lo que siga abierto se cierra a mercado al terminar esa vela: 10 minutos antes del cierre de la sesión de futuros del CME (17:00 ET). En Colombia, 15:50 en verano y 16:50 en invierno *(09/10/2026)* |
-| **`ORIGEN_DEL_STOP`** | desde que **nació la zona** hasta la vela de rompimiento | `R-32` — el stop es el extremo alcanzado en todo ese tramo, no solo el del retroceso que originó la zona *(27/08/2026)*. Es el de la **Continuación**: el del **Reingreso** va en el extremo del último retroceso *(plan 3.62, 16/11/2026)* |
+| **`ORIGEN_DEL_STOP`** | desde que **nació la zona** hasta la vela de rompimiento | `R-32` — el stop es el extremo alcanzado en todo ese tramo, no solo el del retroceso que originó la zona *(27/08/2026)*. Es el de la **Continuación**: el del **Reingreso** va en el extremo del último retroceso *(plan 3.62, 16/11/2026)*. Si no cabe, un retroceso nuevo dentro del plazo trae un stop nuevo, en su extremo, con la misma entrada *(plan 3.64, 18/11/2026)* |
 | **`VENTANA_NOTICIA`** | ±5 minutos | `R-35` |
 
 ---

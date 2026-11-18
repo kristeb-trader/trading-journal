@@ -35,7 +35,7 @@ namespace NinjaTrader.NinjaScript
     {
         // Huella de lector.py (L) y de este archivo sin esta línea (C) con la que pasó la sincronía.
         // La escribe SOLO `python scripts/bot/sincronia.py --sellar`, y solo con 0 diferencias.
-        public const string SELLO = "L:d5c169fcd2c51fef C:0f7049e952437f81";
+        public const string SELLO = "L:b57be514b3b56bd2 C:5134453c990d96e1";
 
         // ─────────────────────────────────────────────────────────── tipos
         public class Vela { public string D; public string T; public double O, H, L, C; public long V; }
@@ -133,6 +133,13 @@ namespace NinjaTrader.NinjaScript
         {
             public string Tipo; public int Dir; public double E, S, T, R; public int I;
             public int? Pausa; public bool Cruzo;
+            public Pendiente Retro;      // plan 3.64: la orden salió de un retroceso nuevo y su stop va con él
+        }
+
+        /// <summary>Plan 3.64: un rompimiento cuyo stop no cabía, a la espera de un retroceso nuevo dentro del plazo.</summary>
+        public class Pendiente
+        {
+            public int I0, Nd; public double E; public string Clase; public int? Ini; public bool Fed, Perm; public string Ult;
         }
 
         public class Trade : Orden
@@ -1032,12 +1039,54 @@ namespace NinjaTrader.NinjaScript
             return o;
         }
 
+        /// <summary>Plan 3.64 (18/11/2026, Kris, R-32): el rompimiento cuyo stop no cabía, con el stop en el extremo del
+        /// retroceso nuevo (de p.Ini a la vela i); la entrada no cambia. tipo null: no hay setup que mirar.
+        /// _eval_retro de lector.py.</summary>
+        private Orden EvalRetro(Resultado res, Pendiente p, int i, out string motivo, out double st, out double? t, out double r, out string tipo)
+        {
+            var D = res.D; var Z = res.Z; int nd = p.Nd; double e = p.E;
+            st = nd > 0 ? double.MaxValue : double.MinValue;
+            for (int x = p.Ini.Value; x <= i; x++) st = nd > 0 ? Math.Min(st, D[x].L) : Math.Max(st, D[x].H);
+            tipo = "Reingreso"; motivo = null; t = null; r = 0;
+            if (p.Clase == "romp" && ZonaATestear(Z, i, e + Math.Abs(e - st) * nd, nd) == null)
+            {
+                if (p.Fed || !p.Perm) { tipo = null; return null; }
+                tipo = "Continuación";
+            }
+            var o = Evaluar(Z, i, tipo, nd, e, st, out motivo, out t, out r);
+            if (o != null && tipo == "Reingreso")
+            {
+                var pr = PuntoDeReferencia(res, i, e, t.Value, nd);
+                if (pr != null) { o = null; motivo = "el objetivo pasa del punto de referencia " + F2(pr.Value); }
+                else if (ZonaATestear(Z, i, t.Value, nd) == null) { o = null; motivo = SIN_ZONA; }
+            }
+            return o;
+        }
+
+        /// <summary>Plan 3.64: la orden que salió de un retroceso nuevo no se cancela porque el precio pase su stop: el
+        /// stop va con el retroceso. Se cancela solo si con el stop nuevo ya no cumple. _sigue_retro de lector.py.</summary>
+        private bool SigueRetro(Resultado res, Orden o, int i, Vela k, List<string> ev)
+        {
+            string m2; double st2; double? t2; double r2; string tp2;
+            var o2 = EvalRetro(res, o.Retro, i, out m2, out st2, out t2, out r2, out tp2);
+            if (o2 == null)
+            {
+                ev.Add(Hh(k) + "  orden cancelada — el retroceso sigue hasta " + F2(st2) + " y ya no cumple: " + (m2 ?? "sin zona a la que ir"));
+                return false;
+            }
+            o.S = st2; o.T = t2.Value; o.R = r2;
+            ev.Add(Hh(k) + "  el retroceso sigue: el stop pasa a " + F2(st2) + " · objetivo " + F2(t2.Value) + " · riesgo " + F2(r2));
+            return true;
+        }
+
         public void DetectarSetups(Resultado res, bool soloReingresos)
         {
             var D = res.D; var Z = res.Z; int b = res.B, fin = res.Fin;
             var ev = res.Eventos; Orden orden = null; Trade trade = null;
             res.Reingresos = new List<Reingreso>();
             var flu = new Fluidez(this, res);
+            // Plan 3.64 (18/11/2026): los rompimientos cuyo stop no cabe esperan, dentro del plazo, un retroceso nuevo
+            var pend = new List<Pendiente>();
 
             for (int i = b; i <= fin; i++)
             {
@@ -1118,7 +1167,11 @@ namespace NinjaTrader.NinjaScript
                         }
                         if (o.Dir > 0 ? k.H >= o.E : k.L <= o.E) o.Cruzo = true;
                     }
-                    else if (o.Dir > 0 ? (k.L <= o.S && k.C >= k.O) : (k.H >= o.S && k.C < k.O))
+                    else if (o.Retro != null && (o.Dir > 0 ? k.L <= o.S : k.H >= o.S) && !SigueRetro(res, o, i, k, ev))
+                    {
+                        orden = null;
+                    }
+                    else if (o.Retro == null && (o.Dir > 0 ? (k.L <= o.S && k.C >= k.O) : (k.H >= o.S && k.C < k.O)))
                     {
                         ev.Add(Hh(k) + "  orden cancelada — el precio volvió al punto del stop (" + F2(o.S) + ") antes de llenar, por el orden dentro de la vela");
                         orden = null;
@@ -1150,7 +1203,7 @@ namespace NinjaTrader.NinjaScript
                         if (!cerrado) { trade.Res = "ABIERTO"; trade.Pts = null; trade.IOut = ult; trade.HOut = Hh(D[ult]); }
                         break;
                     }
-                    if (orden != null && (o.Dir > 0 ? k.L <= o.S : k.H >= o.S))
+                    if (orden != null && o.Retro == null && (o.Dir > 0 ? k.L <= o.S : k.H >= o.S))
                     {
                         ev.Add(Hh(k) + "  orden cancelada — el precio volvió al punto del stop (" + F2(o.S) + ")"); orden = null;
                     }
@@ -1162,6 +1215,45 @@ namespace NinjaTrader.NinjaScript
                 if (orden != null) continue;
 
                 var vivas = Z.Where(z => z.I <= i && (z.Fin == null || z.Fin >= i)).ToList();
+
+                // ---------- EL RETROCESO NUEVO TRAE UN STOP NUEVO (plan 3.64, 18/11/2026, Kris, R-32) ----------
+                // El rompimiento cuyo stop pasa de STOP_MAX espera, dentro del plazo, un retroceso nuevo (R-06); su extremo
+                // es el stop nuevo y la entrada no cambia. Caso de origen: 18/11, rompimiento 9:55, retroceso 9:56.
+                {
+                    var vivos = new List<Pendiente>();
+                    foreach (var p in pend)
+                    {
+                        if (i - p.I0 > P.Plazo) continue;
+                        var a_ = D[i - 1];
+                        if (p.Nd > 0 ? k.H >= p.E : k.L <= p.E) continue;
+                        if (p.Ini == null && ((p.Nd > 0 && k.L <= a_.L - P.Tick) || (p.Nd < 0 && k.H >= a_.H + P.Tick)))
+                            p.Ini = i;
+                        vivos.Add(p);
+                    }
+                    pend = vivos;
+                    foreach (var p in pend)
+                    {
+                        if (p.Ini == null) continue;
+                        string motivo; double st; double? t; double r; string tipo;
+                        var o = EvalRetro(res, p, i, out motivo, out st, out t, out r, out tipo);
+                        if (tipo == null) continue;
+                        int nd = p.Nd; double e = p.E;
+                        if (tipo == "Reingreso" && t != null) res.Reingresos.Add(new Reingreso { I = i, E = e, T = t.Value, Nd = nd });
+                        string tag = Hh(k) + "  " + tipo.ToUpper() + " " + (nd > 0 ? "alcista" : "bajista") + " con el stop del retroceso nuevo "
+                                     + "(rompimiento de las " + Hh(D[p.I0]) + ", retroceso desde las " + Hh(D[p.Ini.Value]) + ") · entrada " + F2(e) + " · stop " + F2(st)
+                                     + (t != null ? " · objetivo " + F2(t.Value) + " · riesgo " + F2(r) : "");
+                        if (o != null)
+                        {
+                            o.I = p.I0; o.Retro = p;
+                            orden = Colocar(o, tag, ev, k); pend = new List<Pendiente>(); break;
+                        }
+                        if (p.Ult != motivo)
+                        {
+                            ev.Add(tag + "  ✗ todavía no — " + motivo); p.Ult = motivo;
+                        }
+                    }
+                }
+                if (orden != null) continue;
 
                 // ---------- REINGRESO ----------
                 foreach (var z in vivas)
@@ -1181,6 +1273,7 @@ namespace NinjaTrader.NinjaScript
                     double st = stA.Value;
                     string motivo; double? t; double r;
                     var o = Evaluar(Z, i, "Reingreso", nd, e, st, out motivo, out t, out r);
+                    if (r > P.StopMax) pend.Add(new Pendiente { I0 = i, Nd = nd, E = e, Clase = "rein" });      // plan 3.64
                     if (t != null) res.Reingresos.Add(new Reingreso { I = i, E = e, T = t.Value, Nd = nd });
                     if (o != null)
                     {
@@ -1215,6 +1308,7 @@ namespace NinjaTrader.NinjaScript
                     double st = stC.Value;
                     string motivo; double? t; double r;
                     var o = Evaluar(Z, i, "Reingreso", nd, e, st, out motivo, out t, out r);
+                    if (r > P.StopMax) pend.Add(new Pendiente { I0 = i, Nd = nd, E = e, Clase = "rein" });      // plan 3.64
                     if (t != null) res.Reingresos.Add(new Reingreso { I = i, E = e, T = t.Value, Nd = nd });
                     if (o != null)
                     {
@@ -1240,12 +1334,16 @@ namespace NinjaTrader.NinjaScript
                     else if (nd < 0 && k.H >= zlo && k.L < zlo - P.Tick / 2) { d = "abajo"; e0 = k.L; }
                     else continue;
                     z.Roto = new Roto { Dir = d, I = i, Ex = e0 };
+                    Pendiente pb;
                     // Plan 3.52 (29/10/2026): hacia una zona activa nacida desde la apertura es un REINGRESO, no una
                     // Continuación: sin fluidez, también en día de Fed, con los filtros del reingreso.
                     {
                         double eb = e0 + P.Tick * nd;
                         double? stbN = UltimoRetroceso(res, i, nd);   // plan 3.62: el último retroceso
                         double stb = stbN.HasValue ? stbN.Value : 0;
+                        // plan 3.64: si el stop no cabe, el rompimiento espera un retroceso nuevo (y entonces se decide el setup)
+                        pb = new Pendiente { I0 = i, Nd = nd, E = eb, Clase = "romp", Fed = soloReingresos, Perm = false };
+                        if (stbN == null || Math.Abs(eb - stb) > P.StopMax) pend.Add(pb);
                         if (stbN != null && ZonaATestear(Z, i, eb + Math.Abs(eb - stb) * nd, nd) != null)
                         {
                             string motivoB; double? tb; double rb;
@@ -1269,6 +1367,7 @@ namespace NinjaTrader.NinjaScript
                         break;
                     }
                     string veto = flu.Permiso(z, i);
+                    pb.Perm = veto == null;
                     if (veto != null)
                     {
                         ev.Add(Hh(k) + "  rompimiento de " + z + " ✗ no se opera — " + veto + " (R-40)");
@@ -1279,6 +1378,7 @@ namespace NinjaTrader.NinjaScript
                     double e = e0 + P.Tick * nd;
                     string motivo; double? t; double r;
                     var o = Evaluar(Z, i, "Continuación", nd, e, st, out motivo, out t, out r);
+                    if (r > P.StopMax && !pend.Contains(pb)) pend.Add(pb);
                     string tag = Hh(k) + "  CONTINUACIÓN " + (nd > 0 ? "alcista" : "bajista") + " · entrada " + F2(e) + " · stop " + F2(st)
                                  + (t != null ? " · objetivo " + F2(t.Value) + " · riesgo " + F2(r) : "");
                     if (o != null) orden = Colocar(o, tag, ev, k);

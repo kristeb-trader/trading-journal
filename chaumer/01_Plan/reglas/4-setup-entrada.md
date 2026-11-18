@@ -17,7 +17,7 @@
 
 - **Largo → Buy Stop Market** por encima del precio: máximo de la **vela de rompimiento** + 1 `TICK`.
 - **Corto → Sell Stop Market** por debajo: mínimo de la vela de rompimiento − 1 `TICK`.
-- **El nivel se lee en el gráfico de MNQ** y la orden va **al cierre de la vela de rompimiento**, en el Chart Trader de ese gráfico, tipo `Stop Market`.
+- **El nivel se lee en el gráfico de MNQ** y la orden va **al cierre de la vela de rompimiento**, en el Chart Trader de ese gráfico, tipo `Stop Market`. Si su stop no cabía y llega un retroceso nuevo, va al cierre de la vela de ese retroceso, al mismo nivel (`R-32`, plan 3.64).
 - **Colocar y esperar. No se persigue el precio a mano.** Orden a mercado y orden límite: prohibidas.
 
 ## R-25 · Setup Continuación

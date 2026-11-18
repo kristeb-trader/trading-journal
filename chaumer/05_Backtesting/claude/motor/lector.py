@@ -933,6 +933,25 @@ def _ultimo_retroceso(res, i, nd):
     if j_ok is None: return None
     return min(D[x]['l'] for x in range(j_ok,i+1)) if nd>0 else max(D[x]['h'] for x in range(j_ok,i+1))
 
+def _eval_retro(res, p, i):
+    """Plan 3.64 (18/11/2026, Kris, R-32): el rompimiento cuyo stop no cabia, con el stop en el extremo del
+    retroceso nuevo (de p['ini'] a la vela i). La entrada no cambia. Devuelve (orden o None, motivo, stop,
+    objetivo, riesgo, setup). Lo que decide el setup sigue siendo a donde va el objetivo (plan 3.52): un
+    rompimiento de Continuacion con una zona ya cotizada mas alla del objetivo nuevo es Reingreso."""
+    D, Z = res['D'], res['Z']; nd, e = p['nd'], p['e']
+    seg = range(p['ini'], i+1)
+    st = min(D[x]['l'] for x in seg) if nd > 0 else max(D[x]['h'] for x in seg)
+    tipo = 'Reingreso'
+    if p['clase'] == 'romp' and _zona_a_testear(Z, i, e + abs(e-st)*nd, nd) is None:
+        if p['fed'] or not p['perm']: return None, None, st, None, None, None
+        tipo = 'Continuación'
+    o, motivo, t, r = _evaluar(Z, i, tipo, nd, e, st, None)
+    if o is not None and tipo == 'Reingreso':
+        pr = _punto_de_referencia(res, i, e, t, nd)
+        if pr is not None: o, motivo = None, f"el objetivo pasa del punto de referencia {pr:.2f}"
+        elif _zona_a_testear(Z, i, t, nd) is None: o, motivo = None, SIN_ZONA
+    return o, motivo, st, t, r, tipo
+
 def detectar_setups(res, solo_reingresos=False):
     D,Z,b,fin,retros = res['D'],res['Z'],res['b'],res['fin'],res['retros']
     ev=[]; orden=None; trade=None
@@ -941,7 +960,21 @@ def detectar_setups(res, solo_reingresos=False):
     # R-41: los puntos de control SOLO se dibujan cuando se presenta un reingreso.
     res['reingresos']=[]
     def hh(k): return f"{col(k)//100}:{k['t'][2:4]}"
+    def _sigue_retro(o, i, k):
+        """Plan 3.64: la orden que salio de un retroceso nuevo no se cancela porque el precio pase su stop: el
+        retroceso sigue y el stop va con el (Kris: "si el retroceso nuevo dura mas de una vela no pasa nada,
+        mientras este dentro del rango de 5 velas"). Se cancela solo si con el stop nuevo ya no cumple."""
+        o2, m2, st2, t2, r2, _ = _eval_retro(res, o['retro'], i)
+        if o2 is None:
+            ev.append(f"{hh(k)}  orden cancelada — el retroceso sigue hasta {st2:.2f} y ya no cumple: "
+                      f"{m2 or 'sin zona a la que ir'}")
+            return False
+        o.update(s=st2, t=t2, r=r2)
+        ev.append(f"{hh(k)}  el retroceso sigue: el stop pasa a {st2:.2f} · objetivo {t2:.2f} · riesgo {r2:.2f}")
+        return True
     flu = Fluidez(res)
+    # Plan 3.64 (18/11/2026): los rompimientos cuyo stop no cabe esperan, dentro del plazo, un retroceso nuevo
+    pend = []
 
     for i in range(b, fin+1):
         k=D[i]
@@ -1022,7 +1055,10 @@ def detectar_setups(res, solo_reingresos=False):
                     o['pausa']=T_vela
                     ev.append(f"{hh(k)}  orden retirada — ventana de la noticia roja de las {_hhmm(T_vela)} (R-35)")
                 if (k['h']>=o['e']) if o['dir']>0 else (k['l']<=o['e']): o['cruzo']=True
-            elif (((k['l'] <= o['s']) and (k['c'] >= k['o'])) if o['dir']>0
+            elif o.get('retro') and ((k['l'] <= o['s']) if o['dir']>0 else (k['h'] >= o['s'])) \
+                    and not _sigue_retro(o, i, k):
+                orden=None
+            elif not o.get('retro') and (((k['l'] <= o['s']) and (k['c'] >= k['o'])) if o['dir']>0
                   else ((k['h'] >= o['s']) and (k['c'] <  k['o']))):
                 # CONFIRMADO POR EL OPERADOR 23/09/2026 (R-29) — era propuesta desde el 14/09.
                 # La vela toca el nivel de la orden Y el punto del stop. Se aplica la
@@ -1058,7 +1094,7 @@ def detectar_setups(res, solo_reingresos=False):
             # CANCELACION (operador 27/08/2026): un retroceso nuevo NO cancela.
             # Solo cancela (a) que pasen 5 velas sin consecucion, o (b) que el precio
             # vuelva al extremo del retroceso, que es el mismo punto del stop.
-            if orden and ((k['l'] <= o['s']) if o['dir']>0 else (k['h'] >= o['s'])):
+            if orden and not o.get('retro') and ((k['l'] <= o['s']) if o['dir']>0 else (k['h'] >= o['s'])):
                 ev.append(f"{hh(k)}  orden cancelada — el precio volvió al punto del stop "
                           f"({o['s']:.2f})"); orden=None
             elif orden and hm(k)>=res['fin_v']-1:      # 10:29 Col en verano, 11:29 en invierno
@@ -1066,6 +1102,39 @@ def detectar_setups(res, solo_reingresos=False):
         if orden: continue
 
         vivas=[z for z in Z if z.i<=i and (z.fin is None or z.fin>=i)]
+
+        # ---------- EL RETROCESO NUEVO TRAE UN STOP NUEVO (plan 3.64, 18/11/2026, Kris, R-32) ----------
+        # Un rompimiento (de Continuacion o de Reingreso) cuyo stop pasa de STOP_MAX no se opera en su vela. Si
+        # dentro del plazo de consecucion la vela no hace la consecucion y hace un retroceso nuevo (R-06: alcista,
+        # minimo <= minimo anterior - 1 tick; bajista, maximo >= maximo anterior + 1 tick), su extremo es el stop
+        # nuevo y la entrada sigue siendo la misma. Si con ese stop se cumplen todas las reglas del setup, la orden
+        # sale al cierre de esa vela, y su plazo se cuenta desde el rompimiento. Si la consecucion llega antes de
+        # que el stop cumpla, ese rompimiento ya no da entrada. Caso de origen: 18/11, rompimiento 9:55 (riesgo
+        # 196,75), retroceso 9:56, consecucion 9:57.
+        vivos = []
+        for p in pend:
+            if i - p['i0'] > PLAZO: continue
+            a_ = D[i-1]
+            if (k['h'] >= p['e']) if p['nd'] > 0 else (k['l'] <= p['e']): continue
+            if p['ini'] is None and ((p['nd'] > 0 and k['l'] <= a_['l'] - TICK) or (p['nd'] < 0 and k['h'] >= a_['h'] + TICK)):
+                p['ini'] = i
+            vivos.append(p)
+        pend = vivos
+        for p in pend:
+            if p['ini'] is None: continue
+            o, motivo, st, t, r, tipo = _eval_retro(res, p, i)
+            if tipo is None: continue
+            nd, e = p['nd'], p['e']
+            if tipo == 'Reingreso' and t is not None: res['reingresos'].append((i, e, t, nd))
+            tag = (f"{hh(k)}  {tipo.upper()} {'alcista' if nd>0 else 'bajista'} con el stop del retroceso nuevo "
+                   f"(rompimiento de las {hh(D[p['i0']])}, retroceso desde las {hh(D[p['ini']])}) · entrada {e:.2f} · stop {st:.2f}"
+                   + (f" · objetivo {t:.2f} · riesgo {r:.2f}" if t else ""))
+            if o:
+                o['i'] = p['i0']; o['retro'] = p
+                orden = _colocar(o, tag, ev, dia, k); pend = []; break
+            if p.get('ult') != motivo:
+                ev.append(tag + f"  ✗ todavía no — {motivo}"); p['ult'] = motivo
+        if orden: continue
 
         # ---------- REINGRESO ----------
         for z in vivas:
@@ -1089,6 +1158,7 @@ def detectar_setups(res, solo_reingresos=False):
             # R-41 unificado: el filtro del punto de referencia ya no es el de R-26
             # (z.ref), por eso va ref=None. Lo aplica _punto_de_referencia, abajo.
             o,motivo,t,r=_evaluar(Z,i,'Reingreso',nd,e,st,None)
+            if r > STOP_MAX: pend.append(dict(i0=i, nd=nd, e=e, clase='rein', ini=None))      # plan 3.64
             if t is not None: res['reingresos'].append((i,e,t,nd))
             if o is not None:
                 pr=_punto_de_referencia(res,i,e,t,nd)
@@ -1121,6 +1191,7 @@ def detectar_setups(res, solo_reingresos=False):
             st=_ultimo_retroceso(res, i, nd)
             if st is None: continue
             o,motivo,t,r=_evaluar(Z,i,'Reingreso',nd,e,st,None)
+            if r > STOP_MAX: pend.append(dict(i0=i, nd=nd, e=e, clase='rein', ini=None))      # plan 3.64
             if t is not None: res['reingresos'].append((i,e,t,nd))
             if o is not None:
                 pr=_punto_de_referencia(res,i,e,t,nd)
@@ -1154,6 +1225,9 @@ def detectar_setups(res, solo_reingresos=False):
             # Caso de origen: 28/10/2026 (Fed), la R de la 8:52 rota a las 8:54, consecucion 8:55.
             e=e0+TICK*nd
             st = _ultimo_retroceso(res, i, nd)
+            # plan 3.64: si el stop no cabe, el rompimiento espera un retroceso nuevo (y entonces se decide el setup)
+            pb = dict(i0=i, nd=nd, e=e, clase='romp', ini=None, fed=solo_reingresos, perm=False)
+            if st is None or abs(e-st) > STOP_MAX: pend.append(pb)
             if st is not None and _zona_a_testear(Z, i, e+abs(e-st)*nd, nd) is not None:
                 o,motivo,t,r=_evaluar(Z,i,'Reingreso',nd,e,st,None)
                 if t is not None: res['reingresos'].append((i,e,t,nd))
@@ -1176,6 +1250,7 @@ def detectar_setups(res, solo_reingresos=False):
             # falla— se volveria invisible. El veto es solo para ESTA entrada de
             # continuacion; la zona sigue viva y el reingreso no se toca.
             ok, motivo = flu.permiso(z, i)
+            pb['perm'] = ok
             if not ok:
                 ev.append(f"{hh(k)}  rompimiento de {z} ✗ no se opera — {motivo} (R-40)")
                 break
@@ -1186,6 +1261,7 @@ def detectar_setups(res, solo_reingresos=False):
             st = min(D[j]['l'] for j in seg) if nd>0 else max(D[j]['h'] for j in seg)
             e=e0+TICK*nd
             o,motivo,t,r=_evaluar(Z,i,'Continuación',nd,e,st)
+            if r > STOP_MAX and not any(x is pb for x in pend): pend.append(pb)
             tag=(f"{hh(k)}  CONTINUACIÓN {'alcista' if nd>0 else 'bajista'} · entrada {e:.2f} · stop {st:.2f}"
                  + (f" · objetivo {t:.2f} · riesgo {r:.2f}" if t else ""))
             if o: orden=_colocar(o, tag, ev, dia, k)

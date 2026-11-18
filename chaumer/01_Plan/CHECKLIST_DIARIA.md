@@ -3,7 +3,7 @@
 > **Se ejecuta de arriba abajo. No se decide nada que no esté aquí.**
 > Cada línea cita su regla. Si una respuesta es **NO** donde dice parar, **se para** — no se evalúa, no se matiza.
 
-**Versión del plan:** 3.63 · 2026-11-16 · **34 reglas**
+**Versión del plan:** 3.64 · 2026-11-18 · **34 reglas**
 
 ---
 
@@ -86,6 +86,8 @@
 | ☐ | ¿Es día de FOMC y el setup es una **Continuación**? | `R-36` | **NO SE OPERA** |
 
 > 🔴 **El target nunca se acorta para que quepa.** No existe media entrada ni ratio reducido.
+
+> 🔁 **Si el stop no cabe, mirar las velas siguientes** (`R-32`): si dentro del plazo una vela no hace la consecución y hace un **retroceso nuevo**, su extremo es el stop nuevo, con la **misma entrada**. Si con él se cumplen todas las reglas, se pone la orden.
 
 > 🟠 **Si un setup se descarta, la zona NO queda vacía.** Tras rechazar una **Continuación** por cualquiera de los filtros, **seguir mirando esa misma zona**: si el rompimiento falla y el precio la atraviesa entera hasta salir por el borde contrario, ahí hay un **Reingreso** (`R-26`) — y puede llegar en la **misma vela**. Caso real: `G-12`, 06/07/2026, Continuación descartada y Reingreso operado con un minuto de diferencia.
 
