@@ -195,21 +195,29 @@ def limites_de(fecha, cuenta):
 
 
 def eventos_con_stop(V, d, fed):
-    """ev_de(stop) para medir.medir: (eventos, operación) de una pasada del motor, en memoria, con ese STOP_MAX. El motor
-    descarta los setups con el stop de más de su STOP_MAX (`_evaluar`) y entonces no les mira el resto de filtros;
-    con el de Kris pasan por todos. No toca `lector.py` (el sello del bot): cambia el número y lo devuelve.
+    """ev_de(stop) para medir.medir: (eventos, operación) de una pasada del motor EN MODO AUDITORÍA, en memoria, con ese
+    STOP_MAX. Dos diferencias con la pasada del bot, y ninguna toca `lector.py` (el sello del bot): se cambian y se
+    devuelven.
+    - El STOP_MAX del perfil de Kris: el motor descarta los setups de más de su STOP_MAX (`_evaluar`) sin mirarles el
+      resto de filtros; con el de Kris pasan por todos (D-055).
+    - **Sin orden propia** (Kris, 18/11: «el bot es aparte, la disciplina debe medir mis entradas»): `_colocar` anota
+      el setup («✓ orden enviada») pero no deja la orden puesta, así que el motor nunca llena y no deja de mirar el día.
+      Con la orden puesta, tras llenar dejaba de buscar setups y un trade de Kris posterior salía «sin setup» aunque
+      lo tuviera (02/11: el bot entró a las 9:34 y el trade de las 10:27 no se juzgaba). Cada setup se juzga solo.
     `detectar_setups` anota los rompimientos en las zonas, así que cada pasada lee la sesión de cero."""
     hechos = {}
     def ev_de(stop):
-        if stop == float(lector.STOP_MAX): return None          # la pasada normal ya vale
         if stop not in hechos:
-            antes = lector.STOP_MAX
+            antes, colocar = lector.STOP_MAX, lector._colocar
+            def _auditar(o, tag, ev, dia, k):
+                colocar(o, tag, ev, dia, k)     # el evento, tal cual lo escribe el motor
+                return None                     # sin orden: el motor sigue mirando el día
             try:
-                lector.STOP_MAX = float(stop)
+                lector.STOP_MAX, lector._colocar = float(stop), _auditar
                 r2 = lector.leer_sesion(V, d, minimo_del_dia(f'{d[:4]}-{d[4:6]}-{d[6:]}'))
                 hechos[stop] = lector.detectar_setups(r2, solo_reingresos=fed) if r2 and 'error' not in r2 else None
             finally:
-                lector.STOP_MAX = antes
+                lector.STOP_MAX, lector._colocar = antes, colocar
         return hechos[stop]
     return ev_de
 

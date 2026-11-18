@@ -25,7 +25,9 @@ EVENTOS_ANTES = 15      # minutos de eventos del motor antes de la entrada de Kr
 # 3 (12/11/2026): el juicio solo mira las reglas de SU entrada; nada se compara con la operación del bot.
 # 4 (17/11/2026, D-055): con los límites del perfil de su cuenta en esa fecha (parametros_*), no los del bot,
 #   y con los eventos de una pasada del motor hecha con su stop máximo.
-MEDIR_VERSION = 4
+# 5 (18/11/2026): esa pasada, en modo auditoría (sin orden propia): el motor no deja de mirar tras llenar la suya, y
+#   un trade de Kris posterior se juzga igual (02/11). «El bot es aparte: la disciplina mide mis entradas».
+MEDIR_VERSION = 5
 
 # ── El juicio: ¿tu trade cumplía las reglas? (10/11/2026, docs/disenos/2026-11-10-disciplina-reglas.md) ──
 # Solo las reglas de la entrada de Kris (12/11, D-053): NO se compara con la operación del bot —ni
@@ -188,15 +190,13 @@ def medir(r, ev, t, trades, dia, limites_de=None, ev_de=None):
                   vela=(f"{lector.col(D[i_fill]) // 100}:{D[i_fill]['t'][2:4]}" if i_fill is not None else None))
 
         lim = (limites_de(tr) if limites_de else None) or limites_del_bot()
-        # Los eventos de la pasada con su stop máximo. El motor deja de buscar setups tras llenar su propia
-        # operación: si en esa pasada ya había entrado antes que Kris, no vería el suyo (12/11: entra a las
-        # 9:41 con stop 100 y el trade de las 10:06 salía «sin setup»). Entonces, los de la pasada normal,
-        # donde el juicio no cuenta el «riesgo X pts» que quepa en su máximo.
+        # Los eventos de la pasada de auditoría (subir_dia.eventos_con_stop): con su stop máximo y sin orden propia,
+        # así el motor mira el día entero y no deja de buscar setups tras llenar la suya. Sin ella (sin velas), los de
+        # la pasada normal, donde el juicio no cuenta el «riesgo X pts» que quepa en su máximo.
         ev_op = ev
         if ev_de:
-            ek, tk = ev_de(float(lim['STOP_MAX'])) or (None, None)
-            if ek is not None and not (tk and tk.get('i_fill') is not None and i_fill is not None and tk['i_fill'] < i_fill):
-                ev_op = ek
+            ek, _ = ev_de(float(lim['STOP_MAX'])) or (None, None)
+            if ek is not None: ev_op = ek
         op['limites'] = lim
         op['en_ventana'] = i_fill is not None and r['b'] < i_fill <= r['fin']
         op['riesgo_dentro_del_maximo'] = None if riesgo is None else riesgo <= float(lim['STOP_MAX'])

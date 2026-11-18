@@ -19,6 +19,7 @@
 | 2026-11-17f | Rediseño «Cristal», toques del celular (3): el visor compacto, la fecha y el resultado en una fila cada uno, sin flechas |
 | 2026-11-17e | Rediseño «Cristal», toques del celular (2): el visor del día sin zoom, el gráfico sigue al dedo y más aire en la fecha y el banner |
 | 2026-11-17d | Rediseño «Cristal», toques del celular (1): el Calendario reordenado y «Sin entradas» en la leyenda |
+| 2026-11-18b | La disciplina juzga tu entrada aunque el bot ya haya operado: el motor, en modo auditoría (02/11 y 11/11 ✓, 14/10 contratos) |
 | 2026-11-18 | Los límites salen de Parámetros en todo el Journal: fuera la casilla de Estrategia, el «stop máximo» de Claves y objetivos y los 80 / $160 escritos a mano (fase 4) |
 | 2026-11-17c | La disciplina juzga con el perfil de tu cuenta: 100 pts / $200 desde el 01/10. Octubre 11 de 18, noviembre 3 de 8 (fase 3) |
 | 2026-11-17b | Datos → Parámetros: la pestaña con los perfiles, el riesgo con su historial, lo común y las cuentas → perfil (fase 2) |
@@ -289,6 +290,31 @@ análisis»*.
 
 Verificado con puppeteer a 390 px (agosto, con datos): el orden medido es el pedido, sin errores en la consola; en
 escritorio, la misma portada que antes salvo la leyenda.
+
+---
+
+## Checkpoint 2026-11-18b — La disciplina juzga tu entrada aunque el bot ya haya operado
+
+**Lo que pasó.** El 02/11 salía «sin setup»: el motor entra a las 9:34 y, tras llenar su orden, deja de buscar setups, así
+que el trade de Kris de las 10:27 no se llegaba a juzgar (igual el 14/10 y el 11/11). Se le ofreció no medir esos trades
+(«sin medir») y lo descartó: *«el Bot es aparte, la disciplina debe medir mis entradas: si mi entrada cumple reglas o no»*.
+
+**Lo que se hizo.** `medir.py` v5. La pasada del juicio (`subir_dia.eventos_con_stop`) corre el motor **en modo
+auditoría**: con el `STOP_MAX` de su perfil y **sin orden propia** —`lector._colocar` se sustituye en memoria por uno que
+anota el setup («✓ orden enviada») pero no deja la orden—, así el motor nunca llena y mira el día entero; cada setup se
+juzga solo. `lector.py` no cambia: ni sello nuevo ni recompilar. Fuera el apaño del 17/11 (volver a la pasada normal si el
+motor había llenado antes).
+
+**Recalculado octubre–noviembre** (ensayo primero; cambian solo los tres días esperados):
+
+| Día | Antes | Ahora |
+|---|---|---|
+| 02/11 | sin setup | ✓ dentro de las reglas |
+| 11/11 | sin setup | ✓ (no cuenta: discusión cerrada a su favor) |
+| 14/10 | sin setup | ✗ 3 contratos: con el stop del plan para ese setup y $200 cabía 1 |
+
+**Verificado con un SELECT:** octubre **10 de 18**, noviembre **5 de 9** (el 06/10 ya lo había pasado a «no fluida» la
+remedición del 3.64). Quedan dos «sin setup», uno por mes, ya con el motor mirando el día entero.
 
 ---
 
