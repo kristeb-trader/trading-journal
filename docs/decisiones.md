@@ -10,6 +10,27 @@
 
 ---
 
+## D-056 — El retroceso nuevo trae un stop nuevo
+
+**Decisión (Kris, 18/11/2026, plan 3.64).** Si el stop de un rompimiento (Continuación o Reingreso) pasa de `STOP_MAX`
+y, dentro del plazo de consecución, una vela no hace la consecución y hace un retroceso nuevo, el extremo de ese
+retroceso es el stop nuevo y la entrada sigue siendo la misma; si con él se cumplen todas las reglas del setup, se
+opera. Si el retroceso dura varias velas, el stop va con él; pasado el plazo, la entrada se invalida. Si el primer stop
+ya cabía, los dos valen y elige el operador; **el bot se queda con la orden que ya puso**.
+
+**Motivo.** *«Si después de un rompimiento hace un nuevo retroceso que favorece mi riesgo yo puedo usar ese nuevo
+riesgo para el stop y la entrada sigue siendo la misma»* (caso del 18/11, 9:55–9:57: riesgo de 196,75 a 87,50).
+
+**Medido antes de cambiar nada**, en una copia del motor sobre 95 días: con el tope de 80 cambian 2 operaciones
+(12/11, 29/07); con el de 100 de Kris, 4 (18/11, 5/11, 29/07, 31/07). Revisadas por Kris.
+
+**Alternativas descartadas.**
+- **Cancelar la orden si el retroceso sigue:** *«si el retroceso nuevo dura más de una vela no pasa nada, mientras esté
+  dentro del rango»*. El stop va con él.
+- **Que el bot cambie a la orden del stop más corto cuando la primera ya cabía:** los dos valen; el bot no persigue.
+
+---
+
 ## D-055 — Los parámetros, en Supabase, con un perfil por cuenta: el del bot y el de Kris
 
 **Decisión (Kris, 17/11/2026).** Los números que pueden cambiar viven en **Supabase**, con su historial (`desde`), y

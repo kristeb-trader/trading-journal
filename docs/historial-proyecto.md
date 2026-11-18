@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-18b | El retroceso nuevo trae un stop nuevo (plan 3.64): el plan, los dos motores, el bot, el portal y la disciplina |
 | 2026-11-18 | El diseño «Cristal» es el Journal: fundido en `main`, fuera la banda «en pruebas» y la dirección `/nuevo/` |
 | 2026-11-17i | Rediseño «Cristal»: la barra del celular ya no tapa las ventanas ni los formularios (se aparta al abrir una ventana o al escribir) |
 | 2026-11-17h | Rediseño «Cristal»: el selector de cristal (adiós a la lista nativa ilegible) y contraste medido en todas las pantallas, de 740 textos flojos a 141 |
@@ -96,6 +97,38 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-18b — El retroceso nuevo trae un stop nuevo (plan 3.64)
+
+**Lo que pasó.** Kris operó hoy un reingreso alcista que el motor no veía. La vela de las 9:55 rompe la resistencia de
+la 9:40 con la de la 9:32 ya cotizada arriba, pero con el stop en el último retroceso (9:51) el riesgo era de 196,75.
+La 9:56 hace un retroceso nuevo y la 9:57 da la consecución: con el stop en ese retroceso, 87,50 y TARGET a las 9:59.
+Su regla: si el stop de un rompimiento no cabe y, dentro del plazo de consecución, llega un retroceso nuevo, su extremo
+es el stop nuevo con la misma entrada. Lo dibujé primero con casos inventados y con un caso 1 mal leído (una vela
+que no era retroceso, y un objetivo que chocaba con una zona que no miré); con los días reales y todos los filtros
+quedó claro. Las cinco operaciones que cambian, revisadas una a una por Kris (D-056).
+
+**Lo que se cambió.**
+- **Plan 3.64** (`16b6b24`, con los dos motores): `R-32` (la regla, con su caso de origen), `R-24`, `R-29`, `R-31`,
+  checklist y `ORIGEN_DEL_STOP`. Sincronizado: `plan_documentos` (reglas, parámetros y checklist, huellas verificadas);
+  `catalogo_reglas`, sin cambios.
+- **Los dos motores**, sello `L:b57be514…`: 95/95 días iguales, vela a vela. Los rompimientos descartados por el riesgo
+  esperan su retroceso (`pend`), se evalúan con `_eval_retro` y la orden lleva `retro`: si el precio pasa su stop sin
+  llenarla, el stop va con el retroceso (`_sigue_retro`) en vez de cancelarse.
+- **El bot** (`4ea110a`): no cancela tick a tick esa orden, ajusta los contratos sin cancelar la entrada cuando el motor
+  mueve el stop, y si el retroceso siguió en la vela del llenado pone el stop en su extremo.
+- **El portal** (`16a6ac6`): la regla en las comprobaciones y en el tope de riesgo.
+- **La disciplina:** tu operación de hoy y la del 12/11, medidas otra vez: las dos pasan a «setup válido del plan».
+- **El 13/07** (`f5745ad`), redibujado: con el cambio del 16/11 quedó sin rehacer (Reingreso bajista 9:42, STOP −49,25).
+
+**Lo que cambia.** Con el tope del bot (80): 12/11 y 29/07, de −332,50 a −410,25 en 95 días. Con el de Kris (100),
+además el 18/11 (+87,50), el 5/11 (+88,50) y el 31/07 (−89,75).
+
+**Pendiente.** Kris: copiar `MotorChaumer.cs` (`Custom\AddOns\`) y `BotChaumer.cs` (`Custom\Strategies\`) y F5 fuera de la
+ventana. Al medir otra vez desde octubre salieron otros tres juicios distintos que no son de esta regla (06/10, 08/10,
+05/11): esos días no se habían vuelto a medir tras cambios anteriores; no se guardaron.
 
 ---
 
