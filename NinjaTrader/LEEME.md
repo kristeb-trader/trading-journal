@@ -109,6 +109,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 | *la cuenta … no está en la lista blanca* | Usar SimBot, o añadir la cuenta a `bot-chaumer.json` |
 | *no trae el premercado* | El gráfico no es ETH, o le faltan datos desde las 19:00 del día anterior |
 | *no pude leer las noticias* | Sin conexión con Supabase: ese día no opera, a propósito |
+| *no pude leer de Supabase los parámetros de la cuenta* | Desde el 18/11 el bot lee sus números (stop, riesgo, umbral…) de **Datos → Parámetros** al armarse. Si dice *no tiene perfil*, asígnale uno a la cuenta en *Cuentas → perfil* (SimBot y Playback101 están en **Bot**). Sin conexión, ese día no opera, a propósito |
 | *encendido tarde* | El bot se activó después de que el motor llenara su orden: no la persigue |
 | *no pude pedir al servidor las velas del premercado* | Sin conexión de datos a las 8:30, o el servidor no respondió en 60 s: ese día no opera, a propósito |
 

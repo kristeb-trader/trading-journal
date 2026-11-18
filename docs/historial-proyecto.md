@@ -11,6 +11,9 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-18e | El bot lee su perfil de Supabase al armarse, y la cadena dibuja cada día con el del bot en esa fecha (fase 5) |
+| 2026-11-18d | La disciplina juzga tu entrada aunque el bot ya haya operado: el motor, en modo auditoría (02/11 y 11/11 ✓, 14/10 contratos) |
+| 2026-11-18c | Los límites salen de Parámetros en todo el Journal: fuera la casilla de Estrategia, el «stop máximo» de Claves y objetivos y los 80 / $160 escritos a mano (fase 4) |
 | 2026-11-18b | El retroceso nuevo trae un stop nuevo (plan 3.64): el plan, los dos motores, el bot, el portal y la disciplina |
 | 2026-11-18 | El diseño «Cristal» es el Journal: fundido en `main`, fuera la banda «en pruebas» y la dirección `/nuevo/` |
 | 2026-11-17i | Rediseño «Cristal»: la barra del celular ya no tapa las ventanas ni los formularios (se aparta al abrir una ventana o al escribir) |
@@ -19,8 +22,6 @@
 | 2026-11-17f | Rediseño «Cristal», toques del celular (3): el visor compacto, la fecha y el resultado en una fila cada uno, sin flechas |
 | 2026-11-17e | Rediseño «Cristal», toques del celular (2): el visor del día sin zoom, el gráfico sigue al dedo y más aire en la fecha y el banner |
 | 2026-11-17d | Rediseño «Cristal», toques del celular (1): el Calendario reordenado y «Sin entradas» en la leyenda |
-| 2026-11-18b | La disciplina juzga tu entrada aunque el bot ya haya operado: el motor, en modo auditoría (02/11 y 11/11 ✓, 14/10 contratos) |
-| 2026-11-18 | Los límites salen de Parámetros en todo el Journal: fuera la casilla de Estrategia, el «stop máximo» de Claves y objetivos y los 80 / $160 escritos a mano (fase 4) |
 | 2026-11-17c | La disciplina juzga con el perfil de tu cuenta: 100 pts / $200 desde el 01/10. Octubre 11 de 18, noviembre 3 de 8 (fase 3) |
 | 2026-11-17b | Datos → Parámetros: la pestaña con los perfiles, el riesgo con su historial, lo común y las cuentas → perfil (fase 2) |
 | 2026-11-17 | Los parámetros, en Supabase y por perfil (fase 1): «Mi operativa» con 100 pts / $200 desde el 01/10; el bot, en 80 / $160 |
@@ -99,6 +100,89 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-18e — El bot lee su perfil de Supabase (fase 5)
+
+**Lo que se hizo** (D-055).
+- **El bot** (`BotChaumer`), al armarse cada mañana, lee los números del perfil de su cuenta para ese día
+  (`ChaumerNT.LeerParametros` → `parametros_de_cuenta`) y opera con ellos; el registro lo dice («parámetros de SimBot:
+  stop máx 80 pts · riesgo máx $160 · …»). Una cuenta de la lista blanca **sin perfil asignado no se arma** (no usa el
+  predeterminado, que es el de Kris), y sin conexión tampoco, como con las noticias. El Strategy Analyzer sigue con
+  `reglas.json`. `MotorChaumer.cs` **no cambia**: `Parametros` tiene los campos públicos y `ChaumerNT` los llena; el
+  sello es el mismo.
+- **La vista** (`VistaMotorChaumer`) dibuja con el perfil de la primera cuenta de la lista blanca; si no lo lee, con
+  `reglas.json` y lo dice en el Output.
+- **La cadena** (`subir_dia.numeros_del_bot`) pone en las globales de `lector.py` los del perfil `bot` en la fecha de cada
+  día antes de cada pasada; antes del 05/10 (el perfil bot aún no tiene `RIESGO_MAX`), los de `reglas.json`, como antes.
+  `plan_desfasado` anota en el registro si el plan escrito ya no dice lo mismo que Datos.
+- **Datos → Parámetros:** el perfil Bot y lo común ya se editan. Valen desde el siguiente día hábil (el bot ya se armó
+  hoy; el umbral no se cambia con la sesión empezada): una fecha de hoy o anterior no se guarda.
+- `Playback101` (Market Replay) asignada al perfil Bot: si no, el bot no se armaría ahí.
+
+**Verificado.** El perfil bot de hoy = `reglas.json`, 18 de 18 claves. El motor del 17/11 con los números de Supabase: los
+mismos eventos y la misma operación que con `reglas.json`. `csc` del sistema: los mismos 190 errores de C# 5 antes y
+después del cambio, ninguno nuevo (la compilación de verdad es la de NinjaTrader). En el preview: el perfil Bot editable,
+el umbral 8.000 → 9.000 rechazado con fecha de hoy y programado con la de mañana; consola limpia.
+
+**Pendiente: Kris** copia `ChaumerNT.cs` (`Custom\AddOns\`), `BotChaumer.cs` (`Custom\Strategies\`) y
+`VistaMotorChaumer.cs` (`Custom\Indicators\`) y F5, **fuera de la ventana**. Mirar en el Output, al armarse, la línea
+«parámetros de SimBot: …».
+
+---
+
+## Checkpoint 2026-11-18d — La disciplina juzga tu entrada aunque el bot ya haya operado
+
+**Lo que pasó.** El 02/11 salía «sin setup»: el motor entra a las 9:34 y, tras llenar su orden, deja de buscar setups, así
+que el trade de Kris de las 10:27 no se llegaba a juzgar (igual el 14/10 y el 11/11). Se le ofreció no medir esos trades
+(«sin medir») y lo descartó: *«el Bot es aparte, la disciplina debe medir mis entradas: si mi entrada cumple reglas o no»*.
+
+**Lo que se hizo.** `medir.py` v5. La pasada del juicio (`subir_dia.eventos_con_stop`) corre el motor **en modo
+auditoría**: con el `STOP_MAX` de su perfil y **sin orden propia** —`lector._colocar` se sustituye en memoria por uno que
+anota el setup («✓ orden enviada») pero no deja la orden—, así el motor nunca llena y mira el día entero; cada setup se
+juzga solo. `lector.py` no cambia: ni sello nuevo ni recompilar. Fuera el apaño del 17/11 (volver a la pasada normal si el
+motor había llenado antes).
+
+**Recalculado octubre–noviembre** (ensayo primero; cambian solo los tres días esperados):
+
+| Día | Antes | Ahora |
+|---|---|---|
+| 02/11 | sin setup | ✓ dentro de las reglas |
+| 11/11 | sin setup | ✓ (no cuenta: discusión cerrada a su favor) |
+| 14/10 | sin setup | ✗ 3 contratos: con el stop del plan para ese setup y $200 cabía 1 |
+
+**Verificado con un SELECT:** octubre **10 de 18**, noviembre **5 de 9** (el 06/10 ya lo había pasado a «no fluida» la
+remedición del 3.64). Quedan dos «sin setup», uno por mes, ya con el motor mirando el día entero.
+
+---
+
+## Checkpoint 2026-11-18c — Los límites salen de Parámetros en todo el Journal (fase 4)
+
+**Lo que se hizo** (D-055). Una sola lectura, `limiteDe(clave, { fecha, perfil, cuenta })` en `db.js`, sobre la caché de
+`parametros_*` (`DB.cargarParametros`: la llenan el arranque y `getObjetivos`; se invalida al guardar en Datos). Sin dato
+devuelve `null` y quien llama no inventa un número.
+- **Estrategia:** fuera la casilla del límite. La regla del stop dice «Tu límite: 100 pts · el plan y el bot usan 80» con
+  un acceso a Datos → Parámetros, y la tabla de contratos de R-04 se calcula con tu stop y tu riesgo (antes, 80/40/25/10
+  con $160 fijos).
+- **Claves y objetivos:** fuera «Stop máximo por trade ($)» (era el 200 que Kris tocó), con un aviso que remite a
+  Parámetros. Las columnas `objetivos.stop_max_puntos` y `stop_max_usd` quedan en la BD, **obsoletas** y sin lector.
+- **La disciplina** (`reglaAutoResultado`, el texto de la evidencia, `discContexto`), **el Diario** (la alerta de
+  retroceso) y **el Coach** (que además recibe una línea con los límites del trader ese día: el plan que lleva arriba cita
+  los del bot): todos con `limiteDe` de la fecha del día. `RIESGO_MAX_USD` y todos los `|| 80` desaparecen.
+- **El calendario del Bot** (contratos que caben) usa el perfil **bot**, no el tuyo.
+
+**Efecto que hay que saber.** Los días anteriores al 01/10 ahora se juzgan con el stop que regía entonces (80), no con el
+100 que la casilla tenía ya al juzgarlos. Es lo correcto (cada día, el valor de su fecha) y puede mover algún porcentaje
+de agosto–septiembre.
+
+**Sin hacer, a propósito:** que `PARAMETROS.md` y `reglas.json` se generen desde Supabase. Es el plan de Chaumer
+(`01_Plan`, solo con el sí de Kris) y es lo que el bot lee hoy; va con la fase 5.
+
+**Verificado** en el preview (copia local): `limiteDe` da 80 el 30/09 y 100 desde el 01/10, y el perfil bot 80 / $160; con
+27,25 pts de stop caben 3 contratos en tu perfil y 2 en el del bot; Estrategia sin casilla y con su acceso; Claves y
+objetivos sin el campo; Diario, Disciplina, Análisis, Calendario y Comparador sin errores de consola. **No verificado:** la
+línea de límites del Coach (la copia local no tiene días del plan con juicio).
 
 ---
 
@@ -290,60 +374,6 @@ análisis»*.
 
 Verificado con puppeteer a 390 px (agosto, con datos): el orden medido es el pedido, sin errores en la consola; en
 escritorio, la misma portada que antes salvo la leyenda.
-
----
-
-## Checkpoint 2026-11-18b — La disciplina juzga tu entrada aunque el bot ya haya operado
-
-**Lo que pasó.** El 02/11 salía «sin setup»: el motor entra a las 9:34 y, tras llenar su orden, deja de buscar setups, así
-que el trade de Kris de las 10:27 no se llegaba a juzgar (igual el 14/10 y el 11/11). Se le ofreció no medir esos trades
-(«sin medir») y lo descartó: *«el Bot es aparte, la disciplina debe medir mis entradas: si mi entrada cumple reglas o no»*.
-
-**Lo que se hizo.** `medir.py` v5. La pasada del juicio (`subir_dia.eventos_con_stop`) corre el motor **en modo
-auditoría**: con el `STOP_MAX` de su perfil y **sin orden propia** —`lector._colocar` se sustituye en memoria por uno que
-anota el setup («✓ orden enviada») pero no deja la orden—, así el motor nunca llena y mira el día entero; cada setup se
-juzga solo. `lector.py` no cambia: ni sello nuevo ni recompilar. Fuera el apaño del 17/11 (volver a la pasada normal si el
-motor había llenado antes).
-
-**Recalculado octubre–noviembre** (ensayo primero; cambian solo los tres días esperados):
-
-| Día | Antes | Ahora |
-|---|---|---|
-| 02/11 | sin setup | ✓ dentro de las reglas |
-| 11/11 | sin setup | ✓ (no cuenta: discusión cerrada a su favor) |
-| 14/10 | sin setup | ✗ 3 contratos: con el stop del plan para ese setup y $200 cabía 1 |
-
-**Verificado con un SELECT:** octubre **10 de 18**, noviembre **5 de 9** (el 06/10 ya lo había pasado a «no fluida» la
-remedición del 3.64). Quedan dos «sin setup», uno por mes, ya con el motor mirando el día entero.
-
----
-
-## Checkpoint 2026-11-18 — Los límites salen de Parámetros en todo el Journal (fase 4)
-
-**Lo que se hizo** (D-055). Una sola lectura, `limiteDe(clave, { fecha, perfil, cuenta })` en `db.js`, sobre la caché de
-`parametros_*` (`DB.cargarParametros`: la llenan el arranque y `getObjetivos`; se invalida al guardar en Datos). Sin dato
-devuelve `null` y quien llama no inventa un número.
-- **Estrategia:** fuera la casilla del límite. La regla del stop dice «Tu límite: 100 pts · el plan y el bot usan 80» con
-  un acceso a Datos → Parámetros, y la tabla de contratos de R-04 se calcula con tu stop y tu riesgo (antes, 80/40/25/10
-  con $160 fijos).
-- **Claves y objetivos:** fuera «Stop máximo por trade ($)» (era el 200 que Kris tocó), con un aviso que remite a
-  Parámetros. Las columnas `objetivos.stop_max_puntos` y `stop_max_usd` quedan en la BD, **obsoletas** y sin lector.
-- **La disciplina** (`reglaAutoResultado`, el texto de la evidencia, `discContexto`), **el Diario** (la alerta de
-  retroceso) y **el Coach** (que además recibe una línea con los límites del trader ese día: el plan que lleva arriba cita
-  los del bot): todos con `limiteDe` de la fecha del día. `RIESGO_MAX_USD` y todos los `|| 80` desaparecen.
-- **El calendario del Bot** (contratos que caben) usa el perfil **bot**, no el tuyo.
-
-**Efecto que hay que saber.** Los días anteriores al 01/10 ahora se juzgan con el stop que regía entonces (80), no con el
-100 que la casilla tenía ya al juzgarlos. Es lo correcto (cada día, el valor de su fecha) y puede mover algún porcentaje
-de agosto–septiembre.
-
-**Sin hacer, a propósito:** que `PARAMETROS.md` y `reglas.json` se generen desde Supabase. Es el plan de Chaumer
-(`01_Plan`, solo con el sí de Kris) y es lo que el bot lee hoy; va con la fase 5.
-
-**Verificado** en el preview (copia local): `limiteDe` da 80 el 30/09 y 100 desde el 01/10, y el perfil bot 80 / $160; con
-27,25 pts de stop caben 3 contratos en tu perfil y 2 en el del bot; Estrategia sin casilla y con su acceso; Claves y
-objetivos sin el campo; Diario, Disciplina, Análisis, Calendario y Comparador sin errores de consola. **No verificado:** la
-línea de límites del Coach (la copia local no tiene días del plan con juicio).
 
 ---
 

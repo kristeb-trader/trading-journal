@@ -170,6 +170,62 @@ def trades_del_dia(fecha):
                      'entry_price,exit_price,resultado&order=entry_time')
 
 
+# ── Los números del motor: el perfil «bot» en cada fecha (D-055, fase 5, 18/11/2026) ──
+# Desde la fase 5 el bot lee sus números de Supabase al armarse (ChaumerNT.LeerParametros), no de reglas.json. La
+# cadena dibuja la ficha de cada día con el motor del bot, así que tiene que usar los MISMOS: los del perfil `bot` en
+# esa fecha (un cambio en Datos vale desde su `desde`). Se ponen en las globales de lector.py antes de cada pasada (las
+# lee al llamar, ninguna va como argumento por defecto); lector.py no se toca. Sin Supabase, los de reglas.json —los
+# que lector cargó al importarse— y queda en el registro.
+_GLOBAL_DE = {'TICK': ('TICK', float), 'STOP_MAX': ('STOP_MAX', float), 'RIESGO_MAX': ('RIESGO_MAX', float),
+              'PLAZO_CONSECUCION': ('PLAZO', int), 'UMBRAL_VOL': ('UMBRAL_VOL', int),
+              'VENTANA_NOTICIA': ('VENTANA_NOTICIA', int), 'VUELTA_EN_VELA_DESDE': ('VUELTA_EN_VELA_DESDE', int),
+              'BLOQUE_DESDE': ('BLOQUE_DESDE', int)}
+_DEL_PLAN_JSON = {g: getattr(lector, g) for g, _ in _GLOBAL_DE.values()}
+_DEL_PLAN_JSON['CIERRE_POR_HORA'] = lector.CIERRE_POR_HORA
+_NUMEROS_BOT = {}
+
+
+def numeros_del_bot(fecha):
+    """Pone en lector.py los números del perfil `bot` en `fecha` ('AAAA-MM-DD') y los devuelve ({global: valor},
+    con '_origen' = 'supabase' o 'reglas.json')."""
+    if fecha not in _NUMEROS_BOT:
+        try:
+            p = sb('POST', 'rpc/parametros_vigentes', {'p_fecha': fecha, 'p_perfil': 'bot'}) or {}
+            v = {}
+            for clave, (glob, tipo) in _GLOBAL_DE.items():
+                n = (p.get(clave) or {}).get('numero')
+                if n is None: raise ValueError(f'{clave} sin número')
+                v[glob] = tipo(n)
+            m = re.match(r'\s*(\d{1,2}):(\d{2})\s*ET', (p.get('CIERRE_POR_HORA') or {}).get('texto') or '')
+            if not m: raise ValueError('CIERRE_POR_HORA no es una hora «HH:MM ET»')
+            v['CIERRE_POR_HORA'] = int(m[1]) * 100 + int(m[2])
+            v['_origen'] = 'supabase'
+        except Exception as e:
+            # Antes del 05/10/2026 el perfil bot no tiene RIESGO_MAX (nació con el plan 3.44): esos días —las Sesiones
+            # de julio a septiembre— se leen con los de reglas.json, como antes de la fase 5. Solo se anota si es otra cosa.
+            if 'RIESGO_MAX' not in str(e) or fecha >= '2026-10-05':
+                log(f'{fecha}  parámetros del bot: ❌ {e} — el motor usa los de reglas.json')
+            v = dict(_DEL_PLAN_JSON, _origen='reglas.json')
+        _NUMEROS_BOT[fecha] = v
+    for g, n in _NUMEROS_BOT[fecha].items():
+        if not g.startswith('_'): setattr(lector, g, n)
+    return _NUMEROS_BOT[fecha]
+
+
+def plan_desfasado():
+    """El plan escrito (PARAMETROS.md → reglas.json) es una copia de lo que hay en Supabase (fase 5): si el perfil
+    bot de hoy ya no dice lo mismo, lo anota. Lo pone al día Claude, en un commit `plan:`. Nunca tumba la cadena."""
+    try:
+        nb = numeros_del_bot(datetime.date.today().isoformat())
+        if nb['_origen'] != 'supabase': return
+        dif = [f'{g} {_DEL_PLAN_JSON[g]} → {v}' for g, v in nb.items()
+               if not g.startswith('_') and _DEL_PLAN_JSON.get(g) != v]
+        if dif: log('plan escrito desfasado: reglas.json no dice lo mismo que Datos → Parámetros (' + '; '.join(dif)
+                    + '). El bot y la cadena ya usan lo de Datos; falta poner al día PARAMETROS.md')
+    except Exception as e:
+        log(f'plan_desfasado: ❌ {e}')
+
+
 # ── Los límites de Kris: el perfil de su cuenta (D-055, 17/11/2026) ─────────────
 # La disciplina juzga cada trade con el STOP_MAX y el RIESGO_MAX del perfil de SU cuenta en esa fecha
 # (`parametros_cuentas` → `parametros_vigentes`), no con los del bot. Sin Supabase, los del bot: el juicio
@@ -414,7 +470,10 @@ def procesar(fecha, umbral, desde, fed_set, huella_motor):
         log(f'{fecha}  sin archivo de velas: nada que subir'); return False
     d = fecha.replace('-', '')
     fed = d in fed_set
-    lector.UMBRAL_VOL = umbral
+    nb = numeros_del_bot(fecha)                 # los números del bot ese día (fase 5): el umbral, entre ellos
+    del_perfil = nb['_origen'] == 'supabase'
+    if del_perfil: umbral = nb['UMBRAL_VOL']
+    else: lector.UMBRAL_VOL = umbral
     lector.FOMC = set(fed_set)
     V = lector.cargar(path)
     try:
@@ -424,7 +483,7 @@ def procesar(fecha, umbral, desde, fed_set, huella_motor):
         trades = None
     estado, ficha, t = ficha_del_dia(V, d, umbral, fed, trades)
     avisos = ficha.setdefault('avisos', []) if estado == 'ok' else []
-    if datetime.date.fromisoformat(fecha) < desde:
+    if not del_perfil and datetime.date.fromisoformat(fecha) < desde:
         avisos.append(f'umbral actual ({umbral}, desde {desde:%d/%m/%Y}) aplicado a un día anterior a ese cambio')
     if not fed and estado == 'ok':
         nf = noticias_fed(fecha)
@@ -528,6 +587,7 @@ def medir_pendientes(n_dias, huella_motor, fed_set):
             path = fuente(f)[0]
             if not path: continue
             d = f.replace('-', '')
+            numeros_del_bot(f)
             lector.UMBRAL_VOL = fila.get('umbral_vol') or lector.UMBRAL_VOL
             lector.FOMC = set(fed_set)
             V = lector.cargar(path)
@@ -644,6 +704,7 @@ def main(argv):
         log(f'❌ {e}: no se sube nada (el umbral no se inventa)'); return 1
     fed_set = dias_fed()
     noticias_rojas()
+    plan_desfasado()
     if '--pendientes' in argv:
         n = int(argv[argv.index('--dias') + 1]) if '--dias' in argv else 10
         fechas = pendientes(n)

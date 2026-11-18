@@ -359,6 +359,13 @@ namespace NinjaTrader.NinjaScript.Strategies
             {
                 string fallo = ChaumerNT.LeerDia(http, fila.Fecha, out nots, out fed, out go);
                 if (fallo != null) { NoArmado("no pude leer de Supabase las noticias de hoy (" + fallo + ")"); return; }
+                // Los números del perfil de esta cuenta para hoy (D-055, fase 5): se editan en Datos → Parámetros y valen
+                // desde su fecha; reglas.json ya es solo la copia del plan. Sin ellos no se opera.
+                MotorChaumer.Parametros delPerfil;
+                fallo = ChaumerNT.LeerParametros(http, fila.Fecha, Account.Name, out delPerfil);
+                if (fallo != null) { NoArmado("no pude leer de Supabase los parámetros de la cuenta (" + fallo + ")"); return; }
+                P = delPerfil;
+                Log("parámetros de " + Account.Name + ": " + ChaumerNT.Resumen(P));
                 if (!Account.Name.StartsWith("Playback", StringComparison.Ordinal) && YaOperoHoy(fila.Fecha))
                 { YaOperado(); return; }
             }

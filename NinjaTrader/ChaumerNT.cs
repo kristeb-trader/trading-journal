@@ -83,6 +83,59 @@ namespace NinjaTrader.NinjaScript
             catch (Exception e) { return "no puedo leer el motor del repositorio (" + repo + "): " + e.Message; }
         }
 
+        // ── los parámetros del perfil de la cuenta (D-055, fase 5, 18/11/2026) ──
+        /// <summary>Los números del perfil de `cuenta` en `fecha` (yyyy-MM-dd), de Supabase (`parametros_de_cuenta`): desde
+        /// la fase 5 el bot ya no los lee de reglas.json, que queda como copia del plan. La cuenta tiene que estar dada de
+        /// alta en Datos → Parámetros: sin fila no se usa el perfil predeterminado (el de Kris), porque el bot operaría con
+        /// los límites de otro. null si se leyeron todos; si no, el fallo, y quien llama no se arma: no se inventa un número.</summary>
+        public static string LeerParametros(HttpClient http, string fecha, string cuenta, out MotorChaumer.Parametros p)
+        {
+            p = null;
+            try
+            {
+                var fila = Get(http, "parametros_cuentas?select=perfil&cuenta=eq." + Uri.EscapeDataString(cuenta));
+                if (fila.Count == 0) return "la cuenta " + cuenta + " no tiene perfil en Datos → Parámetros";
+                var cuerpo = new JObject();
+                cuerpo["p_fecha"] = fecha; cuerpo["p_cuenta"] = cuenta;
+                var resp = Task.Run(() => http.PostAsync(URL + "rpc/parametros_de_cuenta",
+                    new StringContent(cuerpo.ToString(), Encoding.UTF8, "application/json"))).Result;
+                string txt = Task.Run(() => resp.Content.ReadAsStringAsync()).Result;
+                if (!resp.IsSuccessStatusCode) return "Supabase " + (int)resp.StatusCode + ": " + txt;
+                var j = JObject.Parse(txt);
+                var q = new MotorChaumer.Parametros();
+                q.Tick              = NumParam(j, "TICK");
+                q.StopMax           = NumParam(j, "STOP_MAX");
+                q.RiesgoMax         = NumParam(j, "RIESGO_MAX");
+                q.Plazo             = (int)NumParam(j, "PLAZO_CONSECUCION");
+                q.UmbralVol         = (long)NumParam(j, "UMBRAL_VOL");
+                q.VentanaNoticia    = (int)NumParam(j, "VENTANA_NOTICIA");
+                q.VueltaEnVelaDesde = (int)NumParam(j, "VUELTA_EN_VELA_DESDE");
+                q.BloqueDesde       = (int)NumParam(j, "BLOQUE_DESDE");
+                // CIERRE_POR_HORA es una hora ("16:50 ET"): se lee del texto, como en MotorChaumer.Parametros.Leer
+                string cierre = j["CIERRE_POR_HORA"] == null ? null : (string)j["CIERRE_POR_HORA"]["texto"];
+                var h = System.Text.RegularExpressions.Regex.Match(cierre ?? "", @"^\s*(\d{1,2}):(\d{2})\s*ET");
+                if (!h.Success) return "CIERRE_POR_HORA no es una hora \"HH:MM ET\" en Supabase";
+                q.CierrePorHoraEt = int.Parse(h.Groups[1].Value, INV) * 100 + int.Parse(h.Groups[2].Value, INV);
+                p = q;
+                return null;
+            }
+            catch (Exception e) { return (e.InnerException ?? e).Message; }
+        }
+
+        private static double NumParam(JObject j, string clave)
+        {
+            var v = j[clave] == null ? null : j[clave]["numero"];
+            if (v == null || v.Type == JTokenType.Null) throw new InvalidDataException(clave + " sin número en Supabase");
+            return (double)v;
+        }
+
+        /// <summary>Los números en una línea, para el registro del bot y de la vista.</summary>
+        public static string Resumen(MotorChaumer.Parametros p)
+        {
+            return "stop máx " + p.StopMax.ToString(INV) + " pts · riesgo máx $" + p.RiesgoMax.ToString(INV)
+                 + " · volumen > " + p.UmbralVol.ToString(INV) + " · consecución " + p.Plazo + " velas";
+        }
+
         // ── Supabase ─────────────────────────────────────────────────────────
         public static string LeerClave()
         {

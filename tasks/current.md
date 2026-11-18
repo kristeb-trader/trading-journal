@@ -166,8 +166,9 @@ Aprobado en el chat el 17/11. «Mi operativa» 100 pts / $200 desde el 01/10; «
 - [ ] **06/10, 08/10 y 12/11**: con el motor de hoy su juicio cambia (06/10 ✓ → corrida no fluida; 08/10 sin setup → 4 contratos;
   12/11 sin consecución → el stop del plan, 126, pasaba de 100). No se reescribieron: preguntar a Kris si se rehacen con el motor de hoy
 - [x] **Fase 4 · fuera los números escritos a mano** (18/11): `limiteDe` en todo el Journal; fuera la casilla de Estrategia y el stop de Claves y objetivos
-- [ ] **Fase 4b · `PARAMETROS.md` y `reglas.json` generados desde Supabase**: es `01_Plan` (solo con el sí de Kris, commit `plan:`); va junto a la fase 5
-- [ ] **Fase 5 · el bot lee su perfil de Supabase** al armarse (`ChaumerNT`). **Kris: recompilar en NinjaTrader**
+- [ ] **La copia del plan** (`PARAMETROS.md` → `reglas.json`): hoy dice lo mismo que Supabase. Cuando Kris cambie un número del bot o común en Datos, ponerla al día en un commit `plan:` (`plan_desfasado` lo anota en el registro de la cadena)
+- [x] **Fase 5 · el bot lee su perfil de Supabase** (18/11): `ChaumerNT.LeerParametros` al armarse; la cadena, el perfil bot por fecha; Datos edita el Bot y lo común
+- [ ] **Kris:** copiar `ChaumerNT.cs`, `BotChaumer.cs` y `VistaMotorChaumer.cs` y F5 fuera de la ventana; mirar en el Output «parámetros de SimBot: …» al armarse
 
 ## Disciplina: ¿tu trade cumplía las reglas? (10/11, D-052)
 

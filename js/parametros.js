@@ -4,8 +4,11 @@
 //  - Riesgo y gestión, por perfil («Mi operativa», «Bot»…); la lectura del mercado, común.
 //  - Un valor nunca se pisa: cambiarlo es una fila nueva con su «desde». Así un día se
 //    juzga con el valor que tenía su perfil ese día, y el 01/10 se pudo poner hacia atrás.
-//  - En transición: el bot y los motores todavía leen `reglas.json` (hasta la fase 5),
-//    así que el perfil Bot y lo común se ven pero no se editan aquí.
+//  - Desde la fase 5 (18/11) el bot lee de aquí su perfil al armarse, y la cadena dibuja cada
+//    día con los del perfil bot en esa fecha. Por eso lo del bot y lo común solo valen desde el
+//    siguiente día hábil: el bot ya se armó hoy, y el umbral no se cambia con la sesión empezada
+//    (P-37). Tu perfil sí admite una fecha pasada: solo cambia cómo se juzgan tus días.
+//    `PARAMETROS.md` y `reglas.json` (el plan escrito) son una copia: la cadena avisa si se desfasan.
 // ════════════════════════════════════════════════════════════════════════════
 const Parametros = (() => {
   let D = null                 // { claves, perfiles, cuentas, valores }
@@ -17,8 +20,8 @@ const Parametros = (() => {
   let desde = null             // la fecha elegida para los cambios pendientes
   let cableado = false
 
-  // Mientras el bot lea `reglas.json`, su perfil y lo común no se editan aquí (fase 5).
-  const SOLO_LECTURA = new Set(['bot'])
+  // Los perfiles que opera el bot: lo que cambia en ellos, igual que lo común, vale desde el siguiente día hábil.
+  const DEL_BOT = new Set(['bot'])
 
   const AYUDA = {
     STOP_MAX:          { operativa: 'Si el stop de tu entrada lo pasa, la regla se rompe', bot: 'Si el stop del setup lo pasa, no se opera' },
@@ -38,7 +41,6 @@ const Parametros = (() => {
   const dma = f => `${dm(f)}/${f.slice(0, 4)}`
   const nombre = c => (D.perfiles.find(p => p.codigo === c) || {}).nombre || c
   const predeterminado = () => (D.perfiles.find(p => p.predeterminado) || D.perfiles[0] || {}).codigo
-  const editable = () => !SOLO_LECTURA.has(perfil)
   const clave = k => D.claves.find(c => c.clave === k)
   const valoresDe = (k, p) => D.valores.filter(v => v.clave === k && (v.perfil == null || v.perfil === p))
     .sort((a, b) => b.desde.localeCompare(a.desde))
@@ -95,7 +97,7 @@ const Parametros = (() => {
     const vig = hist.find(v => v.desde <= hoy)
     const prog = hist.filter(v => v.desde > hoy).pop()   // el programado más cercano
     const ayuda = typeof AYUDA[k] === 'object' ? (AYUDA[k][perfil] || AYUDA[k].operativa) : (AYUDA[k] || '')
-    const puede = c.editable && !c.calculado && editable() && c.ambito === 'perfil'
+    const puede = c.editable && !c.calculado
     const v = valor(k)
     const cambiado = k in cambios
     let campo
@@ -145,8 +147,8 @@ const Parametros = (() => {
       ? `<div class="pm-aviso pm-ok"><i class="ti ti-circle-check"></i><div>Coherente: con <b>${num(stop)} pts</b> y <b>$${fmtMiles(riesgo)}</b> cabe <b>${caben} ${caben === 1 ? 'contrato' : 'contratos'}</b> en el stop máximo (${num(stop)} × $${USD_PUNTO_MNQ} = $${fmtMiles(stop * USD_PUNTO_MNQ)}).</div></div>`
       : `<div class="pm-aviso pm-mal"><i class="ti ti-alert-triangle"></i><div>Con un stop de <b>${num(stop)} pts</b> y <b>$${fmtMiles(riesgo)}</b> no cabe ni un contrato (hacen falta $${fmtMiles(stop * USD_PUNTO_MNQ)}). Sube el riesgo o baja el stop.</div></div>`
     const n = Object.keys(cambios).length
-    const sinLectura = !editable()
-      ? `<div class="pm-nota"><i class="ti ti-lock"></i> Hoy el bot lee sus números del plan (<code>reglas.json</code>). Se podrán cambiar aquí cuando lea de esta tabla.</div>` : ''
+    const sinLectura = DEL_BOT.has(perfil)
+      ? `<div class="pm-nota"><i class="ti ti-robot"></i> El bot lee estos números de aquí cada mañana, al armarse. Un cambio vale desde el siguiente día hábil.</div>` : ''
     const guardar = n ? `<div class="pm-guardar">
         <label>Desde <input type="date" id="pmDesde" value="${desde || (desde = siguienteHabil())}"></label>
         <span class="pm-desde-hint" id="pmDesdeHint"></span>
@@ -163,9 +165,11 @@ const Parametros = (() => {
     const inp = document.getElementById('pmDesde'), h = document.getElementById('pmDesdeHint')
     if (!inp || !h) return
     const f = inp.value, hoy = hoyISO()
+    const delBot = DEL_BOT.has(perfil) || Object.keys(cambios).some(k => clave(k).ambito === 'comun')
     h.textContent = !f ? '' : f > hoy ? 'programado: hasta entonces sigue el de hoy'
+      : delBot ? 'lo del bot y lo común: desde el siguiente día hábil'
       : f === hoy ? 'desde hoy' : `cambia cómo se juzgan los días desde el ${dma(f)}`
-    h.classList.toggle('pm-atras', !!f && f < hoy)
+    h.classList.toggle('pm-atras', !!f && f <= hoy && (delBot || f < hoy))
   }
 
   function pintarMercado() {
@@ -177,7 +181,7 @@ const Parametros = (() => {
         <span class="pm-tag">el motor marca con estos</span></div>
       ${mercado}
       <details class="pm-tecnicos"><summary>Técnicos (${tecnicos.length}) · se ven, no se editan</summary>${tecnicos.map(fila).join('')}</details>
-      <div class="pm-nota"><i class="ti ti-lock"></i> Comunes porque el mercado es uno: tu juicio y el del bot salen de la misma lectura. Hoy los motores los leen del plan; se podrán cambiar aquí cuando lean de esta tabla.</div>`
+      <div class="pm-nota"><i class="ti ti-info-circle"></i> Comunes porque el mercado es uno: tu juicio y el del bot salen de la misma lectura. Un cambio vale desde el siguiente día hábil (el bot ya se armó hoy, y el umbral no se cambia con la sesión empezada).</div>`
   }
 
   function pintarHistorial() {
@@ -194,7 +198,7 @@ const Parametros = (() => {
       const fut = v.desde > hoy
       const etq = v.perfil ? `<span class="pm-lbl${v.perfil === perfil ? ' pm-lbl-on' : ''}">${esc(nombre(v.perfil))}</span>` : ''
       const estado = fut ? '<span class="pm-lbl pm-lbl-prog">programado</span>' : vigentes.has(v.id) ? '<span class="pm-lbl pm-lbl-vig">vigente</span>' : ''
-      const borrar = fut && !SOLO_LECTURA.has(v.perfil) && v.perfil
+      const borrar = fut
         ? `<button type="button" class="pm-borrar" data-borrar="${v.id}" title="Quitar el programado"><i class="ti ti-x"></i></button>` : ''
       return `<li class="${fut ? 'pm-fut' : ''}${v.perfil && v.perfil !== perfil ? ' pm-otro' : ''}">
         <b>${esc(v.numero != null ? `${num(v.numero)}${c.unidad && c.unidad !== 'fecha' ? ' ' + esc(c.unidad) : ''}` : v.texto)}</b>
@@ -236,11 +240,18 @@ const Parametros = (() => {
       if (k === 'STOP_MAX' && Math.round(n * 4) !== n * 4) { Toast.show('El stop va en cuartos de punto (0,25)', 'warning'); return }
     }
     if (contratosQueCaben(valor('STOP_MAX'), valor('RIESGO_MAX')) < 1) return
+    // Lo que lee el bot (su perfil y lo común) no puede valer desde hoy ni hacia atrás: hoy ya se armó con lo de antes,
+    // y una fecha pasada diría que operó con números que no tenía.
+    const delBot = DEL_BOT.has(perfil) || Object.keys(cambios).some(k => clave(k).ambito === 'comun')
+    if (delBot && desde <= hoyISO()) {
+      Toast.show(`Lo del bot y lo común valen desde el siguiente día hábil (${dma(siguienteHabil())}): hoy el bot ya se armó`, 'warning'); return
+    }
     const btn = document.getElementById('pmGuardar')
     if (btn) btn.disabled = true
     try {
       for (const [k, n] of Object.entries(cambios)) {
-        await DB.guardarParametro({ clave: k, perfil, numero: n, texto: textoParametro(k, n), desde })
+        const comun = clave(k).ambito === 'comun'
+        await DB.guardarParametro({ clave: k, perfil: comun ? null : perfil, numero: n, texto: textoParametro(k, n), desde })
       }
       const cuantos = Object.keys(cambios).length, f = desde
       cambios = {}; desde = null
@@ -279,7 +290,7 @@ const Parametros = (() => {
         const n = document.getElementById('pmNuevoNombre')?.value.trim()
         if (!n) { Toast.show('Escribe el nombre del perfil', 'warning'); return }
         try {
-          perfil = await DB.crearPerfil(n, perfil && !SOLO_LECTURA.has(perfil) ? perfil : predeterminado())
+          perfil = await DB.crearPerfil(n, perfil || predeterminado())
           creando = false; cambios = {}
           await recargar()
           Toast.show(`Perfil «${n}» creado con los valores de hoy`, 'success')
@@ -316,6 +327,7 @@ const Parametros = (() => {
         // Repintar sin perder el foco: se reconstruye el bloque y se devuelve el cursor.
         const pos = inp.selectionStart
         pintarRiesgo()
+        if (clave(k).ambito === 'comun') pintarMercado()     // su fila está en el bloque de mercado
         const de = document.querySelector(`.pm-inp[data-clave="${k}"]`)
         if (de) { de.focus(); try { de.setSelectionRange(pos, pos) } catch (_) {} }
         return

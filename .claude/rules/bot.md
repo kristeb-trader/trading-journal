@@ -16,7 +16,8 @@ todo lo demás, o no llega a ninguno** (Kris, 06/10/2026).
 
 | Qué | Única fuente | La leen |
 |---|---|---|
-| Los números del plan | `PARAMETROS.md` → `parametros` de `reglas.json` (`leer-reglas.mjs --escribir`) | `lector.py`, `MotorChaumer.cs` y `medir.py`. **Ninguno escrito a mano en un motor**, y ninguno como propiedad editable del bot en NinjaTrader |
+| Los números | **Supabase, `parametros_*`** (Datos → Parámetros, D-055): el perfil de cada cuenta, con su `desde` | El bot al armarse (`ChaumerNT.LeerParametros`, perfil de su cuenta); la cadena, el perfil `bot` en cada fecha (`subir_dia.numeros_del_bot`, que los pone en las globales de `lector.py`); el juicio de Kris, su perfil (`medir.py`). **Ninguno escrito a mano en un motor**, y ninguno como propiedad editable del bot en NinjaTrader |
+| La copia del plan | `PARAMETROS.md` → `parametros` de `reglas.json` (`leer-reglas.mjs --escribir`) | `lector.py` cuando corre suelto (regresión, `sincronia.py`, Sesiones, días antes del 05/10), `MotorChaumer.Parametros.Leer` (Strategy Analyzer), el portal. Tiene que decir lo mismo que el perfil `bot`: `plan_desfasado` lo vigila |
 | La lógica | `lector.py` (la referencia) | `MotorChaumer.cs`: traducción **literal**, con el mismo texto en cada evento |
 
 ## Al cambiar el marcado o un setup
@@ -34,8 +35,9 @@ todo lo demás, o no llega a ninguno** (Kris, 06/10/2026).
 4. **Avisar a Kris: copiar `MotorChaumer.cs` a `Documentos\NinjaTrader 8\bin\Custom\AddOns\` y F5.** Sin eso el bot
    no opera (comprueba su sello contra el repositorio).
 
-Si solo cambia un **número** de `PARAMETROS.md`, basta regenerar `reglas.json`: los dos motores lo leen. Igual se pasa
-`sincronia.py`.
+Un **número** se cambia en **Datos → Parámetros** (desde el siguiente día hábil para el bot y lo común): el bot y la cadena
+lo leen de ahí sin recompilar. Después se pone al día la copia del plan (`PARAMETROS.md` → `reglas.json`, commit `plan:`)
+y se pasa `sincronia.py`.
 
 ## Lo que la sincronía no puede ver
 

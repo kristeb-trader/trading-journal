@@ -62,6 +62,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         private MotorChaumer.Parametros P;
         private HttpClient http;
         private string repo;                // para leer las velas del bot (19/10/2026)
+        private string cuentaBot;           // la primera de la lista blanca: la vista dibuja con su perfil (D-055)
         private TimeZoneInfo tzNt;
 
         // estado del día que se calcula
@@ -94,6 +95,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 tzNt = Core.Globals.GeneralOptions.TimeZoneInfo;
                 var cfg = ChaumerNT.LeerConfig(null);
                 repo = cfg.Repo;
+                cuentaBot = cfg.Cuentas.Count > 0 ? cfg.Cuentas[0] : null;
                 problema = ChaumerNT.ComprobarMotor(cfg.Repo, out P);
                 if (problema == null) http = ChaumerNT.Cliente();
                 if (problema != null) Print("[VistaMotorChaumer] no dibuja: " + problema);
@@ -208,6 +210,13 @@ namespace NinjaTrader.NinjaScript.Indicators
             {
                 string fecha = d.Substring(0, 4) + "-" + d.Substring(4, 2) + "-" + d.Substring(6, 2);
                 sinNoticias = ChaumerNT.LeerDia(http, fecha, out nots, out fed, out go) != null;
+                // Los mismos números que el bot ese día: los del perfil de su cuenta (D-055, fase 5). Si no se leen,
+                // se dibuja con los de reglas.json y se avisa en la pestaña Output.
+                MotorChaumer.Parametros delPerfil = null;
+                string fallo = cuentaBot == null ? "sin cuentas en bot-chaumer.json"
+                    : ChaumerNT.LeerParametros(http, fecha, cuentaBot, out delPerfil);
+                if (fallo == null) P = delPerfil;
+                else Print("[VistaMotorChaumer] dibujo con los números de reglas.json: " + fallo);
             }
             motor = new MotorChaumer(P, nots, fed);
         }
