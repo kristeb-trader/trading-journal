@@ -32,7 +32,7 @@ const Charts = (() => {
     kpiTrades:  { title: 'Total Trades', text: 'Trades reales del período (sin break-even). Mismo criterio que el calendario.' },
     kpiRent:    { title: 'Rentabilidad', text: 'P&L del período sobre el capital inicial configurado.' },
     kpiEfec:    { title: 'Efectividad', text: 'Tasa de acierto pura: Targets ÷ (Targets + Stops).' },
-    kpiDisc:    { title: 'Disciplina Total', text: 'Desde el 01/10: de tus trades, cuántos cumplían las reglas según el motor (aunque no fueran el trade del bot). No operar nunca es fallo y los días en discusión no cuentan. Antes: % de ítems del checklist cumplidos. Mismo cálculo que el calendario y Disciplina.' },
+    kpiDisc:    { title: 'Disciplina Total', text: 'Desde el 01/10: tus trades que cumplían las reglas según el motor, y tus días sin operar en que el plan no daba ninguna operación (si la daba, es un setup válido no tomado). Los días sin conexión y los que están en discusión no cuentan. Antes: % de ítems del checklist cumplidos. Mismo cálculo que el calendario y Disciplina.' },
     kpiCons:    { title: 'Consistencia', text: 'Sub-períodos positivos: en Mes cuenta semanas, en Trimestre/Año cuenta meses.' },
     equity:     { title: 'Curva de Equity', text: 'P&L acumulado a lo largo del período (por día en Mes/Trimestre, por mes en Anual). El relleno se tiñe de verde sobre cero y de rojo bajo cero. En la cabecera, "máx. caída" es el mayor retroceso desde un pico anterior.' },
     pnlBars:    { title: 'P&L por sub-período', text: 'P&L de cada semana (Mes) o mes (Trimestre/Anual).' },

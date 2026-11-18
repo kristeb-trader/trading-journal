@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-18f | Un día sin operar también se juzga: ✓ si el plan no daba nada, ✗ si daba un setup que no tomaste (D-057) |
 | 2026-11-18e | El bot lee su perfil de Supabase al armarse, y la cadena dibuja cada día con el del bot en esa fecha (fase 5) |
 | 2026-11-18d | La disciplina juzga tu entrada aunque el bot ya haya operado: el motor, en modo auditoría (02/11 y 11/11 ✓, 14/10 contratos) |
 | 2026-11-18c | Los límites salen de Parámetros en todo el Journal: fuera la casilla de Estrategia, el «stop máximo» de Claves y objetivos y los 80 / $160 escritos a mano (fase 4) |
@@ -100,6 +101,30 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-18f — Un día sin operar también se juzga (D-057)
+
+**Lo que pasó.** Kris: un día que no se opera porque no hubo setup válido **es** disciplina, pero hay que comprobar que de
+verdad no lo hubo (puede no haberse entrado por miedo); un día sin conexión no tiene nada que evaluar. Sustituye «no operar
+nunca es fallo» (D-052). Se le enseñaron sus cinco días conectados sin trade antes de tocar nada y eligió que un setup
+cuya orden no se llena (29/10) cuente como ✓.
+
+**Lo que se hizo.**
+- `medir.py` v6 y `subir_dia.operacion_con_limites`: en un día sin trade, la cadena guarda en `tu_operacion.sin_trade` la
+  operación que el plan, con los límites de la cuenta principal, habría **llenado** (motor normal, con orden), o `null`.
+- `juicioDia` (`db.js`): un día sin trade y conectado da un juicio, ✓ «no había setup válido: no operar era lo correcto» o
+  ✗ `no_tomado` «setup válido no tomado: Reingreso alcista a las 9:35». Sin ficha aún, pendiente; sin jornada (festivo),
+  fuera. `REGLA_TXT.no_tomado`.
+- **Disciplina** (cuadritos «sin setup ✓» / «no tomado» y los textos de «trades y días sin operar»), **el visor**
+  («Disciplina · no operar era lo correcto» / «setup válido no tomado»), **el Coach** (el foco: por qué no entró) y
+  **Telegram** (también avisa los días sin trade), al día.
+
+**Verificado.** Ensayo: los días con trade no cambian; sin trade, 12/10 ✓ · 23/10 ✗ (Continuación 9:47) · 29/10 ✓ · 30/10 ✗
+(Reingreso 9:35) · 03/11 ✓ · 13/11 (el plan daba una Continuación a las 10:03, pero no se conectó: fuera). SELECT y `db.js`
+sobre los datos reales dan lo mismo: **octubre 12 de 22 (55 %)**, **noviembre 6 de 10 (60 %)**. En el preview: los cuadritos
+y el bloque del visor del 30/10 y el 03/11; consola limpia.
 
 ---
 

@@ -46,7 +46,10 @@ reglas? El juicio lo escribe **`medir.py`** (`tu_operacion[i].juicio = {cumple, 
 - **Sin `motor` en `discContexto`, todo sigue con la medida de las reglas** (como sin etapas). Cada pantalla que quiera la
   medida nueva carga `DB.getMotorDisciplina()` **y** `DB.getDiscusiones()` y los pasa. Hoy: calendario, Análisis,
   Disciplina, el visor del día y el Coach.
-- **Cuentan trades, no días.** No operar nunca es fallo. Un día en discusión (abierta) no cuenta; cerrada a favor de
+- **Cuentan los trades y los días conectados sin trade** (D-057, 18/11; antes «no operar nunca es fallo»): sin trade, ✓ si el
+  plan con tus límites no habría llenado ninguna operación y ✗ `no_tomado` si sí (`tu_operacion.sin_trade`, de
+  `subir_dia.operacion_con_limites`: el motor normal, con orden y llenado; un setup cuya orden no se llena no cuenta). Un día
+  sin conexión no cuenta. `juicioDia` da un op con `sinTrade: true`. Un día en discusión (abierta) no cuenta; cerrada a favor de
   Kris (`plan`) es `anulado`: no cuenta y **no se enseña nada del motor** (ni en Disciplina, ni en el visor, ni en el Coach).
 - **Solo las reglas de su entrada** (D-053): nada se compara con la operación del bot, ni para dar por bueno un trade
   que coincide con ella. No vuelvas a meter al bot en la disciplina (ni en la pantalla, el visor, Telegram o el Coach).

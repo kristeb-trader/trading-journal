@@ -27,7 +27,9 @@ EVENTOS_ANTES = 15      # minutos de eventos del motor antes de la entrada de Kr
 #   y con los eventos de una pasada del motor hecha con su stop máximo.
 # 5 (18/11/2026): esa pasada, en modo auditoría (sin orden propia): el motor no deja de mirar tras llenar la suya, y
 #   un trade de Kris posterior se juzga igual (02/11). «El bot es aparte: la disciplina mide mis entradas».
-MEDIR_VERSION = 5
+# 6 (18/11/2026): los días SIN trade también se juzgan (Kris: «si realmente no se presentó un setup válido y no se
+#   operó, eso es cumplir disciplina»; puede que no se entrara por miedo). Va en `tu_operacion.sin_trade`.
+MEDIR_VERSION = 6
 
 # ── El juicio: ¿tu trade cumplía las reglas? (10/11/2026, docs/disenos/2026-11-10-disciplina-reglas.md) ──
 # Solo las reglas de la entrada de Kris (12/11, D-053): NO se compara con la operación del bot —ni

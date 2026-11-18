@@ -278,6 +278,34 @@ def eventos_con_stop(V, d, fed):
     return ev_de
 
 
+_CUENTA_PRINCIPAL = None
+
+
+def cuenta_principal():
+    global _CUENTA_PRINCIPAL
+    if _CUENTA_PRINCIPAL is None:
+        try: _CUENTA_PRINCIPAL = (sb('GET', 'objetivos?id=eq.1&select=cuenta_principal') or [{}])[0].get('cuenta_principal') or ''
+        except Exception: _CUENTA_PRINCIPAL = ''
+    return _CUENTA_PRINCIPAL
+
+
+def operacion_con_limites(V, d, fed, stop):
+    """La operación que el plan habría LLENADO ese día con el STOP_MAX de Kris (el motor normal, con su orden y su
+    llenado), o None si no daba ninguna. Es la vara de los días sin trade (18/11/2026): un setup válido cuya orden no
+    se llena no se podía tomar (el 29/10, el Reingreso de las 9:01: el precio no llegó a la entrada) y no cuenta."""
+    antes = lector.STOP_MAX
+    try:
+        lector.STOP_MAX = float(stop)
+        r2 = lector.leer_sesion(V, d, minimo_del_dia(f'{d[:4]}-{d[4:6]}-{d[6:]}'))
+        if not r2 or 'error' in r2: return None
+        _, t2 = lector.detectar_setups(r2, solo_reingresos=fed)
+    finally:
+        lector.STOP_MAX = antes
+    if not t2: return None
+    return {'setup': t2['tipo'], 'sentido': 'alcista' if t2['dir'] > 0 else 'bajista', 'hora': t2['hora'],
+            'entrada': round(t2['e'], 2), 'stop': round(t2['s'], 2), 'riesgo': round(t2['r'], 2), 'resultado': t2.get('res')}
+
+
 def tu_operacion(r, ev, t, trades, d, V=None, fed=False):
     """La medición de las operaciones de Kris contra el motor (medir.py), con la huella de los trades y de los
     límites de su perfil: si cambian (un trade que llega tarde, uno corregido, un límite editado en Datos), la
@@ -290,7 +318,14 @@ def tu_operacion(r, ev, t, trades, d, V=None, fed=False):
         return cache[c]
     ops = medir.medir(r, ev, t, trades, d, limites_de=lim, ev_de=eventos_con_stop(V, d, fed) if V else None)
     limites = next((o.get('limites') for o in ops if o.get('limites')), None)
-    return {'huella': medir.huella_trades(trades, limites), 'operaciones': ops}
+    out = {'huella': medir.huella_trades(trades, limites), 'operaciones': ops}
+    if not trades and V is not None:
+        # Sin trade: ¿el plan, con los límites de su cuenta principal, daba una operación? Si no, no operar era lo
+        # correcto (✓); si sí, es un setup válido no tomado (✗). Si Kris no se conectó, el Journal no lo cuenta.
+        limites = lim({'account': cuenta_principal()}) or medir.limites_del_bot()
+        out['sin_trade'] = {'operacion': operacion_con_limites(V, d, fed, limites['STOP_MAX']), 'limites': limites}
+        out['huella'] = medir.huella_trades(trades, limites)
+    return out
 
 
 def minimo_del_dia(fecha):
@@ -582,7 +617,7 @@ def medir_pendientes(n_dias, huella_motor, fed_set):
         for fila in fichas:
             f = fila['fecha']; ficha = fila['ficha'] or {}
             del_dia = por_dia.get(f, [])
-            lim = limites_de(f, del_dia[0].get('account')) if del_dia else None
+            lim = limites_de(f, del_dia[0].get('account') if del_dia else cuenta_principal())
             if (ficha.get('tu_operacion') or {}).get('huella') == medir.huella_trades(del_dia, lim): continue
             path = fuente(f)[0]
             if not path: continue

@@ -9,7 +9,8 @@ Lo que no se toca sin aprobación explícita. Una línea cada una; el porqué, e
 
 - **Disciplina** — el criterio vive SOLO en `js/db.js`, y un día cuenta las reglas de **su etapa**,
   activas o no (`activa` solo decide qué se ve para marcar). Desde el 01/10 la etapa 2 cuenta **trades** dentro de las
-  reglas según el motor (¿cumplía las reglas?, no «¿lo mismo que el bot?»). `.claude/rules/disciplina.md` · D-004, D-024, D-052.
+  reglas según el motor (¿cumplía las reglas?, no «¿lo mismo que el bot?»), y desde el 18/11 **los días conectados sin trade**:
+  ✓ si el plan no daba nada, ✗ si daba un setup que no se tomó. `.claude/rules/disciplina.md` · D-004, D-024, D-052, D-057.
 - **P&L** — `trades.profit` es **NETO**; `commission` es el round-trip total. D-002.
 - **Riesgo en PUNTOS, no en dólares** — MNQ = $2/punto, NQ = $20/punto. D-005.
 - **Horas: NinjaTrader va en hora de Colombia (UTC-5), no ET.** Convertir a ET antes de razonar

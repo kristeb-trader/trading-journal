@@ -464,7 +464,8 @@ function fmtOpPlan(op) {
 // Sustituye la medida de D-047 («¿hiciste lo mismo que el bot?»): el bot opera UN trade, y otro
 // puede cumplir las mismas reglas (06/10). El juicio de cada trade lo da medir.py con el motor
 // (`ficha.tu_operacion.operaciones[i].juicio = { cumple, regla, texto }`); aquí solo se suma.
-// Cuentan TRADES, no días. No operar nunca es fallo. Un día en discusión (abierta, o cerrada
+// Cuentan los TRADES, y cada día SIN trade (18/11): ✓ si el plan no daba ninguna operación, ✗ si la daba (setup
+// válido no tomado). Un día sin conexión no cuenta. Un día en discusión (abierta, o cerrada
 // dándole la razón a Kris: `plan`) no cuenta. Diseño: docs/disenos/2026-11-10-disciplina-reglas.md.
 const REGLA_TXT = {
   // Sin números: el máximo es el del perfil de la cuenta en esa fecha (D-055), y el de cada trade va en su juicio.
@@ -477,6 +478,7 @@ const REGLA_TXT = {
   fluidez:          { titulo: 'Continuación sin corrida fluida',     corto: 'no fluida',       plan: 'La continuación solo se opera con la corrida fluida.' },
   fed:              { titulo: 'Continuación en día de Fed',          corto: 'día de Fed',      plan: 'En día de Fed no se opera la continuación.' },
   premercado:       { titulo: 'Continuación en una zona de premercado', corto: 'premercado',   plan: 'El rompimiento de una zona de premercado no da continuación: queda para el reingreso.' },
+  no_tomado:        { titulo: 'Setup válido no tomado',              corto: 'no tomado',       plan: 'Si el plan, con tus límites, daba una operación, se toma: no entrar también es salirse del plan.' },
   sin_setup:        { titulo: 'Trades sin setup del plan',           corto: 'sin setup',       plan: 'Solo se operan los setups del plan.' },
   una_operacion:    { titulo: 'Más de una operación',                corto: '2.º trade',       plan: 'Una operación por día.' },
   ventana:          { titulo: 'Fuera de la ventana',                 corto: 'fuera de hora',   plan: 'Solo se opera en los 120 minutos tras la apertura (09:30–11:30 ET).' },
@@ -497,9 +499,25 @@ function juicioDia(s, opts) {
   const trades = (o.tradesPorDia && o.tradesPorDia.get(s.sesion_date)) || []
   const discusion = (o.discusiones && o.discusiones.get(s.sesion_date)) || null
   const plan = (m && m.operacion) || null
-  if (!trades.length) return { estado: 'sin_trade', ops: [], plan, discusion }
-  const ops = _opsDia(m).filter(op => op.juicio)
-  if (!m || m.estado !== 'ok' || ops.length < trades.length) return { estado: 'pendiente', ops, plan, discusion }
+  let ops
+  if (!trades.length) {
+    // Sin trade también se juzga (18/11/2026, Kris): si el plan, con tus límites, no daba ninguna operación, no operar
+    // era lo correcto (✓); si la daba, es un setup válido no tomado (✗: puede que no se entrara por miedo). Lo mide
+    // la cadena (`tu_operacion.sin_trade`: la operación que el plan habría llenado). Un día sin conexión ya salió arriba;
+    // uno sin jornada para el motor (festivo, datos incompletos) no tiene nada que juzgar.
+    if (m && m.estado !== 'ok') return { estado: 'sin_trade', ops: [], plan, discusion }
+    const st = m && m.tu && m.tu.sin_trade
+    if (!st) return { estado: 'pendiente', ops: [], plan, discusion }
+    const p = st.operacion
+    ops = [p
+      ? { hora: p.hora, sentido: p.sentido, sinTrade: true,
+          juicio: { cumple: false, regla: 'no_tomado', texto: `setup válido no tomado: ${p.setup} ${p.sentido} a las ${p.hora}` } }
+      : { hora: null, sinTrade: true,
+          juicio: { cumple: true, regla: null, texto: 'no había setup válido: no operar era lo correcto' } }]
+  } else {
+    ops = _opsDia(m).filter(op => op.juicio)
+    if (!m || m.estado !== 'ok' || ops.length < trades.length) return { estado: 'pendiente', ops, plan, discusion }
+  }
   if (discusion && discusion.estado === 'plan') return { estado: 'anulado', ops: [], plan: null, discusion }
   return { estado: discusion && discusion.estado === 'abierta' ? 'discusion' : 'cuenta', ops, plan, discusion }
 }

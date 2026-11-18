@@ -10,6 +10,33 @@
 
 ---
 
+## D-057 — Un día sin operar también se juzga: ✓ si el plan no daba nada, ✗ si daba un setup que no tomaste
+
+*Sustituye, de D-052, «no operar nunca es fallo».*
+
+**Decisión (Kris, 18/11/2026).** *«Un día que no se opera porque no dio un setup válido sí es cumplir disciplina, pero
+realmente validar que no se haya presentado setup válido, porque de pronto puede pasar que por miedo no se haya entrado.
+[…] Es diferente cuando realmente no me conecto a operar: ese día no hay nada que evaluar.»*
+- **Te conectaste, no operaste y el plan, con tus límites, no daba ninguna operación** → ✓ («no operar era lo correcto»).
+- **Te conectaste, no operaste y el plan sí daba una operación** → ✗ **setup válido no tomado** (`no_tomado`), con su hora.
+- **No te conectaste** (`no_opero` y `se_conecto = false`) → fuera, como siempre.
+
+**La vara.** «El plan daba una operación» = el motor, con los límites del perfil de la cuenta principal y operando de
+verdad (con su orden y su llenado), habría **llenado** una (`subir_dia.operacion_con_limites` →
+`tu_operacion.sin_trade`). Un setup válido cuya orden no se llena no se podía tomar y no cuenta: el 29/10, el Reingreso de
+las 9:01 no llegó a su entrada → ✓ (Kris eligió esta y no la estricta).
+
+**Motivo.** «No operar nunca es fallo» no distinguía no operar porque no había nada de no operar por miedo. Medido el
+18/11 sobre los días conectados sin trade: 12/10 ✓, 23/10 ✗ (Continuación alcista 9:47, TARGET), 29/10 ✓, 30/10 ✗
+(Reingreso alcista 9:35, TARGET), 03/11 ✓; el 13/11 no se conectó. Octubre de 10/18 a **12/22**, noviembre de 5/9 a **6/10**.
+
+**Alternativas descartadas.**
+- **Seguir sin contar los días sin trade:** era lo de D-052; Kris: «no estás siendo estricto ni razonable».
+- **Cualquier setup válido no tomado es ✗, aunque su orden no se llenara:** Kris eligió que cuente solo el que se habría llenado.
+- **Juzgar con los límites del bot:** la disciplina es de Kris, con los suyos (D-055).
+
+---
+
 ## D-056 — El retroceso nuevo trae un stop nuevo
 
 **Decisión (Kris, 18/11/2026, plan 3.64).** Si el stop de un rompimiento (Continuación o Reingreso) pasa de `STOP_MAX`

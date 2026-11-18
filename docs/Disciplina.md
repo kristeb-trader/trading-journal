@@ -45,7 +45,9 @@ Desde el 01/10 la etapa 2 no cuenta casillas: **cuenta trades**, y cada trade lo
 diseño `docs/disenos/2026-11-10-disciplina-reglas.md`; sustituye la medida de D-047). El Diario no tiene casillas en
 estos días: las reglas las mide el motor.
 
-> **Disciplina % = trades dentro de las reglas ÷ trades juzgados.** No operar nunca es fallo y no entra. No cuentan los
+> **Disciplina % = (trades dentro de las reglas + días sin operar en que el plan no daba nada) ÷ (trades + días sin
+> operar conectados).** Desde el 18/11 (D-057) un día conectado sin trade cuenta: ✓ si el plan, con tus límites, no habría
+> llenado ninguna operación; ✗ «setup válido no tomado» si la habría llenado. Un día **sin conexión** no entra. No cuentan los
 > días **en discusión** (Kris no está de acuerdo con el motor) ni los **pendientes** (sin ficha: el candado).
 
 **El juicio de cada trade** lo calcula `scripts/cadena/medir.py` y lo guarda en `ficha.tu_operacion[i].juicio`. Manda la

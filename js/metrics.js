@@ -453,7 +453,7 @@ const Metrics = (() => {
     const chkItemsTotal = disc.total
     const chkItemsOk    = disc.ok
     const disciplinaProceso = disc.pct
-    const discUnidad = disc.medida === 'plan' ? 'trades dentro de las reglas' : 'ítems de checklist'
+    const discUnidad = disc.medida === 'plan' ? 'juicios dentro de las reglas (trades y días sin operar)' : 'ítems de checklist'
 
     // ── Tasa de Errores: % de días registrados con al menos un error ──
     const diasConError = new Set(periodCasuisticas.map(c => c.sesion_date)).size

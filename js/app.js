@@ -239,6 +239,10 @@ const Modal = {
       lbl = 'Disciplina · en discusión'; tono = 'blu'
       txt = `El motor: ${esc(rota ? rota.juicio.texto : 'dentro de las reglas')}.<br>Tú: «${esc(j.discusion.nota || 'sin nota')}»`
         + '<br>No cuenta hasta cerrarla en Disciplina.'
+    } else if (j.ops[0]?.sinTrade) {
+      // Sin trade (18/11): o no había setup válido (✓), o lo había y no se tomó (✗).
+      lbl = rota ? 'Disciplina · setup válido no tomado' : 'Disciplina · no operar era lo correcto'; tono = rota ? 'red' : ''
+      txt = `<strong>${esc(j.ops[0].juicio.texto[0].toUpperCase() + j.ops[0].juicio.texto.slice(1))}</strong>.`
     } else if (rota) {
       lbl = 'Disciplina · regla rota'; tono = 'red'
       txt = `<strong>${esc(rota.juicio.texto[0].toUpperCase() + rota.juicio.texto.slice(1))}</strong> — ${esc([sesion.setup, rota.hora].filter(Boolean).join(' '))}.`

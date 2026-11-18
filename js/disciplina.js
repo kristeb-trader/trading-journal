@@ -514,11 +514,14 @@ const Disciplina = (() => {
   function cuadro(x) {
     const j = x.j
     if (j.estado === 'sin_trade') return { tono: 'n', corto: 'no operaste',
-      tit: 'No operaste: nunca es fallo' }
+      tit: 'No operaste y el motor no tiene jornada ese día: no cuenta' }
     if (j.estado === 'pendiente') return { tono: 'n', corto: 'pendiente', tit: 'Aún sin el juicio del motor' }
     if (j.estado === 'discusion') return { tono: 'b', corto: 'en discusión', tit: j.discusion?.nota || 'En discusión' }
     if (j.estado === 'anulado') return { tono: 'n', corto: 'no cuenta', tit: 'Cerraste la discusión a tu favor: no cuenta' }
     const rota = j.ops.find(op => !op.juicio.cumple)
+    if (j.ops[0]?.sinTrade) return rota
+      ? { tono: 'r', corto: 'no tomado', tit: rota.juicio.texto }
+      : { tono: 'g', corto: 'sin setup ✓', tit: j.ops[0].juicio.texto }
     if (!rota) return { tono: 'g', corto: 'dentro',
       tit: j.ops.map(op => op.juicio.texto).join(' · ') }
     const pts = /(\d+) pts/.exec(rota.juicio.texto)
@@ -537,7 +540,7 @@ const Disciplina = (() => {
         <div class="dd-fuga">
           <div class="dd-fuga-l">Tu fuga ${periodoInfo().k === 'month' ? 'de ' + mes : 'del período'}</div>
           <div class="dd-fuga-t">${esc(t.titulo)}</div>
-          <div class="dd-fuga-c">${p.fuga.n} de tus ${p.total} trade${p.total !== 1 ? 's' : ''} · ${listaFechas(p.fuga.fechas)}</div>
+          <div class="dd-fuga-c">${p.fuga.n} de ${p.total} juzgado${p.total !== 1 ? 's' : ''} · ${listaFechas(p.fuga.fechas)}</div>
           ${t.plan ? `<div class="dd-fuga-p">${esc(t.plan)}</div>` : ''}
           ${p.fuga.notas.length ? `<div class="dd-fuga-n">Tus notas esos días: ${p.fuga.notas.map(n => `«${esc(n.length > 90 ? n.slice(0, 90).trim() + '…' : n)}»`).join(' · ')}</div>` : ''}
         </div>`
@@ -552,8 +555,8 @@ const Disciplina = (() => {
     const tonoPct = v => v == null ? '' : v >= 80 ? 'pos' : v < 55 ? 'neg' : 'ama'
     const stats = [
       { label: 'Dentro de las reglas', value: p.total ? `${p.ok} de ${p.total}` : '—', cls: tonoPct(p.pct),
-        sub: p.total ? `${p.pct}% de tus trades` : 'sin trades juzgados' },
-      { label: 'Racha', value: `${p.racha}`, cls: p.racha ? 'pos' : '', sub: 'trades seguidos dentro de las reglas' },
+        sub: p.total ? `${p.pct}% de tus trades y días sin operar` : 'nada juzgado aún' },
+      { label: 'Racha', value: `${p.racha}`, cls: p.racha ? 'pos' : '', sub: 'seguidos dentro de las reglas (trades y días sin operar)' },
       { label: 'En discusión', value: `${p.enDiscusion.length}`, cls: p.enDiscusion.length ? 'blu' : '', sub: 'días en que crees que el motor se equivoca' },
     ]
     const strip = stats.map(s => `
@@ -571,7 +574,7 @@ const Disciplina = (() => {
       <div class="dd-ley">
         <span><i class="dd-sw g"></i>Dentro de las reglas</span>
         <span><i class="dd-sw r"></i>Regla rota</span>
-        <span><i class="dd-sw n"></i>No operaste: nunca es fallo</span>
+        <span><i class="dd-sw n"></i>Sin juicio: festivo o pendiente</span>
         ${p.enDiscusion.length ? '<span><i class="dd-sw b"></i>En discusión</span>' : ''}
       </div>`
 

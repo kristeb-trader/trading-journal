@@ -76,7 +76,7 @@ const Portada = (() => {
     // meta del mes: la disciplina
     const p = disciplina.total ? disciplina.pct : null
     $('ptPct').textContent = p == null ? '—' : `${p}%`
-    $('ptPctS').textContent = p == null ? 'Sin trades que medir este mes' : `${disciplina.ok} de ${disciplina.total} ${disciplina.medida === 'plan' ? 'trades dentro de las reglas' : 'ítems del checklist'}`
+    $('ptPctS').textContent = p == null ? 'Sin trades que medir este mes' : `${disciplina.ok} de ${disciplina.total} ${disciplina.medida === 'plan' ? 'dentro de las reglas (trades y días sin operar)' : 'ítems del checklist'}`
     const tile = ([l, v]) => `<div class="pt-tile"><small>${l}</small><b class="num">${v}</b></div>`
     $('ptTiles').innerHTML = [
       ['Fuera', p == null ? '—' : disciplina.total - disciplina.ok],

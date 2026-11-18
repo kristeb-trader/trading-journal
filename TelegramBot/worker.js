@@ -129,23 +129,34 @@ async function avisarDisciplina(fecha, env) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha || '') || fecha < AVISO_DISCIPLINA_DESDE) return 'fuera de fecha';
   const leer = async ruta => { const r = await sbFetch(env, ruta); return r.ok ? r.json() : []; };
   const [ses, fichas, trades] = await Promise.all([
-    leer(`sesiones?sesion_date=eq.${fecha}&select=registrada_at,disciplina_avisada_at,setup`),
+    leer(`sesiones?sesion_date=eq.${fecha}&select=registrada_at,disciplina_avisada_at,setup,no_opero,se_conecto`),
     leer(`motor_fichas?fecha=eq.${fecha}&select=estado,operacion:ficha->operacion,tu:ficha->tu_operacion`),
     leer(`trades?trade_date=eq.${fecha}&select=entry_time`),
   ]);
   const s = ses[0], m = fichas[0];
   if (!s || !s.registrada_at) return 'sin registrar';
   if (s.disciplina_avisada_at) return 'ya avisado';
-  if (!trades.length) return 'sin trades';
-  const ops = ((m && m.tu && m.tu.operaciones) || []).filter(op => op.juicio);
-  if (!m || m.estado !== 'ok' || ops.length < trades.length) return 'sin juicio';
-
-  // Solo las reglas de SU entrada (12/11/2026, D-053): nada de lo que hizo el bot.
-  const quien = op => [s.setup, op.hora].filter(Boolean).join(' ');
-  const lineas = ops.map(op => op.juicio.cumple
-    ? `✅ ${escHtml(quien(op))} — <b>dentro de las reglas</b>.`
-    : `❌ ${escHtml(quien(op))} — <b>${escHtml(op.juicio.texto)}</b>.`);
-  const rota = ops.some(op => !op.juicio.cumple);
+  let lineas, rota;
+  if (!trades.length) {
+    // Sin trade también se juzga (18/11/2026): ¿el plan, con sus límites, daba una operación? Sin conexión, nada.
+    if (s.no_opero && s.se_conecto === false) return 'sin conexión';
+    const st = m && m.estado === 'ok' && m.tu && m.tu.sin_trade;
+    if (!st) return 'sin juicio';
+    const p = st.operacion;
+    rota = !!p;
+    lineas = [p
+      ? `❌ No operaste, pero el plan daba <b>${escHtml(`${p.setup} ${p.sentido} a las ${p.hora}`)}</b>: setup válido no tomado.`
+      : '✅ No operaste y el plan no daba ninguna operación: <b>no operar era lo correcto</b>.'];
+  } else {
+    const ops = ((m && m.tu && m.tu.operaciones) || []).filter(op => op.juicio);
+    if (!m || m.estado !== 'ok' || ops.length < trades.length) return 'sin juicio';
+    // Solo las reglas de SU entrada (12/11/2026, D-053): nada de lo que hizo el bot.
+    const quien = op => [s.setup, op.hora].filter(Boolean).join(' ');
+    lineas = ops.map(op => op.juicio.cumple
+      ? `✅ ${escHtml(quien(op))} — <b>dentro de las reglas</b>.`
+      : `❌ ${escHtml(quien(op))} — <b>${escHtml(op.juicio.texto)}</b>.`);
+    rota = ops.some(op => !op.juicio.cumple);
+  }
 
   await sendMessage(env.BOT_TOKEN, env.ALLOWED_CHAT_ID,
     `🎯 <b>Disciplina · ${diaMes(fecha)}</b>\n${lineas.join('\n')}`,
