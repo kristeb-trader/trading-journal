@@ -4,6 +4,9 @@ const SessionForm = (() => {
   let retrocesoCancelId = 0
   let suppressAutoLoad = false // evita que onShow pise la carga de prefill (editar día pasado)
   let objetivos = null // stop_max_usd etc. para la alerta de riesgo (Bloque 1)
+  // La imagen del día la sube también NinjaTrader (FotoChaumer, 16/11/2026): el Diario solo manda `imagen_url`
+  // si se subió o quitó aquí. Si no, abrir el Diario antes de la foto y guardar después la borraba.
+  let imagenTocada = false
 
   // ── Días hábiles ────────────────────────────────────────────────────────
   // El mercado está cerrado en fin de semana, así que Sesión Operativa nunca
@@ -604,6 +607,7 @@ const SessionForm = (() => {
     removeBtn.addEventListener('click', () => {
       previewImg.src = ''
       document.getElementById('imagenUrl').value = ''
+      imagenTocada = true
       preview.classList.add('hidden')
       area.classList.remove('hidden')
     })
@@ -632,6 +636,7 @@ const SessionForm = (() => {
   async function uploadToCloudinary(file) {
     try {
       document.getElementById('imagenUrl').value = await subirACloudinary(file)
+      imagenTocada = true
       Toast.show('Imagen subida correctamente', 'success')
     } catch {
       Toast.show('Error al subir imagen a Cloudinary', 'error')
@@ -725,7 +730,7 @@ const SessionForm = (() => {
 
     // La emoción al llegar y al cierre y la confianza ya no se piden (27/10/2026): no van
     // en el payload, ni en null, para no borrar lo registrado en días anteriores.
-    payload.imagen_url = document.getElementById('imagenUrl').value || null
+    if (imagenTocada) payload.imagen_url = document.getElementById('imagenUrl').value || null
 
     // ── Premercado (se captura si operó, o si no operó pero se conectó) ──
     const seConecto = noOpero ? document.getElementById('seConecto').checked : true
@@ -784,6 +789,7 @@ const SessionForm = (() => {
     document.getElementById('imagePreview').classList.add('hidden')
     document.getElementById('uploadArea').classList.remove('hidden')
     document.getElementById('imagenUrl').value = ''
+    imagenTocada = false
     // Premercado
     soportesNaranja?.clear()
     resistenciasNaranja?.clear()
@@ -921,6 +927,7 @@ const SessionForm = (() => {
     taIA.value = sesion.resumen_ia || ''
     taIA.style.height = 'auto'
     taIA.style.height = taIA.scrollHeight + 'px'
+    imagenTocada = false
     if (sesion.imagen_url) {
       document.getElementById('imagenUrl').value = sesion.imagen_url
       document.getElementById('previewImg').src = sesion.imagen_url

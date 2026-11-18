@@ -3,6 +3,15 @@
 > Solo lo que está en curso. Lo terminado va a `docs/historial-proyecto.md`; las ideas y lo que
 > está por comprobar, a `backlog.md`.
 
+## El diseño «Cristal», ya oficial (18/11/2026)
+
+Fundido en `main`: es el Journal (diseño `docs/disenos/2026-11-13-rediseno-cristal.md`). Kris sigue con los toques finales
+pantalla a pantalla, ya sobre `main`.
+
+- [ ] **Fase 7 · cierre:** borrar el CSS de `styles.css` que «Cristal» tapa y ya no se usa; reescribir las tablas de
+  `.claude/rules/estilos.md` con los tokens nuevos; decidir si las maquetas de `design-mockups/` se quedan
+- [ ] Los 141 textos de contraste justo (3,6–4,4) que quedan, dentro de piezas atenuadas a propósito
+
 ## El bot: BotChaumer en NinjaTrader (D-038)
 
 Aprobado el 06/10. Diseño: `docs/disenos/2026-10-06-bot-chaumer.md`. Se valida en `SimBot` en vivo y con el Strategy
@@ -64,6 +73,8 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
   premercado, en los dos motores. Cambió el marcado del 11/09 y el 14/07, ninguna operación
 - [x] **Plan 3.46** (09/10): cierre por hora a las 16:50 de Nueva York, en el plan, el portal, los dos motores (caso sintético en la sincronía), el bot, la cadena, `bot_operaciones` y el calendario
 - [x] **Kris, fuera de la ventana** (comprobado el 22/10: todo lo instalado es idéntico al repositorio): copiar `MotorChaumer.cs`, `CadenaDiaria.cs` (a `Custom\AddOns\`), `BotChaumer.cs` (a `Custom\Strategies\`) y `VistaMotorChaumer.cs` (a `Custom\Indicators\`), y un solo F5. Sin el motor nuevo, el bot y la vista dicen «motor desincronizado»
+- [x] **Plan 3.62** (16/11, Kris): la zona superada cambia de papel (Reingreso, forma c) y el stop de todo reingreso va en el último retroceso. Plan y motores (`2300618`, sello `L:d5c169fc…`, 93/93), portal, fichas de septiembre. Cambian 5 operaciones (D-054)
+- [x] **Kris** (16/11): `MotorChaumer.cs` con el sello `L:d5c169fc…` copiado y compilado
 - [ ] **§12 D2** `VistaMotorChaumer`: código hecho (07/10). **Kris:** copiar a `Custom/Indicators`, F5 y el Market Replay del 23/09 y el 02/10 con el bot y la vista
 - [ ] **Fase 4 · el pasado entero**: velas desde el 12/06/2025, Strategy Analyzer, Market Replay, informe
 - [ ] **Fase 5 · SimBot en vivo**, con la comparación diaria en la cadena
@@ -142,6 +153,18 @@ Rescatados de `chaumer/04_Web/ESTADO_FASE_2.md` al archivarlo (28/09, D-030). Es
 - [ ] **Kris:** copiar `NinjaTrader/SupabaseAutoExport.cs` a `Custom\Indicators\` y F5 **fuera de la ventana** (sin
   operación abierta: al recompilar, el indicador se reinicia). Desde entonces el MAE/MFE se mide con cada precio y los
   trades de un minuto dejan de guardarse en 0. Comprobar en el primer trade que `mae` no sale 0
+
+## Parámetros en Supabase, por perfil (17/11, D-055)
+
+Aprobado en el chat el 17/11. «Mi operativa» 100 pts / $200 desde el 01/10; «Bot» 80 / $160.
+
+- [x] **Fase 1 · las tablas** (17/11): `parametros_*`, `parametros_vigentes` / `parametros_de_cuenta`. El perfil Bot = `reglas.json`, 0 diferencias
+- [x] **Fase 2 · la pestaña Parámetros en Datos** (17/11): perfiles, riesgo con su historial, lo común y técnicos (solo lectura hasta la fase 5), cuentas → perfil, Mi cuenta, contratos calculados
+- [x] **Fase 3 · la disciplina con el perfil de la cuenta** (17/11): `medir.py` v4, segunda pasada del motor con su stop; oct 11/18, nov 3/8
+- [ ] **06/10, 08/10 y 12/11**: con el motor de hoy su juicio cambia (06/10 ✓ → corrida no fluida; 08/10 sin setup → 4 contratos;
+  12/11 sin consecución → el stop del plan, 126, pasaba de 100). No se reescribieron: preguntar a Kris si se rehacen con el motor de hoy
+- [ ] **Fase 4 · fuera los números escritos a mano**: la casilla de Estrategia, «Stop máximo» de Claves y objetivos, los 80 / $160 de `db.js`, `form.js`, `disciplina.js`, `coach.js`; `PARAMETROS.md` y `reglas.json`, generados desde Supabase
+- [ ] **Fase 5 · el bot lee su perfil de Supabase** al armarse (`ChaumerNT`). **Kris: recompilar en NinjaTrader**
 
 ## Disciplina: ¿tu trade cumplía las reglas? (10/11, D-052)
 

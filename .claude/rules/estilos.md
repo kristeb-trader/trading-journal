@@ -6,9 +6,11 @@ paths:
 
 # Tokens y lenguaje visual
 
-> ⚠️ **Rama `rediseno-cristal` (desde el 16/11/2026):** los tokens de `:root` ya son los del rediseño «Cristal»
-> (`docs/disenos/2026-11-13-rediseno-cristal.md`): `--card` y `--bg3` son **translúcidos**, `--bg2` opaco, y lo que
-> flota sobre contenido usa `--capa`. Las tablas de abajo describen el diseño anterior y se reescriben en la fase 7.
+> ⚠️ **El Journal es el diseño «Cristal»** (fundido en `main` el 18/11/2026; `docs/disenos/2026-11-13-rediseno-cristal.md`):
+> los tokens de `:root` son los suyos, con tema **claro y oscuro**; `--card` y `--bg3` son **translúcidos**, `--bg2` opaco, y
+> lo que flota sobre contenido usa `--capa`. La capa visual nueva va en `css/cristal.css` (después de `styles.css`): una
+> pantalla o pieza nueva se pinta ahí. Los hex de las tablas de abajo son del diseño anterior y se reescriben en la fase 7;
+> la regla base/`-txt` sigue igual.
 
 **Todos los tokens viven en `css/styles.css`, bloque `:root`** (29). Cards `radius 10px`,
 transiciones 150ms. Iconos: Tabler Icons (CDN). Gráficas: Chart.js (CDN).

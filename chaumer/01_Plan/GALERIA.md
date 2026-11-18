@@ -118,6 +118,8 @@ Las medidas están tomadas sobre el gráfico de **NQ** ($20 por punto). El opera
 
 ✅ **Confirma `R-32` para Reingreso:** el stop mide contra la corrida fallida, no contra el retroceso. El operador lo etiqueta literalmente *"Nivel mas bajo"*.
 
+> 🔄 **Desde la 3.62 (16/11/2026), el stop de todo reingreso va en el extremo del último retroceso antes del rompimiento** (`R-32`): *"el extremo del último retroceso, para todos los reingresos"*. En la forma de esta captura —la corrida rompe la zona, falla y el precio vuelve a atravesarla— el extremo de la corrida fallida suele ser también el del último retroceso, y entonces el stop es el mismo. Si no coinciden, manda el último retroceso.
+
 ---
 
 ## G-06 · REINGRESO BAJISTA
@@ -134,6 +136,8 @@ Las medidas están tomadas sobre el gráfico de **NQ** ($20 por punto). El opera
 | 6 | Target 1:1 abajo | `R-32` |
 
 ✅ **Espejo exacto de `G-05`.** Los dos reingresos usan la misma etiqueta para el stop —*"nivel más alto/más bajo"*— y confirman que el plan lo recogió bien.
+
+> 🔄 **Desde la 3.62 (16/11/2026), el stop de todo reingreso va en el extremo del último retroceso antes del rompimiento** (`R-32`): *"el extremo del último retroceso, para todos los reingresos"*. En la forma de esta captura —la corrida rompe la zona, falla y el precio vuelve a atravesarla— el máximo de la corrida fallida suele ser también el del último retroceso, y entonces el stop es el mismo. Si no coinciden, manda el último retroceso.
 
 ---
 

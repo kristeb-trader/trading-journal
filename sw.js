@@ -4,8 +4,7 @@
 //   - CDN (tabler, supabase, chart.js): cache-first → no cambian, carga instantánea
 //   - APIs externas (supabase, cloudinary, workers.dev...): network-only
 
-// En la rama del rediseño (…/nuevo/) la caché lleva su propio nombre: comparte origen con producción.
-const CACHE = 'nqjournal-nuevo-v4'
+const CACHE = 'nqjournal-v15'
 
 // Recursos CDN que no cambian → cache-first
 const CDN_SHELL = [
@@ -36,6 +35,7 @@ const APP_SHELL = [
   './js/form.js',
   './js/charts.js',
   './js/data.js',
+  './js/parametros.js',
   './js/gallery.js',
   './js/experimentos.js',
   './js/apex.js',
@@ -87,8 +87,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      // solo las cachés viejas de ESTA versión de prueba: las de producción no se tocan
-      .then(keys => Promise.all(keys.filter(k => k.startsWith('nqjournal-nuevo-') && k !== CACHE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   )
 })

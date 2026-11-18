@@ -48,18 +48,12 @@ jobs:
         run: |
           mkdir _site
           cp -r index.html favicon.svg manifest.json sw.js js css icons _site/
-      # El rediseño «Cristal» (docs/disenos/2026-11-13-rediseno-cristal.md) se prueba en /nuevo/ sin tocar
-      # producción: se copia la rama rediseno-cristal a esa subcarpeta. Al fundir la rama en main, este
-      # paso y el siguiente se quitan (y .github/workflows/avisar-nuevo.yml, que vive en la rama).
-      - uses: actions/checkout@v4
-        with:
-          ref: rediseno-cristal
-          path: _nuevo
-      - name: Añadir el diseño nuevo en /nuevo/
+      # /nuevo/ fue la dirección de prueba del rediseño «Cristal» (16–18/11/2026). Ya es el Journal: quien
+      # la tenga abierta o instalada pasa a la de siempre, y su service worker se borra solo con su caché.
+      - name: Retirar la dirección de prueba /nuevo/
         run: |
           mkdir _site/nuevo
-          cd _nuevo && cp -r index.html favicon.svg manifest.json sw.js js css icons ../_site/nuevo/
-          cd .. && rm -rf _nuevo
+          cp .github/nuevo-retirado/index.html .github/nuevo-retirado/sw.js _site/nuevo/
           find _site -type f | sort
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4

@@ -158,6 +158,7 @@ class Zona:
         self.i_consec=None                        # vela de esa consecucion
         self.consec_ext=None                      # extremo de la vela de consecucion
         self.rein_ok=False                        # ventana de reingreso abierta
+        self.roto2=None                           # plan 3.62: ya dio su reingreso (forma a o c): (vela, extremo)
         self.ref=None                             # punto de referencia
         self.de_corrida=False                     # la creo una corrida (no un retroceso)
         self.pm=False                             # zona de premercado (R-15)
@@ -915,6 +916,23 @@ def _colocar(o, tag, ev, dia, k):
         ev.append(tag+f"  ✓ setup válido · la orden se aplaza: ventana de la noticia roja de las {_hhmm(T)} (R-35)")
     return o
 
+def _ultimo_retroceso(res, i, nd):
+    """Plan 3.62 (16/11/2026, Kris, R-32): el stop de TODO reingreso (formas a, b y c) va en el extremo del
+    ultimo retroceso antes del rompimiento: "el extremo del ultimo retroceso, para todos los reingresos".
+    nd>0: el ultimo minimo de giro del zigzag ya confirmado en la vela i; nd<0: el ultimo maximo. Se toma el
+    extremo desde ese giro hasta la vela i (si el precio fue mas alla despues, el stop va con el).
+    None si aun no hay ningun giro confirmado: entonces no hay reingreso."""
+    D=res['D']; piv=res['piv']; pc=res['pconf']
+    j_ok=None
+    for n_,((j,p),c) in enumerate(zip(piv,pc)):
+        if c is None or c > i or j > i: continue
+        vec=[piv[m][1] for m in (n_-1,n_+1) if 0<=m<len(piv)]
+        if not vec: continue
+        es_min = all(p <= v for v in vec)
+        if es_min == (nd>0): j_ok=j
+    if j_ok is None: return None
+    return min(D[x]['l'] for x in range(j_ok,i+1)) if nd>0 else max(D[x]['h'] for x in range(j_ok,i+1))
+
 def detectar_setups(res, solo_reingresos=False):
     D,Z,b,fin,retros = res['D'],res['Z'],res['b'],res['fin'],res['retros']
     ev=[]; orden=None; trade=None
@@ -1064,9 +1082,10 @@ def detectar_setups(res, solo_reingresos=False):
             # cuenta, pero esta vela no es de reingreso; se mira lo que viene despues.
             if z.i_consec == i and not ((k['c'] < k['o']) if nd < 0 else (k['c'] > k['o'])):
                 continue
-            seg=range(z.roto[1], i+1)
-            st = max(D[j]['h'] for j in seg) if nd<0 else min(D[j]['l'] for j in seg)
+            st = _ultimo_retroceso(res, i, nd)
+            z.roto2 = (i, None)
             e  = k['l']-TICK if nd<0 else k['h']+TICK
+            if st is None: continue
             # R-41 unificado: el filtro del punto de referencia ya no es el de R-26
             # (z.ref), por eso va ref=None. Lo aplica _punto_de_referencia, abajo.
             o,motivo,t,r=_evaluar(Z,i,'Reingreso',nd,e,st,None)
@@ -1078,6 +1097,36 @@ def detectar_setups(res, solo_reingresos=False):
                 elif _zona_a_testear(Z, i, t, nd) is None:
                     o, motivo = None, SIN_ZONA
             tag=(f"{hh(k)}  REINGRESO {'bajista' if nd<0 else 'alcista'} · entrada {e:.2f} · stop {st:.2f}"
+                 + (f" · objetivo {t:.2f} · riesgo {r:.2f}" if t else ""))
+            if o: orden=_colocar(o, tag, ev, dia, k)
+            else: ev.append(tag+f"  ✗ descartado — {motivo}")
+            break
+        if orden: continue
+
+        # ---------- REINGRESO, FORMA C: LA ZONA QUE CAMBIA DE PAPEL (plan 3.62, 16/11/2026, Kris, R-21 y R-26) ----------
+        # Una zona superada en un sentido (rompimiento + consecucion) cambia de papel: el soporte roto pasa a ser
+        # resistencia, y al reves. Si despues la rompe el precio en sentido contrario y hay consecucion, eso es una
+        # entrada; con una zona ya cotizada mas alla del objetivo, Reingreso. Lo que no cumple, no se opera aqui
+        # (la Continuacion espera una zona nueva). Una sola vez por zona (roto2). Caso de origen: 16/11, el soporte
+        # de la 9:32 roto a las 10:01 (consecucion 10:05), rompimiento alcista a las 10:51, entrada a las 10:53.
+        for z in vivas:
+            if not (z.roto and z.consec) or z.i_consec is None or z.i_consec >= i or z.roto2: continue
+            nd = 1 if z.roto[0]=='abajo' else -1
+            zlo,zhi=(borde(z,i) if con_hijas(z,i) else z.en(i))
+            if   nd>0 and k['l']<=zhi and k['h'] > zhi+TICK/2: e0=k['h']
+            elif nd<0 and k['h']>=zlo and k['l'] < zlo-TICK/2: e0=k['l']
+            else: continue
+            z.roto2=(i,e0)
+            e=e0+TICK*nd
+            st=_ultimo_retroceso(res, i, nd)
+            if st is None: continue
+            o,motivo,t,r=_evaluar(Z,i,'Reingreso',nd,e,st,None)
+            if t is not None: res['reingresos'].append((i,e,t,nd))
+            if o is not None:
+                pr=_punto_de_referencia(res,i,e,t,nd)
+                if pr is not None: o, motivo = None, f"el objetivo pasa del punto de referencia {pr:.2f}"
+                elif _zona_a_testear(Z, i, t, nd) is None: o, motivo = None, SIN_ZONA
+            tag=(f"{hh(k)}  REINGRESO {'alcista' if nd>0 else 'bajista'} (zona rota que cambia de papel: {z}) · entrada {e:.2f} · stop {st:.2f}"
                  + (f" · objetivo {t:.2f} · riesgo {r:.2f}" if t else ""))
             if o: orden=_colocar(o, tag, ev, dia, k)
             else: ev.append(tag+f"  ✗ descartado — {motivo}")
@@ -1103,10 +1152,9 @@ def detectar_setups(res, solo_reingresos=False):
             # el cambio de tendencia busca volver a esa zona. Sin fluidez (R-40), tambien en dia de Fed, y con
             # los filtros del reingreso. Sin esa zona, el objetivo es espacio nuevo: Continuacion, como siempre.
             # Caso de origen: 28/10/2026 (Fed), la R de la 8:52 rota a las 8:54, consecucion 8:55.
-            seg=list(range(z.r_ini, i+1))
-            st = min(D[j]['l'] for j in seg) if nd>0 else max(D[j]['h'] for j in seg)
             e=e0+TICK*nd
-            if _zona_a_testear(Z, i, e+abs(e-st)*nd, nd) is not None:
+            st = _ultimo_retroceso(res, i, nd)
+            if st is not None and _zona_a_testear(Z, i, e+abs(e-st)*nd, nd) is not None:
                 o,motivo,t,r=_evaluar(Z,i,'Reingreso',nd,e,st,None)
                 if t is not None: res['reingresos'].append((i,e,t,nd))
                 if o is not None:

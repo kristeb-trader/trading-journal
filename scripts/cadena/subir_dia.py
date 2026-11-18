@@ -166,14 +166,67 @@ def avisos_del_motor(r, corte_z):
 
 def trades_del_dia(fecha):
     """Las operaciones de Kris ese día (la tabla `trades` = el journal de la cuenta principal)."""
-    return sb('GET', f'trades?trade_date=eq.{fecha}&select=market_pos,entry_time,exit_time,qty,instrument,'
+    return sb('GET', f'trades?trade_date=eq.{fecha}&select=account,market_pos,entry_time,exit_time,qty,instrument,'
                      'entry_price,exit_price,resultado&order=entry_time')
 
 
-def tu_operacion(r, ev, t, trades, d):
-    """La medición de las operaciones de Kris contra el motor (medir.py), con la huella de los trades:
-    si cambian (un trade que llega tarde, uno corregido), la siguiente pasada la rehace."""
-    return {'huella': medir.huella_trades(trades), 'operaciones': medir.medir(r, ev, t, trades, d)}
+# ── Los límites de Kris: el perfil de su cuenta (D-055, 17/11/2026) ─────────────
+# La disciplina juzga cada trade con el STOP_MAX y el RIESGO_MAX del perfil de SU cuenta en esa fecha
+# (`parametros_cuentas` → `parametros_vigentes`), no con los del bot. Sin Supabase, los del bot: el juicio
+# sale igual que antes de la fase 3 y la huella (que lleva los límites) obliga a rehacerlo en la siguiente pasada.
+_CUENTAS = None
+
+
+def limites_de(fecha, cuenta):
+    global _CUENTAS
+    try:
+        if _CUENTAS is None:
+            ctas = sb('GET', 'parametros_cuentas?select=cuenta,perfil') or []
+            pred = sb('GET', 'parametros_perfiles?select=codigo&predeterminado=eq.true') or []
+            _CUENTAS = ({c['cuenta']: c['perfil'] for c in ctas}, pred[0]['codigo'] if pred else None)
+        perfil = _CUENTAS[0].get(cuenta) or _CUENTAS[1]
+        p = sb('POST', 'rpc/parametros_vigentes', {'p_fecha': fecha, 'p_perfil': perfil}) or {}
+        stop, riesgo = (p.get('STOP_MAX') or {}).get('numero'), (p.get('RIESGO_MAX') or {}).get('numero')
+        if stop is None or riesgo is None: return None
+        return {'perfil': perfil, 'STOP_MAX': float(stop), 'RIESGO_MAX': float(riesgo)}
+    except Exception as e:
+        log(f'parámetros: ❌ {e} — el juicio usa los límites del bot')
+        return None
+
+
+def eventos_con_stop(V, d, fed):
+    """ev_de(stop) para medir.medir: (eventos, operación) de una pasada del motor, en memoria, con ese STOP_MAX. El motor
+    descarta los setups con el stop de más de su STOP_MAX (`_evaluar`) y entonces no les mira el resto de filtros;
+    con el de Kris pasan por todos. No toca `lector.py` (el sello del bot): cambia el número y lo devuelve.
+    `detectar_setups` anota los rompimientos en las zonas, así que cada pasada lee la sesión de cero."""
+    hechos = {}
+    def ev_de(stop):
+        if stop == float(lector.STOP_MAX): return None          # la pasada normal ya vale
+        if stop not in hechos:
+            antes = lector.STOP_MAX
+            try:
+                lector.STOP_MAX = float(stop)
+                r2 = lector.leer_sesion(V, d, minimo_del_dia(f'{d[:4]}-{d[4:6]}-{d[6:]}'))
+                hechos[stop] = lector.detectar_setups(r2, solo_reingresos=fed) if r2 and 'error' not in r2 else None
+            finally:
+                lector.STOP_MAX = antes
+        return hechos[stop]
+    return ev_de
+
+
+def tu_operacion(r, ev, t, trades, d, V=None, fed=False):
+    """La medición de las operaciones de Kris contra el motor (medir.py), con la huella de los trades y de los
+    límites de su perfil: si cambian (un trade que llega tarde, uno corregido, un límite editado en Datos), la
+    siguiente pasada la rehace."""
+    f = f'{d[:4]}-{d[4:6]}-{d[6:]}'
+    cache = {}
+    def lim(tr):
+        c = tr.get('account')
+        if c not in cache: cache[c] = limites_de(f, c)
+        return cache[c]
+    ops = medir.medir(r, ev, t, trades, d, limites_de=lim, ev_de=eventos_con_stop(V, d, fed) if V else None)
+    limites = next((o.get('limites') for o in ops if o.get('limites')), None)
+    return {'huella': medir.huella_trades(trades, limites), 'operaciones': ops}
 
 
 def minimo_del_dia(fecha):
@@ -217,7 +270,7 @@ def ficha_del_dia(V, d, umbral, fed, trades=None):
         'avisos': avisos_del_motor(r, corte_z),
     }
     if trades is not None:
-        ficha['tu_operacion'] = tu_operacion(r, ev, t, trades, d)
+        ficha['tu_operacion'] = tu_operacion(r, ev, t, trades, d, V, fed)
     return 'ok', ficha, t
 
 
@@ -455,23 +508,25 @@ def medir_pendientes(n_dias, huella_motor, fed_set):
         fichas = sb('GET', f'motor_fichas?fecha=gte.{desde}&estado=eq.ok&huella_motor=eq.{huella_motor}'
                            '&select=fecha,umbral_vol,dia_fed,ficha')
         if not fichas: return
-        trades = sb('GET', f'trades?trade_date=gte.{desde}&select=trade_date,market_pos,entry_time,qty,instrument,'
+        trades = sb('GET', f'trades?trade_date=gte.{desde}&select=trade_date,account,market_pos,entry_time,qty,instrument,'
                            'exit_time,entry_price,exit_price,resultado&order=entry_time')
         por_dia = {}
         for tr in trades: por_dia.setdefault(tr['trade_date'], []).append(tr)
         for fila in fichas:
             f = fila['fecha']; ficha = fila['ficha'] or {}
             del_dia = por_dia.get(f, [])
-            if (ficha.get('tu_operacion') or {}).get('huella') == medir.huella_trades(del_dia): continue
+            lim = limites_de(f, del_dia[0].get('account')) if del_dia else None
+            if (ficha.get('tu_operacion') or {}).get('huella') == medir.huella_trades(del_dia, lim): continue
             path = fuente(f)[0]
             if not path: continue
             d = f.replace('-', '')
             lector.UMBRAL_VOL = fila.get('umbral_vol') or lector.UMBRAL_VOL
             lector.FOMC = set(fed_set)
-            r = lector.leer_sesion(lector.cargar(path), d, minimo_del_dia(f))
+            V = lector.cargar(path)
+            r = lector.leer_sesion(V, d, minimo_del_dia(f))
             if not r or 'error' in r: continue
             ev, t = lector.detectar_setups(r, solo_reingresos=bool(fila.get('dia_fed')))
-            ficha['tu_operacion'] = tu_operacion(r, ev, t, del_dia, d)
+            ficha['tu_operacion'] = tu_operacion(r, ev, t, del_dia, d, V, bool(fila.get('dia_fed')))
             sb('PATCH', f'motor_fichas?fecha=eq.{f}', {'ficha': ficha}, 'return=minimal')
             n = len(ficha['tu_operacion']['operaciones'])
             log(f"{f}  tu operación medida con el motor ({n} {'operación' if n == 1 else 'operaciones'})")

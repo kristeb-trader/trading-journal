@@ -7,7 +7,7 @@ exactas, y nadie comparaba las dos. Esto pone la operación de Kris al lado de l
 con números, para que el Coach no tenga que adivinar ni preguntar.
 
 NO AÑADE REGLAS (chaumer/CLAUDE.md, regla 1). Solo usa lo que el motor ya aplica a su propia
-operación —el objetivo libre de zonas vigentes (`lector._libre`), el stop máximo (`lector.STOP_MAX`),
+operación —el objetivo libre de zonas vigentes (`lector._libre`), el stop máximo (el del perfil de su cuenta, D-055),
 la ventana de la noticia roja (`lector._noticia`)— y los eventos que el propio motor anotó a esa
 hora. Lo que no se puede deducir se queda en None: el Coach dice «no se puede saber».
 
@@ -23,7 +23,9 @@ EVENTOS_ANTES = 15      # minutos de eventos del motor antes de la entrada de Kr
 # Sube cuando cambia lo que se mide: entra en la huella y obliga a medir de nuevo las fichas ya hechas.
 # 2 (10/11/2026): el juicio de cada operación («¿cumplía las reglas?») y los contratos.
 # 3 (12/11/2026): el juicio solo mira las reglas de SU entrada; nada se compara con la operación del bot.
-MEDIR_VERSION = 3
+# 4 (17/11/2026, D-055): con los límites del perfil de su cuenta en esa fecha (parametros_*), no los del bot,
+#   y con los eventos de una pasada del motor hecha con su stop máximo.
+MEDIR_VERSION = 4
 
 # ── El juicio: ¿tu trade cumplía las reglas? (10/11/2026, docs/disenos/2026-11-10-disciplina-reglas.md) ──
 # Solo las reglas de la entrada de Kris (12/11, D-053): NO se compara con la operación del bot —ni
@@ -60,26 +62,39 @@ def _minutos_hhmm(h):
 def _r(x): return None if x is None else round(x, 2)
 
 
-def huella_trades(trades):
-    """Cambia si cambia algo de los trades del día que entre en la medición."""
+def limites_del_bot():
+    """Los límites del plan (los del bot): los de `reglas.json`, que lee el motor."""
+    return {'perfil': None, 'STOP_MAX': float(lector.STOP_MAX), 'RIESGO_MAX': float(lector.RIESGO_MAX)}
+
+
+def huella_trades(trades, limites=None):
+    """Cambia si cambia algo de los trades del día que entre en la medición, o los límites de su perfil."""
     claves = ('market_pos', 'entry_time', 'exit_time', 'entry_price', 'exit_price', 'resultado', 'qty')
     filas = sorted(json.dumps({k: str(t.get(k)) for k in claves}, sort_keys=True) for t in trades)
     filas.append(f'medir v{MEDIR_VERSION}')
+    if limites: filas.append(json.dumps({k: limites.get(k) for k in ('STOP_MAX', 'RIESGO_MAX')}, sort_keys=True))
     return hashlib.sha256('\n'.join(filas).encode('utf-8')).hexdigest()[:16]
 
 
 def _usd_punto(tr): return 2 if re.match(r'\s*MNQ', str(tr.get('instrument') or 'MNQ'), re.I) else 20
 
 
-def juicio(op, i, tr):
+def _n(x): return f'{x:.0f}' if float(x) == int(x) else f'{x:.2f}'.rstrip('0').replace('.', ',')
+
+
+def juicio(op, i, tr, limites=None):
     """¿La operación cumplía las reglas? → {cumple, regla, texto}. i = su orden en el día (0 = la primera).
     La primera comprobación que salta manda: lo medido por esta medición, y después lo que decidió el motor
-    para su setup en la vela de la entrada (entre 2 minutos antes y la del llenado, en el mismo sentido)."""
+    para su setup en la vela de la entrada (entre 2 minutos antes y la del llenado, en el mismo sentido).
+    `limites`: los del perfil de su cuenta (D-055); sin ellos, los del bot. Los eventos tienen que venir de
+    una pasada del motor con ese mismo STOP_MAX (subir_dia.eventos_con_stop)."""
+    lim = limites or limites_del_bot()
+    stop_max, riesgo_max = float(lim['STOP_MAX']), float(lim['RIESGO_MAX'])
     def mal(regla, texto): return {'cumple': False, 'regla': regla, 'texto': texto}
     riesgo = op.get('riesgo')
     if i > 0: return mal('una_operacion', 'segunda operación del día')
-    if riesgo is not None and riesgo > lector.STOP_MAX:
-        return mal('stop_max', f'stop de {riesgo:.0f} pts (el máximo son {lector.STOP_MAX:.0f})')
+    if riesgo is not None and riesgo > stop_max:
+        return mal('stop_max', f'stop de {riesgo:.0f} pts (tu máximo son {_n(stop_max)})')
     if op.get('en_ventana') is False: return mal('ventana', 'fuera de la ventana 09:30–11:30 ET')
     if op.get('noticia_cerca'): return mal('noticia', f"en la ventana de la noticia de las {op['noticia_cerca']}")
     if op.get('objetivo_libre') is False: return mal('objetivo_zona', TEXTO['objetivo_zona'])
@@ -99,16 +114,29 @@ def juicio(op, i, tr):
             g = re.search(r'riesgo ([\d.]+)', txt)
             r_c = float(g[1]) if g else riesgo
             qty = int(tr.get('qty') or 0) if tr else 0
-            caben = int(float(lector.RIESGO_MAX) // (r_c * _usd_punto(tr))) if r_c and qty else None
-            hallado = (mal('contratos', f'{qty} contratos (cabían {caben})') if caben is not None and qty > caben
+            caben = int(riesgo_max // (r_c * _usd_punto(tr))) if r_c and qty else None
+            hallado = (mal('contratos', f'{qty} contratos (con ${_n(riesgo_max)} cabían {caben})') if caben is not None and qty > caben
                        else {'cumple': True, 'regla': None, 'texto': 'setup válido del plan'})
         elif '✗' in txt:
             motivo = txt.split('✗', 1)[1].strip(' —')
+            # El motor junta los motivos con « · ». Un «riesgo X pts» dentro del máximo de Kris no es motivo para
+            # él (D-055): pasa cuando los eventos vienen de la pasada con el stop del bot (ver medir()).
+            partes = [m for m in motivo.split(' · ')
+                      if not ((g := re.search(MOTIVOS[0][0], m)) and float(g[1]) <= stop_max)]
+            if not partes:
+                g = re.search(r'riesgo ([\d.]+)', txt)
+                r_c = float(g[1]) if g else riesgo
+                qty = int(tr.get('qty') or 0) if tr else 0
+                caben = int(riesgo_max // (r_c * _usd_punto(tr))) if r_c and qty else None
+                hallado = (mal('contratos', f'{qty} contratos (con ${_n(riesgo_max)} cabían {caben})') if caben is not None and qty > caben
+                           else {'cumple': True, 'regla': None, 'texto': 'setup válido del plan'})
+                continue
+            motivo = ' · '.join(partes)
             for patron, regla in MOTIVOS:
                 g = re.search(patron, motivo)
                 if not g: continue
                 if regla == 'stop_max':   # el stop del plan, no el suyo (el suyo ya pasó la regla 2)
-                    hallado = mal(regla, f'con el stop del plan ({float(g[1]):.0f} pts) pasaba de {lector.STOP_MAX:.0f}')
+                    hallado = mal(regla, f'con el stop del plan ({float(g[1]):.0f} pts) pasaba de tu máximo ({_n(stop_max)})')
                 else:
                     hallado = mal(regla, TEXTO[regla])
                 break
@@ -125,9 +153,11 @@ def _eventos_cerca(ev, desde, hasta):
     return out[-8:]
 
 
-def medir(r, ev, t, trades, dia):
+def medir(r, ev, t, trades, dia, limites_de=None, ev_de=None):
     """r, ev, t: lo que devuelven lector.leer_sesion y lector.detectar_setups ese día.
-    trades: las filas de `trades` del día. dia: 'AAAAMMDD'. Devuelve la lista de operaciones medidas."""
+    trades: las filas de `trades` del día. dia: 'AAAAMMDD'. Devuelve la lista de operaciones medidas.
+    limites_de(tr) → los límites del perfil de la cuenta de ese trade (D-055); sin él, los del bot.
+    ev_de(stop_max) → (eventos, operación) de una pasada del motor con ese stop máximo; sin él, `ev`."""
     D, Z = r['D'], r['Z']
     por_minuto = {lector._minutos(k): i for i, k in enumerate(D)}
     ops = []
@@ -157,9 +187,20 @@ def medir(r, ev, t, trades, dia):
                   riesgo=_r(riesgo), deduccion=deduccion,
                   vela=(f"{lector.col(D[i_fill]) // 100}:{D[i_fill]['t'][2:4]}" if i_fill is not None else None))
 
+        lim = (limites_de(tr) if limites_de else None) or limites_del_bot()
+        # Los eventos de la pasada con su stop máximo. El motor deja de buscar setups tras llenar su propia
+        # operación: si en esa pasada ya había entrado antes que Kris, no vería el suyo (12/11: entra a las
+        # 9:41 con stop 100 y el trade de las 10:06 salía «sin setup»). Entonces, los de la pasada normal,
+        # donde el juicio no cuenta el «riesgo X pts» que quepa en su máximo.
+        ev_op = ev
+        if ev_de:
+            ek, tk = ev_de(float(lim['STOP_MAX'])) or (None, None)
+            if ek is not None and not (tk and tk.get('i_fill') is not None and i_fill is not None and tk['i_fill'] < i_fill):
+                ev_op = ek
+        op['limites'] = lim
         op['en_ventana'] = i_fill is not None and r['b'] < i_fill <= r['fin']
-        op['riesgo_dentro_del_maximo'] = None if riesgo is None else riesgo <= lector.STOP_MAX
-        op['stop_maximo'] = lector.STOP_MAX
+        op['riesgo_dentro_del_maximo'] = None if riesgo is None else riesgo <= float(lim['STOP_MAX'])
+        op['stop_maximo'] = float(lim['STOP_MAX'])
 
         # El objetivo, con el mismo filtro que el motor aplica a su orden (zonas vivas en el camino),
         # mirado en la vela anterior al llenado: ahí la orden ya estaba puesta.
@@ -193,8 +234,9 @@ def medir(r, ev, t, trades, dia):
 
         # Lo que anotó el motor justo antes de la entrada: ahí está el stop que el plan le daba a ese
         # rompimiento aunque lo descartara («CONTINUACIÓN alcista · entrada … · stop … ✗ descartado — …»).
-        op['eventos_motor'] = _eventos_cerca(ev, m_ent + 1 - EVENTOS_ANTES, m_ent + 1)
+        # Con los límites de su perfil: un setup que el plan descarta por 90 pts vale con 100 (D-055).
+        op['eventos_motor'] = _eventos_cerca(ev_op, m_ent + 1 - EVENTOS_ANTES, m_ent + 1)
         op['contratos'] = int(tr['qty']) if tr.get('qty') is not None else None
-        op['juicio'] = juicio(op, len(ops), tr)
+        op['juicio'] = juicio(op, len(ops), tr, lim)
         ops.append(op)
     return ops

@@ -1,6 +1,6 @@
 # FICHA DE MARCADO — generada automáticamente
 
-> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-10-29 con `generar_ficha.py`.
+> ⚙️ **No editar a mano.** Generada desde `01_Plan/reglas.json` el 2026-11-16 con `generar_ficha.py`.
 > Si algo aquí contradice a las reglas (`01_Plan/reglas/`), mandan las reglas — y se vuelve a generar la ficha.
 > Los nombres en `MAYÚSCULAS_CON_GUION` son parámetros: su valor está al final, en `PARAMETROS.md`.
 
@@ -357,6 +357,7 @@ Una zona deja de tener efecto cuando ha sido superada en las dos direcciones.
 
 - **Dos estados, sin grises.** **Activa** = cuenta para la operativa. **Inactiva** = superada en las dos direcciones.
 - **Superada en una dirección** = rompimiento **y** consecución en ese sentido. Solo rompimiento, sin consecución → la zona sigue vigente.
+- **🔄 Superada en una dirección, cambia de papel** *(plan 3.62, 16/11/2026)*: el soporte roto pasa a ser **resistencia**, y la resistencia rota pasa a ser **soporte**. Sigue activa y sirve para todo lo que sirve una zona: para entrar, para tapar o filtrar un objetivo, para ver si se cruza con otra zona y para saber cuándo queda inactiva. Su rompimiento en sentido contrario, con consecución, puede ser una entrada (`R-26`, forma c).
 - **Una zona inválida no cuenta para nada como zona:** ni bloquea el objetivo, ni sirve para entrar, ni cuenta para medir el 50 % entre zonas. Se retira del cálculo de los filtros.
 - **Pero sigue ocupando su sitio:** la banda que ya gastó su zona no se reabre porque la zona muera (`R-17`, punto 8). **Deja de valer como zona; no deja de ocupar el sitio.**
 - **Se conserva dibujada** en tono muy tenue, solo como recuerdo visual.
@@ -412,9 +413,11 @@ Un IRI —corrida, retroceso, zona y rompimiento de esa zona— y su consecució
 
 #### `R-26` · Setup Reingreso
 
-Se opera hacia **una zona ya cotizada en el día**: una zona activa nacida desde la apertura de Nueva York, más allá del objetivo, a la que el precio puede ir a testear, con el camino libre hasta el objetivo. Nace de dos maneras: **(a)** un rompimiento con consecución que falla, y el precio atraviesa la zona entera en sentido contrario; o **(b)** el mercado frena, cambia de tendencia y rompe con consecución la zona contraria hacia esa zona ya cotizada.
+Se opera hacia **una zona ya cotizada en el día**: una zona activa nacida desde la apertura de Nueva York, más allá del objetivo, a la que el precio puede ir a testear, con el camino libre hasta el objetivo. Nace de tres maneras: **(a)** un rompimiento con consecución que falla, y el precio atraviesa la zona entera en sentido contrario; **(b)** el mercado frena, cambia de tendencia y rompe con consecución la zona contraria hacia esa zona ya cotizada; o **(c)** una zona ya superada, que **cambió de papel**, se rompe con consecución en sentido contrario. **El stop de todo reingreso va en el extremo del último retroceso** (`R-32`).
 
 **Cómo se aplica**
+
+Los pasos, para la forma a:
 
 | # | Paso |
 |---|---|
@@ -427,13 +430,15 @@ Se opera hacia **una zona ya cotizada en el día**: una zona activa nacida desde
 
 - **🔴 El reingreso no tiene plazo de velas** *(plan 3.51, 22/10/2026)*. **Mientras la zona esté viva**, la vela de reingreso puede llegar en cualquier vela después de la consecución —también después de que el precio haya pasado del extremo de la vela de consecución—, **siempre que tenga espacio de recorrido**: el riesgo dentro de `STOP_MAX` (`R-31`), ninguna zona activa entre la entrada y el objetivo (`R-32`), ningún punto de referencia vivo en contra (`R-41`) y una zona a la que ir más allá del objetivo (paso 6). Hasta la 3.50 decía *«el reingreso es inmediato o no es»*: la ventana se cerraba en cuanto el precio pasaba del extremo de la vela de consecución (27/08/2026).
 - **El `PLAZO_CONSECUCION` de `R-20` no limita cuándo llega la vela de reingreso:** su límite es la vida de la zona. Sí limita la vida de la orden (`R-29`), como en cualquier setup.
-- **🔀 Forma b — el cambio de tendencia** *(plan 3.52, 29/10/2026)*. El mercado frena y deja una zona que no rompe; deja después la zona contraria, la rompe con consecución, y **más allá del objetivo hay una zona activa nacida desde la apertura** (ya cotizada). Ese rompimiento **no es una Continuación sino un Reingreso**: lo que busca es volver a esa zona. Se opera como la Continuación —entrada en la consecución, stop en el extremo que hizo el mercado desde que nació la zona hasta el rompimiento, objetivo 1:1— pero con los filtros del Reingreso: riesgo dentro de `STOP_MAX`, ninguna zona activa ni punto de referencia vivo entre la entrada y el objetivo. **No pide la fluidez de la Continuación** (`R-40`): pide un cambio de tendencia. Y como es Reingreso, **se opera también en día de Fed** (`R-36`).
+- **🔀 Forma b — el cambio de tendencia** *(plan 3.52, 29/10/2026)*. El mercado frena y deja una zona que no rompe; deja después la zona contraria, la rompe con consecución, y **más allá del objetivo hay una zona activa nacida desde la apertura** (ya cotizada). Ese rompimiento **no es una Continuación sino un Reingreso**: lo que busca es volver a esa zona. Se opera como la Continuación —entrada en la consecución, objetivo 1:1— pero con el stop del Reingreso, en el extremo del último retroceso (plan 3.62), y con los filtros del Reingreso: riesgo dentro de `STOP_MAX`, ninguna zona activa ni punto de referencia vivo entre la entrada y el objetivo. **No pide la fluidez de la Continuación** (`R-40`): pide un cambio de tendencia. Y como es Reingreso, **se opera también en día de Fed** (`R-36`).
+- **🔄 Forma c — la zona que cambia de papel** *(plan 3.62, 16/11/2026)*. Una zona superada en un sentido —rompimiento **y** consecución— **cambia de papel** (`R-21`): el soporte roto pasa a ser resistencia, y la resistencia rota pasa a ser soporte. Si después el precio **la rompe en sentido contrario** (`R-20`: la vela pasa el borde, como en la Continuación) y llega la **consecución**, eso es una entrada, en la consecución. **Lo que decide el setup es a dónde va el objetivo**, como en la forma b: con una zona activa nacida desde la apertura más allá del objetivo (el precio ya cotizó ahí), **Reingreso**, con sus filtros. Con el camino libre sería Continuación, y **no se opera**: para una Continuación se espera a que se forme una zona nueva (`R-40`). No hace falta que una sola vela atraviese la zona entera. Ese segundo traspaso deja la zona inactiva (`R-21`), pero la entrada ya la dio. **Una sola vez por zona.**
+- **🎯 El stop de todo reingreso —formas a, b y c— va en el extremo del último retroceso** antes del rompimiento (`R-32`, plan 3.62). Alcista: el mínimo del último retroceso; bajista: el máximo. Si el precio fue más allá después de ese retroceso, el stop va con él. Riesgo y objetivo, los mismos que en la Continuación: `STOP_MAX` y 1:1.
 - **🔑 La misma vela puede cerrar el rompimiento fallido y abrir el reingreso.** Si la vela que da la **consecución** del rompimiento se da la vuelta dentro del mismo minuto, atraviesa la zona entera y sale por el borde contrario, **esa misma vela es a la vez consecución y vela de reingreso**. No se exige una vela posterior.
 - **🕯️ Pero solo si la consecución llegó primero.** Solo se piensa en reingreso **después** de que llega la consecución. Cuando la consecución y la vuelta a través de la zona caen en la misma vela, el orden lo dice su color —el mismo criterio que para las zonas (`R-09`) y para la orden (`R-29`)—: **vela blanca, primero el máximo; vela azul, primero el mínimo**. Un reingreso **bajista** de una sola vela necesita vela **blanca** (primero la consecución arriba, después la vuelta abajo); uno **alcista**, vela **azul**. Si el color dice lo contrario, el precio atravesó la zona **antes** de la consecución: no es un rompimiento que falla, y **en esa vela no hay reingreso**.
 - **Vela de consecución sin cuerpo** (apertura = cierre): la consecución **cuenta** —el precio pasó del extremo de la vela de rompimiento, sea cual sea el color—, pero sin color no se sabe qué llegó primero, así que **esa vela no es vela de reingreso**: se mira lo que hace el precio después.
 - **🔴 Sin zona a la que ir, no hay reingreso.** Si en la dirección del reingreso no queda ninguna zona activa más allá del objetivo, el precio tiene **camino libre**, y el camino libre es terreno de la Continuación, no del Reingreso: ese rompimiento fallido no se opera. Se suma a los otros dos filtros del objetivo, no los sustituye: entre la entrada y el objetivo sigue sin poder haber ninguna zona activa (`R-32`) ni ningún punto de referencia vivo (`R-41`).
 - **Cuándo se mira:** al poner la orden, con las zonas activas de ese momento, como los demás filtros; y otra vez si la orden se vuelve a poner tras una noticia roja (`R-35`). Con la orden puesta no hace falta vigilarla: la zona está más allá del objetivo y el objetivo más allá de la entrada, así que el precio no puede llegar a ella sin llenar antes la orden.
-- **Dirección:** en la forma a, contraria al rompimiento fallido; en la forma b, la del rompimiento, hacia la zona ya cotizada.
+- **Dirección:** en la forma a, contraria al rompimiento fallido; en la forma b, la del rompimiento, hacia la zona ya cotizada; en la forma c, contraria al primer traspaso de la zona.
 - **Filtro propio — el punto de referencia (`R-41`):** el objetivo tiene que quedar del lado de dentro del nivel de referencia de **cualquier retroceso vivo** que quede entre la entrada y el objetivo; ese nivel muere cuando una vela **cierra** más allá. Si el objetivo lo pasa, **el reingreso es inválido y no se opera**.
 - **La orden:** Stop Market al cierre de la vela de reingreso, en el nivel de consecución. **Se comprueba el punto de referencia antes de enviarla.**
 
@@ -540,7 +545,7 @@ Ejecuta con la ATM `K1` al valor de `ATM_DEFECTO` y ajusta stop y target a mano 
 **Cómo se aplica**
 
 - **La ATM:** **`K1`** · los contratos de `R-04` · Auto Breakeven **OFF** · Auto Trail **OFF** · stop y objetivo provisionales en `ATM_DEFECTO`, que depende de los contratos: **cantidad y stop provisional se ponen antes de enviar la orden**.
-- **Filtro antes de enviar:** el stop estructural debe ser **≤ `STOP_MAX`**. La distancia se mide entre la **entrada** y el stop estructural de `R-32`: en la Continuación, el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento; en el Reingreso, el extremo de la **corrida fallida**. Si lo supera **aunque sea por 1 tick, no se opera**.
+- **Filtro antes de enviar:** el stop estructural debe ser **≤ `STOP_MAX`**. La distancia se mide entre la **entrada** y el stop estructural de `R-32`: en la Continuación, el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento; en el Reingreso, el extremo del **último retroceso** antes del rompimiento (plan 3.62). Si lo supera **aunque sea por 1 tick, no se opera**.
 - **Tras el llenado:** 1º el stop a su referencia estructural · 2º el objetivo a 1:1 (`R-32`).
 - **Una vez ajustados, stop y objetivo no se vuelven a mover** (`R-33`).
 
@@ -566,7 +571,9 @@ Ancla la regla en el nivel de entrada, mide el stop hasta su referencia estructu
 | Setup | Alcista (compra) | Bajista (venta) |
 |---|---|---|
 | **Continuación** | punto **más bajo alcanzado desde que nació la zona hasta el rompimiento** | punto **más alto alcanzado desde que nació la zona hasta el rompimiento** |
-| **Reingreso** | punto **más bajo de la corrida fallida** (la que rompió la zona y no continuó) | punto **más alto de la corrida fallida** |
+| **Reingreso** (formas a, b y c) | **mínimo del último retroceso** antes del rompimiento | **máximo del último retroceso** antes del rompimiento |
+
+> 🔄 **Reingreso, desde la 3.62 (16/11/2026):** *"el extremo del último retroceso, para todos los reingresos"*. Hasta la 3.61 iba en el extremo de la corrida fallida (forma a) o en el de la Continuación (forma b). Si el precio fue más allá después de ese retroceso, el stop va con él.
 
 > 🔴 **No es solo el extremo del retroceso que originó la zona.** Cuenta **todo** lo que el precio haya hecho mientras la zona estuvo viva, hasta la vela de rompimiento. Si la zona aguanta muchas velas y el precio se aleja más que en su retroceso original, el stop se va con él.
 
@@ -721,7 +728,7 @@ Ejecuta la sesión siguiendo la checklist diaria **en orden**, y registra **toda
 | **`VENTANA_OPERATIVA`** | 09:30–11:30 ET | `R-02` |
 | **`CANCELACION_FINAL`** | 11:29 ET | `R-29` |
 | **`CIERRE_POR_HORA`** | 16:50 ET | `R-33` — lo que siga abierto se cierra a mercado al terminar esa vela: 10 minutos antes del cierre de la sesión de futuros del CME (17:00 ET). En Colombia, 15:50 en verano y 16:50 en invierno *(09/10/2026)* |
-| **`ORIGEN_DEL_STOP`** | desde que **nació la zona** hasta la vela de rompimiento | `R-32` — el stop es el extremo alcanzado en todo ese tramo, no solo el del retroceso que originó la zona *(27/08/2026)* |
+| **`ORIGEN_DEL_STOP`** | desde que **nació la zona** hasta la vela de rompimiento | `R-32` — el stop es el extremo alcanzado en todo ese tramo, no solo el del retroceso que originó la zona *(27/08/2026)*. Es el de la **Continuación**: el del **Reingreso** va en el extremo del último retroceso *(plan 3.62, 16/11/2026)* |
 | **`VENTANA_NOTICIA`** | ±5 minutos | `R-35` |
 
 ---

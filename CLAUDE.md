@@ -94,6 +94,7 @@ sobre la implementación.** Ya pasó que se implementara otra cosa y hubo que re
 | `plan_documentos` | Los 5 documentos del plan que lee el Coach. **Solo** `scripts/plan/sincronizar.mjs` (SQL por el MCP, `huella` sha256); el texto se edita en `chaumer/01_Plan` |
 | `bot_operaciones` | BotChaumer (D-038): **una fila por día y cuenta**, también los días sin operación (`NO OPERA`) y los que un candado no dejó armarse (`NO ARMADO`, con `motivo`). La escribe el bot con `service_role`; `coincide_motor` lo rellenará la cadena (fase 5). **No** se mezcla con `trades` ni `apex_trades`. La lee el calendario **Bot** (P&L real, `pnl_neto`); antes de su primera fila (07/10) ese calendario enseña lo que marca el motor, **simulado**. El gráfico de cada día es el del motor, que se recalcula con el motor de hoy: el 14/10 y el 22/10 no es la operación del bot. El Strategy Analyzer no escribe aquí: deja un CSV local |
 | `disciplina_discusiones` | «No estoy de acuerdo» con el juicio del motor (D-052): un día por fila. `abierta` y `plan` (Kris tenía razón) **no cuentan** en la disciplina; `motor`, sí. La escriben la web y el bot de Telegram |
+| `parametros_*` | Los números que pueden cambiar, con su historial (D-055). **Un valor nunca se pisa**: un cambio es una fila nueva con su `desde`, y un día se juzga con el de su fecha. Riesgo y gestión **por perfil** (`operativa` = Kris, predeterminado; `bot`), la lectura del mercado **común** (perfil NULL); `ATM_DEFECTO` no se guarda (lo calcula `parametros_vigentes`). Una cuenta sin fila en `parametros_cuentas` usa el predeterminado. **En transición:** hasta la fase 4 los motores y el bot siguen leyendo `reglas.json`; el perfil `bot` tiene que coincidir con él |
 | `coach_uso` | Una fila por llamada del Coach: tokens, coste y `codigos_quitados`. **Sin texto** |
 | `motor_fichas` | Lo que marcó el motor cada día. **Solo** `scripts/cadena/subir_dia.py` (`service_role`), a las 10:32 (11:32 en invierno), o 10 min después de que el bot salga de su operación si sale antes (y otra vez al acabar la ventana, entera). **Candado:** `authenticated` solo la lee si el día está registrado; `motor_estado(fecha)` dice si la hay sin enseñarla. `velas` (UTC) son para el agente: el Coach no las lee. Horas Colombia, precios en puntos. `origen_datos` = `bot` cuando la ventana sale de las velas que guardó el bot en vivo (`chaumer/03_Bot/Velas bot/`, mandan sobre el servidor; diseño 2026-10-19-velas-del-bot) |
 | `sesiones` | `registrada_at` = el **primer** guardado (un trigger la congela): abre el candado de `motor_fichas` y decide qué gráficos del motor se publican; `diario_editado_at` = el último. `setup` y `setup_codigo` los sincroniza `fn_sync_setup_codigo`. La columna `noticias` existe pero no se usa (va a `sesion_noticias`), **ni `estado_emocional_fin_id`** (el estado al cierre vivía en `diagnosticos_diarios`). Desde el 27/10 **no se registran** la corrida, el contexto, las zonas en contra, la emoción ni la confianza (D-048): sus columnas guardan lo de antes, y ni la web ni el bot las mandan, **ni en null**, para no borrarlo. Los **niveles de precio** los escribe NinjaTrader (indicador `SupabaseDailyLevels`): si el bot o el formulario los mandaran, en `[]`, los **borrarían**. Las **zonas naranjas** (`soportes_naranja`, `resistencias_naranja`) ya no las escribe nadie desde el 5 oct: el plan nuevo no las usa y el AddOn las quitó |
@@ -135,11 +136,11 @@ js/db.js          Toda query a Supabase + cálculo canónico de disciplina +
 js/visor.js       El visor del día: placa con la fecha, gráfico maximizado, banner del resultado y la hoja del
                   análisis; recorre la lista desde la que se entró (un calendario, lo filtrado en Trades, Disciplina)
 js/form.js        Pestaña "Diario" de Sesión Operativa
-js/marco.js       Rediseño «Cristal» (rama rediseno-cristal): barra lateral por grupos, barra del celular con muesca,
+js/marco.js       El marco «Cristal»: barra lateral por grupos, barra del celular con muesca,
                   hoja de Otros, tema claro/oscuro, buscador (Ctrl K), la isla, el día que sale de su casilla
 js/portada.js     La portada del Calendario: saludo, meta del mes (disciplina), Lo que destaca, Esta semana
 js/pasos.js       El día paso a paso en Sesión · js/movimiento.js  entradas, cifras que cuentan, luz al cursor
-css/cristal.css   La capa visual del rediseño, después de styles.css
+css/cristal.css   La capa visual «Cristal», después de styles.css: lo que se vea, se toca aquí
 js/coach.js       Pestaña "Coach IA" (3 etapas) + renderHistorial = "Días anteriores"
 js/calendar.js    Calendario mensual (Mío, en P&L) · js/metrics.js  KPIs + curva (pintarEquity)
 js/calendarios.js El Comparador (Otros): los 4 calendarios (Mío · Chaumer · Bot · manual) y la vista de los 3 últimos;
@@ -152,6 +153,7 @@ js/chaumer.js     Comparador Chaumer vs yo (pestañas Diferencias y Registrar)
 js/backtesting.js Bitácora de backtesting: registrar, corregir, borrar (bt_*)
 js/account-filter.js  Filtro de cuentas compartido (nombre COMPLETO)
 js/table.js       Trades · js/data.js  Datos (catálogos) · js/gallery.js  Imágenes
+js/parametros.js  Datos → Parámetros: perfiles por cuenta, riesgo con su historial (D-055)
 css/styles.css    Dark mode + responsive
 NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) ·
                   RR (Risk Reward en PUNTOS) · CadenaDiaria (AddOn: exporta el día y lanza el puente) ·
@@ -160,6 +162,8 @@ NinjaTrader/      SupabaseAutoExport (trades) · SupabaseDailyLevels (niveles) �
                   BotChaumer (la estrategia: opera lo que marca el motor, solo en su lista blanca) ·
                   VistaMotorChaumer (el motor del bot dibujado en vivo: zonas, zigzag, operación) ·
                   ChaumerNT (lo común del bot y la vista: config, sello, Supabase, velas UTC) ·
+                  FechaChaumer (el recuadro de fecha y hora, se arrastra) · FotoChaumer (la foto del día, sola tras
+                  cerrar o con su botón, a `sesiones.imagen_url`: la automática no pisa la del Diario) ·
                   archivo/ChecklistChaumer (archivado el 19/10, no se instala: las noticias van por el Diario, D-040)
 scripts/bot/      sincronia.py: los dos motores, vela a vela, y el SELLO · scripts/hooks/pre-commit lo exige ·
                   comparar.py: el CSV del Strategy Analyzer contra el motor
@@ -184,7 +188,10 @@ que se cargan al abrir sus archivos. Desde fuera, lo que no puede fallar:
 
 ## Estado
 
-Todas las secciones funcionando. **Qué está en marcha y qué falta: `tasks/current.md`.**
+Todas las secciones funcionando. **El Journal es el diseño «Cristal»** desde el 18/11/2026: se fundió en `main` y es
+el único. Todo cambio se hace **en esta carpeta, en `main`**, encima de él. La rama `rediseno-cristal`, su carpeta
+`Trading Journal cristal` y la dirección de prueba `/nuevo/` ya no existen (la de prueba manda a la de siempre). El
+diseño antiguo solo vive en la etiqueta `diseno-anterior-2026-11-13`: no se copia nada de él. **Qué está en marcha y qué falta: `tasks/current.md`.**
 
 ## Dónde está lo demás
 

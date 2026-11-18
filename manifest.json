@@ -1,9 +1,9 @@
 {
-  "name": "Trading Journal · nuevo",
-  "short_name": "Journal nuevo",
+  "name": "Trading Journal",
+  "short_name": "Trading Journal",
   "description": "Journal de operativa NQ/MNQ Futures — Metodología Chaumer",
   "start_url": ".",
-  "scope": "/trading-journal/nuevo/",
+  "scope": "/trading-journal/",
   "display": "standalone",
   "background_color": "#06130d",
   "theme_color": "#1D9E75",

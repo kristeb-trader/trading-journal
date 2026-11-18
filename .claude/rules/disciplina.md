@@ -54,6 +54,12 @@ reglas? El juicio lo escribe **`medir.py`** (`tu_operacion[i].juicio = {cumple, 
 - Los motivos del motor se reconocen por su frase (`MOTIVOS` de `medir.py`): **si `lector.py` cambia sus frases, se
   revisa esa tabla**; lo que no case cae en `otra` con su texto.
 - `MEDIR_VERSION` entra en la huella de `tu_operacion`: al cambiar el juicio, se sube y `medir_pendientes` vuelve a medir.
+- **Los límites son los del perfil de la cuenta del trade en su fecha** (D-055, 17/11): `subir_dia.limites_de` →
+  `parametros_vigentes`; van en `op.limites` y en la huella (editarlos en Datos rehace la medición de los últimos días).
+  Los eventos salen de **una segunda pasada del motor con ese `STOP_MAX`** (`eventos_con_stop`, en memoria: `lector.py`
+  no se toca, el sello del bot tampoco). Si en esa pasada el motor ya había llenado antes que Kris, se usan los de la
+  pasada normal y un «riesgo X pts» que quepa en su máximo no cuenta (12/11). Sin Supabase, los del bot.
+- `REGLA_TXT` no lleva números: el de cada trade va en el texto de su juicio.
 - El aviso de Telegram (`avisarDisciplina`, en el bot) solo para días **registrados** (el candado) y **una vez**
   (`sesiones.disciplina_avisada_at`).
 
@@ -86,7 +92,7 @@ reglas? El juicio lo escribe **`medir.py`** (`tu_operacion[i].juicio = {cumple, 
 los trades de NQ, y ya llevó a una conclusión falsa.
 
 `objetivos.limite_perdida_dia` ($150) quedó **obsoleto**: es control de capital de Apex, no
-una regla de proceso. El límite vivo es `objetivos.stop_max_puntos` (80).
+una regla de proceso. En la etapa 1 el límite es `objetivos.stop_max_puntos`; en la medida del plan, el perfil de la cuenta (D-055).
 
 ## Efecto lateral asumido (3 ago)
 

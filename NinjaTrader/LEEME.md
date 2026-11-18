@@ -1,6 +1,6 @@
 # NinjaTrader — qué hay, qué instalar y cómo se usa
 
-**Actualizado:** 19/10/2026 · Es la referencia para **reinstalar NinjaTrader desde cero** y para recordar qué hace cada
+**Actualizado:** 16/11/2026 · Es la referencia para **reinstalar NinjaTrader desde cero** y para recordar qué hace cada
 pieza. La versión buena de cada archivo es **la de esta carpeta** del repositorio.
 
 ---
@@ -16,6 +16,8 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 | **SupabaseAutoExport** | Exporta cada operación cerrada a Supabase. La cuenta principal (o las que empiezan por `PA-`) va al Journal (`trades`) y avisa por Telegram; el resto de cuentas Apex, a `apex_trades`. **Ignora las cuentas de simulación** (SimBot, Sim101, Playback) | Un gráfico de MNQ: una sola instancia vigila todas las cuentas | la clave de Supabase |
 | **SupabaseDailyLevels** | Escribe los niveles del día en la sesión del Journal: apertura, máximo, mínimo y cierre de ayer; apertura de hoy; máximo y mínimo del premercado | Gráfico MNQ con la plantilla **ETH**. Propiedades: RTH abre **930**, cierra **1600** (hora de **Nueva York**) | la clave de Supabase |
 | **MarcacionChaumer** | El **zigzag blanco** de corridas y retrocesos, en tiempo real. Es el de **tu gráfico operativo manual**: **independiente del bot**, no se toca sin tu sí | Tu gráfico de operar, 1 minuto. Propiedad: la cuenta que vigilas (al volver a plano tras operar, deja de dibujar) | nada |
+| **FechaChaumer** | El **recuadro con la fecha y la hora** («Lunes, 16 de Noviembre, 2026» y debajo, del mismo tamaño, **«Entry = 09:46:55»**: la hora de tu entrada del día, de la cuenta de sus propiedades, Sim101; la de la última operación si hubo varias). Si ese día no entraste, la hora, que avanza cada segundo en vivo. La fecha es la de la última vela (en Replay, el día que se reproduce). **Se arrastra con el ratón** y queda fijo en la pantalla aunque desplaces el gráfico; la posición se guarda con el espacio de trabajo. Tamaño, letra y colores, en sus propiedades | Tu gráfico de operar | nada |
+| **FotoChaumer** | **La foto de la operativa**: la ventana del gráfico entera, siempre de **2000 × 1190** (la ventana se encaja sin deformarse; si es de otra forma, el sobrante queda en negro: ajusta Ancho y Alto a tu ventana). Sola **3 minutos después de que la cuenta principal quede plana** (si vuelves a operar, espera a la última salida), o a las **11:30 de Nueva York** si no operaste; y con el botón de la **cámara** de la barra del gráfico («Foto del día» al pasar el ratón). Queda en `fotos-chaumer\` y **en tu día del Journal** (Diario, Coach, visor y portal). La automática no pisa una imagen que hayas subido tú en el Diario; el botón sí. No hace falta que el gráfico esté a la vista, pero sí que la ventana no esté minimizada | Tu gráfico de operar | `ChaumerNT`, la clave de Supabase |
 | **VistaMotorChaumer** | **El motor del bot dibujado en vivo**: zonas (las de premercado, desde la vela donde nacen; las vigentes, hasta las 10:30; 11:30 en invierno; el premercado, del servidor como el bot), zigzag, puntos de referencia (solo los que quedan entre la entrada y el objetivo de un reingreso; si el reingreso se opera, también el más cercano de más allá del objetivo), la franja de la operación y una línea arriba con lo que el motor tiene en marcha | El gráfico del bot (o donde quieras ver las zonas). Si está también MarcacionChaumer, apaga **Zigzag** en uno de los dos | `MotorChaumer`, `ChaumerNT`, el repositorio |
 
 ### AddOns · `Custom\AddOns\`
@@ -55,6 +57,7 @@ Todos van en `Documentos\NinjaTrader 8\bin\Custom\`, cada uno en su carpeta.
 | `telegram-notify-secret.txt` | El secreto del aviso «Trade cerrado» de `SupabaseAutoExport` a Telegram. Es el mismo valor que el secreto `NOTIFY_SECRET` del Worker `trading-journal-bot` en Cloudflare. Sin él los trades se exportan igual, pero no llega el aviso (el Output lo dice) | **No.** Se guarda en el gestor de contraseñas. **Nunca en el repositorio** |
 | `cadena-diaria.json` | Configuración de la cadena: carpeta de las velas, Python, el puente | Sí |
 | `bot-chaumer.json` | Configuración del bot y la vista: ruta del repositorio, cuentas permitidas, si exige el GO. **`exigir_go` en `false`**: el GO lo sellaba el AddOn archivado y ya no lo escribe nadie; en `true`, el bot no se armaría nunca | Sí |
+| `fotos-chaumer\` | Las fotos de `FotoChaumer`: `AAAA-MM-DD.png`, y a su lado `.url` (la que subió al Journal: así sabe que no es tuya) y `.salida` (la salida que ya tiene foto) | Sí |
 | `cadena-diaria\registro.txt` · `bot-chaumer\registro.txt` | Lo que hicieron la cadena y el bot. En `bot-chaumer\` quedan también los CSV del Strategy Analyzer | Sí |
 
 ---

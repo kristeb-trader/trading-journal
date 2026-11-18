@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-11-16
+**Última actualización:** 2026-11-18
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,15 +11,21 @@
 
 | Fecha | Checkpoint |
 |---|---|
-| 2026-11-17f | Rediseño «Cristal»: la barra del celular ya no tapa las ventanas ni los formularios (se aparta al abrir una ventana o al escribir) |
-| 2026-11-17e | Rediseño «Cristal»: el selector de cristal (adiós a la lista nativa ilegible) y contraste medido en todas las pantallas, de 740 textos flojos a 141 |
-| 2026-11-17d | Rediseño «Cristal», toques del celular (4): el gráfico del visor de borde a borde, y nítido al girar el celular |
-| 2026-11-17c | Rediseño «Cristal», toques del celular (3): el visor compacto, la fecha y el resultado en una fila cada uno, sin flechas |
-| 2026-11-17b | Rediseño «Cristal», toques del celular (2): el visor del día sin zoom, el gráfico sigue al dedo y más aire en la fecha y el banner |
-| 2026-11-17 | Rediseño «Cristal», toques del celular (1): el Calendario reordenado y «Sin entradas» en la leyenda |
-| 2026-11-16d | Rediseño «Cristal», fases 1 a 6 en la rama: marco nuevo, tema claro/oscuro, buscador, isla, portada del Calendario, filtros de Análisis y el día por pasos |
-| 2026-11-16c | Rediseño «Cristal»: fuera el ámbar del fondo; movimiento en toda la app (entradas, cifras que cuentan, luz que sigue al cursor) |
-| 2026-11-16b | Rediseño «Cristal», fase 0 (2), en la rama: tokens del tema oscuro, Manrope y el fondo vivo |
+| 2026-11-18 | El diseño «Cristal» es el Journal: fundido en `main`, fuera la banda «en pruebas» y la dirección `/nuevo/` |
+| 2026-11-17i | Rediseño «Cristal»: la barra del celular ya no tapa las ventanas ni los formularios (se aparta al abrir una ventana o al escribir) |
+| 2026-11-17h | Rediseño «Cristal»: el selector de cristal (adiós a la lista nativa ilegible) y contraste medido en todas las pantallas, de 740 textos flojos a 141 |
+| 2026-11-17g | Rediseño «Cristal», toques del celular (4): el gráfico del visor de borde a borde, y nítido al girar el celular |
+| 2026-11-17f | Rediseño «Cristal», toques del celular (3): el visor compacto, la fecha y el resultado en una fila cada uno, sin flechas |
+| 2026-11-17e | Rediseño «Cristal», toques del celular (2): el visor del día sin zoom, el gráfico sigue al dedo y más aire en la fecha y el banner |
+| 2026-11-17d | Rediseño «Cristal», toques del celular (1): el Calendario reordenado y «Sin entradas» en la leyenda |
+| 2026-11-17c | La disciplina juzga con el perfil de tu cuenta: 100 pts / $200 desde el 01/10. Octubre 11 de 18, noviembre 3 de 8 (fase 3) |
+| 2026-11-17b | Datos → Parámetros: la pestaña con los perfiles, el riesgo con su historial, lo común y las cuentas → perfil (fase 2) |
+| 2026-11-17 | Los parámetros, en Supabase y por perfil (fase 1): «Mi operativa» con 100 pts / $200 desde el 01/10; el bot, en 80 / $160 |
+| 2026-11-16g | Rediseño «Cristal», fases 1 a 6 en la rama: marco nuevo, tema claro/oscuro, buscador, isla, portada del Calendario, filtros de Análisis y el día por pasos |
+| 2026-11-16f | Rediseño «Cristal»: fuera el ámbar del fondo; movimiento en toda la app (entradas, cifras que cuentan, luz que sigue al cursor) |
+| 2026-11-16e | Rediseño «Cristal», fase 0 (2), en la rama: tokens del tema oscuro, Manrope y el fondo vivo |
+| 2026-11-16c | La zona superada cambia de papel y el stop de todo reingreso va en el último retroceso (plan 3.62) |
+| 2026-11-16b | NinjaTrader escribe la fecha y hace la foto del día: `FechaChaumer` y `FotoChaumer`, que la sube sola al Journal |
 | 2026-11-16 | Rediseño «Cristal», fase 0 (1): la rama se publica en `/nuevo/` para probarla; `visor.js`, al modo sin conexión |
 | 2026-11-15 | Rediseño «Cristal»: diseño aprobado por fases, maqueta de referencia y copia de seguridad del diseño anterior |
 | 2026-11-12c | El visor del día: la tira de días, oculta tras «Días» (o D), para saltar a cualquier día |
@@ -93,7 +99,26 @@
 
 ---
 
-## Checkpoint 2026-11-17f — Rediseño «Cristal»: la barra del celular no tapa nada
+## Checkpoint 2026-11-18 — El diseño «Cristal» es el Journal
+
+Kris: *«ayer hice un cambio en otro chat, pero me lo hizo en el Journal viejo… quiero que oficialices el nuevo como el
+actual. Quita ese letrero de Journal nuevo en pruebas»*. El cambio de ayer era la pestaña Parámetros y la disciplina con
+el perfil de la cuenta (17, 17b, 17c), hechos en `main` mientras el rediseño vivía en su rama.
+
+**Lo que se hizo.** `main` se fundió en `rediseno-cristal` (sin choques salvo este historial: se quedan los dos lados, y
+los checkpoints de la rama del 16 y el 17 se renumeraron, 16e–16g y 17d–17i, para no repetir letras con los de `main`), y
+la rama pasó a `main`. Parámetros entra en el marco nuevo tal cual (y a `APP_SHELL`). Fuera lo que solo servía a la
+prueba: la banda «DISEÑO NUEVO · EN PRUEBAS», la copia de la rama en `/nuevo/`, `avisar-nuevo.yml`, la caché y el
+manifiesto propios (`nqjournal-v15`; el nombre y el `scope` de siempre) y el servidor `cristal` de la vista previa.
+`/nuevo/` no da 404: es una página que manda a la de siempre y un service worker que borra la caché de la prueba y se da
+de baja (`.github/nuevo-retirado/`), para quien la tenga abierta o instalada en el celular.
+
+**Para los demás chats:** `CLAUDE.md` (Estado) lo dice: todo cambio, en `main`, encima de «Cristal»; la capa visual en
+`css/cristal.css`. La carpeta `Trading Journal cristal` se borró.
+
+---
+
+## Checkpoint 2026-11-17i — Rediseño «Cristal»: la barra del celular no tapa nada
 
 Kris, en el celular: *«el botón de la mitad, el +, y la barra quedan entrometidos a veces con algo del formulario…
 estaba guardando la imagen de la operativa de Chaumer y casi no le puedo dar al botón de guardar… lo mismo para
@@ -116,7 +141,7 @@ operativa de Chaumer abierta, la barra se va y «Guardar» queda a la vista; al 
 
 ---
 
-## Checkpoint 2026-11-17e — Rediseño «Cristal»: el selector de cristal y el contraste
+## Checkpoint 2026-11-17h — Rediseño «Cristal»: el selector de cristal y el contraste
 
 Kris (web, Sesión → La operación → Setup operado): *«los colores no contrastan, se ve muy feo, revisa que todas las
 ventanas y diseño tengan un contraste y colores adecuados»*, y vuelve a pegar los pilares (interactiva, envolvente,
@@ -146,7 +171,7 @@ ninguna pantalla.
 
 ---
 
-## Checkpoint 2026-11-17d — Rediseño «Cristal», toques del celular (4): el gráfico, más grande
+## Checkpoint 2026-11-17g — Rediseño «Cristal», toques del celular (4): el gráfico, más grande
 
 Kris: *«¿se puede que crezca más el gráfico para aprovechar más espacio?»*. El gráfico de NinjaTrader es ~2,5 veces
 más ancho que alto: con el celular derecho manda el ancho, y crecer en alto obliga a recortar. Se le enseñaron tres
@@ -162,7 +187,7 @@ eligió **A + C**.
 
 ---
 
-## Checkpoint 2026-11-17c — Rediseño «Cristal», toques del celular (3): el visor, compacto
+## Checkpoint 2026-11-17f — Rediseño «Cristal», toques del celular (3): el visor, compacto
 
 Kris corrige el 17b: *«no te pedí más espacio entre letras, sino más compacto… en la parte de arriba, eso de "Mío",
 quitarlo, y dejar todo en una sola fila. Y abajo, ¿no se puede dejar todo en una sola fila? Y sí podemos quitar
@@ -179,7 +204,7 @@ Verificado a 390 px en tres días (stop, sin entradas, target): sin errores, sin
 
 ---
 
-## Checkpoint 2026-11-17b — Rediseño «Cristal», toques del celular (2): el visor del día
+## Checkpoint 2026-11-17e — Rediseño «Cristal», toques del celular (2): el visor del día
 
 Kris: *«dar más espacio en las letras de la parte de arriba y la parte de abajo… quiero quitar lo del zoom, creo
 que eso lo vuelve lento, quiero que quede fluido tanto al dar click para ver la imagen, al igual que al pasar la
@@ -210,7 +235,7 @@ Esc, sin cambios ni errores.
 
 ---
 
-## Checkpoint 2026-11-17 — Rediseño «Cristal», toques del celular (1): el Calendario
+## Checkpoint 2026-11-17d — Rediseño «Cristal», toques del celular (1): el Calendario
 
 Kris lo abrió en el celular y empieza los toques finales por el Calendario, **solo en el celular**:
 *«de primeras la gráfica la meta del mes · de segundas el calendario · 3 las tarjetas · 4 la gráfica igual que la de
@@ -232,7 +257,88 @@ escritorio, la misma portada que antes salvo la leyenda.
 
 ---
 
-## Checkpoint 2026-11-16d — Rediseño «Cristal», fases 1 a 6 de una vez (en la rama, para la revisión final)
+## Checkpoint 2026-11-17c — La disciplina juzga con el perfil de tu cuenta (fase 3)
+
+**Lo que se hizo** (D-055). `medir.py` v4: el juicio de cada trade usa el `STOP_MAX` y el `RIESGO_MAX` del perfil de su
+cuenta en su fecha (`subir_dia.limites_de` → `parametros_vigentes`; van en `op.limites` y en la huella). Los eventos salen
+de **una segunda pasada del motor, en memoria, con ese stop máximo** (`eventos_con_stop`): el motor descarta los setups de
+más de su `STOP_MAX` sin mirarles el resto de filtros, y con el de Kris pasan por todos. **`lector.py` no se toca**: ni
+sello nuevo ni recompilar.
+
+**Lo que salió al probarlo.** El 12/11, con stop 100, el motor entra él mismo a las 9:41 y deja de buscar setups: el trade
+de Kris de las 10:06 salía «sin setup». Es el límite conocido del motor (se para tras su propia operación, el del 02/11),
+que con un stop más ancho muerde más. Arreglado dentro de la medición: si esa pasada ya había llenado antes que Kris, se
+usan los eventos de la pasada normal, y un «riesgo X pts» que quepa en su máximo no cuenta como motivo.
+
+**Recalculado octubre–noviembre.** Ensayo primero: con los límites del bot, 25 de 28 trades salen igual que antes (la
+regresión); los 3 que no (06/10, 08/10 y 12/11) cambian por el **motor de hoy**, no por los límites —sus fichas son de
+un motor anterior—, y **no se reescriben**. Se escribieron los 5 que cambian por los límites:
+
+| Día | Antes (80 / $160) | Ahora (100 / $200) |
+|---|---|---|
+| 21/10 | 3 contratos (cabían 2) | ✓ dentro de las reglas |
+| 04/11 | stop de 90 | ✓ |
+| 06/11 | stop de 89 | ✓ |
+| 16/11 | stop de 81 | ✓ |
+| 05/11 | el stop del plan (130) pasaba de 80 | sigue roto: pasaba de tu máximo (100) |
+
+**Verificado con un SELECT:** octubre **11 de 18** (antes 10), noviembre **3 de 8** (antes 0), sin contar los días en
+discusión. `medir_pendientes` real sobre los últimos días: el 17/11 medido de nuevo con `operativa 100/$200`, mismo
+juicio (objetivo contra una zona). `REGLA_TXT` sin «80» ni «$160»: el número de cada trade va en su juicio.
+
+---
+
+## Checkpoint 2026-11-17b — Datos → Parámetros (fase 2)
+
+**Lo que se hizo.** La pestaña **Parámetros**, la primera de Datos (D-055, boceto aprobado en el chat):
+- **Los perfiles** arriba, con sus cuentas; «+ nuevo perfil» copia el riesgo de hoy del que se está mirando.
+- **Riesgo y gestión** del perfil: cada valor con su cambio («80 → 100 desde 01/10»). Al editar, la fecha
+  **desde** (por defecto el siguiente día hábil; hacia atrás avisa de que cambia cómo se juzgan esos días), los
+  **contratos que caben** con cada stop (calculados, sustituyen a la tabla de $160) y el **aviso de coherencia**:
+  si con el stop máximo no cabe ni un contrato, no deja guardar.
+- **La lectura del mercado** (común) y los técnicos, plegados.
+- **El historial** de la clave elegida, con todos los perfiles para comparar; un valor **programado** se puede quitar,
+  uno que ya juzgó días, no.
+- **Cuentas → perfil** y **Mi cuenta** (cuenta principal y capital inicial, que vivían encima de todas las pestañas).
+
+**Solo lectura, a propósito:** el perfil **Bot** y lo **común**. Los motores y el bot siguen leyendo `reglas.json`
+hasta las fases 4–5; editarlos aquí haría que el perfil Bot dejara de coincidir con lo que opera de verdad.
+
+**Código.** `js/parametros.js` (el módulo nuevo); en `db.js`, `paramVigente` · `textoParametro` ·
+`contratosQueCaben` y `DB.getParametros` / `guardarParametro` / `borrarParametro` / `asignarPerfil` /
+`quitarCuentaPerfil` / `crearPerfil`. Fuera `.data-hero`.
+
+**Verificado** en el preview (copia local con las cuatro tablas): stop 120 con $200 → aviso rojo y «Guardar»
+apagado; con $240, coherente; guardar deja «100 → 120 desde 18/11» y el programado en el historial; quitarlo vuelve a
+«80 → 100»; el perfil Bot sin campos; un perfil nuevo y una cuenta asignada a él. Escritorio y 375 px sin desbordar,
+consola limpia.
+
+---
+
+## Checkpoint 2026-11-17 — Los parámetros, en Supabase y por perfil (fase 1)
+
+**Lo que pasó.** Noviembre en 0 de disciplina: tres de las fugas eran stops de 81–90 pts contra un límite de 80 que Kris
+ya había subido a 100 en Estrategia, pero que el juicio no veía (lee el del plan). El stop vivía en seis sitios distintos.
+Kris pidió centralizarlo en la base de datos, con una pestaña en Datos, y separar lo del bot de lo suyo, por cuenta (D-055).
+
+**Lo que se hizo (fase 1).** Cuatro tablas y dos funciones (`2026-11-17-parametros*.sql`):
+- `parametros_claves` (18: 5 de riesgo por perfil —`ATM_DEFECTO`, calculado—, 7 de mercado comunes, 6 técnicas que no se
+  editan), `parametros_perfiles` (`operativa`, predeterminado; `bot`), `parametros_cuentas` (Sim101 y APEX-232411-15 →
+  operativa; SimBot → bot) y `parametros_valores` (24 valores con su `desde`). Un trigger impide un valor de perfil sin
+  perfil, uno común con perfil y guardar uno calculado.
+- `parametros_vigentes(fecha, perfil)` y `parametros_de_cuenta(fecha, cuenta)`: el JSON con la forma de `parametros` de
+  `reglas.json`, más `desde`.
+
+**Verificado.** Sim101: 80 / $160 / ATM 320 el 30/09 y 100 / $200 / ATM 400 el 01/10 y hoy. SimBot hoy: **18 de 18 claves
+iguales a `reglas.json`**, 0 diferencias. Una cuenta sin perfil cae en «Mi operativa». RLS `auth_all`, `anon` sin
+acceso ni a las tablas ni a las funciones; los dos guardas del trigger, probados.
+
+**Todavía no lo lee nadie:** el motor, el bot y el juicio siguen con `reglas.json`, y la disciplina no cambia hasta la
+fase 3.
+
+---
+
+## Checkpoint 2026-11-16g — Rediseño «Cristal», fases 1 a 6 de una vez (en la rama, para la revisión final)
 
 Kris: *«quiero que hagas todos los cambios, de todas las fases, y al final validamos los toques finales»*. Todo en
 la rama `rediseno-cristal` (se ve en `…/trading-journal/nuevo/`); producción no cambia.
@@ -279,7 +385,7 @@ Para llegar ahí, el movimiento mira lo que se pinta en lote y en el siguiente f
 
 ---
 
-## Checkpoint 2026-11-16c — Rediseño «Cristal»: fuera el ámbar del fondo, y movimiento en toda la app
+## Checkpoint 2026-11-16f — Rediseño «Cristal»: fuera el ámbar del fondo, y movimiento en toda la app
 
 Kris vio `/nuevo/` y no le gustó: *«ese fondo como naranja al lado derecho… es como algo soleado»*, y *«no veo
 efectos, movimientos, no veo diferencia al diseño anterior»*. Las dos cosas eran ciertas: la fase 0 solo cambiaba
@@ -298,7 +404,7 @@ la 2.
 
 ---
 
-## Checkpoint 2026-11-16b — Rediseño «Cristal», fase 0 (2): colores, fuente y fondo vivo, en la rama
+## Checkpoint 2026-11-16e — Rediseño «Cristal», fase 0 (2): colores, fuente y fondo vivo, en la rama
 
 Solo en la rama `rediseno-cristal` (se ve en `…/trading-journal/nuevo/`); producción no cambia.
 
@@ -315,6 +421,93 @@ Solo en la rama `rediseno-cristal` (se ve en `…/trading-journal/nuevo/`); prod
 Con solo los tokens, todas las pantallas cambian ya de aspecto sin tocar su estructura. **Verificado** en la copia
 local, escritorio y celular, consola limpia y sin scroll horizontal: Calendario, Análisis, Sesión, Otros, Trades y
 Disciplina; Manrope cargada.
+
+---
+
+## Checkpoint 2026-11-16c — La zona superada cambia de papel; el stop del reingreso, en el último retroceso (plan 3.62)
+
+**Lo que pasó.** Kris vio un reingreso alcista a las 10:53 del 16/11 que el motor no veía. Paso a paso: el soporte de la
+9:32 se rompió a las 10:01 con consecución a las 10:05, así que pasó a ser resistencia; la 10:51 la rompió hacia arriba y
+la 10:53 dio la consecución, con la resistencia de la 9:45 ya cotizada más arriba. El motor no lo veía por tres cosas:
+pedía que una sola vela atravesara la zona entera, no daba entrada en una zona ya rota, y medía el stop desde el
+rompimiento fallido (~200 puntos). Kris: el stop de **todo** reingreso va en el extremo del último retroceso; con el
+camino libre sería Continuación y no lo opera (espera una zona nueva). Se le enseñaron 5 casos sintéticos y los aprobó;
+después, los 5 días que cambian en los 93 con datos, también aprobados (D-054).
+
+**Lo que se cambió.**
+- **Plan 3.62** (`2300618`, junto con los dos motores): `R-21` (cambia de papel), `R-26` (forma c, el stop, el 13/07
+  reescrito, caso de origen del 16/11), `R-31`, `R-32`, checklist y `ORIGEN_DEL_STOP`. Sincronizado: `catalogo_reglas`
+  (R-26 y la línea del stop, la vieja desactivada) y `plan_documentos` (reglas, parámetros y checklist, huellas verificadas).
+- **Los dos motores**, sello `L:d5c169fc…`: 93/93 días iguales, vela a vela. `_ultimo_retroceso` (el último giro del
+  zigzag confirmado y el extremo desde él) para las formas a, b y c; la forma c, una vez por zona (`roto2`).
+- **El portal** (`ef0f50d`): la tercera forma y el stop en el último retroceso.
+- **Las fichas de septiembre** que cambian de eventos, rehechas: solo cambia de operación el 8/09 (Reingreso alcista
+  10:12, TARGET +33,00). Las gráficas de `03_Bot\` no se tocan.
+
+**Lo que cambia.** 5 operaciones de 93 días: 16/11 (Reingreso −68,50), 30/10 (Reingreso +47,50), 8/09 (+33,00), 29/07
+(stop más cerca: −54,50 → −46,75) y 13/07 (+28,50 → −49,25). Total, de −203,00 a −261,00. En otros 26 días cambian solo
+reingresos descartados.
+
+**Después.** Kris copió y compiló `MotorChaumer.cs` (16/11). Plan 3.63: una nota en los dos reingresos de la galería de
+Chaumer, que etiquetan el stop en la corrida fallida: suele coincidir con el último retroceso, y si no, manda este.
+
+---
+
+## Checkpoint 2026-11-16b — NinjaTrader escribe la fecha y hace la foto del día
+
+**Lo que pasó.** Kris quiere automatizar lo manual de cada día: escribía la fecha en el gráfico con la herramienta de
+texto, al terminar capturaba la pantalla con su reloj de escritorio, la recortaba y la subía en el Diario (22 de los 23
+días del 15/10 al 16/11). Pidió dos indicadores; se le propuso además subir la foto sola al Journal. Con bocetos sobre
+su captura del 16/11 eligió: la hora dentro del recuadro de la fecha (así la foto no depende del reloj externo ni de
+fotografiar la pantalla), en dos líneas del mismo tamaño, un 25 % más grandes que su recuadro; la foto **3 minutos
+después de cerrar** y **subida sola**. Pidió no escribir más documentos de diseño: se aprobó en el chat.
+
+**Lo que se hizo.**
+- **`NinjaTrader/FechaChaumer.cs`:** el recuadro «Lunes, 16 de Noviembre, 2026 / 09:57:15». Fecha de la última vela;
+  hora de NinjaTrader cada segundo en vivo. Se arrastra con el ratón, fijo en la pantalla, y la posición la guarda el
+  espacio de trabajo.
+- **`NinjaTrader/FotoChaumer.cs`:** la ventana del gráfico con `Chart.GetScreenshot(Window)` (lo hace NinjaTrader por
+  dentro: sale aunque otra ventana tape el gráfico), encajada en 2000 × 1190. Sola a los 3 min de que la cuenta
+  principal (Sim101) quede plana, o a las 11:30 de Nueva York si no operó; botón «Foto del día» en la barra. A
+  `fotos-chaumer\`, a Cloudinary y a `sesiones.imagen_url`. La automática no pisa una imagen subida en el Diario.
+- **El Diario** (`js/form.js`) solo manda `imagen_url` si se subió o quitó ahí: abrirlo antes de la foto y guardar
+  después la borraba.
+
+**Verificado.** Los dos `.cs` compilan contra las DLL de NinjaTrader (la barra `MainMenu` y `GetScreenshot` existen
+como se usan). La fecha, cargando el indicador compilado: «Lunes, 16 de Noviembre, 2026», «Miércoles, 18 de
+Noviembre, 2026», «Sábado, 2 de Enero, 2027». El encaje: una ventana de 3440 × 1392 sale en 2000 × 1190 sin deformar.
+El Diario en el navegador, con el guardado interceptado: sin tocar la imagen no la manda; quitada, manda el vacío.
+**En NinjaTrader (11:38, instalados por Kris):** el recuadro sale en su gráfico con la hora corriendo, y al añadir
+FotoChaumer hizo sola la foto de la salida de las 9:55 (`fotos-chaumer\2026-11-16.png`, la ventana entera, con el
+recuadro dentro) y la marcó en `.salida`. No tocó `imagen_url` del día, que era la suya del Diario: lo previsto.
+Corregido tras verla: el botón salía «Fotodeldía» (la barra se comía los espacios: ahora el texto va en un
+`TextBlock`), la etiqueta «Foto Chaumer(MNQ 12-26 (1 Minute))» salía en la foto (`DisplayName` vacío en los dos), y la
+automática subía a Cloudinary antes de mirar si podía escribir: ahora mira primero y no sube fotos que no se usan.
+
+**17/11, el botón con icono.** Kris no sabía que «Fotodeldía» de la barra era el botón (seguía con la versión del
+16/11, sin el arreglo de los espacios) y pidió un icono «que siga el estándar de Ninja». La fuente de iconos de
+NinjaTrader no trae cámara: va la cámara de Windows (Segoe Fluent Icons), de línea y de un color, con el estilo y el
+color de un botón que ya está en la barra, y «Foto del día» al pasar el ratón. Instalado (9:50), el icono **no
+salía**: casi seguro, el estilo copiado era de un tipo de botón propio de NinjaTrader y WPF no deja aplicarlo a un
+`Button`, y la excepción cortaba `Enganchar` **antes de arrancar el vigía** (sin foto automática). Ahora el vigía va
+primero, el botón en un `try` que lo dice en el Output, solo se copia un estilo que sirva para un `Button` (si no, uno
+plano con el color de los textos) y el icono va escrito ``. La foto de las 9:48, con la versión anterior (aún
+«Fotodeldía»), llegó al Journal: la subida funciona de punta a punta. Y el `DisplayName` vacío (para que la
+etiqueta no salga en la foto) dejaba en blanco los dos en la lista «Configured» de la ventana de Indicadores: ahora
+devuelve el nombre en `SetDefaults` y `Configure` (las copias que edita esa ventana) y vacío en el gráfico.
+
+**10:12, la automática de punta a punta.** Kris salió a las 10:09:26 (Sim101 plana); la foto se hizo a las 10:12:26 y a
+las 10:12:28 estaba en `sesiones.imagen_url` (la misma URL que `.url`). El icono, en cambio, seguía sin salir, ni un hueco
+en la barra de la foto: el botón no llegaba a ponerse. Se deja de copiar el estilo de la barra y el botón lleva
+plantilla propia (plana, sombreado al pasar el ratón, el color `FontActionBrush`); al ponerse lo dice en el Output.
+
+**«Entry = HH:MM:SS».** Kris pidió que la segunda línea del recuadro sea la hora de su entrada: `FechaChaumer` lee las
+ejecuciones del día de una cuenta (propiedad «Cuenta de la entrada», Sim101 por defecto, como MarcacionChaumer) y escribe
+«Entry = » y la hora de la ejecución que la sacó de plano (la última operación, si hubo varias). Sin entrada, la hora
+como hasta ahora. Instalado a las 10:26: el recuadro dice «Entry = 10:07:58» y la cámara ya está en la barra, al final. Kris confirma los nombres en la ventana de Indicadores: queda cerrado.
+
+**Probado el 17/11:** la foto automática y la manual llegan al Journal, «Entry =», la cámara y los nombres. Sin
+probar, solo arrastrar el recuadro.
 
 ---
 

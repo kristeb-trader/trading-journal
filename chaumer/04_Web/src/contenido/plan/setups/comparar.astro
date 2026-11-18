@@ -29,12 +29,12 @@ import { v } from './_datos.mjs';
         <tr>
           <th>Qué opera</th>
           <td>El rompimiento que funciona</td>
-          <td>El rompimiento que falló, o el que rompe la zona contraria tras un cambio de tendencia</td>
+          <td>El rompimiento que falló, el que rompe la zona contraria tras un cambio de tendencia, o el de una zona que cambió de papel</td>
         </tr>
         <tr>
           <th>Dirección</th>
           <td>A favor del movimiento</td>
-          <td>Contraria al rompimiento que falló, o la del cambio de tendencia</td>
+          <td>Contraria al rompimiento que falló, la del cambio de tendencia, o contraria al primer traspaso de la zona</td>
         </tr>
         <tr>
           <th>Plazo</th>
@@ -44,7 +44,7 @@ import { v } from './_datos.mjs';
         <tr>
           <th>Stop</th>
           <td>Extremo del retroceso</td>
-          <td>Extremo de la corrida fallida (forma b: como la Continuación)</td>
+          <td>Extremo del último retroceso</td>
         </tr>
         <tr>
           <th>Filtros de objetivo</th>
@@ -67,10 +67,10 @@ import { v } from './_datos.mjs';
 
   <div class="duro">
     <p>
-      <strong>El stop del Reingreso suele salir más ancho.</strong> Se mide
-      contra la corrida fallida, que está al otro lado de la zona, así que
-      incluye la zona entera. Por eso el tope de riesgo descarta más
-      Reingresos que Continuaciones.
+      <strong>El stop del Reingreso va en el último retroceso.</strong> Hasta
+      el 16/11/2026 se medía contra la corrida fallida, al otro lado de la
+      zona y con la zona entera dentro, y el tope de riesgo descartaba muchos
+      Reingresos. El último retroceso queda más cerca de la entrada.
     </p>
   </div>
 </section>

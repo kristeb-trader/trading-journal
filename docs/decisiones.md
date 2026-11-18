@@ -10,6 +10,55 @@
 
 ---
 
+## D-055 — Los parámetros, en Supabase, con un perfil por cuenta: el del bot y el de Kris
+
+**Decisión (Kris, 17/11/2026).** Los números que pueden cambiar viven en **Supabase**, con su historial (`desde`), y
+**no en un documento**: *«eso no debería estar mejor en la base de datos centralizado en una tabla de parámetros, y en
+alguna parte de Datos, una pestaña con todos esos parámetros centralizados?»*. Y en **perfiles por cuenta**: *«unos
+parámetros únicamente para el bot, y otros para la estrategia y medir la disciplina»*. Hoy, «Mi operativa» (Sim101,
+APEX-232411-15) con **100 pts / $200 desde el 01/10/2026**, y «Bot» (SimBot) con los 80 / $160 del plan.
+- **Riesgo y gestión, por perfil** (`STOP_MAX`, `RIESGO_MAX`, `OPS_POR_SESION`, `RATIO_TARGET`). **La lectura del
+  mercado, común** (volumen, noticia, consecución, horarios): el motor lee el día una vez, y el juicio de Kris y el del
+  bot salen de las mismas zonas.
+- **Un valor nunca se pisa**: un cambio es una fila nueva con su fecha, y cada día se juzga con el valor de su perfil ese
+  día. `ATM_DEFECTO` no se guarda: es `STOP_MAX` en ticks.
+
+**Motivo.** El 17/11 el stop vivía en seis sitios que ya no coincidían: Estrategia (100), Claves y objetivos (200 $),
+`PARAMETROS.md` (80), la tabla de contratos de $160, y textos con «80» escritos a mano en el Journal. Kris subió el
+límite en uno y los demás siguieron diciendo otra cosa.
+
+**Alternativas descartadas.**
+- **`PARAMETROS.md` como única fuente** (la primera propuesta): Kris no quiere los números en un documento de texto.
+- **Un solo juego de números para todo:** subir el stop de Kris a 100 cambiaba también lo que opera el bot.
+
+**Fases** (aprobadas en el chat el 17/11): 1 las tablas · 2 la pestaña Parámetros en Datos · 3 la disciplina con el perfil
+de la cuenta · 4 fuera los números escritos a mano (Estrategia, textos, Coach, el plan como copia) · 5 el bot lee su perfil
+de Supabase (una recompilación). Hasta la 4, `PARAMETROS.md` → `reglas.json` sigue siendo lo que leen los motores.
+
+---
+
+## D-054 — La zona superada cambia de papel, y el stop de todo reingreso va en el último retroceso
+
+**Decisión (Kris, 16/11/2026, plan 3.62).** Una zona superada en un sentido (rompimiento + consecución) **cambia de
+papel**: el soporte roto pasa a ser resistencia, y al revés. Si luego se rompe en sentido contrario con consecución, es
+una entrada; con una zona ya cotizada más allá del objetivo, **Reingreso** (forma c). Con el camino libre no se opera.
+**El stop de todo reingreso —formas a, b y c— va en el extremo del último retroceso** antes del rompimiento; riesgo y
+objetivo, como en la Continuación (`STOP_MAX`, 1:1).
+
+**Motivo.** El 16/11 a las 10:53: *«esa zona fue rota como soporte y no me generó entrada, no pasa nada, pero después
+generó un setup claro de reingreso alcista»*. Las zonas siempre se ven para algo: entrar, filtrar objetivos, cruzarse con
+otra zona y saber cuándo mueren. El stop desde el rompimiento fallido daba ~200 puntos; el del último retroceso, 68,50.
+
+**Medido antes de cambiar nada**, en una copia del motor sobre 93 días: cambian 5 operaciones, revisadas por Kris (16/11,
+30/10, 8/09, 29/07, 13/07); de −203,00 a −261,00. El 13/07 de la 9:41, el ejemplo del plan de lo que no es reingreso,
+pasa a serlo.
+
+**Alternativas descartadas.**
+- **Límites de stop propios para el reingreso:** *«el reingreso y la continuación manejan los mismos límites de stop y targets»*.
+- **Operar la forma c como Continuación con el camino libre:** para una Continuación Kris espera a que se forme una zona nueva.
+
+---
+
 ## D-053 — La disciplina mide solo las reglas de tu entrada; el Diario ya no tiene casillas
 
 *Afina D-052.*

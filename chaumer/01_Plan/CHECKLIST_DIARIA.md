@@ -3,7 +3,7 @@
 > **Se ejecuta de arriba abajo. No se decide nada que no esté aquí.**
 > Cada línea cita su regla. Si una respuesta es **NO** donde dice parar, **se para** — no se evalúa, no se matiza.
 
-**Versión del plan:** 3.61 · 2026-11-02 · **34 reglas**
+**Versión del plan:** 3.63 · 2026-11-16 · **34 reglas**
 
 ---
 
@@ -71,7 +71,7 @@
 | ☐ | Setup | Dónde va el stop | Regla |
 |---|---|---|---|
 | ☐ | **Continuación** | el extremo alcanzado **desde que nació la zona** hasta la vela de rompimiento — no solo el del retroceso que la originó | `R-32` |
-| ☐ | **Reingreso** | extremo de la **corrida fallida** | `R-32` |
+| ☐ | **Reingreso** | extremo del **último retroceso** antes del rompimiento (formas a, b y c) | `R-32` |
 | ☐ | **Target** = misma distancia, al otro lado. **1:1** | | `R-32` |
 
 ### Los filtros · basta que falle uno

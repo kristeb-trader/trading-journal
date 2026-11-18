@@ -1,6 +1,6 @@
 # Rediseño visual «Cristal» y navegación nueva
 
-**Versión:** v1.3 · **Estado:** ✅ APROBADO por Kris (15/11/2026; la maqueta 8 y la isla, el 16/11) · Fases 0 a 6 hechas en la rama (16/11), a falta de la revisión final de Kris.
+**Versión:** v1.3 · **Estado:** ✅ APROBADO por Kris (15/11/2026; la maqueta 8 y la isla, el 16/11) · Fases 0 a 6 hechas; **fundido en `main` el 18/11/2026: es el Journal.** Falta la fase 7.
 **Copia de seguridad del diseño anterior:** etiqueta de git `diseno-anterior-2026-11-13` (commit `a5feff0`), subida a GitHub.
 **Maqueta de referencia:** `design-mockups/mockup-8.html` (en lo visual manda la maqueta sobre este texto).
 **Alcance:** solo aspecto y navegación. No cambia datos, cálculos ni base de datos. Lo que no es visual queda para
@@ -177,7 +177,9 @@ en una dirección aparte del mismo sitio (`…/trading-journal/nuevo/`); se mont
 `js/dev.local.js` y el servidor de vista previa `cristal` (puerto 3214, `.claude/launch.json`). La carpeta de siempre
 se queda en `main`: la cadena diaria y los demás chats trabajan ahí.
 
-**Al fundir la rama en `main`** (cuando Kris dé por bueno el rediseño) hay que deshacer lo que solo sirve a la
+**✅ Hecho el 18/11/2026** (Kris: «oficializa el nuevo como el actual»): la rama se fundió en `main`, `/nuevo/` quedó como una
+redirección que retira su service worker (`.github/nuevo-retirado/`), y la carpeta `Trading Journal cristal` se borró.
+Lo que había que deshacer lo que solo sirve a la
 versión de prueba: en `publicar-journal.yml`, los dos pasos de `/nuevo/`; borrar `.github/workflows/avisar-nuevo.yml`;
 en `sw.js`, el nombre de la caché (`nqjournal-vN`) y el filtro de `activate`; en `manifest.json`, el nombre y el
 `scope`; y la banda «DISEÑO NUEVO · EN PRUEBAS» (`html[data-nuevo]` en `styles.css` y su línea en `index.html`).
