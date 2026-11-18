@@ -577,3 +577,12 @@ select option { background: var(--capa); color: var(--text); font-weight: 500; }
   /* Las ventanas: con su propio scroll hasta el final y el botón de guardar por encima de la barra del iPhone */
   .modal { max-height: 92dvh; padding-bottom: env(safe-area-inset-bottom); }
 }
+
+/* «Corregir la causa» (18/11): mismo componente que «No estoy de acuerdo», en ámbar */
+.dv-corr-btn { border-color: var(--warning); color: var(--warning-txt); background: var(--warning-dim); margin-right: 8px; }
+.dv-corr-form { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.dv-corr-form select, .dv-corr-form input, .dv-corr-form textarea {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text); padding: 8px 10px; font-size: 0.85rem;
+}
+.dv-corr-nota { font-size: 0.78rem; color: var(--text3); }

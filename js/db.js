@@ -385,6 +385,9 @@ function paramVigente(valores, clave, perfil, fecha = hoyISO()) {
   }
   return mejor
 }
+// Las causas corregidas por Kris (`disciplina_correcciones`, 18/11): fecha → { regla, etiqueta, texto }. Las carga
+// DB.cargarCorrecciones (el arranque y getDiscusiones); sin ellas, el juicio del motor tal cual.
+let _CORRECCIONES = new Map()
 // Los límites de cada cuenta, de la caché de `parametros_*` (DB.cargarParametros la llena: getObjetivos, el arranque).
 // `perfil` explícito (`bot`) o el de `cuenta` (por defecto, la principal); una cuenta sin fila usa el predeterminado.
 // null = sin dato (caché sin cargar o clave sin valor en esa fecha): quien llama NO inventa un número, devuelve «sin
@@ -471,13 +474,15 @@ const REGLA_TXT = {
   // Sin números: el máximo es el del perfil de la cuenta en esa fecha (D-055), y el de cada trade va en su juicio.
   stop_max:         { titulo: 'Stop de más de tu máximo',            corto: 'stop > máx.',     plan: 'Si el stop pasa de tu máximo (Datos → Parámetros), no se opera, por bueno que sea el setup.' },
   contratos:        { titulo: 'Más contratos de los que caben',      corto: 'contratos',       plan: 'Los contratos los decide el stop: los que quepan en tu riesgo máximo, redondeando hacia abajo.' },
-  punto_referencia: { titulo: 'Objetivo más allá del punto de referencia', corto: 'punto de ref.', plan: 'El objetivo no puede pasar del punto de referencia vivo más cercano: si lo pasa, no se opera.' },
+  punto_referencia: { titulo: 'Objetivo más allá del punto de referencia', corto: 'Punto de ref. en contra', plan: 'El objetivo no puede pasar del punto de referencia vivo más cercano: si lo pasa, no se opera.' },
   objetivo_zona:    { titulo: 'Objetivo contra una zona',            corto: 'zona en contra',  plan: 'Entre la entrada y el objetivo no puede haber una zona viva.' },
-  primer_iri:       { titulo: 'Entrar en el primer IRI',             corto: 'primer IRI',      plan: 'Tras un movimiento contrario, el primer IRI no se opera: se espera el segundo.' },
-  consecucion:      { titulo: 'Entrar sin consecución',              corto: 'sin consecución', plan: 'Sin consecución no hay setup.' },
-  fluidez:          { titulo: 'Continuación sin corrida fluida',     corto: 'no fluida',       plan: 'La continuación solo se opera con la corrida fluida.' },
+  primer_iri:       { titulo: 'Entrar en el primer IRI',             corto: 'IRI no fluido',      plan: 'Tras un movimiento contrario, el primer IRI no se opera: se espera el segundo.' },
+  consecucion:      { titulo: 'Entrar sin consecución',              corto: 'Sin consecución', plan: 'Sin consecución no hay setup.' },
+  fluidez:          { titulo: 'Continuación sin corrida fluida',     corto: 'IRI no fluido',       plan: 'La continuación solo se opera con la corrida fluida.' },
   fed:              { titulo: 'Continuación en día de Fed',          corto: 'día de Fed',      plan: 'En día de Fed no se opera la continuación.' },
   premercado:       { titulo: 'Continuación en una zona de premercado', corto: 'premercado',   plan: 'El rompimiento de una zona de premercado no da continuación: queda para el reingreso.' },
+  zona_mal_creada:  { titulo: 'Zona mal creada',                     corto: 'Zona mal creada', plan: 'Solo se opera el rompimiento de una zona: una línea provisional (retroceso sin confirmar) o una zona que la regla del 50 % anula no es zona.' },
+  entrada_incorrecta: { titulo: 'Entrada incorrecta',                corto: 'Entrada incorrecta', plan: 'La orden tiene que ser la del setup: el sentido, el precio de entrada y los contratos.' },
   no_tomado:        { titulo: 'Setup válido no tomado',              corto: 'no tomado',       plan: 'Si el plan, con tus límites, daba una operación, se toma: no entrar también es salirse del plan.' },
   sin_setup:        { titulo: 'Trades sin setup del plan',           corto: 'sin setup',       plan: 'Solo se operan los setups del plan.' },
   una_operacion:    { titulo: 'Más de una operación',                corto: '2.º trade',       plan: 'Una operación por día.' },
@@ -519,7 +524,16 @@ function juicioDia(s, opts) {
     if (!m || m.estado !== 'ok' || ops.length < trades.length) return { estado: 'pendiente', ops, plan, discusion }
   }
   if (discusion && discusion.estado === 'plan') return { estado: 'anulado', ops: [], plan: null, discusion }
-  return { estado: discusion && discusion.estado === 'abierta' ? 'discusion' : 'cuenta', ops, plan, discusion }
+  // La causa corregida por Kris (18/11, `disciplina_correcciones`): el motor acertó la regla rota pero no la causa. Solo
+  // cambia la causa del primer ✗; el día cuenta igual.
+  const corr = _CORRECCIONES.get(s.sesion_date)
+  const i = corr ? ops.findIndex(op => !op.juicio.cumple) : -1
+  if (i >= 0) {
+    ops = ops.slice()
+    ops[i] = { ...ops[i], juicio: { cumple: false, regla: corr.regla, texto: corr.texto || reglaTxt(corr.regla).titulo,
+                                    etiqueta: corr.etiqueta || null, corregido: true, motor: ops[i].juicio } }
+  }
+  return { estado: discusion && discusion.estado === 'abierta' ? 'discusion' : 'cuenta', ops, plan, discusion, correccion: corr || null }
 }
 
 // Todo lo de un período con la medida del plan: los días, el %, la racha y la fuga.
@@ -1394,7 +1408,25 @@ const DB = {
 
   // «No estoy de acuerdo» con el juicio del motor (D-052): un día por fila. `abierta` no cuenta;
   // se cierra con `motor` (vuelve a contar) o `plan` (Kris tenía razón: no cuenta).
+  async cargarCorrecciones() {
+    const { data, error } = await supa.from('disciplina_correcciones').select('fecha, regla, etiqueta, texto')
+    if (error) throw error
+    _CORRECCIONES = new Map((data || []).map(c => [c.fecha, c]))
+    return _CORRECCIONES
+  },
+  async corregirCausa(fecha, regla, etiqueta, texto) {
+    const { error } = await supa.from('disciplina_correcciones')
+      .upsert({ fecha, regla, etiqueta: (etiqueta || '').trim() || null, texto: (texto || '').trim() || null }, { onConflict: 'fecha' })
+    if (error) throw error
+    await this.cargarCorrecciones()
+  },
+  async quitarCorreccion(fecha) {
+    const { error } = await supa.from('disciplina_correcciones').delete().eq('fecha', fecha)
+    if (error) throw error
+    await this.cargarCorrecciones()
+  },
   async getDiscusiones() {
+    this.cargarCorrecciones().catch(() => {})     // viajan juntas: quien juzga el plan pide las discusiones
     const { data, error } = await supa.from('disciplina_discusiones')
       .select('fecha, nota, estado, creada_at, cerrada_at').order('fecha')
     if (error) throw error

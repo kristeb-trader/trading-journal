@@ -521,9 +521,10 @@ const Disciplina = (() => {
     const rota = j.ops.find(op => !op.juicio.cumple)
     if (j.ops[0]?.sinTrade) return rota
       ? { tono: 'r', corto: 'no tomado', tit: rota.juicio.texto }
-      : { tono: 'g', corto: 'sin setup ✓', tit: j.ops[0].juicio.texto }
-    if (!rota) return { tono: 'g', corto: 'dentro',
+      : { tono: 'g', corto: 'Nada válido', tit: j.ops[0].juicio.texto }
+    if (!rota) return { tono: 'g', corto: 'Ok',
       tit: j.ops.map(op => op.juicio.texto).join(' · ') }
+    if (rota.juicio.etiqueta) return { tono: 'r', corto: rota.juicio.etiqueta, tit: rota.juicio.texto }
     const pts = /(\d+) pts/.exec(rota.juicio.texto)
     const delPlan = /stop del plan/.test(rota.juicio.texto)   // el suyo cabía; el del plan, no (05/11)
     return { tono: 'r', corto: rota.juicio.regla === 'stop_max' && pts ? (delPlan ? `stop del plan ${pts[1]}` : `stop ${pts[1]} pts`) : reglaTxt(rota.juicio.regla).corto,

@@ -64,7 +64,11 @@ reglas? El juicio lo escribe **`medir.py`** (`tu_operacion[i].juicio = {cumple, 
   la orden), así el motor mira el día entero y no se para tras llenar la suya. «El bot es aparte: la disciplina mide mis
   entradas» (Kris, 18/11; antes, el 02/11 el trade de las 10:27 salía «sin setup» porque el motor había entrado a las 9:34).
   Sin velas, la pasada normal, donde un «riesgo X pts» que quepa en su máximo no cuenta. Sin Supabase, los límites del bot.
-- `REGLA_TXT` no lleva números: el de cada trade va en el texto de su juicio.
+- `REGLA_TXT` no lleva números: el de cada trade va en el texto de su juicio. Las etiquetas (`corto`) son las de Kris
+  (18/11): «Ok», «Nada válido», «Sin consecución», «IRI no fluido», «Punto de ref. en contra»…
+- **La causa corregida** (`disciplina_correcciones`, 18/11): cuando el motor acierta el rojo pero no el porqué, Kris la corrige
+  desde el visor; `juicioDia` cambia la causa del primer ✗ (`juicio.corregido`, y `juicio.motor` guarda la del motor). No
+  cambia ninguna cifra. Caché `_CORRECCIONES` (`DB.cargarCorrecciones`: el arranque y `getDiscusiones`).
 - El aviso de Telegram (`avisarDisciplina`, en el bot) solo para días **registrados** (el candado) y **una vez**
   (`sesiones.disciplina_avisada_at`).
 

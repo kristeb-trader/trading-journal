@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-18h | Las etiquetas de Disciplina con las palabras de Kris, y «Corregir la causa» en el visor |
 | 2026-11-18g | El Coach valida como el análisis del 05/11: qué setup operaste de verdad, su regla paso a paso con la vela, y la causa |
 | 2026-11-18f | Un día sin operar también se juzga: ✓ si el plan no daba nada, ✗ si daba un setup que no tomaste (D-057) |
 | 2026-11-18e | El bot lee su perfil de Supabase al armarse, y la cadena dibuja cada día con el del bot en esa fecha (fase 5) |
@@ -102,6 +103,27 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-18h — Las etiquetas con tus palabras y «Corregir la causa»
+
+**Lo que pasó.** Repasados con Kris, vela a vela, los rojos de noviembre: el 05/11 (sin consecución; el motor juzgó otro
+setup), el 09/11 (primer IRI tras la bajada de la apertura), el 10/11 (vendió el rompimiento de un soporte que no existía:
+retroceso sin confirmar y pasado del 50 % entre la resistencia de la 10:02 y la zona de premercado de la 4:01) y el 17/11
+(orden equivocada). Kris eligió las etiquetas.
+
+**Lo que se hizo.**
+- `REGLA_TXT` con sus palabras: «Ok» (✓ con trade), «Nada válido» (✓ sin trade), «Sin consecución», «IRI no fluido»
+  (primer IRI y fluidez), «Punto de ref. en contra»; nuevas `zona_mal_creada` y `entrada_incorrecta`.
+- `disciplina_correcciones` (`2026-11-18-disciplina-correcciones*.sql`): la causa de un rojo corregida; `juicioDia` la
+  aplica al primer ✗ sin cambiar ninguna cifra. Cargadas las tres de noviembre.
+- En el visor del día, **«Corregir la causa»** (junto a «No estoy de acuerdo»): la regla, la etiqueta y una frase; y
+  «Volver a la del motor». El visor dice «Causa corregida por ti. El motor decía: …».
+
+**Verificado.** Con los datos reales, octubre 12/22 y noviembre 6/10, las mismas cifras; noviembre se lee
+02 Ok · 03 Nada válido · 04 Ok · 05 Sin consecución · 06 Ok · 09 IRI no fluido · 10 Soporte mal creado · 16 Ok ·
+17 Entrada incorrecta · 18 Ok. Preview: los cuadritos y el visor del 05/11; consola limpia.
 
 ---
 

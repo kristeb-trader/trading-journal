@@ -244,13 +244,27 @@ const Modal = {
       lbl = rota ? 'Disciplina · setup válido no tomado' : 'Disciplina · no operar era lo correcto'; tono = rota ? 'red' : ''
       txt = `<strong>${esc(j.ops[0].juicio.texto[0].toUpperCase() + j.ops[0].juicio.texto.slice(1))}</strong>.`
     } else if (rota) {
-      lbl = 'Disciplina · regla rota'; tono = 'red'
+      lbl = `Disciplina · ${esc(rota.juicio.etiqueta || 'regla rota')}`; tono = 'red'
       txt = `<strong>${esc(rota.juicio.texto[0].toUpperCase() + rota.juicio.texto.slice(1))}</strong> — ${esc([sesion.setup, rota.hora].filter(Boolean).join(' '))}.`
+        + (rota.juicio.corregido ? `<br><span class="dv-corr-nota">Causa corregida por ti. El motor decía: ${esc(rota.juicio.motor?.texto || '—')}.</span>` : '')
     } else {
       lbl = 'Disciplina · dentro de las reglas'; tono = ''
       txt = `<strong>Dentro de las reglas</strong> — ${esc([sesion.setup, j.ops[0]?.hora].filter(Boolean).join(' '))}.`
     }
-    const boton = j.estado === 'discusion' ? '' : `
+    // «Corregir la causa» (18/11): el motor acertó el rojo pero no el porqué. El día sigue contando igual.
+    const opcionesCausa = Object.entries(REGLA_TXT).filter(([k]) => !['otra'].includes(k))
+      .map(([k, v]) => `<option value="${k}"${rota && rota.juicio.regla === k ? ' selected' : ''}>${esc(v.corto)}</option>`).join('')
+    const corregir = rota && j.estado !== 'discusion' ? `
+      <button type="button" class="dv-disc-btn dv-corr-btn" data-corregir="${dateStr}">✏️ Corregir la causa</button>
+      <div class="dv-corr-form hidden">
+        <select class="dv-corr-regla">${opcionesCausa}</select>
+        <input type="text" class="dv-corr-etq" maxlength="40" placeholder="Etiqueta (p. ej. «Soporte mal creado»)" value="${esc(rota.juicio.corregido ? rota.juicio.etiqueta || '' : '')}">
+        <textarea rows="2" class="dv-corr-txt" placeholder="La causa en una frase">${esc(rota.juicio.corregido ? rota.juicio.texto : '')}</textarea>
+        <div class="dv-disc-bts"><button type="button" class="dd-btn" data-guardar-causa="${dateStr}">Guardar la causa</button>
+        ${rota.juicio.corregido ? `<button type="button" class="dd-btn" data-quitar-causa="${dateStr}">Volver a la del motor</button>` : ''}
+        <button type="button" class="dd-btn" data-cancelar-causa>Cancelar</button></div>
+      </div>` : ''
+    const boton = j.estado === 'discusion' ? '' : `${corregir}
       <button type="button" class="dv-disc-btn" data-discutir="${dateStr}">🤔 No estoy de acuerdo</button>
       <div class="dv-disc-form hidden">
         <textarea rows="2" placeholder="Una frase: qué vio mal el motor (p. ej. «no vio la zona de las 9:32»)"></textarea>
@@ -270,6 +284,33 @@ const Modal = {
     el.querySelector('[data-cancelar]')?.addEventListener('click', () => {
       el.querySelector('.dv-disc-form')?.classList.add('hidden')
       el.querySelector('[data-discutir]')?.classList.remove('hidden')
+    })
+    el.querySelector('[data-corregir]')?.addEventListener('click', e => {
+      e.currentTarget.classList.add('hidden')
+      el.querySelector('.dv-corr-form')?.classList.remove('hidden')
+    })
+    el.querySelector('[data-cancelar-causa]')?.addEventListener('click', () => {
+      el.querySelector('.dv-corr-form')?.classList.add('hidden')
+      el.querySelector('[data-corregir]')?.classList.remove('hidden')
+    })
+    const trasCorregir = msg => {
+      const form = el.querySelector('.dv-corr-form')
+      if (form) form.outerHTML = `<p class="dv-disc-ok">${msg} Se ve en Disciplina al volver a abrirla.</p>`
+    }
+    el.querySelector('[data-guardar-causa]')?.addEventListener('click', async e => {
+      const b = e.currentTarget, fecha = b.dataset.guardarCausa
+      const regla = el.querySelector('.dv-corr-regla')?.value
+      const etiqueta = el.querySelector('.dv-corr-etq')?.value || reglaTxt(regla).corto
+      const texto = el.querySelector('.dv-corr-txt')?.value || ''
+      b.disabled = true
+      try { await DB.corregirCausa(fecha, regla, etiqueta, texto); trasCorregir(`Causa guardada: «${etiqueta}».`) }
+      catch (err) { b.disabled = false; Toast.show('No se pudo guardar la causa: ' + err.message, 'error') }
+    })
+    el.querySelector('[data-quitar-causa]')?.addEventListener('click', async e => {
+      const b = e.currentTarget
+      b.disabled = true
+      try { await DB.quitarCorreccion(b.dataset.quitarCausa); trasCorregir('Vuelve la causa del motor.') }
+      catch (err) { b.disabled = false; Toast.show('No se pudo quitar: ' + err.message, 'error') }
     })
     el.querySelector('[data-guardar]')?.addEventListener('click', async e => {
       const b = e.currentTarget, fecha = b.dataset.guardar
@@ -807,6 +848,7 @@ async function boot() {
   // Los límites de riesgo (D-055) se cargan ya, antes de pintar ninguna pantalla que juzgue un día. `getObjetivos`
   // los carga también; si esto falla, `limiteDe` da null y las pantallas no inventan un número.
   await DB.cargarParametros().catch(() => {})
+  await DB.cargarCorrecciones().catch(() => {})    // las causas corregidas (18/11): las lee juicioDia
 
   // Check Supabase connectivity. La barra solo muestra el punto de color: el
   // texto decía lo mismo que el color y ocupaba sitio. El detalle sale al pulsarlo.
