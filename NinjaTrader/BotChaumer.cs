@@ -296,6 +296,7 @@ namespace NinjaTrader.NinjaScript.Strategies
             if (EntradaViva())
             {
                 if (Misma(o, ordenMotor)) return;
+                if (o.Retro != null && MismaEntrada(o, ordenMotor)) { ActualizarRetro(o); return; }   // plan 3.64
                 pendienteTrasCancelar = o; horaPendiente = MotorChaumer.Hh(r.D[o.I]);   // otra orden: se pone al cancelar la vieja
                 CancelarEntrada();
                 return;
@@ -469,6 +470,26 @@ namespace NinjaTrader.NinjaScript.Strategies
         private bool EntradaViva() { return entrada != null && !Order.IsTerminalState(entrada.OrderState); }
         private void CancelarEntrada() { if (EntradaViva() && llenados == 0) CancelOrder(entrada); }
 
+        private static bool MismaEntrada(MotorChaumer.Orden a, MotorChaumer.Orden b)
+        {
+            return b != null && a.I == b.I && a.Tipo == b.Tipo && a.Dir == b.Dir && Math.Abs(a.E - b.E) < 1e-9;
+        }
+
+        /// <summary>Plan 3.64 (18/11/2026): la orden salió de un retroceso nuevo y el retroceso sigue: el motor mueve el
+        /// stop (y el objetivo, 1:1). La entrada es la misma, así que la orden no se cancela: se ajustan los contratos.</summary>
+        private void ActualizarRetro(MotorChaumer.Orden o)
+        {
+            double pv = Instrument.MasterInstrument.PointValue;
+            int qty = (int)Math.Floor(P.RiesgoMax / (o.R * pv) + 1e-9);
+            ordenMotor = o;
+            fila.Stop = o.S; fila.Objetivo = o.T; fila.Riesgo = o.R;
+            Log("el retroceso sigue: stop " + MotorChaumer.F2(o.S) + " · objetivo " + MotorChaumer.F2(o.T) + " · riesgo " + MotorChaumer.F2(o.R));
+            if (qty < 1) { fila.Motivo = "no cabe ni un contrato en RIESGO_MAX"; CancelarEntrada(); Guardar(fila); return; }
+            fila.Contratos = qty;
+            if (entrada != null && entrada.Quantity != qty && llenados == 0) ChangeOrder(entrada, qty, 0, entrada.StopPrice);
+            Guardar(fila);
+        }
+
         private static bool Misma(MotorChaumer.Orden a, MotorChaumer.Orden b)
         {
             return b != null && a.I == b.I && a.Tipo == b.Tipo && Math.Abs(a.E - b.E) < 1e-9 && Math.Abs(a.S - b.S) < 1e-9;
@@ -478,6 +499,9 @@ namespace NinjaTrader.NinjaScript.Strategies
         private void VigilarTick()
         {
             if (!EntradaViva() || llenados > 0 || ordenMotor == null) return;
+            // Plan 3.64: si la orden salió de un retroceso nuevo, pasar su stop no la cancela: el retroceso sigue y el
+            // stop va con él. Lo decide el motor al cierre de la vela (ActualizarRetro, o la cancela).
+            if (ordenMotor.Retro != null) return;
             double px = Close[0];
             if (ordenMotor.Dir > 0 ? px <= ordenMotor.S : px >= ordenMotor.S)
             {
@@ -555,9 +579,22 @@ namespace NinjaTrader.NinjaScript.Strategies
                 OrderAction salida = o.Dir > 0 ? OrderAction.Sell : OrderAction.BuyToCover;
                 if (stopO == null)
                 {
+                    // Plan 3.64: con la orden de un retroceso nuevo, si el retroceso siguió dentro de esta vela antes de
+                    // llenar, el stop va a su extremo (lo que hará el motor al cierre) y el objetivo, a 1:1.
+                    double sx = o.S, tx = o.T;
+                    if (o.Retro != null)
+                    {
+                        sx = o.Dir > 0 ? Math.Min(o.S, Low[0]) : Math.Max(o.S, High[0]);
+                        tx = o.E + Math.Abs(o.E - sx) * o.Dir;
+                        if (Math.Abs(sx - o.S) > 1e-9)
+                        {
+                            filaOp.Stop = sx; filaOp.Objetivo = tx; filaOp.Riesgo = Math.Abs(o.E - sx);
+                            Log("el retroceso siguió en la vela del llenado: stop " + MotorChaumer.F2(sx) + " · objetivo " + MotorChaumer.F2(tx));
+                        }
+                    }
                     string oco = "chaumer-" + Guid.NewGuid().ToString("N");
-                    SubmitOrderUnmanaged(0, salida, OrderType.StopMarket, llenados, 0, Instrument.MasterInstrument.RoundToTickSize(o.S), oco, N_STOP);
-                    SubmitOrderUnmanaged(0, salida, OrderType.Limit, llenados, Instrument.MasterInstrument.RoundToTickSize(o.T), 0, oco, N_OBJETIVO);
+                    SubmitOrderUnmanaged(0, salida, OrderType.StopMarket, llenados, 0, Instrument.MasterInstrument.RoundToTickSize(sx), oco, N_STOP);
+                    SubmitOrderUnmanaged(0, salida, OrderType.Limit, llenados, Instrument.MasterInstrument.RoundToTickSize(tx), 0, oco, N_OBJETIVO);
                 }
                 else
                 {
