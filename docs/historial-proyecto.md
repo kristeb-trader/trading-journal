@@ -126,9 +126,10 @@ quedó claro. Las cinco operaciones que cambian, revisadas una a una por Kris (D
 **Lo que cambia.** Con el tope del bot (80): 12/11 y 29/07, de −332,50 a −410,25 en 95 días. Con el de Kris (100),
 además el 18/11 (+87,50), el 5/11 (+88,50) y el 31/07 (−89,75).
 
-**Pendiente.** Kris: copiar `MotorChaumer.cs` (`Custom\AddOns\`) y `BotChaumer.cs` (`Custom\Strategies\`) y F5 fuera de la
-ventana. Al medir otra vez desde octubre salieron otros tres juicios distintos que no son de esta regla (06/10, 08/10,
-05/11): esos días no se habían vuelto a medir tras cambios anteriores; no se guardaron.
+**Después.** Kris copió y compiló el motor y el bot (18/11). Con su sí: la discusión del 12/11 («no entiendo por qué sin
+consecución») se cerró a su favor, y se guardaron los otros tres juicios que cambian al medir otra vez desde octubre y
+que no son de esta regla (esos días no se habían vuelto a medir tras cambios anteriores): 06/10 (válido → corrida no
+fluida), 08/10 (sin setup → 4 contratos, cabían 3) y 05/11 (el stop del plan, 130 → 155 pts).
 
 ---
 

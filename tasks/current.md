@@ -76,8 +76,7 @@ Analyzer y el Market Replay sobre el pasado. **Todo cambio de regla aprobado lle
 - [x] **Plan 3.62** (16/11, Kris): la zona superada cambia de papel (Reingreso, forma c) y el stop de todo reingreso va en el último retroceso. Plan y motores (`2300618`, sello `L:d5c169fc…`, 93/93), portal, fichas de septiembre. Cambian 5 operaciones (D-054)
 - [x] **Kris** (16/11): `MotorChaumer.cs` con el sello `L:d5c169fc…` copiado y compilado
 - [x] **Plan 3.64** (18/11, Kris): el retroceso nuevo trae un stop nuevo. Plan y motores (`16b6b24`, sello `L:b57be514…`, 95/95), bot (`4ea110a`), portal, disciplina del 12/11 y el 18/11 (D-056)
-- [ ] **Kris, fuera de la ventana:** copiar `MotorChaumer.cs` (`Custom\AddOns\`) y `BotChaumer.cs` (`Custom\Strategies\`), y un F5. Sin el motor nuevo el bot no opera
-- [ ] **Disciplina:** al medir otra vez desde octubre salen distintos el 06/10 (válido → corrida no fluida), el 08/10 (sin setup → 4 contratos, cabían 3) y el 05/11 (130 → 155 pts). No son de la 3.64: esos días no se volvieron a medir tras cambios anteriores. Preguntar a Kris si se guardan (`remedir`, en el scratchpad de la sesión del 18/11)
+- [x] **Kris** (18/11): `MotorChaumer.cs` (sello `L:b57be514…`) y `BotChaumer.cs` copiados y compilados. Disciplina medida otra vez con su sí: 06/10, 08/10, 05/11, 12/11 y 18/11; la discusión del 12/11, cerrada a su favor
 - [ ] **§12 D2** `VistaMotorChaumer`: código hecho (07/10). **Kris:** copiar a `Custom/Indicators`, F5 y el Market Replay del 23/09 y el 02/10 con el bot y la vista
 - [ ] **Fase 4 · el pasado entero**: velas desde el 12/06/2025, Strategy Analyzer, Market Replay, informe
 - [ ] **Fase 5 · SimBot en vivo**, con la comparación diaria en la cadena
