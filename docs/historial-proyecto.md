@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-18g | El Coach valida como el análisis del 05/11: qué setup operaste de verdad, su regla paso a paso con la vela, y la causa |
 | 2026-11-18f | Un día sin operar también se juzga: ✓ si el plan no daba nada, ✗ si daba un setup que no tomaste (D-057) |
 | 2026-11-18e | El bot lee su perfil de Supabase al armarse, y la cadena dibuja cada día con el del bot en esa fecha (fase 5) |
 | 2026-11-18d | La disciplina juzga tu entrada aunque el bot ya haya operado: el motor, en modo auditoría (02/11 y 11/11 ✓, 14/10 contratos) |
@@ -101,6 +102,25 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-18g — El Coach valida como el análisis del 05/11
+
+**Lo que pasó.** El 05/11 salía en Disciplina como «stop del plan 155». Mirado vela a vela: Kris operó un Reingreso alcista
+sobre el soporte de la 9:58, que la 10:02 rompe hacia abajo (mínimo 27.433) sin que ninguna vela pase de ese mínimo antes de
+volver arriba: **sin consecución no hay reingreso**, lo mismo que su nota («me faltó la consecución»). El juicio del motor
+había emparejado su trade con OTRO setup (el Reingreso de las 10:01 sobre el soporte de la 9:53, entrada 27.588, stop de
+155). Kris: *«ese tipo de análisis y esa conclusión es lo que quiero que se haga en el análisis»*.
+
+**Lo que se hizo.** `METODO_VALIDACION` en `coach.js`: el system de la Etapa 1 (días de la etapa 2) lo lleva entero, con
+el 05/11 como ejemplo; la instrucción del análisis, un recordatorio; y el foco de un trade con regla rota pide comprobar
+primero que el motor juzgó el setup que se operó (y su última línea admite «salvo que el motor juzgara otro setup»).
+Verificado en el preview interceptando la llamada del 05/11: el método y el ejemplo van detrás del foco y delante del
+formato; consola limpia.
+
+**Pendiente.** La etiqueta de Disciplina del 05/11 sigue diciendo «stop del plan 155» hasta que el juicio de `medir.py`
+empareje por el precio de entrada (`tasks/current.md`).
 
 ---
 

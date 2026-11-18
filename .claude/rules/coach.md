@@ -147,8 +147,16 @@ como **Apertura / Zonas / Noticias** (`formatoContexto`). Los días de la etapa 
   escribir su instrucción, porque la instrucción lleva el foco; `llamarClaude(…, isFirst)` ya no lo rehace.
 - **Foco:** `focoDelDia(juicio, ficha)` (system Etapa 1 **e** instrucción del análisis) y `veredictoEtapa3(juicio)`
   (system Etapa 3), con el juicio de `juicioDia` (D-052): regla rota → esa regla y por qué; dentro de las reglas → corto,
-  a la ejecución (sin compararlo con el bot, D-053); sin trade → muy corto, no es fallo; en discusión → examinar la nota
-  de Kris con las velas. Sin juicio (sin ficha, antes del 01/10, etapa 1) no sale nada y todo es como antes.
+  a la ejecución (sin compararlo con el bot, D-053); sin trade → ✓ no había setup / ✗ setup no tomado: por qué no entró
+  (D-057); en discusión → examinar la nota de Kris con las velas. Sin juicio (sin ficha, antes del 01/10, etapa 1) no sale
+  nada y todo es como antes.
+- **El método de la validación** (`METODO_VALIDACION`, 18/11, en el system de la Etapa 1 de los días de la etapa 2 y
+  resumido en la instrucción): 1) qué zona y qué setup operó de verdad, **por su precio de entrada** —el juicio del motor
+  empareja por el minuto y puede hablar de otro setup (05/11: juzgó el Reingreso de la 9:53, entrada 27.588, y Kris operó
+  el de la 9:58)—; 2) la regla de ese setup paso a paso, una línea ✅/❌ con la vela y el precio (así la pinta
+  `renderValidacion`, sin cambios); 3) la causa = el primer paso que falla, y qué habría pasado si se hubiera cumplido.
+  El ejemplo es el 05/11 («Reingreso sin consecución»), el que Kris dio por bueno. Si cambia el formato de VALIDACIÓN,
+  el ejemplo cambia con él.
 - **Plan ligero:** `construirBloquePlan(docs, contextoDia)` → índice de las 34 reglas + `reglasDelDia` enteras (sin la
   tabla de metadatos) + parámetros. `REGLAS_SIEMPRE` y `REGLAS_SETUP` deciden las fijas; las citadas por el motor
   (`R-\d\d` en eventos, avisos y `tu_operacion`) se añaden solas. **Sin ficha, o si el documento de reglas cambia de

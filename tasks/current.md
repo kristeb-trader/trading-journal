@@ -172,6 +172,8 @@ Aprobado en el chat el 17/11. «Mi operativa» 100 pts / $200 desde el 01/10; «
 
 ## Disciplina: ¿tu trade cumplía las reglas? (10/11, D-052)
 
+- [ ] **El juicio empareja por el precio de entrada, no por el minuto** (`medir.py`): el 05/11 juzgó el Reingreso de la 9:53 (entrada 27.588) y Kris operó el de la 9:58, que fallaba por la consecución. Etiqueta correcta: «sin consecución». Ensayo sobre oct–nov antes de escribir
+
 - [ ] Un día registrado **desde la web** después de que el motor midiera no recibe el aviso de Telegram (ninguno de los
   dos caminos lo ve). Si molesta, que el guardado del Diario llame a `/disciplina`
 - [ ] **Kris:** el secreto nuevo del aviso de trade (checkpoint 10/11c): pegar el valor de

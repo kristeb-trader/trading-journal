@@ -139,6 +139,33 @@ Vigilar: <el/los nivel(es) clave que importan hoy y por qué>
 Noticias: <noticia relevante del día, o "Sin noticias">`
   }
 
+  // ── El método de la validación (18/11/2026, Kris) ─────────────────────────────────────────────
+  // «Ese tipo de análisis y esa conclusión es lo que quiero que se haga en el análisis», sobre el 05/11:
+  // qué operó de verdad (la zona y el setup, por su precio de entrada), las velas clave, la regla de ESE
+  // setup paso a paso con la vela de cada uno, y la causa. El juicio del motor empareja por el minuto y
+  // a veces habla de OTRO setup (05/11: el Reingreso de la 9:53, entrada 27.588, y no el de Kris): el
+  // Coach lo comprueba antes de aceptarlo. Va entero en el system y resumido en la instrucción.
+  const METODO_VALIDACION = `**🔎 EL MÉTODO DE LA VALIDACIÓN** (días con trade; y los días sin trade en que el plan daba una operación, para confirmar que ese setup era válido):
+1. **Qué operó de verdad.** Con su precio de entrada, su sentido y su hora, busca en las zonas del motor CUÁL zona operó y QUÉ setup era (Continuación, o Reingreso: rompimiento que falla, cambio de tendencia o zona que cambia de papel). Si el juicio del motor habla de otro setup —otra zona u otra entrada a más de unos ticks de la suya—, dilo: el motor comparó con otro setup, y se juzga el que operó.
+2. **La regla de ESE setup, paso a paso**, en el orden del plan, una línea ✅/❌ por paso, cada una con la vela exacta (su hora) y el precio de la tabla de velas: zona → rompimiento → consecución → (en el reingreso: la vela que vuelve y sobrepasa el borde contrario) → entrada (1 tick más allá) → stop (dónde lo pone el plan) → riesgo frente a su máximo → objetivo (sin zona ni punto de referencia en el camino; en el reingreso, con zona a la que ir).
+3. **La causa** es el PRIMER paso que falla. En la nota del setup: la causa en una frase, y qué habría pasado si ese paso se hubiera cumplido (¿cabía el setup con su stop, su riesgo y su objetivo?).
+4. La línea «En corto» de VALIDACIÓN dice esa causa con palabras llanas, sin precios.
+
+Ejemplo — 05/11/2026, largo a las 10:03 en 27.485,75, STOP en 27.433 (−52,75). El motor lo juzgó con su Reingreso de las 10:01 (soporte de la 9:53, entrada 27.588, stop de 155): era OTRO setup. Lo que operó:
+### Reingreso alcista · soporte de la 9:58 (27.458,50 – 27.467,75)
+**Fase 2 · Lectura del setup**
+✅ Zona viva — el soporte de la 9:58, nacido en la bajada desde la 9:40
+✅ Rompimiento — la vela de las 10:02 rompe el soporte hacia abajo (mínimo 27.433)
+❌ Consecución del rompimiento — la de las 10:03 no pasa de 27.433 (mínimo 27.442) y vuelve arriba: sin una consecución que falle no hay reingreso
+✅ Vela de reingreso — la de las 10:03 sobrepasa el borde superior (máximo 27.485,75)
+**Fase 3 · Ejecución**
+❌ Entrada — en 27.485,75, el máximo de la vela de reingreso: el plan pide 1 tick más (27.486)
+✅ Stop — 27.433, el extremo del último retroceso: 52,75 pts, dentro de su máximo (100)
+✅ Objetivo — 27.538,50 (1:1), sin zonas en medio; el soporte de la 9:53 queda más arriba como zona a la que ir
+Stop: 52,75 pts | Target: 52,75 pts
+La causa: entró en un reingreso cuyo rompimiento nunca tuvo consecución. Si la consecución hubiera llegado (bajo 27.433) y luego el precio hubiera vuelto, el setup cabía: riesgo de 53 pts y objetivo libre.
+(En corto: «Reingreso sin consecución: el soporte se rompió a las 10:02 pero ninguna vela pasó de su mínimo antes de volver arriba; sin eso no hay reingreso.»)`
+
   // El FOCO del análisis según el juicio del motor (D-049, y desde el 10/11 D-052): la pregunta
   // ya no es «¿hiciste lo mismo que el bot?» sino «¿tu trade cumplía las reglas?». El juicio lo
   // da el motor (medir.py); el Coach aporta donde el motor no llega —por qué entró, qué vio, el
@@ -157,14 +184,14 @@ Noticias: <noticia relevante del día, o "Sin noticias">`
     } else if (j.estado === 'discusion') {
       foco = `El trader NO está de acuerdo con el motor${rota ? ` («${rota.juicio.texto}»)` : ''}: «${j.discusion?.nota || 'sin nota'}». Examina con las velas si el motor cae en uno de sus dos agujeros conocidos y di quién tiene razón, con la vela exacta.`
     } else if (rota) {
-      foco = `El trade ROMPIÓ una regla: ${rota.juicio.texto}. Céntrate en ESA regla: qué pide el plan, qué vio el trader y por qué entró igual (su lectura). Con números.`
+      foco = `Según el motor, el trade ROMPIÓ una regla: ${rota.juicio.texto}. Antes de aceptarlo, comprueba con EL MÉTODO DE LA VALIDACIÓN que el motor juzgó el setup que operó el trader (la misma zona y la misma entrada); si juzgó otro, dilo y busca la causa en el suyo. Céntrate en la regla que de verdad rompió: qué pide el plan, qué vio el trader y por qué entró igual (su lectura). Con números y con la vela exacta.`
     } else {
       foco = `El trade cumplía las reglas. Análisis CORTO: confirma en una frase qué setup válido era y céntrate en la EJECUCIÓN —entrada, stop y contratos—.`
     }
     return `${foco}
 - La línea «En corto» de VALIDACIÓN empieza por ese juicio, en palabras llanas.
 - El Detalle de VALIDACIÓN lista SOLO las reglas que deciden el día, no la lista entera.
-- El juicio lo da el MOTOR y es la medida oficial de la disciplina: no lo contradigas, salvo que el día caiga en uno de sus dos agujeros conocidos; entonces dilo explícitamente, con la vela.`
+- El juicio lo da el MOTOR y es la medida oficial de la disciplina: no lo contradigas, salvo que el día caiga en uno de sus dos agujeros conocidos o que el motor juzgara OTRO setup que el que operó el trader (pasa: empareja por el minuto); entonces dilo explícitamente, con la vela.`
   }
 
   // Cómo empieza el VEREDICTO del diagnóstico según el juicio del motor (los días sin entrada no
@@ -610,6 +637,8 @@ Cuando recibas la instrucción de análisis técnico (o la imagen del gráfico),
 ${focoDelDia(juicio, fichaMotor?.ficha) ? `
 **🎯 EL FOCO DE ESTE DÍA** (manda sobre el formato de abajo):
 ${focoDelDia(juicio, fichaMotor?.ficha)}
+` : ''}${etapaDeFecha(date) === 2 ? `
+${METODO_VALIDACION}
 ` : ''}
 ⚠️ **CADA UNA de las 3 secciones se escribe en DOS capas, con estas dos marcas literales:**
 
@@ -2067,6 +2096,9 @@ Stop: X pts | Target: Y pts
 
 Reglas: usa SIEMPRE el título descriptivo de la regla, NUNCA el código interno (nada de \`chk_consecucion\`). Omite la fase que no tenga ítems. La línea "En corto" es lo ÚNICO que el trader ve sin desplegar: si va cargada de jerga o de números, no le sirve de nada.
 
+${soloPlan ? `
+En VALIDACIÓN sigue EL MÉTODO DE LA VALIDACIÓN del system (el ejemplo del 05/11): primero qué zona y qué setup operó de verdad, por su precio de entrada (si el motor juzgó otro, dilo); luego la regla de ESE setup paso a paso, una línea ✅/❌ por paso con la vela y el precio; la causa es el primer paso que falla, y en la nota qué habría pasado si se hubiera cumplido.
+` : ''}
 NO des el veredicto final (VÁLIDA/INVÁLIDA): va en el diagnóstico. NO adivines precios: usa los valores exactos; si falta un dato, pregúntalo.`
 
       let userContent
