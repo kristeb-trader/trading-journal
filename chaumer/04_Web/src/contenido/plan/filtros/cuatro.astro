@@ -21,7 +21,10 @@ import { v } from './_datos.mjs';
     <li>
       <strong>El stop no pasa de {v('STOP_MAX')}.</strong> Se mide
       desde la entrada hasta su referencia estructural. Si lo supera aunque sea
-      por un tick, no se opera.
+      por un tick, no se opera en esa vela. Pero si dentro del plazo de
+      consecución el precio no la hace y hace un <strong>retroceso nuevo</strong>,
+      su extremo es el stop nuevo, con la misma entrada: si con él se cumple
+      todo, se opera.
     </li>
     <li>
       <strong>El camino al objetivo está libre de zonas vivas.</strong> Una sola
@@ -64,6 +67,28 @@ import { v } from './_datos.mjs';
       consumido, y se ganó.
     </p>
   </div>
+
+  <h3>El retroceso nuevo trae un stop nuevo</h3>
+  <p>
+    Un rompimiento cuyo stop no cabe no está perdido del todo. Si en las velas
+    siguientes, <strong>dentro del plazo de consecución</strong>, el precio no
+    hace la consecución y hace un retroceso nuevo —una vela que baja del mínimo
+    de la anterior, si es alcista, o sube de su máximo, si es bajista—, el
+    extremo de ese retroceso pasa a ser el stop. <strong>La entrada no
+    cambia</strong>. Si con el stop nuevo se cumplen todas las comprobaciones,
+    la orden se pone al cierre de esa vela. Vale para la Continuación y para el
+    Reingreso.
+  </p>
+  <ul>
+    <li>Si el retroceso dura varias velas, el stop va con él mientras siga dentro del plazo.</li>
+    <li>Pasado el plazo, la entrada se invalida.</li>
+    <li>Si el primer stop ya cabía, los dos valen: elige el operador.</li>
+  </ul>
+  <p class="meta">
+    Caso de origen, 18/11/2026: rompimiento a las 9:55 con 196,75 puntos de
+    riesgo; retroceso nuevo a las 9:56; entrada a las 9:57 con 87,50 de riesgo y
+    objetivo a las 9:59.
+  </p>
 
   <div class="veto">
     <p>
