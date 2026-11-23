@@ -116,6 +116,9 @@ El motor corre sobre cualquier día del que haya velas de 1 minuto; lo que limit
 - **Velas:** NinjaTrader las tiene guardadas desde el 12/06/2025 (MNQ 09-25, 12-25, 03-26, 06-26, 09-26, 12-26):
   se exportan por **contrato** (el de ese vencimiento, no el siguiente). El backtesting a mano de 2025 (116 gráficos,
   01/08/2025 → 16/01/2026) queda cubierto. Septiembre, en `datos/dia/Septiembre.txt` (MNQ 09-26, 31/08 → 18/09)
+- **Estudio de caso, guardado para revisar (Kris, 23/11): las Continuaciones en un movimiento extendido.** Kris ve que
+  cuando el movimiento ya viene extendido y la entrada es una Continuación, sale por stop. Hacen falta varios casos
+  antes de proponer nada. Casos hasta hoy: **lunes 23/11, largo** · **viernes 20/11**. Se añaden los que vaya dando
 
 Dudas que ya salieron, para reconocerlas si vuelven: `docs/historial-proyecto.md`, checkpoints del 28/09 y del 30/09.
 
