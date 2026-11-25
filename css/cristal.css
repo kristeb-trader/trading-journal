@@ -586,3 +586,8 @@ select option { background: var(--capa); color: var(--text); font-weight: 500; }
   color: var(--text); padding: 8px 10px; font-size: 0.85rem;
 }
 .dv-corr-nota { font-size: 0.78rem; color: var(--text3); }
+
+/* El visor con una imagen con placas (FotoChaumer, desde el 25/11/2026): la imagen ya lleva el día, la entrada y el
+   resultado, así que el visor no los repite. Los botones de la placa de arriba se quedan (cerrar, las 3 gráficas). */
+.vs.con-placas .ld-titulo { visibility: hidden; }
+.vs.con-placas .vs-banner { display: none; }

@@ -48,7 +48,7 @@ hay que **sacarlas del destructuring** antes de enviarlo. Ya rompió el guardado
 
 **`imagen_url` solo va si se tocó en el Diario** (`imagenTocada`: subir o quitar con la ✕; 16/11/2026). La imagen
 del día la sube también NinjaTrader (`FotoChaumer`) mientras el Diario puede estar abierto: mandarla siempre, vacía,
-la borraba al guardar.
+la borraba al guardar. Y con la imagen manda `imagen_placas = false` (25/11/2026): la subida a mano no lleva las placas.
 
 `collectFormData` manda además `registrada_at` y `diario_editado_at` (fase 7): son columnas reales. El
 primer guardado abre el candado de la ficha del motor y un trigger lo congela; los siguientes solo mueven

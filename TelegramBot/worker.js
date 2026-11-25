@@ -732,10 +732,21 @@ async function handleNotify(request, env) {
 async function handleFoto(request, env) {
   const token = request.headers.get('X-Notify-Token');
   if (!token || token !== env.NOTIFY_SECRET) return new Response('Unauthorized', { status: 403 });
-  const { fecha, png } = await request.json().catch(() => ({}));
+  const { fecha, png, final } = await request.json().catch(() => ({}));
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha || '')) return new Response('fecha', { status: 400 });
-  if (!(await env.KV.get(`p:${fecha}`))) return new Response('sin trade pendiente');
   const bytes = png ? Uint8Array.from(atob(png), c => c.charCodeAt(0)) : null;
+  // La foto final, con sus placas (25/11/2026): como ARCHIVO, para que Telegram no la recomprima.
+  if (final) {
+    if (!bytes) return new Response('sin png', { status: 400 });
+    const form = new FormData();
+    form.append('chat_id', env.ALLOWED_CHAT_ID);
+    form.append('caption', `📷 <b>La foto del día · ${diaMes(fecha)}</b>`);
+    form.append('parse_mode', 'HTML');
+    form.append('document', new Blob([bytes], { type: 'image/png' }), `${fecha}.png`);
+    const r = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendDocument`, { method: 'POST', body: form });
+    return new Response(r.ok ? 'final enviada' : `sendDocument ${r.status}`);
+  }
+  if (!(await env.KV.get(`p:${fecha}`))) return new Response('sin trade pendiente');
   return new Response(await preguntarTrasTrade(env, fecha, bytes));
 }
 

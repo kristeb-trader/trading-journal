@@ -10,6 +10,28 @@
 
 ---
 
+## D-058 — La foto del día lleva sus placas, y el gráfico va píxel a píxel
+
+**Decisión (Kris, 25/11/2026).** Desde el 25/11/2026 la imagen del día es la foto final de FotoChaumer: arriba el día y la
+entrada; en el medio el gráfico de 1 minuto **tal cual** (2339 × 1392, su ventana, sin reescalar); abajo resultado,
+puntos, contratos, P&L y setup (o el motivo), con el color del resultado. Se arma cuando el día está registrado, porque el
+setup y el motivo los pone Kris después de la foto. **Los días anteriores no cambian.** El visor no repite lo que la imagen
+ya dice (`sesiones.imagen_placas`).
+
+**Motivo.** La foto se reducía a 2000 × 1190 y las letras quedaban al 86 %; y Kris quería la imagen estandarizada y con
+las placas que ve en el Journal, para que el día se entienda solo con ella (Telegram, el portal, una galería).
+
+**Alternativas descartadas.**
+- **Ventana de 2560 × 1236 para una imagen de 2560 × 1600:** obligaba a cambiar la forma de su gráfico. Se mide su ventana y
+  la imagen se ajusta a ella (2339 × 1712).
+- **Tarjetas sobre el gráfico (modelo B):** tapaban velas y volumen. **C, D y E:** descartadas por Kris.
+- **Fotografiar la pantalla:** sale lo que tape el gráfico (la ventana de Claude, los trazos de Epic Pen). Se queda
+  `Chart.GetScreenshot`, que dibuja la ventana por dentro.
+- **Armarla con WPF en NinjaTrader:** sin la letra del Journal (Manrope no está instalada); el HTML con puppeteer reproduce
+  el boceto aprobado tal cual.
+
+---
+
 ## D-057 — Un día sin operar también se juzga: ✓ si el plan no daba nada, ✗ si daba un setup que no tomaste
 
 *Sustituye, de D-052, «no operar nunca es fallo».*

@@ -731,7 +731,8 @@ const SessionForm = (() => {
 
     // La emoción al llegar y al cierre y la confianza ya no se piden (27/10/2026): no van
     // en el payload, ni en null, para no borrar lo registrado en días anteriores.
-    if (imagenTocada) payload.imagen_url = document.getElementById('imagenUrl').value || null
+    // Una imagen subida (o quitada) a mano no lleva las placas de FotoChaumer (25/11/2026): el visor vuelve a ponerlas.
+    if (imagenTocada) { payload.imagen_url = document.getElementById('imagenUrl').value || null; payload.imagen_placas = false }
 
     // ── Premercado (se captura si operó, o si no operó pero se conectó) ──
     const seConecto = noOpero ? document.getElementById('seConecto').checked : true

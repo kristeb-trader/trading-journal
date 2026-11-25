@@ -383,6 +383,8 @@ const Visor = {
     const banner = el.querySelector('.vs-banner')
     banner.className = `mh-box vs-banner tone-${d.tono || 'o'}`
     banner.innerHTML = d.celdas || ''
+    // La imagen con placas (FotoChaumer, 25/11/2026) ya dice el día, la entrada y el resultado: ni fecha ni banner.
+    el.classList.toggle('con-placas', !!d.placas)
     abajo.classList.remove('cargando')
     this._entra(banner)
     el.querySelector('.vs-mas').classList.toggle('hidden', !d.analisis)

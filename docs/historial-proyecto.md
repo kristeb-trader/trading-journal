@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-25b | La foto del día con sus placas: el gráfico tal cual, el día y la entrada arriba, el resultado abajo (D-058) |
 | 2026-11-25 | Telegram: el setup llega con la foto de la operación, Continuación o Reingreso (la dirección sale sola), y menos mensajes |
 | 2026-11-18h | Las etiquetas de Disciplina con las palabras de Kris, y «Corregir la causa» en el visor |
 | 2026-11-18g | El Coach valida como el análisis del 05/11: qué setup operaste de verdad, su regla paso a paso con la vela, y la causa |
@@ -104,6 +105,40 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-25b — La foto del día con sus placas
+
+**Lo que pasó.** Kris pidió estandarizar la imagen del día: alta calidad (que se lean todas las letras), siempre del
+mismo tamaño y con las placas del Journal. Se le enseñaron cinco modelos (A como el visor, B tarjetas sobre el gráfico,
+C panel lateral, D editorial, E el resultado de protagonista) y eligió la A con sus cambios: arriba el día en mayúsculas
+(«MIÉRCOLES, 25 DE NOVIEMBRE, 2026», del tamaño del título de las gráficas del bot) y la entrada en su recuadro; el
+gráfico en el medio, sin bordes; abajo una placa baja como el banner del visor (Resultado · Puntos · Contratos · P&L ·
+Setup) con las líneas de división a 2 px; stop en rojo; sin operación, «SIN OPERACIÓN» y el Motivo. Para el tamaño se
+midió su ventana (2339 × 1392, ya a toda la altura de la pantalla de 3440 × 1440): la foto se reducía a 2000 × 1190 y cada
+letra quedaba al 86 %. Pidió que no cambien las imágenes anteriores.
+
+**Lo que se hizo (D-058).**
+- **`scripts/foto/componer.mjs`** (nuevo): arma la foto final con el diseño aprobado (HTML, Manrope, puppeteer del
+  portal) y los datos del Journal, calculados como el banner del visor. 2339 × 1712, el gráfico píxel a píxel. `--firma`
+  da solo si el día está registrado y la huella de sus datos.
+- **`NinjaTrader/FotoChaumer.cs`:** el gráfico tal cual (`-grafico.png`; propiedades nuevas `GraficoAncho/GraficoAlto`,
+  porque el espacio de trabajo guardaba las de antes); cada minuto, con el día registrado y los datos cambiados, la final
+  con placas → Journal (`imagen_placas = true`) y Telegram como archivo, una vez. Desde el 25/11/2026.
+- **El bot** (`/foto` con `final`): `sendDocument`, sin recomprimir.
+- **El Journal:** `sesiones.imagen_placas` (migración `2026-11-25-imagen-placas.sql`; los 208 días, en false); el visor
+  oculta la fecha y el banner cuando la imagen los lleva (los botones se quedan); el Diario la vuelve a false si se sube
+  una imagen a mano; las imágenes se piden a Cloudinary con `q_auto:best` (la del 25/11: 77 KB → 140 KB, el texto limpio).
+- **`FechaChaumer.cs`** → `NinjaTrader/archivo/`: el día y la entrada van en la placa.
+
+**Verificado.** El compositor con tres días reales: 25/11 (target, +82,25, +$163), 23/11 (stop, −69,75, −$141, en rojo)
+y 03/11 (sin operación, «Sin setup»), cifras iguales al Journal. Una captura nativa de la ventana de Kris (10:51) para
+ver la nitidez. `FotoChaumer.cs` compila; el bot, simulado (la final llega como documento); el visor en la vista previa:
+con placas, sin fecha ni banner; sin placas, como siempre; sin errores. **Sin probar en real:** la foto final de punta
+a punta en NinjaTrader (necesita copiar el indicador y un día registrado).
+
+**Pendiente.** Kris: copiar `FotoChaumer.cs`, F5, y quitar Fecha Chaumer del gráfico.
 
 ---
 

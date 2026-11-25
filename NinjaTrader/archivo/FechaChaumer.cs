@@ -1,3 +1,6 @@
+// ARCHIVADO 25/11/2026: ya no va en el gráfico de operar. El día y la entrada los lleva la placa de arriba de la foto
+// del día (FotoChaumer + scripts/foto/componer.mjs), y Kris lo quitó de los indicadores. No se instala.
+//
 // FechaChaumer — el recuadro con la fecha y la hora, en el gráfico operativo
 //
 // Sustituye a la fecha que Kris escribía a mano cada día con la herramienta de texto (16/11/2026).

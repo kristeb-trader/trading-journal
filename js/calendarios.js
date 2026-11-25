@@ -1066,7 +1066,9 @@ const Calendarios = (() => {
     if (id === 'mio') {
       const [trades, sesion] = await Promise.all([DB.getTradesByDate(fe), DB.getSesionByDate(fe)])
       const trs = AccountFilter.filter('calendar', trades || [])
-      return { url: sesion?.imagen_url || null, ...Modal.bannerDia(trs, sesion), analisis: () => Modal.analisisDia(fe, trs, sesion) }
+      // `placas`: la imagen ya lleva el día, la entrada y el banner (FotoChaumer, desde el 25/11/2026): el visor no los repite.
+      return { url: sesion?.imagen_url || null, placas: !!(sesion?.imagen_placas && sesion?.imagen_url),
+               ...Modal.bannerDia(trs, sesion), analisis: () => Modal.analisisDia(fe, trs, sesion) }
     }
     const f = FUENTE[id]
     const d = await diaDe(id, fe)

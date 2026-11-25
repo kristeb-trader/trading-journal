@@ -131,3 +131,4 @@ registrar (ago) + 56 previas a la práctica.
 | `2026-11-17-parametros-search-path.sql` | ✅ MCP | Las tres funciones de los parámetros con `search_path` fijo (aviso del asesor de seguridad) |
 | `2026-11-18-disciplina-correcciones.sql` | ✅ MCP | `disciplina_correcciones`: la causa de una regla rota corregida por Kris (fecha, regla, etiqueta, texto). El día cuenta igual; cambia lo que se ve y la regla de la fuga. RLS `auth_all` |
 | `2026-11-18-disciplina-correcciones-noviembre.sql` | ✅ MCP | Las causas de noviembre revisadas con Kris: 05/11 «Sin consecución», 10/11 «Soporte mal creado», 17/11 «Entrada incorrecta» |
+| `2026-11-25-imagen-placas.sql` | ✅ MCP | `sesiones.imagen_placas`: la imagen del día ya lleva las placas de FotoChaumer (fecha y entrada arriba; resultado, puntos, contratos, P&L y setup o motivo abajo) y el visor no las repite. Los días anteriores, `false`. El Diario la vuelve a `false` si se sube otra imagen a mano |

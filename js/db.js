@@ -255,7 +255,8 @@ function imgOpt(url, ancho = null) {
   if (/\/upload\/(?!v\d+\/)[a-z]{1,3}_[^/]*\//.test(url)) return url
   const px = ancho || (window.innerWidth || 1600) * (window.devicePixelRatio || 1)
   const w = IMG_ESCALONES.find(e => e >= px) || IMG_ESCALONES.at(-1)
-  return url.replace('/image/upload/', `/image/upload/f_auto,q_auto,w_${w},c_limit/`)
+  // q_auto:best (25/11/2026): los gráficos son texto fino (precios, horas, las placas); con q_auto se emborronaba.
+  return url.replace('/image/upload/', `/image/upload/f_auto,q_auto:best,w_${w},c_limit/`)
 }
 
 // ── Subida a Cloudinary ─────────────────────────────────────────────────────

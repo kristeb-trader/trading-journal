@@ -5,14 +5,19 @@
 //   Qué       la ventana del gráfico entera (barra de herramientas, velas, volumen y Chart Trader), como su captura
 //             del 16/11. La hace NinjaTrader por dentro (Chart.GetScreenshot), no es una foto de la pantalla: sale
 //             bien aunque otra ventana tape el gráfico. Minimizada no se puede: espera a que vuelva.
-//   Tamaño    siempre Ancho × Alto (2000 × 1190, el de su captura): la ventana se encaja sin deformarse y el
-//             sobrante queda en negro.
+//   Tamaño    el gráfico TAL CUAL, píxel a píxel (25/11/2026): la ventana de Kris mide 2339 × 1392 (propiedades
+//             «Gráfico: ancho / alto»). Si mide otra cosa, se encaja en esa medida sin deformarse y se avisa en el Output.
 //   Cuándo    · sola, «Minutos tras cerrar» (3) después de que la cuenta principal quede plana. Si vuelve a operar
 //               antes, espera a la última salida. Solo en tiempo real y con las operaciones de hoy.
 //             · sola, al final de la ventana (11:30 de Nueva York) si ese día no operó y aún no hay foto.
 //             · con el botón de la cámara de la barra del gráfico («Foto del día»), cuando quiera.
-//   Dónde     1) Documentos\NinjaTrader 8\fotos-chaumer\AAAA-MM-DD.png  2) Cloudinary (el preset del Diario)
+//   Dónde     1) Documentos\NinjaTrader 8\fotos-chaumer\AAAA-MM-DD-grafico.png  2) Cloudinary (el preset del Diario)
 //             3) sesiones.imagen_url de ese día, que leen el Diario, el Coach, el visor y el portal.
+//   Placas    (25/11/2026) cuando el día está registrado (con su setup o su motivo), cada minuto se comprueba y se arma
+//             la foto final con scripts/foto/componer.mjs: arriba el día y la entrada, abajo resultado, puntos,
+//             contratos, P&L y setup (o el motivo). Va a AAAA-MM-DD.png, sustituye a la del Journal (con
+//             sesiones.imagen_placas = true: el visor no repite sus placas) y llega a Telegram como archivo, una vez.
+//             Si cambia un dato (el setup, el motivo), se vuelve a armar. Los días anteriores al 25/11 no se tocan.
 //   Respeta   la automática NO pisa una imagen que Kris haya puesto en el Diario: solo escribe si el día no tiene
 //             o si la que tiene la subió ella (la apunta en AAAA-MM-DD.url). El botón sí la reemplaza.
 //
@@ -61,6 +66,8 @@ namespace NinjaTrader.NinjaScript.Indicators
         private DateTime cuentaLeida = DateTime.MinValue;
         private volatile bool ocupado;
         private TimeZoneInfo nuevaYork;
+        private DateTime placasMiradas = DateTime.MinValue;
+        private volatile bool componiendo;
 
         protected override void OnStateChange()
         {
@@ -73,8 +80,9 @@ namespace NinjaTrader.NinjaScript.Indicators
                 DisplayInDataBox         = false;
                 PaintPriceMarkers        = false;
                 IsSuspendedWhileInactive = false;
-                Ancho                    = 2000;
-                Alto                     = 1190;
+                GraficoAncho             = 2339;     // la ventana del gráfico de 1 minuto de Kris (25/11/2026)
+                GraficoAlto              = 1392;
+                ConPlacas                = true;
                 MinutosTrasCerrar        = 3;
                 FotoSinOperacion         = true;
                 SubirAlJournal           = true;
@@ -175,6 +183,12 @@ namespace NinjaTrader.NinjaScript.Indicators
         {
             if (State != State.Realtime || ventana == null || ocupado) return;
             DateTime ahora = NinjaTrader.Core.Globals.Now;
+            if (ConPlacas && SubirAlJournal && !componiendo && (DateTime.Now - placasMiradas).TotalSeconds >= 60)
+            {
+                placasMiradas = DateTime.Now;
+                componiendo = true;
+                Task.Run(() => { try { MirarPlacas(); } finally { componiendo = false; } });
+            }
             if (ahora.DayOfWeek == DayOfWeek.Saturday || ahora.DayOfWeek == DayOfWeek.Sunday) return;
             LeerCuentaPrincipal(ahora);
             string nombre = cuentaPrincipal;
@@ -197,7 +211,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 if (Foto(false)) Escribir(marca, clave);
             }
             else if (!opero && FotoSinOperacion && ahora >= FinVentana(ahora.Date)
-                     && !File.Exists(Ruta(ahora.Date, ".png")))
+                     && !File.Exists(Ruta(ahora.Date, "-grafico.png")))
             {
                 if (Foto(false)) Escribir(marca, "sin operación");
             }
@@ -267,16 +281,24 @@ namespace NinjaTrader.NinjaScript.Indicators
             try
             {
                 BitmapSource crudo = ventana.GetScreenshot(ShareScreenshotType.Window, null);
-                png = Png(Encajar(crudo, Ancho, Alto));
+                // Tal cual si mide lo de siempre: cada letra en su píxel. Si no, encajada en esa medida (y se avisa).
+                if (crudo.PixelWidth == GraficoAncho && crudo.PixelHeight == GraficoAlto) png = Png(crudo);
+                else
+                {
+                    Print("[FotoChaumer] la ventana mide " + crudo.PixelWidth + " × " + crudo.PixelHeight + ", no " + GraficoAncho + " × "
+                          + GraficoAlto + ": se encaja (pierde nitidez). Vuelve a dejarla de " + GraficoAncho + " × " + GraficoAlto + ".");
+                    png = Png(Encajar(crudo, GraficoAncho, GraficoAlto));
+                }
                 Directory.CreateDirectory(DIR);
-                File.WriteAllBytes(Ruta(dia, ".png"), png);
+                File.WriteAllBytes(Ruta(dia, "-grafico.png"), png);
+                if (aMano) { try { File.Delete(Ruta(dia, ".placas")); } catch { } }   // con el gráfico nuevo, las placas otra vez
             }
             catch (Exception ex)
             {
                 Print("[FotoChaumer] no se pudo hacer la foto: " + ex.Message);
                 return false;
             }
-            Print("[FotoChaumer] foto del " + dia.ToString("yyyy-MM-dd") + (aMano ? " (botón)" : " (automática)") + ": " + Ruta(dia, ".png"));
+            Print("[FotoChaumer] foto del " + dia.ToString("yyyy-MM-dd") + (aMano ? " (botón)" : " (automática)") + ": " + Ruta(dia, "-grafico.png"));
 
             bool finde = dia.DayOfWeek == DayOfWeek.Saturday || dia.DayOfWeek == DayOfWeek.Sunday;
             if (SubirAlJournal && !finde)
@@ -313,7 +335,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         }
 
         // En segundo plano: primero si se puede (la automática no pisa la del Diario), luego Cloudinary y sesiones.imagen_url.
-        private void Subir(DateTime dia, byte[] png, bool aMano)
+        private void Subir(DateTime dia, byte[] png, bool aMano, bool placas = false)
         {
             string fecha = dia.ToString("yyyy-MM-dd");
             if (!aMano)
@@ -359,7 +381,7 @@ namespace NinjaTrader.NinjaScript.Indicators
                 using (var http = ChaumerNT.Cliente())
                 {
                     if (http == null) { Print("[FotoChaumer] subida a Cloudinary, pero sin la clave de Supabase no llega al Journal: " + url); return; }
-                    var cuerpo = new JObject { { "sesion_date", fecha }, { "imagen_url", url } };
+                    var cuerpo = new JObject { { "sesion_date", fecha }, { "imagen_url", url }, { "imagen_placas", placas } };
                     var req = new HttpRequestMessage(HttpMethod.Post, ChaumerNT.URL + "sesiones?on_conflict=sesion_date");
                     req.Headers.Add("Prefer", "resolution=merge-duplicates,return=minimal");
                     req.Content = new StringContent(cuerpo.ToString(), Encoding.UTF8, "application/json");
@@ -368,20 +390,20 @@ namespace NinjaTrader.NinjaScript.Indicators
                         throw new Exception("Supabase HTTP " + (int)res.StatusCode + ": " + Corto(res.Content.ReadAsStringAsync().Result));
                 }
                 Escribir(Ruta(dia, ".url"), url);
-                Print("[FotoChaumer] ✅ en el Journal, el " + fecha + ": " + url);
+                Print("[FotoChaumer] ✅ en el Journal" + (placas ? " con sus placas" : "") + ", el " + fecha + ": " + url);
             }
             catch (Exception ex) { Print("[FotoChaumer] subida a Cloudinary, pero no llegó al Journal: " + Mensaje(ex) + " · " + url); }
         }
 
         // A /foto del bot de Telegram, con el secreto de /notify (el de SupabaseAutoExport, fuera del repo). El bot la
         // manda con el trade en el pie y la pregunta Continuación / Reingreso; si no llega, pregunta igual a los 8 minutos.
-        private void AvisarTelegram(DateTime dia, byte[] png)
+        private void AvisarTelegram(DateTime dia, byte[] png, bool final = false)
         {
             try
             {
                 string secreto = Leer(Path.Combine(ChaumerNT.DIR_NT, "telegram-notify-secret.txt"));
                 if (string.IsNullOrEmpty(secreto)) { Print("[FotoChaumer] sin telegram-notify-secret.txt: la foto no va a Telegram"); return; }
-                var cuerpo = new JObject { { "fecha", dia.ToString("yyyy-MM-dd") }, { "png", Convert.ToBase64String(png) } };
+                var cuerpo = new JObject { { "fecha", dia.ToString("yyyy-MM-dd") }, { "png", Convert.ToBase64String(png) }, { "final", final } };
                 using (var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) })
                 {
                     var req = new HttpRequestMessage(HttpMethod.Post, TELEGRAM_FOTO);
@@ -393,6 +415,83 @@ namespace NinjaTrader.NinjaScript.Indicators
                 }
             }
             catch (Exception ex) { Print("[FotoChaumer] no llegó a Telegram (pregunta sin foto a los 8 min): " + Mensaje(ex)); }
+        }
+
+        // ── Las placas (25/11/2026) ──────────────────────────────────────────
+        // En segundo plano, cada minuto: hoy siempre, y los 5 días anteriores que tengan gráfico y aún no sus placas.
+        private void MirarPlacas()
+        {
+            DateTime hoy = DateTime.Today;
+            for (int i = 0; i <= 5; i++)
+            {
+                DateTime dia = hoy.AddDays(-i);
+                if (dia < PLACAS_DESDE || !File.Exists(Ruta(dia, "-grafico.png"))) continue;
+                if (i > 0 && File.Exists(Ruta(dia, ".placas"))) continue;
+                try { Componer(dia); }
+                catch (Exception ex) { Print("[FotoChaumer] las placas del " + dia.ToString("yyyy-MM-dd") + ": " + Mensaje(ex)); }
+            }
+        }
+
+        private static readonly DateTime PLACAS_DESDE = new DateTime(2026, 11, 25);   // «solo a partir de hoy» (Kris)
+
+        private void Componer(DateTime dia)
+        {
+            string fecha = dia.ToString("yyyy-MM-dd");
+            JObject f = Node("--fecha " + fecha + " --firma");
+            if (f == null || !(bool)f["ok"] || !(bool)f["registrada"]) return;         // sin registrar: aún no hay setup ni motivo
+            string firma = (string)f["firma"];
+            string hecha = Leer(Ruta(dia, ".placas"));
+            if (hecha == firma || hecha == "tuya:" + firma) return;                    // nada cambió
+
+            // Como la automática: no se pisa una imagen que Kris haya subido a mano en el Diario.
+            using (var http = ChaumerNT.Cliente())
+            {
+                if (http == null) return;
+                JArray a = ChaumerNT.Get(http, "sesiones?sesion_date=eq." + fecha + "&select=imagen_url");
+                string actual = a.Count > 0 ? (string)a[0]["imagen_url"] : null;
+                if (!string.IsNullOrEmpty(actual) && actual != Leer(Ruta(dia, ".url")))
+                {
+                    Print("[FotoChaumer] el " + fecha + " tiene una imagen tuya en el Diario: las placas se quedan en el PC");
+                    Escribir(Ruta(dia, ".placas"), "tuya:" + firma);
+                    return;
+                }
+            }
+
+            string salida = Ruta(dia, ".png");
+            JObject c = Node("--fecha " + fecha + " --grafico \"" + Ruta(dia, "-grafico.png") + "\" --salida \"" + salida + "\"");
+            if (c == null || !(bool)c["ok"]) { Print("[FotoChaumer] no se pudieron armar las placas del " + fecha + (c != null ? ": " + c["error"] : "")); return; }
+            byte[] png = File.ReadAllBytes(salida);
+            Subir(dia, png, true, true);
+            if (Leer(Ruta(dia, ".url")) == null) return;
+            Escribir(Ruta(dia, ".placas"), firma);
+            Print("[FotoChaumer] placas del " + fecha + " (" + c["ancho"] + " × " + c["alto"] + "): " + salida);
+            if (!File.Exists(Ruta(dia, ".telegram")))
+            {
+                AvisarTelegram(dia, png, true);
+                Escribir(Ruta(dia, ".telegram"), DateTime.Now.ToString("s"));
+            }
+        }
+
+        /// <summary>scripts/foto/componer.mjs con Node; su última línea es un JSON. null si no se pudo lanzar.</summary>
+        private JObject Node(string args)
+        {
+            string repo = ChaumerNT.LeerConfig(null).Repo;
+            string script = Path.Combine(repo, "scripts", "foto", "componer.mjs");
+            if (!File.Exists(script)) { Print("[FotoChaumer] no encuentro " + script + " (la ruta del repositorio, en bot-chaumer.json)"); return null; }
+            string node = File.Exists(@"C:\Program Files\nodejs\node.exe") ? @"C:\Program Files\nodejs\node.exe" : "node";
+            var pi = new System.Diagnostics.ProcessStartInfo(node, "\"" + script + "\" " + args)
+            {
+                WorkingDirectory = repo, UseShellExecute = false, CreateNoWindow = true,
+                RedirectStandardOutput = true, RedirectStandardError = true, StandardOutputEncoding = Encoding.UTF8,
+            };
+            using (var pr = System.Diagnostics.Process.Start(pi))
+            {
+                string salida = pr.StandardOutput.ReadToEnd();
+                if (!pr.WaitForExit(180000)) { try { pr.Kill(); } catch { } Print("[FotoChaumer] componer.mjs tardó demasiado"); return null; }
+                string linea = salida.Split('\n').Select(l => l.Trim()).LastOrDefault(l => l.StartsWith("{"));
+                if (linea == null) { Print("[FotoChaumer] componer.mjs no respondió: " + Corto(pr.StandardError.ReadToEnd())); return null; }
+                return JObject.Parse(linea);
+            }
         }
 
         // ── Utilidades ───────────────────────────────────────────────────────
@@ -417,13 +516,16 @@ namespace NinjaTrader.NinjaScript.Indicators
         }
 
         #region Propiedades
+        // Nombres nuevos (25/11/2026): los de antes, Ancho y Alto (2000 × 1190, la foto encajada), los guardaba el espacio de
+        // trabajo y habrían seguido mandando.
         [Range(400, 8000)]
-        [Display(Name = "Ancho (px)", Order = 1, GroupName = "Foto")]
-        public int Ancho { get; set; }
+        [Display(Name = "Gráfico: ancho (px)", Order = 1, GroupName = "Foto",
+                 Description = "El ancho de la ventana del gráfico. Si mide eso, la foto va tal cual, píxel a píxel.")]
+        public int GraficoAncho { get; set; }
 
         [Range(300, 8000)]
-        [Display(Name = "Alto (px)", Order = 2, GroupName = "Foto")]
-        public int Alto { get; set; }
+        [Display(Name = "Gráfico: alto (px)", Order = 2, GroupName = "Foto")]
+        public int GraficoAlto { get; set; }
 
         [Range(0, 60)]
         [Display(Name = "Minutos tras cerrar", Order = 3, GroupName = "Foto",
@@ -437,6 +539,10 @@ namespace NinjaTrader.NinjaScript.Indicators
         [Display(Name = "Subir al Journal", Order = 5, GroupName = "Foto",
                  Description = "Apagado, la foto solo se guarda en Documentos\\NinjaTrader 8\\fotos-chaumer.")]
         public bool SubirAlJournal { get; set; }
+
+        [Display(Name = "Con placas", Order = 6, GroupName = "Foto",
+                 Description = "Al registrar el día, la foto final con la placa del día y la entrada arriba y la del resultado abajo.")]
+        public bool ConPlacas { get; set; }
         #endregion
     }
 }
