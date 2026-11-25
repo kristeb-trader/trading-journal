@@ -151,6 +151,12 @@ análisis) y el aviso de disciplina. Automatizarlo entero desde el motor se desc
 06/10 y el 14/10 no coincidió con el motor, y eso es lo que enseña), el motor mide horas después y enseñarlo antes del
 registro rompe el candado (D-026). Eligió la opción A con la foto: la dirección sale sola del trade y él elige la familia.
 
+Antes, Kris preguntó por el mensaje nuevo «dentro de las reglas» (el aviso 🎯 Disciplina, D-052/D-057) y por el botón
+«No estoy de acuerdo». Explicado sin cambiar nada: el día queda en discusión y no cuenta; la discusión se trae a una
+sesión de chat, se revisa contra el plan (las velas, la ficha del motor y su frase) y, si la regla no es clara, con
+Alfredo; se cierra en Otros → Disciplina («El motor tenía razón» / «Tenía yo razón»). Había dos, las dos cerradas a su
+favor (11/11 y 12/11). Quedó ofrecido, sin hacer: que Telegram recuerde las discusiones abiertas.
+
 **Lo que se cambió.**
 - **`TelegramBot/worker.js`:** `/notify` ya no manda nada: guarda el trade en el KV (`t:<fecha>`) y lo marca pendiente
   (`p:<fecha>`). `/foto` (nuevo, mismo secreto) manda la foto con los trades en el pie y **2 botones, Continuación o
@@ -163,9 +169,9 @@ registro rompe el candado (D-026). Eligió la opción A con la foto: la direcci�
 **Verificado.** El Worker simulado en local (Telegram, Supabase y KV falsos): trade → nada; `/foto` con secreto malo →
 403; con el bueno → la foto con el trade y los 2 botones; «Continuación» en un trade corto → «Continuación Bajista» y se
 guarda sin la clave interna `_dir`; el análisis → «✅ Guardado»; sin foto, el cron a los 9 min pregunta; una foto tarde no
-repite. `FotoChaumer.cs` compila. **Sin probar en real:** la foto en Telegram (necesita copiar FotoChaumer y una operación).
-
-**Pendiente.** Kris: copiar `FotoChaumer.cs` y F5. Hasta entonces la pregunta llega sin foto, a los 8 minutos.
+repite. `FotoChaumer.cs` compila. Instalado el mismo día (con el checkpoint 2026-11-25b): la foto final ya llegó a Telegram
+como archivo (12:05:38). **Sin probar en real:** la pregunta del setup con la foto tras una operación (la de hoy cerró a las
+9:43, antes del despliegue de las 10:09); la primera operación del 26/11 lo confirma.
 
 ---
 
