@@ -231,24 +231,10 @@ function setupKeyboard(setups) {
 }
 
 // ── Resumen completo de la sesión ───────────────────────────────────────────
+// Una línea (25/11/2026): el resumen largo repetía el análisis que Kris acababa de escribir.
 function buildResumen(data) {
-
-  // Caso 2: me conecté a analizar pero no hubo setup válido
-  if (data.no_opero) {
-    return (
-      `✅ <b>Sesión guardada</b>\n\n` +
-      `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
-      `🔌 Me conecté a analizar (sin setup válido)\n` +
-      `\n✍️ <b>Análisis del día:</b>\n${escHtml(data.analisis_trader || '—')}`
-    );
-  }
-
-  return (
-    `✅ <b>Sesión guardada</b>\n\n` +
-    `📅 <b>Fecha:</b> ${data.sesion_date}\n` +
-    `📐 <b>Setup:</b> ${escHtml(data.setup)}\n` +
-    `\n✍️ <b>Análisis del día:</b>\n${escHtml(data.analisis_trader || '—')}`
-  );
+  const que = data.no_opero ? 'sin operación' : escHtml(data.setup || 'sin setup');
+  return `✅ <b>Guardado</b> · ${diaMes(data.sesion_date)} · ${que}`;
 }
 
 // ── Supabase upsert de sesión ────────────────────────────────────────────────
@@ -373,36 +359,96 @@ async function startSesionFlow(chatId, token, kv, env) {
   );
 }
 
-// Arranque automático tras un trade de NinjaTrader. Si llega un trade es que se
-// operó: se salta "¿Operaste hoy?" y se va directo al setup.
-// NO arranca (solo queda el aviso del trade) si:
-//   - ya hay un registro a medias de hoy: un 2º trade no lo reinicia;
-//   - el día ya está registrado (`registrada_at`, la pone el primer guardado del
-//     bot o de la web; la fila que crea NT8 en premercado la deja en null).
-async function iniciarTrasTrade(env) {
-  const chatId = env.ALLOWED_CHAT_ID;
-  if (!chatId) return;
-  const today = hoyBogota(env);
+// ── El trade, la foto y el setup (25/11/2026) ───────────────────────────────
+// Antes: «🔔 Trade cerrado» al cerrar y, aparte, «¿Qué setup operaste?» con 4 botones. Ahora el trade se
+// GUARDA (KV `t:<fecha>`) y la pregunta llega con la foto de la operación que hace FotoChaumer 3 minutos
+// después (`/foto`): el trade en el pie, y solo 2 botones, Continuación o Reingreso, porque la dirección
+// sale del trade (Long → alcista, Short → bajista). Si la foto no llega en 8 minutos (FotoChaumer
+// apagado o sin red), el cron pregunta igual, sin foto. Lo que el motor vio no se usa: el setup sigue
+// siendo la lectura de Kris (y el candado, D-026).
+const ESPERA_FOTO_MS = 8 * 60 * 1000;
 
+async function tradesDelDia(env, fecha) {
+  return (await env.KV.get(`t:${fecha}`, 'json')) || [];
+}
+
+// 'alcista' / 'bajista' si todos los trades del día van en la misma dirección; si no, null (4 botones).
+async function direccionDelDia(env, fecha) {
+  let lados = (await tradesDelDia(env, fecha)).map(t => t.market_pos);
+  if (!lados.length) {
+    try {
+      const r = await sbFetch(env, `trades?trade_date=eq.${fecha}&select=market_pos`);
+      if (r.ok) lados = (await r.json()).map(t => t.market_pos);
+    } catch { /* sin red: 4 botones */ }
+  }
+  const u = [...new Set(lados.filter(Boolean))];
+  return u.length === 1 ? (u[0] === 'Long' ? 'alcista' : u[0] === 'Short' ? 'bajista' : null) : null;
+}
+
+function familiaKeyboard() {
+  return { inline_keyboard: [[
+    { text: 'Continuación', callback_data: 'fam_continuacion' },
+    { text: 'Reingreso',    callback_data: 'fam_reingreso' },
+  ]] };
+}
+
+// La pregunta del setup: 2 botones si se sabe la dirección, los 4 de siempre si no.
+async function preguntaSetup(env, fecha) {
+  const dir = await direccionDelDia(env, fecha);
+  return dir
+    ? { dir, texto: `📐 <b>Setup ${dir}</b>\n\n¿Continuación o Reingreso?`, teclado: familiaKeyboard() }
+    : { dir: null, texto: PREGUNTA_SETUP, teclado: setupKeyboard(await fetchSetups(env)) };
+}
+
+// El pie de la foto: los trades del día, en una línea cada uno.
+function lineasTrades(trades) {
+  return trades.map(t => {
+    const ins  = (t.instrument || '').split(' ')[0];
+    const dir  = t.market_pos === 'Long' ? '🟢 Long' : '🔴 Short';
+    const res  = t.resultado === 'target' ? '✅ Target' : t.resultado === 'stop' ? '🔴 Stop' : '⚫ Otro';
+    const p    = parseFloat(t.profit) || 0;
+    return `${ins} ${dir} · ${t.qty} ct · <b>${p >= 0 ? '+' : '−'}$${Math.abs(p).toFixed(2)}</b> ${res}`;
+  }).join('\n');
+}
+
+// ¿Se puede arrancar el registro de hoy? No si ya hay uno a medias o el día ya está registrado
+// (`registrada_at`, la pone el primer guardado del bot o de la web).
+async function puedePreguntar(env, chatId, fecha) {
   const enCurso = await getState(env.KV, chatId);
-  if (enCurso && enCurso.data && enCurso.data.sesion_date === today) return;
-
+  if (enCurso && enCurso.data && enCurso.data.sesion_date === fecha) return false;
   try {
-    const res = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/sesiones?sesion_date=eq.${today}&select=registrada_at`,
-      { headers: { apikey: env.SUPABASE_SERVICE_ROLE, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE}` } }
-    );
-    if (res.ok) {
-      const filas = await res.json();
-      if (Array.isArray(filas) && filas[0] && filas[0].registrada_at) return;
-    }
+    const r = await sbFetch(env, `sesiones?sesion_date=eq.${fecha}&select=registrada_at`);
+    if (r.ok) { const f = await r.json(); if (f[0] && f[0].registrada_at) return false; }
   } catch { /* sin red: mejor preguntar de más que dejar el día sin registrar */ }
+  return true;
+}
 
+// Arranca el registro: la pregunta del setup con el trade, con la foto si la hay.
+async function preguntarTrasTrade(env, fecha, png) {
+  const chatId = env.ALLOWED_CHAT_ID;
+  await env.KV.delete(`p:${fecha}`);
+  if (!chatId || !(await puedePreguntar(env, chatId, fecha))) return 'no toca';
+  const trades = await tradesDelDia(env, fecha);
+  const q = await preguntaSetup(env, fecha);
+  const texto = `🔔 <b>Trade cerrado · ${diaMes(fecha)}</b>\n${lineasTrades(trades)}\n\n${q.texto}`;
+  let ok = false;
+  if (png) {
+    const form = new FormData();
+    form.append('chat_id', chatId);
+    form.append('caption', texto);
+    form.append('parse_mode', 'HTML');
+    form.append('reply_markup', JSON.stringify(q.teclado));
+    form.append('photo', new Blob([png], { type: 'image/png' }), `${fecha}.png`);
+    const r = await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendPhoto`, { method: 'POST', body: form });
+    ok = r.ok;
+    if (!ok) console.error('[foto] sendPhoto', r.status, await r.text());
+  }
+  if (!ok) await sendMessage(env.BOT_TOKEN, chatId, texto, q.teclado);
   await saveState(env.KV, chatId, {
     step: STEPS.SETUP,
-    data: { sesion_date: today, no_opero: false, se_conecto: true },
+    data: { sesion_date: fecha, no_opero: false, se_conecto: true, _dir: q.dir },
   });
-  await sendMessage(env.BOT_TOKEN, chatId, PREGUNTA_SETUP, setupKeyboard(await fetchSetups(env)));
+  return ok ? 'con foto' : 'sin foto';
 }
 
 // Cierre del registro: guarda la sesión y deja el resumen. Con `msgId` lo escribe en
@@ -497,8 +543,11 @@ async function handleCallback(cbq, env) {
 
   // ── Setup seleccionado → directo al análisis ──────────────────────────────
   // El checklist ya NO se llena en el bot (se marca en el Diario del Journal).
-  if (action.startsWith('setup_')) {
-    const codigo = action.slice(6);
+  // `fam_continuacion` / `fam_reingreso` (25/11/2026): la familia, con la dirección del trade del día.
+  if (action.startsWith('setup_') || action.startsWith('fam_')) {
+    const codigo = action.startsWith('fam_')
+      ? `${action.slice(4)}_${state.data._dir || ''}`
+      : action.slice(6);
     const setups = await fetchSetups(env);
     const elegido = setups.find(s => s.codigo === codigo);
     // Se guarda el CÓDIGO: el trigger fn_sync_setup_codigo rellena el nombre en
@@ -507,10 +556,15 @@ async function handleCallback(cbq, env) {
     state.data.setup = elegido ? elegido.nombre : null;
     state.step = STEPS.REFLEXION;
     await saveState(env.KV, chatId, state);
-    await editMessage(token, chatId, msgId,
-      `📐 Setup: <b>${escHtml(state.data.setup)}</b>\n\n` +
-      `✍️ <b>Análisis del día</b>\n\nEscribe tu análisis y reflexión de la sesión:`
-    );
+    const pide = `📐 Setup: <b>${escHtml(state.data.setup || codigo)}</b>\n\n` +
+                 `✍️ <b>Análisis del día</b>\n\nEscribe tu análisis y reflexión de la sesión:`;
+    if (cbq.message.photo) {
+      // El mensaje de la foto no se puede convertir en texto: se le quitan los botones y se pide aparte.
+      await tg(token, 'editMessageReplyMarkup', { chat_id: chatId, message_id: msgId, reply_markup: { inline_keyboard: [] } });
+      await sendMessage(token, chatId, pide);
+    } else {
+      await editMessage(token, chatId, msgId, pide);
+    }
     return;
   }
 
@@ -529,8 +583,12 @@ async function handleCallback(cbq, env) {
       state.data.no_opero = false;
       state.data.se_conecto = true;
       state.step = STEPS.SETUP;
-      await saveState(env.KV, chatId, state);
-      await editMessage(token, chatId, msgId, PREGUNTA_SETUP, setupKeyboard(await fetchSetups(env)));
+      {
+        const q = await preguntaSetup(env, state.data.sesion_date);   // 2 botones si ya hay trade de hoy
+        state.data._dir = q.dir;
+        await saveState(env.KV, chatId, state);
+        await editMessage(token, chatId, msgId, q.texto, q.teclado);
+      }
       break;
 
     case 'opero_no':
@@ -659,39 +717,33 @@ async function handleNotify(request, env) {
     return new Response('Unauthorized', { status: 403 });
   }
 
+  // Ya no se manda nada aquí (25/11/2026): el trade se guarda y sale en el pie de la foto (`/foto`),
+  // o en la pregunta sin foto si a los 8 minutos no ha llegado (el cron).
   const t = await request.json();
-
-  const instrument  = t.instrument?.split(' ')[0] || t.instrument;
-  const accountParts = (t.account || '').split('-');
-  const account = accountParts.length > 2 ? accountParts.slice(0, 2).join('-') : (t.account || '');
-
-  const isLong = t.market_pos === 'Long';
-  const dir    = isLong ? '🟢 ▲ Long' : '🔴 ▼ Short';
-  const emoji  = t.resultado === 'target' ? '✅ Target' :
-                 t.resultado === 'stop'   ? '🔴 Stop'   : '⚫ Otro';
-  const sign   = t.profit >= 0 ? '+' : '';
-
-  const text =
-    `🔔 <b>Trade cerrado — ${instrument}</b>\n` +
-    `${account ? `🏦 ${account}\n` : ''}` +
-    `${dir} | ${t.qty} contrato${t.qty !== 1 ? 's' : ''}\n` +
-    `PnL: <b>${sign}$${Math.abs(parseFloat(t.profit)).toFixed(2)}</b> ${emoji}\n` +
-    `MAE: $${parseFloat(t.mae).toFixed(2)} | MFE: $${parseFloat(t.mfe).toFixed(2)}`;
-
-  await fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: env.ALLOWED_CHAT_ID,
-      text,
-      parse_mode: 'HTML',
-    }),
-  });
-
-  // Sin botón "Registrar sesión": el registro sigue solo con el setup.
-  await iniciarTrasTrade(env);
-
+  const fecha = hoyBogota(env);
+  const trades = await tradesDelDia(env, fecha);
+  trades.push({ instrument: t.instrument, market_pos: t.market_pos, qty: t.qty, profit: t.profit, resultado: t.resultado });
+  await env.KV.put(`t:${fecha}`, JSON.stringify(trades), { expirationTtl: 36 * 3600 });
+  await env.KV.put(`p:${fecha}`, String(Date.now()), { expirationTtl: 36 * 3600 });
   return new Response('OK');
+}
+
+// La foto de FotoChaumer (automática, tras cerrar): { fecha, png: base64 }. Con el mismo secreto que /notify.
+async function handleFoto(request, env) {
+  const token = request.headers.get('X-Notify-Token');
+  if (!token || token !== env.NOTIFY_SECRET) return new Response('Unauthorized', { status: 403 });
+  const { fecha, png } = await request.json().catch(() => ({}));
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha || '')) return new Response('fecha', { status: 400 });
+  if (!(await env.KV.get(`p:${fecha}`))) return new Response('sin trade pendiente');
+  const bytes = png ? Uint8Array.from(atob(png), c => c.charCodeAt(0)) : null;
+  return new Response(await preguntarTrasTrade(env, fecha, bytes));
+}
+
+// Cada 5 minutos: si un trade lleva 8 minutos sin foto, se pregunta igual (sin foto).
+async function vigilarPendientes(env) {
+  const fecha = hoyBogota(env);
+  const p = await env.KV.get(`p:${fecha}`);
+  if (p && Date.now() - Number(p) >= ESPERA_FOTO_MS) await preguntarTrasTrade(env, fecha, null);
 }
 
 // ── Entry point ─────────────────────────────────────────────────────────────
@@ -702,6 +754,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === '/notify') return handleNotify(request, env);
     if (url.pathname === '/disciplina') return handleDisciplina(request, env);
+    if (url.pathname === '/foto') return handleFoto(request, env);
 
     try {
       const update = await request.json();
@@ -729,5 +782,10 @@ export default {
     }
 
     return new Response('OK');
+  },
+
+  // El cron de wrangler.toml: la pregunta del setup sin foto si FotoChaumer no la mandó.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(vigilarPendientes(env));
   },
 };

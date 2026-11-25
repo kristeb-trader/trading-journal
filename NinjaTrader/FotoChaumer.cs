@@ -51,6 +51,7 @@ namespace NinjaTrader.NinjaScript.Indicators
     {
         private const string CLOUDINARY = "https://api.cloudinary.com/v1_1/dq4n7bjta/image/upload";
         private const string PRESET     = "trading-journal";   // el del Diario (js/config.js): sin firma, no es secreto
+        private const string TELEGRAM_FOTO = "https://trading-journal-bot.kristerock.workers.dev/foto";
         private static readonly string DIR = Path.Combine(ChaumerNT.DIR_NT, "fotos-chaumer");
 
         private Chart ventana;
@@ -283,6 +284,8 @@ namespace NinjaTrader.NinjaScript.Indicators
                 ocupado = true;
                 Task.Run(() => { try { Subir(dia, png, aMano); } finally { ocupado = false; } });
             }
+            // La automática va también a Telegram (25/11/2026): con ella llega la pregunta del setup.
+            if (!aMano && !finde) Task.Run(() => AvisarTelegram(dia, png));
             return true;
         }
 
@@ -368,6 +371,28 @@ namespace NinjaTrader.NinjaScript.Indicators
                 Print("[FotoChaumer] ✅ en el Journal, el " + fecha + ": " + url);
             }
             catch (Exception ex) { Print("[FotoChaumer] subida a Cloudinary, pero no llegó al Journal: " + Mensaje(ex) + " · " + url); }
+        }
+
+        // A /foto del bot de Telegram, con el secreto de /notify (el de SupabaseAutoExport, fuera del repo). El bot la
+        // manda con el trade en el pie y la pregunta Continuación / Reingreso; si no llega, pregunta igual a los 8 minutos.
+        private void AvisarTelegram(DateTime dia, byte[] png)
+        {
+            try
+            {
+                string secreto = Leer(Path.Combine(ChaumerNT.DIR_NT, "telegram-notify-secret.txt"));
+                if (string.IsNullOrEmpty(secreto)) { Print("[FotoChaumer] sin telegram-notify-secret.txt: la foto no va a Telegram"); return; }
+                var cuerpo = new JObject { { "fecha", dia.ToString("yyyy-MM-dd") }, { "png", Convert.ToBase64String(png) } };
+                using (var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) })
+                {
+                    var req = new HttpRequestMessage(HttpMethod.Post, TELEGRAM_FOTO);
+                    req.Headers.Add("X-Notify-Token", secreto);
+                    req.Content = new StringContent(cuerpo.ToString(), Encoding.UTF8, "application/json");
+                    HttpResponseMessage res = http.SendAsync(req).Result;
+                    string r = res.Content.ReadAsStringAsync().Result;
+                    Print("[FotoChaumer] Telegram: " + (res.IsSuccessStatusCode ? r : "HTTP " + (int)res.StatusCode + " " + Corto(r)));
+                }
+            }
+            catch (Exception ex) { Print("[FotoChaumer] no llegó a Telegram (pregunta sin foto a los 8 min): " + Mensaje(ex)); }
         }
 
         // ── Utilidades ───────────────────────────────────────────────────────

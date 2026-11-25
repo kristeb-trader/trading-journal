@@ -1,6 +1,6 @@
 # Trading Journal NQ Futures — Historial del proyecto
 
-**Última actualización:** 2026-11-18
+**Última actualización:** 2026-11-25
 
 > **Qué es este archivo:** la narrativa de qué pasó y cuándo, del más reciente al más antiguo. Para el
 > estado actual, `CLAUDE.md`. Para el **porqué** de una decisión, `docs/decisiones.md`. Para lo que falta,
@@ -11,6 +11,7 @@
 
 | Fecha | Checkpoint |
 |---|---|
+| 2026-11-25 | Telegram: el setup llega con la foto de la operación, Continuación o Reingreso (la dirección sale sola), y menos mensajes |
 | 2026-11-18h | Las etiquetas de Disciplina con las palabras de Kris, y «Corregir la causa» en el visor |
 | 2026-11-18g | El Coach valida como el análisis del 05/11: qué setup operaste de verdad, su regla paso a paso con la vela, y la causa |
 | 2026-11-18f | Un día sin operar también se juzga: ✓ si el plan no daba nada, ✗ si daba un setup que no tomaste (D-057) |
@@ -103,6 +104,32 @@
 | 2026-08-16c | Navegación: 6 botones y la pantalla "Otros" |
 | 2026-08-16b | Reestructuración documental |
 | 2026-08-16 | Sesión Operativa: tres pantallas en una |
+
+---
+
+## Checkpoint 2026-11-25 — Telegram: la pregunta del setup llega con la foto
+
+**Lo que pasó.** Kris preguntó si el setup se podía automatizar y quitar mensajes de Telegram. Un día con operación
+eran cinco: «Trade cerrado», «¿Qué setup operaste?» (4 botones), el análisis, «Sesión guardada» (que repetía el
+análisis) y el aviso de disciplina. Automatizarlo entero desde el motor se descartó: el setup es su lectura (el 02/10, el
+06/10 y el 14/10 no coincidió con el motor, y eso es lo que enseña), el motor mide horas después y enseñarlo antes del
+registro rompe el candado (D-026). Eligió la opción A con la foto: la dirección sale sola del trade y él elige la familia.
+
+**Lo que se cambió.**
+- **`TelegramBot/worker.js`:** `/notify` ya no manda nada: guarda el trade en el KV (`t:<fecha>`) y lo marca pendiente
+  (`p:<fecha>`). `/foto` (nuevo, mismo secreto) manda la foto con los trades en el pie y **2 botones, Continuación o
+  Reingreso** (`fam_*`; la dirección, del trade: Long → alcista). Si en 8 minutos no hay foto, el **cron** del Worker
+  (`*/5`, en `wrangler.toml`) pregunta igual, sin foto. Con trades en direcciones distintas, los 4 botones de siempre.
+  `/sesion` → «Sí, operé» también usa los 2 botones si ya hay trade del día. El resumen final es una línea: «✅ Guardado ·
+  25/11 · Continuación Bajista».
+- **`NinjaTrader/FotoChaumer.cs`:** la foto automática se manda también a `/foto`.
+
+**Verificado.** El Worker simulado en local (Telegram, Supabase y KV falsos): trade → nada; `/foto` con secreto malo →
+403; con el bueno → la foto con el trade y los 2 botones; «Continuación» en un trade corto → «Continuación Bajista» y se
+guarda sin la clave interna `_dir`; el análisis → «✅ Guardado»; sin foto, el cron a los 9 min pregunta; una foto tarde no
+repite. `FotoChaumer.cs` compila. **Sin probar en real:** la foto en Telegram (necesita copiar FotoChaumer y una operación).
+
+**Pendiente.** Kris: copiar `FotoChaumer.cs` y F5. Hasta entonces la pregunta llega sin foto, a los 8 minutos.
 
 ---
 
