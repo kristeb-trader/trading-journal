@@ -135,10 +135,11 @@ letra quedaba al 86 %. Pidió que no cambien las imágenes anteriores.
 **Verificado.** El compositor con tres días reales: 25/11 (target, +82,25, +$163), 23/11 (stop, −69,75, −$141, en rojo)
 y 03/11 (sin operación, «Sin setup»), cifras iguales al Journal. Una captura nativa de la ventana de Kris (10:51) para
 ver la nitidez. `FotoChaumer.cs` compila; el bot, simulado (la final llega como documento); el visor en la vista previa:
-con placas, sin fecha ni banner; sin placas, como siempre; sin errores. **Sin probar en real:** la foto final de punta
-a punta en NinjaTrader (necesita copiar el indicador y un día registrado).
-
-**Pendiente.** Kris: copiar `FotoChaumer.cs`, F5, y quitar Fecha Chaumer del gráfico.
+con placas, sin fecha ni banner; sin placas, como siempre; sin errores. **En real (12:04–12:05, Kris pulsó la cámara):** el gráfico a
+2339 × 1392 (12:04:50) y al Journal; al minuto, la final de 2339 × 1712 con sus placas (12:05:34), en `imagen_url` con
+`imagen_placas = true` (el 24/11 sigue en false) y a Telegram como archivo (12:05:38). Al instalarla, Foto Chaumer se
+había quitado del gráfico junto con Fecha Chaumer: se volvió a añadir. La publicación del Journal falló dos veces en
+`deploy-pages` por un error 500 de GitHub Pages; se relanzó cuando volvió a estar operativo.
 
 ---
 

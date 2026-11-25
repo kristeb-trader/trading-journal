@@ -11,6 +11,8 @@ name: Publicar Journal
 # Pasar a privado DESACTIVA Pages: al volver a público hay que reactivarlo (Source:
 # "GitHub Actions") y relanzar este workflow; si no, configure-pages falla.
 # Diseño: docs/disenos/2026-09-24-unificacion-chaumer.md, fase 1.
+# Si falla `deploy-pages` con «Failed to create deployment (status: 500)», es de GitHub (25/11/2026, dos veces
+# seguidas): se relanza cuando githubstatus.com dé Pages operativo (Actions → Re-run jobs, o un push que lo dispare).
 
 on:
   push:
